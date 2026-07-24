@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <%@ include file="/common/taglibs.jsp" %>
-<html>
+<html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
 	<head>
 		<rst:viteClient />
 		<title>
 			<sitemesh:write property='title'/> |
-			<fmt:message key="webapp.name" />
+			<spring:message code="webapp.name"/>
 		</title>
 
 		<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -27,6 +27,7 @@
 				$('#timezone_field').val(tz.name());
 			});
 		</script>
+		<rst:i18nMessages />
 		<sitemesh:write property='head'/>
 	</head>
 
@@ -38,7 +39,7 @@
 			<div class="container" style="max-width:960px;padding:0 5% 0 5%;">
 				<div class="row footerVersionRow">
 					<div class="col-md-4" style="text-align:center;">
-						<fmt:message key="webapp.version" />
+						${applicationScope['RS_DEPLOY_PROPS']['webappVersion']}
 					</div>
 					<div class="col-md-4" style="text-align:center;">
 						<c:forEach items="${applicationScope['RS_DEPLOY_PROPS']['uiFooterUrls']}" var="url" varStatus="loopStatus">
@@ -48,9 +49,9 @@
 					</div>
 					<div class="col-md-4" style="text-align:center;">
 						&copy;&nbsp;
-						<fmt:message key="copyright.year" />&nbsp;<a href="<fmt:message key='company.url' />"
+						${applicationScope['RS_DEPLOY_PROPS']['copyrightYear']}&nbsp;<a href="<spring:message code='company.url'/>"
 						target="_blank">
-						<fmt:message key="company.name" /></a>
+						<spring:message code="company.name"/></a>
 					</div>
 				</div>
 			</div>

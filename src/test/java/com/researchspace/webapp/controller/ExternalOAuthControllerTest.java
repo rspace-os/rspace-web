@@ -16,6 +16,8 @@ import com.researchspace.googleauth.ExternalAuthTokenVerifier;
 import com.researchspace.googleauth.ExternalProfile;
 import com.researchspace.model.User;
 import com.researchspace.service.ISignupHandlerPolicy;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.service.UserExistsException;
@@ -56,6 +58,7 @@ public class ExternalOAuthControllerTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.openMocks(this);
+    signupCtrller.messages = new MessageSourceUtils(new JsonMessageSource());
   }
 
   @After

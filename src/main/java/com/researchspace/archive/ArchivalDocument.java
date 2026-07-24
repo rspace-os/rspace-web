@@ -2,6 +2,7 @@ package com.researchspace.archive;
 
 import com.researchspace.archive.elninventory.ArchivalListOfMaterials;
 import com.researchspace.archive.elninventory.ArchivalMaterialUsage;
+import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.record.ImportOverride;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -113,6 +114,11 @@ public class ArchivalDocument {
     String originalOwner = getCreatedBy() != null ? getCreatedBy() : "n/a";
     return new ImportOverride(
         created, modified, originalOwner, allowCreationDateAfterModificationDate);
+  }
+
+  @XmlTransient
+  public String getGlobalId() {
+    return GlobalIdPrefix.SD.toString() + docId;
   }
 
   public Set<String> getIgsnInventoryLinkedItems() {

@@ -1,0 +1,80 @@
+{
+  "email": {
+    "account": {
+      "accountEnablementNotification": {
+        "disabled": "The RSpace system administrator has disabled your user account. For more details, please contact your RSpace administrator at <a href=\"mailto:{0}\">{0}</a>.",
+        "enabled": "The RSpace system administrator has enabled your user account. You can now <a href=\"{0}/workspace\">log in to RSpace</a>.",
+        "subjectDisabled": "RSpace account disabled",
+        "subjectEnabled": "RSpace account enabled"
+      },
+      "activationRequest": {
+        "accept": "To <b>accept</b> this request, please click <a href=\"{0}\">to accept.</a>",
+        "body": "A new registrant for the {0} installation has signed up.",
+        "details": "The details are as follows:",
+        "email": "Email: {0}",
+        "fullName": "Full name: {0}",
+        "reject": "To <b>reject</b> this request, please click <a href=\"{0}\">to deny.</a>",
+        "subject": "Sign up request from {0}"
+      },
+      "defaultWelcome": {
+        "access": "You can access the application at <a href=\"{0}/workspace\">RSpace</a>.",
+        "browserAdvice": "We support recent versions of Chrome, Safari and Firefox.<br>We do not support Edge or Internet Explorer.",
+        "contact": "For any help, comments, or questions, contact <a href=\"mailto:support@researchspace.com\">support@researchspace.com</a>.",
+        "groupMember": "You are part of the Lab Group ''{0}'', and can share documents, send messages, and collaborate with other members of the group.",
+        "guidanceHeading": "Guidance",
+        "guidanceIntro": "Here is some guidance for getting started with RSpace.",
+        "guidanceVideo": "As background you might like to watch our <a href=\"https://youtu.be/bhRExXIGxek&ab_channel=ResearchSpace\">Getting Started for Researchers video</a>.",
+        "helpDocs": "Our full <a href=\"https://researchspace.helpdocs.io/\">Guidance Notes</a> are also available, and can be accessed through the in-app <b>Need Help?</b> button on the bottom-right of RSpace.",
+        "individualUser": "You are registered as an individual user.",
+        "intro": "Welcome to ResearchSpace! We're pleased that you are using our system and we want to make your experience as positive as possible.",
+        "recommendModernBrowser": "RSpace uses modern HTML technology, and to get the best experience we recommend a modern browser:",
+        "subject": "Welcome to RSpace"
+      },
+      "emailChangeConfirmation": {
+        "body": "Your RSpace email address was updated. The new address is {0}.",
+        "ifNotYou": "If you did not just change your email, please get in touch with your RSpace support team.",
+        "subject": "Email address update"
+      },
+      "emailChangeVerification": {
+        "body": "Please use the link below to verify and activate your new email account in RSpace.",
+        "subject": "Email address update"
+      },
+      "genericAccountActivation": {
+        "activated": "Your account is now activated and can be accessed by going to <a href=\"{0}\">{0}</a> in your browser.",
+        "subject": "RSpace account activated"
+      },
+      "genericAccountDenial": {
+        "denied": "Unfortunately, your request was not accepted.",
+        "subject": "RSpace account denied"
+      },
+      "genericAccountReview": {
+        "body": "Thank you for registering with RSpace.",
+        "contactSupport": "Please contact support@researchspace.com for more information.",
+        "greeting": "Dear {0},"
+      },
+      "newUserAccountComplete": {
+        "body": "The RSpace system administrator has created a {0} account for you.<p>To log into your server, open <a href=\"{1}/workspace\">RSpace</a>.</p><p>Your <b>username</b> for this account is {2}.<br>Your system administrator can provide your login password if they have not already done so. If your server is using a single sign-on technology provided by your institution then your login credentials are most likely the same username and password you use to access all other institutional systems.</p><p>To change your profile details, go to <b>My RSpace</b> &gt; <b>My Profile</b>.</p><p>For documentation and instructional videos, use the <b>Need Help?</b> button in RSpace or visit the <a href=\"https://researchspace.helpdocs.io/\">RSpace help website</a>. To request assistance from ResearchSpace support, select <b>Chat with us</b> in the help interface.</p>",
+        "subject": "RSpace account created"
+      },
+      "passwordResetComplete": {
+        "body": "You, or someone else, has reset the {0} for the RSpace account at this email address.",
+        "ifNotYou": "If you did not just reset your {0}, please get in touch with your RSpace support team.",
+        "subject": "RSpace password changed"
+      },
+      "passwordResetMessage": {
+        "body": "You, or someone else, requested to reset their {0} for RSpace at this email address.",
+        "ifGenuine": "If this is a genuine request, and you wish to change your {0}, then please use the link below to reset your {0}:",
+        "subject": "RSpace password change request"
+      },
+      "usernameReminderMessage": {
+        "body": "You, or someone else, requested a username reminder for RSpace at this email address.",
+        "ifNotYou": "If you did not request a username reminder, please get in touch with your RSpace support team.",
+        "subject": "RSpace username reminder",
+        "username": "Your username is {0}<br>You can <a href=\"{1}\">login to RSpace</a>."
+      },
+      "verificationPasswordResetComplete": {
+        "subject": "RSpace verification password changed"
+      }
+    }
+  }
+}

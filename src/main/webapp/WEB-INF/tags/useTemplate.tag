@@ -1,6 +1,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 
 <script src="<rst:assetUrl value='/scripts/tags/useTemplate.js'/>"></script>
 
@@ -12,11 +13,11 @@
 
 <div id="useTemplateDlg" style="display: none;">
 
-    <div id="useTemplateDlgDesc">Document will be created in your <b>Home</b> folder.</div>
+    <div id="useTemplateDlgDesc"><spring:message code="dialogs.useTemplate.description"/></div>
     <axt:folderChooser folderChooserId="-useTemplate"></axt:folderChooser>
 
     <div id="useTemplateDlgName">
-        <label for="useTemplateNameInput">Document name: </label>
+        <label for="useTemplateNameInput"><spring:message code="dialogs.useTemplate.label.name"/></label>
         <input id="useTemplateNameInput" type="text" />
     </div>
 

@@ -16,6 +16,8 @@ import com.researchspace.model.dtos.RaidUpdateResult;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.service.CommunicationManager;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
 import com.researchspace.testutils.SystemPropertyTestFactory;
 import com.researchspace.testutils.VelocityTestUtils;
@@ -64,6 +66,7 @@ public class AsyncDepositorImplTest {
         VelocityTestUtils.setupVelocity(
             "src/main/resources/velocityTemplates/messageAndNotificationEmails");
     underTest.setVelocity(engine);
+    underTest.setMessages(new MessageSourceUtils(new JsonMessageSource()));
     underTest.setCommMgr(comm);
     underTest.setRaIDServiceClientAdapter(mockRaidServiceClientAdapter);
     anyUser = createAnyUser("any");

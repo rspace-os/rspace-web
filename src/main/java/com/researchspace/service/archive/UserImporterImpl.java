@@ -17,6 +17,7 @@ import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
 import com.researchspace.service.LicenseRequestResult;
 import com.researchspace.service.LicenseService;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.UserProfileManager;
@@ -37,6 +38,7 @@ public class UserImporterImpl implements UserImporter {
   private @Autowired IContentInitializer contentInitializer;
   private @Autowired UserManager userMgr;
   private @Autowired UserProfileManager userProfileManager;
+  private @Autowired MessageSourceUtils messages;
 
   Logger log = org.slf4j.LoggerFactory.getLogger(UserImporterImpl.class);
 
@@ -73,7 +75,10 @@ public class UserImporterImpl implements UserImporter {
       if (userMgr.userExists(archiveUser.getUsername())) {
         report
             .getInfoList()
-            .addErrorMsg(" User [" + archiveUser.getUsername() + "] already exists; skipping");
+            .addErrorMsg(
+                messages.getMessage(
+                    "archiveImport.info.existingUserSkipped",
+                    new Object[] {archiveUser.getUsername()}));
         alreadyExists.add(archiveUser);
         continue;
       }

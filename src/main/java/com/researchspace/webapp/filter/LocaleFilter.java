@@ -1,6 +1,7 @@
 package com.researchspace.webapp.filter;
 
 import com.researchspace.Constants;
+import com.researchspace.service.UserLocaleService;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
@@ -10,16 +11,28 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.jstl.core.Config;
+import org.springframework.context.i18n.LocaleContext;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/** Filter to wrap request with a request including user preferred locale. */
+/** Applies {@link UserLocaleService}'s locale consistently throughout each request. */
 public class LocaleFilter extends OncePerRequestFilter {
 
+  public static final String RESOLVED_LOCALE_TAG_REQUEST_ATTRIBUTE = "rsResolvedLocaleTag";
+
+  private UserLocaleService userLocaleService;
+
+  @Override
+  protected void initFilterBean() throws ServletException {
+    // This filter is created by the servlet container, not Spring.
+    userLocaleService =
+        WebApplicationContextUtils.getRequiredWebApplicationContext(getServletContext())
+            .getBean(UserLocaleService.class);
+  }
+
   /**
-   * This method looks for a "locale" request parameter. If it finds one, it sets it as the
-   * preferred locale and also configures it to work with JSTL.
-   *
    * @param request the current request
    * @param response the current response
    * @param chain the chain
@@ -31,34 +44,18 @@ public class LocaleFilter extends OncePerRequestFilter {
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws IOException, ServletException {
 
-    String locale = request.getParameter("locale");
-    Locale preferredLocale = null;
-
-    if (locale != null) {
-      int indexOfUnderscore = locale.indexOf('_');
-      if (indexOfUnderscore != -1) {
-        String language = locale.substring(0, indexOfUnderscore);
-        String country = locale.substring(indexOfUnderscore + 1);
-        preferredLocale = new Locale(language, country);
-      } else {
-        preferredLocale = new Locale(locale);
-      }
-    }
+    Locale locale = resolveLocale(request);
+    LocaleContext previousLocaleContext = LocaleContextHolder.getLocaleContext();
+    LocaleContextHolder.setLocale(locale);
+    request.setAttribute(RESOLVED_LOCALE_TAG_REQUEST_ATTRIBUTE, locale.toLanguageTag());
 
     HttpSession session = request.getSession(false);
-
     if (session != null) {
-      if (preferredLocale == null) {
-        preferredLocale = (Locale) session.getAttribute(Constants.PREFERRED_LOCALE_KEY);
-      } else {
-        session.setAttribute(Constants.PREFERRED_LOCALE_KEY, preferredLocale);
-        Config.set(session, Config.FMT_LOCALE, preferredLocale);
-      }
-
-      if (preferredLocale != null && !(request instanceof LocaleRequestWrapper)) {
-        request = new LocaleRequestWrapper(request, preferredLocale);
-        LocaleContextHolder.setLocale(preferredLocale);
-      }
+      session.setAttribute(Constants.PREFERRED_LOCALE_KEY, locale);
+      Config.set(session, Config.FMT_LOCALE, locale);
+    }
+    if (!(request instanceof LocaleRequestWrapper)) {
+      request = new LocaleRequestWrapper(request, locale);
     }
 
     String theme = request.getParameter("theme");
@@ -67,9 +64,23 @@ public class LocaleFilter extends OncePerRequestFilter {
       config.put(Constants.CSS_THEME, theme);
     }
 
-    chain.doFilter(request, response);
+    try {
+      chain.doFilter(request, response);
+    } finally {
+      LocaleContextHolder.setLocaleContext(previousLocaleContext);
+    }
+  }
 
-    // Reset thread-bound LocaleContext.
-    LocaleContextHolder.setLocaleContext(null);
+  private Locale resolveLocale(HttpServletRequest request) {
+    Locale configuredLocale = userLocaleService.getLocale();
+    String requestPath = request.getRequestURI().substring(request.getContextPath().length());
+    if ((requestPath.equals("/api/v1") || requestPath.startsWith("/api/v1/"))
+        && request.getHeader(HttpHeaders.ACCEPT_LANGUAGE) != null) {
+      Locale requestedLocale = request.getLocale();
+      if (configuredLocale.equals(requestedLocale)) {
+        return requestedLocale;
+      }
+    }
+    return configuredLocale;
   }
 }

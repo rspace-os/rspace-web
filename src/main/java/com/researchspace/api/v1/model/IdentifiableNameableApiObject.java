@@ -26,7 +26,7 @@ public abstract class IdentifiableNameableApiObject extends LinkableApiObject
   @JsonProperty("name")
   @Size(
       max = BaseRecord.DEFAULT_VARCHAR_LENGTH,
-      message = "Name cannot be longer than 255 characters")
+      message = "{errors.inventory.name.validationTooLong}")
   private String name = null;
 
   /**

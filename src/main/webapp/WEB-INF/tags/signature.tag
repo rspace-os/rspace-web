@@ -1,4 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 <%@ attribute name="record" required="true" type="com.researchspace.model.record.BaseRecord"%>
 
 <script>
@@ -27,7 +28,7 @@
 		_contentHash = undefined;
 		_exportHashes = [];
 	}
-	
+
 	function _signatureAddWitness(name, date) {
 		var hasWitnessed = !!date && date != "DECLINED";
 		if (hasWitnessed) {
@@ -38,15 +39,15 @@
 			_pendingWitnesses.push(name);
 		}
 	}
-	
+
 	function signatureSetFromJSON(signatureInfo) {
 		signatureResetState();
 		if (signatureInfo) {
 			_signatureId = signatureInfo.id;
 			_signer = {
-	   			fullName: signatureInfo.signerFullName,
-	   			date: signatureInfo.signDate
-	   		};
+				fullName: signatureInfo.signerFullName,
+				date: signatureInfo.signDate
+			};
 			$.each(signatureInfo.witnesses, function(name, date) {
 		        _signatureAddWitness(name, date);
 			});
@@ -56,32 +57,32 @@
 			_signatureStatus = signatureInfo.status;
 		}
 	}
-	
+
 	function _signatureGetSignerMsg() {
-		return "This document was signed by <b>" + _signer.fullName + "</b> on "+ _signer.date +".";
+		return RS.msg("legacyjs.signature.signedBy", _signer.fullName, _signer.date);
 	}
-	
+
 	function _signatureGetWitnessMsg(witness) {
-		return "This document was witnessed by <b>"+ witness.fullName +"</b> on "+ witness.date + ".";
+		return RS.msg("legacyjs.signature.witnessedBy", witness.fullName, witness.date);
 	}
-	
+
 	function _signatureGetPendingWitnessMsg() {
-		return "Pending witness requests: " +  _pendingWitnesses.join(', ') + '.';
+		return RS.msg("legacyjs.signature.pendingWitnessRequests", RS.formatList(_pendingWitnesses));
 	}
 
     function _signatureGetDeclinedWitnessMsg() {
-        return "Declined witness requests: " + _declinedWitnesses.join(', ') + '.';
+        return RS.msg("legacyjs.signature.declinedWitnessRequests", RS.formatList(_declinedWitnesses));
     }
 
 	function signatureRecalculateStatus() {
-		isSigned = _signer != undefined; 
+		isSigned = _signer != undefined;
 		isWitnessed = _witnesses.length > 0;
-		
+
 		$('.signatureContainer').empty();
 		if (isSigned) {
 			var signMsg = "<span class='signature'>" + _signatureGetSignerMsg() + "</span>";
 			$('.signatureContainer').append(signMsg);
-			
+
 			$.each(_witnesses, function(index, witness) {
 				var witnessMsg = "<span class='witnessLabel'>" + _signatureGetWitnessMsg(witness) + "</span>";
 				$('.signatureContainer').append(witnessMsg);
@@ -103,21 +104,21 @@
 
         $('#signatureHashesContainer').remove();
         if (_contentHash) {
-          var initMsg = '<span>Secure checksums and exports were generated on signing: </span>'
-              + '<a class="signatureHashesToggle">Show</a> ' 
-              + '<a class="signatureHashesToggle" style="display:none">Hide</a>';
+          var initMsg = '<span>' + RS.msg("legacyjs.signature.hashesIntro") + '</span> '
+              + '<a class="signatureHashesToggle">' + RS.msg("legacyjs.common.show") + '</a> '
+              + '<a class="signatureHashesToggle" style="display:none">' + RS.msg("legacyjs.common.hide") + '</a>';
           $('.signatureContainer').append(initMsg);
-              
+
           var container = '<div id="signatureHashesContainer">';
           container += "<span class='hashLabel'>" + _signatureGetContentHashMsg(_contentHash) + "</span><br/>";
           $.each(_exportHashes, function(index, hash) {
-              if (hash.type !== 'CONTENT') { 
+              if (hash.type !== 'CONTENT') {
                   container += "<span class='hashLabel'>" + _signatureGetArchiveHashMsg(hash) + "</span><br/>";
               }
           });
           container += '</div>';
           $('.signatureContainer').after(container);
-          
+
           $('#verifyContentHashBtn').on('click', function() {
               _verifyContentHash();
           });
@@ -126,43 +127,44 @@
           });
         }
     }
-    
+
     function _signatureGetContentHashMsg(hash) {
-        return "SHA-256 checksum of the signed content: " + hash.hexValue + "<button type=\"button\" class=\"btn\" id=\"verifyContentHashBtn\" >Verify</button>";
+        return RS.msg("legacyjs.signature.contentHashChecksum", hash.hexValue)
+            + "<button type=\"button\" class=\"btn\" id=\"verifyContentHashBtn\" >" + RS.msg("legacyjs.common.verify") + "</button>";
     }
 
     function _signatureGetArchiveHashMsg(hash) {
-        return "SHA-256 checksum of " + _getArchiveUrl(hash) + ": " + hash.hexValue;
+        return RS.msg("legacyjs.signature.archiveHashChecksum", _getArchiveUrl(hash), hash.hexValue);
     }
     function _getArchiveUrl(hash) {
         if (hash) {
-            return "<a href=\"/Streamfile/filestore/" + _signatureId + "/" + hash.filePropertyId + "\">" 
+            return "<a href=\"/Streamfile/filestore/" + _signatureId + "/" + hash.filePropertyId + "\">"
                 + hash.type + '<img src="/images/download.png" class="hashExportDownloadImg"/></a>';
         }
         return "";
     }
-    
+
     function _signatureHashesToggleContainer() {
-    	$('.signatureHashesToggle, #signatureHashesContainer').toggle();
+	$('.signatureHashesToggle, #signatureHashesContainer').toggle();
     }
     function _verifyContentHash() {
         var jxqr = $.get("/workspace/editor/structuredDocument/ajax/currentContentHash/" + getDocumentOrEntryId(), function (data, xhr){
-        	if (data === _contentHash.hexValue) {
-        		RS.defaultConfirm("Current content matches the checksum from the time of signing.");
-        	} else {
-        		var msg = "Current checksum: " + data;
-        		msg += "<br />Checksum at the time of signing: " + _contentHash.hexValue; 
-        		msg += "<br /><br />Either document content, or the way it is represented, has changed since the document was signed.";
-        		msg += "If that's unexpected, contact your System Admin";
-        	    apprise(msg);
-        	}
+	if (data === _contentHash.hexValue) {
+		RS.defaultConfirm(RS.msg("legacyjs.signature.contentMatchesChecksum"));
+	} else {
+		var msg = RS.msg("legacyjs.signature.currentChecksum", data);
+		msg += "<br />" + RS.msg("legacyjs.signature.checksumAtSigningTime", _contentHash.hexValue);
+		msg += "<br /><br />" + RS.msg("legacyjs.signature.contentChangedWarning");
+		msg += RS.msg("legacyjs.signature.contactSystemAdmin");
+	    apprise(msg);
+	}
         }).fail(function() {
-            RS.ajaxFailed("Getting current hash value", false, jxqr);
+            RS.ajaxFailed(RS.msg("legacyjs.signature.gettingCurrentHashValue"), false, jxqr);
         });
     }
-	
+
 	function signatureShowToastMessage() {
-		var msg = '-- signature info unavailable --';
+		var msg = RS.msg("legacyjs.signature.infoUnavailable");
 		if (isSigned) {
 			msg = "<br><span>" + _signatureGetSignerMsg() + "</span>";
 			$.each(_witnesses, function(index, witness) {
@@ -185,11 +187,11 @@
 			signatureInfoJson = '${signatureInfo.asJSON}';
 			signatureSetFromJSON(JSON.parse(RS.unescape(signatureInfoJson)));
 		</c:if>
-	
-	  	signatureRecalculateStatus();
- 	});
+
+		signatureRecalculateStatus();
+	});
 </script>
 
 <div class="signatureContainer">
-    ...signature info unavailable...
+    <spring:message code="dialogs.signature.infoUnavailable"/>
 </div>

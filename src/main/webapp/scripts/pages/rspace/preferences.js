@@ -11,6 +11,8 @@ $(document).ready(function (e) {
 				apprise(getValidationErrorString(response.errorMessages));
 			}
 		});
-		jxqr.fail("Message preferences change", false, jxqr);
+		jxqr.fail(function () {
+			RS.ajaxFailed(RS.msg("legacyjs.core.preferences.changeFailed"), false, jxqr);
+		});
 	});
 });

@@ -12,6 +12,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.UserFolderSetup;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class LabProtocol extends BuiltinContent implements IBuiltinContent {
@@ -20,31 +21,36 @@ public class LabProtocol extends BuiltinContent implements IBuiltinContent {
     super(initializer);
   }
 
+  public LabProtocol(IBuiltInPersistor initializer, Locale locale) {
+    super(initializer, locale);
+  }
+
   public LabProtocol() {}
 
   @Override
   protected String getFormName() {
     ResourceBundle resources = getResourceBundle();
-    return resources.getString("form.labprotocol.name");
+    return resources.getString("form.labProtocol.name");
   }
 
   @Override
   public RSForm createForm(User createdBy) {
-    String[] textFieldKeys = new String[] {"Safety", "Method", "Materials"};
-    String[] dateFieldKeys = new String[] {"DateCreated", "DateReviewed"};
+    String[] textFieldKeys = {
+      "form.labProtocol.safety", "form.labProtocol.method", "form.labProtocol.materials"
+    };
+    String[] dateFieldKeys = {"form.labProtocol.dateCreated", "form.labProtocol.dateReviewed"};
     ResourceBundle resources = getResourceBundle();
 
     RSForm form =
         new RSForm(
-            resources.getString("form.labprotocol.name"),
-            resources.getString("form.labprotocol.description"),
+            resources.getString("form.labProtocol.name"),
+            resources.getString("form.labProtocol.description"),
             createdBy);
     form.setCurrent(true);
 
     // text fields first
     int colindex = 1;
-    for (String fieldKey : textFieldKeys) {
-      String resourceKey = "form.labprotocol." + fieldKey;
+    for (String resourceKey : textFieldKeys) {
       String fieldName = resources.getString(resourceKey);
       FieldForm field = new TextFieldForm(fieldName);
       field.setColumnIndex(colindex++);
@@ -52,8 +58,7 @@ public class LabProtocol extends BuiltinContent implements IBuiltinContent {
     }
 
     // then date fields
-    for (String fieldKey : dateFieldKeys) {
-      String resourceKey = "form.labprotocol." + fieldKey;
+    for (String resourceKey : dateFieldKeys) {
       String fieldName = resources.getString(resourceKey);
       FieldForm field = new DateFieldForm(fieldName);
       field.setColumnIndex(colindex++);
@@ -69,21 +74,21 @@ public class LabProtocol extends BuiltinContent implements IBuiltinContent {
 
   public List<StructuredDocument> createTemplates(User createdBy) {
     ResourceBundle resources = getResourceBundle();
-    ArrayList<StructuredDocument> templates = new ArrayList<StructuredDocument>();
+    ArrayList<StructuredDocument> templates = new ArrayList<>();
 
     StructuredDocument template =
         recordFactory.createStructuredDocument(
-            resources.getString("form.labprotocolT1.name"), createdBy, m_form);
+            resources.getString("form.labProtocolT1.name"), createdBy, m_form);
 
     template
-        .getField(resources.getString("form.labprotocol.Safety"))
-        .setFieldData(resources.getString("form.labprotocolT1.Safetyfieldvalue"));
+        .getField(resources.getString("form.labProtocol.safety"))
+        .setFieldData(resources.getString("form.labProtocolT1.safetyFieldValue"));
     template
-        .getField(resources.getString("form.labprotocol.Materials"))
-        .setFieldData(resources.getString("form.labprotocolT1.Materialsfieldvalue"));
+        .getField(resources.getString("form.labProtocol.materials"))
+        .setFieldData(resources.getString("form.labProtocolT1.materialsFieldValue"));
     template
-        .getField(resources.getString("form.labprotocol.Method"))
-        .setFieldData(resources.getString("form.labprotocolT1.Methodfieldvalue"));
+        .getField(resources.getString("form.labProtocol.method"))
+        .setFieldData(resources.getString("form.labProtocolT1.methodFieldValue"));
 
     template.addType(RecordType.TEMPLATE);
     templates.add(template);
@@ -94,7 +99,7 @@ public class LabProtocol extends BuiltinContent implements IBuiltinContent {
   @Override
   public List<StructuredDocument> createExamples(User createdBy, UserFolderSetup folderSetup) {
     ResourceBundle resources = getResourceBundle();
-    ArrayList<StructuredDocument> examples = new ArrayList<StructuredDocument>();
+    ArrayList<StructuredDocument> examples = new ArrayList<>();
     if (m_form == null) {
       log.warn("Can't create example from form " + getFormName() + " - does not exist!");
       return examples;
@@ -102,19 +107,19 @@ public class LabProtocol extends BuiltinContent implements IBuiltinContent {
 
     StructuredDocument example =
         recordFactory.createStructuredDocument(
-            resources.getString("form.labprotocolE1.name"), createdBy, m_form);
+            resources.getString("form.labProtocolE1.name"), createdBy, m_form);
     example
-        .getField(resources.getString("form.labprotocol.Safety"))
-        .setFieldData(getStartupHTMLData(resources.getString("form.labprotocolE1.Safety")));
+        .getField(resources.getString("form.labProtocol.safety"))
+        .setFieldData(getStartupHTMLData(resources.getString("form.labProtocolE1.safety")));
     example
-        .getField(resources.getString("form.labprotocol.Method"))
-        .setFieldData(getStartupHTMLData(resources.getString("form.labprotocolE1.Method")));
+        .getField(resources.getString("form.labProtocol.method"))
+        .setFieldData(getStartupHTMLData(resources.getString("form.labProtocolE1.method")));
     example
-        .getField(resources.getString("form.labprotocol.DateCreated"))
-        .setFieldData(resources.getString("form.labprotocolE1.DateCreated"));
+        .getField(resources.getString("form.labProtocol.dateCreated"))
+        .setFieldData(resources.getString("form.labProtocolE1.dateCreated"));
     example
-        .getField(resources.getString("form.labprotocol.DateReviewed"))
-        .setFieldData(resources.getString("form.labprotocolE1.DateReviewed"));
+        .getField(resources.getString("form.labProtocol.dateReviewed"))
+        .setFieldData(resources.getString("form.labProtocolE1.dateReviewed"));
     m_initializer.saveRecord(example);
     examples.add(example);
 

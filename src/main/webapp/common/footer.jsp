@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp" %>
 
   <span class="version">
-    <fmt:message key="webapp.version" />
+    ${applicationScope['RS_DEPLOY_PROPS']['webappVersion']}
   </span>
   <span>
       <c:forEach items="${applicationScope['RS_DEPLOY_PROPS']['uiFooterUrls']}" var="url" varStatus="loopStatus">
@@ -10,12 +10,12 @@
       </c:forEach>
   </span>
   <span>
-    <a href="<fmt:message key='company.url'/>" target="_blank">
+    <a href="<spring:message code='company.url'/>" target="_blank">
       <img src="<c:url value='/images/mainLogo3.svg'/>" style="vertical-align:middle; margin-top:-4px; width: 80px;"
         alt="RSpace" />
     </a>
     &copy;&nbsp;
-    <fmt:message key="copyright.year" />&nbsp;<a href="<fmt:message key='company.url'/>" target="_blank">
-      <fmt:message key="company.name" />
+    ${applicationScope['RS_DEPLOY_PROPS']['copyrightYear']}&nbsp;<a href="<spring:message code='company.url'/>" target="_blank">
+      <spring:message code="company.name"/>
     </a>
   </span>

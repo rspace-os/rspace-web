@@ -30,7 +30,7 @@ public class ArgosController extends BaseController {
       return new AjaxReturnObject<>(client.importDmp(id), null);
     } catch (IOException | URISyntaxException e) {
       log.error("Failure on importing DMP", e);
-      return new AjaxReturnObject<>(null, ErrorList.of("Couldn't import DMP"));
+      return new AjaxReturnObject<>(null, ErrorList.of(getText("apps.dmp.errors.import")));
     }
   }
 
@@ -48,7 +48,7 @@ public class ArgosController extends BaseController {
           client.listPlans(pageSize, page, like, grantsLike, fundersLike, collaboratorsLike), null);
     } catch (MalformedURLException | URISyntaxException e) {
       log.error("Failure on listing DMPs", e);
-      return new AjaxReturnObject<>(null, ErrorList.of("Couldn't list DMPs"));
+      return new AjaxReturnObject<>(null, ErrorList.of(getText("apps.dmp.errors.list")));
     }
   }
 }

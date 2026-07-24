@@ -3,13 +3,14 @@ package com.researchspace.extmessages.base;
 import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
 import static com.researchspace.testutils.SystemPropertyTestFactory.createAnyAppWithConfigElements;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.UserAppConfig;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,7 +32,7 @@ import org.springframework.web.client.RestTemplate;
 public class ExternalMessageSenderTest {
 
   public @Rule MockitoRule rule = MockitoJUnit.rule();
-  @Mock OperationFailedMessageGenerator authGen;
+  @Mock MessageSourceUtils messages;
   @Mock RestTemplate template;
   @InjectMocks DummyExternalMessageSender msteamsSender;
   private User sender;
@@ -102,6 +103,9 @@ public class ExternalMessageSenderTest {
             msteamsSender.sendMessage(
                 null, cfg.getAppConfigElementSets().iterator().next(), imposter));
     assertMessageNotPosted();
-    verify(authGen).getFailedMessage(Mockito.eq(imposter), Mockito.anyString());
+    verify(messages)
+        .getMessage(
+            Mockito.eq("errors.authorization.failure.sendExternalMessage"),
+            aryEq(new Object[] {imposter.getUsername()}));
   }
 }

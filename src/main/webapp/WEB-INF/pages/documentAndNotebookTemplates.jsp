@@ -7,7 +7,7 @@
  structuredDocument.jsp and notebookEditor.jsp, and comments are needed in both -->
 <div id="comment-editor" style="display: none">
   <div class="divComment" id="" style="margin:4px;">
-    <label>Enter a new comment:<br><br>
+    <label><spring:message code="documentAndNotebookTemplates.enterNewCommentLabel"/><br><br>
       <textarea id="commentText" class="newComment" style="width: 500px;"></textarea>
     </label>
   </div>
@@ -30,6 +30,7 @@
   </div>
 </div>
 
+<spring:message code="documentAndNotebookTemplates.imageInfoLabel" var="docTplImageInfoLabel"/>
 <div id="imageViewModeDivTemplate" style="display:none">
   <div class="imageViewModePanel">
     <div class="imagePanel">
@@ -37,14 +38,16 @@
     <div class="imageData">
       <div class="imageFileNameDiv"></div>
       <div class="imageInfoBtnDiv"
-           alt="Image Info"
-           title="Image Info">
+           alt="${docTplImageInfoLabel}"
+           title="${docTplImageInfoLabel}">
         <img class="infoImg" src="/images/info.svg" style="top:5px"/>
       </div>
     </div>
   </div>
 </div>
 
+<spring:message code="documentAndNotebookTemplates.chemElementInfoLabel" var="docTplChemElementInfoLabel"/>
+<spring:message code="documentAndNotebookTemplates.chemicalElementNonEditableLabel" var="docTplChemicalElementNonEditableLabel"/>
 <div id="chemImageViewModeDivTemplate" style="display:none">
   <div class="imageViewModePanel">
     <div class="imagePanel">
@@ -52,19 +55,24 @@
     <div class="imageData">
       <div class="imageFileNameDiv"></div>
       <div class="imageInfoBtnDiv"
-           alt="Chem Element Info"
-           title="Chem Element Info">
+           alt="${docTplChemElementInfoLabel}"
+           title="${docTplChemElementInfoLabel}">
         <img class="infoImg" src="/images/info.svg" style="top:5px"/>
       </div>
       <div class="chemImageNonEditableDiv"
-           alt="Chemical Element Non-Editable"
-           title="Chemical Element Non-Editable">
+           alt="${docTplChemicalElementNonEditableLabel}"
+           title="${docTplChemicalElementNonEditableLabel}">
         <img class="nonEditableIcon" src="/images/icons/nonEditableIcon.png" style="top:5px"/>
       </div>
     </div>
   </div>
 </div>
 
+<spring:message code="documentAndNotebookTemplates.historicalVersionTitle" var="docTplHistoricalVersionTitle"/>
+<spring:message code="documentAndNotebookTemplates.openInOfficeLink" var="docTplOpenInOfficeLink"/>
+<spring:message code="recordInfo.viewButton" var="docTplViewButton"/>
+<spring:message code="common:actions.download" var="docTplDownloadButton"/>
+<spring:message code="recordInfo.infoLabel" var="docTplInfoLabel"/>
 <div id="previewableAttachmentDivTemplate" style="display:none">
   <div class="attachmentPanel previewableAttachmentPanel">
     <div class="attachmentThumbnailPanel">
@@ -72,15 +80,15 @@
       <div class="attachmentNameDiv">
         <label class="attachmentName">-</label>
         <img class="historicalVersionImg" src="/images/icons/versionSymbol.png"
-             title="Historical version" style="display:none"/>
+             title="${docTplHistoricalVersionTitle}" style="display:none"/>
       </div>
     </div>
     <div class="inlineActionsPanel">
-      <a href="#" class="inlineActionLink viewInMsOnlineLink" style="display:none">Open in Office</a>
-      <a href="#" class="inlineActionLink viewActionLink">View</a>
-      <a href="#" class="inlineActionLink downloadActionLink">Download</a>
+      <a href="#" class="inlineActionLink viewInMsOnlineLink" style="display:none">${docTplOpenInOfficeLink}</a>
+      <a href="#" class="inlineActionLink viewActionLink">${docTplViewButton}</a>
+      <a href="#" class="inlineActionLink downloadActionLink">${docTplDownloadButton}</a>
       <a href="#" class="inlineActionLink infoActionLink">
-        Info <img class="infoImg" src="/images/info.svg" style="top:6px"/>
+        ${docTplInfoLabel} <img class="infoImg" src="/images/info.svg" style="top:6px"/>
       </a>
     </div>
   </div>
@@ -93,14 +101,14 @@
       <div class="attachmentNameDiv">
         <label class="attachmentName">-</label>
         <img class="historicalVersionImg" src="/images/icons/versionSymbol.png"
-             title="Historical version" style="display:none"/>
+             title="${docTplHistoricalVersionTitle}" style="display:none"/>
       </div>
     </div>
     <div class="inlineActionsPanel">
-      <a href="#" class="inlineActionLink viewInMsOnlineLink" style="display:none">Open in Office</a>
-      <a href="#" class="inlineActionLink downloadActionLink">Download</a>
+      <a href="#" class="inlineActionLink viewInMsOnlineLink" style="display:none">${docTplOpenInOfficeLink}</a>
+      <a href="#" class="inlineActionLink downloadActionLink">${docTplDownloadButton}</a>
       <a href="#" class="inlineActionLink infoActionLink">
-        Info <img class="infoImg" src="/images/info.svg" style="top:6px"/>
+        ${docTplInfoLabel} <img class="infoImg" src="/images/info.svg" style="top:6px"/>
       </a>
     </div>
   </div>
@@ -113,13 +121,13 @@
       <div class="attachmentNameDiv">
         <label class="attachmentName">-</label>
         <img class="historicalVersionImg" src="/images/icons/versionSymbol.png"
-             title="Historical version" style="display:none"/>
+             title="${docTplHistoricalVersionTitle}" style="display:none"/>
       </div>
     </div>
     <div class="inlineActionsPanel" style="margin-top: 3px;">
-      <a href="#" class="inlineActionLink downloadActionLink">Download</a>
+      <a href="#" class="inlineActionLink downloadActionLink">${docTplDownloadButton}</a>
       <a href="#" class="inlineActionLink infoActionLink">
-        Info <img class="infoImg" src="/images/info.svg" style="top:6px"/>
+        ${docTplInfoLabel} <img class="infoImg" src="/images/info.svg" style="top:6px"/>
       </a>
     </div>
   </div>
@@ -132,27 +140,29 @@
       <label class="attachmentName">-</label>
     </div>
     <div class="inlineActionsPanel" style="margin-top: 3px;">
-      <a href="#" class="inlineActionLink previewActionLink hidden">View</a>
-      <a href="#" class="inlineActionLink downloadActionLink">Download</a>
+      <a href="#" class="inlineActionLink previewActionLink hidden">${docTplViewButton}</a>
+      <a href="#" class="inlineActionLink downloadActionLink">${docTplDownloadButton}</a>
       <a href="#" class="inlineActionLink infoActionLink">
-        Info <img class="infoImg" src="/images/info.svg" style="top:6px"/></a>
+        ${docTplInfoLabel} <img class="infoImg" src="/images/info.svg" style="top:6px"/></a>
     </div>
   </div>
 </div>
 
+<spring:message code="documentAndNotebookTemplates.renameLabel" var="docTplRenameLabel"/>
+<spring:message code="documentAndNotebookTemplates.recordInfoLabel" var="docTplRecordInfoLabel"/>
 <script id="newRecordHeaderTemplate" type="text/mustache">
   <div class="bootstrap-custom-flat">
     <div class="row">
         <div class="col-md-2">
             <div id="recordNameDiv" class="rs-record-name">
                 <form id="inlineRenameRecordForm" class="info-panel">
-                    <label for="recordNameInHeaderEditor">Name:</label>
-                    <span id="recordNameInHeader" title="Click to edit the name">{{name}}</span>
+                    <label for="recordNameInHeaderEditor"><spring:message code="recordInfo.nameLabel"/></label>
+                    <span id="recordNameInHeader" title="<spring:message code='documentAndNotebookTemplates.clickToEditNameTitle'/>">{{name}}</span>
                     <textarea type="text" name="recordNameInHeader" id="recordNameInHeaderEditor" class="dynamicWidthInputField" placeholder="{{name}}" readonly="true" rows="1" maxlength="255" style="display: none;"></textarea>
-                    <button id="renameRecordEdit" alt="Rename" title="Edit name" class="bootstrap-custom-flat" style="display: none;">
+                    <button id="renameRecordEdit" alt="${docTplRenameLabel}" title="<spring:message code='documentAndNotebookTemplates.editNameTitle'/>" class="bootstrap-custom-flat" style="display: none;">
                         <span class="glyphicon glyphicon-pencil"></span>
                     </button>
-                    <button type="submit" alt="Rename" title="Rename" id="renameRecordSubmit" class="bootstrap-custom-flat" style="display: none;" title="Save name">
+                    <button type="submit" alt="${docTplRenameLabel}" title="${docTplRenameLabel}" id="renameRecordSubmit" class="bootstrap-custom-flat" style="display: none;" title="<spring:message code='documentAndNotebookTemplates.saveNameTitle'/>">
                         <span class="glyphicon glyphicon-floppy-disk"></span>
                     </button>
                 </form>
@@ -163,26 +173,26 @@
         <input type="password" style="width:0;height:0;visibility:hidden;position:absolute;left:0;top:0" />
         <div class="col-md-8">
             <div class="rs-record-tags">
-                <div>Tags:</div>
-                <button id="saveTags" class="bootstrap-custom-flat" style="display: none;" title="Save tags">
+                <div><spring:message code="recordInfo.tagsLabel"/></div>
+                <button id="saveTags" class="bootstrap-custom-flat" style="display: none;" title="<spring:message code='documentAndNotebookTemplates.saveTagsTitle'/>">
                     <span class="glyphicon glyphicon-floppy-disk"></span>
                 </button>
-                <ul id="notebookTags" title="Click to edit the tags"></ul>
-                <button id="editTags" class="bootstrap-custom-flat" style="display: none;" title="Edit tags">
+                <ul id="notebookTags" title="<spring:message code='documentAndNotebookTemplates.clickToEditTagsTitle'/>"></ul>
+                <button id="editTags" class="bootstrap-custom-flat" style="display: none;" title="<spring:message code='documentAndNotebookTemplates.editTagsTitle'/>">
                     <span class="glyphicon glyphicon-pencil"></span>
                 </button>
             </div>
         </div>
         <div class="col-md-2">
             <div class="rs-global-id">
-                <span>Unique ID:</span>
+                <span><spring:message code="documentAndNotebookTemplates.uniqueIdLabel"/></span>
                 <a href="/globalId/{{globalId}}">{{globalId}}</a>
                 <a href="#"
                    class="recordInfoIcon"
                    data-recordid="{{recordId}}"
                    data-versionid="{{versionId}}"
-                   alt="Record Info"
-                   title="Record Info">
+                   alt="${docTplRecordInfoLabel}"
+                   title="${docTplRecordInfoLabel}">
                    <img class="infoImg" src="/images/info.svg" style="top:-1px"/>
                 </a>
             </div>
@@ -192,7 +202,7 @@
     <div class="row">
         <div class="col-md-12">
             <label class="displayRevisionsContainer">
-                <input type="checkbox" class="displayRevisions"> Show last modified date
+                <input type="checkbox" class="displayRevisions"> <spring:message code="documentAndNotebookTemplates.showLastModifiedDateLabel"/>
             </label>
         </div>
     </div>
@@ -205,49 +215,49 @@
   <div class="recordInfoPanel">
     <table class="boxInfoPanelTable">
       <tr>
-        <td class="labelCell">Name: </td>
+        <td class="labelCell"><spring:message code="recordInfo.nameLabel"/> </td>
         <td class="boxInfoPanel-name"></td>
       </tr>
       <tr>
-        <td class="labelCell">Description: </td>
+        <td class="labelCell"><spring:message code="documentAndNotebookTemplates.descriptionLabel"/> </td>
         <td class="boxInfoPanel-description"></td>
       </tr>
       <tr>
-        <td class="labelCell">Latest Version: </td>
+        <td class="labelCell"><spring:message code="documentAndNotebookTemplates.latestVersionLabel"/> </td>
         <td><a class="boxInfoPanel-sharedLinkUrl" href="#" target="_blank"></a></td>
       </tr>
       <tr>
-        <td class="labelCell">Owner: </td>
+        <td class="labelCell"><spring:message code="recordInfo.ownerLabel"/> </td>
         <td class="boxInfoPanel-owner"></td>
       </tr>
       <tr>
-        <td class="labelCell">Created At: </td>
+        <td class="labelCell"><spring:message code="documentAndNotebookTemplates.createdAtLabel"/> </td>
         <td class="boxInfoPanel-createdAt"></td>
       </tr>
       <tr>
-        <td class="labelCell">Version: </td>
+        <td class="labelCell"><spring:message code="recordInfo.versionLabel"/> </td>
         <td>
           <span class="boxInfoPanel-versionNumber boxVersion"></span>
-          <button type='button' class='boxFileDownloadBtn'>Download</button>
+          <button type='button' class='boxFileDownloadBtn'><spring:message code="common:actions.download"/></button>
         </td>
       </tr>
       <tr>
         <td>&nbsp;</td>
       </tr>
       <tr>
-        <td class="labelCell">File Id: </td>
+        <td class="labelCell"><spring:message code="documentAndNotebookTemplates.fileIdLabel"/> </td>
         <td class="boxInfoPanel-id" href="#"></td>
       </tr>
       <tr>
-        <td class="labelCell">Version Id: </td>
+        <td class="labelCell"><spring:message code="documentAndNotebookTemplates.versionIdLabel"/> </td>
         <td class="boxInfoPanel-versionID" href="#"></td>
       </tr>
       <tr>
-        <td class="labelCell">Fingerprint: </td>
+        <td class="labelCell"><spring:message code="documentAndNotebookTemplates.fingerprintLabel"/> </td>
         <td class="boxInfoPanel-sha1"></td>
       </tr>
       <tr>
-        <td class="labelCell">File size: </td>
+        <td class="labelCell"><spring:message code="recordInfo.fileSizeLabel"/> </td>
         <td class="boxInfoPanel-size"></td>
       </tr>
     </table>
@@ -258,22 +268,22 @@
   <div class="recordInfoPanel">
     <div class="externalLinkedRecordNoticeDiv">
       <img src="/images/notice.png" style="height: 14px; vertical-align: text-top;" />
-      This link points to a different RSpace server</div>
+      <spring:message code="documentAndNotebookTemplates.differentServerNotice"/></div>
     <table class="infoPanelTable">
       <tr>
-        <td class="infoLabelCell">Name: </td>
+        <td class="infoLabelCell"><spring:message code="recordInfo.nameLabel"/> </td>
         <td class="infoPanel-name"></td>
       </tr>
       <tr>
-        <td class="infoLabelCell">Global ID: </td>
+        <td class="infoLabelCell"><spring:message code="documentAndNotebookTemplates.globalIdLabel"/> </td>
         <td class="infoPanel-globalId"></td>
       </tr>
       <tr>
-        <td class="infoLabelCell">Server: </td>
+        <td class="infoLabelCell"><spring:message code="documentAndNotebookTemplates.serverLabel"/> </td>
         <td class="infoPanel-server"></td>
       </tr>
       <tr class="infoPanelObjectIdRow">
-        <td class="infoLabelCell">Link: </td>
+        <td class="infoLabelCell"><spring:message code="documentAndNotebookTemplates.linkLabel"/> </td>
         <td><a class="infoPanel-internalLinkHref" href="#"></a></td>
       </tr>
     </table>
@@ -302,22 +312,22 @@
   <div class="nfsFileInfoPanel">
     <table class="nfsInfoTable">
       <tr><td colspan="2" class="nfsInfoTableHeaderRow"></td></tr>
-      <tr><td class="nfsInfoLabelCell">Name: </td><td class="nfsInfoPanel-name"> </td></tr>
-      <tr><td class="nfsInfoLabelCell">Original path: </td><td class="nfsInfoPanel-path"> </td></tr>
+      <tr><td class="nfsInfoLabelCell"><spring:message code="netFileStores.info.dialog.nameLabel"/></td><td class="nfsInfoPanel-name"> </td></tr>
+      <tr><td class="nfsInfoLabelCell"><spring:message code="netFileStores.info.dialog.originalPathLabel"/></td><td class="nfsInfoPanel-path"> </td></tr>
       <tr><td>&nbsp;</td><td></td></tr>
-      <tr><td colspan="2">Stored on a File System:</td></tr>
-      <tr><td class="nfsInfoLabelCell">Name: </td><td class="nfsInfoPanel-fileSystemName"> </td></tr>
-      <tr><td class="nfsInfoLabelCell">URL: </td><td class="nfsInfoPanel-fileSystemPath"> </td></tr>
+      <tr><td colspan="2"><spring:message code="netFileStores.info.dialog.storedOnFileSystemLabel"/></td></tr>
+      <tr><td class="nfsInfoLabelCell"><spring:message code="netFileStores.info.dialog.nameLabel"/></td><td class="nfsInfoPanel-fileSystemName"> </td></tr>
+      <tr><td class="nfsInfoLabelCell"><spring:message code="netFileStores.info.dialog.urlLabel"/></td><td class="nfsInfoPanel-fileSystemPath"> </td></tr>
       <tr class="nfsInfoBucketNameRow">
-        <td class="nfsInfoLabelCell">Bucket: </td><td class="nfsInfoPanel-bucketName"> </td>
+        <td class="nfsInfoLabelCell"><spring:message code="netFileStores.info.dialog.bucketLabel"/></td><td class="nfsInfoPanel-bucketName"> </td>
       </tr>
       <tr class="nfsInfoShareNameRow">
-        <td class="nfsInfoLabelCell">Share: </td><td class="nfsInfoPanel-fileSystemShareName"> </td>
+        <td class="nfsInfoLabelCell"><spring:message code="netFileStores.info.dialog.shareLabel"/></td><td class="nfsInfoPanel-fileSystemShareName"> </td>
       </tr>
     </table>
     <div class="nfsInfoPanelButtons">
-      <button type='button' title="Update Current Path" class='nfsInfoPanelBtn nfsUpdatePathBtn'>Update Path</button>
-      <button type='button' title="Download through RSpace" class='nfsInfoPanelBtn nfsFileDownloadBtn'>Download</button>
+      <button type='button' title="<spring:message code="netFileStores.info.dialog.updatePathButtonTitle"/>" class='nfsInfoPanelBtn nfsUpdatePathBtn'><spring:message code="netFileStores.info.dialog.updatePathButton"/></button>
+      <button type='button' title="<spring:message code="netFileStores.info.dialog.downloadButtonTitle"/>" class='nfsInfoPanelBtn nfsFileDownloadBtn'><spring:message code="netFileStores.info.dialog.downloadButton"/></button>
     </div>
   </div>
 </div>

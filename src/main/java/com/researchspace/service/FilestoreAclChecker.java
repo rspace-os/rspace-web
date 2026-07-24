@@ -76,7 +76,7 @@ public class FilestoreAclChecker {
     String fsName = fs == null ? "(unknown)" : fs.getName();
     return new AuthorizationException(
         messages.getMessage(
-            "netfilestores.acl.denied." + op, new Object[] {user.getUsername(), fsName}));
+            "netFileStores.acl.denied." + op, new Object[] {user.getUsername(), fsName}));
   }
 
   private static boolean isGated(NfsFileSystem fs) {

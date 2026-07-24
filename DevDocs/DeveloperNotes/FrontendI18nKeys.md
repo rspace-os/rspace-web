@@ -125,6 +125,17 @@ between languages. Use placeholders / ICU:
 For text with inline markup (links, `<strong>`), use `TransRichText` rather
 than splitting the string.
 
+Natural-language lists also depend on locale. Do not render user-facing lists
+with `array.join(", ")` or a hand-written final `and`/`or`. Use `formatList`
+from `@/modules/common/i18n/listFormat`, passing the active i18next language:
+
+```ts
+formatList(names, i18n.resolvedLanguage ?? i18n.language);
+```
+
+Delimiter joining remains appropriate for machine formats such as CSV, query
+parameters, database fields, CSS, and paths.
+
 ### Placeholder names must match exactly, on both sides
 
 This project uses ICU interpolation, so placeholders use **single braces**
@@ -298,12 +309,10 @@ and keys as `en-US`. Only values are translated.
 Use a BCP 47 language tag such as `fr-FR` or `de-DE`.
 
 1. Add the language tag to `locales` in `src/main/webapp/ui/i18next.config.ts`.
-2. Add the same tag to `supportedLngs` in
-   `src/main/webapp/ui/src/modules/common/i18n/index.ts`.
-3. Create `src/modules/common/i18n/locales/<language>/`.
-4. Copy every JSON namespace from `locales/en-US/` into the new language
+2. Create `src/modules/common/i18n/locales/<language>/`.
+3. Copy every JSON namespace from `locales/en-US/` into the new language
    folder and translate the values.
-5. Run:
+4. Run:
 
    ```bash
    pnpm run i18n:lint
@@ -388,6 +397,14 @@ you want to disable the rule for real words, add a translation key instead.
 
 ## 9. Common pitfalls
 
+- **Mocking i18next.** Tests then verify the mock rather than ICU formatting,
+  fallback, interpolation, or catalogue contents. Use the configured singleton
+  in `cimode`, or `renderWithRealI18n` / `createTestI18n` from
+  `src/__tests__/helpers` when translated output matters. Legacy `RS.msg`
+  tests should exercise the real formatter with a real catalogue entry.
+- **Joining a displayed list with `join`.** Use `formatList`; punctuation and
+  conjunctions vary by locale.
+
 - **Placeholder name mismatch** between the JSON template and the object passed
   to `t()`. The user sees the literal `{placeholder}` instead of an error. See
   section 5.
@@ -407,5 +424,7 @@ you want to disable the rule for real words, add a translation key instead.
 3. Name it `feature.subFeature.roleOfText` in `camelCase`.
 4. Reference via `t()` (component) or `i18n.t("ns:key")` (outside React).
 5. Interpolate variables; do not concatenate.
-6. Run the key-first workflow, or extract a temporary English `defaultValue`
+6. Format user-facing lists with `formatList`, never `join`.
+7. Test with real i18next rather than mocking translation functions.
+8. Run the key-first workflow, or extract a temporary English `defaultValue`
    with `i18n:extract --sync-primary`; then run types, lint, and `tsc`.

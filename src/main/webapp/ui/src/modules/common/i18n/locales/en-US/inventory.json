@@ -309,6 +309,12 @@
       "printBarcode": "Print Barcode",
       "removeFromThisBasket": "Remove from This Basket"
     },
+    "create": {
+      "containerFull": "This Container has no free available locations.",
+      "noPermission": "You do not have permission to create new items from this item.",
+      "nothingSelected": "Nothing is selected.",
+      "singleItemOnly": "Can only create from a single item."
+    },
     "createDialog": {
       "change": "Change",
       "columns": {
@@ -327,6 +333,12 @@
       "noOptions": "No options available.",
       "title": "Create new items from <strong>{name}</strong>"
     },
+    "delete": {
+      "noPermission": "{count, plural, one {You do not have permission to delete this item.} other {You do not have permission to delete these items.}}"
+    },
+    "duplicate": {
+      "noPermission": "{count, plural, one {You do not have permission to duplicate this item.} other {You do not have permission to duplicate these items.}}"
+    },
     "edit": {
       "batchEdit": "Batch Edit",
       "batchUnsupported": "Cannot batch edit {globalIds}.",
@@ -344,8 +356,23 @@
         "title": "Unsaved changes"
       }
     },
+    "export": {
+      "noPermission": "{count, plural, one {You do not have permission to export this item.} other {You do not have permission to export these items.}}"
+    },
     "historicalVersion": "Cannot modify a historical version.",
     "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
+    "move": {
+      "noPermission": "{count, plural, one {You do not have permission to move this item.} other {You do not have permission to move these items.}}",
+      "templatesCannotBeMoved": "Templates cannot be moved."
+    },
+    "printBarcode": {
+      "noPermission": "{count, plural, one {You do not have permission to print this item.} other {You do not have permission to print these items.}}",
+      "recordBeingEdited": "Cannot print barcodes whilst a record is being edited.",
+      "templatesHaveNoBarcodes": "Templates do not have barcodes."
+    },
+    "restore": {
+      "noPermission": "{count, plural, one {You do not have permission to restore this item.} other {You do not have permission to restore these items.}}"
+    },
     "splitButton": {
       "label": "More selection options",
       "moreOptions": "More selection options"
@@ -1321,6 +1348,11 @@
       "templateName": "Template Name",
       "templateNameValidation": "Template name is required."
     },
+    "fieldSelect": {
+      "alreadyMapped": "This field is already mapped to another column.",
+      "customField": "Custom Field (Various Types)",
+      "incompatibleData": "Incompatible data in this column."
+    },
     "fieldTypeMenu": {
       "options": "Options"
     },
@@ -1565,11 +1597,12 @@
         "modified": "Modified",
         "version": "Version{version, select, none {} other { {version}}}"
       },
-      "current": " (current)",
+      "current": "(current)",
+      "loadFailed": "Could not load version history.",
       "none": "No version history is available for this item yet.",
       "title": "Version history",
       "view": "View version history",
-      "viewing": " (viewing)"
+      "viewing": "(viewing)"
     }
   },
   "moveToTarget": {
@@ -1679,6 +1712,9 @@
       "standardPrinter": "Standard Printer",
       "standardPrinterHint": "Print multiple labels per sheet (e.g. A4 / A3 / Letter)."
     }
+  },
+  "publicIdentifierPage": {
+    "pageTitle": "RSpace Inventory - Public Item"
   },
   "recordDetails": {
     "labels": {
@@ -1820,7 +1856,8 @@
         "applyLabel": "Apply link",
         "discard": "Discard",
         "discardLabel": "Discard link changes",
-        "none": "None"
+        "none": "None",
+        "selectBothBeforeApplying": "Select both a relationship type and a target before applying."
       },
       "numberOfSubsamples": {
         "count": "Number of {plural}",

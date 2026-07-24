@@ -22,6 +22,7 @@ import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FolderNavigationService;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
@@ -36,7 +37,6 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -69,7 +69,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
     } else {
       targetFolder = folderMgr.getFolder(toCreate.getParentFolderId(), user);
       if (targetFolder.isNotebook()) {
-        errors.reject("notebook.nestednotebook.error", "Nested notebooks are prohibited");
+        errors.reject("notebook.errors.nestedNotebook");
         throw new BindException(errors);
       }
       if (targetFolder.isSharedFolder() && toCreate.isNotebook()) {
@@ -78,15 +78,14 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       }
     }
     if (targetFolder.hasType(RecordType.ROOT_MEDIA)) {
-      errors.reject("gallery.api.no_top_level_folder", "Can't create top-level Gallery folder");
+      errors.reject("gallery.api.noTopLevelFolder");
       throw new BindException(errors);
     }
 
     Folder newCreatedFolder = null;
     if (toCreate.isNotebook()) {
       if (!targetFolder.isInWorkspace()) {
-        errors.reject(
-            "notebook.no_notebook_in_gallery.error", "Notebooks can only exist in the Workspace");
+        errors.reject("notebook.errors.noNotebookInGallery");
         throw new BindException(errors);
       }
       newCreatedFolder =
@@ -144,7 +143,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   public void deleteFolder(@PathVariable Long id, @RequestAttribute(name = "user") User user) {
     Folder folder = loadFolder(id, user); // test it exists and is a folder.
     if (folder.isSystemFolder() || folder.isRootFolder()) {
-      throw new IllegalArgumentException("Cannot delete user home folder or a system folder");
+      throw new IllegalArgumentException(getMessage("folder.delete.errors.systemOrHomeFolder"));
     }
     DeletionSettings settings =
         DeletionSettings.builder()
@@ -157,7 +156,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
           recordDeletionManager.doDeletion(
               new Long[] {id}, user::getUsername, settings, user, ProgressMonitor.NULL_MONITOR);
       if (!result.isAllSucceeded()) {
-        throw new RuntimeException("Unknown server error deleting folder: " + id);
+        throw new RuntimeException(getMessage("folder.delete.errors.failed", new Object[] {id}));
       }
     } catch (DocumentAlreadyEditedException e) {
       // this is just thrown when deleting documents, so this should not happen
@@ -240,7 +239,9 @@ public class FolderApiController extends BaseApiController implements FolderApi 
     if (!isEmpty(typesToInclude)
         && !CollectionUtils.containsAll(ACCEPTABLE_TYPES, typesToInclude)) {
       throw new IllegalArgumentException(
-          "typesToInclude terms must be one of: " + StringUtils.join(ACCEPTABLE_TYPES, ","));
+          getMessage(
+              "folder.list.errors.invalidTypesToInclude",
+              new Object[] {ListFormatUtils.formatList(ACCEPTABLE_TYPES)}));
     }
   }
 

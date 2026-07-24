@@ -9,6 +9,7 @@ import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserAppConfigManager;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
 
   private @Autowired UserAppConfigDao appCfgDao;
   private @Autowired IPermissionUtils permUtils;
+  private @Autowired MessageSourceUtils messages;
 
   public AppConfigManagerImpl() {
     super();
@@ -52,7 +54,8 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
             return appCfgDao.save(uacNew);
           });
     } else {
-      throw new IllegalStateException("No app with name [" + appName + "]");
+      throw new IllegalStateException(
+          messages.getMessage("apps.errors.notFoundByName", new Object[] {appName}));
     }
   }
 
@@ -77,7 +80,8 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
           propName);
       App app = appCfgDao.findAppByPropertyName(propName);
       if (app == null) {
-        throw new IllegalArgumentException("App could not be identified for property " + propName);
+        throw new IllegalArgumentException(
+            messages.getMessage("apps.errors.notFoundByProperty", new Object[] {propName}));
       }
       cfg = new UserAppConfig(user, app, true);
       cfg = appCfgDao.save(cfg);

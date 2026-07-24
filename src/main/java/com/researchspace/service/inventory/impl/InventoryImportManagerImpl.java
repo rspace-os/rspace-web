@@ -424,19 +424,16 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
     GlobalIdentifier parentContainerGlobalId =
         resultsToPrevalidate.getParentContainerGlobalIdForResultNumber(resultNumber);
     if (parentContainerImportId != null && parentContainerGlobalId != null) {
-      recordErrors.rejectValue(
-          "id",
-          "errors.inventory.import.parent.container.importId.with.globalId",
-          "parent container set via both import and global id");
+      recordErrors.rejectValue("id", "errors.inventory.import.parentContainerImportIdWithGlobalId");
     } else {
       if (parentContainerImportId != null
           && (containerResults == null
               || containerResults.getResultForImportId(parentContainerImportId) == null)) {
         recordErrors.rejectValue(
             "id",
-            "errors.inventory.import.parent.container.not.found",
+            "errors.inventory.import.parentContainerNotFound",
             new Object[] {parentContainerImportId},
-            "parent container not found");
+            null);
       }
       if (parentContainerGlobalId != null) {
         try {
@@ -447,19 +444,19 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
           if (!container.isListLayoutContainer() && !container.isWorkbench()) {
             recordErrors.rejectValue(
                 "id",
-                "errors.inventory.import.parent.container.not.list.container",
+                "errors.inventory.import.parentContainerNotListContainer",
                 new Object[] {
                   parentContainerGlobalId,
                   container.getContainerType().toString().toLowerCase(Locale.ROOT)
                 },
-                "parent not a list container");
+                null);
           }
         } catch (RuntimeException re) {
           recordErrors.rejectValue(
               "id",
-              "errors.inventory.import.parent.container.not.editable",
+              "errors.inventory.import.parentContainerNotEditable",
               new Object[] {parentContainerGlobalId},
-              "parent container not found or no permission");
+              null);
         }
       }
     }
@@ -521,15 +518,11 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         subSampleCsvResult.getParentSampleGlobalIdForResultNumber(resultNumber);
 
     if (sampleImportId == null && sampleGlobalId == null) {
-      recordErrors.rejectValue(
-          "id", "errors.inventory.import.parent.sample.not.set", "parent sample not set");
+      recordErrors.rejectValue("id", "errors.inventory.import.parentSampleNotSet");
       return;
     }
     if (sampleImportId != null && sampleGlobalId != null) {
-      recordErrors.rejectValue(
-          "id",
-          "errors.inventory.import.parent.sample.importId.with.globalId",
-          "parent sample set via both import and global id");
+      recordErrors.rejectValue("id", "errors.inventory.import.parentSampleImportIdWithGlobalId");
       return;
     }
 
@@ -539,9 +532,9 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
             || sampleCsvResult.getResultForImportId(sampleImportId) == null)) {
       recordErrors.rejectValue(
           "id",
-          "errors.inventory.import.parent.sample.not.found",
+          "errors.inventory.import.parentSampleNotFound",
           new Object[] {sampleImportId},
-          "parent sample not found");
+          null);
     } else if (sampleImportId != null && sampleCsvResult.getTemplate() != null) {
       ApiSampleTemplate template = (ApiSampleTemplate) sampleCsvResult.getTemplate().getRecord();
       parentSampleQuantityUnitId = template.getDefaultUnitId();
@@ -557,9 +550,9 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
       } catch (RuntimeException re) {
         recordErrors.rejectValue(
             "id",
-            "errors.inventory.import.parent.sample.not.editable",
+            "errors.inventory.import.parentSampleNotEditable",
             new Object[] {sampleGlobalId},
-            "parent sample not found or no permission");
+            null);
       }
     }
     // verify quantity unit of subsample matches one of a parent sample
@@ -569,11 +562,11 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
       if (!subSampleUnit.isComparable(sampleUnit)) {
         recordErrors.rejectValue(
             "quantity",
-            "errors.inventory.subsample.unit.incompatible.with.sample",
+            "errors.inventory.subsample.unitIncompatibleWithSample",
             new Object[] {
               subSampleToImport.getQuantity().toQuantityInfo().toPlainString(), sampleUnit.name()
             },
-            "incompatible subsample unit");
+            null);
       }
     }
   }

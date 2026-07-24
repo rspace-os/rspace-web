@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { Person, PersonAttrs } from "@/stores/definitions/Person";
 import type { Fetched } from "@/util/fetchingData";
@@ -8,7 +9,8 @@ import useOauthToken from "../auth/useOauthToken";
  * Get the current user's information from the /api/v1/userDetails/whoami endpoint.
  */
 export default function useWhoAmI(): Fetched<Person> {
-  const getToken = useOauthToken();
+  const { getToken } = useOauthToken();
+  const { t } = useTranslation("common");
   const [currentUser, setCurrentUser] = React.useState<Fetched<Person>>({
     tag: "loading",
   });
@@ -18,7 +20,7 @@ export default function useWhoAmI(): Fetched<Person> {
       try {
         const { data } = await axios.get<PersonAttrs>("/api/v1/userDetails/whoami", {
           headers: {
-            Authorization: `Bearer ${await getToken.getToken()}`,
+            Authorization: `Bearer ${await getToken()}`,
           },
         });
         setCurrentUser({
@@ -42,11 +44,11 @@ export default function useWhoAmI(): Fetched<Person> {
       } catch (error) {
         setCurrentUser({
           tag: "error",
-          error: error instanceof Error ? error.message : "Unknown error",
+          error: error instanceof Error ? error.message : t("apiErrors.unknown"),
         });
       }
     })();
-  }, []);
+  }, [getToken, t]);
 
   return currentUser;
 }

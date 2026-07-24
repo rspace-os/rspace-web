@@ -13,6 +13,7 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.IMediaFactory;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserManager;
@@ -20,7 +21,6 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
-import java.util.Locale;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -30,7 +30,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.springframework.context.support.StaticMessageSource;
 import org.springframework.http.ResponseEntity;
 
 public class ImageControllerTest extends JavaxValidatorTest {
@@ -48,9 +47,7 @@ public class ImageControllerTest extends JavaxValidatorTest {
   @Before
   public void setUp() throws Exception {
     anyUser = TestFactory.createAnyUser("any");
-    StaticMessageSource msg = new StaticMessageSource();
-    msg.addMessage("record.inaccessible", Locale.getDefault(), "auth");
-    imgController.setMessageSource(new MessageSourceUtils(msg));
+    imgController.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
   }
 
   @After

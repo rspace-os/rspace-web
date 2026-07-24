@@ -3,6 +3,7 @@ package com.researchspace.archive.model;
 import com.researchspace.archive.ArchivalLinkResolver;
 import com.researchspace.archive.ArchivalMeta;
 import com.researchspace.archive.ExportScope;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
@@ -16,7 +17,6 @@ import java.util.Map;
 import java.util.Set;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Holds user-supplied export configuration and export results. <br>
@@ -60,7 +60,7 @@ public class ArchiveExportConfig implements IArchiveExportConfig {
    * @param description
    */
   public void setDescription(String description) {
-    this.description = StringUtils.abbreviate(description, MAX_DESC_SIZE);
+    this.description = StringAbbreviationUtils.abbreviate(description, MAX_DESC_SIZE);
   }
 
   private String archiveType = XML;

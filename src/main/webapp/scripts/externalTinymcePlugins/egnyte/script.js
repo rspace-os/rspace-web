@@ -20,7 +20,7 @@ function initEgnyteDialog() {
 		});
 
 		if (!egnyteDomain) {
-			alert("Egnyte Domain URL is not set, please go to Apps page and set it up.");
+			alert(RS.msg("legacyjs.tinymce.egnyte.domainMissing"));
 			activeEditor.windowManager.close();
 			return;
 		}
@@ -42,7 +42,7 @@ function openAuthorizationDialogForEgnyte(onSuccess, egnyteDomain) {
 	var jqxhr = $.get('/deploymentproperties/ajax/property', { name: 'egnyte.client.id' });
 	jqxhr.done(function (egnyteClientId) {
 		if (!egnyteClientId) {
-			alert('Egnyte is not configured properly on this RSpace instance. Please contact your System Admin');
+			alert(RS.msg("legacyjs.tinymce.egnyte.configMissing"));
 			return;
 		}
 		var authUrl = egnyteDomain + "/puboauth/token?client_id=" + egnyteClientId

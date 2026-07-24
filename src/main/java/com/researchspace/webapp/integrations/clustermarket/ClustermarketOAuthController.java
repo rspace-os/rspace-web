@@ -97,7 +97,7 @@ public class ClustermarketOAuthController extends BaseOAuth2Controller {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
               .appName(CLUSTERMARKET_APP_NAME)
-              .errorMsg("Exception during token exchange")
+              .errorMsg(getText("apps.oauth.errors.tokenExchange"))
               .errorDetails(e.getResponseBodyAsString())
               .build();
       ConnectionResultPage.addError(

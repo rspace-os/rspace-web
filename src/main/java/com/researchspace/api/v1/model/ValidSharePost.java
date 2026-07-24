@@ -13,8 +13,7 @@ import javax.validation.Payload;
 @Constraint(validatedBy = {ValidSharePostValidator.class})
 @Documented
 public @interface ValidSharePost {
-  String message() default
-      "At least one user ID or group ID must be provided in 'users' or 'groups' list";
+  String message() default "{sharing.errors.recipientsRequired}";
 
   Class<?>[] groups() default {};
 

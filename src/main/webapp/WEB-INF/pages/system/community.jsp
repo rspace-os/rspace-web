@@ -32,27 +32,28 @@
             <tr>
                 <td width="12%" valign="top"><label
                     for='profileText'><spring:message code="community.profile.label" /></label></td>
-                <td><form:textarea path="profileText"
-                        placeholder="Optionally, enter a short text description of this community (max 255 chars)"
+                <td><spring:message code="community.editForm.profileTextPlaceholder" var="profileTextPlaceholder"/>
+                    <form:textarea path="profileText"
+                        placeholder="${profileTextPlaceholder}"
                         maxlength="255" />
                 <td />
             </tr>
             <tr>
                 <td width="12%"><form:hidden path="id" /></td>
-                <td><input id='editProfileSubmit' type='submit' value='Save' class="systemButton systemSaveButton"> 
-                    <a id='editProfileCancel' href='#' class="systemButton systemCancelButton">Cancel</a></td>
+                <td><input id='editProfileSubmit' type='submit' value='<spring:message code="common:actions.save"/>' class="systemButton systemSaveButton">
+                    <a id='editProfileCancel' href='#' class="systemButton systemCancelButton"><spring:message code="common:actions.cancel"/></a></td>
             </tr>
         </table>
     </form:form>
     <div id="propertyView">
         <h2>
             <span id="displayName" class="editableProperty">${community.displayName}</span>
-            <span style="font-size: initial">(created: <fmt:formatDate type="date" value="${community.creationDate}" />)</span>
+            <span style="font-size: initial">(<spring:message code="community.createdLabel"/>: <fmt:formatDate type="date" value="${community.creationDate}" />)</span>
         </h2>
         <h3><spring:message code="community.profileHeading" /></h3>
         <span id="profileText" class="editableProperty"> <c:choose>
                 <c:when test="${empty community.profileText}">
-                    <spring:message code="community.noprofile.msg" />
+                    <spring:message code="community.noProfile.emptyState" />
                 </c:when>
                 <c:otherwise>
                     ${community.profileText}
@@ -64,9 +65,9 @@
 <br>
 
 <c:if test="${canEdit}">
-    <a href="#" id="editCommunityProps" class="systemButton systemEditButton">Edit</a>
+    <a href="#" id="editCommunityProps" class="systemButton systemEditButton"><spring:message code="common:actions.edit"/></a>
     <c:if test="${community.id != -1}"> <%-- i.e. not a default 'All Groups' community --%>
-        <a href="#" id="editCommunityAppsSettings" class="systemButton systemEditButton">Apps Settings</a>
+        <a href="#" id="editCommunityAppsSettings" class="systemButton systemEditButton"><spring:message code="community.appsSettingsLinkLabel"/></a>
     </c:if>
 </c:if>
 
@@ -81,16 +82,16 @@
                     <shiro:hasRole name="ROLE_SYSADMIN">
                         <c:if test="${community.id ne -1}">
                             <%--only sysadmin can remove a group from a community --%>
-                            <a id="removeGroup" class="crudops systemButton systemRemoveButton" href="#">Remove group</a>
-                            <a id="addGroup" class="systemButton systemAddLabGroupButton" href="#">Add group</a>
+                            <a id="removeGroup" class="crudops systemButton systemRemoveButton" href="#"><spring:message code="community.removeGroupLinkLabel"/></a>
+                            <a id="addGroup" class="systemButton systemAddLabGroupButton" href="#"><spring:message code="community.addGroupLinkLabel"/></a>
                         </c:if>
-                        <a id="moveGroup" class="crudops systemButton systemMoveButton" href="#">Move group</a>
+                        <a id="moveGroup" class="crudops systemButton systemMoveButton" href="#"><spring:message code="community.moveGroupLinkLabel"/></a>
                     </shiro:hasRole>
                 </div>
                 <div class="communityViewInnerList">
                     <c:choose>
                         <c:when test="${empty community.labGroups}">
-                            <spring:message code="community.nolabGroups.msg" />
+                            <spring:message code="community.noLabGroups.emptyState" />
                         </c:when>
                         <c:otherwise>
                             <table>
@@ -120,7 +121,7 @@
         <div id="adminsList">
             <div class="topGreyBar">
                 <c:if test="${canEdit}">
-                    <a href="#" id="addAdminLink" class="systemButton systemAddAdminButton">Add admin</a>
+                    <a href="#" id="addAdminLink" class="systemButton systemAddAdminButton"><spring:message code="community.addAdminLinkLabel"/></a>
                 </c:if>
             </div>
             <div class="communityViewInnerList">
@@ -129,7 +130,7 @@
                         <tr>
                             <td><a class="adminLink" href="<c:url value='/userform?userId=${admin.id}'/>">${admin.fullNameAndEmail}</a></td>
                             <td><c:if test="${canEdit}">
-                                    <a id="remove_${admin.id}" href="#" class="removeAdminLink">Remove</a>
+                                    <a id="remove_${admin.id}" href="#" class="removeAdminLink"><spring:message code="common:actions.remove"/></a>
                                 </c:if>
                             </td>
                         <tr>
@@ -142,7 +143,7 @@
 
 <!-- Apps settings dialog -->
 <div id="communityAppsSettingsDialog"
-    title="Apps Settings for this Community">
-    <div id="mainArea">test dialog</div>
+    title="<spring:message code='community.appsSettingsDialog.title'/>">
+    <div id="mainArea"><spring:message code="community.appsSettingsDialog.placeholder"/></div>
 </div>
 <!-- End of apps settings dialog -->

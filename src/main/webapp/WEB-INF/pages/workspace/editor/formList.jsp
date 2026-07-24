@@ -1,17 +1,17 @@
 <%@ include file="/common/taglibs.jsp"%>
 <%@ include file="include/templatePublishShareDlg.jsp"%>
 <head>
-  <title><fmt:message key="forms.manage.title" /></title>
+  <title><spring:message code="form.manage.title"/></title>
   <script src="<rst:assetUrl value='/scripts/pages/workspace/editor/formlist.js'/>"></script>
   <!-- <script src="<rst:assetUrl value='/scripts/pages/admin.js'/>"></script> -->
 </head>
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
 
 <div class="tabularViewTop">
-  <h2 class="title">Manage Forms</h2>
+  <h2 class="title"><spring:message code="form.manage.heading"/></h2>
   <div style="display:flex;align-items: center; padding-right: 15px">
-      <label>My forms: <input type="radio" class="userFormsOnly" name="userFormsOnly" value="true"></label>
-      <label>All forms: <input type="radio"  class="userFormsOnly" name="userFormsOnly" value="false"></label>
+      <label><spring:message code="form.manage.myFormsLabel"/> <input type="radio" class="userFormsOnly" name="userFormsOnly" value="true"></label>
+      <label><spring:message code="form.manage.allFormsLabel"/> <input type="radio"  class="userFormsOnly" name="userFormsOnly" value="false"></label>
   </div>
   <div 
     id='searchFormListInput'
@@ -24,7 +24,7 @@
 
 <div id="searchModePanel" style="display: none;">
   <span id="message"></span>
-  <button id="resetSearch">Clear search</button>
+  <button id="resetSearch"><spring:message code="common:search.clearTooltip"/></button>
 </div>
 
 <div id="formListContainer" class="newTabularView bootstrap-custom-flat">  
@@ -35,25 +35,25 @@
   <div id="formActions" class="crudopsTopPanel" style="margin-bottom: 5px !important;">
     <ul>
       <li class="formAction deleteForm deleteFormIcon" tabindex="0">
-        Delete
+        <spring:message code="common:actions.delete"/>
       </li>
       <li class="formAction publish single publishIcon" tabindex="0">
-        Publish
+        <spring:message code="common:actions.publish"/>
       </li>
-      <li class="formAction unpublish single unpublishIcon" tabindex="0">  
-        Unpublish
+      <li class="formAction unpublish single unpublishIcon" tabindex="0">
+        <spring:message code="form.editor.unpublishLabel"/>
       </li>
-      <li class="formAction managePermissions single permissionsIcon" tabindex="0">  
-        Permissions
+      <li class="formAction managePermissions single permissionsIcon" tabindex="0">
+        <spring:message code="form.manage.permissionsLabel"/>
       </li>
-      <li class="formAction copyForm copyFormIcon" tabindex="0">  
-        Duplicate
+      <li class="formAction copyForm copyFormIcon" tabindex="0">
+        <spring:message code="common:actions.duplicate"/>
       </li>
-      <li class="formAction removeFromMenu single removeFromMenuIcon" tabindex="0"> 
-        Remove from Menu
+      <li class="formAction removeFromMenu single removeFromMenuIcon" tabindex="0">
+        <spring:message code="form.manage.removeFromMenu"/>
       </li>
-      <li class="formAction addToMenu single addToMenuIcon" tabindex="0">  
-        Add to Menu
+      <li class="formAction addToMenu single addToMenuIcon" tabindex="0">
+        <spring:message code="form.manage.addToMenu"/>
       </li>
     </ul>
   </div>
@@ -63,29 +63,29 @@
       <thead>
         <tr>
           <th style="max-width: 50px;">
-            Options
+            <spring:message code="workspace.list.options.header"/>
           </th>
           <th>
-            Type
+            <spring:message code="workspace.list.type.header"/>
           </th>
           <th style="padding-left:31px">
             <a href="#" class="orderByLink" data-orderby='name' data-sortorder='ASC'>
-              Form&nbsp;Name
+              <spring:message code="form.manage.formNameHeader"/>
             </a>
           </th>
           <th>
             <a href="#" class="orderByLink" data-orderby='owner.username' data-sortorder='ASC'>
-              Owner
+              <spring:message code="workspace.list.owner.header"/>
             </a>
           </th>
           <th>
-            Version
+            <spring:message code="workspace.list.version.header"/>
           </th>
           <th>
             <a href="#" class="orderByLink" data-orderby='publishingState' data-sortorder='DESC'>
-              Status
+              <spring:message code="form.manage.statusHeader"/>
             </a>
-          </th> 
+          </th>
         </tr>
       </thead>
       <jsp:include page="formList_ajax.jsp"></jsp:include>

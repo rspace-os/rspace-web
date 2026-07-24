@@ -21,16 +21,17 @@ public class SwapPiValidator implements Validator {
     Group grp = cmd.getGroup();
     User currPi = cmd.getCurrPi();
     if (!GroupType.LAB_GROUP.equals(grp.getGroupType())) {
-      errors.reject("group.swapPi.labGroupOny.err", new Object[] {grp.getDisplayName()}, null);
+      errors.reject(
+          "groups.swapPi.errors.labGroupRequired", new Object[] {grp.getDisplayName()}, null);
     }
     if (!newPi.hasRole(Role.PI_ROLE)) {
-      errors.reject("group.swapPi.requiredPI.role", new Object[] {}, null);
+      errors.reject("groups.swapPi.requiredPi.role");
     }
     if (!grp.getAllNonPIMembers().contains(newPi)) {
-      errors.reject("group.swapPi.requiredPI.inGroup", new Object[] {}, null);
+      errors.reject("groups.swapPi.requiredPi.inGroup");
     }
     if (currPi.equals(newPi)) {
-      errors.reject("group.swapPi.requiredNewPI", new Object[] {}, null);
+      errors.reject("groups.swapPi.requiredNewPi");
     }
   }
 }

@@ -1,28 +1,28 @@
 <%@ include file="/common/taglibs.jsp"%>
 
 <form:form id ='rsFormSharingForm' method='POST' modelAttribute="formSharingCommand" >
-<table id="templateShareConfig" > 
- 
+<table id="templateShareConfig" >
+
 
  <tr>
-              <td>Group</td>
-              
+              <td><spring:message code="dialogs.share.groupHeader"/></td>
+
               <td>
               <form:radiobuttons class="alwaysActive" path="groupOptions" items="${groupAvailableOptionList}"/>
                 <a href="#" class="templateSharingForm_help">?</a>
- 			    <p class="templateSharingForm_helpContent" style="display:none"> 
- 			     Configures access to other members of groups that you belong to. <a href="#" style="font-size: 75%;color:blue" class="templateSharingForm_help_hide">Hide</a></p>
- 			   </td>
- </tr>	 
+			    <p class="templateSharingForm_helpContent" style="display:none">
+			     <spring:message code="form.sharingConfig.groupHelpText"/> <a href="#" style="font-size: 75%;color:blue" class="templateSharingForm_help_hide"><spring:message code="form.sharingConfig.hideLabel"/></a></p>
+			   </td>
+ </tr>
  <tr>
-              <td>World</td>
-              
+              <td><spring:message code="form.sharingConfig.worldLabel"/></td>
+
               <td><form:radiobuttons class="alwaysActive" path="worldOptions" items="${worldAvaialbleOptionList}"/>
-              	<a href="#" class="templateSharingForm_help">?</a>
- 			    <p class="templateSharingForm_helpContent" style="display:none"> 
- 			     Configures public access to all users. <a href="#" style="font-size: 75%; color:blue" class="templateSharingForm_help_hide">Hide</a></p>
+	<a href="#" class="templateSharingForm_help">?</a>
+			    <p class="templateSharingForm_helpContent" style="display:none">
+			     <spring:message code="form.sharingConfig.worldHelpText"/> <a href="#" style="font-size: 75%; color:blue" class="templateSharingForm_help_hide"><spring:message code="form.sharingConfig.hideLabel"/></a></p>
               </td>
- </tr>	 
+ </tr>
 
 </table>
 <form:hidden path="formId"/>

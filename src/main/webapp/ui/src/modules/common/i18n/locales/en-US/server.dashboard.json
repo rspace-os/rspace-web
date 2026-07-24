@@ -1,0 +1,159 @@
+{
+  "dashboard": {
+    "createMessage": {
+      "label": "Create Message"
+    },
+    "errors": {
+      "invalidSession": "No valid session",
+      "replySaveFailed": "Could not save message reply, this has been logged"
+    },
+    "message": {
+      "completionDateLabel": "Completion Date?",
+      "optionalMessageLabel": "Optional Message",
+      "recipientsLabel": "To",
+      "requestTypeLabel": "Request Type"
+    },
+    "messages": {
+      "header": "Message Settings"
+    },
+    "new": {
+      "calendar": {
+        "entry": "Create a Calendar Entry"
+      }
+    },
+    "received": {
+      "header": "Requests and Messages Received"
+    },
+    "sent": {
+      "header": "Open Sent Requests"
+    }
+  },
+  "messages": {
+    "completionBy": {
+      "label": "Due for completion by:"
+    },
+    "concerning": {
+      "label": "Concerning:"
+    },
+    "empty": "There are no active messages or requests.",
+    "from": {
+      "label": "From:"
+    },
+    "joinLabGroup": {
+      "warning": "If you accept, the group PI will be able to see all of your data"
+    },
+    "joinProjectGroup": {
+      "warning": "Project Groups have no PI, your documents won't be visible<br/>to other group members until you explicitly share them."
+    },
+    "joinRequest": {
+      "toJoin": "To join:"
+    },
+    "orderBy": {
+      "completionDate": "| Completion date",
+      "label": "Order by",
+      "sender": "| Sender",
+      "time": "Time"
+    },
+    "recipients": {
+      "allUsers": "Recipients: All Users",
+      "count": "{0} recipients:"
+    },
+    "reply": {
+      "label": "Reply",
+      "placeholder": "Add optional message"
+    },
+    "sent": {
+      "label": "Sent:"
+    },
+    "setStatus": {
+      "label": "Set Request Status:"
+    },
+    "status": {
+      "accepted": "ACCEPTED",
+      "acceptedShareWithPi": "ACCEPTED - share data with PI",
+      "cancelled": "CANCELLED",
+      "completed": "COMPLETED",
+      "new": "NEW",
+      "rejected": "REJECTED",
+      "replied": "REPLIED"
+    },
+    "title": "My Messages",
+    "type": {
+      "global": "Global",
+      "globalMessageRequest": "Global Message request",
+      "message": "Message",
+      "messageRequest": "Message request",
+      "request": "{0} request"
+    },
+    "updateReply": {
+      "label": "Update & Reply"
+    }
+  },
+  "messaging": {
+    "errors": {
+      "completionDateNotFuture": "Completion date must be a date in the future",
+      "invalidCompletionDateFormat": "Invalid date format - must be [{0}]",
+      "invalidRecipient": {
+        "deliveryFailure": "Message could not be sent to user {0} - {1}"
+      },
+      "noRecipients": {
+        "emptyRecipientList": "There are no valid recipients for message type: {0}"
+      },
+      "sendFailed": "Could not send message"
+    },
+    "newNotificationsTitle": "My New Notifications",
+    "request": {
+      "cancelled": "Request cancelled",
+      "cancelledBy": "Request cancelled by {0}"
+    },
+    "sendMessageLinkHelpText": "Send a new message from the link above, or use the message icon anywhere in the application.",
+    "sendMessageLinkLabel": "Send Message"
+  },
+  "myrequests": {
+    "cancelRequest": "Cancel Request",
+    "empty": "There are no sent requests.",
+    "orderBy": {
+      "completionDate": "Completion date",
+      "label": "Order by:",
+      "timeSent": "Time sent"
+    },
+    "request": {
+      "sentLabel": "Request<br>Sent:"
+    },
+    "sentToAllUsers": "Sent to all users",
+    "status": {
+      "label": "Status:"
+    },
+    "summary": {
+      "basic": "You sent a {0} request",
+      "withDueDate": "You sent a {0} request due for completion by {1}",
+      "withRecord": "You sent a {0} request concerning {1}",
+      "withRecordAndDueDate": "You sent a {0} request concerning {1}, due for completion by {2}"
+    },
+    "title": "My Sent Requests"
+  },
+  "notificationType": {
+    "archiveExportCompleted": "Export Completed",
+    "documentDeleted": "Document Deleted",
+    "documentEdited": "Document Edited",
+    "documentShared": "Document Shared",
+    "documentUnshared": "Document Unshared",
+    "processCompleted": "Process Completed",
+    "processFailed": "Process Failed",
+    "requestStatusChange": "Request Status Change"
+  },
+  "notifications": {
+    "concerning": "concerning",
+    "deleteAll": "Delete all",
+    "deleteDisplayed": "Delete all displayed",
+    "empty": "There are no new notifications.",
+    "generatedEvent": "{0} generated a {1} event.",
+    "markAsRead": "Mark as read",
+    "orderBy": "Order By:",
+    "sender": "Sender",
+    "sent": "Notification<br>Sent:",
+    "timeSent": "Time Sent",
+    "title": "My Notifications",
+    "withMessage": "with message:"
+  }
+}

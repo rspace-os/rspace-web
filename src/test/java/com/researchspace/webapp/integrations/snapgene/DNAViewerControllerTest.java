@@ -23,6 +23,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SystemPropertyManager;
@@ -57,7 +58,7 @@ public class DNAViewerControllerTest {
   @Mock SnapgeneWSClient wsClient;
   @Mock RecordManager rcdMgr;
   @Mock IPermissionUtils perms;
-  @Mock MessageSourceUtils messages;
+  MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
   @Mock SystemPropertyManager systemPropertyManagerImpl;
   @Mock SystemPropertyValue isSnapgeneAllowed;
   @InjectMocks DNAViewerController dnaController;
@@ -69,6 +70,7 @@ public class DNAViewerControllerTest {
 
   @Before
   public void before() {
+    dnaController.setMessageSource(messages);
     edf.setExtension("gb");
     when(systemPropertyManagerImpl.findByName(SNAPGENE_AVAILABLE)).thenReturn(isSnapgeneAllowed);
     when(isSnapgeneAllowed.getValue()).thenReturn(ALLOWED.name());

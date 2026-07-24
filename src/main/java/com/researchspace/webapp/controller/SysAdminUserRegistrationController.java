@@ -56,6 +56,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -244,7 +245,7 @@ public class SysAdminUserRegistrationController extends BaseController {
     userEnablementUtils.checkLicenseForUserInRole(usersToSave.size(), Role.USER_ROLE);
     ProgressMonitor monitor = createProgressMonitor(usersToSave, groupsToSave);
     setBatchRegistrationProgress(monitor, session);
-    monitor.setDescription("Creating users");
+    monitor.setDescription(getText("system.userImport.progress.creatingUsers"));
     for (User newUser : usersToSave) {
       try {
         userManager.saveNewUser(newUser);
@@ -259,7 +260,7 @@ public class SysAdminUserRegistrationController extends BaseController {
       } catch (UserExistsException e) {
         String msg =
             getText(
-                "system.createAccount.batchUpload.error.userExists",
+                "system.createAccount.batchUpload.errors.userExists",
                 new Object[] {newUser.getUsername(), newUser.getEmail()});
         errors.addErrorMsg(msg);
         log.warn(msg, e);
@@ -267,7 +268,7 @@ public class SysAdminUserRegistrationController extends BaseController {
       } catch (IllegalAddChildOperation e) {
         String msg =
             getText(
-                "system.createAccount.batchUpload.error.userInit",
+                "system.createAccount.batchUpload.errors.userInit",
                 new Object[] {newUser.getUsername()});
         errors.addErrorMsg(msg);
         log.warn(msg, e);
@@ -279,7 +280,7 @@ public class SysAdminUserRegistrationController extends BaseController {
                 newUser.getUsername(), (int) monitor.getPercentComplete()));
       }
     }
-    monitor.setDescription("Creating groups");
+    monitor.setDescription(getText("system.userImport.progress.creatingGroups"));
     for (Group group : groupsToSave) {
       try {
         User[] usersInGroup = userImportResult.getUsersFromMemberString(group.getMemberString());
@@ -299,7 +300,7 @@ public class SysAdminUserRegistrationController extends BaseController {
       } catch (RuntimeException e) {
         String msg =
             getText(
-                "system.createAccount.batchUpload.error.group",
+                "system.createAccount.batchUpload.errors.group",
                 new Object[] {group.getUniqueName(), e.getMessage()});
         errors.addErrorMsg(msg);
         log.warn(msg, e);
@@ -313,7 +314,7 @@ public class SysAdminUserRegistrationController extends BaseController {
     }
 
     if (communitiesInfo != null) {
-      monitor.setDescription("Creating communities");
+      monitor.setDescription(getText("system.userImport.progress.creatingCommunities"));
       for (CommunityPublicInfo communityInfo : communitiesInfo) {
 
         Community community = communityInfo.toCommunity();
@@ -354,13 +355,16 @@ public class SysAdminUserRegistrationController extends BaseController {
 
           } catch (DataAccessException dae) {
             // probably because not unique?
-            errors.addErrorMsg(getText("errors.notUnique", new Object[] {"Unique name"}));
+            errors.addErrorMsg(
+                getText(
+                    "errors.notUnique",
+                    new Object[] {new DefaultMessageSourceResolvable("label.uniqueName")}));
           }
 
         } catch (RuntimeException e) {
           String msg =
               getText(
-                  "system.createAccount.batchUpload.error.community",
+                  "system.createAccount.batchUpload.errors.community",
                   new Object[] {community.getUniqueName(), e.getMessage()});
           errors.addErrorMsg(msg);
           log.warn(msg, e);
@@ -368,7 +372,7 @@ public class SysAdminUserRegistrationController extends BaseController {
       }
     }
 
-    monitor.setDescription("Notifying new users");
+    monitor.setDescription(getText("system.userImport.progress.notifyingUsers"));
     for (User newUser : usersToSave) {
       try {
         // newUser is transient, so we need to get the persisted one,
@@ -392,7 +396,7 @@ public class SysAdminUserRegistrationController extends BaseController {
       } catch (RuntimeException e) {
         String msg =
             getText(
-                "system.createAccount.batchUpload.error.notifyUser",
+                "system.createAccount.batchUpload.errors.notifyUser",
                 new Object[] {newUser.getUsername(), newUser.getEmail()});
         errors.addErrorMsg(msg);
         log.warn(msg, e);
@@ -473,7 +477,7 @@ public class SysAdminUserRegistrationController extends BaseController {
             errors,
             user.getUsername(),
             "username",
-            getText("system.createAccount.batchUpload.error.existingUsername"));
+            getText("system.createAccount.batchUpload.errors.existingUsername"));
       }
 
       List<User> userByEmail = userManager.getUserByEmail(user.getEmail());
@@ -482,7 +486,7 @@ public class SysAdminUserRegistrationController extends BaseController {
             errors,
             user.getUsername(),
             "email",
-            getText("system.createAccount.batchUpload.error.existingEmail"));
+            getText("system.createAccount.batchUpload.errors.existingEmail"));
       }
 
       if (Constants.SYSADMIN_ROLE.equals(user.getRole())) {
@@ -491,7 +495,7 @@ public class SysAdminUserRegistrationController extends BaseController {
               errors,
               user.getUsername(),
               "",
-              getText("system.createAccount.batchUpload.error.creatingSysadminWithoutSystemRole"));
+              getText("system.createAccount.batchUpload.errors.creatingSysadminWithoutSystemRole"));
         }
       }
     }
@@ -522,7 +526,7 @@ public class SysAdminUserRegistrationController extends BaseController {
           errors,
           username,
           "username",
-          getText("system.createAccount.batchUpload.error.repeatedUsername"));
+          getText("system.createAccount.batchUpload.errors.repeatedUsername"));
     }
 
     for (User user : validUsers) {
@@ -531,7 +535,7 @@ public class SysAdminUserRegistrationController extends BaseController {
             errors,
             user.getUsername(),
             "email",
-            getText("system.createAccount.batchUpload.error.repeatedEmail"));
+            getText("system.createAccount.batchUpload.errors.repeatedEmail"));
       }
     }
 
@@ -557,7 +561,7 @@ public class SysAdminUserRegistrationController extends BaseController {
               errors,
               group.getUniqueName(),
               "displayName",
-              getText("system.createAccount.batchUpload.error.groupDisplayNameWithComma"));
+              getText("system.createAccount.batchUpload.errors.groupDisplayNameWithComma"));
         }
       } else {
         for (Entry<String, String> fieldErrorMsg : basicValidationErrors.entrySet()) {
@@ -575,13 +579,13 @@ public class SysAdminUserRegistrationController extends BaseController {
               errors,
               group.getUniqueName(),
               "pi",
-              getText("system.createAccount.batchUpload.error.unknownUser", new Object[] {pi}));
+              getText("system.createAccount.batchUpload.errors.unknownUser", new Object[] {pi}));
         } else if (!Constants.PI_ROLE.equals(piUser.getRole())) {
           addGroupErrorMsg(
               errors,
               group.getUniqueName(),
               "pi",
-              getText("system.createAccount.batchUpload.error.piWithoutPiRole"));
+              getText("system.createAccount.batchUpload.errors.piWithoutPiRole"));
         }
       }
 
@@ -596,7 +600,8 @@ public class SysAdminUserRegistrationController extends BaseController {
               errors,
               group.getUniqueName(),
               "otherMembers",
-              getText("system.createAccount.batchUpload.error.unknownUser", new Object[] {member}));
+              getText(
+                  "system.createAccount.batchUpload.errors.unknownUser", new Object[] {member}));
         }
       }
     }
@@ -635,7 +640,9 @@ public class SysAdminUserRegistrationController extends BaseController {
             errors,
             community.getUniqueName(),
             "admins",
-            getText("errors.required", new Object[] {"Choosing an administrator"}));
+            getText(
+                "errors.required",
+                new Object[] {new DefaultMessageSourceResolvable("label.choosingAdministrator")}));
       } else {
         for (String admin : communityAdmins) {
           User adminUser = usersMap.get(admin);
@@ -645,7 +652,7 @@ public class SysAdminUserRegistrationController extends BaseController {
                 community.getUniqueName(),
                 "admins",
                 getText(
-                    "system.createAccount.batchUpload.error.unknownUser", new Object[] {admin}));
+                    "system.createAccount.batchUpload.errors.unknownUser", new Object[] {admin}));
           } else if (!Constants.ADMIN_ROLE.equals(adminUser.getRole())
               && !Constants.SYSADMIN_ROLE.equals(adminUser.getRole())) {
             addCommunityErrorMsg(
@@ -653,7 +660,7 @@ public class SysAdminUserRegistrationController extends BaseController {
                 community.getUniqueName(),
                 "admins",
                 getText(
-                    "system.createAccount.batchUpload.error.communityAdminWithoutAdminRole",
+                    "system.createAccount.batchUpload.errors.communityAdminWithoutAdminRole",
                     new Object[] {admin}));
           }
         }
@@ -677,7 +684,7 @@ public class SysAdminUserRegistrationController extends BaseController {
                   community.getUniqueName(),
                   "labGroups",
                   getText(
-                      "system.createAccount.batchUpload.error.unknownGroup",
+                      "system.createAccount.batchUpload.errors.unknownGroup",
                       new Object[] {groupName}));
             }
           }

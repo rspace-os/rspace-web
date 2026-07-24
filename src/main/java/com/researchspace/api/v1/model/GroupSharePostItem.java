@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GroupSharePostItem {
-  @NotNull(message = "Must specify id of the group")
+  @NotNull(message = "{sharing.errors.groupIdRequired}")
   private Long id;
 
   @Pattern(regexp = "(READ|EDIT|read|edit)")

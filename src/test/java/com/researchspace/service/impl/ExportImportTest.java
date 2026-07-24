@@ -1,6 +1,8 @@
 package com.researchspace.service.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -8,10 +10,15 @@ import static org.mockito.Mockito.when;
 import com.researchspace.archive.ArchivalFileNotExistException;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.archive.export.ExportFailureException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -22,7 +29,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.springframework.context.support.StaticMessageSource;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 public class ExportImportTest {
@@ -36,21 +42,12 @@ public class ExportImportTest {
   @InjectMocks private ExportImportImpl exportImpl;
 
   private MockHttpServletResponse response;
-  private StaticMessageSource mockMessageSource;
 
   @Before
   public void setUp() throws Exception {
     response = new MockHttpServletResponse();
     exportImpl.setResponseUtil(new ResponseUtil());
-    setupMessageSources();
-  }
-
-  private void setupMessageSources() {
-    mockMessageSource = new StaticMessageSource();
-    mockMessageSource.addMessage(
-        "archive.download.failure.msg", Locale.getDefault(), "downloadfailed");
-    mockMessageSource.addMessage("errors.invalidstringformat", Locale.getDefault(), "badformat");
-    exportImpl.setMessageSource(mockMessageSource);
+    exportImpl.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
   }
 
   @After
@@ -72,6 +69,40 @@ public class ExportImportTest {
     FileUtils.write(file, "some data", StandardCharsets.UTF_8);
     when(properties.getExportFolderLocation()).thenReturn(folder.getRoot().getAbsolutePath());
     exportImpl.streamArchiveDownload("file", response);
+  }
+
+  @Test
+  public void downloadFailureIsNotReportedAsMissingFile() throws IOException {
+    File file = folder.newFile("file.zip");
+    FileUtils.write(file, "some data", StandardCharsets.UTF_8);
+    when(properties.getExportFolderLocation()).thenReturn(folder.getRoot().getAbsolutePath());
+    HttpServletResponse failingResponse = mock(HttpServletResponse.class);
+    when(failingResponse.getOutputStream())
+        .thenReturn(
+            new ServletOutputStream() {
+              @Override
+              public boolean isReady() {
+                return true;
+              }
+
+              @Override
+              public void setWriteListener(WriteListener writeListener) {}
+
+              @Override
+              public void write(int value) throws IOException {
+                throw new IOException("simulated output failure");
+              }
+            });
+
+    try {
+      exportImpl.streamArchiveDownload("file.zip", failingResponse);
+      fail("Expected an export failure");
+    } catch (ExportFailureException e) {
+      assertEquals(
+          "Export could not be downloaded. Contact us at support@researchspace.com for help with"
+              + " export.",
+          e.getMessage());
+    }
   }
 
   @Test

@@ -9,6 +9,8 @@ import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.service.ExportApiHandler;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.ExportImport;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.testutils.TestFactory;
@@ -20,6 +22,7 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -31,6 +34,9 @@ public class ExportApiControllerTest {
   @Mock ExportApiHandler handler;
   @Mock IPropertyHolder props;
   @Mock ExportImport exporterService;
+
+  @Spy MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
+
   @InjectMocks ExportApiController controller;
   User exporter = TestFactory.createAnyUser("any");
   MockHttpServletResponse response;

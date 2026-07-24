@@ -16,6 +16,7 @@ import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.Validate;
@@ -34,6 +35,7 @@ public class CommunityServiceManagerImpl implements CommunityServiceManager {
   Logger log = LoggerFactory.getLogger(CommunityServiceManagerImpl.class);
 
   @Autowired IPermissionUtils permUtils;
+  private @Autowired MessageSourceUtils messages;
 
   private @Autowired UserDao userDao;
   private @Autowired PermissionFactory permFac;
@@ -84,7 +86,8 @@ public class CommunityServiceManagerImpl implements CommunityServiceManager {
   public Community addGroupToCommunity(Long grpId, Long communityId, User subject) {
     Community community = communityDao.get(communityId);
     if (!permUtils.isPermitted(community, PermissionType.WRITE, subject)) {
-      throw new AuthorizationException("Unauthorized attempt to add group to community");
+      throw new AuthorizationException(
+          messages.getMessage("errors.authorization.communityAddGroup"));
     }
     Group grp = groupDao.get(grpId);
     if (!grp.isLabGroup()) {

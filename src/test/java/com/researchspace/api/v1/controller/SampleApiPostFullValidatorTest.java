@@ -57,7 +57,7 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     assertEquals(1, e.getErrorCount());
     assertFieldNameIs(e, "quantity");
     assertEquals(
-        "errors.inventory.sample.unit.incompatible.with.template", e.getFieldError().getCode());
+        "errors.inventory.sample.unitIncompatibleWithTemplate", e.getFieldError().getCode());
 
     // sanity check with comparable quantity
     fullPost
@@ -87,15 +87,13 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
     validator.validate(fullPost, e);
     assertEquals(2, e.getErrorCount());
     assertFieldNameIs(e, "fields");
-    assertEquals("errors.inventory.sample.mandatory.field.empty", e.getFieldError().getCode());
+    assertEquals("errors.inventory.field.mandatoryFieldEmpty", e.getFieldError().getCode());
     assertEquals(2, e.getFieldErrors().size());
-    assertEquals(
-        "errors.inventory.sample.mandatory.field.empty", e.getFieldErrors().get(0).getCode());
+    assertEquals("errors.inventory.field.mandatoryFieldEmpty", e.getFieldErrors().get(0).getCode());
     assertEquals(
         "myText (mandatory - no default value)", e.getFieldErrors().get(0).getArguments()[0]);
     assertEquals(
-        "errors.inventory.sample.mandatory.field.no.selection",
-        e.getFieldErrors().get(1).getCode());
+        "errors.inventory.field.mandatoryFieldNoSelection", e.getFieldErrors().get(1).getCode());
     assertEquals(
         "myRadio (mandatory - no default value)", e.getFieldErrors().get(1).getArguments()[0]);
 

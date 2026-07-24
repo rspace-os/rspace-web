@@ -10,9 +10,9 @@ import com.researchspace.model.events.ListOfMaterialsCreationEvent;
 import com.researchspace.model.events.ListOfMaterialsDeleteEvent;
 import com.researchspace.model.events.ListOfMaterialsEditingEvent;
 import com.researchspace.model.record.StructuredDocument;
-import java.util.ArrayList;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -23,11 +23,15 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class ListOfMaterialsAuditTrail {
 
   private @Autowired AuditTrailService auditer;
+  private @Autowired MessageSourceUtils messages;
 
   @TransactionalEventListener
   public void listOfMaterialsCreated(ListOfMaterialsCreationEvent lomCreateEvent) {
     ListOfMaterials createdLom = lomCreateEvent.getCreatedItem();
-    String description = "Added List of Materials " + createdLom.getOid().getIdString() + ".";
+    String description =
+        messages.getMessage(
+            "inventory.audit.listOfMaterials.added",
+            new Object[] {createdLom.getOid().getIdString()});
     String addedItems = generatedDescriptionForUsedMaterials(createdLom.getMaterials());
     description += generateDescriptionForAddedDeletedItems(addedItems, null);
     generateDocumentWriteEventWithLomDetails(
@@ -35,23 +39,30 @@ public class ListOfMaterialsAuditTrail {
   }
 
   private String generatedDescriptionForUsedMaterials(List<MaterialUsage> usedMaterials) {
-    String commaSeparatedGlobalIds =
+    return ListFormatUtils.formatList(
         usedMaterials.stream()
             .map(mu -> mu.getInventoryRecord().getGlobalIdentifier())
             .filter(s -> s != null)
-            .collect(Collectors.joining(", "));
-    return commaSeparatedGlobalIds;
+            .toList());
   }
 
   private String generateDescriptionForAddedDeletedItems(String addedItems, String removedItems) {
-    List<String> descriptionsToJoin = new ArrayList<>();
+    StringBuilder description = new StringBuilder();
     if (StringUtils.isNotBlank(addedItems)) {
-      descriptionsToJoin.add(" Added inventory items: " + addedItems + ".");
+      description
+          .append(" ")
+          .append(
+              messages.getMessage(
+                  "inventory.audit.listOfMaterials.itemsAdded", new Object[] {addedItems}));
     }
     if (StringUtils.isNotBlank(removedItems)) {
-      descriptionsToJoin.add(" Removed inventory items: " + removedItems + ".");
+      description
+          .append(" ")
+          .append(
+              messages.getMessage(
+                  "inventory.audit.listOfMaterials.itemsRemoved", new Object[] {removedItems}));
     }
-    return descriptionsToJoin.stream().collect(Collectors.joining());
+    return description.toString();
   }
 
   @TransactionalEventListener
@@ -61,15 +72,14 @@ public class ListOfMaterialsAuditTrail {
     List<MaterialUsage> newMaterials = updatedLom.getMaterials();
 
     List<MaterialUsage> addedMaterials =
-        newMaterials.stream()
-            .filter(mu -> !originalMaterials.contains(mu))
-            .collect(Collectors.toList());
+        newMaterials.stream().filter(mu -> !originalMaterials.contains(mu)).toList();
     List<MaterialUsage> removedMaterials =
-        originalMaterials.stream()
-            .filter(mu -> !newMaterials.contains(mu))
-            .collect(Collectors.toList());
+        originalMaterials.stream().filter(mu -> !newMaterials.contains(mu)).toList();
 
-    String description = "Edited List of Materials " + updatedLom.getOid().getIdString() + ".";
+    String description =
+        messages.getMessage(
+            "inventory.audit.listOfMaterials.edited",
+            new Object[] {updatedLom.getOid().getIdString()});
     String addedItems = generatedDescriptionForUsedMaterials(addedMaterials);
     String removedItems = generatedDescriptionForUsedMaterials(removedMaterials);
     description += generateDescriptionForAddedDeletedItems(addedItems, removedItems);
@@ -80,7 +90,10 @@ public class ListOfMaterialsAuditTrail {
   @TransactionalEventListener
   public void listOfMaterialsDeleted(ListOfMaterialsDeleteEvent lomDeleteEvent) {
     ListOfMaterials deletedLom = lomDeleteEvent.getDeletedItem();
-    String description = "Deleted List of Materials " + deletedLom.getOid().getIdString() + ".";
+    String description =
+        messages.getMessage(
+            "inventory.audit.listOfMaterials.deleted",
+            new Object[] {deletedLom.getOid().getIdString()});
     String removedItems = generatedDescriptionForUsedMaterials(deletedLom.getMaterials());
     description += generateDescriptionForAddedDeletedItems(null, removedItems);
     generateDocumentWriteEventWithLomDetails(

@@ -14,6 +14,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.IMessageAndNotificationTracker;
 import com.researchspace.service.MessageOrRequestCreatorManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSpaceRequestManager;
 import com.researchspace.service.RSpaceRequestUpdateHandler;
 import java.util.ArrayList;
@@ -47,6 +48,8 @@ public class RSpaceRequestManagerImpl implements RSpaceRequestManager {
   @Autowired private CommunicationManager commMgr;
 
   @Autowired private UserDao userDao;
+
+  @Autowired private MessageSourceUtils messages;
 
   private List<RSpaceRequestUpdateHandler> requestHandlers =
       new ArrayList<RSpaceRequestUpdateHandler>();
@@ -153,7 +156,8 @@ public class RSpaceRequestManagerImpl implements RSpaceRequestManager {
       throw new IllegalStateException("ID was not a message ID");
     }
     if (MessageType.GLOBAL_MESSAGE.equals(originalMsg.getMessageType())) {
-      throw new IllegalStateException("replying to Global Message is not allowed");
+      throw new IllegalStateException(
+          messages.getMessage("messaging.errors.replyToGlobalMessageNotAllowed"));
     }
 
     Set<String> respondents = new HashSet<String>();

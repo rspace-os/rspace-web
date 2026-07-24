@@ -1,0 +1,73 @@
+{
+  "community": {
+    "invitation": {
+      "errors": {
+        "emptyEmailList": "Email list is empty!",
+        "invalidEmail": "Incorrect email"
+      }
+    },
+    "actions": {
+      "go": "Go"
+    },
+    "addAdmin": {
+      "chooseLabel": "Please choose community admin(s)"
+    },
+    "addAdminLinkLabel": "Add admin",
+    "addGroup": {
+      "chooseLabel": "Please choose unassigned groups to add to this community"
+    },
+    "addGroupLinkLabel": "Add group",
+    "admins": {
+      "header": "Admins of this community:"
+    },
+    "appsSettingsDialog": {
+      "placeholder": "test dialog",
+      "title": "Apps Settings for this Community"
+    },
+    "appsSettingsLinkLabel": "Apps Settings",
+    "choose": {
+      "label": "Please choose a community"
+    },
+    "createdLabel": "created",
+    "communities": {
+      "title": "Communities"
+    },
+    "defaultCommunity": {
+      "noLabGroups": {
+        "emptyState": "There are no groups in default 'All Groups' community. To add a group belonging to other Community, go to that community and 'Move' the group."
+      }
+    },
+    "displayName": {
+      "label": "Display name"
+    },
+    "editForm": {
+      "profileTextPlaceholder": "Optionally, enter a short text description of this community (max 255 chars)"
+    },
+    "errors": {
+      "moveSrcTargetSame": "Source and target communities are the same!",
+      "removeAdminFailed": "Could not remove admin from this community!",
+      "removeFromDefaultProhibited": "Cannot remove a group from the default community"
+    },
+    "labGroups": {
+      "header": "Lab groups in this community:"
+    },
+    "moveGroupLinkLabel": "Move group",
+    "name": "Community",
+    "noLabGroups": {
+      "emptyState": "There are no groups in this community."
+    },
+    "noProfile": {
+      "emptyState": "There is no profile information for this community."
+    },
+    "profile": {
+      "label": "Profile text"
+    },
+    "profileHeading": "Profile information",
+    "removeGroupLinkLabel": "Remove group",
+    "settings": {
+      "errors": {
+        "systemDenied": "System setting was set to DENIED by system admin and cannot be overridden."
+      }
+    }
+  }
+}

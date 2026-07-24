@@ -146,7 +146,7 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     ApiRuntimeException ex =
         assertThrows(
             ApiRuntimeException.class, () -> manager.applyLinkFieldValue(dbField, apiField, user));
-    assertEquals("errors.inventory.field.link.relationTypeInvalid", ex.getErrorCode());
+    assertEquals("errors.inventory.field.linkRelationTypeInvalid", ex.getErrorCode());
     verifyNoInteractions(inventoryLinkManager);
   }
 
@@ -158,7 +158,7 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     ApiRuntimeException ex =
         assertThrows(
             ApiRuntimeException.class, () -> manager.applyLinkFieldValue(dbField, apiField, user));
-    assertEquals("errors.inventory.field.link.relationTypeNotPermitted", ex.getErrorCode());
+    assertEquals("errors.inventory.field.linkRelationTypeNotPermitted", ex.getErrorCode());
     verifyNoInteractions(inventoryLinkManager);
   }
 

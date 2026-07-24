@@ -35,7 +35,7 @@ public class CsvListOfMaterialsExporter extends InventoryItemCsvExporter {
 
     List<String> columnNames = new ArrayList<>();
     for (ExportableInvRecProperty prop : LOM_ALL_EXPORTABLE_PROPS) {
-      columnNames.add(prop.getCsvColumnHeader());
+      columnNames.add(prop.getCsvColumnHeader(messages));
     }
     writeCsvLine(mapper, outputStream, columnNames);
 

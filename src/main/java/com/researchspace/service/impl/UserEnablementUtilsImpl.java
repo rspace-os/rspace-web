@@ -44,9 +44,11 @@ public class UserEnablementUtilsImpl implements UserEnablementUtils {
     velocityModel.put("user", user);
     velocityModel.put("accountDisabled", !newStatus);
     velocityModel.put("systemUser", systemUser);
-    velocityModel.put("htmlPrefix", properties.getServerUrl());
+    velocityModel.put("baseURL", properties.getServerUrl());
     String subjectKey =
-        newStatus ? "email.account.enabled.subject" : "email.account.disabled.subject";
+        newStatus
+            ? "email.account.accountEnablementNotification.subjectEnabled"
+            : "email.account.accountEnablementNotification.subjectDisabled";
     EmailContent content =
         emailContentGenerator.render(subjectKey, "accountEnablementNotification.vm", velocityModel);
     emailer.sendEmail(content, List.of(user.getEmail()), null);
@@ -65,15 +67,10 @@ public class UserEnablementUtilsImpl implements UserEnablementUtils {
     if (result.isLicenseServerAvailable() && !result.isRequestOK()) {
       String customMessage = properties.getLicenseExceededCustomMessage();
 
-      if (numSeatsRequested == 1) {
-        throw new LicenseExceededException(
-            getMessage("license.insufficientSeatsSingle.msg", new Object[] {customMessage}));
-      } else {
-        throw new LicenseExceededException(
-            getMessage(
-                "license.insufficientSeatsMultiple.msg",
-                new Object[] {result.getAvailableSeats(), numSeatsRequested, customMessage}));
-      }
+      throw new LicenseExceededException(
+          getMessage(
+              "license.insufficientSeats.details",
+              new Object[] {result.getAvailableSeats(), numSeatsRequested, customMessage}));
     } else if (!result.isLicenseServerAvailable()) {
       throw new LicenseServerUnavailableException();
     }

@@ -13,13 +13,14 @@
             <div class="container">
                 <axt:breadcrumb breadcrumb="${bcrumb}" breadcrumbTagId="editorBcrumb"></axt:breadcrumb>
                 <c:if test="${!param.publicDocument}">
+                    <spring:message code="common:appBar.published" var="documentViewPublishedLabel"/>
                     <div><img id="publishedStatusImg"
                               src="/images/icons/html.png"
-                              alt="Published"
-                              title="Published"
+                              alt="${documentViewPublishedLabel}"
+                              title="${documentViewPublishedLabel}"
                               width="35" height="35"
                               <c:if test="${not isPublished}">hidden</c:if>
-                    ><label style="cursor:default;" for="publishedStatusImg" <c:if test="${not isPublished}">hidden</c:if>>Published</label>
+                    ><label style="cursor:default;" for="publishedStatusImg" <c:if test="${not isPublished}">hidden</c:if>>${documentViewPublishedLabel}</label>
                     </div>
                     <script>
                         $(document).ready(function () {
@@ -55,5 +56,5 @@
             type="file"
             class="fromLocalComputer fileReplaceInput"
             style="display:none"
-            aria-label="Insert file from local computer"
+            aria-label="<spring:message code='documentView.insertFileAriaLabel'/>"
     />

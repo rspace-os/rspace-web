@@ -14,8 +14,7 @@ import javax.validation.Payload;
 @Constraint(validatedBy = {ValidDateFormFieldPostValidator.class})
 @Documented
 public @interface ValidDateFormFieldPost {
-  String message() default
-      "Min date must be before max date, and default date must be between them";
+  String message() default "{form.validation.dateRange}";
 
   Class<?>[] groups() default {};
 

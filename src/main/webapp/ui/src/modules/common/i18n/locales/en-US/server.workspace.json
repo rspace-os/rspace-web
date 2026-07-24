@@ -1,0 +1,1041 @@
+{
+  "chem": {
+    "errors": {
+      "createElementFailed": "Error creating chemical element: {0}",
+      "elementNotFound": "No chem element with id {0}",
+      "elementsUnavailable": "RSChemElements with Chemistry File Id: {0} could not be retrieved. Details: {1}",
+      "fileUnavailable": "Chemistry File with Id: {0} could not be retrieved. Details: {1}",
+      "imageUpdateFailed": "An Error Occurred While Updating Chemical Element Images Details: {0}",
+      "infoUnavailable": "Couldn''t retrieve info for chemId: {0}"
+    },
+    "validation": {
+      "searchTermRequired": "Search term is required",
+      "searchTypeRequired": "Search type is required"
+    }
+  },
+  "calendar": {
+    "event": {
+      "start": {
+        "beforeEnd": "Event start time must be before end time."
+      },
+      "unavailable": "No calendar file available. Please try creating the calendar event again."
+    }
+  },
+  "deletedItems": {
+    "deletedHeader": "Deleted",
+    "heading": "Deleted Items",
+    "lastModifiedByHeader": "Last Modified&nbsp;by",
+    "pageTitle": "Deleted documents",
+    "searchPlaceholder": "Search by name"
+  },
+  "dialogs": {
+    "createCalendarEntry": {
+      "attachedResources": {
+        "label": "Attached resources:"
+      },
+      "description": {
+        "placeholder": "an optional description for this event",
+        "title": "Description"
+      },
+      "eventEnd": {
+        "title": "Event end"
+      },
+      "eventStart": {
+        "title": "Event start"
+      },
+      "eventTitle": {
+        "title": "Event title"
+      },
+      "frequency": {
+        "daily": "Daily",
+        "label": "Frequency",
+        "monthly": "Monthly",
+        "weekly": "Weekly",
+        "yearly": "Yearly"
+      },
+      "includeLinkCheckbox": {
+        "title": "Include links to resources"
+      },
+      "repeatEvent": {
+        "title": "Repeat event"
+      },
+      "repeatFor": {
+        "ariaLabel": "How many times to repeat event",
+        "label": "Repeat for",
+        "unit": "times"
+      },
+      "selectedRecordLabel": "selected record",
+      "treeHeading": "Workspace"
+    },
+    "createFromForm": {
+      "iconAlt": "Icon Image",
+      "instruction": "Click on a form name to create a new Document of that type."
+    },
+    "createFromTemplate": {
+      "filterByName": "Filter by Name",
+      "goButton": "Go",
+      "myTemplatesTab": "My Templates",
+      "newDocumentName": "New document name",
+      "sharedTemplatesTab": "Shared With Me"
+    },
+    "crudops": {
+      "addRemoveTags": "Add/Remove Tags",
+      "addToFavorites": "Add to Favorites",
+      "createDocument": "Create Document",
+      "csv": "CSV",
+      "msTeamsAbbreviation": "MS Teams",
+      "removeFromFavorites": "Remove from Favorites",
+      "sendToLabel": "Send to {0}",
+      "sendToTitle": "Send Message to {0}"
+    },
+    "fileTreeBrowser": {
+      "applyOrderingTitle": "Apply new ordering",
+      "changeOrderingTitle": "Change tree ordering",
+      "showTreeTitle": "Show tree browser"
+    },
+    "folderChooser": {
+      "createNewFolderInstruction": "Optionally, create a new folder in the chosen folder:",
+      "linkText": "Choose a folder or notebook",
+      "newFolderAriaLabel": "New folder name",
+      "newFolderPlaceholder": "New Folder Name",
+      "optionalLinkText": "Optionally, choose a folder or notebook",
+      "shareTitle": "Select a folder to share into"
+    },
+    "importFromWord": {
+      "instruction": "Please choose 1 or more <span class=\"importfileType\">Word/OpenOffice</span> files to import:"
+    },
+    "moveRecord": {
+      "dialogTitle": "Select move target",
+      "instruction": "Use the tree below to choose a destination folder for the selected documents",
+      "selection": "Your path selection is"
+    },
+    "permissionChooser": {
+      "sentence": "I want members of the {0} group to be able to {1} my shared item(s).",
+      "selectAriaLabel": "Share privileges",
+      "title": "Specify permissions"
+    },
+    "publish": {
+      "confirmInstruction": "Please type \"confirm\"",
+      "displayContactDetailsLabel": "Display contact details?",
+      "internetHeader": "Publish on the internet",
+      "internetViewableWarning": "This will be viewable by non RSpace users.",
+      "linkHeader": "Publish a link",
+      "linkNotebookContentsWarning": "If this is a notebook, all current and future contents will be viewable.",
+      "notebookContentsWarning": "If this is a notebook, all current and future contents will be public.",
+      "searchEngineIndexWarning": "Search engines will index and may cache the published document.",
+      "searchEngineNoIndexWarning": "Search engines will be instructed not to index the document, so it should not appear in search results.",
+      "summaryDescriptionLabel": "Summary description, max length 200 characters:"
+    },
+    "recordEditorLink": {
+      "formatNotSupported": "{0} not supported",
+      "templateBadgeLabel": "T",
+      "templateBadgeTitle": "Template"
+    },
+    "renameRecord": {
+      "action": "Rename",
+      "label": {
+        "name": "Name:",
+        "newName": "Please enter a new name"
+      }
+    },
+    "saveAsTemplate": {
+      "fieldsInstruction": "Include contents from these fields:",
+      "label": {
+        "name": "Template Name"
+      },
+      "title": "Template Dialog"
+    },
+    "share": {
+      "emailHeader": "E-Mail",
+      "goBack": "Go back",
+      "groupHeader": "Group",
+      "header": {
+        "user": "User name"
+      },
+      "instruction": {
+        "individuals": "Select individuals to share with"
+      },
+      "selectGroupAriaLabel": "Select group to share with",
+      "selectGroupInstruction": "Select a group to share with",
+      "selectUserAriaLabel": "Select user to share with",
+      "sharePermissionsAriaLabel": "Share permissions"
+    },
+    "signature": {
+      "infoUnavailable": "...signature info unavailable..."
+    },
+    "useTemplate": {
+      "description": "Document will be created in your <b>Home</b> folder.",
+      "label": {
+        "name": "Document name:"
+      }
+    }
+  },
+  "document": {
+    "audit": {
+      "errors": {
+        "invalidGlobalId": "Invalid syntax of oid [{0}]",
+        "mediaFileVersionNotFound": "Version {0} not found for media file {1}",
+        "missingVersion": "Unexpected call to audit view without document version [{0}]",
+        "notStructuredDocument": "Viewing record's audit history only works with StructuredDocuments!",
+        "revisionOrVersionRequired": "Either revision or version must be provided",
+        "versionNotFound": "Version {0} not found for record {1}",
+        "versionRequired": "Version must be provided"
+      }
+    },
+    "create": {
+      "errors": {
+        "failed": "Could not create new document"
+      }
+    },
+    "delete": {
+      "errors": {
+        "editedByOtherUser": "Document {0} cannot be deleted as it is currently edited by {1}",
+        "itemNotInFolderTree": "Item to delete must be in user's folder tree, not a shared folder",
+        "ownerRequired": "Document can only be deleted by its owner.",
+        "unexpectedError": "Unexpected error deleting item {0}"
+      }
+    },
+    "edit": {
+      "errors": {
+        "alreadyEditedBy": "Already edited by {0}",
+        "fieldIdMismatch": "Provided field id: {0} does not match document field id: {1}",
+        "fieldsMismatch": "Provided fields don't match document fields",
+        "signed": "Document {0} is signed and cannot be altered"
+      }
+    },
+    "search": {
+      "errors": {
+        "advancedQueryParseFailed": "Problem with parsing advancedQuery: {0}",
+        "bothQueryTypesProvided": "Please provide either a query or advancedQuery, not both"
+      }
+    },
+    "move": {
+      "errors": {
+        "alreadyInTargetFolder": "Record with ID: {0} already in target folder",
+        "failed": "Error performing move. {0}",
+        "idsAndTargetRequired": "Ids to move and target folder are required.",
+        "noResult": "No result from move operation.",
+        "sameSourceAndTarget": "Source and target folder are the same. Id: {0}",
+        "sharedNotebookFailed": "Move into shared notebook failed",
+        "targetIsSelf": "Attempt to move record with ID: {0} to itself"
+      }
+    },
+    "rename": {
+      "errors": {
+        "nameRequired": "New name cannot be empty but was [{0}]",
+        "notEditable": "The document could not be renamed. It may be signed or locked for editing."
+      }
+    },
+    "tag": {
+      "errors": {
+        "forbiddenCharacter": "The value: {0} may not be used in tags",
+        "newTagsNotAllowedWhenOntologiesEnforced": "New tags cannot be saved through the API when ontologies are enforced",
+        "notTaggable": "Only StructuredDocuments, Folders and Notebooks can be tagged"
+      }
+    },
+    "validation": {
+      "tagsTooLong": "Document tags cannot be longer than 8000 characters"
+    },
+    "restore": {
+      "errors": {
+        "notEditable": "Could not restore - this document is not editable by you. Edit status is {0}"
+      }
+    }
+  },
+  "errors": {
+    "chemistry": {
+      "clearIndexesFailed": "Chemistry service couldn't clear search indexes.",
+      "clearIndexesRequestFailed": "Unsuccessful request to clear chemistry search indexes, status code: {0}.",
+      "convertFailed": "Chemistry service couldn't convert the chemical.",
+      "conversionRequestFailed": "Unsuccessful conversion request to the chemistry service, status code: {0}.",
+      "imageExportFailed": "Chemistry service couldn't generate the image for the chemical.",
+      "imageExportRequestFailed": "Unsuccessful image export request to the chemistry service, status code: {0}.",
+      "indexingFailed": "Chemistry service couldn't start search indexing.",
+      "indexingRequestFailed": "Unsuccessful chemistry search indexing request, status code: {0}.",
+      "requestRejected": "Chemistry service could not process the request.",
+      "saveFailed": "Chemistry service couldn't save the chemical.",
+      "saveRequestFailed": "Unsuccessful save request to the chemistry service, status code: {0}.",
+      "searchFailed": "Chemistry service unable to search for the chemical.",
+      "searchRequestFailed": "Unsuccessful search request to the chemistry service, status code: {0}.",
+      "serviceCallFailed": "Chemistry service call failed"
+    },
+    "stoichiometry": {
+      "copyMoleculeFailed": "Problem saving molecule from SMILES during stoichiometry copy",
+      "deleteFailed": "Error deleting stoichiometry with id {0}",
+      "moleculeInfoUnavailable": "Couldn't retrieve molecule info for provided structure",
+      "moleculeNotFound": "Molecule ID {0} not found in existing stoichiometry molecules.",
+      "recordIdRequired": "recordId must be provided",
+      "saveMoleculeFailed": "Problem saving new molecule from SMILES",
+      "smilesRequired": "New molecule requires a SMILES string"
+    }
+  },
+  "folder": {
+    "delete": {
+      "errors": {
+        "failed": "Unknown server error deleting folder: {0}",
+        "systemOrHomeFolder": "Cannot delete user home folder or a system folder"
+      }
+    },
+    "navigation": {
+      "errors": {
+        "notAParent": "Folder {0} is not a parent of {1}",
+        "pathNotAccessible": "The record named ''{0}'' does not exist in the path, or cannot be accessed. {1}",
+        "sharedContextUndetermined": "Cannot infer shared context for Notebook with ID=[{0}], as \"grandParentId\" param is not set"
+      }
+    },
+    "list": {
+      "errors": {
+        "invalidTypesToInclude": "typesToInclude terms must be one of: {0}"
+      }
+    }
+  },
+  "documentAndNotebookTemplates": {
+    "chemElementInfoLabel": "Chem Element Info",
+    "chemicalElementNonEditableLabel": "Chemical Element Non-Editable",
+    "clickToEditNameTitle": "Click to edit the name",
+    "clickToEditTagsTitle": "Click to edit the tags",
+    "createdAtLabel": "Created At:",
+    "descriptionLabel": "Description:",
+    "differentServerNotice": "This link points to a different RSpace server",
+    "editNameTitle": "Edit name",
+    "editTagsTitle": "Edit tags",
+    "enterNewCommentLabel": "Enter a new comment:",
+    "fileIdLabel": "File Id:",
+    "fingerprintLabel": "Fingerprint:",
+    "globalIdLabel": "Global ID:",
+    "historicalVersionTitle": "Historical version",
+    "imageInfoLabel": "Image Info",
+    "latestVersionLabel": "Latest Version:",
+    "linkLabel": "Link:",
+    "openInOfficeLink": "Open in Office",
+    "recordInfoLabel": "Record Info",
+    "renameLabel": "Rename",
+    "saveNameTitle": "Save name",
+    "saveTagsTitle": "Save tags",
+    "serverLabel": "Server:",
+    "showLastModifiedDateLabel": "Show last modified date",
+    "uniqueIdLabel": "Unique ID:",
+    "versionIdLabel": "Version Id:"
+  },
+  "documentView": {
+    "attachmentsLabel": "Attachments",
+    "contactLabel": "contact:",
+    "filesButtonLabel": "Files",
+    "importFromOwncloudTitle": "Import From ownCloud / NextCloud",
+    "insertFileAriaLabel": "Insert file from local computer",
+    "metaHeading": "Notebook",
+    "showLastModifiedDate": "Show last modified date",
+    "tapToExpandListing": "Tap to expand listing.",
+    "templateLabel": "Template"
+  },
+  "form": {
+    "choiceOptions": {
+      "invalidFormat": "Choice options specified in invalid format - field names can't contain '=' or '&' characters."
+    },
+    "errors": {
+      "createMenuVersionMismatch": "Only the current version of a form can be added to the CreateMenu - this is version {0} of form {1}",
+      "createUnauthorized": "You do not have permission to create a form",
+      "deleteFailed": "Exception deleting form. This has been logged.",
+      "fieldCreateUnauthorized": "Create field form unauthorised",
+      "fieldDeleteUnauthorized": "Not permitted to delete field [{0}]",
+      "fieldUpdateUnauthorized": "Unauthorised attempt to update a form field",
+      "hasDocumentsCreated": "Form {0} has been used to create documents, and cannot be deleted.",
+      "infoUnauthorized": "Unauthorized attempt to get form info",
+      "notEditable": "Cannot edit this form: {0}",
+      "publishUnauthorized": "Unauthorised attempt to publish form: {0}",
+      "notFound": "Form with id [{0}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it.",
+      "systemFormUnpublish": "Attempted to unpublish a system form",
+      "unknownFieldType": "Unknown field type [{0}]"
+    },
+    "validation": {
+      "choiceDefaultsInvalid": "Default options must be included in the possible options",
+      "dateRange": "Min date must be before max date, and default date must be between them",
+      "numberRange": "Min must be < max",
+      "optionRequired": "Please provide at least one option",
+      "radioDefaultInvalid": "Default option must be one of the possible options",
+      "stringTooLong": "String fields must be less than {max} characters",
+      "typeUnsupported": "Please supply a supported 'type' property: was '${validatedValue}' but must match {regexp}"
+    },
+    "editor": {
+      "addFieldButton": "Add Field",
+      "addFieldTitle": "Add field",
+      "changeIconButton": "Change Icon",
+      "fieldEditorDialogTitle": "Field Editor",
+      "fieldNamesHeader": "Field Names",
+      "fieldTypeLabel": "Field Type",
+      "fieldsHeader": "Fields",
+      "metaHeading": "Form",
+      "orderFormFieldsDialogTitle": "Order Form Fields",
+      "orderFormFieldsInstruction": "Select a field for moving options and use the arrow keys to change position.",
+      "reorderFieldsButton": "Reorder Fields",
+      "reorderFieldsTitle": "Reorder fields",
+      "revertButton": "Revert",
+      "saveAndCloseButton": "Save and Close",
+      "statusPrefix": "Status -",
+      "tagsLabel": "Tags:",
+      "unpublishLabel": "Unpublish",
+      "updateButton": "Update"
+    },
+    "elisa": {
+      "changes": "Changes",
+      "cytokines": {
+        "choice1": "IL-4",
+        "choice10": "Relm Alpha",
+        "choice11": "YM1",
+        "choice12": "CCL3 (MIP1 alpha)",
+        "choice13": "GM-CSF",
+        "choice14": "IFNy",
+        "choice2": "IL-5",
+        "choice3": "IL-6",
+        "choice4": "IL-10",
+        "choice5": "IL-13",
+        "choice6": "IL-12p40",
+        "choice7": "IL-17",
+        "choice8": "M-CSF",
+        "choice9": "TNFalpha",
+        "label": "Cytokines"
+      },
+      "description": "",
+      "name": "ELISA",
+      "platePlan": "Plate Plan",
+      "protocol": "Protocol",
+      "results": "Results",
+      "volumesAntibodyUsed": "Volumes and concentrations"
+    },
+    "elisaE1": {
+      "changes": "Elisa/E1Changes.html",
+      "cytokines": "IL-13",
+      "name": "SJHP3 ELISA",
+      "platePlan": "Elisa/E1PlatePlan.html",
+      "protocol": "Elisa/E1Protocol.html",
+      "results": "Elisa/E1Results.html",
+      "samples": "Elisa/E1Samples.html",
+      "volumesAntibodyUsed": "Elisa/E1VolumesAntibodyUsed.html"
+    },
+    "elisaT1": {
+      "name": "ELISA",
+      "protocolFieldValue": "",
+      "volumesAntibodyUsedFieldValue": ""
+    },
+    "experiment": {
+      "conclusionFieldName": "Conclusion",
+      "dateFieldName": "Date",
+      "description": "Structured record of an experiment",
+      "methodFieldName": "Method",
+      "name": "Experiment",
+      "objectiveFieldName": "Objective",
+      "resultsFieldName": "Results"
+    },
+    "experimentE2": {
+      "conclusionFieldValue": "<p>The cancer cell line XYZ was highly sensitive to Drug A. Two additional repeats of this assay will be conducted to account for any biological variability and/or human error.</p><p>The ED50 of Drug A on cell line XYZ was 681.1 pM.</p>",
+      "dateFieldValue": "2018-05-10",
+      "methodFieldValueA": "Experiment/E2MethodA.html",
+      "methodFieldValueB": "Experiment/E2plate.png",
+      "methodFieldValueC": "Experiment/E2MethodC.html",
+      "name": "Sensitivity of Cancer cell line XYZ to Drug A",
+      "objectiveFieldValue": "To determine the ED50 value of Drug A on Cancer cell line XYZ",
+      "resultsFieldValueA": "Experiment/E2ResultsA.html",
+      "resultsFieldValueB": "Experiment/E2DoseResponseCurve.png",
+      "resultsFieldValueC": "Experiment/E2ResultsC.html"
+    },
+    "experimentT1": {
+      "conclusionFieldValue": "",
+      "dateFieldValue": "2018-02-25",
+      "methodFieldValue": "Experiment/Method.html",
+      "name": "Experiment 1",
+      "objectiveFieldValue": "<p>I want to clone w.t. F08G5.1 (with its endogenous promoter, hopefully) into the mosSCI ttTi5605 integration vector pCFJ151 to have for injections and for tagging F08G5.1.</p>",
+      "resultsFieldValue": ""
+    },
+    "field": {
+      "lastModifiedLabel": "Last modified:",
+      "picklistSuffix": "(Picklist)",
+      "saveAndViewTitle": "Save and View"
+    },
+    "fieldEditor": {
+      "addNew": "Add New",
+      "checked": "Checked",
+      "checkedValue": "checked",
+      "dateFormat": "Date Format",
+      "decimalPlaces": "Decimal Places",
+      "defaultDate": "Default Date",
+      "defaultTime": "Default Time",
+      "defaultValue": "Default Value",
+      "deleteOption": "(Delete)",
+      "displayAsPicklist": "Display as a picklist?",
+      "dragToSortHint": "(Or drag to sort by hand)",
+      "isPassword": "Is Password",
+      "maxValue": "Max Value",
+      "minValue": "Min Value",
+      "multiple": "Multiple",
+      "multipleAllowedNo": "no",
+      "multipleAllowedYes": "yes",
+      "noEditorAssociated": "No editor associated with this field",
+      "orUploadFromFile": "Or upload from a file",
+      "readDataFromUploaded": "Read data from uploaded",
+      "readFile": "Read file",
+      "required": "Required?",
+      "sortAlphabetically": "Sort alphabetically?",
+      "time12Hour": "hh:mm AM/PM(12 hours)",
+      "time24Hour": "HH:mm(24 hours)",
+      "timeFormat": "Time Format",
+      "title": "Edit field",
+      "typeAndClickAddNew": "Type text and click 'Add New'",
+      "uncheckedValue": "unchecked",
+      "uploadFileInfo": "Upload File Info"
+    },
+    "labProtocol": {
+      "dateCreated": "Date Created",
+      "dateReviewed": "Date Reviewed",
+      "description": "An experimental protocol",
+      "materials": "Materials",
+      "method": "Method",
+      "name": "Lab Protocol",
+      "safety": "Safety"
+    },
+    "labProtocolE1": {
+      "dateCreated": "2018-04-27",
+      "dateReviewed": "2018-04-29",
+      "method": "LabProtocol/E1Method.html",
+      "name": "Extract Protocol for ChIP",
+      "safety": "LabProtocol/E1Safety.html"
+    },
+    "labProtocolT1": {
+      "materialsFieldValue": "Materials-value",
+      "methodFieldValue": "Method value",
+      "name": "Protocol 1",
+      "safetyFieldValue": "Safety-value"
+    },
+    "manage": {
+      "addToMenu": "Add to Menu",
+      "allFormsLabel": "All forms:",
+      "formInfoLabel": "Form Info",
+      "formNameHeader": "Form&nbsp;Name",
+      "heading": "Manage Forms",
+      "myFormsLabel": "My forms:",
+      "permissionsLabel": "Permissions",
+      "removeFromMenu": "Remove from Menu",
+      "selectFormAriaLabel": "Select form",
+      "statusHeader": "Status",
+      "title": "Forms"
+    },
+    "notebookE1": {
+      "content": "Notebook/E1Entry.html",
+      "name": "2018-02-04"
+    },
+    "notebookE2": {
+      "contentA": "Notebook/E2EntryA.html",
+      "contentB": "Notebook/E2EntryB.png",
+      "contentC": "Notebook/E2EntryC.html",
+      "contentD": "Notebook/E2EntryD.png",
+      "contentE": "Notebook/E2EntryE.html",
+      "contentF": "Notebook/E2EntryF.png",
+      "contentG": "Notebook/E2EntryG.png",
+      "contentH": "Notebook/E2EntryH.png",
+      "name": "2018-02-05"
+    },
+    "publishShareDialog": {
+      "instruction": "Configure access to your form by groups that you belong to, or by all RSpace users. If you don't choose any options, the form will remain private to you."
+    },
+    "rtpcr": {
+      "cyclingParameters": "Cycling Parameters",
+      "date": "PCR done on",
+      "description": "For an rtPCR assay",
+      "discussion": "Discussion",
+      "masterMix": "Master Mix",
+      "name": "rtPCR",
+      "positives": "Positives",
+      "primers": "Primers",
+      "results": "Results",
+      "template": "Template",
+      "toDo": "To do"
+    },
+    "rtpcrE1": {
+      "cyclingParameters": "rtPCR/E1CyclingParameters.html",
+      "date": "2018-05-17",
+      "discussion": "rtPCR/E1Discussion.html",
+      "masterMix": "rtPCR/E1MasterMix.html",
+      "name": "bam mutant rtPCR",
+      "positives": "rtPCR/E1Positives.html",
+      "primers": "rtPCR/E1Primers.html",
+      "results": "rtPCR/E1Results.html",
+      "resultsImage": "rtPCR/E1Results.png",
+      "template": "rtPCR/E1Template.html",
+      "toDo": "rtPCR/E1To-do.html"
+    },
+    "sharingConfig": {
+      "groupHelpText": "Configures access to other members of groups that you belong to.",
+      "hideLabel": "Hide",
+      "worldHelpText": "Configures public access to all users.",
+      "worldLabel": "World"
+    },
+    "textField": {
+      "documentEditorAriaLabel": "Document editor",
+      "hiddenInputAriaLabel": "Hidden input",
+      "insertFileToGalleryAriaLabel": "Insert file to Gallery from local computer",
+      "insertMediaAriaLabel": "Insert media from your device",
+      "openJupyterNotebooks": "Open Jupyter Notebook(s)"
+    },
+    "update": {
+      "explanation": "Editing a form. Click 'Update' to commit this edit and make available.<br/>Abandoning the editing (by clicking 'Revert') will revert to the previous form version."
+    },
+    "welcome": {
+      "name": "Getting started",
+      "welcome1": "Welcome/welcome1.html"
+    }
+  },
+  "importExport": {
+    "download": {
+      "errors": {
+        "failed": "Export could not be downloaded. Contact us at support@researchspace.com for help with export.",
+        "missingFile": "Export could not be downloaded because the file does not exist: it may have already been removed from the server. Contact us at support@researchspace.com for help with export."
+      }
+    },
+    "export": {
+      "all": {
+        "heading": "Export all",
+        "instructions": "If you want to export all of your work and files, click the button below."
+      },
+      "report": {
+        "title": "Export Report"
+      },
+      "selection": {
+        "instructions": "If you want to export a selection of your work, return to the Workspace and use the list checkboxes to choose documents or folders to be exported.Then, choose the Export button in the list of options under the toolbar."
+      }
+    },
+    "import": {
+      "archiveFormatExplanation": "This process imports a single Zip (or .eln) file containing an XML format archive produced by a previous RSpace XML/ELN export. Importing creates new documents in RSpace using the archived files and folders.",
+      "archiveIntro": "Use this facility to import an archive of work into Research Space.",
+      "badFormat": {
+        "unsupportedFileType": "Please supply an RSpace archive file in zip or .eln format"
+      },
+      "errors": {
+        "csvRequired": "Please upload a CSV file",
+        "details": "There was an error importing the archive: {0}",
+        "invalidServerPath": "File {0} is not a valid archive path on the server - must be a readable .zip file{1}",
+        "serverFileUnreadable": "File {0} either does not exist, or cannot be read."
+      },
+      "findFile": "Find your file",
+      "report": {
+        "another": {
+          "label": "Import another archive"
+        },
+        "header": "Archive Import Report",
+        "title": "Import Report",
+        "workspace": {
+          "label": "Back to workspace"
+        }
+      },
+      "submitHelp": "Click to import selected file"
+    },
+    "progress": {
+      "archive": "Importing XML archive",
+      "completed": "Import completed, redirecting",
+      "ontology": "Importing Ontology File"
+    },
+    "pdfArchiving": {
+      "submission": {
+        "success": "Your export generation request has been submitted to the server. RSpace will notify you when the export is ready."
+      }
+    },
+    "title": "Import and Export Archives"
+  },
+  "messaging": {
+    "errors": {
+      "replyToGlobalMessageNotAllowed": "Replying to Global Message is not allowed"
+    },
+    "channelLabel": "Channel",
+    "manyDocsHelp": "The message will include links to selected documents. Only RSpace users with access to these documents will be able to use the links.",
+    "messageLabel": "Message",
+    "messagePlaceholder": "Check my document!",
+    "sendMessageToLabel": "Send a message to {{label}}",
+    "singleDocHelp": "The message will include a link to the current document. Only RSpace users with access to the document will be able to use the link."
+  },
+  "notebook": {
+    "errors": {
+      "nestedNotebook": "Notebooks and folders cannot be created inside notebooks.",
+      "noNotebookInGallery": "You can only create a Notebook in the Workspace, not the Gallery folder tree"
+    },
+    "title": "Notebook Document"
+  },
+  "pageHeadings": {
+    "history": "History"
+  },
+  "photoswipe": {
+    "closeTitle": "Close (Esc)",
+    "fullscreenTitle": "Toggle fullscreen",
+    "nextTitle": "Next (arrow right)",
+    "prevTitle": "Previous (arrow left)",
+    "zoomTitle": "Zoom in/out"
+  },
+  "publish": {
+    "notice": {
+      "documentation": "Read the documentation for {0}",
+      "documentationLinkText": "Publication of documents",
+      "manage": {
+        "sharedDocument": "To unpublish go to the <a href=\"/record/share/published/manage\" target=\"_blank\">Published Documents</a> page."
+      }
+    }
+  },
+  "record": {
+    "errors": {
+      "createLocationForbidden": "User is not authorized to create in this {0}.",
+      "idsRequired": "List of ids to retrieve is empty!"
+    },
+    "icon": {
+      "audio": "Audio",
+      "chemistry": "Chemistry",
+      "file": "File",
+      "folder": "Folder",
+      "image": "Image",
+      "notebook": "Notebook",
+      "sharedFolder": "Shared Folder",
+      "snippet": "Snippet",
+      "structuredDocument": "Structured Document",
+      "structuredDocumentWithForm": "Structured Document (Form Name: ''{0}'', ID: {1})",
+      "template": "Template (Form Name: ''{0}'', ID: {1})",
+      "templatesFolder": "Templates Folder",
+      "unknownFormat": "Unknown Format {0}",
+      "unknownRecord": "Unknown Record {0}",
+      "userFolder": "User Folder",
+      "video": "Video"
+    },
+    "status": {
+      "editing": "Editing",
+      "sealed": "Sealed",
+      "signed": "Signed",
+      "signedAndWitnessed": "Signed and witnessed",
+      "signedAwaitingWitness": "Signed, awaiting witness",
+      "signedWitnessesDeclined": "Signed, all witnesses declined",
+      "view": "View",
+      "viewNotEditable": "View (Not editable)",
+      "viewReadPermissionOnly": "View (read permission only)",
+      "viewSomeoneElseEditing": "View (someone else is editing)"
+    },
+    "types": {
+      "documents": "documents",
+      "folder": "folder",
+      "notebooks": "notebooks",
+      "snippets": "snippets"
+    }
+  },
+  "recordInfo": {
+    "fileSizeLabel": "File size:",
+    "infoLabel": "Info",
+    "nameLabel": "Name:",
+    "ownerLabel": "Owner:",
+    "tagsLabel": "Tags:",
+    "versionLabel": "Version:",
+    "viewButton": "View"
+  },
+  "recordInfoPanel": {
+    "captionLabel": "Caption:",
+    "createdByLabel": "Created by:",
+    "createdFromLabel": "Created from:",
+    "creationDateLabel": "Creation Date:",
+    "downloadToDeviceTitle": "Download to your device",
+    "editFileTitle": "Edit this file",
+    "formIdLabel": "Form ID:",
+    "historicalVersionNotice": "This attachment is a historical version and can't be edited directly. To modify or reuse this attachment, please download it and re-attach it to this or a new document",
+    "importedFromArchiveNotice": "Imported from archive",
+    "lastModifiedLabel": "Last Modified:",
+    "linkedDocsTitle": "Lists documents that link to this file",
+    "linkedRecords": {
+      "idHeader": "ID",
+      "nameHeader": "Name"
+    },
+    "openInOfficeComButton": "Open in Office.com",
+    "openInOfficeComTitle": "Open this file in Office.com",
+    "originalCreatorLabel": "Original creator:",
+    "originalImageLabel": "Original Image:",
+    "pathLabel": "Path:",
+    "previewLabel": "Preview:",
+    "revisionNotice": {
+      "text": "The information below describes <strong>version {0}</strong> of&nbsp;a&nbsp;document {1}, which may not be the latest version."
+    },
+    "signatureStatusLabel": "Signature Status:",
+    "sourceLabel": "Source:",
+    "statusLabel": "Status:",
+    "templateNameLabel": "Template Name:",
+    "typeLabel": "Type:",
+    "uniqueIdLabel": "Unique Id:",
+    "uploadNewVersionTitle": "Upload new version of this file",
+    "viewFileTitle": "View this file in browser"
+  },
+  "internalLink": {
+    "errors": {
+      "invalidTarget": "Linked item must be a {0}.",
+      "textFieldRequired": "The field containing the link must be a text field."
+    }
+  },
+  "requestFeedback": {
+    "memberOfGroupNotice": "Request <b>accepted</b>! - you''re now a member of \"{0}\" group",
+    "notJoiningGroupNotice": "Request <b>declined</b>! - you''re not joining the group \"{0}\"",
+    "returnToWorkspaceLink": "Return to workspace",
+    "title": "Request Declined"
+  },
+  "revisionHistory": {
+    "backToWorkspace": "Back to Workspace",
+    "dateRangeAriaLabel": "Date range",
+    "dateRangeHeader": "Date Range",
+    "historyForLabel": "Revision history for {0}, created by <b>{1}</b> on {2}",
+    "modificationDateHeader": "Modification Date",
+    "modificationDetailsHeader": "Modification Details",
+    "modifiedByLabel": "Modified by",
+    "pageTitle": "Document History",
+    "searchButtonValue": "Search Revisions",
+    "searchRevisionsByLabel": "Search Revisions By:",
+    "typeOfModificationHeader": "Type of Modification"
+  },
+  "searchableRecordPicker": {
+    "browseTab": "Browse",
+    "globalIdOwnerSummary": "Global Id: {{globalId}}, Owner: {{ownerFullName}}",
+    "searchPlaceholder": "Search with query, or by global ID..."
+  },
+  "sharing": {
+    "errors": {
+      "docIdRequired": "Document id cannot be null",
+      "folderUnsupported": "Cannot share folder: {0}.",
+      "groupIdRequired": "Must specify id of the group",
+      "itemsRequired": "There must be at least 1 document or notebook to share",
+      "permissionUpdateFailed": "Could not update permission: {0}",
+      "recipientsRequired": "At least one user ID or group ID must be provided in the 'users' or 'groups' list",
+      "sharedItemIdsLimit": "Maximum number of ids in sharedItemIds is {max}.",
+      "sharedNotebookMoveFailed": "Errors while moving into Shared Notebook: [{0}]",
+      "sharingFailed": "Problem sharing: {0}",
+      "unsupportedRecordType": "Cannot share record {0}; only {1} can be shared.",
+      "userIdRequired": "Must specify id of the user"
+    },
+    "groups": {
+      "title": "Share with a group"
+    },
+    "notice": {
+      "manage": {
+        "sharedDocument": "To unshare, or to change permissions of shared documents, go to the <a href=\"/record/share/manage\" target=\"_blank\">Shared Documents</a> page."
+      }
+    },
+    "notification": {
+      "sharedByUser": "{0} shared by {1}"
+    },
+    "others": {
+      "invitationInstructions": "Enter the email of a colleague that you would like to share your documents with. If they accept your invitation, your content will automatically be shared with them.",
+      "title": "Share with others"
+    },
+    "users": {
+      "title": "Share with users"
+    }
+  },
+  "template": {
+    "abandon": {
+      "version": "Deletes the changes made to this version"
+    },
+    "commit": {
+      "version": "Commits the changes to a new version of the form"
+    },
+    "creation": {
+      "errors": {
+        "failed": "The template could not be created.",
+        "noFields": "Please choose at least one field to put in the template."
+      },
+      "success": {
+        "confirmation": "The new template has been created in the Templates folder successfully."
+      }
+    },
+    "publish": {
+      "description": "Makes a form available to users"
+    },
+    "save": {
+      "description": "Saves current changes - does not re-version or alter publishing status."
+    },
+    "unpublish": {
+      "description": "Hides a form from users"
+    }
+  },
+  "userform": {
+    "accountStatusLabel": "Account Status:",
+    "affiliationLabel": "Affiliation",
+    "apiKey": {
+      "confirmPasswordLabel": "Please confirm your password",
+      "docsLinkPrefix": "See <a href=\"/public/apiDocs\" target=\"_blank\">API Documentation</a>.",
+      "docsLinkSuffix": "For more examples, check out our <a href=\"https://github.com/rspace-os\" target=\"_blank\">GitHub</a>.",
+      "generateKeyButton": "Generate key",
+      "generateWarningIntro": "This API key provides access to your account, research data, and intellectual property. If exposed or compromised:",
+      "generateWarningRisk1": "Unauthorized users could access and steal your data",
+      "generateWarningRisk2": "Your intellectual property could be copied or misused",
+      "generateWarningRisk3": "Your data may be permanently deleted or altered without your consent",
+      "generateWarningTitle": "Important: Your API Key Grants Full Access to Your RSpace Account and Data",
+      "generatingConfirmPrompt": "Are you sure you want to generate a new API key? Please store it securely and never share it with others or expose it in client-side code.",
+      "keyGeneratedAgo": "The current key was generated {{ageLabel}}.",
+      "keyLabel": "Key: {{key}}",
+      "keyNoteWarning": "Be sure to note the key down in a secure manner as it will not be visible again.",
+      "noKeySet": "There is no API key set.",
+      "regenerateKeyButton": "Regenerate key",
+      "revokeKeyButton": "Revoke key"
+    },
+    "cameraViewLabel": "Camera view:",
+    "chooseFileAriaLabel": "Choose a file",
+    "egnyte": {
+      "connectedNotice": "Your RSpace account is connected to Egnyte filestore.",
+      "disconnectButton": "Disconnect",
+      "notConfiguredNotice": "There is a problem with your connection to Egnyte filestore, please <a href=\"/egnyte/egnyteConnectionSetup\">re-authenticate</a>.",
+      "setupHeading": "Egnyte filestore setup"
+    },
+    "lastLoginLabel": "Last Login:",
+    "usernameWithAlias": "{0}, login alias: {1}",
+    "otherProfileHeading": "User Profile",
+    "ownProfileHeading": "My Profile",
+    "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
+    "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+    "pictureLabel": "Picture:",
+    "profileHeading": "Profile",
+    "signupSource": {
+      "google": "Google",
+      "internal": "This is an RSpace internal account",
+      "ldap": "LDAP",
+      "ssoBackdoor": "This is an administrative SSO account used for RSpace maintenance"
+    },
+    "takePictureButton": "Take a Picture",
+    "uploadImageTabLink": "Upload Image"
+  },
+  "validation": {
+    "name": {
+      "invalid": "Invalid name",
+      "length": "Name must be between 1 and 50 characters"
+    },
+    "pagination": {
+      "pageNumberNonNegative": "Page number must be 0 or greater.",
+      "pageSizeRange": "Page size must be between {min} and {max}."
+    },
+    "ror": {
+      "invalid": "Not a valid RoR"
+    },
+    "search": {
+      "maxAdvancedQueryLength": "Max advanced query length is {max}.",
+      "maxQueryLength": "Max query length is {max}.",
+      "queryLengthRange": "Min query length is {min}, max query length is {max}."
+    }
+  },
+  "workspace": {
+    "copy": {
+      "unknownName": "Unknown Name_Copy"
+    },
+    "delete": {
+      "progress": "Deleting records"
+    },
+    "errors": {
+      "homeFolderMissing": "Home folder should be present, but is not for user {0}",
+      "inconsistentSharingStatus": "The folder you''re browsing seems to have inconsistent sharing status. Please contact your System Admin, citing folder ID: {0}. More details at {1}",
+      "notMediaRecord": "Not a media record"
+    },
+    "selectRecordAriaLabel": "Select record",
+    "export": {
+      "failureMessage": "Your export [{0}] failed for the following reason: {1}",
+      "groupPermissionDenied": "Only PIs or LabAdmins with view-all permission can export a group.",
+      "groupRequired": "Group is required.",
+      "invalidRepositoryApp": "App [{0}] cannot be used as a repository.",
+      "noDiskSpace": "RSpace has not enough disk space to start archive export process. Please contact your System Admin.",
+      "projectGroupNotFound": "Project group with ID \"{0}\" does not exist.",
+      "raidAssociationMissing": "Project with ID \"{0}\" has no associated RAiD.",
+      "repositoryConfigurationNotFound": "Repository configuration with ID \"{0}\" could not be found.",
+      "selectionIdsRequired": "Export item IDs are required.",
+      "selectionNamesRequired": "Export item names are required.",
+      "selectionTypesRequired": "Export item types are required.",
+      "successMessage": "Your export [{0}] is now available in the Exports section of <a href=\"{1}\">the Gallery</a>.",
+      "usernameRequired": "Username is required.",
+      "usernameTooLong": "Username cannot be greater than {0} characters."
+    },
+    "folder": {
+      "errors": {
+        "nestedNameTooLong": "Nested folder name above {0} characters is not allowed.",
+        "tooManyNested": "More than {0} nested folders are not allowed."
+      }
+    },
+    "list": {
+      "creationDate": {
+        "header": "Created"
+      },
+      "date": {
+        "header": "Modified"
+      },
+      "id": {
+        "header": "ID"
+      },
+      "name": {
+        "header": "Name"
+      },
+      "options": {
+        "header": "Options"
+      },
+      "owner": {
+        "header": "Owner"
+      },
+      "type": {
+        "header": "Type"
+      },
+      "version": {
+        "header": "Version"
+      },
+      "view": {
+        "header": "View"
+      }
+    },
+    "move": {
+      "errors": {
+        "noRecords": "No records to move"
+      },
+      "some": {
+        "notMoved": "Some records were not moved. You may lack permissions to move the records from their current location, or into the new location."
+      },
+      "success": "Move action successful"
+    },
+    "pagination": {
+      "applyTitle": "Apply the Items per page setting",
+      "itemsPerPage": "Items per page:"
+    },
+    "search": {
+      "errors": {
+        "invalidInput": "Invalid search input",
+        "missingScope": "Either search terms or parent folder must be set"
+      }
+    },
+    "settings": {
+      "errors": {
+        "invalidKey": "Invalid settings key",
+        "missingSessionListing": "Session did not contain a workspace listing associated with the given settings key"
+      }
+    },
+    "share": {
+      "owned": {
+        "intoSharedOwned": "Nothing was moved. A shared document owned by a specific user cannot be shared into a notebook owned by the same user. If the document should be a part of the notebook, the owner can `move` it into the notebook on their Workspace."
+      }
+    },
+    "sort": {
+      "ariaLabel": "Order by",
+      "byLastModified": "Last Modified",
+      "byName": "Name",
+      "label": "Order by:",
+      "sortOrderAriaLabel": "Sort order"
+    },
+    "word": {
+      "import": {
+        "createFailed": "Could not create document from {0}",
+        "createFailedWithReason": "Could not create document from {0} - {1}",
+        "evernoteExtensionRequired": "File must be in Evernote XML ending in .enex",
+        "noFilesError": "No files were submitted! Please choose some Word or text files to upload.",
+        "noImporterForFileType": "No importer for file type {0}",
+        "progressDescription": "Processed file ''{0}''. Import is {1}% complete."
+      }
+    }
+  },
+  "workspaceAjax": {
+    "favoriteLabel": "Favorite",
+    "groupOwnedLabel": "Group-owned",
+    "mandatoryFieldsMissingAlt": "Some of the mandatory fields in the document are missing a value",
+    "mandatoryFieldsMissingTitle": "Mandatory fields are missing value",
+    "publishedLabel": "Published",
+    "recordInfoLabel": "Record Info",
+    "recordIsSignedAlt": "Record Is Signed",
+    "selectDeselectAllLabel": "Select/deselect all",
+    "sharedLabel": "Shared",
+    "signedTitle": "Signed"
+  }
+}

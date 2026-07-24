@@ -10,15 +10,15 @@ import lombok.Data;
 @Data
 public class ApiInventoryBulkOperationPost {
 
-  @NotNull(message = "Bulk operation must specify operationType")
+  @NotNull(message = "{errors.inventory.bulk.operationTypeRequired}")
   @JsonProperty("operationType")
   private BulkApiOperationType operationType;
 
   @JsonProperty("rollbackOnError")
   private boolean rollbackOnError = true;
 
-  @NotNull(message = "Bulk operation must specify list of records")
-  @Size(min = 1, max = 100, message = "Bulk operation must specify at least 1, at most 100 records")
+  @NotNull(message = "{errors.inventory.bulk.recordsRequired}")
+  @Size(min = 1, max = 100, message = "{errors.inventory.bulk.recordCount}")
   @JsonProperty("records")
   private List<ApiInventoryRecordInfo> records = new ArrayList<>();
 

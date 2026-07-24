@@ -11,6 +11,12 @@ import java.util.Map;
  */
 public interface IPropertyHolder extends Versionable {
 
+  /** Returns the version displayed in page footers, including its {@code v} prefix. */
+  String getWebappVersion();
+
+  /** Returns the current year for page-footer copyright notices. */
+  String getCopyrightYear();
+
   /**
    * Getter for sysadmin.delete.user property
    *

@@ -3,7 +3,6 @@ package com.researchspace.service.inventory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiExtraField;
@@ -230,8 +229,9 @@ class InventoryFieldNameUniquenessValidatorTest {
 
     assertEquals(1, errors.getErrorCount());
     assertEquals("extraFields[0].name", errors.getFieldErrors().get(0).getField());
-    assertTrue(
-        errors.getFieldErrors().get(0).getDefaultMessage().contains("B"),
-        "Expected default message to mention duplicated name 'B'");
+    assertEquals(
+        InventoryFieldNameUniquenessValidator.DUPLICATE_NAME_ERROR_CODE,
+        errors.getFieldErrors().get(0).getCode());
+    assertEquals("B", errors.getFieldErrors().get(0).getArguments()[0]);
   }
 }

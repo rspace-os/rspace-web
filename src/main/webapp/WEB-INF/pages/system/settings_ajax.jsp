@@ -1,10 +1,15 @@
 <%@ include file="/common/taglibs.jsp"%>
+<%@ taglib prefix="f" uri="http://researchspace.com/functions" %>
 
+<spring:message code="common:help.additionalServerProperties" var="additionalPropertiesHelpSlug"/>
 <div id="systemSettingsView">
 
     <div style="margin: 5px;">
       <spring:message code="system.settings.header.info" />
-      Some settings can only be adjusted by IT staff with with access to the server environment, for more information about additional settings see: <a href="https://documentation.researchspace.com/article/6i9j335fy1-additional-server-properties-settings" rel="noreferrer">Additional Server Properties / Settings</a>
+      <spring:message code="system.settings.additionalPropertiesLink" var="additionalPropertiesLinkText"/>
+      <spring:message code="system.settings.additionalPropertiesInfo">
+        <spring:argument value='<a href="${f:helpDocsUrl(additionalPropertiesHelpSlug)}" rel="noreferrer">${additionalPropertiesLinkText}</a>'/>
+      </spring:message>
     </div>
 
     <div id="systemSettingsList">
@@ -34,71 +39,71 @@
             <div class="settingEditDiv" style="display:none">
                 <div class="settingValue">
                     <select class="settingBooleanSelectValue" style="display:none">
-                        <option value="ALLOWED">Allowed</option>
-                        <option value="DENIED_BY_DEFAULT">Denied By Default</option>
-                        <option value="DENIED">Denied</option>
+                        <option value="ALLOWED"><spring:message code="system.settingValue.allowed"/></option>
+                        <option value="DENIED_BY_DEFAULT"><spring:message code="system.settingValue.deniedByDefault"/></option>
+                        <option value="DENIED"><spring:message code="system.settingValue.denied"/></option>
                     </select>
                     <input class="settingTextValue" type="text" style="display:none"></input>
                 </div>
                 <div class="settingActions">
-                    <a class="settingCancelLink" href="#">Cancel</a>
-                    <a class="settingSaveLink" href="#">Save</a>
+                    <a class="settingCancelLink" href="#"><spring:message code="common:actions.cancel"/></a>
+                    <a class="settingSaveLink" href="#"><spring:message code="common:actions.save"/></a>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="systemSettingsDescriptions" style="display:none">
-        <div id="dropbox.available.description"><spring:message code="system.property.description.dropbox.available" /></div>
-        <div id="dropbox.linking.enabled.description"><spring:message code="system.property.description.dropbox.linking.enabled" /></div>
-        <div id="box.available.description"><spring:message code="system.property.description.box.available" /></div>
-        <div id="box.linking.enabled.description"><spring:message code="system.property.description.box.linking.enabled" /></div>
-        <div id="box.api.enabled.description"><spring:message code="system.property.description.box.api.enabled" /></div>
-        <div id="googledrive.available.description"><spring:message code="system.property.description.googledrive.available" /></div>
-        <div id="onedrive.available.description"><spring:message code="system.property.description.onedrive.available" /></div>
-        <div id="onedrive.linking.enabled.description"><spring:message code="system.property.description.onedrive.linking.enabled" /></div>
-        <div id="egnyte.available.description"><spring:message code="system.property.description.egnyte.available" /></div>
-        <div id="owncloud.available.description"><spring:message code="system.property.description.owncloud.available" /></div>
-        <div id="nextcloud.available.description"><spring:message code="system.property.description.nextcloud.available" /></div>
-        <div id="evernote.available.description"><spring:message code="system.property.description.evernote.available" /></div>
-        <div id="chemistry.available.description"><spring:message code="system.property.description.chemistry.available" /></div>
-        <div id="slack.available.description"><spring:message code="system.property.description.slack.available" /></div>
-        <div id="orcid.available.description"><spring:message code="system.property.description.orcid.available" /></div>
-        <div id="raid.available.description"><spring:message code="system.property.description.raid.available" /></div>
-        <div id="dataverse.available.description"><spring:message code="system.property.description.repo.available" arguments="Dataverse"/></div>
-        <div id="figshare.available.description"><spring:message code="system.property.description.repo.available" arguments="Figshare"/></div>
-        <div id="pyrat.available.description"><spring:message code="system.property.description.pyrat.available" /></div>
-        <div id="clustermarket.available.description"><spring:message code="system.property.description.clustermarket.available" /></div>
-        <div id="omero.available.description"><spring:message code="system.property.description.omero.available" /></div>
-        <div id="dryad.available.description"><spring:message code="system.property.description.dryad.available" /></div>
-        <div id="dmpassistant.available.description"><spring:message code="system.property.description.dmpassistant.available" /></div>
-        <div id="dmponline.available.description"><spring:message code="system.property.description.dmponline.available" /></div>
-        <div id="dmptool.available.description"><spring:message code="system.property.description.dmptool.available" /></div>
-        <div id="dsw.available.description"><spring:message code="system.property.description.dsw.available" /></div>
-        <div id="argos.available.description"><spring:message code="system.property.description.argos.available" /></div>
-        <div id="zenodo.available.description"><spring:message code="system.property.description.zenodo.available" /></div>
-        <div id="digitalCommonsData.available.description"><spring:message code="system.property.description.digitalCommonsData.available" /></div>
-        <div id="fieldmark.available.description"><spring:message code="system.property.description.fieldmark.available" /></div>
-        <div id="galaxy.available.description"><spring:message code="system.property.description.galaxy.available" /></div>
-        <div id="github.available.description"><spring:message code="system.property.description.github.available" /></div>
-        <div id="api.available.description"><spring:message code="system.property.description.api.available" /></div>
-        <div id="api.oauth.authentication.description"><spring:message code="system.property.description.api.oauth.authentication" /></div>
-        <div id="onboarding.available.description"><spring:message code="system.property.description.onboarding.available" /></div>
-        <div id="snapgene.available.description"><spring:message code="system.property.description.snapgene.available" /></div>
-        <div id="group_autosharing.available.description"><spring:message code="system.property.description.group_autosharing.available" /></div>
-        <div id="self_service_labgroups.description"><spring:message code="system.property.description.self_service_labgroups" /></div>
-        <div id="publicLastLogin.available.description"><spring:message code="system.property.description.publicLastLogin.available" /></div>
-        <div id="inventory.available.description"><spring:message code="system.property.description.inventory.available" /></div>
-        <div id="public_sharing.description"><spring:message code="system.property.description.public_sharing" /></div>
-        <div id="publicdocs_allow_seo.description"><spring:message code="system.property.description.publicdocs_allow_seo" /></div>
-        <div id="allow_project_groups.description"><spring:message code="system.property.description.allow_project_groups" /></div>
-        <div id="pi_can_edit_all_work_in_labgroup.description"><spring:message code="system.property.description.pi_can_edit_all_work_in_labgroup" /></div>
-        <div id="msteams.available.description"><spring:message code="system.property.description.msteams.available" /></div>
-        <div id="protocols_io.available.description"><spring:message code="system.property.description.protocols_io.available" /></div>
+        <div id="dropbox.available.description"><spring:message code="system.property.description.dropboxAvailable" /></div>
+        <div id="dropbox.linking.enabled.description"><spring:message code="system.property.description.dropboxLinkingEnabled" /></div>
+        <div id="box.available.description"><spring:message code="system.property.description.boxAvailable" /></div>
+        <div id="box.linking.enabled.description"><spring:message code="system.property.description.boxLinkingEnabled" /></div>
+        <div id="box.api.enabled.description"><spring:message code="system.property.description.boxApiEnabled" /></div>
+        <div id="googledrive.available.description"><spring:message code="system.property.description.googleDriveAvailable" /></div>
+        <div id="onedrive.available.description"><spring:message code="system.property.description.oneDriveAvailable" /></div>
+        <div id="onedrive.linking.enabled.description"><spring:message code="system.property.description.oneDriveLinkingEnabled" /></div>
+        <div id="egnyte.available.description"><spring:message code="system.property.description.egnyteAvailable" /></div>
+        <div id="owncloud.available.description"><spring:message code="system.property.description.owncloudAvailable" /></div>
+        <div id="nextcloud.available.description"><spring:message code="system.property.description.nextcloudAvailable" /></div>
+        <div id="evernote.available.description"><spring:message code="system.property.description.evernoteAvailable" /></div>
+        <div id="chemistry.available.description"><spring:message code="system.property.description.chemistryAvailable" /></div>
+        <div id="slack.available.description"><spring:message code="system.property.description.slackAvailable" /></div>
+        <div id="orcid.available.description"><spring:message code="system.property.description.orcidAvailable" /></div>
+        <div id="raid.available.description"><spring:message code="system.property.description.raidAvailable" /></div>
+        <div id="dataverse.available.description"><spring:message code="system.property.description.repoAvailable" arguments="Dataverse"/></div>
+        <div id="figshare.available.description"><spring:message code="system.property.description.repoAvailable" arguments="Figshare"/></div>
+        <div id="pyrat.available.description"><spring:message code="system.property.description.pyratAvailable" /></div>
+        <div id="clustermarket.available.description"><spring:message code="system.property.description.clustermarketAvailable" /></div>
+        <div id="omero.available.description"><spring:message code="system.property.description.omeroAvailable" /></div>
+        <div id="dryad.available.description"><spring:message code="system.property.description.dryadAvailable" /></div>
+        <div id="dmpassistant.available.description"><spring:message code="system.property.description.dmpAssistantAvailable" /></div>
+        <div id="dmponline.available.description"><spring:message code="system.property.description.dmponlineAvailable" /></div>
+        <div id="dmptool.available.description"><spring:message code="system.property.description.dmpToolAvailable" /></div>
+        <div id="dsw.available.description"><spring:message code="system.property.description.dswAvailable" /></div>
+        <div id="argos.available.description"><spring:message code="system.property.description.argosAvailable" /></div>
+        <div id="zenodo.available.description"><spring:message code="system.property.description.zenodoAvailable" /></div>
+        <div id="digitalCommonsData.available.description"><spring:message code="system.property.description.digitalCommonsDataAvailable" /></div>
+        <div id="fieldmark.available.description"><spring:message code="system.property.description.fieldmarkAvailable" /></div>
+        <div id="galaxy.available.description"><spring:message code="system.property.description.galaxyAvailable" /></div>
+        <div id="github.available.description"><spring:message code="system.property.description.githubAvailable" /></div>
+        <div id="api.available.description"><spring:message code="system.property.description.apiAvailable" /></div>
+        <div id="api.oauth.authentication.description"><spring:message code="system.property.description.apiOauthAuthentication" /></div>
+        <div id="onboarding.available.description"><spring:message code="system.property.description.onboardingAvailable" /></div>
+        <div id="snapgene.available.description"><spring:message code="system.property.description.snapgeneAvailable" /></div>
+        <div id="group_autosharing.available.description"><spring:message code="system.property.description.groupAutosharingAvailable" /></div>
+        <div id="self_service_labgroups.description"><spring:message code="system.property.description.selfServiceLabgroups" /></div>
+        <div id="publicLastLogin.available.description"><spring:message code="system.property.description.publicLastLoginAvailable" /></div>
+        <div id="inventory.available.description"><spring:message code="system.property.description.inventoryAvailable" /></div>
+        <div id="public_sharing.description"><spring:message code="system.property.description.publicSharing" /></div>
+        <div id="publicdocs_allow_seo.description"><spring:message code="system.property.description.publicdocsAllowSeo" /></div>
+        <div id="allow_project_groups.description"><spring:message code="system.property.description.allowProjectGroups" /></div>
+        <div id="pi_can_edit_all_work_in_labgroup.description"><spring:message code="system.property.description.piCanEditAllWorkInLabgroup" /></div>
+        <div id="msteams.available.description"><spring:message code="system.property.description.msTeamsAvailable" /></div>
+        <div id="protocols_io.available.description"><spring:message code="system.property.description.protocolsIoAvailable" /></div>
     </div>
 
     <div id="systemSettingsLabels" style="display:none">
-        <div id="clustermarket.available.label"><spring:message code="system.property.label.clustermarket.available" /></div>
+        <div id="clustermarket.available.label"><spring:message code="system.property.label.clustermarketAvailable" /></div>
     </div>
 
 </div>

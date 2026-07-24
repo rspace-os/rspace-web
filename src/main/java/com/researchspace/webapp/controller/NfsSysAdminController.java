@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.service.FilestoreAclChecker;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.NfsManager;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -90,8 +91,8 @@ public class NfsSysAdminController extends BaseController {
     if (!intersection.isEmpty()) {
       throw new IllegalArgumentException(
           getText(
-              "netfilestores.acl.users.in.both.lists",
-              new Object[] {String.join(", ", intersection)}));
+              "netFileStores.acl.users.inBothLists",
+              new Object[] {ListFormatUtils.formatList(intersection)}));
     }
   }
 

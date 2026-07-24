@@ -1,6 +1,5 @@
 package com.axiope.model.record.init;
 
-import com.researchspace.Constants;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.inventory.SampleTemplate;
@@ -40,6 +39,7 @@ public abstract class BuiltinContent implements IBuiltinContent {
 
   IRecordFactory recordFactory;
 
+  private Locale locale;
   private ResourceBundle resourceBundle;
 
   public BuiltinContent() {
@@ -54,8 +54,13 @@ public abstract class BuiltinContent implements IBuiltinContent {
   }
 
   public BuiltinContent(IBuiltInPersistor initializer) {
+    this(initializer, null);
+  }
+
+  public BuiltinContent(IBuiltInPersistor initializer, Locale locale) {
     this.recordFactory = new RecordFactory();
     m_initializer = initializer;
+    this.locale = locale;
   }
 
   @Override
@@ -75,8 +80,9 @@ public abstract class BuiltinContent implements IBuiltinContent {
   /** For use by subclasses to get the resource bundle. Initialises once and then caches. */
   protected ResourceBundle getResourceBundle() {
     if (resourceBundle == null) {
-      Locale locale = LocaleContextHolder.getLocale();
-      resourceBundle = ResourceBundle.getBundle(Constants.BUNDLE_KEY, locale);
+      resourceBundle =
+          BuiltinContentMessages.forLocale(
+              locale != null ? locale : LocaleContextHolder.getLocale());
     }
 
     return resourceBundle;

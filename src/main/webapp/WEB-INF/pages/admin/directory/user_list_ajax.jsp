@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 <h2 id="directoryListTitle" style="display: none;">
-	<spring:message code="directory.users.title" />
+	<spring:message code="system:usersPage.title" />
 </h2>
 <input type="hidden" id="noOfRows" value="${fn:length(users.results)}">
 <c:choose>
@@ -11,12 +11,12 @@
 				<tr>
 					<th style="width:15%">
 						<a class="orderBy" id="orderByName" href="${orderByLastNameLink.link}">
-							<spring:message code="user.fullname.label" />
+							<spring:message code="system:usersPage.columns.fullName" />
 						</a>
 					</th>
 					<th style="width:10%">
 						<a class="orderBy" id="orderByUserName" href="${orderByUsernameLink.link}">
-							<spring:message code="user.username.label" />
+							<spring:message code="system:usersPage.columns.username" />
 						</a>
 					</th>
 					<rst:hasDeploymentProperty name="cloud" value="true">
@@ -27,11 +27,11 @@
 					</th>
 					</rst:hasDeploymentProperty>
 					<th style="width:10%">
-						<spring:message code="group.labgroup.name" />
+						<spring:message code="groups.labGroup.name" />
 					</th>
 					<th style="width:15%">
 						<a class="orderBy" id="orderByEmail" href="${orderByEmailLink.link}">
-							<spring:message code="user.email.label" />
+							<spring:message code="common:userDetails.email" />
 						</a>
 					</th>
 					<th style="width:25%">
@@ -72,15 +72,15 @@
 					<td>
 						<c:if test="${not empty user.orcidId}">
 							<a class="orcidIdLink" target="_blank" href="https://orcid.org/${user.orcidId}">
-								<img class="orcidIdImg" src="/images/integrations/orcid-small.png" style="vertical-align: text-bottom;" alt="ORCiD Logo" />
+								<img class="orcidIdImg" src="/images/integrations/orcid-small.png" style="vertical-align: text-bottom;" alt="<spring:message code='directory.userList.orcidLogoAlt'/>" />
 								https://orcid.org/${user.orcidId}
 							</a>
 							<br />
-						</c:if> 
+						</c:if>
 						<c:if test="${not empty user.shortProfileText}">
-		          ${user.shortProfileText} 
-		          <a href="/userform?userId=${user.userInfo.id}"> 
-		          	<spring:message code="button.more" />
+		          ${user.shortProfileText}
+		          <a href="/userform?userId=${user.userInfo.id}">
+			<spring:message code="button.more" />
 		          </a>
 						</c:if>
 					</td>
@@ -101,17 +101,17 @@
 			<%--  if new pageload in cloud, we don't get a listing anyway --%>
 			<c:choose>
 				<c:when test="${not empty pageReload}">
-					<span class="directoryMsg searchMessage"> <spring:message code="directory.cloud.help.msg" /></span>
+					<span class="directoryMsg searchMessage"> <spring:message code="directory.cloud.searchPrompt" /></span>
 				</c:when>
 				<%--  otherwise the search is retrieving no results --%>
 				<c:otherwise>
-					<span class="directoryMsg searchError"><spring:message code="directory.noresults.msg" arguments="users" /></span>
+					<span class="directoryMsg searchError"><spring:message code="directory.noResults.emptySearchResults" /></span>
 				</c:otherwise>
 			</c:choose>
 		</rst:hasDeploymentProperty>
 		<rst:hasDeploymentProperty name="cloud" value="true" match="false">
 			<span class="directoryMsg searchError">
-				<spring:message code="directory.noresults.msg" arguments="users" />
+				<spring:message code="directory.noResults.emptySearchResults" />
 			</span>
 		</rst:hasDeploymentProperty>
 	</div>

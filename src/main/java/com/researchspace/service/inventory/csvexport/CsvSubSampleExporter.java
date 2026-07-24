@@ -46,7 +46,7 @@ public class CsvSubSampleExporter extends InventoryItemCsvExporter {
       List<SubSample> subSamples, CsvExportMode exportMode) {
     List<String> columnNames = super.getBasicColumnNamesForCsv(exportMode);
     for (ExportableInvRecProperty prop : SUBSAMPLE_EXPORTABLE_PROPS) {
-      columnNames.add(prop.getCsvColumnHeader());
+      columnNames.add(prop.getCsvColumnHeader(messages));
     }
     columnNames.addAll(
         getExtraFieldColumnNamesForCsv(getExtraFieldsFromAllItems(subSamples), exportMode));

@@ -121,7 +121,7 @@ public class InstrumentsApiControllerTest extends SpringTransactionalTest {
     assertEquals(1, bindException.getErrorCount());
     assertNotNull(bindException.getFieldError());
     assertEquals("name", bindException.getFieldError().getField());
-    assertEquals("errors.maxlength", bindException.getFieldError().getCode());
+    assertEquals("errors.maxLength", bindException.getFieldError().getCode());
   }
 
   @Test

@@ -4,6 +4,7 @@ import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
 
 import com.researchspace.model.field.StringFieldForm;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
@@ -23,9 +24,11 @@ public class StringFieldDTOValidator extends AbstractFieldFormValidator implemen
         && dto.getDefaultStringValue().length() > DEFAULT_VARCHAR_LENGTH) {
       errors.rejectValue(
           "defaultStringValue",
-          "errors.maxlength",
-          new Object[] {"default value", DEFAULT_VARCHAR_LENGTH},
-          "defaultStringValue is too long");
+          "errors.maxLength",
+          new Object[] {
+            new DefaultMessageSourceResolvable("label.defaultValue"), DEFAULT_VARCHAR_LENGTH
+          },
+          null);
     }
   }
 }

@@ -22,6 +22,7 @@
   "jupyterNotebooks": "src/eln/jupyter-notebooks/index.tsx",
   "ketcherViewer": "src/tinyMCE/ketcher/KetcherViewer.tsx",
   "labgroupsTable": "src/my-rspace/profile/GroupsTable.tsx",
+  "legacyI18n": "src/modules/common/i18n/legacyI18n.ts",
   "materialsListing": "src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
   "memberAutoshareStatusWrapper": "src/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper.tsx",
   "myLabGroups": "src/my-rspace/directory/groups/MyLabGroups.tsx",

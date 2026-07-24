@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runInNewContext } from "node:vm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { legacyMsg } from "@/__tests__/helpers/legacyI18n";
 
 // Resolve from this file's location rather than process.cwd(): the jsdom test
 // environment polyfills `process` (vite-plugin-node-polyfills), so
@@ -180,7 +181,12 @@ describe("TinyMCE video embed plugin", () => {
     vi.clearAllMocks();
     document.body.innerHTML = "";
     window.insertActions = new Map();
-    (globalThis as typeof globalThis & { RS: { trackEvent: ReturnType<typeof vi.fn> } }).RS = {
+    (
+      globalThis as typeof globalThis & {
+        RS: { msg: (key: string, ...args: Array<unknown>) => string; trackEvent: ReturnType<typeof vi.fn> };
+      }
+    ).RS = {
+      msg: legacyMsg,
       trackEvent: vi.fn(),
     };
   });

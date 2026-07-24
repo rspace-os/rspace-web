@@ -14,7 +14,7 @@ function loadNetFileSystemsList() {
     });
     
     jqxhr.fail(function () {
-         RS.ajaxFailed("Getting File Systems page", false, jqxhr);
+         RS.ajaxFailed(RS.msg("legacyjs.system.netFileSystem.gettingFileSystemsPageAction"), false, jqxhr);
     });
 }
 
@@ -29,7 +29,7 @@ function loadNetFileSystems() {
     });
     
     jqxhr.fail(function () {
-         RS.ajaxFailed("Couldn't retrieve list of File Systems", false, jqxhr);
+         RS.ajaxFailed(RS.msg("legacyjs.system.netFileSystem.retrievingFileSystemsAction"), false, jqxhr);
     });
 }
 
@@ -79,23 +79,23 @@ function deleteFileSystem() {
         name = $(this).data('name');
     
     apprise(
-        "<div style='line-height:1.3em'>Delete File System '" + name + "'?</div>",
-        {   confirm : true, textOk : 'Delete' },
+        "<div style='line-height:1.3em'>" + RS.msg("legacyjs.system.netFileSystem.confirmDeleteFileSystem", name) + "</div>",
+        {   confirm : true, textOk : RS.msg("legacyjs.system.common.delete") },
         function(r) {
-            RS.blockPage("Deleting...");
+            RS.blockPage(RS.msg("legacyjs.system.netFileSystem.deleting"));
             var jqxhr = $.post("/system/netfilesystem/delete", { fileSystemId : id });
             jqxhr.done(function(result) {
                 if (result) {
-                    $().toastmessage('showSuccessToast', 'File System deleted');
+                    $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.netFileSystem.fileSystemDeleted"));
                 } else {
-                    apprise('The File System \'' + name + '\' couldn\'t be deleted. <br><br>That could happen if users already created some File Stores for this File System.');
+                    apprise(RS.msg("legacyjs.system.netFileSystem.fileSystemDeleteFailed", name));
                     RS.focusAppriseDialog();
                 }
                 
                 loadNetFileSystemsList();
             });
             jqxhr.fail(function() {
-                RS.ajaxFailed("Delete", true, jqxhr);
+                RS.ajaxFailed(RS.msg("legacyjs.system.common.delete"), true, jqxhr);
             });
             jqxhr.always(function () {
                 RS.unblockPage();
@@ -295,10 +295,10 @@ function saveFileSystem() {
             readAllowlist: authType === 'NONE' ? readAllowlist : null,
             writeAllowlist: authType === 'NONE' ? writeAllowlist : null
         };
-    RS.blockPage("Saving...");
+    RS.blockPage(RS.msg("legacyjs.system.common.saving"));
     var jqxhr = RS.sendJsonPostRequestToUrl('/system/netfilesystem/save', fileSystem);
     jqxhr.done(function(result) {
-        $().toastmessage('showSuccessToast', 'File System saved');
+        $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.netFileSystem.fileSystemSaved"));
         showAllowlistWarnings(result);
         loadNetFileSystemsList();
     });
@@ -309,7 +309,7 @@ function saveFileSystem() {
         if (errorMsg) {
             showStickyError(RS.escapeHtml(errorMsg.trim()).replace(/\n/g, '<br/>'));
         } else {
-            RS.ajaxFailed("Couldn't save File System", false, jqxhr);
+            RS.ajaxFailed(RS.msg("legacyjs.system.netFileSystem.savingFileSystemAction"), false, jqxhr);
         }
     });
     jqxhr.always(function () {
@@ -385,17 +385,17 @@ function refreshClientTypeRows() {
     $('#fileSystemAuthTypePasswordSpan').text(sysNetfileSysDetAuthPasswd);
     $("label[for='fileSystemUrl']").text(sysNetFileSysDetUrl);
     if (isIrodsClient) {
-        $("label[for='fileSystemUrl']").text('iRODS Host');
+        $("label[for='fileSystemUrl']").text(RS.msg("legacyjs.system.netFileSystem.irodsHostLabel"));
     }
 
     if (isSambaClient || isSambaSmbjClient) {
         $('#fileSystemUrl')
-        .attr('title', 'Samba server URL should start with smb://')
+        .attr('title', RS.msg("legacyjs.system.netFileSystem.sambaUrlTitle"))
         .attr('pattern', '^smb://.*');
     } else if (isIrodsClient) {
         $('#fileSystemUrl')
         .removeAttr('pattern')
-        .attr('title', 'iRODS hostname or IP without protocol');
+        .attr('title', RS.msg("legacyjs.system.netFileSystem.irodsUrlTitle"));
     } else {
         $('#fileSystemUrl').removeAttr('title').removeAttr('pattern');
     }
@@ -465,13 +465,13 @@ function showAllowlistWarnings(result) {
     // toastmessage renders text as HTML, so escape the sysadmin-typed usernames.
     if (result.unknownReadAllowlistUsernames && result.unknownReadAllowlistUsernames.length) {
         showStickyWarning(
-            'Unknown usernames on read allowlist (saved as typed): '
-            + result.unknownReadAllowlistUsernames.map(RS.escapeHtml).join(', '));
+            RS.msg("legacyjs.system.netFileSystem.unknownReadAllowlistUsernames",
+            RS.formatList(result.unknownReadAllowlistUsernames.map(RS.escapeHtml))));
     }
     if (result.unknownWriteAllowlistUsernames && result.unknownWriteAllowlistUsernames.length) {
         showStickyWarning(
-            'Unknown usernames on write allowlist (saved as typed): '
-            + result.unknownWriteAllowlistUsernames.map(RS.escapeHtml).join(', '));
+            RS.msg("legacyjs.system.netFileSystem.unknownWriteAllowlistUsernames",
+            RS.formatList(result.unknownWriteAllowlistUsernames.map(RS.escapeHtml))));
     }
 }
 

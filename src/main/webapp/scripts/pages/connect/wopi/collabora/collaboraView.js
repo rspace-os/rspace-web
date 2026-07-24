@@ -7,7 +7,7 @@ function initCollaboraOnlineFrame() {
     collabora_frame.id = 'collabora_frame';
 
     // The title should be set for accessibility
-    collabora_frame.title = 'Collabora Online Frame';
+    collabora_frame.title = RS.msg("legacyjs.connect.collabora.frameTitle");
 
     frameholder.appendChild(collabora_frame);
 
@@ -32,9 +32,9 @@ function handlePostMessage(e) {
                     "Values": {
                         "id": "rspaceclose",
                         "imgurl": "/browser/dist/images/closedoc.svg",
-                        "hint": "Save and Close",
+                        "hint": RS.msg("legacyjs.connect.collabora.saveAndClose"),
                         "mobile": false,
-                        "label": "Save and Close",
+                        "label": RS.msg("legacyjs.connect.collabora.saveAndClose"),
                         "insertBefore": "sidebar",
                         "unoCommand": ""
                     }

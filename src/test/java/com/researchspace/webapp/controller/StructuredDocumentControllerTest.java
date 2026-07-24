@@ -51,6 +51,7 @@ import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
@@ -64,7 +65,6 @@ import java.io.InputStream;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -78,7 +78,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.stubbing.OngoingStubbing;
-import org.springframework.context.support.StaticMessageSource;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockServletContext;
@@ -112,13 +111,11 @@ public class StructuredDocumentControllerTest {
 
   private Principal mockPrincipal;
   private User user;
-  private StaticMessageSource messageSource;
   private MockServletContext context;
   private MockHttpSession session;
 
   @Before
   public void setUp() {
-    messageSource = new StaticMessageSource();
     session = new MockHttpSession();
     strucDocCtrller = new StructuredDocumentController();
     context = new MockServletContext();
@@ -126,7 +123,7 @@ public class StructuredDocumentControllerTest {
     strucDocCtrller.setUserManager(userMgr);
     strucDocCtrller.setRecordManager(recordMgr);
     strucDocCtrller.setMediaManager(mediaMgr);
-    strucDocCtrller.setMessageSource(new MessageSourceUtils(messageSource));
+    strucDocCtrller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
     strucDocCtrller.setServletContext(new MockServletContext());
     strucDocCtrller.setAuditService(auditTrail);
     strucDocCtrller.setAuditManager(auditMgr);
@@ -269,9 +266,6 @@ public class StructuredDocumentControllerTest {
   private StructuredDocument setUpStructuredDocument() {
     final StructuredDocument sd = TestFactory.createAnySD();
     sd.setId(3L);
-    messageSource.addMessage("errors.required", Locale.getDefault(), "any");
-    messageSource.addMessage("errors.invalidchars", Locale.getDefault(), "any");
-    messageSource.addMessage("rename.failed.msg", Locale.getDefault(), "any");
     return sd;
   }
 
@@ -297,7 +291,6 @@ public class StructuredDocumentControllerTest {
     assertNull(rc.getData());
 
     // invalid tags rejected
-    messageSource.addMessage("errors.invalidchars", Locale.getDefault(), "xss");
     tagText = "<img src='' onerror='alert(3);'>";
     when(documentTagManager.saveTag(recordId, tagText, user)).thenReturn(anySuccessResult());
 
@@ -312,14 +305,12 @@ public class StructuredDocumentControllerTest {
 
   @Test()
   public void testGetTooLongTagRejected() {
-    messageSource.addMessage("errors.maxlength", Locale.getDefault(), "any");
     CoreTestUtils.assertIllegalArgumentException(
         () -> strucDocCtrller.getTags(randomAlphanumeric(StructuredDocument.MAX_TAG_LENGTH + 1)));
   }
 
   @Test()
   public void testGetTags() {
-    messageSource.addMessage("errors.maxlength", Locale.getDefault(), "any");
     strucDocCtrller.getTags(randomAlphanumeric(StructuredDocument.MAX_TAG_LENGTH));
     Mockito.verify(documentTagManager)
         .getTagsPlusMetaForViewableELNDocuments(Mockito.any(), Mockito.anyString());
@@ -349,7 +340,6 @@ public class StructuredDocumentControllerTest {
   @Test(expected = AuthorizationException.class)
   public void editDescriptionThrowsAuthExceptionIfNotWritePermission() {
     generalExpectations();
-    messageSource.addMessage("error.authorization.failure.polite", Locale.getDefault(), "any");
     final Folder toEdit = TestFactory.createAFolder("any", user);
     toEdit.setId(1L);
     when(baseRecordMgr.get(1L, user)).thenReturn(toEdit);
@@ -362,7 +352,6 @@ public class StructuredDocumentControllerTest {
   @Test(expected = ObjectRetrievalFailureException.class)
   public void editDescriptionThrowsISEIfNotExists() {
     generalExpectations();
-    messageSource.addMessage("record.inaccessible", Locale.getDefault(), "any");
     final Folder toEdit = TestFactory.createAFolder("any", user);
     toEdit.setId(1L);
     when(baseRecordMgr.get(1L, user)).thenThrow(new ObjectRetrievalFailureException("", null));
@@ -410,7 +399,6 @@ public class StructuredDocumentControllerTest {
     Field field = sd.getFields().iterator().next();
     field.setId(1L);
     generalExpectations();
-    messageSource.addMessage("errors.emptyString.polite", Locale.getDefault(), "any");
     verify(mediaMgr, never())
         .insertEcatComment(
             Mockito.any(String.class), Mockito.any(String.class), Mockito.any(User.class));
@@ -420,7 +408,6 @@ public class StructuredDocumentControllerTest {
     assertNull(aro.getData());
     assertNotNull(aro.getErrorMsg());
     // too long comment rejected
-    messageSource.addMessage("errors.maxlength", Locale.getDefault(), "any");
     String tooLong = RandomStringUtils.randomAlphabetic(EcatComment.MAX_COMMENT_LENGTH + 1);
     aro = strucDocCtrller.insertComment(1L + "", tooLong);
     assertNull(aro.getData());
@@ -443,7 +430,6 @@ public class StructuredDocumentControllerTest {
     field.setId(1L);
     final EcatComment createdComment = TestFactory.createEcatComment(1L, sd, 2L);
     generalExpectations();
-    messageSource.addMessage("errors.emptyString.polite", Locale.getDefault(), "any");
     verify(mediaMgr, never())
         .insertEcatComment(
             Mockito.any(String.class), Mockito.any(String.class), Mockito.any(User.class));
@@ -453,7 +439,6 @@ public class StructuredDocumentControllerTest {
     assertNull(aro.getData());
     assertNotNull(aro.getErrorMsg());
     // too long comment rejected
-    messageSource.addMessage("errors.maxlength", Locale.getDefault(), "any");
     String tooLong = RandomStringUtils.randomAlphabetic(EcatComment.MAX_COMMENT_LENGTH + 1);
     aro = strucDocCtrller.addComment(createdComment.getComId() + "", 1L + "", tooLong);
     assertNull(aro.getData());
@@ -477,7 +462,6 @@ public class StructuredDocumentControllerTest {
     final User owner = TestFactory.createAnyUser("any");
     sd.setOwner(owner);
     sd.setId(3L);
-    messageSource.addMessage("document.deletebyuseronly.msg", Locale.getDefault(), "any");
     generalExpectations();
     when(recordMgr.getParentFolderOfRecordOwner(3L, user)).thenReturn(null);
 
@@ -510,7 +494,6 @@ public class StructuredDocumentControllerTest {
     // now try if permission denied....throws AuthException
     when(permissionUtils.isPermitted(sd, PermissionType.READ, user)).thenReturn(false);
 
-    messageSource.addMessage("record.inaccessible", Locale.getDefault(), "any");
     assertAuthExceptionThrown(
         new Invokable() {
           public void invoke() {
@@ -543,9 +526,6 @@ public class StructuredDocumentControllerTest {
   @Test
   public void importFromWordIntoNonSharedFolderAndErrorCases() throws IOException {
 
-    messageSource.addMessage(
-        "workspace.word.import.nofiles.error.msg", Locale.getDefault(), "empty");
-
     getAuthenticatedUser();
     List<MultipartFile> files = new ArrayList<>();
     Folder parentFolder = TestFactory.createAFolder("any", user);
@@ -556,7 +536,9 @@ public class StructuredDocumentControllerTest {
     verifyWordImportNotAttempted();
     assertNull(resp.getData());
     assertNotNull(resp.getErrorMsg());
-    assertEquals("empty", resp.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy(""));
+    assertEquals(
+        "No files were submitted! Please choose some Word or text files to upload.",
+        resp.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy(""));
 
     MultipartFile multipart =
         new MockMultipartFile(

@@ -139,7 +139,7 @@
         },
         "name": "File name",
         "nameHelper": "Name your file",
-        "pageFormatLabel": "Page format: ",
+        "pageFormatLabel": "Page format:",
         "pageSize": {
           "a4": "A4",
           "letter": "Letter"
@@ -148,7 +148,7 @@
       },
       "word": {
         "name": "Name your file",
-        "pageFormatLabel": "Page format: ",
+        "pageFormatLabel": "Page format:",
         "pageSize": {
           "a4": "A4",
           "letter": "Letter"
@@ -347,7 +347,7 @@
       "largeThumbnail": "large thumbnail",
       "loadingData": "Data is loading...",
       "noImage": "no image",
-      "parentLink": " -> parent_{parentType}",
+      "parentLink": "-> parent_{parentType}",
       "redrawImage": "Redraw image",
       "seeInOmero": "See in OMERO",
       "selectedCount": "Selected: {count}",
@@ -465,6 +465,7 @@
       "dialogTitle": "SnapGene",
       "dnaPreviewAlt": "DNA preview",
       "dnaPreviewError": "An error has occurred. This could be because the SnapGene server is down or the DNA sequence is invalid.",
+      "enzymeLoadFailed": "Could not load the enzyme table.",
       "enzymeSetOptions": {
         "commercialNonredundant": "Commercial nonredundant",
         "sixPlus": "Six plus",
@@ -476,10 +477,12 @@
       "enzymeSites": "Enzyme sites",
       "enzymeTableLabel": "Enzyme table",
       "enzymeTypeLabel": "Enzyme type",
+      "fastaLoadFailed": "Could not load the FASTA sequence.",
       "imageType": "Image type",
       "linear": "Linear",
       "linearChoiceLabel": "Linear choice",
       "openReadingFrames": "Open Reading Frames",
+      "orfLoadFailed": "Could not load the ORF table.",
       "orfTable": "ORF table",
       "readingFrames": {
         "all": "All",

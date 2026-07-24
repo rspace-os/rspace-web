@@ -1,0 +1,312 @@
+{
+  "api": {
+    "errors": {
+      "authentication": {
+        "accountDisabled": "Api access denied as account for user ''{0}'', who is associated with provided authentication token, is locked or disabled",
+        "apiDisabled": "Access to API has been disabled by RSpace administrator.",
+        "apiKeyInvalid": "API key invalid - must match regexp:{0}",
+        "apiKeyMissing": "API key is missing - please include your apiKey as a header in format ''apiKey:myAPikey''.",
+        "credentialsMissing": "API authentication information is missing - please include your apiKey as a header in the format ''apiKey:myAPikey'' or with OAuth in the format ''Authorization: Bearer <myAccessToken>''.",
+        "oauthHeaderInvalid": "Authorization header for OAuth must be in the form \"Bearer <myAccessToken>\"",
+        "oauthTokenInvalid": "OAuth token is invalid or expired.",
+        "tokenUnknown": "User could not be authenticated for token {0}...",
+        "userApiDisabled": "Access to API has been disabled for user ''{0}''",
+        "userOAuthDisabled": "Access through OAuth tokens has been disabled for user ''{0}''"
+      },
+      "detected": "Errors detected: {0}"
+    },
+    "pubchem": {
+      "errors": {
+        "unexpected": "An unexpected error occurred."
+      }
+    }
+  },
+  "errors": {
+    "form": {
+      "invalidFieldIds": "At least one ID in the incoming form fields does not exist in form [{0}]. Persisted field form IDs are [{1}]; supplied IDs are [{2}]."
+    },
+    "ajax": {
+      "unauthenticated": {
+        "refreshRequired": "You are no longer authenticated - please refresh the page and log in again."
+      }
+    },
+    "ajaxFragment": {
+      "notice": "There was an error responding to this request, which has been logged.",
+      "refLabel": "Ref: {0}"
+    },
+    "allFields": {
+      "required": "Please fill in all the fields."
+    },
+    "authorization": {
+      "apiError": "Authorisation error",
+      "audit": {
+        "community": "Unauthorized attempt to audit a community",
+        "groupOrCommunity": "Unauthorized attempt to audit a group or community"
+      },
+      "communityAddGroup": "Unauthorized attempt to add group to community",
+      "formIconUpdate": "Unauthorized attempt to update form icon",
+      "document": {
+        "signed": "This document has already been signed."
+      },
+      "failed": "Attempt to access resource of type {0} identified by {1} by user {2} to perform action {3}",
+      "failure": {
+        "accessMediaFile": "Unauthorized attempt by {0} to access media file [{1}]",
+        "addToFolder": "Unauthorized attempt by {0} to add an item to a folder",
+        "changeGroupMemberRole": "Unauthorized attempt by {0} to change the role of user {1} in group {2}",
+        "changeGroupPiEditPermission": "Unauthorized attempt by {0} to change {1}''s edit-all-work permission in group {2}",
+        "changePiEditAllSetting": "Unauthorized attempt by {0} to change the PI edit-all-work setting in group {1}",
+        "changeUserEnabledState": "Unauthorized attempt by {0} to change a user''s enabled state",
+        "createFolderIn": "Unauthorized attempt by {0} to create a folder in [{1}]",
+        "createGroupWithoutCommunity": "Unauthorized attempt by {0} to create a group. Please ask to be assigned to a community.",
+        "createRequest": "Unauthorized attempt by {0} to create a request of type {1}",
+        "downloadSignedExports": "Unauthorized attempt by {0} to download signed exports",
+        "editFirstName": "Unauthorized attempt by {0} to edit their first name",
+        "editFormDescription": "Unauthorized attempt by {0} to edit a form description",
+        "editGroup": "Unauthorized attempt by {0} to edit a group",
+        "editLastName": "Unauthorized attempt by {0} to edit their last name",
+        "exportSelection": "Unauthorized attempt by {0} to export a selection",
+        "exportRecordsOfUser": "Unauthorized attempt by {0} to export records belonging to {1}",
+        "exportUserOrGroup": "Unauthorized attempt by {0} to export a user or group",
+        "grantGlobalPiRole": "Unauthorized attempt by {0} to grant the global PI role",
+        "insertComment": "Unauthorized attempt by {0} to insert a comment",
+        "listAllUsers": "Unauthorized attempt by {0} to list all users",
+        "openDeletedFolder": "Unauthorized attempt by {0} to open a deleted folder",
+        "openNotebook": "Unauthorized attempt by {0} to open notebook [{1}]",
+        "openUnauthorisedFolder": "Unauthorized attempt by {0} to open an unauthorised folder",
+        "polite": "Sorry, you don''t have permission to {0}",
+        "promoteUserToPi": "Unauthorized attempt by {0} to promote a user to PI",
+        "readCommunication": "Unauthorized attempt by {0} to view a communication",
+        "readMediaFile": "Unauthorized attempt by {0} to read a media file",
+        "readRecord": "Unauthorized attempt by {0} to read a record",
+        "removePiFromGroup": "Unauthorized attempt by {0} to remove a PI from a group. Only a PI or an administrator can remove another PI from a group.",
+        "removeUserFromGroup": "Unauthorized attempt by {0} to remove a user from a group",
+        "renameRecord": "Unauthorized attempt by {0} to rename {1} [id={2}]",
+        "renameForm": "Unauthorized attempt by {0} to rename a form",
+        "restoreRevisionOfSignedDocument": "Unauthorized attempt by {0} to restore an earlier revision of a signed document",
+        "retrieveJobById": "Unauthorized attempt by {0} to retrieve job by id",
+        "revokeGlobalPiRole": "Unauthorized attempt by {0} to revoke the global PI role",
+        "saveAnnotation": "Unauthorized attempt by {0} to save an annotation",
+        "saveChemicalStructure": "Unauthorized attempt by {0} to save a chemical structure",
+        "saveMathEquation": "Unauthorized attempt by {0} to save a maths equation",
+        "saveSketch": "Unauthorized attempt by {0} to save a sketch",
+        "sendExternalMessage": "Unauthorized attempt by {0} to send an external message",
+        "shareFolder": "Unauthorized attempt by {0} to share folder {1}",
+        "swapGroupPis": "Unauthorized attempt by {0} to swap group PIs",
+        "unlockUserAccount": "Unauthorized attempt by {0} to unlock a user account"
+      },
+      "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
+      "signing": "Only the record owner can sign the record.",
+      "sysadminApiOnly": "Only sysadmin can use this API",
+      "sysadminCreateSysadminOnly": "Only a sysadmin can create another sysadmin!",
+      "sysadminIpRequired": "Sysadmin role with valid IP required for admin operations",
+      "userCreationSysadminOnly": "Creating user accounts requires a sysadmin role"
+    },
+    "captcha": {
+      "response": {
+        "missing": "Please confirm that you're not a robot."
+      },
+      "verification": {
+        "failed": "Invalid captcha response, please try again."
+      }
+    },
+    "date": "{0} is not a date.",
+    "dateOutsideAllowedRange": "Default date is outside the allowed range.",
+    "detail": "{0}",
+    "disorderedRange": "Default value lies outside the min/ max range.",
+    "emptyString": {
+      "generic": "Field cannot be empty.",
+      "polite": "Please enter a value for {0}."
+    },
+    "existing": {
+      "user": "This username ({0}) or e-mail address ({1}) already exists. Please try a different username and/or email.",
+      "username": "This username ({0}) already exists. Please try a different username.",
+      "usernameAlias": "This username ({0}) is already registered as a username alias. Please try a different username, or contact System Admin if you think that username shouldn''t be taken by an alias"
+    },
+    "fromDateLaterThanToDate": "From date should be before to date.",
+    "invalid": "{0} is invalid.",
+    "invalidChars": "{0} is not an allowed character for {1}",
+    "invalidDateFormat": "Invalid date format used.",
+    "invalidDateFormattingString": "Invalid date formatting String used.",
+    "invalidOrderByClause": "Invalid order by clause {0} - should be one of {1}",
+    "invalidPassword": "Password must be between {0} and {1} characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[]^_`'{'|'}'~",
+    "invalidRole": "{0} is not a valid role name - must be one of {1}",
+    "invalidStringFormat": "Invalid string format {0} for parameter {1}; should match {2}",
+    "invalidUsername": {
+      "relaxed": "Username must consist of alphanumeric characters.",
+      "strict": "Username must be at least 6 alphanumeric characters."
+    },
+    "invalidXml": {
+      "content": "XML content for field {0} was invalid: {1}",
+      "namespace": "XML content for property {0} has invalid namespace - it should be {1} but was {2}."
+    },
+    "login": {
+      "adminLogin": {
+        "wrongSignupSource": "The account you try to log into can be only accessed directly through SSO, not with Admin Login."
+      },
+      "credentials": {
+        "wrong": "Invalid username or password, please try again."
+      },
+      "lockout": {
+        "policyDescription": "After four unsuccessful login attempts the account is temporarily locked - try again in 10 minutes."
+      }
+    },
+    "maxLength": "{0} cannot be greater than {1} characters.",
+    "minDateLaterThanMaxDate": "Minimum date is later than maximum date.",
+    "minGtMax": "Min value is greater than max value",
+    "minLength": "{0} cannot be less than {1} characters.",
+    "noOptions": "No search option provided",
+    "noTerms": "No search term provided",
+    "noValue": {
+      "multipleChoice": "No value given for multiple choice option.",
+      "name": "No value given for name field."
+    },
+    "noWildcards": "No wildcards allowed for sysadmin search but was {0}",
+    "notUnique": "{0} is not a unique value, please try another.",
+    "number": {
+      "decimalPlaces": "Decimal places must be a whole number between 0 and 127.",
+      "invalidNumber": "Invalid number format"
+    },
+    "operation": {
+      "failed": {
+        "message": "{0} failed for the following reasons: {1}"
+      }
+    },
+    "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
+    "composedId": {
+      "missing": "No id to retrieve",
+      "invalidFormat": "Incorrect id format - should be ''\\d+-\\d+'' but was ''{0}''"
+    },
+    "globalId": {
+      "invalidSyntax": "Invalid syntax of oid [{0}]",
+      "unsupported": "Currently this OID [{0}] is unsupported."
+    },
+    "pagination": {
+      "invalidSortParameter": "Problem parsing sort parameter: [{0}]. It must be one of {1}."
+    },
+    "page": {
+      "contactSupportNotice": "Please inspect the message detail below – if you believe this to be a server error, please contact ResearchSpace support. You might also try asking the resource owner to share the resource with you.",
+      "databaseUnavailable": "Database exception - query could not be executed.",
+      "genericServerError": "An error occurred on the server.",
+      "idAtTimestamp": "Id - {0} at {1}",
+      "insufficientPermissions": "You have insufficient permissions to view the resource, or you requested an unauthorized or non-existent resource.",
+      "reasonsIntro": "This is usually because",
+      "unauthorizedOperation": "You attempted to do an operation which is unauthorized or not available to you.",
+      "unavailableResource": "An expected resource was unavailable (null). This is probably a server error - please report this to support.",
+      "unhandledExceptionNotice": "An exception occurred on the server. If it persists, please contact ResearchSpace support."
+    },
+    "password": {
+      "conflict": "Password and Confirm Password fields are not identical.",
+      "insecurePassword": "Please choose a more secure password.",
+      "invalid": "Invalid password.",
+      "notEqualUsername": "Please use a password other than your username."
+    },
+    "reauthentication": {
+      "failed": "Reauthentication failed, please try again."
+    },
+    "recordFilterMustIncludeTerm": "Filtering by folder/document IDs must also include a search term",
+    "required": "{0} is a required field.",
+    "resource": {
+      "inaccessible": "{0} with id [{1}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it."
+    },
+    "searchOptionBlank": "Empty search option",
+    "searchTermBlank": "Empty search term",
+    "searchTermMinLength": "Search term must be at least {0} characters",
+    "searchTermTooLong": "Search term at index {2} is too long ({0} chars) - max search string length is {1} chars.",
+    "signupCode": {
+      "failed": "Please supply the correct signup code (this is case sensitive)."
+    },
+    "signing": {
+      "failed": "Signing failed"
+    },
+    "termCannotParse": "Cannot parse the search term {0}",
+    "termTooPermissive": "Search term [{0}] is too permissive - please use a more precise search term",
+    "termsOptionsMismatch": "The number of terms ({0}) should equal the number of options ({1})",
+    "textQueryWildcardStartDisallowed": "Search term [{0}] should not begin with a wildcard (* or ?).",
+    "unknownSearchOption": "Unknown search option {0}",
+    "username": "An invalid username was specified",
+    "valueCount": {
+      "tooMany": "Only {0} values can be handled at once, please choose fewer items."
+    }
+  },
+  "label": {
+    "affiliation": "Affiliation",
+    "caption": "caption",
+    "choosingAdministrator": "Choosing an administrator",
+    "comment": "Comment",
+    "confirmPassword": "Confirm password",
+    "defaultValue": "default value",
+    "description": "description",
+    "deleteDocumentAction": "delete this document",
+    "displayName": "Display name",
+    "editDescriptionAction": "edit description",
+    "email": "Email",
+    "firstName": "First name",
+    "groupName": "group name",
+    "ipAddress": "IP address",
+    "latex": "LaTeX",
+    "lastName": "Last name",
+    "link": "link",
+    "message": "message",
+    "name": "Name",
+    "nameLowercase": "name",
+    "password": "Password",
+    "pdfName": "PDF name",
+    "repository": "Repository",
+    "renameRecordAction": "rename this record",
+    "svg": "SVG",
+    "svgContent": "SVG content",
+    "tag": "Tag",
+    "tagLowercase": "tag",
+    "tagFilter": "tag filter",
+    "token": "Token",
+    "uniqueName": "Unique name",
+    "username": "Username",
+    "yourComment": "your comment"
+  },
+  "requestType": {
+    "passwordReminder": "password reminder",
+    "usernameReminder": "username reminder"
+  },
+  "relativeDate": {
+    "daysAgo": "{0, plural, one {# day ago at {1}} other {# days ago at {1}}}",
+    "today": "Today at {0}",
+    "yesterday": "Yesterday at {0}"
+  },
+  "resourceType": {
+    "community": "Community",
+    "dataverseConfiguration": "Dataverse configuration",
+    "exportPlan": "Export plan",
+    "property": "Property"
+  },
+  "validation": {
+    "errors": {
+      "allVersionsRequired": "allVersions is a required field.",
+      "archiveTypeRequired": "archiveType is a required field.",
+      "authorsCollectionRange": "Authors must contain between {min} and {max} entries.",
+      "authorsRequired": "Authors are required.",
+      "contactsCollectionRange": "Contacts must contain between {min} and {max} entries.",
+      "contactsRequired": "Contacts are required.",
+      "descriptionRequired": "Description is a required field.",
+      "descriptionStringMax": "Description \"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be less than {max} characters but was length ${validatedValue.length()}.",
+      "emailRequired": "Email is a required field.",
+      "exportFormatInvalid": "Format must be either xml or html.",
+      "exportFormatRequired": "Format is a required field.",
+      "exportScopeInvalid": "Scope must be one of user, group, or selection.",
+      "exportScopeRequired": "Scope is a required field.",
+      "exportTypeRequired": "Type is a required field.",
+      "invalidEmail": "\"${validatedValue}\" is an invalid email format.",
+      "licenseNameRequired": "License name is a required field.",
+      "licenseNameStringRange": "License name \"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be between {min} and {max} characters but was length ${validatedValue.length()}.",
+      "licenseUrlRequired": "License URL is a required field.",
+      "licenseUrlStringMax": "License URL \"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be less than {max} characters but was length ${validatedValue.length()}.",
+      "maxLinkLevelRequired": "maxLinkLevel is a required field.",
+      "nameRequired": "Name is a required field.",
+      "nameRange": "Name \"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be between {min} and {max} characters but was length ${validatedValue.length()}.",
+      "pdfNameRequired": "PDF name is a required field.",
+      "subjectRequired": "Subject is a required field.",
+      "subjectStringMax": "Subject \"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be less than {max} characters but was length ${validatedValue.length()}.",
+      "titleRequired": "Title is a required field.",
+      "titleStringRange": "Title \"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be between {min} and {max} characters but was length ${validatedValue.length()}."
+    }
+  }
+}

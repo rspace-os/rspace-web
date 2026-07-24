@@ -1,25 +1,27 @@
 #*
-Template for messaging a user that an  account is now created for them.
+Template for messaging a user that an account is now created for them.
 Arguments:
 - adminUser - the admin user who created the account
-- newUser - The new admin user.
-- htmlPrefix - the base URL of the application
+- newUser - The new user.
+- baseURL - the base URL of the application
 - newUserRole - a String of the new Role name.
+- msg - MessageSourceUtils for i18n phrase lookup
 *#
 
-<p>Hello ${newUser.fullName},</p>
-<p>The RSpace system administrator has created a ${newUserRole} account for you.</p>
-<p>To log into your server, open <a href="${htmlPrefix}/workspace">RSpace</a>.</p>
-<p>Your <b>username</b> for this account is ${newUser.username}.<br/>
-Your system administrator can provide your login password if they have not already done so.
-If your server is using a single sign-on technology provided by your institution then your
-login credentials are most likely the same username and password you use to access all other institutional systems.</p>
-<p>To change your profile details, go to <b>My RSpace</b> &gt; <b>My Profile</b>.</p>
-<p>For documentation and instructional videos, use the <b>Need Help?</b> button in RSpace or visit the
-<a href="https://researchspace.helpdocs.io/">RSpace help website</a>. To request assistance from ResearchSpace support, select <b>Chat with us</b> in the help interface.</p>
+<p/>
+$msg.format("email.common.greeting", [${newUser.fullName}])
+<p/>
+$msg.format("email.account.newUserAccountComplete.body", [${newUserRole}, ${baseURL}, ${newUser.username}])
+<p/>
 
-#notificationPrefInfoNewUser
+<p>
+$msg.getMessage("email.common.notificationPrefNewUser")
+</p>
 
-<p>Best wishes,<br/>
-${adminUser.fullName}</p>
-#dontReply
+$msg.getMessage("email.common.signatureSignOff")
+<p/>
+${adminUser.fullName}
+
+<p>
+$msg.getMessage("email.common.dontReply")
+</p>

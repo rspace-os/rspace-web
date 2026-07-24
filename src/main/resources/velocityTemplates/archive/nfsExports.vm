@@ -2,19 +2,18 @@
  Generates a top-level summary file of all NfsExternal links
 *#
 <!DOCTYPE HTML>
-<html>
+<html lang="$msg.languageTag">
 <head>
-<title>External file system links</title>
+<title>$msg.getMessage("export.archive.nfsExports.title")</title>
 <link href="resources/document.css" rel="stylesheet" />
 <meta charset="UTF-8">
 </head>
 <body>
   <div class="navigationSection">
-     <a href="index.html">Top</a></div>
-  </div>
-  <h3> All external file links in export </h3>
+     <a href="index.html">$msg.getMessage("export.archive.top")</a></div>
+  <h3> $msg.getMessage("export.archive.nfsExports.heading") </h3>
   <div id="nfsList">
     #nfsElements($nfsList ".")
-  </d1iv>
+  </div>
 </body>
 </html>

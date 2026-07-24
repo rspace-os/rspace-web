@@ -11,23 +11,23 @@ Reusable tag for incorporating a notifications section into a page.
 <div id=notificationListContents>
 	<c:choose>
 		<c:when test="${empty notificationList}">
-			There are no new notifications.
+			<spring:message code="notifications.empty"/>
 		</c:when>
 		<c:otherwise>
-			<h2 id="notificationsTitle">My Notifications</h2>
+			<h2 id="notificationsTitle"><spring:message code="notifications.title"/></h2>
 			<div style="padding-bottom: 10px" id="notification_linkMenu">
 				<span style="float: right; text-align: right;"> <a
 					style="position: relative; right: 10px;" id="deleteAllOnPageLink"
-					href="#">Delete all displayed</a><br> <input type="hidden"
+					href="#"><spring:message code="notifications.deleteDisplayed"/></a><br> <input type="hidden"
 					id="timeOfListing" value="${timeOfListing}" /> <a
 					style="position: relative; right: 10px;" id="deleteAllLink"
-					href="#">Delete all</a>
-				</span> <span style="position: relative; left: 10px;">Order By: </span> <a
+					href="#"><spring:message code="notifications.deleteAll"/></a>
+				</span> <span style="position: relative; left: 10px;"><spring:message code="notifications.orderBy"/> </span> <a
 					href="#" class="notifcnOrderBy" style="position: relative; left: 10px;"
-					id="orderBy_communication.creationTime">Time Sent</a><br> <span
-					style="position: relative; left: 10px;">Order By: </span> <a
+					id="orderBy_communication.creationTime"><spring:message code="notifications.timeSent"/></a><br> <span
+					style="position: relative; left: 10px;"><spring:message code="notifications.orderBy"/> </span> <a
 					href="#" class="notifcnOrderBy" style="position: relative; left: 10px;"
-					id="orderBy_originator.username">Sender</a>
+					id="orderBy_originator.username"><spring:message code="notifications.sender"/></a>
 				<%--	<a href="/admin/preferences" style="position:relative;left:10px;"
 						>Configure... </a> --%>
 			</div>
@@ -38,7 +38,7 @@ Reusable tag for incorporating a notifications section into a page.
 						<td width="120" valign="top" class="leftInfo"
 							style="line-height: 1.1em;">
 							<div>
-								<span class="boldtext">Notification<br>Sent:
+								<span class="boldtext"><spring:message code="notifications.sent"/>
 								</span>
 								<rst:relDate input="${notification.creationTime}"></rst:relDate>
 							</div>
@@ -51,13 +51,17 @@ Reusable tag for incorporating a notifications section into a page.
 						  ${notification.notificationMessage}
 						</c:when>
 									<c:otherwise>
-							 ${notification.originator.username} generated a ${notification.notificationType} event.
+							 <spring:message code="${rst:notificationTypeMessageKey(notification.notificationType)}" var="notificationTypeLabel"/>
+							 <spring:message code="notifications.generatedEvent">
+							 <spring:argument value="${notification.originator.username}"/>
+							 <spring:argument value="${notificationTypeLabel}"/>
+						 </spring:message>
 						</c:otherwise>
 								</c:choose>
 							</div>
 							<div>
 							<c:if test="${not empty notification.record  and  not notification.ignoreRecordLinkInMessage}">
-						          concerning 
+							          <spring:message code="notifications.concerning"/>
 						          <c:choose>
 						 		  <c:when test = "${notification.record.notebook}">
 						 		  <c:url var="recordURL"
@@ -72,7 +76,7 @@ Reusable tag for incorporating a notifications section into a page.
 							</c:if>
 						  
 								<c:if test="${not empty notification.message}">
-							 with message: <br />
+							 <spring:message code="notifications.withMessage"/> <br />
 							     ${notification.message}
 							</c:if>
 							</div>
@@ -80,7 +84,7 @@ Reusable tag for incorporating a notifications section into a page.
 						</td>
 						<td width="120" valign="top" class="leftInfo"
 							style="vertical-align: center;"><input type="checkbox"
-							class="deleteSingleNotificn" aria-label="Mark as read" /> Mark as read</td>
+							class="deleteSingleNotificn" aria-label="<spring:message code='notifications.markAsRead'/>" /> <spring:message code="notifications.markAsRead"/></td>
 					</tr>
 				</table>
 			</c:forEach>

@@ -2,11 +2,11 @@
 <%@ include file="/common/taglibs.jsp"%>
 <%-- A simple error format for returning from an Ajax call.--%>
 <div id="ajaxError">
-	There was an error responding to this request, which has been logged. <br />
+	<spring:message code="errors.ajaxFragment.notice"/> <br />
 	<p />
 	<span id="ajaxErrorMsg">${exceptionMessage}</span>
 	<p id="ajaxErrorIdMsg">
-		<span>Ref: ${errorId}</span>
+		<span><spring:message code="errors.ajaxFragment.refLabel" arguments="${errorId}"/></span>
 	</p>
 	<%-- show contents of error list, which may not be set. --%>
 	<c:if test="${not empty errors}">

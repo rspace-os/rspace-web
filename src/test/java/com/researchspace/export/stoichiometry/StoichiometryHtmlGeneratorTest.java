@@ -10,7 +10,10 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
 import com.researchspace.model.stoichiometry.MoleculeRole;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.StoichiometryService;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.util.List;
 import org.apache.velocity.app.VelocityEngine;
@@ -43,6 +46,9 @@ public class StoichiometryHtmlGeneratorTest {
     ReflectionTestUtils.setField(generator, "velocityEngine", velocityEngine);
     ReflectionTestUtils.setField(generator, "stoichiometryService", stoichiometryService);
     ReflectionTestUtils.setField(generator, "urlPrefix", "https://test.researchspace.com");
+    ReflectionTestUtils.setField(
+        generator, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    ReflectionTestUtils.setField(generator, "userLocaleService", new UserLocaleService());
 
     exporter = new User();
     exporter.setUsername("exporter");

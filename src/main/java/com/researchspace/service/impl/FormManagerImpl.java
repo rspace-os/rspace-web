@@ -1,7 +1,5 @@
 package com.researchspace.service.impl;
 
-import static java.lang.String.format;
-
 import com.researchspace.api.v1.model.ApiFormInfo;
 import com.researchspace.core.util.DefaultURLPaginator;
 import com.researchspace.core.util.ISearchResults;
@@ -29,6 +27,7 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.TemporaryCopyLinkedToOriginalCopyPolicy;
 import com.researchspace.model.views.FormSearchCriteria;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
 import java.util.ArrayList;
@@ -53,6 +52,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   private @Autowired FormCreateMenuDao formCreateMenudao;
   private @Autowired IconImgDao iconImgDao;
   private @Autowired IRecordFactory recordFactory;
+  private @Autowired MessageSourceUtils messages;
 
   public FormManagerImpl(@Autowired FormDao formDao) {
     super(formDao);
@@ -127,11 +127,13 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     RSForm form = formDao.get(id);
     if (form.isSystemForm() && !toPublish) {
       log.error("Attempted to unpublish a system form by user {}", authUser.getUsername());
-      throw new UnsupportedOperationException("Attempted to unpublish a system form");
+      throw new UnsupportedOperationException(
+          messages.getMessage("form.errors.systemFormUnpublish"));
     }
     boolean altered = false;
     if (!permissionUtils.isPermitted(form, PermissionType.SHARE, authUser)) {
-      throw new AuthorizationException("Unauthorised attempt to publish form: " + form.getId());
+      throw new AuthorizationException(
+          messages.getMessage("form.errors.publishUnauthorized", new Object[] {form.getId()}));
     }
     // only update on status change
     if (toPublish && !form.isPublishedAndVisible()) {
@@ -164,9 +166,8 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
       formDao.remove(formId);
     } else {
       throw new IllegalArgumentException(
-          format(
-              "Form %s has been used to create documents, and cannot be deleted.",
-              form.getStableID()));
+          messages.getMessage(
+              "form.errors.hasDocumentsCreated", new Object[] {form.getStableID()}));
     }
     return form;
   }
@@ -381,11 +382,9 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     RSForm form = formDao.get(formId);
     if (!form.isCurrent()) {
       throw new IllegalArgumentException(
-          "Only the current version of a form can be added "
-              + "to the CreateMenu - this is version "
-              + form.getVersion()
-              + " of form "
-              + form.getId());
+          messages.getMessage(
+              "form.errors.createMenuVersionMismatch",
+              new Object[] {form.getVersion(), form.getId()}));
     }
     FormUserMenu inMenu = new FormUserMenu(toAdd, form);
     return formCreateMenudao.save(inMenu);
@@ -446,11 +445,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
         form = get(apiFormId, user);
       } catch (ObjectRetrievalFailureException e) {
         throw new IllegalArgumentException(
-            "Form with id ["
-                + apiFormId
-                + "] could not "
-                + "be retrieved - possibly it has been deleted, does not exist, "
-                + "or you do not have permission to access it.");
+            messages.getMessage("form.errors.notFound", new Object[] {apiFormId}));
       }
     }
     return form;

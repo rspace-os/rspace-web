@@ -150,7 +150,8 @@ public class InventorySearchApiController extends BaseApiInventoryController
         return findBasketItems(
             parentOid.getDbId(), ownedBy, searchType, deletedItemsOption, pgCrit, user);
       default:
-        throw new IllegalArgumentException("unknown parent global id: " + parentOid);
+        throw new IllegalArgumentException(
+            getMessage("errors.inventory.globalId.unsupportedParent", new Object[] {parentOid}));
     }
   }
 

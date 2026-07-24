@@ -5,17 +5,17 @@ Arguments :
 indexItems - a collection of IndexItem objects. Ideally these will be sorted.
 *#
 <!DOCTYPE HTML>
-<html>
+<html lang="$msg.languageTag">
 <head>
-<title>A-Z listing</title>
+<title>$msg.getMessage("export.archive.azIndex.title")</title>
 <link href="resources/index.css" rel="stylesheet" />
 <meta charset="UTF-8">
 </head>
 <body>
 <div class="navigationSection">
-<a href="index.html">Top</a></div><br/>
+<a href="index.html">$msg.getMessage("export.archive.top")</a></div><br/>
 #foreach ($indexItem in $indexItems)
-	#indexRow($indexItem.url, $indexItem.name,"./resources/document.png")
+	<img src="./resources/document.png" width=32 height=32/><a href = "$indexItem.url">$indexItem.name</a><br/>
 #end
 
 </body>

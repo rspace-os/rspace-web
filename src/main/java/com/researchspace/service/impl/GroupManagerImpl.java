@@ -71,7 +71,8 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.FolderNotSharedException;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitialiserUtils;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.PiChangeContext;
 import com.researchspace.service.PiChangeHandler;
 import com.researchspace.service.RecordManager;
@@ -118,7 +119,7 @@ public class GroupManagerImpl implements GroupManager {
   private @Autowired DAOUtils daoUtils;
   private @Autowired IGroupPermissionUtils groupPermUtils;
   private @Autowired RoleDao roleDao;
-  private @Autowired OperationFailedMessageGenerator authMsgGenerator;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired PiChangeHandler piChangeHandler;
   private @Autowired IControllerInputValidator inputValidator;
   private @Autowired FolderManager folderMgr;
@@ -145,7 +146,9 @@ public class GroupManagerImpl implements GroupManager {
   public Group saveGroup(Group group, boolean isNew, User subject) {
     if (!isNew) {
       if (!permissnUtils.isPermitted(group, PermissionType.WRITE, subject)) {
-        throw new AuthorizationException(authMsgGenerator.getFailedMessage(subject, "edit group"));
+        throw new AuthorizationException(
+            messages.getMessage(
+                "errors.authorization.failure.editGroup", new Object[] {subject.getUsername()}));
       }
     }
     group = groupDao.save(group);
@@ -735,7 +738,9 @@ public class GroupManagerImpl implements GroupManager {
       if (isAssignedPI(userToAdd, grp)) {
         if (!userToAdd.hasRole(Role.PI_ROLE)) {
           throw new IllegalArgumentException(
-              String.format("User %s does not have PI role!", userToAdd.getFullName()));
+              messages.getMessage(
+                  "groups.edit.errors.userDoesNotHavePiRole",
+                  new Object[] {userToAdd.getFullName()}));
         }
         role = RoleInGroup.PI;
       } else if (isAssignedAdmin(userToAdd, grp)) {
@@ -848,9 +853,8 @@ public class GroupManagerImpl implements GroupManager {
             .anyMatch(lastLogin -> lastLogin.after(cutoff));
     if (hasRecentlyActiveMember) {
       throw new IllegalStateException(
-          "Cannot delete group "
-              + groupId
-              + ": at least one member has logged in within the last year.");
+          messages.getMessage(
+              "groups.edit.errors.recentLoginBlocksDeletion", new Object[] {groupId}));
     }
     return removeGroup(groupId, subject);
   }
@@ -902,11 +906,11 @@ public class GroupManagerImpl implements GroupManager {
     User toChange = userDao.get(userid);
     if (!groupPermUtils.subjectCanAlterGroupRole(group, subject, toChange)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(
-              subject,
-              String.format(
-                  "change role of %s user in '%s' group",
-                  toChange.getUsername(), group.getDisplayName())));
+          messages.getMessage(
+              "errors.authorization.failure.changeGroupMemberRole",
+              new Object[] {
+                subject.getUsername(), toChange.getUsername(), group.getDisplayName()
+              }));
     }
 
     for (UserGroup ug : ugs) {
@@ -915,7 +919,7 @@ public class GroupManagerImpl implements GroupManager {
         if (isPiDemotion(role, ug)) {
           if (isAttemptToDemoteOnlyPiInGroup(group, ug)) {
             throw new IllegalStateException(
-                "Attempt to change the role of the only PI in the group!");
+                messages.getMessage("groups.edit.errors.onlyPiRoleChange"));
           }
           // if we're demoting a PI role, need to remove group members folders from the group.
           if (group.isLabGroup()) {
@@ -1049,9 +1053,8 @@ public class GroupManagerImpl implements GroupManager {
     Group group = getGroup(groupId);
     if (!group.isLabGroup()) {
       throw new UnsupportedOperationException(
-          "Lab admin can only view documents of a lab group, "
-              + "but this group is "
-              + group.getGroupType());
+          messages.getMessage(
+              "groups.edit.errors.labAdminWrongGroupType", new Object[] {group.getGroupType()}));
     }
     if (!permissnUtils.isPermitted(group, PermissionType.WRITE, subject)
         || subject.hasRoleInGroup(group, RoleInGroup.RS_LAB_ADMIN)) {
@@ -1113,16 +1116,15 @@ public class GroupManagerImpl implements GroupManager {
     Group group = getGroupWithCommunities(groupId);
     if (!group.isLabGroup()) {
       throw new UnsupportedOperationException(
-          "PI can only edit all documents in a lab group, but this group is "
-              + group.getGroupType());
+          messages.getMessage(
+              "groups.edit.errors.piEditWrongGroupType", new Object[] {group.getGroupType()}));
     }
 
     if (!group.getPiusers().contains(subject)) {
-      throw new AuthorizationException("Only a PI of this group can change this setting");
+      throw new AuthorizationException(messages.getMessage("groups.edit.errors.piEditOnlyPi"));
     }
     if (!groupPermUtils.piCanEditAllWorkInLabGroup(group) && canPIEditAll) {
-      throw new AuthorizationException(
-          "System admin or community admin has not allowed  this setting to be changed");
+      throw new AuthorizationException(messages.getMessage("groups.edit.errors.piEditNotAllowed"));
     }
     groupPermUtils.setReadOrEditAllPermissionsForPi(group, subject, canPIEditAll);
   }
@@ -1134,11 +1136,11 @@ public class GroupManagerImpl implements GroupManager {
     for (User groupPI : group.getPiusers()) {
       if (!groupPermUtils.subjectCanAlterGroupRole(group, subject, groupPI)) {
         throw new AuthorizationException(
-            authMsgGenerator.getFailedMessage(
-                subject,
-                String.format(
-                    " change %s 's edit all work permission in group %s ",
-                    groupPI.getUsername(), group.getDisplayName())));
+            messages.getMessage(
+                "errors.authorization.failure.changeGroupPiEditPermission",
+                new Object[] {
+                  subject.getUsername(), groupPI.getUsername(), group.getDisplayName()
+                }));
       }
       authorizePIToEditAll(groupId, groupPI, canPIEditAll);
     }
@@ -1188,7 +1190,7 @@ public class GroupManagerImpl implements GroupManager {
     if (result.hasErrors()) {
       ErrorList el = new ErrorList();
       inputValidator.populateErrorList(result, el);
-      throw new IllegalArgumentException(el.getAllErrorMessagesAsStringsSeparatedBy(";"));
+      throw new IllegalArgumentException(ListFormatUtils.formatList(el.getErrorMessages()));
     }
 
     PiChangeContext ctxt = new PiChangeContext(grp.getUserGroupForUser(currPi).isPiCanEditWork());
@@ -1312,7 +1314,9 @@ public class GroupManagerImpl implements GroupManager {
   private void validateUserInGroup(User user, Group group) {
     if (!user.hasGroup(group)) {
       throw new IllegalArgumentException(
-          String.format("User %s is not in group %s", user.getUsername(), group.getDisplayName()));
+          messages.getMessage(
+              "groups.edit.errors.userNotInGroup",
+              new Object[] {user.getUsername(), group.getDisplayName()}));
     }
   }
 

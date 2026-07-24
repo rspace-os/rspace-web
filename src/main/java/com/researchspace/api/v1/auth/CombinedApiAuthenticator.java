@@ -40,14 +40,13 @@ public class CombinedApiAuthenticator implements ApiAuthenticator {
   public User authenticate(HttpServletRequest request) {
     if (StringUtils.isNotEmpty(request.getHeader("apiKey"))) {
       if (!apiHandler.isApiAvailableForUser(null)) {
-        throw new ApiAuthenticationException(
-            "Access to API has been disabled by RSpace administrator.");
+        throw new ApiAuthenticationException("api.errors.authentication.apiDisabled");
       }
       User user = apiKeyAuthenticator.authenticate(request);
       if (user != null) {
         if (!apiHandler.isApiAvailableForUser(user)) {
           throw new ApiAuthenticationException(
-              String.format("Access to API has been disabled for user '%s'", user.getUsername()));
+              "api.errors.authentication.userApiDisabled", user.getUsername());
         }
         user.setAuthenticatedBy(UserAuthenticationMethod.API_KEY);
         logExternalApiRequest(request, user);
@@ -60,19 +59,14 @@ public class CombinedApiAuthenticator implements ApiAuthenticator {
       if (UserAuthenticationMethod.API_OAUTH_TOKEN.equals(user.getAuthenticatedBy())) {
         if (!apiHandler.isOAuthAccessAllowed(user)) {
           throw new ApiAuthenticationException(
-              String.format(
-                  "Access through OAuth tokens has been disabled for user '%s'",
-                  user.getUsername()));
+              "api.errors.authentication.userOAuthDisabled", user.getUsername());
         }
         logExternalApiRequest(request, user);
       }
       return user;
     }
 
-    throw new ApiAuthenticationException(
-        "API authentication information is missing - please include your apiKey as a header in the"
-            + " format 'apiKey:myAPikey' or with OAuth in the format 'Authorization: Bearer"
-            + " <myAccessToken>'.");
+    throw new ApiAuthenticationException("api.errors.authentication.credentialsMissing");
   }
 
   private void logExternalApiRequest(HttpServletRequest request, User user) {

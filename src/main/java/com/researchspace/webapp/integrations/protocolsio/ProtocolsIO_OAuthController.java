@@ -4,6 +4,7 @@ import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAM
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.core.util.JacksonUtil;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
@@ -21,7 +22,6 @@ import javax.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -146,7 +146,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
               .appName("Protocols.io")
-              .errorMsg("Exception during token exchange")
+              .errorMsg(getText("apps.oauth.errors.tokenExchange"))
               .errorDetails(e.getResponseBodyAsString())
               .build();
       ConnectionResultPage.addError(
@@ -216,7 +216,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
             log.warn(
                 " Refresh token expired for {}:{}",
                 subject.getName(),
-                StringUtils.abbreviate(conn.getRefreshToken(), 5));
+                StringAbbreviationUtils.abbreviate(conn.getRefreshToken(), 5));
             return new ResponseEntity<String>(
                 "Refresh token expired", HttpStatus.SERVICE_UNAVAILABLE);
           default:
@@ -224,14 +224,16 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
                 " General error refreshing token for {}:{}",
                 subject.getName(),
                 err.getErrorMessage());
-            return new ResponseEntity<String>("General error ", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<String>(
+                getText("apps.oauth.errors.general"), HttpStatus.INTERNAL_SERVER_ERROR);
         }
       }
       log.warn(
           " General error refreshing token for {}: {}",
           subject.getName(),
           e.getResponseBodyAsString());
-      return new ResponseEntity<String>("Unknown error", HttpStatus.INTERNAL_SERVER_ERROR);
+      return new ResponseEntity<String>(
+          getText("apps.oauth.errors.unknown"), HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

@@ -129,7 +129,7 @@ const UploadNewVersionMenuItem = ({
   const uploadNewVersionAllowed = computed((): Result<null> => {
     return selection
       .asSet()
-      .only.toResult(() => new Error("Only one item may be updated with a new version at once."))
+      .only.toResult(() => new Error(t("actionsMenu.validation.onlyOneNewVersion")))
       .flatMap((file) => file.canUploadNewVersion);
   });
   return (
@@ -179,11 +179,11 @@ const UploadNewVersionMenuItem = ({
                */
               const idOfFolderThatFileIsIn = Result.fromNullable(
                 file.path.at(-1),
-                new Error("Current folder is not known"),
+                new Error(t("actionsMenu.validation.currentFolderUnknown")),
               )
                 .map(({ id }) => id)
                 .orElseTry(() => FetchingData.getSuccessValue(folderId))
-                .mapError(() => new Error("Current folder is not known"))
+                .mapError(() => new Error(t("actionsMenu.validation.currentFolderUnknown")))
                 .elseThrow();
 
               /*
@@ -192,7 +192,10 @@ const UploadNewVersionMenuItem = ({
                * it.
                */
               if (!files || files.length === 0) return;
-              const newFile = Result.fromNullable(files.item(0), new Error("No files selected")).elseThrow();
+              const newFile = Result.fromNullable(
+                files.item(0),
+                new Error(t("actionsMenu.validation.noFilesSelected")),
+              ).elseThrow();
               void uploadNewVersion(idOfFolderThatFileIsIn, file, newFile)
                 .then(() => {
                   onSuccess();
@@ -326,13 +329,13 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
   const openAllowed = computed(() => {
     return selection
       .asSet()
-      .only.toResult(() => new Error("Too many items selected."))
+      .only.toResult(() => new Error(t("actionsMenu.validation.tooManyItems")))
       .flatMapDiscarding((f) => f.canOpen);
   });
   const editingAllowed = computed(() =>
     selection
       .asSet()
-      .only.toResult(() => new Error("Too many items selected."))
+      .only.toResult(() => new Error(t("actionsMenu.validation.tooManyItems")))
       .flatMap<
         | {
             key: "image";
@@ -376,20 +379,20 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
               url,
             })),
           )
-          .mapError(() => new Error("Cannot edit this item."));
+          .mapError(() => new Error(t("actionsMenu.validation.cannotEdit")));
       }),
   );
   const viewHidden = computed(() =>
     selection
       .asSet()
-      .only.toResult(() => new Error("Too many items selected."))
+      .only.toResult(() => new Error(t("actionsMenu.validation.tooManyItems")))
       .map((file) => file.canOpen.isOk)
       .orElse(false),
   );
   const viewAllowed = computed(() =>
     selection
       .asSet()
-      .only.toResult(() => new Error("Too many items selected."))
+      .only.toResult(() => new Error(t("actionsMenu.validation.tooManyItems")))
       .flatMap((file) =>
         canPreviewAsImage(file)
           .map((downloadHref) => ({
@@ -431,17 +434,21 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
       ),
   );
   const duplicateAllowed = computed((): Result<null> => {
-    if (selection.size > 50) return Result.Error([new Error("Cannot duplicate more than 50 items at once.")]);
+    if (selection.size > 50) {
+      return Result.Error([new Error(t("actionsMenu.validation.duplicateLimit"))]);
+    }
     return Result.all(...selection.asSet().map((f) => f.canDuplicate)).map(() => null);
   });
   const deleteAllowed = computed((): Result<null> => {
-    if (selection.size > 50) return Result.Error([new Error("Cannot delete more than 50 items at once.")]);
+    if (selection.size > 50) {
+      return Result.Error([new Error(t("actionsMenu.validation.deleteLimit"))]);
+    }
     return Result.all(...selection.asSet().map((f) => f.canDelete)).map(() => null);
   });
   const renameAllowed = computed((): Result<null> => {
     return selection
       .asSet()
-      .only.toResult(() => new Error("Only one item may be renamed at once."))
+      .only.toResult(() => new Error(t("actionsMenu.validation.onlyOneRename")))
       .flatMap((file) => file.canRename);
   });
   const moveToIrodsAllowed = computed((): Result<null> => {
@@ -490,7 +497,9 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
   });
 
   const exportAllowed = computed((): Result<null> => {
-    if (selection.size > 100) return Result.Error([new Error("Cannot export more than 100 items at once.")]);
+    if (selection.size > 100) {
+      return Result.Error([new Error(t("actionsMenu.validation.exportLimit"))]);
+    }
     return Result.all(...selection.asSet().map((f) => f.canBeExported)).map(() => null);
   });
   const getShareDialogSelection = (): Result<{
@@ -498,20 +507,24 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
     names: ReadonlyArray<string>;
   }> => {
     if (fetchedCurrentUser.tag === "loading") {
-      return Result.Error([new Error("Loading user information...")]);
+      return Result.Error([new Error(t("actionsMenu.validation.loadingUser"))]);
     }
     if (fetchedCurrentUser.tag === "error") {
-      return Result.Error([new Error("Unable to load user information. Sharing is temporarily unavailable.")]);
+      return Result.Error([new Error(t("actionsMenu.validation.userLoadFailed"))]);
     }
-    if (selection.isEmpty) return Result.Error([new Error("At least one snippet must be selected.")]);
-    if (selection.asSet().some((f) => !f.isSnippet)) return Result.Error([new Error("Only snippets can be shared.")]);
+    if (selection.isEmpty) {
+      return Result.Error([new Error(t("actionsMenu.validation.selectSnippet"))]);
+    }
+    if (selection.asSet().some((f) => !f.isSnippet)) {
+      return Result.Error([new Error(t("actionsMenu.validation.onlySnippetsShareable"))]);
+    }
     const selectedFiles = selection.asSet().toArray();
     const globalIds = selectedFiles
       .map((file) => file.globalId)
       .filter((globalId): globalId is string => typeof globalId === "string");
     if (globalIds.length !== selectedFiles.length) {
       // This should never happen, but currently the typing allows for `string | undefined` so it's here as a safeguard
-      return Result.Error([new Error("Cannot share snippets that are missing global IDs.")]);
+      return Result.Error([new Error(t("actionsMenu.validation.missingGlobalId"))]);
     }
 
     /*
@@ -530,7 +543,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
          * in /gallery/getUploadedFiles.
          */
         if (currentUser?.id !== file.ownerId) {
-          return Result.Error([new Error("Only owners of the snippet can change its share settings.")]);
+          return Result.Error([new Error(t("actionsMenu.validation.onlyOwnerCanShare"))]);
         }
       }
     }
@@ -543,21 +556,27 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
     return getShareDialogSelection().map(() => null);
   });
   const downloadAllowed = computed((): Result<null> => {
-    if (selection.asSet().some((f) => f.isFolder)) return Result.Error([new Error("Cannot download folders.")]);
-    if (selection.asSet().some((f) => f.isSnippet)) return Result.Error([new Error("Cannot download snippets.")]);
+    if (selection.asSet().some((f) => f.isFolder)) {
+      return Result.Error([new Error(t("actionsMenu.validation.cannotDownloadFolders"))]);
+    }
+    if (selection.asSet().some((f) => f.isSnippet)) {
+      return Result.Error([new Error(t("actionsMenu.validation.cannotDownloadSnippets"))]);
+    }
     return Result.Ok(null);
   });
   const moveAllowed = computed((): Result<null> => {
-    if (selection.size > 50) return Result.Error([new Error("Cannot move more than 50 items at once.")]);
+    if (selection.size > 50) {
+      return Result.Error([new Error(t("actionsMenu.validation.moveLimit"))]);
+    }
     return Result.all(...selection.asSet().map((f) => f.canBeMoved)).map(() => null);
   });
   const logOutAllowed = computed((): Result<Filestore> => {
     return selection
       .asSet()
-      .only.toResult(() => new Error("Only one item may be logged out of at once."))
+      .only.toResult(() => new Error(t("actionsMenu.validation.onlyOneLogout")))
       .flatMapDiscarding((file) => file.canBeLoggedOutOf)
       .flatMap((f: GalleryFile) =>
-        f instanceof Filestore ? Result.Ok(f) : Result.Error([new Error("Cannot log out of this item.")]),
+        f instanceof Filestore ? Result.Ok(f) : Result.Error([new Error(t("actionsMenu.validation.cannotLogOut"))]),
       );
   });
   const { logout } = useFilestoresEndpoint();
@@ -1088,7 +1107,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             try {
               const file = selection
                 .asSet()
-                .only.toResult(() => new Error("Nothing selected"))
+                .only.toResult(() => new Error(t("actionsMenu.validation.nothingSelected")))
                 .elseThrow();
               const newFile = new File(
                 [newBlob],
@@ -1099,11 +1118,11 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
               );
               const idOfFolderThatFileIsIn = Result.fromNullable(
                 file.path.at(-1),
-                new Error("Current folder is not known"),
+                new Error(t("actionsMenu.validation.currentFolderUnknown")),
               )
                 .map(({ id }) => id)
                 .orElseTry(() => FetchingData.getSuccessValue(folderId))
-                .mapError(() => new Error("Current folder is not known"))
+                .mapError(() => new Error(t("actionsMenu.validation.currentFolderUnknown")))
                 .elseThrow();
               await uploadFiles(idOfFolderThatFileIsIn, [newFile], {
                 originalImageId: file.id,

@@ -167,7 +167,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     if (!settingTypeFor(inventoryItem).equals(settingTypeFor(identifierToAssign.getType()))) {
       throw new IllegalArgumentException(
           messages.getMessage(
-              "errors.inventory.identifier.assign.type.mismatch",
+              "errors.inventory.identifier.assignTypeMismatch",
               new Object[] {identifierToAssign.getType(), inventoryOid}));
     }
 
@@ -184,8 +184,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
     throw new IllegalArgumentException(
         messages.getMessage(
-            "errors.inventory.identifier.minting.unsupported.type",
-            new Object[] {invRec.getType()}));
+            "errors.inventory.identifier.mintingUnsupportedType", new Object[] {invRec.getType()}));
   }
 
   private InventorySettingType settingTypeFor(IdentifierType identifierType) {
@@ -204,7 +203,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       default:
         throw new UnsupportedOperationException(
             messages.getMessage(
-                "errors.inventory.identifier.type.unsupported", new Object[] {identifierType}));
+                "errors.inventory.identifier.typeUnsupported", new Object[] {identifierType}));
     }
   }
 
@@ -219,7 +218,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     if (!dataciteEnabled && !b2instEnabled) {
       throw new UnsupportedOperationException(
           messages.getMessage(
-              "errors.inventory.identifier.integration.not.enabled",
+              "errors.inventory.identifier.integrationNotEnabled",
               new Object[] {InventorySettingType.PIDINST}));
     }
   }
@@ -286,7 +285,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     DigitalObjectIdentifier doi = doiDao.get(identifier.getId());
     if (!user.equals(doi.getOwner())) {
       throw new IllegalArgumentException(
-          messages.getMessage("errors.inventory.identifier.delete.not.owner"));
+          messages.getMessage("errors.inventory.identifier.deleteNotOwner"));
     }
     doi.setDeleted(true);
     doi = doiDao.save(doi);
@@ -585,7 +584,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     } catch (B2instConnectionException b2instException) {
       throw new B2instConnectionException(
           messages.getMessage(
-              "errors.inventory.identifier.b2inst.publish.failed",
+              "errors.inventory.identifier.b2instPublishFailed",
               new Object[] {b2instException.getMessage()}),
           b2instException);
     }

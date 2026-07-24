@@ -15,7 +15,6 @@ import com.researchspace.fieldmark.model.exception.FieldmarkImportException;
 import com.researchspace.model.User;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.fieldmark.FieldmarkServiceManager;
-import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -33,7 +32,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.client.HttpServerErrorException;
 
-public class FieldmarkApiControllerTest extends SpringTransactionalTest {
+public class FieldmarkApiControllerTest {
 
   private static final String NOTEBOOK_ID = "notebookId";
   private static final FieldmarkApiImportRequest GOOD_NOTEBOOK_REQ =
@@ -112,8 +111,7 @@ public class FieldmarkApiControllerTest extends SpringTransactionalTest {
             BindException.class,
             () -> fieldmarkApiController.getNotebooks(wrongUser),
             "FieldmarkApiController did not throw the exception, but it was needed");
-    assertTrue(
-        thrown.getMessage().contains("Error fetching notebooks due to the Fieldmark server"));
+    assertEquals("apps.fieldmark.errors.fetchNotebooks", thrown.getGlobalError().getCode());
   }
 
   @Test
@@ -124,13 +122,8 @@ public class FieldmarkApiControllerTest extends SpringTransactionalTest {
             () ->
                 fieldmarkApiController.importNotebook(GOOD_NOTEBOOK_REQ, bindingResult, wrongUser),
             "FieldmarkApiController did not throw the exception, but it was needed");
-    assertTrue(
-        thrown
-            .getMessage()
-            .contains(
-                "Error importing notebook \""
-                    + GOOD_NOTEBOOK_REQ.getNotebookId()
-                    + "\" from Fieldmark"));
+    assertEquals("apps.fieldmark.errors.importNotebook", thrown.getGlobalError().getCode());
+    assertEquals(GOOD_NOTEBOOK_REQ.getNotebookId(), thrown.getGlobalError().getArguments()[0]);
   }
 
   @Test
@@ -145,13 +138,8 @@ public class FieldmarkApiControllerTest extends SpringTransactionalTest {
             BindException.class,
             () -> fieldmarkApiController.importNotebook(GOOD_NOTEBOOK_REQ, bindingResult, goodUser),
             "FieldmarkApiController did not throw the exception, but it was needed");
-    assertTrue(
-        thrown
-            .getMessage()
-            .contains(
-                "Error importing notebook \""
-                    + GOOD_NOTEBOOK_REQ.getNotebookId()
-                    + "\" from Fieldmark"));
+    assertEquals("apps.fieldmark.errors.importNotebook", thrown.getGlobalError().getCode());
+    assertEquals(GOOD_NOTEBOOK_REQ.getNotebookId(), thrown.getGlobalError().getArguments()[0]);
   }
 
   public void testImportNotebookRaisesClientHttpException() {
@@ -188,11 +176,8 @@ public class FieldmarkApiControllerTest extends SpringTransactionalTest {
             BindException.class,
             () -> fieldmarkApiController.getIgsnCandidateFields(NOTEBOOK_ID, wrongUser),
             "FieldmarkApiController did not throw the exception, but it was needed");
-    assertTrue(
-        thrown
-            .getMessage()
-            .contains(
-                "Error creating IGSN candidate fields for notebook \""
-                    + GOOD_NOTEBOOK_REQ.getNotebookId()));
+    assertEquals(
+        "apps.fieldmark.errors.createIgsnCandidateFields", thrown.getGlobalError().getCode());
+    assertEquals(NOTEBOOK_ID, thrown.getGlobalError().getArguments()[0]);
   }
 }

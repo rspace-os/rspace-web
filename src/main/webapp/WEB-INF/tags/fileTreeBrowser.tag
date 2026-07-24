@@ -1,6 +1,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 
 <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/jquery.fancytree/dist/skin-bootstrap/ui.fancytree.min.css'/>" />
 <link rel="stylesheet" href="<rst:assetUrl value='/styles/tags/fileTreeBrowser.css'/>" />
@@ -13,9 +14,9 @@
 <div id="fileBrowsing" class="fileTreeBrowserPanel bootstrap-custom-flat">
 
   <div class="fileTreeButtons navbar navbar-inverse rs-container container-fluid" id="fileTreeToolbar">
-      <ul class="nav navbar-nav"> 
+      <ul class="nav navbar-nav">
         <li>
-          <a id="fileTreeSettingsToggle" href="#" class="rs-actionbar__item rs-actionbar__item--icon" title="Change tree ordering">
+          <a id="fileTreeSettingsToggle" href="#" class="rs-actionbar__item rs-actionbar__item--icon" title="<spring:message code='dialogs.fileTreeBrowser.changeOrderingTitle'/>">
             <span class="glyphicon glyphicon-cog"></span>
           </a>
         </li>
@@ -24,20 +25,20 @@
         <li class="sortingSettingsLi">
           <div class="sortingSettings" style="display:none">
             <span style="margin-left: 10px; color: white;">
-                Order by: 
+                <spring:message code="workspace.sort.label"/>
             </span>
             <br/>
             <div style="text-align: center;">
-                <select class="orderBy" aria-label="Order by">
-                  <option value="name">Name</option>
-                  <option value="creationdate">Creation Date</option>
-                  <option value="modificationdate">Last Modified</option>
+                <select class="orderBy" aria-label="<spring:message code='workspace.sort.ariaLabel'/>">
+                  <option value="name"><spring:message code="workspace.sort.byName"/></option>
+                  <option value="creationdate"><spring:message code="common:treeSort.order.creationDate"/></option>
+                  <option value="modificationdate"><spring:message code="workspace.sort.byLastModified"/></option>
                 </select>
-                <select class="sortOrder" style="margin-left: 2px;" aria-label="Sort order">
-                  <option value="ASC">Ascending</option>
-                  <option value="DESC">Descending</option>
+                <select class="sortOrder" style="margin-left: 2px;" aria-label="<spring:message code='workspace.sort.sortOrderAriaLabel'/>">
+                  <option value="ASC"><spring:message code="common:treeSort.direction.ascending"/></option>
+                  <option value="DESC"><spring:message code="common:treeSort.direction.descending"/></option>
                 </select>
-                <button class="btn btn-default" id="applySortingSettings" title="Apply new ordering">
+                <button class="btn btn-default" id="applySortingSettings" title="<spring:message code='dialogs.fileTreeBrowser.applyOrderingTitle'/>">
                     <span class="glyphicon glyphicon-ok"></span>
                 </button>
             </div>
@@ -46,7 +47,7 @@
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <li>
-          <a id="hideFileTreeSmall" href="#" class="rs-actionbar__item rs-actionbar__item--icon" title="Hide tree browser">
+          <a id="hideFileTreeSmall" href="#" class="rs-actionbar__item rs-actionbar__item--icon" title="<spring:message code='common:toolbar.hideTreeBrowser'/>">
             <span class="glyphicon glyphicon-menu-right"></span>
           </a>
         </li>
@@ -58,7 +59,7 @@
 </div>
 
 <div class="bootstrap-custom-flat">
-    <button id="showFileTreeSmall" class="btn btn-primary" title="Show tree browser">
+    <button id="showFileTreeSmall" class="btn btn-primary" title="<spring:message code='dialogs.fileTreeBrowser.showTreeTitle'/>">
       <span class="glyphicon glyphicon-menu-left"></span>
     </button>
 </div>

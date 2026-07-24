@@ -8,29 +8,29 @@ tinymce.PluginManager.add('toolbar', function (editor, url) {
 
   editor.addCommand('cmdRSCustomToolbar', function () {
     editor.windowManager.openUrl({
-      title: 'Configure toolbar',
+      title: RS.msg("legacyjs.tinymce.toolbar.configure"),
       url: url + '/plugin.html',
       width: 980,
       height: 590,
       autoScroll: true,
       buttons: [
         {
-          text: 'Cancel',
+          text: RS.msg("legacyjs.common.cancel"),
           type: 'custom',
           name: 'cancel',
         },
         {
-          text: 'Reset',
+          text: RS.msg("legacyjs.tinymce.toolbar.reset"),
           type: 'custom',
           name: 'reset',
         },
         {
-          text: 'Reset to default',
+          text: RS.msg("legacyjs.tinymce.toolbar.resetDefault"),
           type: 'custom',
           name: 'hard-reset',
         },
         {
-          text: 'Save',
+          text: RS.msg("legacyjs.common.save"),
           type: 'custom',
           name: 'save',
           primary: true
@@ -58,13 +58,12 @@ tinymce.PluginManager.add('toolbar', function (editor, url) {
   });
 
   editor.ui.registry.addMenuItem('confToolbar', {
-    text: 'Configure Toolbar',
+    text: RS.msg("legacyjs.tinymce.toolbar.configure"),
     icon: 'toolbar',
     onAction: function () {
       editor.execCommand("cmdRSCustomToolbar");
     },
   });
 });
-
 
 

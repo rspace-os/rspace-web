@@ -83,6 +83,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -201,7 +202,7 @@ public class SysAdminController extends BaseController {
     User admin = userManager.getAuthenticatedUserInSession();
     User userToAmend = userManager.get(userId);
     userPermissionUtils.assertHasPermissionsOnTargetUser(
-        admin, userToAmend, "Changing enablement state of user");
+        admin, userToAmend, "errors.authorization.failure.changeUserEnabledState");
     if (enabled && !userToAmend.isEnabled()) {
       userEnablementUtils.checkLicenseForUserInRole(1, userToAmend.getRoles().iterator().next());
     }
@@ -229,12 +230,13 @@ public class SysAdminController extends BaseController {
     // the account might no longer be locked by the time the sysadmin makes this call
     if (userToUnlock.isAccountLocked()) {
       userPermissionUtils.assertHasPermissionsOnTargetUser(
-          admin, userToUnlock, "Unlocking user account");
+          admin, userToUnlock, "errors.authorization.failure.unlockUserAccount");
       lockoutPolicy.forceUnlock(userToUnlock);
       userManager.save(userToUnlock);
       return ResponseEntity.status(HttpStatus.OK).build();
     }
-    return getAjaxMessageResponseEntity(HttpStatus.BAD_REQUEST, "Account is already unlocked");
+    return getAjaxMessageResponseEntity(
+        HttpStatus.BAD_REQUEST, getText("system.users.accountAlreadyUnlocked"));
   }
 
   @PostMapping("/ajax/removeUserAccount")
@@ -242,7 +244,7 @@ public class SysAdminController extends BaseController {
   public ResponseEntity<Object> removeUserAccount(@RequestParam("userId") Long userId) {
 
     if (!(TRUE.toString()).equalsIgnoreCase(properties.getDeleteUser())) {
-      throw new IllegalStateException("Delete user is disabled!");
+      throw new IllegalStateException(getText("errors.deleteUser.disabled"));
     }
 
     User sysadmin = userManager.getAuthenticatedUserInSession();
@@ -431,7 +433,8 @@ public class SysAdminController extends BaseController {
     assertUserIsSysAdmin(currentUser);
 
     if (!userManager.exists(incomingData.getUserId())) {
-      throw new IllegalArgumentException("No user found for id: " + incomingData.getUserId());
+      throw new IllegalArgumentException(
+          getText("errors.user.notFound", new Object[] {incomingData.getUserId()}));
     }
 
     try {
@@ -627,7 +630,7 @@ public class SysAdminController extends BaseController {
   private void assertSubjectIsSysAdminOrAdmin(User subject) {
     if (!subject.hasRole(Role.SYSTEM_ROLE) && !subject.hasRole(Role.ADMIN_ROLE)) {
       throw new AuthorizationException(
-          getText("system.unauthorized.userrole", new Object[] {subject.getFullName()}));
+          getText("system.unauthorized.userRole", new Object[] {subject.getFullName()}));
     }
   }
 
@@ -747,7 +750,10 @@ public class SysAdminController extends BaseController {
 
     } catch (DataAccessException dae) {
       // probably because not unique?
-      errors.reject("errors.notUnique", new Object[] {"Unique name"}, null);
+      errors.reject(
+          "errors.notUnique",
+          new Object[] {new DefaultMessageSourceResolvable("label.uniqueName")},
+          null);
       return getCreateCommunityValidationErrorView(model, community);
     }
 
@@ -784,12 +790,18 @@ public class SysAdminController extends BaseController {
 
     User adminUser = userManager.getAuthenticatedUserInSession();
     ValidationUtils.rejectIfEmpty(
-        errors, "sysadminPassword", "errors.required", new Object[] {"password"});
+        errors,
+        "sysadminPassword",
+        "errors.required",
+        new Object[] {new DefaultMessageSourceResolvable("label.password")});
     ValidationUtils.rejectIfEmpty(
-        errors, "runAsUsername", "errors.required", new Object[] {"username"});
+        errors,
+        "runAsUsername",
+        "errors.required",
+        new Object[] {new DefaultMessageSourceResolvable("label.username")});
     String[] users = User.getUsernamesFromMultiUser(runAsUserCmnd.getRunAsUsername());
     if (ArrayUtils.isEmpty(users)) {
-      errors.rejectValue("runAsUsername", "system.runAs.invalidusernameformat.msg", null);
+      errors.rejectValue("runAsUsername", "system.runAs.errors.invalidUsernameFormat");
     }
     rejectIfNotReauthenticated(runAsUserCmnd.getSysadminPassword(), errors, adminUser);
     if (errors.hasErrors()) {
@@ -810,7 +822,7 @@ public class SysAdminController extends BaseController {
     try {
       targetUser = userManager.getUserByUsername(targetUsername);
     } catch (DataAccessException dae) {
-      errors.reject("errors.username", null, null);
+      errors.reject("errors.username");
     }
     if (errors.hasErrors()) {
       return "system/runAsUserDlg";
@@ -887,10 +899,9 @@ public class SysAdminController extends BaseController {
     Map<String, Object> velocityModel = new HashMap<String, Object>();
     velocityModel.put("runAs", runAs);
     velocityModel.put("systemUser", admin);
-    velocityModel.put("htmlPrefix", properties.getServerUrl());
     EmailContent content =
         emailContentGenerator.render(
-            "email.admin.operateas.subject",
+            "email.admin.adminRunningAsUserNotification.subject",
             null,
             "adminRunningAsUserNotification.vm",
             velocityModel);

@@ -1,4 +1,6 @@
 import { type RestApiError, RestApiErrorSchema } from "@/modules/common/api/schema";
+import i18n from "@/modules/common/i18n";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { parse } from "@/modules/common/queries/parseOrThrow";
 
 export const WORKSPACE_API_BASE_URL = "/workspace";
@@ -60,7 +62,7 @@ function getWorkspaceAjaxErrorMessage(data: unknown): string | null {
       .filter((message): message is string => Boolean(message));
 
     if (messages.length > 0) {
-      return messages.join("; ");
+      return formatList(messages, i18n.resolvedLanguage ?? i18n.language);
     }
   }
 

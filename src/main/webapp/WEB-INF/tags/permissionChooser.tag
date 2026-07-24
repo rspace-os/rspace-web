@@ -1,21 +1,17 @@
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
 <div id="permissionChooser" style="display: none;">
-    <h4>Specify permissions</h4>
-    <fmt:bundle basename="bundles.workspace.workspace">
-        <p>I want members of the
-            <strong><span class="selectedGroupName"></span></strong>
-            group to be able to
-            <select class="sharedIntoFolderPermission"
-                    aria-label="Share privileges">
-                <option value="read" selected>
-                    <fmt:message key="sharing.permission.read"/>
-                </option>
-                <option value="write">
-                    <fmt:message key="sharing.permission.write"/>
-                </option>
-            </select>
-            my shared item(s).
-        </p>
-    </fmt:bundle>
+    <h4><spring:message code="dialogs.permissionChooser.title"/></h4>
+    <spring:message code="common:shareDialog.permissions.read" var="readPermission"/>
+    <spring:message code="common:shareDialog.permissions.edit" var="editPermission"/>
+    <spring:message code="dialogs.permissionChooser.selectAriaLabel" var="permissionAriaLabel"/>
+    <c:set var="groupName"><strong><span class="selectedGroupName"></span></strong></c:set>
+    <c:set var="permissionSelect"><select class="sharedIntoFolderPermission" aria-label="${permissionAriaLabel}"><option value="read" selected>${readPermission}</option><option value="write">${editPermission}</option></select></c:set>
+    <p>
+        <spring:message code="dialogs.permissionChooser.sentence">
+            <spring:argument value="${groupName}"/>
+            <spring:argument value="${permissionSelect}"/>
+        </spring:message>
+    </p>
 </div>

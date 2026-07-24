@@ -8,6 +8,7 @@ import com.researchspace.model.dto.CommunityPublicInfo;
 import com.researchspace.model.dto.GroupPublicInfo;
 import com.researchspace.model.dto.UserRegistrationInfo;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.service.MessageSourceUtils;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
@@ -24,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -36,7 +36,7 @@ import org.springframework.stereotype.Component;
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class UserImporterFromCSV implements UserListGenerator {
 
-  @Autowired private MessageSource messages;
+  @Autowired private MessageSourceUtils messages;
 
   @Autowired private UserLineParserFromCSV userLineParser;
 
@@ -319,52 +319,47 @@ public class UserImporterFromCSV implements UserListGenerator {
 
   private String suggestedPINotAssignedPIRole(String pi, int lineNumber) {
     return messages.getMessage(
-        "system.csvimport.group.piWithoutPiRole", new Object[] {pi, lineNumber}, null);
+        "system.csvImport.group.piWithoutPiRole", new Object[] {pi, lineNumber});
   }
 
   private String suggestedCommunityAdminNotAssignedAdminRole(String admin, int lineNumber) {
     return messages.getMessage(
-        "system.csvimport.communityAdmin.noAdminRole", new Object[] {admin, lineNumber}, null);
+        "system.csvImport.communityAdmin.noAdminRole", new Object[] {admin, lineNumber});
   }
 
   private String unknownUsernameMsg(String name, int lineNumber) {
-    return messages.getMessage(
-        "system.csvimport.unknownUsername", new Object[] {name, lineNumber}, null);
+    return messages.getMessage("system.csvImport.unknownUsername", new Object[] {name, lineNumber});
   }
 
   private String unknownLabGroupMsg(String name, int lineNumber) {
-    return messages.getMessage(
-        "system.csvimport.unknownLabGroup", new Object[] {name, lineNumber}, null);
+    return messages.getMessage("system.csvImport.unknownLabGroup", new Object[] {name, lineNumber});
   }
 
   private String blankUsernameErrorMsg(int lineNumber) {
-    return messages.getMessage("system.csvimport.blankUsername", new Object[] {lineNumber}, null);
+    return messages.getMessage("system.csvImport.blankUsername", new Object[] {lineNumber});
   }
 
   private String blankPINameErrorMsg(int lineNumber) {
-    return messages.getMessage("system.csvimport.group.blankPI", new Object[] {lineNumber}, null);
+    return messages.getMessage("system.csvImport.group.blankPi", new Object[] {lineNumber});
   }
 
   private String blankGroupNameErrorMsg(int lineNumber) {
-    return messages.getMessage(
-        "system.csvimport.group.blankGroupName", new Object[] {lineNumber}, null);
+    return messages.getMessage("system.csvImport.group.blankGroupName", new Object[] {lineNumber});
   }
 
   private String createMinimalGroupInfoMissingMsg(String line, int lineNumber) {
     return messages.getMessage(
-        "system.csvimport.group.wrongNumberOfFields", new Object[] {line, lineNumber}, null);
+        "system.csvImport.group.wrongNumberOfFields", new Object[] {line, lineNumber});
   }
 
   private String createMinimalCommunityInfoMissingMsg(String line, int lineNumber) {
     return messages.getMessage(
-        "system.csvimport.community.wrongNumberOfFields", new Object[] {line, lineNumber}, null);
+        "system.csvImport.community.wrongNumberOfFields", new Object[] {line, lineNumber});
   }
 
   private String createMinimalCommunityAdminInfoMissingMsg(String line, int lineNumber) {
     return messages.getMessage(
-        "system.csvimport.communityAdmin.wrongNumberOfFields",
-        new Object[] {line, lineNumber},
-        null);
+        "system.csvImport.communityAdmin.wrongNumberOfFields", new Object[] {line, lineNumber});
   }
 
   /*
@@ -373,7 +368,7 @@ public class UserImporterFromCSV implements UserListGenerator {
    * ===============
    */
 
-  public void setMessages(MessageSource messages) {
+  public void setMessages(MessageSourceUtils messages) {
     this.messages = messages;
   }
 

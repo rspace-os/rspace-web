@@ -15,7 +15,7 @@
     }
 
     @top-right {
-      content: 'Page: ' counter(page);
+      content: '$pageLabel' counter(page);
       border-bottom: solid black;
       font-family: 'Arial', 'Helvetica', 'sans-serif';
     }

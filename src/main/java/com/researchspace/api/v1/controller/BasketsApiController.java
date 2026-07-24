@@ -33,7 +33,7 @@ public class BasketsApiController extends BaseApiInventoryController implements 
 
     @Size(
         max = BaseRecord.DEFAULT_VARCHAR_LENGTH,
-        message = "Name cannot be longer than 255 characters")
+        message = "{errors.inventory.name.validationTooLong}")
     @JsonProperty("name")
     private String name;
   }

@@ -79,7 +79,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.ObjectRetrievalFailureException;
@@ -100,7 +99,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired RSChemElementManager rsChemElementMgr;
   private @Autowired StoichiometryInventoryLinkDao stoichiometryInventoryLinkDao;
   private @Autowired InstrumentDao instrumentDao;
-  private @Autowired MessageSource messageSource;
+  private @Autowired MessageSourceUtils messages;
 
   @Before
   public void setUp() throws Exception {
@@ -287,7 +286,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(sysadmin.getId(), policy, sysadmin);
     assertFalse(report.isSucceeded());
-    assertEquals(report.getMessage(), messages.getMessage("errors.deleteuser.nonself"));
+    assertEquals(report.getMessage(), messages.getMessage("errors.deleteUser.nonSelf"));
   }
 
   @Test
@@ -1146,7 +1145,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
   private Folder findDeletedUsersTemplateFolder(User deletedUser, User sysadmin) {
     String deletedFolderName =
-        messageSource.getMessage(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER, null, null);
+        messages.getMessage(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER);
     Folder templateRoot = folderMgr.getTemplateFolderForUser(sysadmin);
     Folder deletedUsersFolder =
         folderMgr.getSubFolders(templateRoot).stream()
@@ -1165,7 +1164,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
   private Folder findDeletedUsersSubfolder(Folder categoryFolder, User deletedUser, User sysadmin) {
     String deletedFolderName =
-        messageSource.getMessage(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER, null, null);
+        messages.getMessage(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER);
     Folder deletedUsersFolder =
         folderMgr.getSubFolders(categoryFolder).stream()
             .filter(f -> deletedFolderName.equals(f.getName()))

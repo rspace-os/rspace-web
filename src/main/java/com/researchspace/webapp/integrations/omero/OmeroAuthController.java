@@ -83,7 +83,8 @@ public class OmeroAuthController extends BaseController {
       mav.addObject("appName", APP_DISPLAY_NAME);
       mav.addObject("connectionChannel", CONNECTION_CHANNEL);
       mav.addObject("connectionType", CONNECTION_TYPE);
-      mav.addObject("connectionError", "Could not log in to OMERO: " + e.getMessage());
+      mav.addObject(
+          "connectionError", getText("apps.omero.errors.login", new Object[] {e.getMessage()}));
       return mav;
     }
   }

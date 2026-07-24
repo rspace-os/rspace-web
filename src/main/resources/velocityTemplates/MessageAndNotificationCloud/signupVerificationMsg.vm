@@ -6,24 +6,28 @@ Arguments:
 - ipAddress - The IP address from where the request was generated.
 *#
 
+<p>$msg.format("email.common.greeting", [${firstName}])</p>
 
-<p>Hello $firstName,</p>
-
-<p>You, or someone else, have signed up for an RSpace account, at:</p>
+<p>$msg.getMessage("email.cloud.signupVerification.signedUp")</p>
 <p>
 ${htmlDomainPrefix}
 </p>
 
-
-<p>If it was really you that signed up, please click on the link below to verify
-and activate your account.
+<p>$msg.getMessage("email.cloud.signupVerification.activate")</p>
 
 <p>
 <a href="${verifyLink}">${verifyLink}</a>
 </p>
 
-#dontReply<p/>
+<p>
+$msg.getMessage("email.common.dontReply")
+</p><p/>
 
-#signature
+$msg.getMessage("email.common.signatureSignOff")
+<p>
+$msg.getMessage("email.common.signatureTeam")
+</p>
 <p/>
-#emailSourceIpFooter (${ipAddress})
+<div style="font-size:80%">
+$msg.format("email.common.sourceIpFooter", [$ipAddress, "https://ip-lookup.net/index.php?ip=$ipAddress"])
+</div>

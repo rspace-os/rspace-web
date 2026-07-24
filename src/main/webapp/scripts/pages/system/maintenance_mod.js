@@ -21,7 +21,7 @@ function loadScheduledMaintenanceView() {
     });
     
     jqxhr.fail(function () {
-         RS.ajaxFailed("Getting schedule downtime view", false, jqxhr);
+         RS.ajaxFailed(RS.msg("legacyjs.system.maintenance.gettingScheduleViewAction"), false, jqxhr);
     });
 }
 
@@ -35,7 +35,7 @@ function loadScheduledMaintenances() {
     });
     
     jqxhr.fail(function () {
-         RS.ajaxFailed("Couldn't retrieve list of scheduled downtimes", false, jqxhr);
+         RS.ajaxFailed(RS.msg("legacyjs.system.maintenance.retrievingScheduledListAction"), false, jqxhr);
     });
 }
 
@@ -100,12 +100,12 @@ function setOldMaintenances() {
 
 function checkDatesAreValid(startDate, endDate) {
     if (startDate < new Date()) {
-        apprise('Start date can\'t be set in the past');
+        apprise(RS.msg("legacyjs.system.maintenance.startDateInPast"));
         RS.focusAppriseDialog();
         return false;
     }
     if (!(startDate < endDate)) {
-      apprise('End date can\'t be earlier than start date');
+      apprise(RS.msg("legacyjs.system.maintenance.endDateBeforeStartDate"));
       RS.focusAppriseDialog();
       return false;
     }
@@ -135,11 +135,11 @@ function addNewMaintenance() {
         contentType:"application/json",
         dataType: "json",
         success: function (result) {
-        	 $().toastmessage('showSuccessToast', 'Scheduled new downtime');
+	 $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.maintenance.scheduledNewDowntime"));
              loadScheduledMaintenances();
         },
         error: function (xhr, ajaxOptions, thrownError) {
-        	 RS.ajaxFailed("Couldn't schedule new downtime", false, xhr);
+	 RS.ajaxFailed(RS.msg("legacyjs.system.maintenance.schedulingNewDowntimeAction"), false, xhr);
         }
     });
 //        var jqxrh = $.post('', data);
@@ -177,11 +177,11 @@ function updateMaintenance() {
         data: JSON.stringify(data),
         contentType:"application/json",
         success: function (result) {
-        	 $().toastmessage('showSuccessToast', 'Downtime details updated');
+	 $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.maintenance.downtimeDetailsUpdated"));
              loadScheduledMaintenances();
         },
         error: function (xhr, ajaxOptions, thrownError) {
-        	  RS.ajaxFailed("Couldn't update scheduled downtime", false, xhr);
+	  RS.ajaxFailed(RS.msg("legacyjs.system.maintenance.updatingScheduledDowntimeAction"), false, xhr);
         }
     });
     
@@ -194,12 +194,12 @@ function stopUserLogin() {
     var jqxrh = $.post('/system/maintenance/ajax/stopUserLogin', {});
     
     jqxrh.done(function() {
-        $().toastmessage('showSuccessToast', 'Users no longer allowed to login');
+        $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.maintenance.usersNoLongerAllowedToLogin"));
         loadScheduledMaintenances();
     });
     
     jqxrh.fail(function () {
-         RS.ajaxFailed("Couldn't stop users login", false, jqxrh);
+         RS.ajaxFailed(RS.msg("legacyjs.system.maintenance.stoppingUsersLoginAction"), false, jqxrh);
     });
 }
 
@@ -209,12 +209,12 @@ function finishActiveMaintenance() {
     var jqxrh = $.post('/system/maintenance/ajax/finishNow', {});
     
     jqxrh.done(function() {
-        $().toastmessage('showSuccessToast', 'Downtime finished');
+        $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.maintenance.downtimeFinished"));
         loadScheduledMaintenances();
     });
     
     jqxrh.fail(function () {
-         RS.ajaxFailed("Couldn't finish active downtime", false, jqxrh);
+         RS.ajaxFailed(RS.msg("legacyjs.system.maintenance.finishingActiveDowntimeAction"), false, jqxrh);
     });
 }
 
@@ -224,12 +224,12 @@ function deleteMaintenance() {
     var jqxrh = $.post('/system/maintenance/ajax/delete', data);
     
     jqxrh.done(function(result) {
-        $().toastmessage('showSuccessToast', 'Scheduled downtime deleted');
+        $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.maintenance.scheduledDowntimeDeleted"));
         loadScheduledMaintenances();
     });
     
     jqxrh.fail(function () {
-         RS.ajaxFailed("Couldn't delete selected downtime", false, jqxrh);
+         RS.ajaxFailed(RS.msg("legacyjs.system.maintenance.deletingSelectedDowntimeAction"), false, jqxrh);
     });
 }
 

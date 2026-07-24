@@ -29,7 +29,7 @@ import com.researchspace.model.views.SigningResult;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.MessageOrRequestCreatorManager;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSpaceRequestManager;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.UserManager;
@@ -57,7 +57,7 @@ public class RecordSigningManagerImpl implements RecordSigningManager {
   private @Autowired IPermissionUtils permissnUtils;
   private @Autowired SignatureDao signatureDao;
   private @Autowired RecordEditorTracker tracker;
-  private @Autowired OperationFailedMessageGenerator authMsgGen;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired RichTextUpdater updater;
   private @Autowired AuditManager auditMgr;
@@ -289,7 +289,9 @@ public class RecordSigningManagerImpl implements RecordSigningManager {
     Signature sig = signatureDao.get(signatureId);
     if (!permissnUtils.isPermitted(sig.getRecordSigned(), PermissionType.READ, subject)) {
       throw new AuthorizationException(
-          authMsgGen.getFailedMessage(subject.getUsername(), "download signed exports"));
+          messages.getMessage(
+              "errors.authorization.failure.downloadSignedExports",
+              new Object[] {subject.getUsername()}));
     }
     Optional<FileProperty> fp =
         sig.getHashes().stream()

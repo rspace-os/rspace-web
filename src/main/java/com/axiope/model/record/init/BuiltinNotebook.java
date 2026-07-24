@@ -50,7 +50,7 @@ public class BuiltinNotebook extends BuiltinContent implements IBuiltinContent {
 
     example
         .getField("Data")
-        .setFieldData(getStartupHTMLData(resources.getString("form.notebookE1.Content")));
+        .setFieldData(getStartupHTMLData(resources.getString("form.notebookE1.content")));
     m_initializer.saveRecord(example);
     examples.add(example);
 
@@ -59,31 +59,31 @@ public class BuiltinNotebook extends BuiltinContent implements IBuiltinContent {
             resources.getString("form.notebookE2.name"), createdBy, m_form);
     m_initializer.saveRecord(example);
     TextField content = (TextField) example.getField("Data");
-    String strA = getStartupHTMLData(resources.getString("form.notebookE2.ContentA"));
+    String strA = getStartupHTMLData(resources.getString("form.notebookE2.contentA"));
     String strB =
         m_initializer.loadImageReturnTextFieldLink(
             createdBy,
-            START_UP_DATA + resources.getString("form.notebookE2.ContentB"),
+            START_UP_DATA + resources.getString("form.notebookE2.contentB"),
             "Notebook_E2_Picture1.png",
             content.getId(),
             folders,
             0,
             0);
-    String strC = getStartupHTMLData(resources.getString("form.notebookE2.ContentC"));
+    String strC = getStartupHTMLData(resources.getString("form.notebookE2.contentC"));
     String strD =
         m_initializer.loadImageReturnTextFieldLink(
             createdBy,
-            START_UP_DATA + resources.getString("form.notebookE2.ContentD"),
+            START_UP_DATA + resources.getString("form.notebookE2.contentD"),
             "Notebook_E2_Picture2.png",
             content.getId(),
             folders,
             600,
             0);
-    String strE = getStartupHTMLData(resources.getString("form.notebookE2.ContentE"));
+    String strE = getStartupHTMLData(resources.getString("form.notebookE2.contentE"));
     String strF =
         m_initializer.loadImageReturnTextFieldLink(
             createdBy,
-            START_UP_DATA + resources.getString("form.notebookE2.ContentF"),
+            START_UP_DATA + resources.getString("form.notebookE2.contentF"),
             "Notebook_E2_Picture3.png",
             content.getId(),
             folders,
@@ -92,7 +92,7 @@ public class BuiltinNotebook extends BuiltinContent implements IBuiltinContent {
     String strG =
         m_initializer.loadImageReturnTextFieldLink(
             createdBy,
-            START_UP_DATA + resources.getString("form.notebookE2.ContentG"),
+            START_UP_DATA + resources.getString("form.notebookE2.contentG"),
             "Notebook_E2_Picture4.png",
             content.getId(),
             folders,
@@ -101,7 +101,7 @@ public class BuiltinNotebook extends BuiltinContent implements IBuiltinContent {
     String strH =
         m_initializer.loadImageReturnTextFieldLink(
             createdBy,
-            START_UP_DATA + resources.getString("form.notebookE2.ContentH"),
+            START_UP_DATA + resources.getString("form.notebookE2.contentH"),
             "Notebook_E2_Picture5.png",
             content.getId(),
             folders,

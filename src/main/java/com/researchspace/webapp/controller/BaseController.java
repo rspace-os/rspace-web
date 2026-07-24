@@ -36,16 +36,16 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.LicenseService;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.OrganisationManager;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.service.UserManager;
 import com.researchspace.session.UserSessionTracker;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -83,7 +83,6 @@ public abstract class BaseController implements ServletContextAware {
   protected @Autowired BaseRecordAdaptable recordAdapter;
   protected @Autowired FolderManager folderManager;
   protected @Autowired LicenseService licenseService;
-  protected @Autowired OperationFailedMessageGenerator authGenerator;
   protected @Autowired AuditTrailService auditService;
   protected @Autowired AuditManager auditManager;
   protected @Autowired IPermissionUtils permissionUtils;
@@ -104,6 +103,7 @@ public abstract class BaseController implements ServletContextAware {
   protected ServletContext servletContext;
 
   protected @Autowired MessageSourceUtils messages;
+  protected @Autowired UserLocaleService userLocaleService;
 
   protected @Autowired ApplicationEventPublisher publisher;
 
@@ -295,7 +295,7 @@ public abstract class BaseController implements ServletContextAware {
   protected void assertUserIsSysAdmin(User subject) {
     if (!subject.hasRole(Role.SYSTEM_ROLE)) {
       throw new AuthorizationException(
-          getText("system.unauthorized.userrole", new Object[] {subject.getFullName()}));
+          getText("system.unauthorized.userRole", new Object[] {subject.getFullName()}));
     }
   }
 
@@ -488,9 +488,8 @@ public abstract class BaseController implements ServletContextAware {
   protected ResponseEntity<Object> getAjaxMessageResponseEntity(
       HttpStatus status, BindingResult errors) {
     String errorMsg =
-        errors.getAllErrors().stream()
-            .map(err -> messages.getMessage(err))
-            .collect(Collectors.joining(","));
+        ListFormatUtils.formatList(
+            errors.getAllErrors().stream().map(err -> messages.getMessage(err)).toList());
     return getAjaxMessageResponseEntity(status, errorMsg);
   }
 

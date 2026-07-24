@@ -54,7 +54,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> containerApiMgr.createNewApiContainer(toCreate, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -86,7 +86,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> containerApiMgr.createNewApiContainer(toCreate, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -104,7 +104,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> containerApiMgr.updateApiContainer(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -119,7 +119,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> subSampleApiMgr.updateApiSubSample(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -130,7 +130,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> sampleApiMgr.createNewApiSample(toCreate, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -153,7 +153,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> sampleApiMgr.createNewApiSample(sample, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   // ---------- Sample: case-only, whitespace, reserved, delete-add, rename ----------
@@ -166,7 +166,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> sampleApiMgr.createNewApiSample(toCreate, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -177,7 +177,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> sampleApiMgr.createNewApiSample(toCreate, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -206,7 +206,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> sampleApiMgr.updateApiSample(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -220,7 +220,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> sampleApiMgr.updateApiSample(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -265,7 +265,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> sampleApiMgr.updateApiSample(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   // ---------- SubSample: case-only, whitespace, reserved, delete-add, rename ----------
@@ -282,7 +282,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> subSampleApiMgr.updateApiSubSample(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -297,7 +297,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> subSampleApiMgr.updateApiSubSample(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -379,7 +379,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> subSampleApiMgr.updateApiSubSample(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   // ---------- Container: case-only, whitespace (update), update reserved, delete-add, rename ----
@@ -394,7 +394,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> containerApiMgr.createNewApiContainer(toCreate, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -408,7 +408,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> containerApiMgr.updateApiContainer(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -422,7 +422,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> containerApiMgr.updateApiContainer(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -486,7 +486,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> containerApiMgr.updateApiContainer(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   // ---------- helpers ----------

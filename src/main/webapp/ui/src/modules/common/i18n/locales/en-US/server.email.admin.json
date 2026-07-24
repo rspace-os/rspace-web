@@ -1,0 +1,22 @@
+{
+  "email": {
+    "admin": {
+      "adminRunningAsUserNotification": {
+        "body": "The RSpace system administrator ({0}) has recently logged into your RSpace account.<p>There are several reasons why this might happen:</p><ul><li>To perform an admin function</li><li>Maintenance work</li><li>User assistance or fault diagnosis</li></ul><p>If this is unexpected, or your account has been tampered with, please contact the RSpace admin at <a href=\"mailto:{1}\">{1}</a>.</p><p>Best wishes,<br>RSpace admin</p>",
+        "subject": "RSpace admin is using your account"
+      },
+      "promoteToPiComplete": {
+        "bodyLabGroupLink": "To view your lab group, please go to <a href=\"{0}\">{0}</a>.",
+        "bodyProfileLink": "If you would like to change your profile details for your account, please go to <a href=\"{0}\">{0}</a>.",
+        "bodyPromoted": "The RSpace system administrator has set you up with a PI role.",
+        "subject": "RSpace admin account created"
+      },
+      "supportLogFiles": {
+        "bodyGenerated": "{0} ({1}) generated an RSpace server error log file on {2} at {3}.",
+        "bodyLogsEnd": "END OF LOGS",
+        "bodyLogsHeader": "Logs",
+        "bodyMessageSent": "The following message was sent from {0}"
+      }
+    }
+  }
+}

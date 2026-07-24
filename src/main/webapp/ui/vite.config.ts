@@ -9,11 +9,55 @@ import { browserslistToTargets } from "lightningcss";
 import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
 import { defineConfig } from "vitest/config";
 import bundleEntries from "./bundleEntries.json";
+import { flattenMessages } from "./src/modules/common/i18n/flattenMessages";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const resolveFromRoot = (relativePath: string) => path.resolve(__dirname, relativePath);
+
+const legacyI18nEntryPath = resolveFromRoot("src/modules/common/i18n/legacyI18n.ts");
+const localesPath = resolveFromRoot("src/modules/common/i18n/locales");
+const intlMessageFormatBundlePath = path.join(
+  path.dirname(createRequire(import.meta.url).resolve("intl-messageformat")),
+  "intl-messageformat.iife.js",
+);
+
+function legacyI18n(): Plugin {
+  const legacyCatalogueFiles = ["server.legacyJs.json", "server.core.json", "server.gallery.json"];
+  const catalogues = JSON.stringify(
+    Object.fromEntries(
+      fs
+        .readdirSync(localesPath, { withFileTypes: true })
+        .filter(
+          (entry) => entry.isDirectory() && fs.existsSync(path.join(localesPath, entry.name, "server.legacyJs.json")),
+        )
+        .map((entry) => {
+          const catalogue = Object.assign(
+            {},
+            ...legacyCatalogueFiles
+              .filter((file) => fs.existsSync(path.join(localesPath, entry.name, file)))
+              .map((file) =>
+                flattenMessages(JSON.parse(fs.readFileSync(path.join(localesPath, entry.name, file), "utf8"))),
+              ),
+          );
+          return [entry.name, catalogue] as const;
+        }),
+    ),
+  );
+  const formatter = fs.readFileSync(intlMessageFormatBundlePath, "utf8");
+  return {
+    name: "rspace:legacy-i18n",
+    load(id) {
+      if (id.split("?")[0] === legacyI18nEntryPath) {
+        const entry = fs.readFileSync(legacyI18nEntryPath, "utf8").replace('"__LEGACY_I18N_CATALOGUES__"', catalogues);
+        // This entry is deliberately loaded as a blocking classic script. Prepending
+        // FormatJS's flattened browser build keeps it self-contained and import-free.
+        return `${formatter}\nglobalThis.RSpaceIntlMessageFormat = IntlMessageFormat;\n${entry}`;
+      }
+    },
+  };
+}
 
 /*
  * Serves the self-hosted TinyMCE 8 build as static files under
@@ -137,7 +181,7 @@ const resolvedBundleEntries = Object.fromEntries(
 export default defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  const plugins: PluginOption[] = [react()];
+  const plugins: PluginOption[] = [react(), legacyI18n()];
 
   if (!isVitest) {
     plugins.push(tinymceAssets("/ui/dist/"));

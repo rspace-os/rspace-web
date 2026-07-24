@@ -3,8 +3,8 @@
 <script src="<rst:assetUrl value='/scripts/pages/rspace/preferences.js'/>"></script>
 
 <head>
-    <title><fmt:message key="userList.title"/></title>
-    <meta name="heading" content="<fmt:message key='userList.heading'/>"/>
+    <title><spring:message code="userList.title"/></title>
+    <meta name="heading" content="<spring:message code='userList.heading'/>"/>
     <meta name="menu" content="AdminMenu"/>
 </head>
 
@@ -61,7 +61,7 @@
     
       <div style="margin-top: 12px;">
         <button class="btn btn-primary" id="prefssubmit" name="submit" aria-disabled="false" role="button" type="submit">
-          <span><spring:message code="userProfile.preferences.updateBtn.label"/></span>
+          <span><spring:message code="userProfile.preferences.updateButton.label"/></span>
         </button>
       </div>
     

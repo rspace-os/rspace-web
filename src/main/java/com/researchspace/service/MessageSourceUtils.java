@@ -1,5 +1,7 @@
 package com.researchspace.service;
 
+import java.util.List;
+import java.util.Locale;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -7,10 +9,7 @@ import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.stereotype.Component;
 
-/**
- * Class that unifies access to message resources in RSpace. Returns messages based on default
- * locale.
- */
+/** Accesses messages using either the current request locale or an explicit locale. */
 @NoArgsConstructor
 @Component("messageSourceUtils")
 public class MessageSourceUtils {
@@ -19,7 +18,7 @@ public class MessageSourceUtils {
 
   @Autowired
   public void setMessageSource(MessageSource messageSource) {
-    messages = new MessageSourceAccessor(messageSource);
+    this.messages = new MessageSourceAccessor(messageSource);
   }
 
   public String getMessage(String code) {
@@ -32,6 +31,31 @@ public class MessageSourceUtils {
 
   public String getMessage(String key, Object[] args) {
     return messages.getMessage(key, args);
+  }
+
+  /** Resolves a message without arguments against an explicit locale. */
+  public String getMessageForLocale(String key, Locale locale) {
+    return messages.getMessage(key, locale);
+  }
+
+  /** Resolves a message against an explicit locale. */
+  public String getMessage(String key, Object[] args, Locale locale) {
+    return messages.getMessage(key, args, locale);
+  }
+
+  /** Resolves a {@link MessageSourceResolvable} against an explicit locale. */
+  public String getMessage(MessageSourceResolvable resolvable, Locale locale) {
+    return messages.getMessage(resolvable, locale);
+  }
+
+  /** Accepts Velocity array literals, which are passed as {@link List Lists}. */
+  public String format(String key, List<Object> args) {
+    return messages.getMessage(key, args == null ? null : args.toArray());
+  }
+
+  /** Locale-explicit variant of {@link #format(String, List)}. */
+  public String format(String key, List<Object> args, Locale locale) {
+    return messages.getMessage(key, args == null ? null : args.toArray(), locale);
   }
 
   /**
@@ -47,12 +71,9 @@ public class MessageSourceUtils {
   }
 
   public String getResourceNotFoundMessage(String resourceType, String id) {
-    return getMessage("record.inaccessible", new String[] {resourceType, id});
+    return getMessage("errors.resource.inaccessible", new String[] {resourceType, id});
   }
 
-  /*
-   * for testing
-   */
   public MessageSourceUtils(MessageSource messageSource) {
     setMessageSource(messageSource);
   }

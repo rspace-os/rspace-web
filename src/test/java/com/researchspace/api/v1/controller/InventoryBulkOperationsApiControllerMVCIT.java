@@ -546,7 +546,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     assertEquals(1, bulkOpResult.getErrorCount());
     assertEquals(InventoryBulkOperationStatus.REVERTED_ON_ERROR, bulkOpResult.getStatus());
     errorMsg = bulkOpResult.getResults().get(0).getError().getErrors().get(0);
-    assertTrue(errorMsg.contains("move.failure.cannot.locate.target.container"), errorMsg);
+    assertTrue(errorMsg.contains("errors.inventory.move.targetContainer.unavailable"), errorMsg);
 
     // confirm container not moved
     retrievedContainer = containerApiMgr.getApiContainerById(testUserContainer.getId(), testUser);

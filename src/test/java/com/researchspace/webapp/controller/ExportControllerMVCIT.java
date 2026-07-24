@@ -467,7 +467,8 @@ public class ExportControllerMVCIT extends MVCTestBase {
                 .content(requestContent)
                 .contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isOk())
-        .andExpect(content().string(messages.getMessage("pdfArchiving.submission.successMsg")));
+        .andExpect(
+            content().string(messages.getMessage("importExport.pdfArchiving.submission.success")));
   }
 
   private void exportAndExpectFailure(
@@ -479,17 +480,17 @@ public class ExportControllerMVCIT extends MVCTestBase {
                 .principal(u::getUsername)
                 .content(requestContent)
                 .contentType(APPLICATION_JSON_UTF8))
-        .andExpect(status().isOk())
+        .andExpect(status().isBadRequest())
         .andExpect(
             content()
                 .string(
                     messages.getMessage(
-                        "workspace.export.msgFailure",
-                        new String[] {
-                          "Export",
-                          "The projectID \""
-                              + exportRequestDTO.getProjectGroupId()
-                              + "\" has not got any RaidAssociated"
+                        "workspace.export.failureMessage",
+                        new Object[] {
+                          messages.getMessage("common:actions.export"),
+                          messages.getMessage(
+                              "workspace.export.raidAssociationMissing",
+                              new Object[] {exportRequestDTO.getProjectGroupId()})
                         })));
   }
 

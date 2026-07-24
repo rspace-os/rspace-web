@@ -1,6 +1,7 @@
 package com.researchspace.service.archive.export;
 
 import com.researchspace.model.ArchivalCheckSum;
+import java.util.List;
 
 /**
  * Defines policy for deciding when an HTML or XML export ( or any other resource on the server,
@@ -22,9 +23,11 @@ public interface ExportRemovalPolicy {
    * an archive become eligible for deletion, the exact time of it's removal may vary, depending on
    * how often the archives are scanned by the deletion mechanism.
    *
-   * @return A String.
+   * @return the untranslated message key and arguments
    */
-  public String getRemovalCircumstancesMsg();
+  RemovalCircumstancesMessage getRemovalCircumstancesMessage();
+
+  record RemovalCircumstancesMessage(String key, List<Object> arguments) {}
 
   /** Always returns false - the archive should not be removed. */
   ExportRemovalPolicy FALSE =
@@ -35,8 +38,9 @@ public interface ExportRemovalPolicy {
         }
 
         @Override
-        public String getRemovalCircumstancesMsg() {
-          return "This archive will never be removed.";
+        public RemovalCircumstancesMessage getRemovalCircumstancesMessage() {
+          return new RemovalCircumstancesMessage(
+              "email.notification.exportCompleteNotification.removalPolicyNever", List.of());
         }
       };
 
@@ -49,8 +53,9 @@ public interface ExportRemovalPolicy {
         }
 
         @Override
-        public String getRemovalCircumstancesMsg() {
-          return "This archive is now elegible for removal.";
+        public RemovalCircumstancesMessage getRemovalCircumstancesMessage() {
+          return new RemovalCircumstancesMessage(
+              "email.notification.exportCompleteNotification.removalPolicyNow", List.of());
         }
       };
 }

@@ -79,7 +79,8 @@ public class DashboardController extends BaseController {
     // handle NPE following server restart when user was logged on or browser open and hence there
     // is no longer a session
     if (subjectUser == null || subjectUser.getId() == null) {
-      return new AjaxReturnObject<NotificationStatus>(null, ErrorList.of("No valid session"));
+      return new AjaxReturnObject<NotificationStatus>(
+          null, ErrorList.of(getText("dashboard.errors.invalidSession")));
     }
     Integer notificationCount = tracker.getNotificationCountFor(subjectUser.getId());
     Integer messageCount = tracker.getMessageCountFor(subjectUser.getId());
@@ -202,7 +203,7 @@ public class DashboardController extends BaseController {
       reqStatusUpdateMgr.replyToMessage(principal.getName(), messageOrRequestId, message);
     } catch (Exception e) {
       log.error("Error replying to message: " + e.getMessage());
-      ErrorList el = ErrorList.of("Could not save message reply, this has been logged");
+      ErrorList el = ErrorList.of(getText("dashboard.errors.replySaveFailed"));
       return new AjaxReturnObject<>(null, el);
     }
     return new AjaxReturnObject<>("Success", null);

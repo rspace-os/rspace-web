@@ -13,7 +13,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 /**
  * POJO for RepositorySubmission
  *
- * <p>Message properties are resolved in ValidationMessages.properties
+ * <p>Validation messages are resolved through the application message source.
  */
 @Data
 @NoArgsConstructor
@@ -22,33 +22,36 @@ public class RepoDepositMeta {
   protected static final int MAX_FIELD_LENGTH = 1000;
   protected static final int MIN_FIELD_LENGTH = 3;
 
-  @Size(max = MAX_USERS, message = "{errors.collection.range} {authors}")
-  @NotEmpty(message = "{authors} {errors.required.field}")
+  @Size(max = MAX_USERS, message = "{validation.errors.authorsCollectionRange}")
+  @NotEmpty(message = "{validation.errors.authorsRequired}")
   private @Valid List<UserDepositorAdapter> authors;
 
-  @Size(max = 10, message = "{errors.collection.range} {contacts}")
-  @NotEmpty(message = "{contacts} {errors.required.field}")
+  @Size(max = 10, message = "{validation.errors.contactsCollectionRange}")
+  @NotEmpty(message = "{validation.errors.contactsRequired}")
   private @Valid List<UserDepositorAdapter> contacts;
 
-  @Size(min = MIN_FIELD_LENGTH, max = MAX_FIELD_LENGTH, message = "{title} {errors.string.range}")
-  @NotBlank(message = "{title} {errors.required.field}")
+  @Size(
+      min = MIN_FIELD_LENGTH,
+      max = MAX_FIELD_LENGTH,
+      message = "{validation.errors.titleStringRange}")
+  @NotBlank(message = "{validation.errors.titleRequired}")
   private String title;
 
-  @Size(max = MAX_FIELD_LENGTH, message = "{subject} {errors.string.max}")
-  @NotBlank(message = "{subject} {errors.required.field}")
+  @Size(max = MAX_FIELD_LENGTH, message = "{validation.errors.subjectStringMax}")
+  @NotBlank(message = "{validation.errors.subjectRequired}")
   private String subject;
 
-  @Size(max = MAX_FIELD_LENGTH, message = "{license} {errors.string.max}")
-  @NotBlank(message = "{licenseURL} {errors.required.field}")
+  @Size(max = MAX_FIELD_LENGTH, message = "{validation.errors.licenseUrlStringMax}")
+  @NotBlank(message = "{validation.errors.licenseUrlRequired}")
   private String licenseUrl;
 
   // License names can be abbreviations, e.g. CC
-  @Size(min = 2, max = MAX_FIELD_LENGTH, message = "{license} {errors.string.max}")
-  @NotBlank(message = "{licenseName} {errors.required.field}")
+  @Size(min = 2, max = MAX_FIELD_LENGTH, message = "{validation.errors.licenseNameStringRange}")
+  @NotBlank(message = "{validation.errors.licenseNameRequired}")
   private String licenseName;
 
-  @Size(max = MAX_FIELD_LENGTH, message = "{description} {errors.string.max}")
-  @NotBlank(message = "{description} {errors.required.field}")
+  @Size(max = MAX_FIELD_LENGTH, message = "{validation.errors.descriptionStringMax}")
+  @NotBlank(message = "{validation.errors.descriptionRequired}")
   private String description;
 
   private List<RepoDepositTag> tags;

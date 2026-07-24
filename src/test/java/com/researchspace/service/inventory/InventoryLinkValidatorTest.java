@@ -21,7 +21,7 @@ class InventoryLinkValidatorTest {
 
     assertTrue(errors.hasFieldErrors("targetGlobalId"));
     assertEquals(
-        "errors.inventory.field.link.targetNotFound",
+        "errors.inventory.field.linkTargetNotFound",
         errors.getFieldError("targetGlobalId").getCode());
   }
 
@@ -33,7 +33,7 @@ class InventoryLinkValidatorTest {
 
     assertTrue(errors.hasFieldErrors("relationType"));
     assertEquals(
-        "errors.inventory.field.link.relationTypeInvalid",
+        "errors.inventory.field.linkRelationTypeInvalid",
         errors.getFieldError("relationType").getCode());
   }
 
@@ -45,7 +45,7 @@ class InventoryLinkValidatorTest {
 
     assertTrue(errors.hasFieldErrors("targetGlobalId"));
     assertEquals(
-        "errors.inventory.field.link.targetKindUnsupported",
+        "errors.inventory.field.linkTargetKindUnsupported",
         errors.getFieldError("targetGlobalId").getCode());
   }
 

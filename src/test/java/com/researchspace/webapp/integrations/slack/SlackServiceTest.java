@@ -6,6 +6,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.slack.SlackMessage;
 import com.researchspace.webapp.controller.RecordAccessDeniedException;
 import com.researchspace.webapp.integrations.slack.SlackServiceImpl.MessageHistory;
@@ -16,6 +19,7 @@ import org.junit.Test;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
 public class SlackServiceTest {
@@ -27,6 +31,9 @@ public class SlackServiceTest {
   @Before
   public void setUp() throws Exception {
     slackService.setRestTemplate(restTemplate);
+    ReflectionTestUtils.setField(
+        slackService, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    ReflectionTestUtils.setField(slackService, "userLocaleService", new UserLocaleService());
   }
 
   @Test

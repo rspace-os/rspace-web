@@ -180,7 +180,9 @@ public class DeploymentPropertiesController extends BaseController {
       case "deployment.helpEmail":
         return deploymentHelpEmail;
       default:
-        throw new IllegalArgumentException("No property available for name: " + propertyName);
+        throw new IllegalArgumentException(
+            messages.getResourceNotFoundMessage(
+                messages.getMessage("resourceType.property"), propertyName));
     }
   }
 

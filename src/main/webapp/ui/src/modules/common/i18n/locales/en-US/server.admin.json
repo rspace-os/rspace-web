@@ -1,0 +1,357 @@
+{
+  "errors": {
+    "group": {
+      "memberCount": "Group must contain between {min} and {max} members",
+      "nameRequired": "Please provide a name for the group"
+    },
+    "user": {
+      "role": {
+        "invalid": "Unknown role - must be one of 'ROLE_USER' or 'ROLE_PI'"
+      },
+      "usernameRequired": "Username must be provided"
+    }
+  },
+  "action": {
+    "audit": "Audit"
+  },
+  "admin": {
+    "title": "ResearchSpace Admin"
+  },
+  "passwordChange": {
+    "errors": {
+      "incorrectCurrentPassword": "The current password is incorrect"
+    },
+    "success": "Password changed successfully"
+  },
+  "cloud": {
+    "createGroup": {
+      "labGroup": {
+        "controlledSharing": {
+          "cloud": "Only you and your PI can see your data by default.",
+          "label": "Controlled sharing.",
+          "nonCloud": "As PI, you can see the data of all members of your group. Other group members can only see their own data by default.",
+          "shareInstructions": "You can let others in your lab see or edit a specific document or notebook by selecting it in the workspace and clicking SHARE. YOU decide when to share your work, who to share it with and what level of access other users have; either 'read only' or 'edit'."
+        },
+        "intro": "You can organise your colleagues into LabGroups to make collaboration and oversight easier.",
+        "openSharing": "Open sharing. It may be that your group is 'open' and you want all data to be shared automatically amongst its members. Your group members can opt-in to this after they join the group, by enabling autosharing.",
+        "sharingOptionsIntro": "There are two options for sharing data in LabGroups:",
+        "visibilityNote": "Your work is ONLY ever visible to members of groups that you belong to."
+      },
+      "projectGroup": {
+        "dataPrivate": "All data is private, unless explicitly shared among group members.",
+        "heading": "Create a Project Group",
+        "intro": "You can organise your colleagues into Project Groups to allow data sharing.",
+        "leave": "Any group member may leave, except the last Group Owner.",
+        "noPi": "There is no PI in a Project Group. There must be at least one Group Owner, by default the creator of the group.",
+        "ownerDelete": "The Group Owner can delete the group.",
+        "ownerInvite": "The Group Owner can invite new members.",
+        "ownerPromote": "The Group Owner can make other users Group Owners."
+      }
+    },
+    "createGroupSuccess": {
+      "hereLinkText": "here"
+    }
+  },
+  "audit": {
+    "actions": {
+      "label": "Actions"
+    },
+    "activity": {
+      "filter": {
+        "admin": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4} or by {5}",
+        "pi": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4}",
+        "sysadmin": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4}, by {5}, or by {6}",
+        "user": "You can filter this audit by {0}, by {1}, by {2}, and by {3}"
+      }
+    },
+    "communities": {
+      "label": "Communities"
+    },
+    "date": {
+      "label": "Date range"
+    },
+    "domains": {
+      "label": "Activity areas"
+    },
+    "downloadReport": {
+      "button": {
+        "label": "Download Audit Report"
+      },
+      "limit": "(maximum of 10,000 events per download)"
+    },
+    "filter": {
+      "communityPrompt": "Enter a Community to audit",
+      "dateRangePrompt": "Date range to audit",
+      "from": "from",
+      "globalIdPrompt": "Enter a global ID of a document, notebook, or Inventory item, e.g. SD12345",
+      "labGroupPrompt": "Enter a LabGroup to audit",
+      "to": "to",
+      "usersPrompt": "Enter a user or users to audit"
+    },
+    "getReport": {
+      "button": {
+        "label": "Get Audit Report"
+      }
+    },
+    "global": {
+      "label": "Global RSpace Activity"
+    },
+    "heading": "Auditing",
+    "my": "My RSpace Activity",
+    "myCommunity": {
+      "label": "My Community's RSpace Activity"
+    },
+    "myGroup": {
+      "label": "My LabGroup's RSpace Activity"
+    },
+    "title": "Auditing"
+  },
+  "dialogs": {
+    "changeEmail": {
+      "label": {
+        "confirm": "Confirm new e-mail",
+        "new": "New e-mail",
+        "password": "Enter password"
+      }
+    },
+    "changeFormIcon": {
+      "instruction": "Select a file and view resized to icon proportions before submitting"
+    },
+    "changePassword": {
+      "label": {
+        "confirm": "Confirm new password",
+        "current": "Enter current password",
+        "new": "Enter new password"
+      }
+    },
+    "changeVerificationPassword": {
+      "label": {
+        "confirm": "Confirm new verification password",
+        "current": "Enter current verification password",
+        "new": "Enter new verification password"
+      }
+    },
+    "setVerificationPassword": {
+      "label": {
+        "confirm": "Confirm verification password",
+        "new": "Enter verification password"
+      }
+    },
+    "uploadImage": {
+      "instruction": "Please upload a gif, jpeg, or png format profile image"
+    },
+    "verificationPassword": {
+      "description": "This password provides an additional layer of security when performing sensitive actions such as changing email address or signing documents. <strong>It should <em>not</em> be the same as your SingleSignOn or Google password.</strong>"
+    }
+  },
+  "directory": {
+    "cloud": {
+      "searchPrompt": "Please search for users using the search bar on the right of the page."
+    },
+    "labGroupList": {
+      "communityNameHeader": "Community Name",
+      "nameHeader": "LabGroup Name"
+    },
+    "noResults": {
+      "emptySearchResults": "No users were found. Please try searching again."
+    },
+    "projectGroupList": {
+      "nameHeader": "Project Group Name"
+    },
+    "projectGroups": {
+      "title": "Project Groups"
+    },
+    "search": {
+      "placeholder": "By name, email or username"
+    },
+    "title": "Directory",
+    "userList": {
+      "orcidLogoAlt": "ORCiD Logo"
+    }
+  },
+  "form": {
+    "create": {
+      "fieldTypeSelect": "Select Field Type"
+    }
+  },
+  "header": {
+    "runAs": {
+      "activeBanner": "Currently operating as"
+    },
+    "switchToEnglish": "{0} in English"
+  },
+  "mainMenu": {
+    "heading": "Welcome!"
+  },
+  "menu": {
+    "admin": {
+      "audit": "Auditing",
+      "inOut": "Export - Import",
+      "listRecordSharing": "Shared Documents",
+      "newGroup": "Create LabGroup",
+      "newProjectGroup": "Create Project Group",
+      "publicListRecordSharing": "Users' Published Documents",
+      "trash": "Deleted Resources",
+      "trashList": "Deleted Items"
+    },
+    "labGroup": "My LabGroups",
+    "profile": "My Profile",
+    "publicListRecordSharing": {
+      "pi": "My Group's Published Documents",
+      "user": "My Published Documents"
+    },
+    "scrollButtons": {
+      "next": "Next menu items",
+      "previous": "Previous menu items"
+    },
+    "templates": {
+      "create": "Create Form",
+      "formEditor": "Form Editor",
+      "list": "Manage Forms"
+    },
+    "user": "Edit Profile"
+  },
+  "table": {
+    "about": {
+      "header": "About"
+    },
+    "admins": {
+      "header": "Admins"
+    },
+    "created": {
+      "header": "Created"
+    },
+    "name": {
+      "header": "Name"
+    }
+  },
+  "unknown": {
+    "group": {
+      "label": "&lt;unknown group&gt;"
+    },
+    "user": {
+      "label": "&lt;unknown user&gt;"
+    }
+  },
+  "user": {
+    "actions": {
+      "label": "Manage Roles"
+    },
+    "affiliation": {
+      "label": "Affiliation"
+    },
+    "apiKey": {
+      "label": "Manage API key"
+    },
+    "confirmPassword": "Confirm Password",
+    "email": "E-Mail",
+    "id": "Id",
+    "orcid": {
+      "label": "ORCID"
+    },
+    "remove": {
+      "label": "Remove User"
+    },
+    "roles": "Current Roles",
+    "sid": "SID",
+    "signupSource": "Signed up with"
+  },
+  "userList": {
+    "heading": "Current Users",
+    "title": "User List"
+  },
+  "userDeletion": {
+    "errors": {
+      "exportBeforeDeletionFailed": "Could not make export of user's work before deleting account; user deletion aborted",
+      "filestoreRemovalFailed": "Problem during filestore removal",
+      "nonTempUserTooNew": "Can only delete users created more than a year ago",
+      "resourceListUnreadable": "Resource list file not readable",
+      "sysadminRequired": "Only user with sysadmin role can delete filestore resources",
+      "tempUserTooNew": "Can only delete temp users created more than a year ago"
+    }
+  },
+  "userProfile": {
+    "apiKey": {
+      "errors": {
+        "notSet": "API key is not set",
+        "runAs": "API key value cannot be accessed when 'operating as' another user"
+      }
+    },
+    "heading": "User Profile",
+    "image": {
+      "errors": {
+        "notAnImage": "RSpace could not interpret file {0} as an image file"
+      }
+    },
+    "email": {
+      "errors": {
+        "alreadyRegistered": "There is already user registered with this email",
+        "confirmationMismatch": "New email field does not match the confirm email",
+        "incorrectPassword": "The current password is incorrect",
+        "tooLong": "Email address is too long - should be less than {0} characters",
+        "unchanged": "Provided email is the same as your current email"
+      }
+    },
+    "message": {
+      "delivery": {
+        "label": "Preferred delivery method"
+      },
+      "notify": {
+        "label": "Notify me when"
+      },
+      "title": "Messaging and Notification Preferences"
+    },
+    "messageSettingsChanged": {
+      "confirmation": "Message preferences updated"
+    },
+    "otherPreferences": {
+      "hideProfile": {
+        "label": "Hide my profile from public listings"
+      },
+      "title": "Other Preferences"
+    },
+    "pageLinks": {
+      "changePassword": "Change Password",
+      "changeVerificationPassword": "Change Verification Password",
+      "deleteOrcidId": "Remove ORCID ID",
+      "forgotVerificationPassword": "Reset Verification Password",
+      "setOrcidId": "Set ORCID ID",
+      "setVerificationPassword": "Set Verification Password",
+      "uploadImage": "Change Image"
+    },
+    "preferences": {
+      "updateButton": {
+        "label": "Update Preferences"
+      }
+    },
+    "sectionLabel": {
+      "collaborationGroups": "Collaboration Groups:",
+      "labGroups": "LabGroups",
+      "projectGroups": "Project Groups:"
+    },
+    "selfDeclarePi": {
+      "addPiRole": "Add PI role",
+      "canManage": "You can manage your PI role.",
+      "errors": {
+        "alreadyPi": "User is already a PI.",
+        "disabled": "Self-declaring PI not enabled.",
+        "hasLabGroups": "You must delete or transfer over all LabGroups before you can remove your PI status.",
+        "notAllowed": "User cannot self-declare as a PI (isAllowedPiRole=false).",
+        "notPi": "User is not a PI."
+      },
+      "heading": "Manage PI Role",
+      "isPi": "You have PI role.",
+      "notPi": "You are a regular user, without PI role.",
+      "removePiRole": "Remove PI role"
+    },
+    "title": "User Settings"
+  },
+  "verificationPassword": {
+    "set": {
+      "errors": {
+        "alreadySet": "Verification password has already been set."
+      },
+      "success": "Verification password set successfully"
+    }
+  }
+}

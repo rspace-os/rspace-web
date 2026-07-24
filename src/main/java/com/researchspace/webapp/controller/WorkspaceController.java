@@ -15,6 +15,7 @@ import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.core.util.SortOrder;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.core.util.URLGenerator;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.EcatMediaFile;
@@ -65,6 +66,7 @@ import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.HelpDocsUrls;
 import com.researchspace.service.PostLoginHandler;
 import com.researchspace.service.PreWorkspaceViewRecordStatusManager;
 import com.researchspace.service.RecordDeletionManager;
@@ -222,8 +224,7 @@ public class WorkspaceController extends BaseController {
           user.getUsername(),
           user.getLastLogin());
       throw new IllegalStateException(
-          String.format(
-              "Home folder should be present, but is not for user %s", user.getUsername()));
+          getText("workspace.errors.homeFolderMissing", new Object[] {user.getUsername()}));
     }
     // if we have a settings key, then we use that to configure workspace reload
     if (isValidSettingsKey(settingsKey)) {
@@ -380,15 +381,15 @@ public class WorkspaceController extends BaseController {
 
     if (folderName.length() > NESTED_NAME_MAX_LENGTH) {
       error.addErrorMsg(
-          String.format(
-              "Nested folder name above %d characters is not allowed.", NESTED_NAME_MAX_LENGTH));
+          getText(
+              "workspace.folder.errors.nestedNameTooLong", new Object[] {NESTED_NAME_MAX_LENGTH}));
       return new AjaxReturnObject<>(null, error);
     }
 
     List<String> nestedFolderNames = parseNestedFolderPath(folderName);
     if (nestedFolderNames.size() > NESTED_NAME_MAX_FOLDERS) {
       error.addErrorMsg(
-          String.format("More than %d nested folders are not allowed.", NESTED_NAME_MAX_FOLDERS));
+          getText("workspace.folder.errors.tooManyNested", new Object[] {NESTED_NAME_MAX_FOLDERS}));
       return new AjaxReturnObject<>(null, error);
     }
 
@@ -451,7 +452,7 @@ public class WorkspaceController extends BaseController {
   }
 
   protected String abbreviateName(String folderName) {
-    return StringUtils.abbreviate(folderName, NAME_MAX_LENGTH);
+    return StringAbbreviationUtils.abbreviate(folderName, NAME_MAX_LENGTH);
   }
 
   /**
@@ -484,7 +485,7 @@ public class WorkspaceController extends BaseController {
       currentNewName = newName[indx];
       boolean isRecord = isRecord(currentIdToCopy);
       if (currentNewName == null) {
-        currentNewName = "Unknown Name_Copy";
+        currentNewName = getText("workspace.copy.unknownName");
       }
       // RSPAC-1558
       fitNameToMaxSize(newName, indx);
@@ -519,7 +520,7 @@ public class WorkspaceController extends BaseController {
       throws IOException {
     Record mediaRecord = recordManager.get(id);
     if (!mediaRecord.isMediaRecord()) {
-      throw new IllegalArgumentException("Not a media record");
+      throw new IllegalArgumentException(getText("workspace.errors.notMediaRecord"));
     }
     User user = getUserByUsername(principal.getName());
     assertAuthorisation(user, mediaRecord, PermissionType.READ);
@@ -574,7 +575,7 @@ public class WorkspaceController extends BaseController {
         || toMove.length == 0
         || targetFolderId == null
         || targetFolderId.isEmpty()) {
-      throw new IllegalArgumentException("No records to move");
+      throw new IllegalArgumentException(getText("workspace.move.errors.noRecords"));
     }
 
     User user = getUserByUsername(principal.getName());
@@ -600,10 +601,10 @@ public class WorkspaceController extends BaseController {
                     .anyMatch(
                         result ->
                             result != null && result.getMessage().contains("into own notebook"))
-                ? "workspace.share.owned.into.shared.owned"
+                ? "workspace.share.owned.intoSharedOwned"
                 : "workspace.move.nothing.moved";
       } else {
-        msgKey = getText("workspace.move.some.not.moved");
+        msgKey = "workspace.move.some.notMoved";
       }
       model.addAttribute("errorMsg", getText(msgKey));
     }
@@ -634,7 +635,10 @@ public class WorkspaceController extends BaseController {
 
     ProgressMonitor progress =
         createProgressMonitor(
-            RS_DELETE_RECORD_PROGRESS, toDelete.length * 10, "Deleting records", session);
+            RS_DELETE_RECORD_PROGRESS,
+            toDelete.length * 10,
+            getText("workspace.delete.progress"),
+            session);
     DeletionSettings delContext =
         DeletionSettings.builder()
             .grandParentId(settings.getGrandParentId())
@@ -676,7 +680,8 @@ public class WorkspaceController extends BaseController {
       log.warn("Document cannot be deleted: edit status is {}", es);
       String editor = tracker.getEditingUserForRecord(id);
       model.addAttribute(
-          "errorMsg", getText("document.delete.failure.msg", new Object[] {id, editor}));
+          "errorMsg",
+          getText("document.delete.errors.editedByOtherUser", new Object[] {id, editor}));
     }
   }
 
@@ -862,11 +867,13 @@ public class WorkspaceController extends BaseController {
     if (isSharedFolderWithOnlyOwnerPermission) {
       model.addAttribute(
           "errorMsg",
-          "The folder you're browsing seems "
-              + "to have inconsistent sharing status. Please contact your System Admin, "
-              + "citing folder ID: "
-              + parentFolder.getOid()
-              + ". More details at https://researchspace.helpdocs.io/article/2toicmq4iu");
+          getText(
+              "workspace.errors.inconsistentSharingStatus",
+              new Object[] {
+                parentFolder.getOid(),
+                HelpDocsUrls.urlFromSlug(
+                    messages.getMessage("common:help.inconsistentSharingFolder"))
+              }));
     }
   }
 
@@ -908,7 +915,7 @@ public class WorkspaceController extends BaseController {
       addWorkspaceConfigToSessionAndKeyModel(config, model, session);
 
     } else {
-      throw new IllegalArgumentException("Either of search terms or parent folder must be set");
+      throw new IllegalArgumentException(getText("workspace.search.errors.missingScope"));
     }
   }
 
@@ -971,7 +978,7 @@ public class WorkspaceController extends BaseController {
     if (errors != null && errors.hasErrorMessages()) {
       request.setAttribute("ajax.errors", errors);
       response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
-      throw new IllegalArgumentException("Invalid search input");
+      throw new IllegalArgumentException(getText("workspace.search.errors.invalidInput"));
     }
   }
 
@@ -1239,13 +1246,12 @@ public class WorkspaceController extends BaseController {
       HttpSession session) {
     // basic validation
     if (!isValidSettingsKey(settingsKey)) {
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid settings key");
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+          .body(getText("workspace.settings.errors.invalidKey"));
     }
     if (session.getAttribute(settingsKey) == null) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-          .body(
-              "Session did not contain a workspace listing associated with the "
-                  + "given settings key");
+          .body(getText("workspace.settings.errors.missingSessionListing"));
     } else {
       WorkspaceListingConfig cfg = new WorkspaceListingConfig(settings);
       session.setAttribute(settingsKey, cfg);

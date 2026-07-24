@@ -11,10 +11,8 @@ import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIAS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
-import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.integrations.galaxy.service.GalaxyAliasToServer;
 import com.researchspace.integrations.galaxy.service.GalaxyService;
@@ -33,6 +31,8 @@ import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IRepositoryConfigFactory;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserAppConfigManager;
@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -89,6 +90,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private @Autowired UserManager userMgr;
   private @Autowired IRepositoryConfigFactory repositoryConfigFactory;
   private @Autowired UserConnectionManager userConnManager;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired IPropertyHolder propertyHolder;
   private @Autowired PyratClient pyratClient;
   private @Autowired RaIDServiceClientAdapter raidClientService;
@@ -425,9 +427,15 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private void checkValidIntegration(String name) {
     if (!isValidIntegration(name)) {
       throw new IllegalArgumentException(
-          format(
-              "Invalid integration name %s, must be one of [%s]",
-              name, join(booleanIntegrationPrefs, ",")));
+          messages.getMessage(
+              "apps.errors.invalidIntegrationName",
+              new Object[] {
+                name,
+                ListFormatUtils.formatList(
+                    booleanIntegrationPrefs.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.toList()))
+              }));
     }
   }
 

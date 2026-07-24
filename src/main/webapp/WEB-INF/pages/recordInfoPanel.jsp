@@ -5,16 +5,16 @@
 
   <div class="linkedRecordsForAttachmentsDiv">
  <!--{{^isEmpty}} -->
-This file is referenced by:
+<spring:message code="inventory:fields.link.gallerySections.referencedBy"/>
 <table class="linkedRecordsForAttachmentsTable" width="100%">
-            <tr class="linkedRecordRow"><th>ID</th><th>Name</th></tr>
+            <tr class="linkedRecordRow"><th><spring:message code="recordInfoPanel.linkedRecords.idHeader"/></th><th><spring:message code="recordInfoPanel.linkedRecords.nameHeader"/></th></tr>
             <!--{{#items}} -->
             <tr><td><a href="/globalId/{{oid.idString}}">{{oid.idString}}</a></td><td>{{name}}</td></tr>
            <!--  {{/items}}   -->
   </table>
  <!--{{/isEmpty}} -->
  <!--{{#isEmpty}} -->
-There are no references to this file.
+<spring:message code="inventory:fields.link.gallerySections.noReferences"/>
  <!--{{/isEmpty}} -->
 </div>
 
@@ -98,18 +98,19 @@ There are no references to this file.
   <div class="recordInfoPanel">
     <div class="recordInfoLeftPanel">
       <div class="infoPanelRevisionInfoDiv" style="display:none">
-        The information below describes <strong>version <span class="infoPanel-docVersion"></span></strong>
-        of&nbsp;a&nbsp;document <a class="infoPanel-objectIdLatestLink" href="#"></a>, which may not be the latest
-        version.
+        <spring:message code="recordInfoPanel.revisionNotice.text">
+          <spring:argument value='<span class="infoPanel-docVersion"></span>'/>
+          <spring:argument value='<a class="infoPanel-objectIdLatestLink" href="#"></a>'/>
+        </spring:message>
       </div>
 
       <table class="infoPanelTable">
         <tr>
-          <td class="infoLabelCell">Name: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfo.nameLabel"/> </td>
           <td class="infoPanel-name"></td>
         </tr>
         <tr class="infoPanelObjectIdRow">
-          <td class="infoLabelCell">Unique Id: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.uniqueIdLabel"/> </td>
           <td><a class="infoPanel-objectIdLink" href="#">
                 <span class="infoPanel-objectId"></span>
                 <img class="infoPanel-objectIdDownloadIcon" src='/images/download.png' />
@@ -117,75 +118,75 @@ There are no references to this file.
           </td>
         </tr>
         <tr>
-          <td class="infoLabelCell">Type: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.typeLabel"/> </td>
           <td class="infoPanel-type"></td>
         </tr>
         <tr class="infoPanelPathRow">
-          <td class="infoLabelCell">Path: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.pathLabel"/> </td>
           <td class="infoPanel-path"></td>
         </tr>
         <tr class="infoPanelDocVersionRow">
-          <td class="infoLabelCell">Version: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfo.versionLabel"/> </td>
           <td class="infoPanel-docVersion"></td>
         </tr>
         <tr class="infoPanelFileVersionRow">
-          <td class="infoLabelCell">Version: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfo.versionLabel"/> </td>
           <td class="infoPanel-fileVersion"></td>
         </tr>
         <tr class="infoPanelFileSizeRow">
-          <td class="infoLabelCell">File size: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfo.fileSizeLabel"/> </td>
           <td class="infoPanel-fileSize"></td>
         </tr>
         <tr>
-          <td class="infoLabelCell">Owner: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfo.ownerLabel"/> </td>
           <td class="infoPanel-owner"></td>
         </tr>
         <tr class="infoPanelCreatedByRow">
-          <td class="infoLabelCell">Created by: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.createdByLabel"/> </td>
           <td class="infoPanel-createdBy"></td>
         </tr>
          <tr class="infoPanelOriginalSource">
-          <td class="infoLabelCell">Source:  </td>
-          <td >Imported from archive</td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.sourceLabel"/>  </td>
+          <td ><spring:message code="recordInfoPanel.importedFromArchiveNotice"/></td>
         </tr>
         <tr class="infoPanelOriginalSource ">
-          <td class="infoLabelCell">Original creator: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.originalCreatorLabel"/> </td>
           <td class="infoPanelOriginalCreator"></td>
         </tr>
         <tr>
-          <td class="infoLabelCell">Creation Date: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.creationDateLabel"/> </td>
           <td class="infoPanel-creationDate"></td>
         </tr>
         <tr>
-          <td class="infoLabelCell">Last Modified: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.lastModifiedLabel"/> </td>
           <td class="infoPanel-modificationDate"></td>
         </tr>
         <tr class="infoPanelStatusRow">
-          <td class="infoLabelCell">Status: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.statusLabel"/> </td>
           <td class="infoPanel-status"></td>
         </tr>
         <tr class="infoPanelSignatureStatusRow">
-          <td class="infoLabelCell">Signature Status: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.signatureStatusLabel"/> </td>
           <td class="infoPanel-signatureStatus"></td>
         </tr>
         <tr class="infoPanelTemplateFormName">
-          <td class="infoLabelCell">Created from: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.createdFromLabel"/> </td>
           <td class="infoPanel-templateFormName"></td>
         </tr>
         <tr class="infoPanelTemplateFormId">
-          <td class="infoLabelCell">Form ID: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.formIdLabel"/> </td>
           <td><a class="infoPanel-templateFormID" href="#"></a></td>
         </tr>
         <tr class="infoPanelTemplateID">
-          <td class="infoLabelCell">Template Name: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.templateNameLabel"/> </td>
           <td><a class="infoPanel-templateID" href="#"></a></td>
         </tr>
         <tr class="infoPanelTagsRow">
-          <td class="infoLabelCell">Tags: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfo.tagsLabel"/> </td>
           <td class="infoPanel-tags"></td>
         </tr>
         <tr class="infoPanelOriginalImageIdRow">
-          <td class="infoLabelCell">Original Image: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.originalImageLabel"/> </td>
           <td><a class="infoPanel-objectIdLink" href="#">
                 <span class="infoPanel-objectId"></span>
                 <img class="infoPanel-objectIdDownloadIcon" src='/images/download.png' />
@@ -193,16 +194,16 @@ There are no references to this file.
           </td>
         </tr>
         <tr class="infoPanelCaptionViewDiv">
-          <td class="infoLabelCell">Caption: </td>
+          <td class="infoLabelCell"><spring:message code="recordInfoPanel.captionLabel"/> </td>
           <td class="infoPanel-caption"></td>
         </tr>
         <tr class="infoPanelCaptionEditDiv" style="display:none">
-          <td class="infoLabelCell" id="infoCaptionLabelCell">Caption: </td>
+          <td class="infoLabelCell" id="infoCaptionLabelCell"><spring:message code="recordInfoPanel.captionLabel"/> </td>
           <td>
             <textarea class="infoPanel-captionTextArea" aria-labelledby="infoCaptionLabelCell" maxlength="250"></textarea>
             <div class="infoPanelCaptionButtons">
-              <a class="infoPanelCancelCaptionBtn smallBtn closeIcon" href="#">Cancel</a>
-              <a class="infoPanelSaveCaptionBtn smallBtn createIcon" href="#">Save</a>
+              <a class="infoPanelCancelCaptionBtn smallBtn closeIcon" href="#"><spring:message code="common:actions.cancel"/></a>
+              <a class="infoPanelSaveCaptionBtn smallBtn createIcon" href="#"><spring:message code="common:actions.save"/></a>
             </div>
           </td>
         </tr>
@@ -214,9 +215,7 @@ There are no references to this file.
 
       <div class="infoPanelHistoricalVersionNotice" style="display:none">
         <img class="infoPanel-historicalVersionNoticeIcon" src='/images/warning.png' />
-        This attachment is a historical version and can't be edited directly.
-        To modify or reuse this attachment, please download it and re-attach it to
-        this or a new document
+        <spring:message code="recordInfoPanel.historicalVersionNotice"/>
       </div>
       <div class="infoPanelInternalLinksDiv" style="display:none"></div>
       <div class="infoPanelRelatedInventoryItemsDiv" style="display:none"></div>
@@ -224,62 +223,62 @@ There are no references to this file.
       <div class="publicLinksDiv" style="display:none"></div>
 
       <div class="infoPanelButtons bootstrap-custom-flat">
-        <button 
-          type='button' 
-          title="Open this file in Office.com"
-          class='infoPanelBtn recordViewInMsOnlineBtn btn btn-default' 
+        <button
+          type='button'
+          title="<spring:message code='recordInfoPanel.openInOfficeComTitle'/>"
+          class='infoPanelBtn recordViewInMsOnlineBtn btn btn-default'
           tabindex="0"
         >
-          Open in Office.com
+          <spring:message code="recordInfoPanel.openInOfficeComButton"/>
         </button>
-        <button 
-          type='button' 
-          title="Edit this file" 
+        <button
+          type='button'
+          title="<spring:message code='recordInfoPanel.editFileTitle'/>"
           class='infoPanelBtn recordEditBtn btn btn-default'
-          style="display:none;" 
+          style="display:none;"
           tabindex="0"
         >
-          Edit
+          <spring:message code="common:actions.edit"/>
         </button>
-        <button 
-          type='button' 
-          title="View this file in browser" 
+        <button
+          type='button'
+          title="<spring:message code='recordInfoPanel.viewFileTitle'/>"
           class='infoPanelBtn recordViewBtn btn btn-default'
           tabindex="0"
         >
-          View
+          <spring:message code="recordInfo.viewButton"/>
         </button>
-        <button 
-          type='button' 
-          title="Download to your device" 
+        <button
+          type='button'
+          title="<spring:message code='recordInfoPanel.downloadToDeviceTitle'/>"
           class='infoPanelBtn recordDownloadBtn btn btn-default'
           tabindex="0"
         >
-          Download
+          <spring:message code="common:actions.download"/>
         </button>
-        <button 
-          type='button' 
-          title="Upload new version of this file"
-          class='infoPanelBtn recordReplaceBtn btn btn-default' 
-          style="display:none;" 
+        <button
+          type='button'
+          title="<spring:message code='recordInfoPanel.uploadNewVersionTitle'/>"
+          class='infoPanelBtn recordReplaceBtn btn btn-default'
+          style="display:none;"
           tabindex="0"
         >
-          Upload new version
+          <spring:message code="inventory:fields.link.gallerySections.uploadNewVersion"/>
         </button>
-        <button 
-          type='button' 
-          title="Lists documents that link to this file"
-          class='infoPanelBtn recordShowLinkedDocs btn btn-default' 
-          style="display:none;" 
+        <button
+          type='button'
+          title="<spring:message code='recordInfoPanel.linkedDocsTitle'/>"
+          class='infoPanelBtn recordShowLinkedDocs btn btn-default'
+          style="display:none;"
           tabindex="0"
         >
-          Show linked docs
+          <spring:message code="inventory:fields.link.gallerySections.showLinkedDocs"/>
         </button>
       </div>
       <div class="linkedRecordsForAttachments" style="display:none;"></div>
     </div>
     <div class="recordInfoRightPanel">
-      <div class="strucDocPreviewHeader">Preview:</div>
+      <div class="strucDocPreviewHeader"><spring:message code="recordInfoPanel.previewLabel"/></div>
       <div class="strucDocPreviewContainer">
         <div class="strucDocPreview"></div>
       </div>

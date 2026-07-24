@@ -201,7 +201,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     String NEW_PROFILE_TEXT = "new profilex";
     MvcResult result = postNewProfile(pi1, g1, NEW_PROFILE_TEXT);
     Map data = parseJSONObjectFromResponseStream(result);
-    assertTrue(data.containsKey("data"));
+    assertEquals(true, data.get("data"));
     // assert profile is updated:
     g1 = grpMgr.getGroup(g1.getId());
     assertEquals(NEW_PROFILE_TEXT, g1.getProfileText());
@@ -677,7 +677,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     assertTrue(
         res3.getResponse()
             .getContentAsString()
-            .contains(getMsgFromResourceBundler("group.edit.invalidrolename.error.msg")));
+            .contains(getMsgFromResourceBundler("groups.edit.errors.invalidRoleName")));
 
     // try to change user role to unknown role, fails gracefully:
     MvcResult res4 =
@@ -692,7 +692,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     assertTrue(
         res4.getResponse()
             .getContentAsString()
-            .contains(getMsgFromResourceBundler("group.edit.invalidrolename.error.msg")));
+            .contains(getMsgFromResourceBundler("groups.edit.errors.invalidRoleName")));
 
     // finally, we should succeed - pi can alter user->lab admin role, for
     // example
@@ -731,7 +731,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     assertTrue(
         res7.getResponse()
             .getContentAsString()
-            .contains(getMsgFromResourceBundler("group.edit.mustbe1.admin.error.msg")));
+            .contains(getMsgFromResourceBundler("groups.edit.errors.cannotRemoveLastAdminOrPi")));
 
     // now let's update to a labdmin with view all permissions
     logoutAndLoginAs(pi1);

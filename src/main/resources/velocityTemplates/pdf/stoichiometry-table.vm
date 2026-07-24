@@ -1,24 +1,23 @@
 <div id='stoichiometry'>
   <br>
-  <h4>Stoichiometry Information for $header</h4>
+  <h4>$title</h4>
   <div class="stoichiometry-table-container">
     <table id='stoichiometry-table' class='stoichiometry-table'>
       <thead>
       <tr>
-        <th class='stoichiometry-table-name'>Name</th>
-        <th>Role</th>
-        <th>Limiting
-          Reagent
+        <th class='stoichiometry-table-name'>$msg.getMessage("export.pdf.stoichiometry.headerName")</th>
+        <th>$msg.getMessage("export.pdf.stoichiometry.headerRole")</th>
+        <th>$msg.getMessage("common:stoichiometry.table.columns.limitingReagent")
         </th>
-        <th>Equivalent</th>
-        <th>Molecular Weight (g/mol)</th>
-        <th>Mass (g)</th>
-        <th>Moles (mol)</th>
-        <th>Inventory</th>
-        <th>Actual Mass (g)</th>
-        <th>Actual Moles (mol)</th>
-        <th>Yield/Excess (%)</th>
-        <th class='stoichiometry-table-notes'>Notes</th>
+        <th>$msg.getMessage("common:stoichiometry.table.columns.equivalent")</th>
+        <th>$msg.getMessage("common:stoichiometry.table.columns.molecularWeight")</th>
+        <th>$msg.getMessage("common:stoichiometry.table.columns.mass")</th>
+        <th>$msg.getMessage("common:stoichiometry.table.columns.moles")</th>
+        <th>$msg.getMessage("export.pdf.stoichiometry.headerInventory")</th>
+        <th>$msg.getMessage("common:stoichiometry.table.columns.actualMass")</th>
+        <th>$msg.getMessage("common:stoichiometry.table.columns.actualMoles")</th>
+        <th>$msg.getMessage("common:stoichiometry.table.columns.yieldExcess")</th>
+        <th class='stoichiometry-table-notes'>$msg.getMessage("common:stoichiometry.table.columns.notes")</th>
       </tr>
       </thead>
       <tbody>

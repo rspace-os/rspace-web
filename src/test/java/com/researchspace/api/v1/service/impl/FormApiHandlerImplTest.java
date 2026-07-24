@@ -14,6 +14,8 @@ import com.researchspace.model.dtos.FormFieldSource;
 import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
@@ -25,6 +27,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class FormApiHandlerImplTest {
 
@@ -40,6 +43,7 @@ public class FormApiHandlerImplTest {
 
   @Before
   public void setup() {
+    ReflectionTestUtils.setField(impl, "messages", new MessageSourceUtils(new JsonMessageSource()));
     anyUser = TestFactory.createAnyUser("any");
     sessionTracker = new UserSessionTracker();
     // single field

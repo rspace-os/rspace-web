@@ -11,6 +11,8 @@ import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
 import com.researchspace.model.dtos.chemistry.ChemicalExportType;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchResultsDTO;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,6 +26,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -48,6 +51,8 @@ class ChemistryClientTest {
       ChemicalExportFormat.builder().exportType(ChemicalExportType.PNG).build();
 
   @Mock RestTemplate restTemplate;
+
+  @Spy private MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @InjectMocks ChemistryClient chemistryClient;
 
@@ -85,7 +90,7 @@ class ChemistryClientTest {
         String.format(
             "Unsuccessful conversion request to the chemistry service, status code: %d.",
             errorStatus.value());
-    assertEquals(expectedErrorMsg, exception.getMessage());
+    assertEquals(expectedErrorMsg, resolve(exception));
   }
 
   @Test
@@ -99,7 +104,7 @@ class ChemistryClientTest {
             () -> chemistryClient.convert("some chemical", EMPTY_INPUT_FORMAT, "some format"));
 
     String expectedErrorMsg = "Chemistry service couldn't convert the chemical.";
-    assertEquals(expectedErrorMsg, exception.getMessage());
+    assertEquals(expectedErrorMsg, resolve(exception));
   }
 
   @Test
@@ -121,6 +126,7 @@ class ChemistryClientTest {
     ChemistryClientException exception =
         assertThrows(ChemistryClientException.class, () -> chemistryClient.extract("CCC"));
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
+    assertEquals("Chemistry service could not process the request.", resolve(exception));
   }
 
   @Test
@@ -130,7 +136,7 @@ class ChemistryClientTest {
 
     ChemistryClientException exception =
         assertThrows(ChemistryClientException.class, () -> chemistryClient.extract("CCC"));
-    assertEquals("Chemistry service call failed", exception.getMessage());
+    assertEquals("Chemistry service call failed", resolve(exception));
   }
 
   @Test
@@ -161,7 +167,7 @@ class ChemistryClientTest {
         String.format(
             "Unsuccessful image export request to the chemistry service, status code: %d.",
             errorStatus.value());
-    assertEquals(expectedErrorMsg, exception.getMessage());
+    assertEquals(expectedErrorMsg, resolve(exception));
   }
 
   @Test
@@ -175,7 +181,7 @@ class ChemistryClientTest {
             () -> chemistryClient.exportImage("CC", "smiles", OUTPUT_FORMAT));
 
     String expectedErrorMsg = "Chemistry service couldn't generate the image for the chemical.";
-    assertEquals(expectedErrorMsg, exception.getMessage());
+    assertEquals(expectedErrorMsg, resolve(exception));
   }
 
   @ParameterizedTest
@@ -196,7 +202,7 @@ class ChemistryClientTest {
         String.format(
             "Unsuccessful save request to the chemistry service, status code: %d.",
             errorStatus.value());
-    assertEquals(expectedErrorMsg, exception.getMessage());
+    assertEquals(expectedErrorMsg, resolve(exception));
   }
 
   @Test
@@ -211,7 +217,7 @@ class ChemistryClientTest {
         assertThrows(ChemistryClientException.class, () -> chemistryClient.save(chemElement));
 
     String expectedErrorMsg = "Chemistry service couldn't save the chemical.";
-    assertEquals(expectedErrorMsg, exception.getMessage());
+    assertEquals(expectedErrorMsg, resolve(exception));
   }
 
   @Test
@@ -237,6 +243,18 @@ class ChemistryClientTest {
     List<Long> expectedIdMatches = List.of(Long.valueOf(expectedId));
 
     assertEquals(expectedIdMatches, actual.getChemicalHits());
+  }
+
+  @Test
+  public void whenSuccessfulSearchHasNoBody_thenReturnEmptyResults() {
+    when(restTemplate.exchange(
+            anyString(), any(HttpMethod.class), any(), any(ParameterizedTypeReference.class)))
+        .thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
+
+    ChemicalSearchResultsDTO actual = chemistryClient.search("CC", "SUBSTRUCTURE");
+
+    assertEquals(Collections.emptyList(), actual.getChemicalHits());
+    assertEquals(0, actual.getTotalHits());
   }
 
   @ParameterizedTest
@@ -267,7 +285,7 @@ class ChemistryClientTest {
         String.format(
             "Unsuccessful search request to the chemistry service, status code: %d.",
             errorStatus.value());
-    assertEquals(expectedErrorMsg, exception.getMessage());
+    assertEquals(expectedErrorMsg, resolve(exception));
   }
 
   @Test
@@ -292,6 +310,21 @@ class ChemistryClientTest {
             ChemistryClientException.class, () -> chemistryClient.search("CC", "SUBSTRUCTURE"));
 
     String expectedErrorMsg = "Chemistry service unable to search for the chemical.";
-    assertEquals(expectedErrorMsg, exception.getMessage());
+    assertEquals(expectedErrorMsg, resolve(exception));
+  }
+
+  @Test
+  public void whenFastSearchIndexingThrowsException_thenUseIndexingMessage() {
+    when(restTemplate.exchange(anyString(), any(HttpMethod.class), any(), any(Class.class)))
+        .thenThrow(new RestClientException(""));
+
+    ChemistryClientException exception =
+        assertThrows(ChemistryClientException.class, chemistryClient::callFastSearchIndexing);
+
+    assertEquals("Chemistry service couldn't start search indexing.", resolve(exception));
+  }
+
+  private String resolve(ChemistryClientException exception) {
+    return messages.getMessage(exception.getMessageKey(), exception.getArgs());
   }
 }

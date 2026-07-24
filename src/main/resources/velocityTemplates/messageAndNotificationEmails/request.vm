@@ -1,44 +1,36 @@
-
-<h2>RSpace Request from "$cmm.originator.fullName" (user "$cmm.originator.username")</h2>
-The RSpace#if ($cmm.messageType == "REQUEST_JOIN_LAB_GROUP") Principal Investigator #else User #end
-"<b>$cmm.originator.fullName</b>" sent you a
-request on $date.format('full_date', $dateOb) at #if ($cmm.messageType == "REQUEST_JOIN_LAB_GROUP") $date.format('short_time', $dateOb). #else $date.format('short_time', $dateOb)#end
+<h2>$msg.format("email.notification.request.rspaceRequestFromUser", [$cmm.originator.fullName, $cmm.originator.username])</h2>
+#if ($cmm.messageType == "REQUEST_JOIN_LAB_GROUP")
+#set($senderType = "pi")
+#else
+#set($senderType = "user")
+#end
+$msg.format("email.notification.request.sentRequest", [$senderType, $cmm.originator.fullName, $date.format('full_date', $dateOb), $date.format('short_time', $dateOb)])
 #if ($cmm.messageType == "REQUEST_JOIN_LAB_GROUP" || $cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
+#if($cmm.messageType == "REQUEST_JOIN_LAB_GROUP")
+#set($groupType = "labGroup")
+#else
+#set($groupType = "projectGroup")
+#end
 <br/><br/>
-In order to join the
-#if($cmm.messageType == "REQUEST_JOIN_LAB_GROUP")
-Lab
-#elseif($cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
-Project
-#end
-Group "<b>$cmm.group.displayName</b>" click to
-<a rel="nofollow" target="_blank" class="word-wrap"
-href="$baseURL/dashboard/updateMessageStatus?messageOrRequestId=$cmm.id&status=COMPLETED">ACCEPT</a>
-or
-<a rel="nofollow" target="_blank" class="word-wrap"
-href="$baseURL/dashboard/updateMessageStatus?messageOrRequestId=$cmm.id&status=REJECTED">REJECT</a>
-this invitation, then log in to RSpace with your credentials.
+$msg.format("email.notification.request.joinInstruction", [$groupType, $cmm.group.displayName, "$baseURL/dashboard/updateMessageStatus?messageOrRequestId=$cmm.id&status=COMPLETED", "$baseURL/dashboard/updateMessageStatus?messageOrRequestId=$cmm.id&status=REJECTED"])
 <br/>
-#if($cmm.messageType == "REQUEST_JOIN_LAB_GROUP")
-If you accept, the group's PI will be permitted to view your documents.
-#elseif($cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
-Project Groups have no PI, your documents won't be visible to other group members until you explicitly share them.
-#end
-
+$msg.format("email.notification.request.joinPermissionNote", [$groupType])
 <br/><br/>
 #end
 
 #if ($cmm.record && $cmm.record.notebook)
-concerning notebook <a href="$baseURL/notebookEditor/$cmm.record.id">$cmm.record.name</a>.
+$msg.format("email.notification.request.concerningNotebook", ["$baseURL/notebookEditor/$cmm.record.id", $cmm.record.name])
 <br>
 #elseif($cmm.record)
-concerning document <a href="$baseURL/workspace/editor/structuredDocument/$cmm.record.id">$cmm.record.name</a>.
+$msg.format("email.notification.request.concerningDocument", ["$baseURL/workspace/editor/structuredDocument/$cmm.record.id", $cmm.record.name])
 <br>
 #end
 
 #if ($cmm.message && $cmm.message != "")
-More details:<br>
+$msg.getMessage("email.notification.notification.moreDetails")<br>
 $cmm.message
 #end
 <p/>
-#dontReply
+<p>
+$msg.getMessage("email.common.dontReply")
+</p>

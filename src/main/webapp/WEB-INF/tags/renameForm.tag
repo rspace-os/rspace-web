@@ -13,7 +13,7 @@
 <%@ attribute name="itemType" required="false" type="java.lang.String" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 <script>
 function getFormName () {
 	return $('#documentName').find('.recordName').text();
@@ -21,10 +21,10 @@ function getFormName () {
 
 </script>
 <div id="documentName" class="breadcrumb">
-  Name: <span class="recordName" tabindex="0">${editInfo.name}</span>
+  <spring:message code="dialogs.renameRecord.label.name"/> <span class="recordName" tabindex="0">${editInfo.name}</span>
 </div>
 <div id="renameRecordDirect" style="display:none">
-	<label><fmt:message key="dialogs.renameRecord.label.newName"></fmt:message>
+	<label><spring:message code="dialogs.renameRecord.label.newName"/>
 		<input id="nameFieldDirect" type="text" width="30" value="${editInfo.name}">
 	</label>
 </div>
@@ -37,42 +37,42 @@ function getFormName () {
 	var itemType="${itemType}";
 
 	$(document).ready(function() {
+		var renameRecordButtons = {};
+		renameRecordButtons[RS.msg("legacyjs.common.cancel")] = function (){
+			$(this).dialog('close');
+		};
+		renameRecordButtons[RS.msg("legacyjs.core.action.rename")] = function (){
+			var newName=$('#nameFieldDirect').val();
+			if(newName == ""){
+				apprise(RS.msg("legacyjs.core.renameForm.nameRequired"));
+				RS.focusAppriseDialog(true);
+				return;
+			}
+			$(this).dialog('close');
+
+			var data={
+					recordId:recordId,
+					newName:newName
+			};
+			$.post("${postURL}/rename",data,function (data){
+				if(data.errorMsg != null) {
+					apprise(getValidationErrorString(data.errorMsg));
+				} else {
+					$('.recordName').text(newName);
+					$('#nameInBreadcrumb').val(newName +" ");
+					if(itemType === 'RECORD') {
+						var oldTitle = $(document).prop('title');
+						var newTitle = oldTitle.replace(/^[^\|]+/, newName + " ");
+						$(document).prop('title', newTitle);
+					}
+				}
+			});
+		};
 		$('#renameRecordDirect').dialog({
 			modal : true,
 			autoOpen:false,
-			title: "Rename",
-			buttons :{
-				Cancel: function (){
-					$(this).dialog('close');
-				},
-				Rename: function (){
-					var newName=$('#nameFieldDirect').val();
-					if(newName == ""){
-						apprise("Please enter a name!");
-						RS.focusAppriseDialog(true);						
-						return;
-					}
-					$(this).dialog('close');				
-					
-					var data={
-							recordId:recordId,
-							newName:newName
-					};
-					$.post("${postURL}/rename",data,function (data){
-						if(data.errorMsg != null) {
-							apprise(getValidationErrorString(data.errorMsg));
-						} else {
-							$('.recordName').text(newName);
-							$('#nameInBreadcrumb').val(newName +" ");
-							if(itemType === 'RECORD') {
-								var oldTitle = $(document).prop('title');
-								var newTitle = oldTitle.replace(/^[^\|]+/, newName + " ");
-								$(document).prop('title', newTitle);
-							}
-						}
-					});
-				}
-			}		
+			title: RS.msg("legacyjs.core.action.rename"),
+			buttons : renameRecordButtons
 		});
 		RS.onEnterSubmitJQueryUIDialog('#renameRecordDirect');
 	});

@@ -1,5 +1,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 <%@ attribute name="structuredDocument" required="true" type="com.researchspace.model.record.StructuredDocument" %>
 
 <script src="<rst:assetUrl value='/scripts/tags/saveAsTemplate.js'/>"></script>
@@ -18,15 +19,15 @@
     }
 </style>
 
-<div id="saveAsTemplateDlg" title="Template Dialog" style="display: none;">
+<div id="saveAsTemplateDlg" title="<spring:message code='dialogs.saveAsTemplate.title'/>" style="display: none;">
     <div id="saveAsTemplateNameDiv">
         <label>
-            Template Name <input id="template_name" type="text" value="${structuredDocument.name}_template" size="30" />
+            <spring:message code="dialogs.saveAsTemplate.label.name"/> <input id="template_name" type="text" value="${structuredDocument.name}_template" size="30" />
         </label>
     </div>
-    
+
     <div id="saveAsTemplateFieldsDesc">
-        Include contents from these fields:
+        <spring:message code="dialogs.saveAsTemplate.fieldsInstruction"/>
     </div>
     <div id="saveAsTemplateFieldsDiv">
         <table>

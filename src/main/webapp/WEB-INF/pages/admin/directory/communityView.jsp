@@ -19,15 +19,15 @@
 <div id="communityProps">
   <div id="propertyView" >
     <h2>
-      <spring:message code="community.name"/>: <span id="displayName" class="editableProperty">${community.displayName}</span>, 
+      <spring:message code="community.name"/>: <span id="displayName" class="editableProperty">${community.displayName}</span>,
       <spring:message code="table.created.header"/>: <fmt:formatDate type="date" value="${community.creationDate}"/>
     </h2>
-    
+
     <h3><spring:message code="community.profileHeading"/></h3>
     <span id="profileText" class="editableProperty">
       <c:choose>
         <c:when test="${empty community.profileText}">
-            <spring:message code="community.noprofile.msg"/>
+            <spring:message code="community.noProfile.emptyState"/>
         </c:when>
         <c:otherwise>
             ${community.profileText}
@@ -46,7 +46,7 @@
       <div class="communityViewInnerList">
         <c:choose>
           <c:when test="${empty community.labGroups}">
-            <spring:message code="community.nolabGroups.msg"/>
+            <spring:message code="community.noLabGroups.emptyState"/>
           </c:when>
           <c:otherwise>
             <table>
@@ -91,7 +91,7 @@
                       <a class="adminLink" href="<c:url value='/userform?userId=${admin.id}'/>">${admin.fullNameAndEmail}</a>
                   </c:otherwise>
                 </c:choose>
-              </td> 
+              </td>
             <tr>
           </c:forEach>
         </table>

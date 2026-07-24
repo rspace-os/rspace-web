@@ -23,7 +23,7 @@ function setUpAppsSettingsDialog() {
       modal: true,
       zIndex: 3002,
       buttons: {
-        "OK": function() {
+        [RS.msg("legacyjs.system.common.ok")]: function() {
             $(this).dialog("close");
         }
       }
@@ -50,7 +50,7 @@ function setUpAddGroup() {
   $('body').on('click', '#addGroupSubmit', function (e) {
     e.preventDefault();
     if ($("input[class='groupcbox']:checked").size() == 0) {
-      apprise("Please select groups to add to this community.");
+      apprise(RS.msg("legacyjs.system.community.selectGroupsToAdd"));
       RS.focusAppriseDialog();
       return;
     }
@@ -73,7 +73,7 @@ function setUpAddGroup() {
         }
     });
     jxqr.fail(function() {
-        RS.ajaxFailed("Moving group to another community", false, jxqr);
+        RS.ajaxFailed(RS.msg("legacyjs.system.community.movingGroupAction"), false, jxqr);
     });
   });
 
@@ -98,7 +98,7 @@ function setUpAddAdmin() {
           // there are no admins
           $('#adminForm').hide();
           $('#adminsList').show();
-          apprise(" There are no available admins to add to this community just now.");
+          apprise(RS.msg("legacyjs.system.community.noAvailableAdmins"));
           RS.focusAppriseDialog();
         }
     });
@@ -111,7 +111,7 @@ function setUpAddAdmin() {
   $('body').on('click', '#addAdminSubmit', function (e){
     e.preventDefault();
     if(  $("input[class='admincbox']:checked").size()==0){
-      apprise("Please select admins to add to this community.");
+      apprise(RS.msg("legacyjs.system.community.selectAdminsToAdd"));
       RS.focusAppriseDialog();
     }else {
       $(this).closest('form').submit();
@@ -143,7 +143,7 @@ function setUpRemoveAdmin(){
       
     });
     jxqr.fail(function(){
-      RS.ajaxFailed("Removing admin from community",false,jxqr);
+      RS.ajaxFailed(RS.msg("legacyjs.system.community.removingAdminAction"),false,jxqr);
     });
     
   });
@@ -228,7 +228,7 @@ function setUpCheckboxHandlers() {
       }    
     });
     jxqr.fail(function(){
-      RS.ajaxFailed("Moving group to another community",false,jxqr);
+      RS.ajaxFailed(RS.msg("legacyjs.system.community.movingGroupAction"),false,jxqr);
       });
   });
   
@@ -241,8 +241,8 @@ function hideCommunityCrudops() {
 function setUpRemoveGroupHandler() {
   $('body').on('click','#removeGroup', function (){
   
-    apprise("<div style='line-height:1.3em'>Do you want to remove selected groups from this community? They will be moved to the 'AllGroups' community</div>",  
-      {confirm:true, textOk:'Remove' }, function () {
+    apprise("<div style='line-height:1.3em'>" + RS.msg("legacyjs.system.community.confirmRemoveGroups") + "</div>",
+      {confirm:true, textOk: RS.msg("legacyjs.system.common.remove") }, function () {
         var ids = getSelectedIdArray();
         var params ={
             "ids[]":ids,
@@ -257,7 +257,7 @@ function setUpRemoveGroupHandler() {
                   }
            });
           jxqr.fail(function(){
-            RS.ajaxFailed("Removing group from community",false,jxqr);
+            RS.ajaxFailed(RS.msg("legacyjs.system.community.removingGroupAction"),false,jxqr);
            });
         });
     RS.focusAppriseDialog();

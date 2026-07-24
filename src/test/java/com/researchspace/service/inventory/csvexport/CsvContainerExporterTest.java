@@ -115,7 +115,7 @@ public class CsvContainerExporterTest extends SpringTransactionalTest {
         containerExporter
             .getCsvCommentFragmentForContainers(ExportScope.USER, CsvExportMode.COMPACT, user)
             .toString();
-    assertTrue(csvComment.startsWith("# " + containerExporter.CSV_COMMENT_HEADER), csvComment);
+    assertTrue(csvComment.startsWith("# " + containerExporter.getCsvCommentHeader()), csvComment);
     assertTrue(csvComment.contains("# Exported content: CONTAINERS"), csvComment);
     assertTrue(csvComment.contains("# Export scope: USER"), csvComment);
     assertTrue(csvComment.contains("# Export mode: COMPACT"), csvComment);

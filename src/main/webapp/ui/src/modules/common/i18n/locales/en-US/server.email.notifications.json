@@ -1,0 +1,46 @@
+{
+  "email": {
+    "notification": {
+      "exportCompleteNotification": {
+        "archiveSummary": "{0, plural, =0 {No records were exported.} one {The archive includes # record.} other {The archive includes # records.}}",
+        "archiveSummaryWithNfs": "{0, plural, =0 {No records were exported} one {The archive includes # record} other {The archive includes # records}}{1, plural, =0 {. No filestore links were included} one { and # linked filestore item} other { and # linked filestore items}}{2, plural, =0 {.} one {.<br/><br/># filestore link was not included.} other {.<br/><br/># filestore links were not included.}}",
+        "clickOrCopy": "Please click on, or copy the link into a browser to access the export:",
+        "completedWithSize": "Your export {0} is completed and generated an archive of size {1}.",
+        "moreDetails": "More details are available on the <a href=\"{0}\">export report page</a>.",
+        "removalPolicyAfterHours": "{0, plural, one {The export will be eligible for deletion after # hour.} other {The export will be eligible for deletion after # hours.}}",
+        "removalPolicyNever": "This archive will never be removed.",
+        "removalPolicyNow": "This archive is now eligible for removal."
+      },
+      "message": {
+        "concerningDocument": "This message concerns the document <a href=\"{0}\">{1}</a>.",
+        "replyInRSpace": "To reply to the sender of this message, please do so in <a href=\"{0}\">RSpace</a>.",
+        "rspaceMessageFrom": "RSpace message from {0}",
+        "sentMessage": "<a href=\"{0}\">{1}</a> sent you a message on {2} at {3}."
+      },
+      "notification": {
+        "concerning": "This notification concerns the {0, select, notebook {notebook} other {document}} {1}.",
+        "generatedNotification": "<a href=\"{0}\">{1}</a> generated a notification for you on {2} at {3}.",
+        "generatedNotificationWithType": "<a href=\"{0}\">{1}</a> generated a notification for you of type [{2}] on {3} at {4}.",
+        "moreDetails": "More details:",
+        "notificationFromRSpace": "Notification from RSpace"
+      },
+      "raidUpdateCompleteNotification": {
+        "response": "{0, select, true {Your research output recently deposited on \"{1}\" with the DOI <a href=\"{2}\">{2}</a> has been added to your RAiD record <a href=\"{3}\">{4}</a>.} other {Your research output recently deposited on \"{1}\" with the DOI <a href=\"{2}\">{2}</a> could not be added to your RAiD record <a href=\"{3}\">{4}</a>.}}"
+      },
+      "repoDepositCompleteNotification": {
+        "hereIsMessage": "Here is the message from the repository:",
+        "noUrlRetrieved": "No URL for the repository could be retrieved",
+        "response": "{0, select, true {Your deposit to repository {1} is complete.} other {Your deposit to repository {1} failed.}}"
+      },
+      "request": {
+        "concerningDocument": "This request concerns the document <a href=\"{0}\">{1}</a>.",
+        "concerningNotebook": "This request concerns the notebook <a href=\"{0}\">{1}</a>.",
+        "joinInstruction": "In order to join the {0, select, labGroup {Lab Group} other {Project Group}} \"<b>{1}</b>\", click to <a href=\"{2}\" rel=\"nofollow\" target=\"_blank\" class=\"word-wrap\">ACCEPT</a> or <a href=\"{3}\" rel=\"nofollow\" target=\"_blank\" class=\"word-wrap\">REJECT</a> this invitation, then log in to RSpace with your credentials.",
+        "joinPermissionNote": "{0, select, labGroup {If you accept, the group''s PI will be permitted to view your documents.} other {Project Groups have no PI, your documents won''t be visible to other group members until you explicitly share them.}}",
+        "rspaceRequestFromUser": "RSpace Request from \"{0}\" (user \"{1}\")",
+        "sentRequest": "The RSpace {0, select, pi {Principal Investigator} other {User}} \"<b>{1}</b>\" sent you a request on {2} at {3}."
+      },
+      "subject": "RSpace notification"
+    }
+  }
+}

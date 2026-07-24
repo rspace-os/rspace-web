@@ -17,7 +17,7 @@ public class SampleTemplateFieldPostValidator extends SampleTemplateFieldValidat
     // check field name
     String fieldName = apiTemplateField.getName();
     if (StringUtils.isBlank(fieldName)) {
-      errors.rejectValue("name", "errors.inventory.template.empty.field.name", "empty field name");
+      errors.rejectValue("name", "errors.inventory.template.emptyFieldName");
     } else {
       validateIncomingTemplateFieldName(errors, fieldName);
     }
@@ -25,7 +25,7 @@ public class SampleTemplateFieldPostValidator extends SampleTemplateFieldValidat
     // check field type
     ApiFieldType fieldType = apiTemplateField.getType();
     if (fieldType == null) {
-      errors.rejectValue("type", "errors.inventory.template.empty.field.type", "empty field type");
+      errors.rejectValue("type", "errors.inventory.template.emptyFieldType");
     }
 
     validateIncomingTemplateFieldContent(errors, apiTemplateField);

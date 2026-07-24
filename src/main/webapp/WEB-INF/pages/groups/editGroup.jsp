@@ -2,9 +2,9 @@
 
 <head>
   <title>
-    <fmt:message key="groups.edit.title" />
+    <spring:message code="groups.edit.title"/>
   </title>
-  <meta name="heading" content="<fmt:message key='groups.heading'/>" />
+  <meta name="heading" content="<spring:message code='groups.heading'/>" />
   <meta name="menu" content="MainMenu" />
   <meta charset="UTF-8">
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/system.css'/>" />
@@ -34,7 +34,7 @@
   </shiro:hasAnyRoles> --%>
 <br>
 <h2>
-  <fmt:message key="groups.message" />
+  <spring:message code="groups.create.configureIntro"/>
 </h2>
 
 <div id="newLabGroup"></div>

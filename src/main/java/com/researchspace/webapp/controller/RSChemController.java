@@ -15,6 +15,7 @@ import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.ChemistryService;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -98,7 +99,7 @@ public class RSChemController extends BaseController {
       ChemElementDataDto created = chemistryService.createChemicalElement(dto, subject);
       return new AjaxReturnObject<>(created);
     } catch (Exception e) {
-      String errorMsg = String.format("Error creating chemical element: %s", e.getMessage());
+      String errorMsg = getText("chem.errors.createElementFailed", new Object[] {e.getMessage()});
       return new AjaxReturnObject<>(ErrorList.of(errorMsg));
     }
   }
@@ -207,7 +208,7 @@ public class RSChemController extends BaseController {
           input.getParameters());
       ErrorList el = new ErrorList();
       el = inputValidator.populateErrorList(errors, el);
-      return badConversion(el.getAllErrorMessagesAsStringsSeparatedBy(","));
+      return badConversion(ListFormatUtils.formatList(el.getErrorMessages()));
     }
     try {
       log.info(
@@ -236,9 +237,7 @@ public class RSChemController extends BaseController {
       return new AjaxReturnObject<>(dto);
     } catch (Exception e) {
       String errorMsg =
-          String.format(
-              "Chemistry File with Id: %d could not be retrieved. Details: %s",
-              chemistryFileId, e.getMessage());
+          getText("chem.errors.fileUnavailable", new Object[] {chemistryFileId, e.getMessage()});
       return new AjaxReturnObject<>(ErrorList.of(errorMsg));
     }
   }
@@ -260,9 +259,8 @@ public class RSChemController extends BaseController {
       return new AjaxReturnObject<>(dto);
     } catch (Exception e) {
       String errorMsg =
-          String.format(
-              "RSChemElements with Chemistry File Id: %d could not be retrieved. Details: %s",
-              chemistryFileId, e.getMessage());
+          getText(
+              "chem.errors.elementsUnavailable", new Object[] {chemistryFileId, e.getMessage()});
       return new AjaxReturnObject<>(ErrorList.of(errorMsg));
     }
   }
@@ -285,10 +283,7 @@ public class RSChemController extends BaseController {
           chemistryService.updateChemicalElementImages(dto, user);
       return new AjaxReturnObject<>(updatedChemElements);
     } catch (Exception e) {
-      String errorMsg =
-          String.format(
-              "An Error Occurred While Updating Chemical Element Images Details: %s",
-              e.getMessage());
+      String errorMsg = getText("chem.errors.imageUpdateFailed", new Object[] {e.getMessage()});
       return new AjaxReturnObject<>(ErrorList.of(errorMsg));
     }
   }
@@ -412,14 +407,16 @@ public class RSChemController extends BaseController {
         chemistryService.getElementalAnalysis(chemId, revision, subject);
     if (elementalAnalysis == null) {
       log.info("No chem element found for id {} and revision {}", chemId, revision);
-      return new AjaxReturnObject<>(ErrorList.of("No chem element with id " + chemId));
+      return new AjaxReturnObject<>(
+          ErrorList.of(getText("chem.errors.elementNotFound", new Object[] {chemId})));
     }
     if (elementalAnalysis.isPresent()) {
       return new AjaxReturnObject<>(elementalAnalysis.get());
     } else {
       log.info(
           "Couldn't retrieve elementalAnalysis for chemId {} and revision {}", chemId, revision);
-      return new AjaxReturnObject<>(ErrorList.of("Couldn't retrieve info for chemId: " + chemId));
+      return new AjaxReturnObject<>(
+          ErrorList.of(getText("chem.errors.infoUnavailable", new Object[] {chemId})));
     }
   }
 

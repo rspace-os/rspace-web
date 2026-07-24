@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.Group;
+import com.researchspace.model.Organisation;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
@@ -19,13 +20,13 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
@@ -37,7 +38,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.support.StaticMessageSource;
 import org.springframework.ui.ExtendedModelMap;
 
 public class GroupControllerTest {
@@ -59,12 +59,11 @@ public class GroupControllerTest {
   User userA = TestFactory.createAnyUserWithRole("userA", Role.USER_ROLE.getName());
   User userB = TestFactory.createAnyUserWithRole("userB", Role.USER_ROLE.getName());
   Group group = TestFactory.createAnyGroup(userPI, new User[] {userA});
-  StaticMessageSource messages = new StaticMessageSource();
+  MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @Before
   public void setUp() throws Exception {
-    messages.addMessage("errors.maxlength", Locale.getDefault(), "toobig");
-    grpController.setMessageSource(new MessageSourceUtils(messages));
+    grpController.setMessageSource(messages);
 
     Set<Group> cononectedGroups = new HashSet<>();
     cononectedGroups.add(group);
@@ -86,7 +85,13 @@ public class GroupControllerTest {
         grpController.renameGroup(
             new ExtendedModelMap(), 1L, randomAlphabetic(BaseRecord.DEFAULT_VARCHAR_LENGTH + 1));
     assertNotNull(response.getError());
-    assertEquals("toobig", response.getError().getAllErrorMessagesAsStringsSeparatedBy(""));
+    assertEquals(
+        messages.getMessage(
+            "errors.maxLength",
+            new Object[] {
+              messages.getMessage("label.name"), Organisation.MAX_INDEXABLE_UTF_LENGTH
+            }),
+        response.getError().getAllErrorMessagesAsStringsSeparatedBy(""));
     Mockito.verifyZeroInteractions(publisher);
     verify(grpMgr, never()).saveGroup(group, false, userPI);
 

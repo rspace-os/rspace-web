@@ -12,4 +12,3 @@
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
-<c:set var="datePattern"><fmt:message key="date.format"/></c:set>

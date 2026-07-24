@@ -16,7 +16,7 @@ function onPageClick(event) {
 			$('#formDetails').html('');
 			$('#formDetails').html(data);
 		}).fail(function() {
-			RS.ajaxFailed("Form navigation", false, jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.core.form.navigation"), false, jxqr);
 		});
 	}
 }
@@ -27,7 +27,7 @@ function initFormCreateMenuDialog(parentId) {
     $('#formDetails').html('');
     $('#formDetails').html(data);
   }).fail(function () {
-    RS.ajaxFailed("Failed to load form list for create form dialog", false, jxqr);
+    RS.ajaxFailed(RS.msg("legacyjs.core.form.loadListFailed"), false, jxqr);
   });
 }
 

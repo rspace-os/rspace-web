@@ -1,8 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 
-<fmt:bundle basename="bundles.admin.admin">
 <head>
-    <title><fmt:message key="admin.title"/></title>
+    <title><spring:message code="admin.title"/></title>
 </head>
 
 <%-- Assets for the admin menu below. They live here in the body, NOT in the <head> above,
@@ -18,7 +17,7 @@
 
 <div class="separator"></div>
 <div id="menuScrollContainer">
-  <button type="button" class="menuScrollButton leftScroller bootstrap-custom-flat" aria-label="Previous menu items">
+  <button type="button" class="menuScrollButton leftScroller bootstrap-custom-flat" aria-label="<spring:message code='menu.scrollButtons.previous'/>">
     <span class="glyphicon glyphicon-chevron-left"></span>
   </button>
   <div id="menuFixer">
@@ -31,7 +30,7 @@
             (pi.username eq subject.username)}"> currentPanel</c:if>">
 
         <a id="myLabGroupLink" href="/groups/viewPIGroup">
-          <fmt:message key="menu.labGroup"/><br>
+          <spring:message code="menu.labGroup"/><br>
           <img src="/images/icons/myLabGroup.png" class="menuInnerPanelIcon">
         </a>
       </li>
@@ -42,7 +41,7 @@
         <c:if test="${pageContext.request.servletPath == '/WEB-INF/pages/userform.jsp' && canEdit}"> currentPanel</c:if>">
 
         <a id="myProfileLink" href="/userform">
-          <fmt:message key="menu.profile"/><br>
+          <spring:message code="menu.profile"/><br>
           <img src="/images/icons/myProfile.png" class="menuInnerPanelIcon">
         </a>
       </li>
@@ -51,7 +50,7 @@
       <li class="menuInnerPanel
         <c:if test="${fn:startsWith(pageContext.request.servletPath, '/WEB-INF/pages/admin/cloud/createCloudGroupForm')}"> currentPanel</c:if>">
         <a id="newLabGroupLink" href='/cloud/group/new'>
-          <fmt:message key="menu.admin.newgroup"/><br>
+          <spring:message code="menu.admin.newGroup"/><br>
           <img src="/images/icons/newGroup.png" class="menuInnerPanelIcon">
         </a>
       </li>
@@ -59,7 +58,7 @@
         <li id="new_project_group" class="menuInnerPanel
         <c:if test="${fn:startsWith(pageContext.request.servletPath, '/WEB-INF/pages/admin/cloud/createCloudGroupForm') and isProjectGroup}"> currentPanel</c:if>">
             <a id="newProjectGroupLink" href='/projectGroup/newGroupForm'>
-                <fmt:message key="menu.admin.newProjectGroup"/><br>
+                <spring:message code="menu.admin.newProjectGroup"/><br>
                 <img src="/images/icons/projectgroup.png" class="menuInnerPanelIcon">
             </a>
         </li>
@@ -69,7 +68,7 @@
         <li id="self_service_labgroups" class="menuInnerPanel
         <c:if test="${fn:startsWith(pageContext.request.servletPath, '/WEB-INF/pages/admin/cloud/createCloudGroupForm') and !isProjectGroup}"> currentPanel</c:if>">
           <a id="newLabGroupLinkSelfService" href='/selfServiceLabGroup/group/new'>
-            <fmt:message key="menu.admin.newgroup"/><br>
+            <spring:message code="menu.admin.newGroup"/><br>
             <img src="/images/icons/newGroup.png" class="menuInnerPanelIcon">
           </a>
         </li>
@@ -90,7 +89,7 @@
         }"> currentPanel</c:if>">
 
         <a id="directoryLink" href='/directory'>
-          <fmt:message key="directory.title"/><br>
+          <spring:message code="directory.title"/><br>
           <img src="/images/icons/directory.png" class="menuInnerPanelIcon">
         </a>
       </li>
@@ -100,7 +99,7 @@
         <c:if test="${pageContext.request.servletPath == '/WEB-INF/pages/workspace/editor/form.jsp'}"> currentPanel</c:if>">
         <form id="createDocForm" method="POST" action='/workspace/editor/form/'>
           <a id="createFormLink" href="#">
-            <fmt:message key="menu.templates.create"/><br>
+            <spring:message code="menu.templates.create"/><br>
             <img src="/images/icons/newForm.png" class="menuInnerPanelIcon">
           </a>
         </form>
@@ -110,7 +109,7 @@
       <li class="menuInnerPanel
         <c:if test="${fn:startsWith(pageContext.request.servletPath, '/WEB-INF/pages/workspace/editor/formList')}"> currentPanel</c:if>">
         <a id="manageFormsLink" href="/workspace/editor/form/list?orderBy=name&sortOrder=ASC&userFormsOnly=true">
-          <fmt:message key="menu.templates.list"/><br>
+          <spring:message code="menu.templates.list"/><br>
           <img src="/images/icons/listForms.png" class="menuInnerPanelIcon">
         </a>
       </li>
@@ -118,7 +117,7 @@
       <li class="menuInnerPanel
         <c:if test="${fn:startsWith(pageContext.request.servletPath, '/WEB-INF/pages/workspace/workspacedeleted_history')}"> currentPanel</c:if>">
         <a id="deletedItemsLink" href="/workspace/trash/list">
-          <fmt:message key="menu.admin.trashlist"/><br>
+          <spring:message code="menu.admin.trashList"/><br>
           <img src="/images/icons/deletedDocuments.png" class="menuInnerPanelIcon">
         </a>
       </li>
@@ -126,7 +125,7 @@
       <li class="menuInnerPanel
         <c:if test="${fn:startsWith(pageContext.request.servletPath, '/WEB-INF/pages/groups/sharing') && !publishedLinks_for_user_to_see && !publishedLinks_for_sysadmin_to_manage}"> currentPanel</c:if>">
         <a id="sharedDocumentsLink" href="/record/share/manage">
-          <fmt:message key="menu.admin.listrecordsharing"/><br>
+          <spring:message code="menu.admin.listRecordSharing"/><br>
           <img src="/images/icons/manageShared.png" class="menuInnerPanelIcon">
         </a>
       </li>
@@ -135,11 +134,11 @@
         <c:if test="${fn:startsWith(pageContext.request.servletPath, '/WEB-INF/pages/groups/sharing') && publishedLinks_for_user_to_see && !publishedLinks_for_sysadmin_to_manage}"> currentPanel</c:if>">
         <a id="publishedUserDocumentsLink" href="/record/share/published/manage">
           <shiro:hasRole name="ROLE_PI">
-              <fmt:message key="menu.publiclistrecordsharing.pi"/><br>
+              <spring:message code="menu.publicListRecordSharing.pi"/><br>
           </shiro:hasRole>
           <shiro:hasRole name="ROLE_USER">
             <shiro:lacksRole name="ROLE_PI">
-              <fmt:message key="menu.publiclistrecordsharing.user"/><br>
+              <spring:message code="menu.publicListRecordSharing.user"/><br>
             </shiro:lacksRole>
           </shiro:hasRole>
           <img width="70" height="70" src="/images/icons/html.png" class="menuInnerPanelIconNew">
@@ -150,7 +149,7 @@
       <li class="menuInnerPanel
         <c:if test="${fn:startsWith(pageContext.request.servletPath, '/WEB-INF/pages/groups/sharing') && publishedLinks_for_sysadmin_to_manage}"> currentPanel</c:if>">
         <a id="publishedDocumentsLink" href="/record/share/published/manage">
-          <fmt:message key="menu.admin.publiclistrecordsharing"/><br>
+          <spring:message code="menu.admin.publicListRecordSharing"/><br>
           <img width="70" height="70" src="/images/icons/html.png" class="menuInnerPanelIconNew">
         </a>
       </li>
@@ -158,7 +157,7 @@
       <li class="menuInnerPanel
         <c:if test="${fn:startsWith(pageContext.request.servletPath, '/WEB-INF/pages/audit/auditing')}"> currentPanel</c:if>">
         <a id="auditingLink" href="/audit/auditing">
-          <fmt:message key="menu.admin.audit"/><br>
+          <spring:message code="menu.admin.audit"/><br>
           <img src="/images/icons/auditingTrail.png" class="menuInnerPanelIcon">
         </a>
       </li>
@@ -166,14 +165,13 @@
       <li class="menuInnerPanel
         <c:if test="${fn:startsWith(pageContext.request.servletPath, '/WEB-INF/pages/import/archiveImport')}"> currentPanel</c:if>">
       	<a id="exportImportLink" href="/import/archiveImport">
-          <fmt:message key="menu.admin.inOut"/><br>
+          <spring:message code="menu.admin.inOut"/><br>
           <img src="/images/icons/exportImportN2.png" class="menuInnerPanelIcon">
         </a>
       </li>
     </div>
   </div>
-  <button type="button" class="menuScrollButton rightScroller bootstrap-custom-flat" aria-label="Next menu items">
+  <button type="button" class="menuScrollButton rightScroller bootstrap-custom-flat" aria-label="<spring:message code='menu.scrollButtons.next'/>">
     <span class="glyphicon glyphicon-chevron-right"></span>
   </button>
 </div>
-</fmt:bundle>

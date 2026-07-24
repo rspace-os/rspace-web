@@ -32,6 +32,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -148,7 +149,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   private void assertNotSampleTemplate(boolean sampleTemplateFlag) {
     if (sampleTemplateFlag) {
       throw new IllegalArgumentException(
-          "Please use /sampleTemplates endpoint for template actions");
+          getMessage("errors.inventory.sample.templateActionsNotAllowed"));
     }
   }
 
@@ -175,7 +176,8 @@ public class SamplesApiController extends BaseApiInventoryController implements 
       return; // a plain sample (non-template) id: let normal sample handling proceed
     }
     templatePermissionCheck.accept(id, user);
-    throw new IllegalArgumentException("Please use /sampleTemplates endpoint for template actions");
+    throw new IllegalArgumentException(
+        getMessage("errors.inventory.sample.templateActionsNotAllowed"));
   }
 
   /* errors might already be populated with simple validation errors using javax.validation annotations
@@ -229,7 +231,11 @@ public class SamplesApiController extends BaseApiInventoryController implements 
       return sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(apiSample.getTemplateId(), user);
     } catch (NotFoundException e) {
       // form ID is set, but is not a readable form.
-      errors.rejectValue("templateId", "", e.getMessage());
+      errors.rejectValue(
+          "templateId",
+          "errors.inventory.sample.templateNotFound",
+          new Object[] {apiSample.getTemplateId()},
+          null);
       // if the form is invalid we can't proceed as there will be downstream exceptions thrown, so
       // fail here
       throwBindExceptionIfErrors(errors);
@@ -261,18 +267,23 @@ public class SamplesApiController extends BaseApiInventoryController implements 
 
     String errorMsg = "";
     if (StringUtils.isEmpty(sampleName)) {
-      errorMsg = "Name cannot be empty";
+      errorMsg =
+          getMessage("inventory:fields.templateFields.customField.validation.emptyName", null);
     } else if (StringUtils.length(sampleName) > BaseRecord.DEFAULT_VARCHAR_LENGTH) {
-      errorMsg = "Name is too long (max 255 chars)";
+      errorMsg =
+          getMessage(
+              "errors.inventory.name.tooLong", new Object[] {BaseRecord.DEFAULT_VARCHAR_LENGTH});
     }
 
     if (errorMsg.isEmpty()) {
       boolean exists = sampleApiMgr.nameExistsForUser(sampleName, user);
       if (exists) {
-        errorMsg = "There is already a sample named [" + sampleName + "]";
+        errorMsg = getMessage("errors.inventory.sample.nameExists", new Object[] {sampleName});
       }
     }
-    return String.format("{ \"valid\": %s, \"message\": \"%s\" }", errorMsg.isEmpty(), errorMsg);
+    return String.format(
+        "{ \"valid\": %s, \"message\": \"%s\" }",
+        errorMsg.isEmpty(), StringEscapeUtils.escapeJson(errorMsg));
   }
 
   @Override

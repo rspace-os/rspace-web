@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 <head>
-    <title><fmt:message key="signup.title"/></title>
-    <meta name="heading" content="<fmt:message key='signup.heading'/>"/>
+    <title><spring:message code="signup.title"/></title>
+    <meta name="heading" content="<spring:message code='signup.heading'/>"/>
     <meta name="google-signin-client_id" content="731959816562-p2igqsv375nta4bd0g3c3tkq5r90kpg5.apps.googleusercontent.com">
     <link href="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
     <script src="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.js'/>"></script>
@@ -34,27 +34,28 @@
 </head>
 
 <div class="page">
+  <spring:message code="signup.browserWarning.iconAlt" var="signupBrowserIconAlt"/>
   <div id="browser-warning" class="bootstrap-custom-flat">
-      <h4>Browser upgrade recommended to use RSpace</h4>
-      <p>It looks like you are using a Microsoft browser - sorry, we don't support either Internet Explorer or Edge. Some RSpace features will not work properly with these browsers.</p>
-      <p>We <strong>do</strong> fully support Chrome, Firefox and Safari. You can use the links below to install one of these browsers if you don't already have it.</p>
+      <h4><spring:message code="signup.browserWarning.heading"/></h4>
+      <p><spring:message code="signup.browserWarning.notice1"/></p>
+      <p><spring:message code="signup.browserWarning.notice2"/></p>
       <div class="row">
         <a rel="noreferrer" href="https://www.google.co.uk/chrome/" target="_blank">
           <div class="col-md-4 browser-container">
-            <img src="/images/icons/chrome-icon.png" alt="Icon by Martin Leblanc"><br />
-            Chrome
+            <img src="/images/icons/chrome-icon.png" alt="${signupBrowserIconAlt}"><br />
+            <spring:message code="signup.browserWarning.chrome"/>
           </div>
         </a>
         <a rel="noreferrer" href="https://www.mozilla.org/en-GB/firefox/" target="_blank">
           <div class="col-md-4 browser-container">
-            <img src="/images/icons/firefox-icon.png" alt="Icon by Martin Leblanc"><br />
-            Firefox
+            <img src="/images/icons/firefox-icon.png" alt="${signupBrowserIconAlt}"><br />
+            <spring:message code="signup.browserWarning.firefox"/>
           </div>
         </a>
         <a rel="noreferrer" href="https://www.apple.com/uk/safari/" target="_blank">
           <div class="col-md-4 browser-container">
-            <img src="/images/icons/safari-icon.png" alt="Icon by Martin Leblanc"><br />
-            Safari
+            <img src="/images/icons/safari-icon.png" alt="${signupBrowserIconAlt}"><br />
+            <spring:message code="signup.browserWarning.safari"/>
           </div>
         </a>
       </div>
@@ -65,7 +66,7 @@
   <!-- BEGIN: sign up form -->
   <div class="rs-sign-in-form bootstrap-custom-flat">
     <div class="rs-sign-in-form__head">
-      Please fill in your details
+      <spring:message code="signup.form.fillDetailsPrompt"/>
     </div>
     
     <spring:bind path="user.*"></spring:bind>
@@ -76,53 +77,59 @@
                class="form-horizontal rs-sign-in-form__body">
       <fieldset>
 
+        <spring:message code="signup.form.usernamePlaceholder" var="signupUsernamePlaceholder"/>
+        <spring:message code="signup.form.usernameLengthTitle" arguments="${applicationScope['RS_DEPLOY_PROPS']['minUsernameLength']}" var="signupUsernameLengthTitle"/>
         <div class="form-group col-lg-12 rs-field rs-field--input">
-          <label for="username" class="sr-only">Create Username</label>
+          <label for="username" class="sr-only"><spring:message code="signup.form.createUsernameLabel"/></label>
           <rst:hasDeploymentProperty name="standalone" value="true">
-            <form:input id="username" type="text" 
+            <form:input id="username" type="text"
                         path="username"
-                        placeholder="Create a Username" 
-                        required="required" 
-                        autofocus="true" 
+                        placeholder="${signupUsernamePlaceholder}"
+                        required="required"
+                        autofocus="true"
                         pattern="[A-Za-z0-9@\.]{${applicationScope['RS_DEPLOY_PROPS']['minUsernameLength']},50}"
-                        title="Minimum ${applicationScope['RS_DEPLOY_PROPS']['minUsernameLength']}, max 50 alphanumeric characters"
+                        title="${signupUsernameLengthTitle}"
                         class="form-control rs-field__input" />
           </rst:hasDeploymentProperty>
           <rst:hasDeploymentProperty name="standalone" value="false">
-            <form:input id="username" type="text" 
+            <form:input id="username" type="text"
                         path="username"
                         readonly="true"
                         pattern="[a-zA-Z0-9]{6,50}"
                         class="form-control rs-field__input" />
           </rst:hasDeploymentProperty>
           <div class="rs-field__icon glyphicon glyphicon-user"></div>
-          <p class="form-text">6 - 50 characters. Only numbers and letters are allowed.</p>
+          <p class="form-text"><spring:message code="signup.form.usernameLengthHint"/></p>
           <form:errors class="rs-tooltip error" path="username"></form:errors>
         </div>
 
         <rst:hasDeploymentProperty name="standalone" value="true">
+          <spring:message code="signup.form.passwordPlaceholder" var="signupPasswordPlaceholder"/>
+          <spring:message code="signup.form.passwordCharsTitle" var="signupPasswordCharsTitle" htmlEscape="true"/>
           <div class="form-group col-lg-12 rs-field rs-field--input">
-            <label for="password" class="sr-only">Create a Password (8 - 50 characters). Numbers, letters, spaces and special characters are allowed.</label>
-            <form:input id="password" type="password" 
+            <label for="password" class="sr-only"><spring:message code="signup.form.createPasswordLabel"/></label>
+            <form:input id="password" type="password"
                         path="password"
-                        placeholder="Create a Password"
+                        placeholder="${signupPasswordPlaceholder}"
                         required="required"
                         pattern="[ -~]{8,50}"
-                        title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
+                        title="${signupPasswordCharsTitle}"
                         class="form-control rs-field__input"/>
-            <p class="form-text">8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
+            <p class="form-text"><spring:message code="signup.form.passwordCharsHint"/></p>
             <div class="rs-field__icon glyphicon fa-key"></div>
             <form:errors class="rs-tooltip error" path="password"></form:errors>
           </div>
-  
+
+          <spring:message code="signup.form.confirmPasswordPlaceholder" var="signupConfirmPasswordPlaceholder"/>
+          <spring:message code="signup.form.confirmPasswordTitle" var="signupConfirmPasswordTitle"/>
           <div class="form-group col-lg-12 rs-field rs-field--input">
-            <label for="confirmPassword" class="sr-only">Confirm Password</label>
+            <label for="confirmPassword" class="sr-only"><spring:message code="signup.form.confirmPasswordLabel"/></label>
             <form:input id="confirmPassword" type="password"
-                        path="confirmPassword" 
-                        placeholder="Confirm Password" 
+                        path="confirmPassword"
+                        placeholder="${signupConfirmPasswordPlaceholder}"
                         required="required"
                         pattern="[ -~]{8,50}"
-                        title="Confirm Password"
+                        title="${signupConfirmPasswordTitle}"
                         class="form-control rs-field__input"/>
             <div class="rs-field__icon glyphicon fa-key"></div>
             <form:errors class="rs-tooltip error" path="confirmPassword"></form:errors>
@@ -131,43 +138,47 @@
 
         <c:set var="nameEditable" value="${not applicationScope['RS_DEPLOY_PROPS']['profileNameEditable']}"/>
         <div class="form-group col-lg-12 rs-field rs-field--input">
-          <label for="firstName" class="sr-only">First Name</label>
+          <label for="firstName" class="sr-only"><spring:message code="signup.form.firstNameLabel"/></label>
+          <spring:message code="signup.form.firstNamePlaceholder" var="signupFirstNamePlaceholder"/>
           <form:input id="firstName" type="text"
-                      path="firstName" 
-                      placeholder="Your First Name" 
+                      path="firstName"
+                      placeholder="${signupFirstNamePlaceholder}"
                       required="required"
                       readonly="${nameEditable}"
-                      autofocus="true" 
+                      autofocus="true"
                       class="form-control rs-field__input" />
           <div class="rs-field__icon glyphicon glyphicon-pencil"></div>
           <form:errors class="rs-tooltip error" path="firstName"></form:errors>
-        </div> 
+        </div>
 
         <div class="form-group col-lg-12 rs-field rs-field--input">
-          <label for="lastName" class="sr-only">Last Name</label>
+          <label for="lastName" class="sr-only"><spring:message code="signup.form.lastNameLabel"/></label>
+          <spring:message code="signup.form.lastNamePlaceholder" var="signupLastNamePlaceholder"/>
           <form:input id="lastName" type="text"
-                      path="lastName" 
-                      placeholder="Your Last Name" 
+                      path="lastName"
+                      placeholder="${signupLastNamePlaceholder}"
                       readonly="${nameEditable}"
-                      required="required" 
-                      autofocus="true" 
+                      required="required"
+                      autofocus="true"
                       class="form-control rs-field__input" />
           <div class="rs-field__icon glyphicon glyphicon-pencil"></div>
           <form:errors class="rs-tooltip error" path="lastName"></form:errors>
-        </div>   
+        </div>
 
         <c:set var="emailEditable" value="${not applicationScope['RS_DEPLOY_PROPS']['profileEmailEditable']}"/>
+        <spring:message code="form.emailAddressPlaceholder" var="signupEmailPlaceholder"/>
+        <spring:message code="form.emailAddressTitle" var="signupEmailTitle"/>
         <div class="form-group col-lg-12 rs-field rs-field--input">
-          <label for="email" class="sr-only">Email address</label>
+          <label for="email" class="sr-only"><spring:message code="signup.form.emailLabel"/></label>
           <form:input id="email" type="email"
-                      path="email" 
-                      placeholder="Your Email Address" 
-                      required="required" 
-                      autofocus="true" 
+                      path="email"
+                      placeholder="${signupEmailPlaceholder}"
+                      required="required"
+                      autofocus="true"
                       readonly="${emailEditable}"
                       maxlength="255"
                       pattern="[^ @]*@[^ @]*"
-                      title="Use a valid email address"
+                      title="${signupEmailTitle}"
                       class="form-control rs-field__input" />
           <div class="rs-field__icon glyphicon glyphicon-envelope"></div>
           <form:errors class="rs-tooltip error" path="email"></form:errors>
@@ -192,35 +203,35 @@
                 <form:errors class="rs-tooltip error" path="picreateGroupOnSignup"></form:errors>
             </c:if>
             <c:if test="${not allowPiCreateGroupOnSignup}">
-              Based on your status at ${applicationScope['RS_DEPLOY_PROPS']['customerNameShort']},
-              you cannot become a PI unless a system administrator manually enables this for you.
+              <spring:message code="signup.form.piStatusNotice" arguments="${applicationScope['RS_DEPLOY_PROPS']['customerNameShort']}"/>
             </c:if>
           </div>
         </rst:hasDeploymentProperty>
         
         <rst:hasDeploymentProperty name="cloud" value="true">
+          <spring:message code="signup.form.affiliationPlaceholder" var="signupAffiliationPlaceholder"/>
           <div class="form-group col-lg-12 rs-field rs-field--input">
-            <label for="affiliation" class="sr-only">Affiliation</label>
+            <label for="affiliation" class="sr-only"><spring:message code="signup.form.affiliationLabel"/></label>
             <form:input id="affiliation" type="text"
-                        path="affiliation" 
-                        placeholder="Your organisation - type and select" 
-                        required="required" 
-                        autofocus="true" 
+                        path="affiliation"
+                        placeholder="${signupAffiliationPlaceholder}"
+                        required="required"
+                        autofocus="true"
                         maxlength="255"
                         class="form-control rs-field__input" />
             <div class="rs-field__icon glyphicon glyphicon-briefcase"></div>
             <form:errors class="rs-tooltip error" path="affiliation"></form:errors>
           </div>
         </rst:hasDeploymentProperty>
-        
+
          <rst:hasDeploymentProperty name="userSignupCode" testNonBlankOnly="true" value="ignored">
-         
-             <label for="signupCode" class="sr-only">Signup code</label>
+             <spring:message code="signup.form.signupCodePlaceholder" var="signupCodePlaceholder"/>
+             <label for="signupCode" class="sr-only"><spring:message code="signup.form.signupCodeLabel"/></label>
               <form:input id="signupCode" type="text"
-                        path="signupCode" 
-                        placeholder="Signup code (get this from your administrator)" 
-                        required="required" 
-                        autofocus="true" 
+                        path="signupCode"
+                        placeholder="${signupCodePlaceholder}"
+                        required="required"
+                        autofocus="true"
                         autocomplete="signupCode"
                         maxlength="255"
                         class="form-control rs-field__input" />
@@ -240,14 +251,17 @@
             <form:hidden path="token"/>
             <label>
               <input type="checkbox" value="remember-me" required/>
-              <span class="rs-field__text rs-field__text--normal">I agree to these <a href='<c:url value="https://researchspace.com/terms-conditions/" />' target='_blank'>Terms and Conditions</a></span>
+              <spring:message code="signup.form.termsAgreementLinkText" var="termsAgreementLinkText"/>
+              <span class="rs-field__text rs-field__text--normal"><spring:message code="signup.form.termsAgreement">
+                <spring:argument value='<a href="https://researchspace.com/terms-conditions/" target="_blank">${termsAgreementLinkText}</a>'/>
+              </spring:message></span>
             </label>
           </div>
         </rst:hasDeploymentProperty>
 
         <div class="form-group col-lg-12 rs-field rs-field--divider">
           <button id="submit" role="button" type="submit" class="btn btn-primary rs-field__button">
-            Sign up
+            <spring:message code="signup.form.submitButton"/>
           </button>
         </div>
 
@@ -256,7 +270,7 @@
       <rst:hasDeploymentProperty name="cloud" value="true"> 
         <fieldset>
           <div class="form-group col-lg-12 rs-field">
-            <div class="rs-field__text rs-field__text--normal"><fmt:message key='button.signup.with.google' /></div>
+            <div class="rs-field__text rs-field__text--normal"><spring:message code='button.signup.with.google'/></div>
           </div>
           <div class="form-group col-lg-12 rs-field rs-google-signup-menu sign-up">
             <div id="g_id_onload"

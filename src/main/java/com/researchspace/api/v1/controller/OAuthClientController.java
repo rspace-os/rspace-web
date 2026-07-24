@@ -10,6 +10,7 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.IReauthenticator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OAuthTokenManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
@@ -44,6 +45,8 @@ public class OAuthClientController {
 
   @Autowired private ApiAvailabilityHandler apiHandler;
 
+  @Autowired private MessageSourceUtils messages;
+
   @Autowired private AnalyticsManager analyticsMgr;
 
   private @Autowired SystemPropertyPermissionManager systemPropertyMgr;
@@ -62,29 +65,27 @@ public class OAuthClientController {
       HttpServletRequest request) {
 
     if (StringUtils.isEmpty(clientId)) {
-      throw new ApiAuthenticationException("Parameter client_id must be present!");
+      throw new ApiAuthenticationException("oauth.errors.clientIdRequired");
     }
     if (StringUtils.isEmpty(clientSecret)) {
-      throw new ApiAuthenticationException("Parameter client_secret must be present!");
+      throw new ApiAuthenticationException("oauth.errors.clientSecretRequired");
     }
     if (!apiHandler.isApiAvailableForUser(null)) {
-      throw new ApiAuthenticationException(
-          "Access to API has been disabled by RSpace administrator.");
+      throw new ApiAuthenticationException("oauth.errors.apiDisabled");
     }
 
     boolean oauthAuthenticationEnabled =
         systemPropertyMgr.isPropertyAllowed(
             (User) null, SystemPropertyName.API_OAUTH_AUTHENTICATION);
     if (!oauthAuthenticationEnabled) {
-      throw new ApiAuthenticationException(
-          "OAuth authentication has been disabled by RSpace administrator.");
+      throw new ApiAuthenticationException("oauth.errors.authenticationDisabled");
     }
 
     NewOAuthTokenResponse response;
     if ("password".equals(grantType)) {
       if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
         throw new IllegalArgumentException(
-            "Password grant requires parameters `username` and `password` to be present.");
+            messages.getMessage("oauth.errors.passwordGrantMissingCredentials"));
       }
       try {
         User user = userManager.getUserByUsernameOrAlias(username);
@@ -97,11 +98,11 @@ public class OAuthClientController {
 
         if (!apiHandler.isApiAvailableForUser(user)) {
           throw new ApiAuthenticationException(
-              "User '" + user.getUsername() + "' doesn't have access to API");
+              "oauth.errors.userApiAccessDisabled", user.getUsername());
         }
         if (user.isLoginDisabled()) {
           throw new ApiAuthenticationException(
-              "User '" + user.getUsername() + "' has their account locked or disabled.");
+              "oauth.errors.userLockedOrDisabled", user.getUsername());
         }
 
         response = passwordGrant(clientId, clientSecret, user, password, isJwt, request);
@@ -111,7 +112,7 @@ public class OAuthClientController {
             "OAuth password flow request for unknown username [{}], from {}",
             username,
             RequestUtil.remoteAddr(request));
-        throw new ApiAuthenticationException("Invalid user credentials.");
+        throw new ApiAuthenticationException("oauth.errors.invalidCredentials");
       }
       return response;
     }
@@ -119,7 +120,7 @@ public class OAuthClientController {
     if ("refresh_token".equals(grantType)) {
       if (StringUtils.isEmpty(refreshToken)) {
         throw new IllegalArgumentException(
-            "Refresh grant requires parameter `refresh_token` to be present.");
+            messages.getMessage("oauth.errors.refreshGrantMissingToken"));
       }
 
       ServiceOperationResult<Void> validationResult = tokenManager.validateToken(refreshToken);
@@ -129,8 +130,7 @@ public class OAuthClientController {
       return refreshGrant(clientId, clientSecret, refreshToken, isJwt, request);
     }
 
-    throw new IllegalArgumentException(
-        "Only password grant and token refresh is supported for OAuth at this time.");
+    throw new IllegalArgumentException(messages.getMessage("oauth.errors.unsupportedGrantType"));
   }
 
   private NewOAuthTokenResponse refreshGrant(
@@ -170,7 +170,7 @@ public class OAuthClientController {
           "OAuth password flow request with invalid credentials " + "for username [{}], from {}",
           subject.getUsername(),
           RequestUtil.remoteAddr(request));
-      throw new ApiAuthenticationException("Invalid user credentials.");
+      throw new ApiAuthenticationException("oauth.errors.invalidCredentials");
     }
     ServiceOperationResult<NewOAuthTokenResponse> response;
     if (isJwt) {
@@ -183,7 +183,7 @@ public class OAuthClientController {
               clientId, clientSecret, subject, OAuthTokenType.API_GENERATED_TOKEN);
     }
     if (!response.isSucceeded()) {
-      throw new ApiAuthenticationException(response.getMessage());
+      throw new ApiAuthenticationException("oauth.errors.tokenCreationFailed");
     }
 
     SECURITY_LOG.info(

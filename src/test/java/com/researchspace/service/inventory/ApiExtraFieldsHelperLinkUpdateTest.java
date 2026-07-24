@@ -179,7 +179,7 @@ class ApiExtraFieldsHelperLinkUpdateTest {
             com.researchspace.api.v1.auth.ApiRuntimeException.class,
             () -> helper.applyExistingLinkFieldChanges(List.of(apiField), List.of(dbField), user));
     org.junit.jupiter.api.Assertions.assertEquals(
-        "errors.inventory.field.link.relationTypeInvalid", ex.getErrorCode());
+        "errors.inventory.field.linkRelationTypeInvalid", ex.getErrorCode());
     verify(inventoryLinkManager, never()).updateLink(any(), any(), any());
     verify(inventoryLinkManager, never()).createLink(any(), any());
   }

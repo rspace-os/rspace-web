@@ -19,6 +19,9 @@ import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
 import com.researchspace.model.core.IRSpaceDoc;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
@@ -75,6 +78,11 @@ public class MSWordProcessorTest {
     ReflectionTestUtils.setField(mswordExporter, "velocityEngine", velocityEngine);
     ReflectionTestUtils.setField(
         mswordExporter, "stoichiometryHtmlGenerator", stoichiometryHtmlGenerator);
+    PdfHtmlGenerator pdfHtmlGenerator = new PdfHtmlGenerator(velocityEngine, null);
+    ReflectionTestUtils.setField(
+        pdfHtmlGenerator, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    ReflectionTestUtils.setField(mswordExporter, "pdfHtmlGenerator", pdfHtmlGenerator);
+    ReflectionTestUtils.setField(mswordExporter, "userLocaleService", new UserLocaleService());
     rtupdater = new RichTextUpdater();
     rtupdater.setVelocity(setupVelocityWithTextFieldTemplates());
     htmlProcessed = Jsoup.parse(STOICHIOMETRY_HTML).html();

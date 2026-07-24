@@ -9,6 +9,7 @@ import com.researchspace.service.OAuthTokenManager;
 import java.util.Optional;
 import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -40,14 +41,16 @@ public class OAuthTokenAuthenticator extends AbstractApiAuthenticator {
    */
   String retrieveTokenFromHeader(HttpServletRequest request) {
     String header = request.getHeader("Authorization");
+    if (StringUtils.isBlank(header)) {
+      throw new ApiAuthenticationException("api.errors.authentication.oauthHeaderInvalid");
+    }
     String[] headerParts = header.split("\\s+");
     if (headerParts.length != 2 || !(headerParts[0].equals("Bearer"))) {
-      throw new ApiAuthenticationException(
-          "Authorization header for OAuth must be in the form \"Bearer <myAccessToken>\"");
+      throw new ApiAuthenticationException("api.errors.authentication.oauthHeaderInvalid");
     }
     ServiceOperationResult<Void> result = tokenManager.validateToken(headerParts[1]);
     if (!result.isSucceeded()) {
-      throw new ApiAuthenticationException(result.getMessage());
+      throw new ApiAuthenticationException("api.errors.authentication.oauthTokenInvalid");
     }
     return headerParts[1];
   }

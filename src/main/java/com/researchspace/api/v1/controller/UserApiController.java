@@ -37,7 +37,7 @@ public class UserApiController extends BaseApiController implements UserApi {
       throw new BindException(errors);
     }
     if (!sysadmin.hasSysadminRole()) {
-      throw new AuthorizationException("Creating user accounts requires a sysadmin role");
+      throw new AuthorizationException(getMessage("errors.authorization.userCreationSysadminOnly"));
     }
 
     // generate API key if requested, return this in the returned User representation.

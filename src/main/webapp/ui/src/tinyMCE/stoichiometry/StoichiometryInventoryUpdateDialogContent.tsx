@@ -18,6 +18,7 @@ import Typography from "@mui/material/Typography";
 import { useMutation } from "@tanstack/react-query";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import { resolveStoichiometryErrorMessage } from "@/modules/stoichiometry/utils";
 import StoichiometryInventoryUpdateMoleculeRow from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateMoleculeRow";
@@ -73,7 +74,7 @@ export default function StoichiometryInventoryUpdateDialogContent({
   onSave,
   onClose,
 }: StoichiometryInventoryUpdateDialogContentProps): React.ReactNode {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const [selectedMoleculeIds, setSelectedMoleculeIds] = React.useState<number[]>(() =>
     getDefaultValues(molecules, linkedInventoryQuantityInfoByGlobalId),
   );
@@ -98,15 +99,12 @@ export default function StoichiometryInventoryUpdateDialogContent({
     if (failedResults.length === 0) {
       return null;
     }
-    return (
-      Array.from(
-        new Set(
-          failedResults
-            .map(({ errorMessage }) => errorMessage)
-            .filter((message): message is string => Boolean(message)),
-        ),
-      ).join(" ") || null
+    const messages = Array.from(
+      new Set(
+        failedResults.map(({ errorMessage }) => errorMessage).filter((message): message is string => Boolean(message)),
+      ),
     );
+    return messages.length === 0 ? null : formatList(messages, i18n.resolvedLanguage ?? i18n.language);
   })();
   const hasInvalidSelectedRows = selectedMoleculeIds.some((selectedMoleculeId) => {
     const selectedMolecule = molecules.find(({ id }) => id === selectedMoleculeId);

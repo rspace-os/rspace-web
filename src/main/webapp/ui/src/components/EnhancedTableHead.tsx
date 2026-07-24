@@ -102,7 +102,9 @@ export default function EnhancedTableHead<COLUMN_ID_TYPE extends React.Key>(
                       width: 1,
                     }}
                   >
-                    {order === "desc" ? "sorted descending" : "sorted ascending"}
+                    {order === "desc"
+                      ? t("enhancedTableHead.sortedDescending")
+                      : t("enhancedTableHead.sortedAscending")}
                   </Box>
                 ) : null}
               </TableSortLabel>

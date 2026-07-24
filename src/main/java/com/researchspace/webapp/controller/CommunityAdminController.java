@@ -18,14 +18,15 @@ import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -74,7 +75,7 @@ public class CommunityAdminController extends BaseController {
       throwAuthorisationException(communityId, subject, PermissionType.WRITE);
     }
     if (Community.DEFAULT_COMMUNITY_ID.equals(communityId)) {
-      ErrorList errors = ErrorList.of(getText("community.removeFromDefaultProhibited.msg"));
+      ErrorList errors = ErrorList.of(getText("community.errors.removeFromDefaultProhibited"));
       return new AjaxReturnObject<Long>(null, errors);
     }
     for (Long id : groupIds) {
@@ -98,7 +99,7 @@ public class CommunityAdminController extends BaseController {
       @RequestParam("from") Long cmmunityIdFrom,
       @RequestParam("to") Long cmmunityIdTo) {
     if (cmmunityIdFrom.equals(cmmunityIdTo)) {
-      ErrorList errors = ErrorList.of(getText("community.moveSrcTargetSame.msg"));
+      ErrorList errors = ErrorList.of(getText("community.errors.moveSrcTargetSame"));
       return new AjaxReturnObject<Long>(null, errors);
     }
     User user = userManager.getAuthenticatedUserInSession();
@@ -165,7 +166,10 @@ public class CommunityAdminController extends BaseController {
 
     User authUser = userManager.getAuthenticatedUserInSession();
     ValidationUtils.rejectIfEmptyOrWhitespace(
-        br, "displayName", "errors.required", new Object[] {"Display name"});
+        br,
+        "displayName",
+        "errors.required",
+        new Object[] {new DefaultMessageSourceResolvable("label.displayName")});
     if (br.hasErrors()) {
       model.addAttribute("view", false);
       return "system/community";
@@ -185,8 +189,13 @@ public class CommunityAdminController extends BaseController {
   private void throwAuthorisationException(Long id, User subject, PermissionType permType) {
     throw new AuthorizationException(
         getText(
-            "authorisation.failed",
-            new Object[] {"Community", id, subject.getFullName(), permType}));
+            "errors.authorization.failed",
+            new Object[] {
+              new DefaultMessageSourceResolvable("resourceType.community"),
+              id,
+              subject.getFullName(),
+              permType
+            }));
   }
 
   @PostMapping("/addAdmin")
@@ -205,7 +214,10 @@ public class CommunityAdminController extends BaseController {
             subject,
             community,
             AuditAction.WRITE,
-            "added admins (" + StringUtils.join(adminids, ",") + ")"));
+            getText(
+                "community.audit.adminsAdded",
+                ListFormatUtils.formatList(
+                    community.getAdminIds().stream().map(String::valueOf).toList()))));
     return REDIRECT_SYSTEM_COMMUNITY + community.getId();
   }
 
@@ -232,7 +244,7 @@ public class CommunityAdminController extends BaseController {
               subject, result.getEntity(), AuditAction.WRITE, "removed admin [" + adminId + "]"));
       return new AjaxReturnObject<Boolean>(true, null);
     } else {
-      ErrorList el = ErrorList.of("Could not remove admin from this community!");
+      ErrorList el = ErrorList.of(getText("community.errors.removeAdminFailed"));
       return new AjaxReturnObject<Boolean>(null, el);
     }
   }
@@ -333,9 +345,7 @@ public class CommunityAdminController extends BaseController {
             .equalsIgnoreCase(HierarchicalPermission.DENIED.name())
         && !newValue.equalsIgnoreCase(HierarchicalPermission.DENIED.name())) {
       return new AjaxReturnObject<>(
-          null,
-          ErrorList.of(
-              "System setting was set to DENIED by system admin and cannot be overridden."));
+          null, ErrorList.of(getText("community.settings.errors.systemDenied")));
     }
 
     SystemPropertyValue systemPropertyValue =

@@ -1,21 +1,21 @@
 <%@ include file="/common/taglibs.jsp"%>
 <head>
-	<title>Authorization Error</title>
+	<title><spring:message code="connect.authorizationError.title"/></title>
 </head>
 
-<body> 
+<body>
     <p>
-        RSpace was not authorized to use ${error.appName}: ${error.errorMsg}.<br/>
-        
-        Please try again, or contact your System Admin.
+        <spring:message code="connect.authorizationError.notAuthorizedNotice"><spring:argument value="${error.appName}"/><spring:argument value="${error.errorMsg}"/></spring:message><br/>
+
+        <spring:message code="connect.authorizationError.retryPrompt"/>
     </p>
     <c:if test="${not empty  error.errorDetails}">
-      <h4> Details</h4>
+      <h4> <spring:message code="connect.authorizationError.detailsHeading"/></h4>
       <p> ${error.errorDetails}</p>
     </c:if>
-    
-    
+
+
     <p>
-        You can close this window.
+        <spring:message code="connect.authorizationError.closeWindowNotice"/>
     </p>
 </body>

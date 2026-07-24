@@ -24,11 +24,11 @@ public class ApiListOfMaterials {
   @JsonProperty("globalId")
   String globalId;
 
-  @Size(max = 255, message = "Name cannot be longer than 255 chars")
+  @Size(max = 255, message = "{errors.inventory.listOfMaterials.nameTooLong}")
   @JsonProperty("name")
   String name;
 
-  @Size(max = 255, message = "Description cannot be longer than 255 chars")
+  @Size(max = 255, message = "{errors.inventory.listOfMaterials.descriptionTooLong}")
   @JsonProperty("description")
   String description;
 

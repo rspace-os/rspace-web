@@ -944,7 +944,7 @@ function parseGalleryFileFromFolderApiResponse(
       }),
     );
   } catch (e) {
-    return Result.Error([e instanceof Error ? e : new Error("Unknown error")]);
+    return Result.Error([e instanceof Error ? e : new Error(i18n.t("common:apiErrors.unknown"))]);
   }
 }
 

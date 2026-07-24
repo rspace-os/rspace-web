@@ -1,7 +1,5 @@
 package com.researchspace.api.v1.controller;
 
-import static org.apache.commons.lang3.StringUtils.join;
-
 import com.researchspace.api.v1.model.ApiSortEnum;
 import javax.validation.constraints.Pattern;
 import org.apache.commons.lang3.StringUtils;
@@ -113,12 +111,7 @@ public class InventoryApiPaginationCriteria extends ApiPaginationCriteria {
         case MODIFICATION_DATE_DESC_API_PARAM:
           return ApiSortEnum.MODIFICATION_DATE_DESC;
         default:
-          throw new IllegalArgumentException(
-              "Problem  parsing sort parameter: ["
-                  + getOrderBy()
-                  + "]. It must be one of "
-                  + join(ALL_PARAMS, ",")
-                  + ".");
+          throw new InvalidSortParameterException(getOrderBy(), ALL_PARAMS);
       }
     }
     return null;
@@ -126,11 +119,7 @@ public class InventoryApiPaginationCriteria extends ApiPaginationCriteria {
 
   @Override
   public InventoryApiPaginationCriteria previousPage() {
-    if (getPageNumber() == 0) {
-      throw new IllegalArgumentException(
-          "Can't create previous pagination criteria - at first page!");
-    }
-    return new InventoryApiPaginationCriteria(getPageNumber() - 1, getPageSize(), getOrderBy());
+    return new InventoryApiPaginationCriteria(previousPageNumber(), getPageSize(), getOrderBy());
   }
 
   @Override

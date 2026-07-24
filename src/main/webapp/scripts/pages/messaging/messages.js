@@ -86,7 +86,7 @@
 				function (xhr) {
 					tr$.hide("fade", function () {
 						if( $('tr.notificationRow').filter(":visible").size() == 0 ){
-          		contentDiv$.html("There are no active messages.");
+		contentDiv$.html(RS.msg("legacyjs.messaging.noActiveMessages"));
         	  }  
 					});
           decrementMessagesBadge();
@@ -102,7 +102,7 @@
 
     		var link$= $(this);
     		// progress indicator
-    		link$.parent().append("<p>Updating...</p>");
+		link$.parent().append("<p>" + RS.msg("legacyjs.messaging.updating") + "</p>");
     		var tr$ = link$.closest('tr');
     		var id = getNotificnIDArrayFromRows (tr$);
     		var postData = {
@@ -110,7 +110,7 @@
 			};
     		var optMessageTxtBox=tr$.find('.replyMessageArea');
     		if(isBlank(optMessageTxtBox.val())){
-    			optMessageTxtBox.val('Please enter a message here!');
+			optMessageTxtBox.val(RS.msg("legacyjs.messaging.enterMessageHere"));
     			return;
     		}
 			
@@ -119,13 +119,13 @@
 				function (xhr) {
 					link$.siblings(":last").remove();
 					if (xhr.data != 'Success') {
-						apprise("Message sending failed - please try again, or report the error.");
+						apprise(RS.msg("legacyjs.messaging.replyFailed"));
 					} else {
 						tr$.find('.repliedMsg').show('fade');
 					}
 				});
             jqxhr.fail(function () {
-                RS.ajaxFailed("Send reply message", false, jqxhr);
+                RS.ajaxFailed(RS.msg("legacyjs.messaging.actionSendReplyMessage"), false, jqxhr);
             });
     	});
     	
@@ -143,7 +143,7 @@
     	
     		var status =tr$.find('.messageStatusChooser').find(":selected").val();
     		if (curStatus == status){
-    			tr$.find('.updateDetails').append("<p class='temp'>No change in status!");
+			tr$.find('.updateDetails').append("<p class='temp'>" + RS.msg("legacyjs.messaging.noChangeInStatus"));
     			return;
     		}
     		var postData={
@@ -171,15 +171,15 @@
     		);
             jqxhr.fail(function () {
 				$(event.target).prop( "disabled", false );
-				$(event.target).prop( "textContent", "Update & Reply" );
-                RS.ajaxFailed("Update message status", false, jqxhr);
+				$(event.target).prop( "textContent", RS.msg("legacyjs.messaging.updateAndReply") );
+                RS.ajaxFailed(RS.msg("legacyjs.messaging.actionUpdateMessageStatus"), false, jqxhr);
             });
     	});
     	
     	// set up pop-up dialog with message listings, dialog defined in headers.jsp
     	$('#messageDlg').dialog({
     		resizable: true,
-    		title: "Messages and Requests",
+		title: RS.msg("legacyjs.messaging.messagesAndRequestsDialogTitle"),
     		modal: true,
     		autoOpen:false,
     		height:500,
@@ -200,7 +200,7 @@
     		},
     		close: doPoll,// refresh count after possible modification. This is defined in notifications.js
     		buttons: {
-    			"Close": function() {
+			[RS.msg("legacyjs.common.close")]: function() {
     				$(this).dialog("close");
    				}
     		}
@@ -222,9 +222,8 @@
     function _replyMessageTooLong() {
         var messageLength = $('.replyMessageArea').val().length;
         if (messageLength > 2000) {
-            apprise('Reply message is too long <br /> (' + messageLength + '/2000 characters)');
+            apprise(RS.msg("legacyjs.messaging.replyMessageTooLong", messageLength));
             return true;
         }
         return false;
     }
-

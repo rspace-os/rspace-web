@@ -240,7 +240,7 @@ export function ShareDialog({ open, onClose, globalIds, names, isSnippet = false
                     folderNameMap.set(groupId, folder.name);
                   } catch (error) {
                     console.error(`Failed to fetch folder for group ${groupId}:`, error);
-                    folderNameMap.set(groupId, "Unknown folder");
+                    folderNameMap.set(groupId, t("shareDialog.unknownFolder"));
                   }
                 }
               }),
@@ -297,7 +297,7 @@ export function ShareDialog({ open, onClose, globalIds, names, isSnippet = false
                     folderNameMap.set(group.id, folder.name);
                   } catch (error) {
                     console.error(`Failed to fetch folder for group ${group.id}:`, error);
-                    folderNameMap.set(group.id, "Unknown folder");
+                    folderNameMap.set(group.id, t("shareDialog.unknownFolder"));
                   }
                 }
               }),
@@ -330,7 +330,7 @@ export function ShareDialog({ open, onClose, globalIds, names, isSnippet = false
                         folderNameMap.set(group.id, folder.name);
                       } catch (error) {
                         console.error(`Failed to fetch folder for group ${group.id}:`, error);
-                        folderNameMap.set(group.id, "Unknown folder");
+                        folderNameMap.set(group.id, t("shareDialog.unknownFolder"));
                       }
                     }
                   }),
@@ -535,7 +535,7 @@ export function ShareDialog({ open, onClose, globalIds, names, isSnippet = false
                 folderNameMap.set(groupId, folder.name);
               } catch (error) {
                 console.error(`Failed to fetch folder for group ${groupId}:`, error);
-                folderNameMap.set(groupId, "Unknown folder");
+                folderNameMap.set(groupId, t("shareDialog.unknownFolder"));
               }
             }
           }),

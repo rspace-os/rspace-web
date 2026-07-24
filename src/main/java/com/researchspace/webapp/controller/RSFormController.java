@@ -150,7 +150,8 @@ public class RSFormController extends BaseController {
     User u = userManager.getUserByUsername(user.getName());
     RSForm toSave = formManager.get(formId, u);
     if (!permissionUtils.isPermitted(toSave, PermissionType.WRITE, u)) {
-      throw new AuthorizationException(authGenerator.getFailedMessage(u, "rename form"));
+      throw new AuthorizationException(
+          getText("errors.authorization.failure.renameForm", new Object[] {u.getUsername()}));
     }
     toSave.setName(newname);
     formManager.save(toSave, u);
@@ -167,7 +168,9 @@ public class RSFormController extends BaseController {
     User u = userManager.getUserByUsername(user.getName());
     RSForm toSave = formManager.get(recordId, u);
     if (!permissionUtils.isPermitted(toSave, PermissionType.WRITE, u)) {
-      throw new AuthorizationException(authGenerator.getFailedMessage(u, "Set form description"));
+      throw new AuthorizationException(
+          getText(
+              "errors.authorization.failure.editFormDescription", new Object[] {u.getUsername()}));
     }
     toSave.setDescription(desc);
     formManager.save(toSave, u);
@@ -352,7 +355,7 @@ public class RSFormController extends BaseController {
 
     } catch (Exception e) {
       ErrorList el = new ErrorList();
-      el.addErrorMsg("Exception deleting form. This has been logged.");
+      el.addErrorMsg(getText("form.errors.deleteFailed"));
       return new AjaxReturnObject<String>(null, el);
     }
     return new AjaxReturnObject<String>("Success", null);
@@ -596,7 +599,8 @@ public class RSFormController extends BaseController {
 
     FieldType ft = FieldType.getFieldTypeForString(fieldtype);
     if (ft == null) {
-      throw new IllegalArgumentException("Unknown field type [" + fieldtype + "]");
+      throw new IllegalArgumentException(
+          getText("form.errors.unknownFieldType", new Object[] {fieldtype}));
     }
 
     Object viewModel = null;
@@ -888,7 +892,7 @@ public class RSFormController extends BaseController {
     // Check if the user has READ permissions for the form
     if (!permissionUtils.isPermitted(form, PermissionType.READ, user)) {
       return new AjaxReturnObject<DetailedRecordInformation>(
-          null, ErrorList.of("Unauthorized attempt to get form info"));
+          null, ErrorList.of(getText("form.errors.infoUnauthorized")));
     }
 
     DetailedRecordInformation info = new DetailedRecordInformation(form);

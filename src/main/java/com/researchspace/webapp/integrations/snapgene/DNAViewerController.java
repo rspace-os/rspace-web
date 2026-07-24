@@ -1,7 +1,6 @@
 package com.researchspace.webapp.integrations.snapgene;
 
 import static com.researchspace.model.preference.HierarchicalPermission.ALLOWED;
-import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.core.util.MediaUtils;
@@ -9,6 +8,7 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Record;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.snapgene.wclient.SnapgeneWSClient;
@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -222,17 +221,15 @@ public class DNAViewerController extends BaseController {
     // fail-fast if file will get rejected by snapgene service.
     if (docRecord.getSize() > MAX_SNAPGENE_FILE_SIZE) {
       throw new IllegalArgumentException(
-          String.format(
-              "The max file size supported by Snapgene server is %d bytes, but this file is %d"
-                  + " bytes",
-              MAX_SNAPGENE_FILE_SIZE, docRecord.getSize()));
+          getText(
+              "connect.snapgene.errors.fileTooLarge",
+              new Object[] {MAX_SNAPGENE_FILE_SIZE, docRecord.getSize()}));
     }
     if (!MediaUtils.isDNAFile(docRecord.getExtension())) {
       throw new IllegalArgumentException(
-          String.format(
-              "This file either has incorrect suffix or is not a supported DNA file - suffix must"
-                  + " be one of %s",
-              StringUtils.join(MediaUtils.supportedDNATypes(), ",")));
+          getText(
+              "connect.snapgene.errors.unsupportedFileType",
+              ListFormatUtils.formatList(MediaUtils.supportedDNATypes())));
     }
     File inputFile = fileStore.findFile(docRecord.getFileProperty());
     return inputFile;
@@ -259,7 +256,8 @@ public class DNAViewerController extends BaseController {
   private ResponseEntity<String> errorMessageResponse(ApiError error) {
     if (error == null) {
       log.warn("Snapgene webservice call failed without a specific error code");
-      return new ResponseEntity<>("Snapgene webservice call failed", HttpStatus.FAILED_DEPENDENCY);
+      return new ResponseEntity<>(
+          getText("connect.snapgene.errors.webserviceNoDetails"), HttpStatus.FAILED_DEPENDENCY);
     }
     String errorMsg = generateErrorMessageString(error);
     log.error(errorMsg);
@@ -267,8 +265,8 @@ public class DNAViewerController extends BaseController {
   }
 
   private String generateErrorMessageString(ApiError error) {
-    return String.format(
-        "Snapgene webservice call failed: %s - %s",
-        error.getMessage(), join(error.getErrors(), ","));
+    return getText(
+        "connect.snapgene.errors.webserviceFailed",
+        new Object[] {error.getMessage(), ListFormatUtils.formatList(error.getErrors())});
   }
 }

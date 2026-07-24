@@ -47,7 +47,7 @@ function showRecordList(result) {
     $('#record_list').show(effect, effectDuration);
     $("#searchModePanel").removeClass().addClass("searchSuccess");
     if (workspaceSettings.searchMode) {
-      var message = "Showing results of your search.";
+      var message = RS.msg("legacyjs.workspace.main.searchResultsShown");
       $("#searchModePanel #message").text(message);
       $("#resetSearch").show();
       $("#searchModePanel").slideDown(fadeTime);
@@ -68,12 +68,12 @@ function showRecordList(result) {
     if (workspaceSettings.searchMode) {
       $("#searchModePanel").addClass("searchError");
       $("#searchModePanel #message").text(
-          "Your search returned no results. Please search again or");
+          RS.msg("legacyjs.workspace.main.searchNoResults"));
       $("#resetSearch").show();
       $("#searchModePanel").slideDown(fadeTime);
     } else {
       $("#searchModePanel").addClass("emptyFolder");
-      $("#searchModePanel #message").text("This folder is empty.");
+      $("#searchModePanel #message").text(RS.msg("legacyjs.workspace.main.folderEmpty"));
       $("#resetSearch").hide();
       $("#searchModePanel").slideDown(fadeTime);
     }
@@ -181,7 +181,7 @@ function navigateToFolder(folderId) {
         }, effectDuration);
       });
   jqxhr.fail(function () {
-    RS.ajaxFailed("Opening folder ", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.main.openFolderAction"), false, jqxhr);
   });
 }
 
@@ -209,9 +209,9 @@ function initFormListDlg() {
       modal: true,
       height: 500,
       autoOpen: false,
-      title: "Choose a form",
+      title: RS.msg("legacyjs.workspace.main.chooseFormTitle"),
       buttons: {
-        Cancel: function () {
+        [RS.msg("legacyjs.workspace.main.cancelButton")]: function () {
           $(this).dialog('close');
         },
       },
@@ -231,8 +231,8 @@ function initFormListDlg() {
   } else {
     formListModal = RS.apprise($('#formListDlg').html(), false, undefined,
         undefined, {
-          title: "Choose a form",
-          textOk: "Cancel",
+          title: RS.msg("legacyjs.workspace.main.chooseFormTitle"),
+          textOk: RS.msg("legacyjs.workspace.main.cancelButton"),
           size: 'small',
           // TO-DO: Find out why using the Cancel button fails on undefined
           // current modal handle
@@ -279,8 +279,8 @@ function toolbarButtonsEventHandler() {
   $('#createFromWord').click(function (e) {
     e.preventDefault();
     openWordChooserDlg({
-      title: "Import from Word/Open Office",
-      fileType: "Word or Open Office",
+      title: RS.msg("legacyjs.workspace.main.importWordTitle"),
+      fileType: RS.msg("legacyjs.workspace.main.importWordFileType"),
       listNotebooks: true
     });
     RS.trackEvent("user:open:create_from_word_dialog:workspace");
@@ -289,8 +289,8 @@ function toolbarButtonsEventHandler() {
   $('#createFromEvernote').click(function (e) {
     e.preventDefault();
     openWordChooserDlg({
-      title: "Import from Evernote",
-      fileType: "Evernote XML", listNotebooks: false
+      title: RS.msg("legacyjs.workspace.main.importEvernoteTitle"),
+      fileType: RS.msg("legacyjs.workspace.main.importEvernoteFileType"), listNotebooks: false
     });
     RS.trackEvent("user:open:create_from_evernote_dialog:workspace");
   });
@@ -348,7 +348,7 @@ function toolbarButtonsEventHandler() {
   $("#list_view").click(function () {
     var id = this.id;
     list_view();
-    history.pushState({data: id, title: "List View"}, "List View",
+    history.pushState({data: id, title: RS.msg("legacyjs.workspace.main.listView")}, RS.msg("legacyjs.workspace.main.listView"),
         "?list_view");
   });
 
@@ -356,7 +356,7 @@ function toolbarButtonsEventHandler() {
     RS.trackEvent('Workspace Tree Viewed');
     var id = this.id;
     tree_view();
-    history.pushState({data: id, title: "Tree View"}, "Tree View",
+    history.pushState({data: id, title: RS.msg("legacyjs.workspace.main.treeView")}, RS.msg("legacyjs.workspace.main.treeView"),
         "?tree_view");
   });
 
@@ -442,7 +442,7 @@ var paginationEventHandler = function (source, e) {
 function getAndDisplayWorkspaceResults(url, data, onLoad = result => {
 }) {
   // block page so that user knows something is loading
-  RS.blockPage("Loading records...", false, $('.rs-working-area'));
+  RS.blockPage(RS.msg("legacyjs.workspace.main.loadingRecords"), false, $('.rs-working-area'));
 
   var jqxhr = $.get(url, data, function (result) {
     onLoad(result);
@@ -454,7 +454,7 @@ function getAndDisplayWorkspaceResults(url, data, onLoad = result => {
       balanceTableColumns();
     }, effectDuration);
   }).fail(function () {
-    RS.ajaxFailed("Display Workspace Settings", true, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.main.displaySettingsAction"), true, jqxhr);
   }).always(function () {
     RS.unblockPage($('.rs-working-area'));
   });
@@ -487,7 +487,7 @@ function saveWorkplaceSettings() {
       }
   );
   jqxhr.fail(function () {
-    RS.ajaxFailed("Failed to save workspace settings", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.main.saveSettingsFailedAction"), false, jqxhr);
   });
 }
 
@@ -589,7 +589,7 @@ $(document).ready(function () {
 
   RS.setupPagination(paginationEventHandler);
   $(".orderByLink").each(function () {
-    $(this).attr("title", "Order by " + $(this).text().trim());
+    $(this).attr("title", RS.msg("legacyjs.workspace.main.orderByTitle", $(this).text().trim()));
   });
   balanceTableColumns();
 });

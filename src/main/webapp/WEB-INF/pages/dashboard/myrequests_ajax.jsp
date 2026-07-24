@@ -12,29 +12,29 @@
 <div id="myrequestListContents">
   <c:choose>
     <c:when test="${empty messages}">
-        There are no sent requests.
+        <spring:message code="myrequests.empty"/>
     </c:when>
     <c:otherwise>
-        <h2 id="requestsTitle"> My Sent Requests </h2>
+        <h2 id="requestsTitle"> <spring:message code="myrequests.title"/> </h2>
         <div style="padding-bottom: 10px" id="myrequest_linkMenu">
-            <span style="position:relative; left:10px;">Order by: </span>
+            <span style="position:relative; left:10px;"><spring:message code="myrequests.orderBy.label"/> </span>
             <a href="#" class="orderBy" style="position: relative;left: 10px;"
-                id="orderBy_creationTime">Time sent </a>
+                id="orderBy_creationTime"><spring:message code="myrequests.orderBy.timeSent"/> </a>
             <br>
-            <span style="position:relative; left:10px;">Order by: </span>
+            <span style="position:relative; left:10px;"><spring:message code="myrequests.orderBy.label"/> </span>
             <a href="#" class="orderBy" style="position: relative;left: 10px;"
-                id="orderBy_requestedCompletionDate">Completion date</a>
+                id="orderBy_requestedCompletionDate"><spring:message code="myrequests.orderBy.completionDate"/></a>
         </div>
         <c:forEach items="${messages}" var="message">
             <table class="table" style="width: 95%">
             <tr class="myrequestRow" id="myrequestID_${message.id}">
                 <td width="120" valign="top" class="leftInfo" style="line-height:1.1em;">
-                    <span style="display: block;" class="boldtext">Request<br>Sent: </span>
+                    <span style="display: block;" class="boldtext"><spring:message code="myrequests.request.sentLabel"/></span>
                     <rst:relDate input="${message.creationTime}"></rst:relDate>
-                    <span style="display: block; padding-bottom:10px"> 
+                    <span style="display: block; padding-bottom:10px">
                       <c:choose>
                         <c:when test="${message.messageType == 'GLOBAL_MESSAGE'}">
-                            Sent to all users
+                            <spring:message code="myrequests.sentToAllUsers"/>
                         </c:when>
                         <c:otherwise>
                             <c:set var="numRecipients" value="${fn:length(message.recipients)}" />
@@ -49,9 +49,8 @@
                 </td>
                 <td id="midRequest" valign="top" class="mainMessage">
                     <div style="font-size: 1em;line-height:1.1em;">
-                        <span class="messageText"> You sent a
-                            <span class="boldtext"> ${message.messageType.label}</span>
-                                request 
+                        <span class="messageText">
+                            <c:set var="messageType"><span class="boldtext">${message.messageType.label}</span></c:set>
                             <c:if test="${not empty message.record}">
                                 <c:choose>
                                     <c:when test="${message.record.notebook}">
@@ -63,24 +62,48 @@
                                             value="/workspace/editor/structuredDocument/${message.record.id}" />
                                     </c:otherwise>
                                 </c:choose>
-                                  concerning <a href="${recordURL}">${message.record.name}</a>
-                            </c:if> 
-                            <c:if test="${not empty message.requestedCompletionDate }">
-                               due for completion by 
-                               <span class="boldtext">
-                               <fmt:formatDate pattern="E dd MMM yyyy" value="${message.requestedCompletionDate}"></fmt:formatDate>
-                            </span>
+                                <c:set var="recordLink"><a href="${recordURL}">${message.record.name}</a></c:set>
                             </c:if>
+                            <c:if test="${not empty message.requestedCompletionDate }">
+                                <fmt:formatDate pattern="E dd MMM yyyy" value="${message.requestedCompletionDate}" var="completionDate"/>
+                                <c:set var="formattedCompletionDate"><span class="boldtext">${completionDate}</span></c:set>
+                            </c:if>
+                            <c:choose>
+                                <c:when test="${not empty message.record and not empty message.requestedCompletionDate}">
+                                    <spring:message code="myrequests.summary.withRecordAndDueDate">
+                                        <spring:argument value="${messageType}"/>
+                                        <spring:argument value="${recordLink}"/>
+                                        <spring:argument value="${formattedCompletionDate}"/>
+                                    </spring:message>
+                                </c:when>
+                                <c:when test="${not empty message.record}">
+                                    <spring:message code="myrequests.summary.withRecord">
+                                        <spring:argument value="${messageType}"/>
+                                        <spring:argument value="${recordLink}"/>
+                                    </spring:message>
+                                </c:when>
+                                <c:when test="${not empty message.requestedCompletionDate}">
+                                    <spring:message code="myrequests.summary.withDueDate">
+                                        <spring:argument value="${messageType}"/>
+                                        <spring:argument value="${formattedCompletionDate}"/>
+                                    </spring:message>
+                                </c:when>
+                                <c:otherwise>
+                                    <spring:message code="myrequests.summary.basic">
+                                        <spring:argument value="${messageType}"/>
+                                    </spring:message>
+                                </c:otherwise>
+                            </c:choose>
                             <c:if test="${not empty message.message }">
-                                with message: <br /> ${message.message}
+                                <spring:message code="notifications.withMessage"/> <br /> ${message.message}
                             </c:if>
                         </span>
                     </div>
                 </td>
                 <td width="120" valign="top" class="leftInfo" style="vertical-align:center;">
                     <input type="hidden" class="currentStatus" value="${message.status}" />
-                    <span class="boldtext">Status: </span>${message.status}<br/>
-                    <a href="#" class="cancelRequestLnk">Cancel Request</a>
+                    <span class="boldtext"><spring:message code="myrequests.status.label"/> </span>${message.status}<br/>
+                    <a href="#" class="cancelRequestLnk"><spring:message code="myrequests.cancelRequest"/></a>
                 </td>
             </tr>
             </table>

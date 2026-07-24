@@ -50,7 +50,7 @@ public class CsvInstrumentExporter extends InventoryItemCsvExporter {
       List<? extends InstrumentEntity> instruments, CsvExportMode exportMode) {
     List<String> columnNames = super.getBasicColumnNamesForCsv(exportMode);
     for (ExportableInvRecProperty prop : getExportableProps()) {
-      columnNames.add(prop.getCsvColumnHeader());
+      columnNames.add(prop.getCsvColumnHeader(messages));
     }
     columnNames.addAll(
         getInstrumentFieldColumnNamesForCsv(

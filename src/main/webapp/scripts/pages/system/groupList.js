@@ -16,16 +16,16 @@ $(document).ready(function () {
     var trToRemove$ = $("input[class='actionCbox']:checked").closest('tr');
     var callback = function () {
       var jxqr = $.post(createURL('/groups/admin/removeGroup/' + selected[0].id), function (xhr) {
-        RS.confirm("Group removed", 'success', 5000);
+        RS.confirm(RS.msg("legacyjs.system.groupList.groupRemoved"), 'success', 5000);
         trToRemove$.remove();
       });
       jxqr.fail(function () {
-        RS.ajaxFailed("Removing group", true, jqxhr);
+        RS.ajaxFailed(RS.msg("legacyjs.system.groupList.removingGroupAction"), true, jqxhr);
       });
     }
     RS.createConfirmationDialog({
-      title: "Confirm deletion",
-      consequences: `Are you sure you want to delete the following group: <strong>${selected[0].displayName}</strong>?`,
+      title: RS.msg("legacyjs.system.common.confirmDeletionTitle"),
+      consequences: RS.msg("legacyjs.system.groupList.confirmDeletionConsequences", selected[0].displayName),
 			variant: "warning",
       callback: callback
     });
@@ -81,6 +81,6 @@ function doSearch() {
   });
 
   jxqr.fail(function () {
-    RS.ajaxFailed("Searching groups list", false, jxqr);
+    RS.ajaxFailed(RS.msg("legacyjs.system.groupList.searchingGroupsAction"), false, jxqr);
   });
 }

@@ -1,13 +1,13 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 
 <c:set var="numRecordsOptions" value="${fn:split('10,15,30,50', ',')}"/>
-
 <form class="form-horizontal numRecordsForm">
 	<fieldset>
 		<div class="form-group" style="margin: 0;">
 			<label for="numberRecordsId" class="control-label">
-				Items per page:
+				<spring:message code="workspace.pagination.itemsPerPage"/>
 			</label>
 				<select name="numberRecords" id="numberRecordsId" class="form-control">
 					<c:forEach items="${numRecordsOptions}" var="link">
@@ -21,10 +21,9 @@
                       </c:choose>
 					</c:forEach>
 				</select>
-			<button class="btn btn-primary" id="applyNumberRecords" style="display: none" title="Apply the Items per page setting">
+				<button class="btn btn-primary" id="applyNumberRecords" style="display: none" title="<spring:message code='workspace.pagination.applyTitle'/>">
 				<span class="glyphicon glyphicon-ok"></span>
 			</button>
 		</div>
 	</fieldset>
 </form>
-

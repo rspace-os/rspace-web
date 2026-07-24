@@ -2,6 +2,8 @@ package com.researchspace.service.impl;
 
 import static org.apache.commons.collections4.ListUtils.removeAll;
 
+import com.ibm.icu.text.ListFormatter;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.dao.GroupMembershipEventDao;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.RecordGroupSharingDao;
@@ -20,6 +22,8 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.AutoshareManager;
 import com.researchspace.service.CommunicationManager;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;
 import java.util.ArrayList;
@@ -28,10 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
@@ -49,6 +51,7 @@ public class AutoshareManagerImpl implements AutoshareManager {
   private @Autowired AuditTrailService auditService;
   private @Autowired SharingHandler sharingHandler;
   private @Autowired CommunicationManager communicationManager;
+  private @Autowired MessageSourceUtils messages;
 
   private final Map<Long, Boolean> usersWithBulkShareInProgress;
 
@@ -63,7 +66,7 @@ public class AutoshareManagerImpl implements AutoshareManager {
 
   private void setBulkSharingInProgress(User subject) {
     if (isBulkShareInProgress(subject)) {
-      throw new IllegalStateException("Cannot launch new bulk share operation; already running");
+      throw new IllegalStateException(messages.getMessage("autoshare.errors.operationInProgress"));
     }
     usersWithBulkShareInProgress.put(subject.getId(), Boolean.TRUE);
   }
@@ -85,10 +88,17 @@ public class AutoshareManagerImpl implements AutoshareManager {
 
     if (!toShare.isAutosharable()) {
       String message =
-          String.format(
-              "%s (%s) cannot be autoshared: autosharing must be enabled and item must be a"
-                  + " document or notebook",
-              toShare.getName(), toShare.getGlobalIdentifier());
+          messages.getMessage(
+              "autoshare.errors.unsupportedItem",
+              new Object[] {
+                toShare.getName(),
+                toShare.getGlobalIdentifier(),
+                ListFormatUtils.formatList(
+                    List.of(
+                        messages.getMessage("common:recordTypes.document.lower"),
+                        messages.getMessage("common:recordTypes.notebook.lower")),
+                    ListFormatter.Type.OR)
+              });
 
       return new ServiceOperationResult<>(null, false, message);
     }
@@ -239,8 +249,10 @@ public class AutoshareManagerImpl implements AutoshareManager {
       Boolean autoshareStatus,
       ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> res) {
 
-    String enabledOrDisabled = (autoshareStatus) ? "enabled" : "disabled";
-    String sharedOrUnshared = (autoshareStatus) ? "shared" : "unshared";
+    String messageKey =
+        autoshareStatus
+            ? "autoshare.notification.memberEnabled"
+            : "autoshare.notification.memberDisabled";
 
     if (res.isAllSucceeded()) {
       for (User groupMember : targetGroup.getMembers()) {
@@ -248,12 +260,8 @@ public class AutoshareManagerImpl implements AutoshareManager {
 
           sysnotify(
               groupMember,
-              String.format(
-                  "%s has %s autosharing into group '%s' and %s all their work",
-                  subject.getFullName(),
-                  enabledOrDisabled,
-                  targetGroup.getDisplayName(),
-                  sharedOrUnshared));
+              messages.getMessage(
+                  messageKey, new Object[] {subject.getFullName(), targetGroup.getDisplayName()}));
         }
       }
     }
@@ -302,42 +310,35 @@ public class AutoshareManagerImpl implements AutoshareManager {
 
     String notificationMessage;
 
-    String enabledOrDisabled = targetAutoshareStatus ? "enabled" : "disabled";
-    String previousStatus = targetAutoshareStatus ? "unshared" : "shared";
-    String currentStatus = targetAutoshareStatus ? "shared" : "unshared";
-
     if (result.isAllSucceeded()) {
       notificationMessage =
-          String.format(
-              "Automatic sharing is now %s. All your previously %s work is now %s.",
-              enabledOrDisabled, previousStatus, currentStatus);
+          messages.getMessage(
+              targetAutoshareStatus
+                  ? "autoshare.notification.allSucceededEnabled"
+                  : "autoshare.notification.allSucceededDisabled");
     } else if (result.getFailureCount() > 0 && result.getExceptionCount() == 0) {
       String failures =
-          result.getFailures().stream()
-              .map(RecordGroupSharing::getShared)
-              .map(br -> br.getName() + " - " + br.getGlobalIdentifier())
-              .collect(Collectors.joining(","));
+          ListFormatUtils.formatList(
+              result.getFailures().stream()
+                  .map(RecordGroupSharing::getShared)
+                  .map(br -> br.getName() + " - " + br.getGlobalIdentifier())
+                  .toList());
       notificationMessage =
-          String.format(
-              "Automatic sharing is now %s. There was a problem, some of your previously %s work is"
-                  + " still %s - %s.",
-              enabledOrDisabled,
-              previousStatus,
-              previousStatus,
-              StringUtils.abbreviate(failures, 255));
+          messages.getMessage(
+              targetAutoshareStatus
+                  ? "autoshare.notification.partialFailureEnabled"
+                  : "autoshare.notification.partialFailureDisabled",
+              new Object[] {StringAbbreviationUtils.abbreviate(failures, 255)});
     } else {
       String exceptions =
-          result.getExceptions().stream()
-              .map(Exception::getMessage)
-              .collect(Collectors.joining(","));
+          ListFormatUtils.formatList(
+              result.getExceptions().stream().map(Exception::getMessage).toList());
       notificationMessage =
-          String.format(
-              "Setting automatic sharing to %s may have failed. Some of your previously %s work is"
-                  + " still %s - %s.",
-              enabledOrDisabled,
-              previousStatus,
-              previousStatus,
-              StringUtils.abbreviate(exceptions, 255));
+          messages.getMessage(
+              targetAutoshareStatus
+                  ? "autoshare.notification.mayHaveFailedEnabled"
+                  : "autoshare.notification.mayHaveFailedDisabled",
+              new Object[] {StringAbbreviationUtils.abbreviate(exceptions, 255)});
     }
 
     return notificationMessage;

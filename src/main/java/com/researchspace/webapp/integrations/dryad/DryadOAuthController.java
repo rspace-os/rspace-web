@@ -124,7 +124,7 @@ public class DryadOAuthController extends BaseOAuth2Controller {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
               .appName("Dryad")
-              .errorMsg("Exception during token exchange")
+              .errorMsg(getText("apps.oauth.errors.tokenExchange"))
               .errorDetails(e.getResponseBodyAsString())
               .build();
       ConnectionResultPage.addError(

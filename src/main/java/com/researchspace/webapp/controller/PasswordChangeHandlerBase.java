@@ -4,6 +4,7 @@ import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
 import com.researchspace.model.permissions.SecurityLogger;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ public abstract class PasswordChangeHandlerBase {
 
   protected static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
   protected @Autowired UserManager userManager;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired UserValidator validator;
 
   public String changePassword(
@@ -25,12 +27,12 @@ public abstract class PasswordChangeHandlerBase {
       User user) {
 
     if (currentPassword.isBlank() || newPassword.isBlank() || confirmPassword.isBlank()) {
-      return "Please enter data in all fields";
+      return messages.getMessage("errors.allFields.required");
     }
 
     if (!reauthenticate(user, currentPassword)) {
       logAuthenticationFailure(request, user);
-      return "The current password is incorrect";
+      return messages.getMessage("passwordChange.errors.incorrectCurrentPassword");
     }
 
     String checkPasswordResult =
@@ -42,7 +44,7 @@ public abstract class PasswordChangeHandlerBase {
 
     encryptAndSavePassword(user, newPassword);
     SECURITY_LOG.info("User [{}] successfully reset their password", user.getUsername());
-    return "Password changed successfully";
+    return messages.getMessage("passwordChange.success");
   }
 
   private void logAuthenticationFailure(HttpServletRequest request, User user) {

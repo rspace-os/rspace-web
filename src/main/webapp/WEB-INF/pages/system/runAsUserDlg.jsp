@@ -8,9 +8,9 @@
 <%-- when creating form  for promote dialog--%>
 <c:when test="${empty completed}">
 <p/>
-<spring:message code="system.runAs.help1"/>
+<spring:message code="system.runAs.permissionsNotice"/>
 <br/>
-<spring:message code="system.runAs.help2"/>
+<spring:message code="system.runAs.userNotificationNotice"/>
 
 
 <form:form method="POST"  modelAttribute="runAsUserCommand">
@@ -20,17 +20,18 @@
 </span>
 <p/>
 <label for="runAsUsername"><spring:message code="system.runAs.label"/></label>
-<form:input path="runAsUsername" placeholder="Enter a name, email or username..."/>
+<spring:message code="system.runAs.usernamePlaceholder" var="runAsUsernamePlaceholder"/>
+<form:input path="runAsUsername" placeholder="${runAsUsernamePlaceholder}"/>
 <p/>
 <label for="incognito"><spring:message code="system.runAs.incognito.label"/></label>
 <form:checkbox path="incognito"/>
 <p/>
 <c:choose>
 	<c:when test="${isVerificationPwdRequired}">
-		<label for="sysadminPassword"><fmt:message key="system.admin.reauthenticateMsgVerifcnPwd"/></label><br/>
+		<label for="sysadminPassword"><spring:message code="system.admin.reauthenticateWithVerificationPassword"/></label><br/>
 	</c:when>
 	<c:otherwise>
-		<label for="sysadminPassword"><fmt:message key="system.admin.reauthenticateMsg"/></label><br/>
+		<label for="sysadminPassword"><spring:message code="system.admin.reauthenticate"/></label><br/>
 	</c:otherwise>
 </c:choose>
 <form:password path="sysadminPassword"/>
@@ -40,6 +41,6 @@
 </c:when>
 <%-- just  a label that page is OK and can redirect--%>
 <c:otherwise>
-<p id="formCompleted"> <fmt:message key="general.pageReloading"/></p>
+<p id="formCompleted"> <spring:message code="general.pageReloading"/></p>
 </c:otherwise>
 </c:choose>

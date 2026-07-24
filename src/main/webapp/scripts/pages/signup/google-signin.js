@@ -3,7 +3,7 @@ function onSignUp(googleUser) {
 	var client_id = googleUser.clientId;
 	var device_tz = $('#timezone_field').val();
 	console.log('auth: ' + id_token);
-	RS.blockPage("Registering account..");
+	RS.blockPage(RS.msg("legacyjs.googleSignin.registeringAccount"));
 	$.post("/externalAuth/ajax/signup",
 		{
 			idTokenString : id_token,
@@ -19,7 +19,7 @@ function onSignUp(googleUser) {
 		}
 	)
 	.fail(function (jqxhr) {
-		googleSignupAjaxFailed("Signup", jqxhr)
+		googleSignupAjaxFailed(RS.msg("legacyjs.googleSignin.actionSignup"), jqxhr)
 	})
 	.always(function (jxqr) {
 		RS.unblockPage();
@@ -31,7 +31,7 @@ function onSignIn(googleUser) {
 	var client_id = googleUser.clientId;
 	var device_tz = $('#timezone_field').val();
 	console.log('auth: ' + id_token);
-	RS.blockPage("Signing in");
+	RS.blockPage(RS.msg("legacyjs.googleSignin.signingIn"));
 	$.post("/externalAuth/ajax/login",
 		{
 			idTokenString : id_token,
@@ -47,7 +47,7 @@ function onSignIn(googleUser) {
 		}
 	)
 	.fail(function(jqxhr) {
-		googleSignupAjaxFailed("Logging in", jqxhr)
+		googleSignupAjaxFailed(RS.msg("legacyjs.googleSignin.actionLoggingIn"), jqxhr)
 	})
 	.always(function(){
 		RS.unblockPage();
@@ -64,6 +64,6 @@ function googleSignupAjaxFailed(action, jqxhr) {
 			.replace("sign up", "<a href='/signup'>sign up</a>");
 		Apprise("<h4>" + msg + "</h4>", { override: false });
 	} else {
-		RS.ajaxFailed("Signup", false, jqxhr)
+		RS.ajaxFailed(action, false, jqxhr)
 	}
 }

@@ -35,7 +35,7 @@ export default function FastaView({ id, setDisabled }: FastaViewProps) {
       .catch((error) => {
         addAlert(
           mkAlert({
-            message: getErrorMessage(error, "Could not load the FASTA sequence."),
+            message: getErrorMessage(error, t("tinymce.snapGene.fastaLoadFailed")),
             variant: "warning",
             isInfinite: true,
           }),

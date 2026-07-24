@@ -3,19 +3,18 @@ package com.researchspace.webapp.controller;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.BaseManagerTestCaseBase.MockPrincipal;
 import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
-import java.util.Locale;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
@@ -25,13 +24,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.springframework.context.support.StaticMessageSource;
 
 public class IntegrationControllerTest {
 
   @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @InjectMocks IntegrationController integrationCtrller;
-  StaticMessageSource msgSource;
+  MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
   @Mock IntegrationsHandler handler;
   @Mock UserManager userMgr;
   User subject;
@@ -41,8 +39,7 @@ public class IntegrationControllerTest {
 
   @Before
   public void setup() {
-    msgSource = new StaticMessageSource();
-    integrationCtrller.setMessageSource(new MessageSourceUtils(msgSource));
+    integrationCtrller.setMessageSource(messages);
     subject = TestFactory.createAnyUser("any");
     principal = new MockPrincipal(subject.getUsername());
   }
@@ -71,11 +68,12 @@ public class IntegrationControllerTest {
     // now do when false
     String invalid = Preference.BOX.name() + "xxx";
     when(handler.isValidIntegration(invalid)).thenReturn(false);
-    msgSource.addMessage("errors.invalid", Locale.getDefault(), "invalid");
     info = integrationCtrller.getIntegrationInfo(invalid);
     assertNull(info.getData());
     assertNotNull(info.getErrorMsg());
-    assertTrue(info.getErrorMsg().getErrorMessages().get(0).contains("invalid"));
+    assertEquals(
+        messages.getMessage("errors.invalid", new Object[] {invalid}),
+        info.getErrorMsg().getErrorMessages().get(0));
   }
 
   @Test

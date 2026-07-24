@@ -28,7 +28,7 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
 
   public static final int MAX_QUERY_LENGTH = 2000;
 
-  @Size(max = MAX_QUERY_LENGTH, message = "Max query length is " + MAX_QUERY_LENGTH)
+  @Size(max = MAX_QUERY_LENGTH, message = "{errors.inventory.search.maxQueryLength}")
   private String query;
 
   @Pattern(
@@ -38,19 +38,17 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
 
   @Pattern(
       regexp = "(IC|BE|SA|IT|BA|NT)(\\d+)(v\\d+)?",
-      message =
-          "Requested parentGlobalId is incorrect, must be global id of a Container, Workbench,"
-              + " Sample, Sample Template, Instrument Template or Basket")
+      message = "{errors.inventory.search.parentGlobalId.invalid}")
   @JsonProperty("parentGlobalId")
   private String parentGlobalId;
 
-  @Size(max = User.MAX_UNAME_LENGTH, message = "Provided value is too long for a username")
+  @Size(max = User.MAX_UNAME_LENGTH, message = "{errors.inventory.search.usernameTooLong}")
   @JsonProperty("ownedBy")
   private String ownedBy;
 
   @Pattern(
       regexp = "EXCLUDE|INCLUDE|DELETED_ONLY",
-      message = "Requested deletedItems option must be one of: EXCLUDE, INCLUDE or DELETED_ONLY")
+      message = "{errors.inventory.search.deletedItems.invalid}")
   private String deletedItems;
 
   /**

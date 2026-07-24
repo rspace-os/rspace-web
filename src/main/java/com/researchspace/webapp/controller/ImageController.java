@@ -260,11 +260,11 @@ public class ImageController extends BaseController {
 
   private void validateComposedId(String idComposed) {
     if (StringUtils.isEmpty(idComposed)) {
-      throw new IllegalArgumentException(" no id to retrieve");
+      throw new IllegalArgumentException(getText("errors.composedId.missing"));
     }
     if (!idComposed.matches("\\d+\\-\\d+")) {
       throw new IllegalArgumentException(
-          "Incorrect id format - should be '\\d+\\-\\d+' but was '" + idComposed + "'");
+          getText("errors.composedId.invalidFormat", new Object[] {idComposed}));
     }
   }
 

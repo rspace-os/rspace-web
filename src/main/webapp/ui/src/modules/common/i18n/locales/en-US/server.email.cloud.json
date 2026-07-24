@@ -1,0 +1,51 @@
+{
+  "email": {
+    "cloud": {
+      "common": {
+        "signupEmailNote": "Please use this email address when you fill out the signup form - you can change it afterwards if you want, once your account is set up."
+      },
+      "groupInvitation": {
+        "loginPrompt": "If you''d like to accept this invitation, please login to RSpace at <a href=\"{0}\">{0}</a>."
+      },
+      "groupInvitationExistingUser": {
+        "body": "{0} ({1}) has invited you to join their RSpace group ''{2}''.",
+        "onceLoggedIn": "Once you''ve logged in, there will be an invitation message waiting for you - accept this invitation and you will be added to {0}''s group."
+      },
+      "groupInvitationNewUser": {
+        "accept": "If you''d like to accept this invitation, please <a href=\"{0}\">sign up for an account</a>.",
+        "body": "Welcome to RSpace! {0} ({1}) has invited you to join their RSpace group ''{2}''.",
+        "help": "There is lots of written and video help material on the <a href=\"https://researchspace.helpdocs.io/\">RSpace help website</a>, or you can use the in-app <b>Need Help?</b> button on the bottom-right of RSpace. You can also ask for help at <a href=\"mailto:support@researchspace.com\">support@researchspace.com</a>.",
+        "onceSignedUp": "Once you''ve signed up, there will be an invitation message waiting for you - accept this invitation and you will be added to {0}''s group."
+      },
+      "groupPiInvitationExistingUser": {
+        "body": "{0} ({1}) has invited you to create an RSpace group ''{2}'', with you as its Principal Investigator.",
+        "onceLoggedIn": "Once you''ve logged in, there will be an invitation message waiting for you - accept this invitation and your group will be created, with {0} as your Lab Admin."
+      },
+      "groupPiInvitationNewUser": {
+        "accept": "To accept this request, all you have to do is go to <a href=\"{0}\">{0}</a>, where you can sign up for an account and authorize the creation of the group.",
+        "body": "Welcome to RSpace! {0} ({1}) wants to create an RSpace group ''{2}'', with you as its Principal Investigator.",
+        "onceSignedUp": "Once you''ve signed up, there will be an invitation message waiting for you - accept this invitation and your group will be created, with {0} as your Lab Admin."
+      },
+      "shareRecordInvitationExistingUser": {
+        "body": "{0} ({1}) wants to share a document ({2}) with you.",
+        "loginPrompt": "If you''d like to accept this request, please login to RSpace at <a href=\"{0}\">{0}</a>.",
+        "onceLoggedIn": "Once you''ve logged in, there will be a request waiting for you - accept this request and the document ({0}) will be shared."
+      },
+      "shareRecordInvitationNewUser": {
+        "accept": "If you''d like to accept this request, please <a href=\"{0}\">sign up for an account</a>.",
+        "body": "Welcome to RSpace! {0} ({1}) has invited you to view a document ''{2}''.",
+        "onceSignedUp": "Once you''ve signed up, there will be a request waiting for you - accept this request and the document ({0}) will be shared."
+      },
+      "signupVerification": {
+        "activate": "If it was really you that signed up, please use the link below to verify and activate your account.",
+        "signedUp": "You, or someone else, have signed up for an RSpace account, at:",
+        "subject": "Welcome to RSpace"
+      },
+      "subject": {
+        "groupInvitation": "Join Group Invitation - Research Space",
+        "groupPiInvitation": "Create Group Invitation - Research Space",
+        "shareRecord": "Shared Document - Research Space"
+      }
+    }
+  }
+}

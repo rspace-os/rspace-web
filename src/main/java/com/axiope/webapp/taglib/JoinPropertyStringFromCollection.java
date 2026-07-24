@@ -1,9 +1,9 @@
 package com.axiope.webapp.taglib;
 
 import static java.lang.Math.min;
-import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.core.util.ObjectToStringPropertyTransformer;
+import com.researchspace.service.ListFormatUtils;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -16,8 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Produces a concatenated comma separated list of object properties. Setting maxSize allows a limit
- * on the number of values in the collection output to string. <br>
+ * Produces a locale-aware list of object properties. Setting maxSize limits the number of values
+ * included in the output. <br>
  * Truncated lists are terminated by an ellipsis ...
  */
 public class JoinPropertyStringFromCollection extends TagSupport {
@@ -92,7 +92,7 @@ public class JoinPropertyStringFromCollection extends TagSupport {
             .map(new ObjectToStringPropertyTransformer<Object>(property))
             .collect(Collectors.toList());
     int endIndex = min(propertyList.size(), maxSize);
-    String rc = join(propertyList.toArray(), ", ", 0, endIndex);
+    String rc = ListFormatUtils.formatList(propertyList.subList(0, endIndex));
     if (propertyList.size() > maxSize) {
       rc = rc + "...";
     }

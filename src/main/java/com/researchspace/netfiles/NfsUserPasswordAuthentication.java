@@ -14,10 +14,10 @@ public class NfsUserPasswordAuthentication implements NfsAuthentication {
   @Override
   public String validateCredentials(String nfsusername, String nfspassword, User user) {
     if (nfsusername == null || nfsusername.trim().length() == 0) {
-      return "net.filestores.validation.no.username";
+      return "netFileStores.validation.noUsername";
     }
     if (StringUtils.isEmpty(nfspassword)) {
-      return "net.filestores.validation.no.password";
+      return "netFileStores.validation.noPassword";
     }
     return null;
   }
@@ -30,6 +30,6 @@ public class NfsUserPasswordAuthentication implements NfsAuthentication {
 
   @Override
   public String getMessageCodeForAuthException(NfsAuthException auth) {
-    return "net.filestores.error.auth.password";
+    return "workspace:export.fileStore.login.authProblem";
   }
 }

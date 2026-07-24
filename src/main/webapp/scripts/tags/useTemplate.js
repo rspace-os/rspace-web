@@ -8,15 +8,15 @@ function initUseTemplateDlg(templateIdAndNameGetter) {
 	$('#useTemplateDlg').dialog({
 		modal: true,
 		autoOpen: false,
-	    title: "Create Document from Template",
+	    title: RS.msg("legacyjs.core.useTemplate.title"),
 	    width: 420,
 	    open : function(event, ui) {
-            showFolderChooser('-useTemplate', 'to put the document there.');
+            showFolderChooser('-useTemplate', RS.msg("legacyjs.core.useTemplate.folderChooserDescription"));
             $("#useTemplateNameInput").val("from_" + templateIdAndNameGetter().name);
 	    },
 	    buttons: {
-			Cancel: function (){$(this).dialog('close');},
-			"Create": function() {
+			[RS.msg("legacyjs.common.cancel")]: function (){$(this).dialog('close');},
+			[RS.msg("legacyjs.core.action.create")]: function() {
 			    
                 var targetFolderId = -1; // root folder
 			    var selectedFolder = $('#folderChooser-id-useTemplate').val();
@@ -37,7 +37,7 @@ function initUseTemplateDlg(templateIdAndNameGetter) {
                 $form.submit();
         RS.trackEvent("user:create_document:from_template:workspace");
                 
-                RS.blockPage('Creating a document...');
+                RS.blockPage(RS.msg("legacyjs.core.document.creating"));
 			}
 		}
 	});

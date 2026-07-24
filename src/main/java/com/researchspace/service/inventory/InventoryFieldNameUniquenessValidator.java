@@ -37,14 +37,14 @@ import org.springframework.validation.Errors;
  * IllegalArgumentException} for both reserved-name and displayed-label clashes.
  *
  * <p>For in-payload duplicates this class throws {@link ApiRuntimeException} with error code {@code
- * errors.inventory.field.duplicate.name} (mapped to HTTP 422 by the controller advice) at the
+ * errors.inventory.field.duplicateName} (mapped to HTTP 422 by the controller advice) at the
  * manager layer, or rejects via Spring's {@link Errors} at the validator layer (mapped to HTTP 400
  * by the controller advice's {@code BindException} handler). The user-facing message keeps the
  * caller's original casing of the duplicated name.
  */
 public final class InventoryFieldNameUniquenessValidator {
 
-  public static final String DUPLICATE_NAME_ERROR_CODE = "errors.inventory.field.duplicate.name";
+  public static final String DUPLICATE_NAME_ERROR_CODE = "errors.inventory.field.duplicateName";
 
   private InventoryFieldNameUniquenessValidator() {}
 
@@ -161,11 +161,7 @@ public final class InventoryFieldNameUniquenessValidator {
     }
     String trimmed = rawName.trim();
     if (!seen.add(trimmed.toLowerCase(Locale.ROOT))) {
-      errors.rejectValue(
-          fieldPath,
-          DUPLICATE_NAME_ERROR_CODE,
-          new Object[] {trimmed},
-          "duplicate field name '" + trimmed + "'");
+      errors.rejectValue(fieldPath, DUPLICATE_NAME_ERROR_CODE, new Object[] {trimmed}, null);
     }
   }
 }

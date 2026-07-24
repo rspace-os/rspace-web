@@ -12,6 +12,7 @@ import static org.junit.Assert.assertTrue;
 import com.researchspace.Constants;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.SortOrder;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RecordGroupSharing;
@@ -22,7 +23,6 @@ import com.researchspace.model.record.Record;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -137,7 +137,8 @@ public class RecordSharingDaoTest extends BaseDaoTestCase {
     srchCrit.setAllFields(rgs.getShared().getGlobalIdentifier());
     assertThat(rShareDao.listSharedRecordsForUser(user, pg), totalSearchResults(1));
     // requires exact match to global ID
-    srchCrit.setAllFields(StringUtils.abbreviate(globalIdString, globalIdString.length() - 1));
+    srchCrit.setAllFields(
+        StringAbbreviationUtils.abbreviate(globalIdString, globalIdString.length() - 1));
     assertThat(rShareDao.listSharedRecordsForUser(user, pg), totalSearchResults(0));
 
     srchCrit.setAllFields(globalIdString + "ddd");

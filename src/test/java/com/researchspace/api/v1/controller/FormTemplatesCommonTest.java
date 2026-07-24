@@ -35,7 +35,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.springframework.context.support.StaticMessageSource;
 
 public class FormTemplatesCommonTest extends JavaxValidatorTest {
 
@@ -49,8 +48,6 @@ public class FormTemplatesCommonTest extends JavaxValidatorTest {
   @InjectMocks FormTemplatesCommon commonFormTemplates;
   User subject;
   Folder root = null;
-
-  StaticMessageSource msg = new StaticMessageSource();
 
   @Test
   public void jsonRoundTrip() {

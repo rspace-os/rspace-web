@@ -1,11 +1,7 @@
-#if($result.succeeded)
-Your deposit to repository $!app.label is complete.
-#else
-Your deposit to repository $!app.label failed.
-#end
+$msg.format("email.notification.repoDepositCompleteNotification.response", [$result.succeeded, $!app.label])
 <br/>
 #if($result.message)
-Here is the message from the repository:
+$msg.getMessage("email.notification.repoDepositCompleteNotification.hereIsMessage")
 <br/>
 $result.message
 <br/>
@@ -13,7 +9,9 @@ $result.message
 #if($result.url)
 <a href="$result.url">$result.url</a>
 #else
-<br>No URL for the repository could be retrieved</br>
+<br>$msg.getMessage("email.notification.repoDepositCompleteNotification.noUrlRetrieved")</br>
 #end
 <br/>
-#dontReply
+<p>
+$msg.getMessage("email.common.dontReply")
+</p>

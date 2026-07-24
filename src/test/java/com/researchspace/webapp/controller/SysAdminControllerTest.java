@@ -22,7 +22,9 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.LicenseService;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserDeletionManager;
 import com.researchspace.service.UserDeletionPolicy;
@@ -34,6 +36,7 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -56,6 +59,11 @@ public class SysAdminControllerTest {
   @Mock CommunityServiceManager commService;
   @InjectMocks SysAdminController ctrller;
   private User sysadmin;
+
+  @Before
+  public void setUp() throws Exception {
+    ctrller.messages = new MessageSourceUtils(new JsonMessageSource());
+  }
 
   @After
   public void tearDown() throws Exception {}

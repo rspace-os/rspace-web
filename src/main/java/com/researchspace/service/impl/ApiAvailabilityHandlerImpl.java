@@ -107,14 +107,13 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
       String integrationName = InventorySettingType.IGSN.equals(settingType) ? "IGSN" : "PIDINST";
       throw new UnsupportedOperationException(
           messages.getMessage(
-              "errors.inventory.identifier.integration.not.enabled",
-              new Object[] {integrationName}));
+              "errors.inventory.identifier.integrationNotEnabled", new Object[] {integrationName}));
     }
   }
 
   private void assertInventoryAvailable(User user) {
     if (!isInventoryAvailable(user)) {
-      throw new UnsupportedOperationException("Inventory is not enabled on this RSpace instance.");
+      throw new UnsupportedOperationException(messages.getMessage("errors.inventory.notEnabled"));
     }
   }
 

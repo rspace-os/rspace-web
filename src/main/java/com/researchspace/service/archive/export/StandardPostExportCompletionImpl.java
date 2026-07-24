@@ -18,6 +18,7 @@ import com.researchspace.model.comms.data.ArchiveExportNotificationData.Exported
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Record;
 import com.researchspace.service.CommunicationManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.PostArchiveCompletion;
 import com.researchspace.service.aws.S3ExportUtilities;
 import java.io.File;
@@ -47,6 +48,11 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
   private @Autowired ExportRemovalPolicy removalPolicy;
   private @Autowired VelocityEngine velocity;
   private @Autowired S3ExportUtilities s3ExportUtilities;
+  private @Autowired MessageSourceUtils messages;
+
+  void setMessages(MessageSourceUtils messages) {
+    this.messages = messages;
+  }
 
   @Value("${server.urls.prefix}")
   private String serverURLPrefix;
@@ -98,7 +104,11 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
     config.put("name", name);
     config.put("size", fileSize);
     config.put("exportedRecordsSummary", getExportedRecordsSummary(expCfg, result));
-    config.put("removalPolicyMessage", removalPolicy.getRemovalCircumstancesMsg());
+    ExportRemovalPolicy.RemovalCircumstancesMessage removalMessage =
+        removalPolicy.getRemovalCircumstancesMessage();
+    config.put(
+        "removalPolicyMessage", messages.format(removalMessage.key(), removalMessage.arguments()));
+    config.put("msg", messages);
     String msg =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocity, "exportCompleteNotification.vm", "UTF-8", config);
@@ -111,6 +121,7 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
     config.put(
         "exportReportLink",
         ArchiveUtils.getExportReportLink(serverURLPrefix, notification.getId()));
+    config.put("msg", messages);
     String updatedMsg =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocity, "exportCompleteNotification.vm", "UTF-8", config);
@@ -131,21 +142,11 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
   }
 
   protected String getExportedRecordsSummary(IArchiveExportConfig expCfg, ArchiveResult result) {
-    String exportSummaryMsg;
     int archivedRecordsCount =
         result.getArchivedRecords() == null ? 0 : result.getArchivedRecords().size();
-    if (archivedRecordsCount == 0) {
-      exportSummaryMsg = "No records were exported";
-    } else {
-      exportSummaryMsg =
-          "The archive includes "
-              + archivedRecordsCount
-              + " record"
-              + (archivedRecordsCount > 1 ? "s" : "");
-    }
+    long includedNfsCount = 0;
+    long skippedNfsCount = 0;
     if (expCfg.isIncludeNfsLinks()) {
-      long includedNfsCount = 0;
-      long skippedNfsCount = 0;
       if (result.getArchivedNfsFiles() != null) {
         for (ArchivalNfsFile nfsFile : result.getArchivedNfsFiles()) {
           if (nfsFile.isAddedToArchive()) {
@@ -155,26 +156,14 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
           }
         }
       }
-      if (includedNfsCount == 0) {
-        exportSummaryMsg += ". No filestore links were included";
-      } else {
-        exportSummaryMsg +=
-            " and "
-                + includedNfsCount
-                + " linked filestore item"
-                + (includedNfsCount > 1 ? "s" : "");
-      }
-      if (skippedNfsCount > 0) {
-        exportSummaryMsg +=
-            ".<br/><br/>"
-                + skippedNfsCount
-                + " filestore link"
-                + (skippedNfsCount > 1 ? "s were" : " was")
-                + " not included";
-      }
     }
-    exportSummaryMsg += ".";
-    return exportSummaryMsg;
+    return expCfg.isIncludeNfsLinks()
+        ? messages.getMessage(
+            "email.notification.exportCompleteNotification.archiveSummaryWithNfs",
+            new Object[] {archivedRecordsCount, includedNfsCount, skippedNfsCount})
+        : messages.getMessage(
+            "email.notification.exportCompleteNotification.archiveSummary",
+            new Object[] {archivedRecordsCount});
   }
 
   protected ArchiveExportNotificationData createExportNotificationData(

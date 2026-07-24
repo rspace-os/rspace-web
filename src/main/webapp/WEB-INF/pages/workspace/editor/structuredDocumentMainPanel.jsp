@@ -3,7 +3,7 @@
 
 <title>${structuredDocument.name} </title>
 <head>
-    <meta name="heading" content="Notebook" />
+    <meta name="heading" content="<spring:message code='documentView.metaHeading'/>" />
     <link rel="canonical" href="${applicationScope['RS_DEPLOY_PROPS']['serverUrl']}${requestScope['javax.servlet.forward.servlet_path']}" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 </head>
@@ -57,13 +57,14 @@
             <axt:breadcrumb breadcrumb="${bcrumb}" breadcrumbTagId="editorBcrumb"></axt:breadcrumb>
           </span>
                 <c:if test="${!param.publicDocument}">
+                    <spring:message code="common:appBar.published" var="documentViewPublishedLabel"/>
                     <div> <img id="publishedStatusImg"
                                src="/images/icons/html.png"
-                               alt="Published"
-                               title="Published"
+                               alt="${documentViewPublishedLabel}"
+                               title="${documentViewPublishedLabel}"
                                width="35" height="35"
                                <c:if test="${not isPublished}">hidden</c:if>
-                    ><label style="cursor:default;" for="publishedStatusImg" <c:if test="${not isPublished}">hidden</c:if>>Published</label>
+                    ><label style="cursor:default;" for="publishedStatusImg" <c:if test="${not isPublished}">hidden</c:if>>${documentViewPublishedLabel}</label>
                     </div>
                 </c:if>
                 <c:if test="${!param.publicDocument}">
@@ -72,7 +73,7 @@
                     </script>
                 </c:if>
                 <c:if test="${isTemplate eq 'true'}">
-                    <span class="templateSpan" style="padding: 3px 12px;">Template</span>
+                    <span class="templateSpan" style="padding: 3px 12px;"><spring:message code="documentView.templateLabel"/></span>
                 </c:if>
                 <axt:status></axt:status>
             </div>
@@ -88,7 +89,7 @@
         <c:if test="${param.publicDocument}">
                     <td>
                     <label class="displayRevisionsContainer">
-                        <input type="checkbox" class="displayRevisions"> Show last modified date
+                        <input type="checkbox" class="displayRevisions"> <spring:message code="documentView.showLastModifiedDate"/>
                     </label>
                 </td>
         </c:if>
@@ -102,7 +103,7 @@
                         type="file"
                         class="fromLocalComputer fileReplaceInput"
                         style="display:none"
-                        aria-label="Insert file from local computer"
+                        aria-label="<spring:message code='documentView.insertFileAriaLabel'/>"
                 />
             </td>
         </tr>
@@ -146,13 +147,13 @@
     <div class="bootstrap-custom-flat attachmentsListing">
       <div class="container">
         <div class="row">
-          <h2 class="h4" style="margin-bottom: 0">Attachments</h2>
-          <small>Tap to expand listing.</small>
+          <h2 class="h4" style="margin-bottom: 0"><spring:message code="documentView.attachmentsLabel"/></h2>
+          <small><spring:message code="documentView.tapToExpandListing"/></small>
         </div>
 
         <div class="row" >
-          <button class="btn btn-primary attachmentButton" title="Attachments">
-            Files
+          <button class="btn btn-primary attachmentButton" title="<spring:message code='documentView.attachmentsLabel'/>">
+            <spring:message code="documentView.filesButtonLabel"/>
           </button>
           <div class="attachmentList" style="display:none">
             <ul class="attachmentUL"></ul>

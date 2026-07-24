@@ -66,9 +66,9 @@ class GroupEditBar extends React.Component<any, any> {
       data.set("newProfile", this.state.profile_text);
       promises.push(
         axios
-          .post(`/groups/editProfile/${this.state.group_id}`, data)
+          .post<{ data: boolean | null; exceptionMessage?: string }>(`/groups/editProfile/${this.state.group_id}`, data)
           .then((response) => {
-            if (response.data.data === "Edit profile ok") {
+            if (response.data.data === true) {
               this.setState({ editing: false });
             } else {
               this.handleError(response.data.exceptionMessage);

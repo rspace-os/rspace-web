@@ -1,8 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
+import i18n from "@/modules/common/i18n";
 import type { Field } from "@/stores/definitions/Field";
 import materialTheme from "@/theme";
 import LinkFieldValue from "../LinkFieldValue";
@@ -458,26 +458,33 @@ describe("LinkFieldValue", () => {
   });
 
   it("rejects applying a typed target that does not exist on the server", async () => {
+    await i18n.changeLanguage("en-US");
+    const t = i18n.getFixedT("en-US", "inventory");
     mockCheckLinkTargetExists.mockResolvedValueOnce(false);
     const user = userEvent.setup();
     const setAttributesDirty = vi.fn();
     const field = linkField({ setAttributesDirty });
-    renderField({
-      field,
-      sourceGlobalId: "SA1",
-      disabled: false,
-      onChange: () => {},
-    });
+    try {
+      renderField({
+        field,
+        sourceGlobalId: "SA1",
+        disabled: false,
+        onChange: () => {},
+      });
 
-    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SS9999");
-    await user.click(screen.getByRole("button", { name: "Open" }));
-    await user.click(screen.getByRole("option", { name: "References" }));
-    await user.click(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" }));
+      await user.type(screen.getByRole("textbox", { name: t("fields.link.editor.targetGlobalId") }), "SS9999");
+      await user.click(screen.getByRole("button", { name: "Open" }));
+      await user.click(screen.getByRole("option", { name: "References" }));
+      await user.click(screen.getByRole("button", { name: t("sample.fields.linkFieldValue.applyLabel") }));
 
-    expect(
-      await screen.findByText("SS9999 does not exist, or you do not have permission to view it."),
-    ).toBeInTheDocument();
-    expect(setAttributesDirty).not.toHaveBeenCalled();
+      expect(
+        await screen.findByText(t("fields.extraFields.link.targetNotFound", { globalId: "SS9999" })),
+      ).toBeInTheDocument();
+      expect(setAttributesDirty).not.toHaveBeenCalled();
+    } finally {
+      cleanup();
+      await i18n.changeLanguage("cimode");
+    }
   });
 
   it("prevents applying a self-link", async () => {

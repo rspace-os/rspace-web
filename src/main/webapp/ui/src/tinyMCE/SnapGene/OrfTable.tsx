@@ -74,7 +74,7 @@ export default function OrfTable(props: any) {
       .catch((error) => {
         addAlert(
           mkAlert({
-            message: getErrorMessage(error, "Could not load the ORF table."),
+            message: getErrorMessage(error, t("tinymce.snapGene.orfLoadFailed")),
             variant: "warning",
             isInfinite: true,
           }),

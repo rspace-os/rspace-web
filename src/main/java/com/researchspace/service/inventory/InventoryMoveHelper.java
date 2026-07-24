@@ -114,7 +114,8 @@ public class InventoryMoveHelper {
 
     // for grid/image container target location is necessary
     if (targetLocation == null) {
-      throw new ApiRuntimeException("move.failure.no.target.location.for.grid.image.container");
+      throw new ApiRuntimeException(
+          "errors.inventory.move.targetLocation.requiredForGridOrImageContainer");
     }
 
     Optional<ContainerLocation> targetDbLocationOpt =
@@ -131,7 +132,8 @@ public class InventoryMoveHelper {
         }
       }
     } else if (targetContainer.isImageLayoutContainer()) {
-      throw new ApiRuntimeException("move.failure.target.image.container.location.not.found");
+      throw new ApiRuntimeException(
+          "errors.inventory.move.targetLocation.notFoundInImageContainer");
     }
     return targetContainer;
   }
@@ -150,7 +152,7 @@ public class InventoryMoveHelper {
             ? false
             : invPermissions.canUserEditInventoryRecord(targetContainer, user);
     if (targetContainer == null || !canMoveIntoTargetContainer) {
-      throw new ApiRuntimeException("move.failure.cannot.locate.target.container");
+      throw new ApiRuntimeException("errors.inventory.move.targetContainer.unavailable");
     }
     return targetContainer;
   }

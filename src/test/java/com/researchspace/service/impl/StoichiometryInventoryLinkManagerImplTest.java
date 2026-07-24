@@ -30,6 +30,8 @@ import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -39,7 +41,6 @@ import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -52,7 +53,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
   @Mock private InventoryPermissionUtils invPerms;
   @Mock private SubSampleApiManager subSampleMgr;
 
-  @InjectMocks private StoichiometryInventoryLinkManagerImpl manager;
+  private StoichiometryInventoryLinkManagerImpl manager;
 
   private User user;
   private StoichiometryMolecule molecule;
@@ -62,6 +63,14 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
   @Before
   public void setUp() {
+    manager =
+        new StoichiometryInventoryLinkManagerImpl(
+            linkDao,
+            moleculeManager,
+            elnPerms,
+            invPerms,
+            subSampleMgr,
+            new MessageSourceUtils(new JsonMessageSource()));
     user = new User();
     user.setUsername("u1");
     molecule = new StoichiometryMolecule();

@@ -70,9 +70,9 @@ public class InventoryLinkValidator {
     if (!DataCiteRelationType.isValid(link.getRelationType())) {
       errors.rejectValue(
           "relationType",
-          "errors.inventory.field.link.relationTypeInvalid",
+          "errors.inventory.field.linkRelationTypeInvalid",
           new Object[] {link.getRelationType()},
-          "relationType not in DataCite vocabulary");
+          null);
     }
   }
 
@@ -81,9 +81,9 @@ public class InventoryLinkValidator {
     if (StringUtils.isBlank(target)) {
       errors.rejectValue(
           "targetGlobalId",
-          "errors.inventory.field.link.targetNotFound",
+          "errors.inventory.field.linkTargetNotFound",
           new Object[] {target},
-          "targetGlobalId is required");
+          null);
       return;
     }
     GlobalIdentifier parsed;
@@ -92,17 +92,17 @@ public class InventoryLinkValidator {
     } catch (IllegalArgumentException ex) {
       errors.rejectValue(
           "targetGlobalId",
-          "errors.inventory.field.link.targetNotFound",
+          "errors.inventory.field.linkTargetNotFound",
           new Object[] {target},
-          "targetGlobalId is not a valid GlobalID");
+          null);
       return;
     }
     if (!ALLOWED_TARGET_PREFIXES.contains(parsed.getPrefix())) {
       errors.rejectValue(
           "targetGlobalId",
-          "errors.inventory.field.link.targetKindUnsupported",
+          "errors.inventory.field.linkTargetKindUnsupported",
           new Object[] {parsed.getPrefix().name()},
-          "target kind not supported");
+          null);
       return;
     }
     if (isSelfLink(parsed, sourceGlobalId)) {
@@ -110,7 +110,7 @@ public class InventoryLinkValidator {
           "targetGlobalId",
           "errors.inventory.field.link.selfLinkForbidden",
           new Object[] {target},
-          "link target cannot equal its source item");
+          null);
     }
   }
 }

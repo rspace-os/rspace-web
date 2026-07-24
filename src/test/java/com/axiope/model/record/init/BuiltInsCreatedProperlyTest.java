@@ -10,10 +10,10 @@ import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestFactory;
-import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.PropertyResourceBundle;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Rule;
@@ -33,14 +33,11 @@ public class BuiltInsCreatedProperlyTest {
   RichTextUpdater richTextUpdater = new RichTextUpdater();
 
   User user = TestFactory.createAnyUser("anyuser");
-  PropertyResourceBundle bundle = null;
+  ResourceBundle bundle = null;
 
   @Before
   public void setUp() throws Exception {
-    // need to read this is in as only has access to test resources by defautlt
-    bundle =
-        new PropertyResourceBundle(
-            new FileInputStream("src/main/resources/bundles/ApplicationResources.properties"));
+    bundle = BuiltinContentMessages.forLocale(Locale.forLanguageTag("en-US"));
   }
 
   List<BuiltinContent> getBuiltinsInPackage()

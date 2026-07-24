@@ -1,7 +1,5 @@
 package com.researchspace.api.v1.controller;
 
-import static org.apache.commons.lang3.StringUtils.join;
-
 import com.researchspace.api.v1.model.ApiSortEnum;
 import javax.validation.constraints.Pattern;
 import lombok.Builder;
@@ -88,11 +86,7 @@ public class DocumentApiPaginationCriteria extends ApiPaginationCriteria {
 
   @Override
   public DocumentApiPaginationCriteria previousPage() {
-    if (getPageNumber() == 0) {
-      throw new IllegalArgumentException(
-          "Can't create previous pagination criteria - at first page!");
-    }
-    return new DocumentApiPaginationCriteria(getPageNumber() - 1, getPageSize(), getOrderBy());
+    return new DocumentApiPaginationCriteria(previousPageNumber(), getPageSize(), getOrderBy());
   }
 
   public DocumentApiPaginationCriteria nextPage() {
@@ -149,12 +143,7 @@ public class DocumentApiPaginationCriteria extends ApiPaginationCriteria {
         case NAME_DESC_API_PARAM:
           return ApiSortEnum.NAME_DESC;
         default:
-          throw new IllegalArgumentException(
-              "Problem  parsing sort parameter: ["
-                  + getOrderBy()
-                  + "]. It must be one of "
-                  + join(ALL_PARAMS, ",")
-                  + ".");
+          throw new InvalidSortParameterException(getOrderBy(), ALL_PARAMS);
       }
     }
     return null;

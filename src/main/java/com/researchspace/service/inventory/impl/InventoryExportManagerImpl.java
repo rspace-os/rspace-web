@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiListOfMaterials;
 import com.researchspace.archive.ExportScope;
 import com.researchspace.core.util.ISearchResults;
@@ -22,6 +23,7 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryExportManager;
@@ -263,11 +265,9 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
       }
     }
     if (!unexportableGlobalIds.isEmpty()) {
-      String msg =
-          String.format(
-              "Cannot export items with global id [%s] - items not found, or no permission",
-              StringUtils.join(unexportableGlobalIds, ", "));
-      throw new IllegalArgumentException(msg);
+      throw new ApiRuntimeException(
+          "errors.inventory.export.unexportableGlobalIds",
+          ListFormatUtils.formatList(unexportableGlobalIds));
     }
   }
 
@@ -458,11 +458,9 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
       }
     }
     if (!unexportableUsers.isEmpty()) {
-      String msg =
-          String.format(
-              "Cannot export data of users [%s] - users not found, or no permission",
-              StringUtils.join(unexportableUsers, ", "));
-      throw new IllegalArgumentException(msg);
+      throw new ApiRuntimeException(
+          "errors.inventory.export.unexportableUsers",
+          ListFormatUtils.formatList(unexportableUsers));
     }
   }
 }

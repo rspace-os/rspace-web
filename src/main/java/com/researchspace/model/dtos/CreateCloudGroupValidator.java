@@ -32,13 +32,13 @@ public class CreateCloudGroupValidator implements Validator {
     CreateCloudGroup createCloudGroup = (CreateCloudGroup) target;
     User userInSession = createCloudGroup.getSessionUser();
     ValidationUtils.rejectIfEmptyOrWhitespace(
-        errors, "groupName", "groupName.required", "Group name is required");
+        errors, "groupName", "groups.creation.errors.groupNameRequired");
     // someone else will be PI, i.e a nomination
     ValidationUtils.rejectIfEmptyOrWhitespace(
-        errors, "piEmail", "principalEmail.required", "Principal investigator email is required");
+        errors, "piEmail", "groups.creation.errors.piEmailRequired");
 
     if (!isEmailValid(createCloudGroup.getPiEmail())) {
-      errors.rejectValue("piEmail", "principalEmail.incorrect", "Please enter a correct email");
+      errors.rejectValue("piEmail", "groups.creation.errors.piEmailInvalid");
       return;
     }
 
@@ -47,15 +47,12 @@ public class CreateCloudGroupValidator implements Validator {
       for (String email : listEmails) {
 
         if (!isEmailValid(email)) {
-          errors.rejectValue("emails", "emails.incorrect", "Enter correct emails");
+          errors.rejectValue("emails", "groups.creation.errors.memberEmailInvalid");
           return;
         }
 
         if (userInSession.getEmail().equals(email)) {
-          errors.rejectValue(
-              "emails",
-              "emails.invalid",
-              "You are already in the group. Please check the email addresses.");
+          errors.rejectValue("emails", "groups.creation.errors.currentUserAlreadyMember");
           return;
         }
       }

@@ -141,7 +141,7 @@ export default function useFolders(): {
             message: getErrorMessage(e, t("apiErrors.unknown")),
           }),
         );
-        throw new Error("Could not fetch folder tree", {
+        throw new Error(t("apiErrors.folders.fetchTreeFailed"), {
           cause: e,
         });
       }
@@ -170,7 +170,7 @@ export default function useFolders(): {
             message: getErrorMessage(e, t("apiErrors.unknown")),
           }),
         );
-        throw new Error("Could not fetch folder", {
+        throw new Error(t("apiErrors.folders.fetchFailed"), {
           cause: e,
         });
       }
@@ -212,7 +212,7 @@ export default function useFolders(): {
             message: getErrorMessage(e, t("apiErrors.unknown")),
           }),
         );
-        throw new Error("Could not create folder", {
+        throw new Error(t("apiErrors.folders.createFailed"), {
           cause: e,
         });
       }

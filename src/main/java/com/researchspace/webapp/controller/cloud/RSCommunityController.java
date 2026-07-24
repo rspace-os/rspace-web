@@ -6,6 +6,7 @@ import static java.util.stream.Collectors.toList;
 import com.axiope.userimport.IPostUserSignup;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.core.util.SecureStringUtils;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.ProductType;
@@ -38,7 +39,6 @@ import java.util.regex.Matcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
@@ -165,13 +165,13 @@ public class RSCommunityController extends BaseController {
 
     List<String> listEmails = Arrays.asList(emails);
     if (listEmails.isEmpty()) {
-      error.addErrorMsg("Email list is empty !");
+      error.addErrorMsg(getText("community.invitation.errors.emptyEmailList"));
       return new AjaxReturnObject<List<String>>(null, error);
     }
 
     for (String s : emails) {
       if (!isEmailValid(s)) {
-        error.addErrorMsg("Incorrect email");
+        error.addErrorMsg(getText("community.invitation.errors.invalidEmail"));
         return new AjaxReturnObject<List<String>>(null, error);
       }
     }
@@ -213,18 +213,11 @@ public class RSCommunityController extends BaseController {
   public AjaxReturnObject<List<UserBasicInfo>> searchPublicUserInfoList(
       @RequestParam(value = "term", required = true) String term) {
     term = SecureStringUtils.removeWildCards(term);
-    List<UserBasicInfo> userInfos = null;
-    try {
-      userInfos = userManager.searchPublicUserInfoList(term);
-    } catch (IllegalArgumentException e) {
-      if (e.getMessage().contains("must be at least 3 characters")) {
-        ErrorList error =
-            ErrorList.of(getText("errors.minlength", new String[] {"Search term", "3"}));
-        return new AjaxReturnObject<>(null, error);
-      } else {
-        throw e;
-      }
+    if (term.length() < 3) {
+      ErrorList error = ErrorList.of(getText("errors.searchTermMinLength", new Object[] {3}));
+      return new AjaxReturnObject<>(null, error);
     }
+    List<UserBasicInfo> userInfos = userManager.searchPublicUserInfoList(term);
     return new AjaxReturnObject<>(userInfos, null);
   }
 
@@ -238,7 +231,7 @@ public class RSCommunityController extends BaseController {
 
     if (term.length() < minLength) {
       ErrorList error =
-          ErrorList.of(getText("errors.minlength", new String[] {"Search term", "3"}));
+          ErrorList.of(getText("errors.searchTermMinLength", new Object[] {minLength}));
       return new AjaxReturnObject<List<GroupListResult>>(null, error);
     }
 
@@ -271,7 +264,7 @@ public class RSCommunityController extends BaseController {
   public ModelAndView getSignupVerificationPage(@RequestParam("token") String token) {
 
     final int maxWidth = 255;
-    token = StringUtils.abbreviate(token, maxWidth);
+    token = StringAbbreviationUtils.abbreviate(token, maxWidth);
     TokenBasedVerification change = userManager.getUserVerificationToken(token);
     if (change != null && change.isValidLink(token, TokenBasedVerificationType.VERIFIED_SIGNUP)) {
       ModelAndView mav = new ModelAndView("cloud/signup/cloudAcceptSignupForm");
@@ -292,7 +285,7 @@ public class RSCommunityController extends BaseController {
       @RequestParam("token") String token, HttpServletRequest request) {
 
     final int maxWidth = 255;
-    token = StringUtils.abbreviate(token, maxWidth);
+    token = StringAbbreviationUtils.abbreviate(token, maxWidth);
     User activated = cloudUserManager.activateUser(token);
     if (activated != null) {
       analyticsManager.userSignedUp(activated, false, request);
@@ -308,25 +301,25 @@ public class RSCommunityController extends BaseController {
       @RequestParam("token") String token, Model model, Principal p) {
 
     final int maxWidth = 255;
-    token = StringUtils.abbreviate(token, maxWidth);
+    token = StringAbbreviationUtils.abbreviate(token, maxWidth);
     TokenBasedVerification changeEmailToken = userManager.getUserVerificationToken(token);
 
     String errorMsg = null;
     if (changeEmailToken == null
         || !changeEmailToken.isValidLink(token, TokenBasedVerificationType.EMAIL_CHANGE)) {
-      errorMsg = "token.verification.fail.help2";
+      errorMsg = "token.verification.fail.retryInstructions";
     } else {
       String tokenUsername = changeEmailToken.getUser().getUsername();
       if (!tokenUsername.equals(p.getName())) {
-        errorMsg = "token.verification.fail.wrong.user";
+        errorMsg = "token.verification.fail.wrongUser";
       } else if (CollectionUtils.isNotEmpty(
           userManager.getUserByEmail(changeEmailToken.getEmail()))) {
-        errorMsg = "token.verification.email.change.fail.already.taken";
+        errorMsg = "token.verification.email.changeFailAlreadyTaken";
       }
     }
 
     if (errorMsg != null) {
-      model.addAttribute("errorMsg", getText(errorMsg));
+      model.addAttribute("errorMsg", errorMsg);
       return new ModelAndView("cloud/verifyEmailChange/emailChangeFailed");
     }
 
@@ -439,7 +432,7 @@ public class RSCommunityController extends BaseController {
         String email = elem.getEmail();
         if (email != null) {
           if (!isEmailValid(email)) {
-            error.addErrorMsg("Incorrect email");
+            error.addErrorMsg(getText("community.invitation.errors.invalidEmail"));
             return new AjaxReturnObject<>(null, error);
           }
           User invitedUser = cloudUserManager.createInvitedUser(email);

@@ -3,6 +3,7 @@ package com.researchspace.service.archive;
 import com.researchspace.model.ArchivalCheckSum;
 import com.researchspace.service.archive.export.ExportRemovalPolicy;
 import java.util.Date;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -98,8 +99,9 @@ public class TimeLimitedExportRemovalPolicy implements ExportRemovalPolicy {
   }
 
   @Override
-  public String getRemovalCircumstancesMsg() {
-    return String.format(
-        "The export will be eligible for deletion after %d hours.", getStorageTime());
+  public RemovalCircumstancesMessage getRemovalCircumstancesMessage() {
+    return new RemovalCircumstancesMessage(
+        "email.notification.exportCompleteNotification.removalPolicyAfterHours",
+        List.of(getStorageTime()));
   }
 }

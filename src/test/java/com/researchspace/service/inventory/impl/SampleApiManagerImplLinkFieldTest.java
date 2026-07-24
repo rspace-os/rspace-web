@@ -162,7 +162,7 @@ class SampleApiManagerImplLinkFieldTest {
             com.researchspace.api.v1.auth.ApiRuntimeException.class,
             () -> manager.applyLinkFieldValue(dbField, apiField, user));
     org.junit.jupiter.api.Assertions.assertEquals(
-        "errors.inventory.field.link.relationTypeInvalid", ex.getErrorCode());
+        "errors.inventory.field.linkRelationTypeInvalid", ex.getErrorCode());
     verifyNoInteractions(inventoryLinkManager);
   }
 
@@ -176,7 +176,7 @@ class SampleApiManagerImplLinkFieldTest {
             com.researchspace.api.v1.auth.ApiRuntimeException.class,
             () -> manager.applyLinkFieldValue(dbField, apiField, user));
     org.junit.jupiter.api.Assertions.assertEquals(
-        "errors.inventory.field.link.relationTypeNotPermitted", ex.getErrorCode());
+        "errors.inventory.field.linkRelationTypeNotPermitted", ex.getErrorCode());
     verifyNoInteractions(inventoryLinkManager);
   }
 

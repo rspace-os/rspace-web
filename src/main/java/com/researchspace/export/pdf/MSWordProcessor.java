@@ -6,17 +6,15 @@ import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.documentconversion.spi.ConvertibleFile;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
-import com.researchspace.export.pdf.ExportToFileConfig.DATE_FOOTER_PREF;
 import com.researchspace.export.stoichiometry.StoichiometryHtmlGenerator;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.core.IRSpaceDoc;
+import com.researchspace.service.UserLocaleService;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +44,8 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
   private @Autowired ImageRetrieverHelper imageHelper;
   @Autowired private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
   @Autowired private VelocityEngine velocityEngine;
-  public final SimpleDateFormat simpleDateFmt = new SimpleDateFormat("yyyy-MM-dd");
+  @Autowired private PdfHtmlGenerator pdfHtmlGenerator;
+  @Autowired private UserLocaleService userLocaleService;
 
   public void setDocConverter(DocumentConversionService docConverter) {
     this.docConverter = docConverter;
@@ -131,7 +130,9 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
       html = prepareExternalWorkflowTablesForWordExport(html);
     }
     String pageSize = exportConfig.getPageSize().equals("A4") ? "A4" : "LETTER";
-    String footerFormattedDate = formatFooterDate(strucDoc, exportConfig);
+    String footerFormattedDate =
+        pdfHtmlGenerator.formatFooterDate(
+            strucDoc, exportConfig, userLocaleService.getLocaleFor(exportConfig.getExporter()));
     html =
         addStyleElement(
             html,
@@ -152,20 +153,6 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
       table.attr("cellspacing", "0");
     }
     return document.toString();
-  }
-
-  private String formatFooterDate(IRSpaceDoc doc, ExportToFileConfig config) {
-    String footerFormattedDate;
-    DATE_FOOTER_PREF format = config.getDateTypeEnum();
-    if (format == DATE_FOOTER_PREF.NEW) {
-      footerFormattedDate = "Create date: " + simpleDateFmt.format(doc.getCreationDate());
-    } else if (format == DATE_FOOTER_PREF.UPD) {
-      footerFormattedDate =
-          "Last updated: " + simpleDateFmt.format(doc.getModificationDateAsDate());
-    } else {
-      footerFormattedDate = "Export date: " + LocalDate.now();
-    }
-    return footerFormattedDate;
   }
 
   private String makeHtmlStyleElement(String pageSize, boolean footerEachPage, String footerDate) {

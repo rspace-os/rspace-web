@@ -1,8 +1,9 @@
 <%@ include file="/common/taglibs.jsp"%>
+<%@ taglib prefix="f" uri="http://researchspace.com/functions" %>
 <%-- JSP to view the information about a group --%>
 <head>
-  <title><fmt:message key="groups.view.title"/></title>
-  <meta name="heading" content="<fmt:message key='groups.heading'/>"/>
+  <title><spring:message code="groups.view.title"/></title>
+  <meta name="heading" content="<spring:message code='groups.heading'/>"/>
   <meta name="menu" content="MainMenu"/>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/groups/viewGroup.css'/>" />
@@ -41,47 +42,51 @@
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
 <p style="visibility:hidden;">space holder</p>
 
+<spring:message code="groups.view.homeFolder.notAvailable" var="homeFolderNotAvailableTitle"/>
+<spring:message code="groups.view.homeFolder.goTo" var="goToHomeFolderTitle"/>
+<spring:message code="groups.view.exportWork.label" var="exportWorkLabel"/>
+
 <div id="groupBlocks">
   <div id="groupBlockLeft">
     <h2 style="flex-grow:1;">
-      <c:if test="${group.groupType == 'COLLABORATION_GROUP'}">Collaboration </c:if>
-      <c:if test="${group.groupType == 'PROJECT_GROUP'}">Project </c:if>
-      Group: <span class="displayname">${group.displayName}</span>
+      <c:if test="${group.groupType == 'COLLABORATION_GROUP'}"><spring:message code="groups.view.type.collaboration"/> </c:if>
+      <c:if test="${group.groupType == 'PROJECT_GROUP'}"><spring:message code="groups.view.type.project"/> </c:if>
+      <spring:message code="groups.view.groupLabel"/> <span class="displayname">${group.displayName}</span>
     </h2>
 
     <div class="groupEditBar">
       <c:if test="${canEdit}">
         <shiro:hasRole name="ROLE_PI">
         <c:if test="${group.isLabGroup() and canEdit == true}">
-          <button id="createCollabGroup" type="button" class="createCollabGroup groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Create Collaboration Group</button>
+          <button id="createCollabGroup" type="button" class="createCollabGroup groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true"><spring:message code="groups.view.actions.createCollabGroup"/></button>
          </c:if>
           <c:if test="${group.isSelfService() and canEdit == true and group.owner == subject}">
-            <button id="deleteGroup" type="button" class="deleteFromCollbGrpLink groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Delete Group</button>
+            <button id="deleteGroup" type="button" class="deleteFromCollbGrpLink groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true"><spring:message code="groups.view.actions.deleteGroup"/></button>
           </c:if>
         </shiro:hasRole>
           <shiro:hasRole name="ROLE_USER">
               <c:if test="${group.isProjectGroup() and canEdit == true and group.owner == subject}">
-                  <button id="deleteProjectGroup" type="button" class="deleteFromCollbGrpLink groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Delete Group</button>
+                  <button id="deleteProjectGroup" type="button" class="deleteFromCollbGrpLink groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true"><spring:message code="groups.view.actions.deleteGroup"/></button>
               </c:if>
           </shiro:hasRole>
         <shiro:hasAnyRoles name="ROLE_ADMIN,ROLE_SYSADMIN">
           <c:if test="${group.groupType != 'PROJECT_GROUP'}">
-            <button id="changePiLink" type="button" class="groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Change PI</button>
+            <button id="changePiLink" type="button" class="groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true"><spring:message code="groups.view.actions.changePi"/></button>
           </c:if>
         </shiro:hasAnyRoles>
-        <button id="renameGrpLink" type="button" class="groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Rename</button>
+        <button id="renameGrpLink" type="button" class="groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true"><spring:message code="groups.view.actions.rename"/></button>
       </c:if>
       <rst:hasDeploymentProperty name="cloud" value="true">
         <c:forEach items="${group.userGroups}" var="ug">
           <c:if test="${ug.user == subject}">
-            <button id="removeMeFromGrpLink" type="button" class="groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Leave Group</button>
+            <button id="removeMeFromGrpLink" type="button" class="groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true"><spring:message code="groups.view.actions.leaveGroup"/></button>
           </c:if>
         </c:forEach>
       </rst:hasDeploymentProperty>
       <c:if test="${group.isProjectGroup() }">
         <c:forEach items="${group.userGroups}" var="ug">
           <c:if test="${ug.user == subject}">
-            <button id="removeMeFromGrpLink" type="button" class="groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Leave Group</button>
+            <button id="removeMeFromGrpLink" type="button" class="groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true"><spring:message code="groups.view.actions.leaveGroup"/></button>
           </c:if>
         </c:forEach>
       </c:if>
@@ -89,7 +94,7 @@
         <div id="groupDrop">
           <dl class="groupDropdown">
             <dt>
-              <a class="groupChangeButton" href="#">Change Group</a>
+              <a class="groupChangeButton" href="#"><spring:message code="groups.view.actions.changeGroup"/></a>
             </dt>
             <dd>
               <ul id="group_options">
@@ -110,7 +115,7 @@
     <c:if test="${canEdit}">
       <div id="renameRecordDirect" style="display: none">
         <p>
-          <label><spring:message code="group.view.rename.msg" />
+          <label><spring:message code="groups.view.rename.prompt" />
             <input class="displayname" id="nameFieldDirect"
               value="${group.displayName}" type="text" width="30">
           </label>
@@ -119,21 +124,21 @@
     </c:if>
     <c:if test="${group.labGroup == true and showExportFunctionality}">
       <button type="button" id="exportGroupRecord" class="groupEditButton">
-        <img class="groupActionButtonIcon" src="/images/icons/exportAllGroupIcon.png" alt="" aria-hidden="true"><spring:message code="group.export.link" />
+        <img class="groupActionButtonIcon" src="/images/icons/exportAllGroupIcon.png" alt="" aria-hidden="true"><spring:message code="groups.export.link" />
       </button>
     </c:if>
     <c:if test="${group.groupType == 'COLLABORATION_GROUP' and canEdit == true}">
       <br>
       <div id="piInviteLink" style="text-align: right;">
-        <button id="grpid_${group.id}" type="button" class="createRequest groupEditButton" title="New PI Invitation">
-          <img class="groupActionButtonIcon" src="/images/icons/invitePi.png" alt="" aria-hidden="true">Invite a New PI</button>
+        <button id="grpid_${group.id}" type="button" class="createRequest groupEditButton" title="<spring:message code='groups.view.newPiInvitation.title'/>">
+          <img class="groupActionButtonIcon" src="/images/icons/invitePi.png" alt="" aria-hidden="true"><spring:message code="groups.view.newPiInvitation.label"/></button>
       </div>
       <div id="leaveCollaborationLink" style="text-align: right;">
         <form class="deleteFromCollbGrp"
           action="/groups/admin/removeLabGrpFromCollabGroup/${group.id}"
           method='POST'></form>
-        <button type="button" class="deleteFromCollbGrpLink groupEditButton" title="Leave Collaboration">
-          <img class="groupActionButtonIcon" src="/images/icons/leavecollaboration.png" alt="" aria-hidden="true">Leave Collaboration</button>
+        <button type="button" class="deleteFromCollbGrpLink groupEditButton" title="<spring:message code='groups.view.leaveCollaboration.title'/>">
+          <img class="groupActionButtonIcon" src="/images/icons/leavecollaboration.png" alt="" aria-hidden="true"><spring:message code="groups.view.leaveCollaboration.label"/></button>
       </div>
     </c:if>
   </div>
@@ -141,7 +146,7 @@
   <c:if test="${group.groupType != 'COLLABORATION_GROUP'}">
     <div id="communityDisplay">
       <h3>
-        Community:
+        <spring:message code="groups.view.communityLabel"/>
         <a href="/directory/community/${group.community.id}">${group.community.displayName}</a>
       </h3>
     </div>
@@ -161,9 +166,9 @@
 <axt:export/>
 
     <div style="margin-bottom: 2em">
-      <h3>Shared Folder</h3>
+      <h3><spring:message code="groups.view.sharedFolder.heading"/></h3>
       <c:if test="${empty folder}">
-        <span style="font-size: 1.2em">Folder missing</span>
+        <span style="font-size: 1.2em"><spring:message code="groups.view.sharedFolder.missing"/></span>
       </c:if>
       <c:if test="${not empty folder}">
         <span>
@@ -177,7 +182,7 @@
 
 <c:if test="${group.groupType == 'COLLABORATION_GROUP'}">
   <div id="memberGroups">
-    <h3>Group PIs</h3>
+    <h3><spring:message code="groups:userBox.groupPis"/></h3>
     <table id="memberGroupsTable" class="table">
       <tbody>
       <c:forEach var="groupPI" items="${group.piusers}">
@@ -215,7 +220,7 @@
 <%-- Dialog for creating request --%>
 <div id="editProfileDlg" style="display: none">
   <div style="margin: 10px 0px;">
-    <spring:message code="group.profile.edit.help" />
+    <spring:message code="groups.profile.edit.help" />
   </div>
   <textarea id="editProfileDlgTextArea" rows="12" cols="40" autofocus="true"></textarea>
 </div>
@@ -230,11 +235,11 @@
 
 <div id="inviteNewMembersDlg" style="display: none">
   <div id="inviteNewMembersDlgContent">
-    <h3> RSpace users </h3>
+    <h3> <spring:message code="groups.view.inviteDialog.existingUsers"/> </h3>
     <div>
       <ul id="existingUsersTag" style="width: 300px; height: 150px;"></ul>
     </div>
-    <h3> New users </h3>
+    <h3> <spring:message code="groups.view.inviteDialog.newUsers"/> </h3>
     <div>
       <ul id="nonExistingUsersTag" style="width: 300px; height: 150px;"></ul>
     </div>
@@ -272,16 +277,16 @@
       <table id="grpDetails" class="table" cellspacing="0">
         <thead>
           <tr>
-            <th><spring:message code="user.fullname.label" /></th>
-            <th><spring:message code="user.username.label" /></th>
+            <th><spring:message code="system:usersPage.columns.fullName" /></th>
+            <th><spring:message code="system:usersPage.columns.username" /></th>
             <c:if test="${showExportFunctionality}">
-              <th style="width:10%"><spring:message code="user.documents.label" /></th>
+              <th style="width:10%"><spring:message code="common:sections.documents" /></th>
             </c:if>
-            <th><spring:message code="user.role.label" /></th>
-            <th>Autosharing</th>
+            <th><spring:message code="system:usersPage.columns.role" /></th>
+            <th><spring:message code="common:profile.groups.table.autosharing"/></th>
             <th style="min-width: 120px"><spring:message code="user.actions.label" /></th>
             <c:if test="${showExportFunctionality}">
-              <th><spring:message code="user.exportWork.label" /></th>
+              <th><spring:message code="system:usersPage.export.work" /></th>
             </c:if>
             <th style="width:15%"><spring:message code="user.remove.label" /></th>
           </tr>
@@ -331,8 +336,8 @@
                 <td style="width:10%">
                   <span data-test-id="homeFolderSpan">
                     <c:choose>
-                    <c:when test="${ug.user.PI and ug.user ne subject}"><img src="/images/icons/folder-unavailable.png" title="Home Folder Not Available"></c:when>
-                    <c:otherwise><a href="/workspace/${ug.user.rootFolder.id}"><img src="/images/icons/folder-user.png" title="Go to User's Home Folder"></a></c:otherwise>
+                    <c:when test="${ug.user.PI and ug.user ne subject}"><img src="/images/icons/folder-unavailable.png" title="${homeFolderNotAvailableTitle}"></c:when>
+                    <c:otherwise><a href="/workspace/${ug.user.rootFolder.id}"><img src="/images/icons/folder-user.png" title="${goToHomeFolderTitle}"></a></c:otherwise>
                     </c:choose>
                   </span>
                 </td>
@@ -340,20 +345,20 @@
               <%-- can't remove or edit a PI in a lab group --%>
               <td>
                 <span data-test-id="roleInGroup_${ug.user.username}">${ug.roleInGroup.label}</span>
-                <c:if test="${ug.adminViewDocsEnabled}"> <img src='/images/icons/viewAllFolderIcon.png' style="vertical-align:middle;padding-bottom:2px;" title="Can View Group's Documents" /></c:if>
-                <c:if test="${ug.piCanEditWork}"> <img src='/images/icons/editIcon.png' style="vertical-align:middle;padding-bottom:2px;" title="Can Edit Group's Documents" /></c:if>
+                <c:if test="${ug.adminViewDocsEnabled}"> <img src='/images/icons/viewAllFolderIcon.png' style="vertical-align:middle;padding-bottom:2px;" title="<spring:message code='groups.view.permissions.canView'/>" /></c:if>
+                <c:if test="${ug.piCanEditWork}"> <img src='/images/icons/editIcon.png' style="vertical-align:middle;padding-bottom:2px;" title="<spring:message code='groups.view.permissions.canEdit'/>" /></c:if>
               </td>
               <td id="autoshareStatus-${ug.user.id}"></td>
               <td>
                 <c:if test="${roleEditable and ug.roleInGroup ne 'PI' and (group.isLabGroup() or canEdit)}">
                   <button type="button" class="changeRole changeRoleButton"
-                    data-groupId="${group.id}" data-adminviewall="${ug.adminViewDocsEnabled}" data-userid="${ug.user.id}" data-username="${ug.user.username}" data-role="${ug.roleInGroup}"><img class="groupActionButtonIcon" src="/images/icons/changeRoleIcon.png" alt="" aria-hidden="true"><spring:message code="group.actions.changerole" /></button>
+                    data-groupId="${group.id}" data-adminviewall="${ug.adminViewDocsEnabled}" data-userid="${ug.user.id}" data-username="${ug.user.username}" data-role="${ug.roleInGroup}"><img class="groupActionButtonIcon" src="/images/icons/changeRoleIcon.png" alt="" aria-hidden="true"><spring:message code="groups.actions.changeRole" /></button>
                 </c:if>
               </td>
               <c:if test="${showExportFunctionality}">
                 <td>
                   <c:if test="${!ug.user.PI or ug.user eq subject}">
-                    <button type="button" class="exportUsersWorkButton groupEditButton" data-username="${ug.user.username}" aria-label="Export Work" title="Export Work">
+                    <button type="button" class="exportUsersWorkButton groupEditButton" data-username="${ug.user.username}" aria-label="${exportWorkLabel}" title="${exportWorkLabel}">
                       <img class="exportUsersWorkButtonIcon" src="/images/icons/exportIcon2.png" alt="" aria-hidden="true">
                     </button>
                   </c:if>
@@ -369,7 +374,7 @@
                       </c:url>
                       <form:form modelAttribute="group" style="display:inline"
                         class="removeUserForm" method="POST" action="${removeUserURL}">
-                        <button type="button" class="removeLink"><img class="groupActionButtonIcon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true">Remove</button>
+                        <button type="button" class="removeLink"><img class="groupActionButtonIcon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.remove"/></button>
                         <form:input type="hidden" path="uniqueName" />
                         <form:input type="hidden" path="id" />
                       </form:form>
@@ -383,19 +388,19 @@
         </tbody>
       </table>
       <!-- Display disabled accounts -->
-      <h3>Disabled Accounts</h3>
+      <h3><spring:message code="groups.view.disabledAccountsHeading"/></h3>
       <table id="disabledAccounts" class="table" cellspacing="0">
         <tr>
-          <th><spring:message code="user.fullname.label" /></th>
-          <th><spring:message code="user.username.label" /></th>
+          <th><spring:message code="system:usersPage.columns.fullName" /></th>
+          <th><spring:message code="system:usersPage.columns.username" /></th>
           <c:if test="${showExportFunctionality}">
             <th>
-              <spring:message code="user.documents.label" />
+              <spring:message code="common:sections.documents" />
             </th>
           </c:if>
           <c:if test="${showExportFunctionality}">
             <th>
-              <spring:message code="user.exportWork.label" />
+              <spring:message code="system:usersPage.export.work" />
             </th>
           </c:if>
           <th style="width:15%"><spring:message code="user.remove.label" /></th>
@@ -443,15 +448,15 @@
               <c:if test="${showExportFunctionality}">
                 <td>
                   <c:choose>
-                  <c:when test="${ug.user.PI and ug.user ne subject}"><img src="/images/icons/folder-unavailable.png" title="Home Folder Not Available"></c:when>
-                  <c:otherwise><a href="/workspace/${ug.user.rootFolder.id}"><img src="/images/icons/folder-user.png" title="Go to User's Home Folder"></a></c:otherwise>
+                  <c:when test="${ug.user.PI and ug.user ne subject}"><img src="/images/icons/folder-unavailable.png" title="${homeFolderNotAvailableTitle}"></c:when>
+                  <c:otherwise><a href="/workspace/${ug.user.rootFolder.id}"><img src="/images/icons/folder-user.png" title="${goToHomeFolderTitle}"></a></c:otherwise>
                   </c:choose>
                 </td>
               </c:if>
               <c:if test="${showExportFunctionality}">
                 <td>
                   <c:if test="${!ug.user.PI or ug.user eq subject}">
-                    <button type="button" class="exportUsersWorkButton groupEditButton" data-username="${ug.user.username}" aria-label="Export Work" title="Export Work">
+                    <button type="button" class="exportUsersWorkButton groupEditButton" data-username="${ug.user.username}" aria-label="${exportWorkLabel}" title="${exportWorkLabel}">
                       <img class="exportUsersWorkButtonIcon" src="/images/icons/exportIcon2.png" alt="" aria-hidden="true">
                     </button>
                   </c:if>
@@ -466,7 +471,7 @@
                     </c:url>
                     <form:form modelAttribute="group" style="display:inline"
                       class="removeUserForm" method="POST" action="${removeUserURL}">
-                      <button type="button" class="removeLink"><img class="groupActionButtonIcon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true">Remove</button>
+                      <button type="button" class="removeLink"><img class="groupActionButtonIcon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.remove"/></button>
                       <form:input type="hidden" path="uniqueName" />
                       <form:input type="hidden" path="id" />
                     </form:form>
@@ -491,7 +496,7 @@
 <div id="raid-connections" data-group-id="${group.id}"></div>
 
 <div id="setNewPiDialog" style="display:none;">
-    Select new PI:
+    <spring:message code="groups.view.setNewPi.label"/>
     <div class="newPiList">
       <c:forEach items="${group.members}" var="member">
         <c:if test="${member.PI and member.enabled and member ne pi}">
@@ -504,28 +509,32 @@
 </div>
 
 <div id="changeRoleDialog" style="display: none;">
-See  <a href="https://researchspace.helpdocs.io/article/8qekgz9y5b-the-lab-admin-role">Help</a> for a full explanation of lab roles.
+<spring:message code="groups.view.changeRole.helpLinkText" var="changeRoleHelpLinkText"/>
+<spring:message code="common:help.labAdminRole" var="labAdminRoleHelpSlug"/>
+<spring:message code="groups.view.changeRole.helpText">
+  <spring:argument value='<a href="${f:helpDocsUrl(labAdminRoleHelpSlug)}">${changeRoleHelpLinkText}</a>'/>
+</spring:message>
 
   <c:choose>
     <c:when test="${group.isProjectGroup()}">
       <fieldset>
-        <legend>Select a role for the user.  <br><br></legend>
-        <label><input type="radio" name="role" id="roleOptionUser" value="DEFAULT"> User</label><br>
-        <label><input type="radio" name="role" id="roleOptionGroupOwner" value="GROUP_OWNER"> Group Owner</label>
+        <legend><spring:message code="groups.view.changeRole.selectRolePrompt"/>  <br><br></legend>
+        <label><input type="radio" name="role" id="roleOptionUser" value="DEFAULT"> <spring:message code="common:userDetails.roles.user"/></label><br>
+        <label><input type="radio" name="role" id="roleOptionGroupOwner" value="GROUP_OWNER"> <spring:message code="groups.view.role.groupOwner"/></label>
       </fieldset>
     </c:when>
     <c:otherwise>
       <fieldset>
-        <legend>Select a role for the user.  <br><br></legend>
-        <label><input type="radio" name="role" id="roleOptionUser" value="DEFAULT"> User</label><br>
-        <label><input type="radio" name="role" id="roleOptionAdmin" value="RS_LAB_ADMIN"> Lab Admin</label>
+        <legend><spring:message code="groups.view.changeRole.selectRolePrompt"/>  <br><br></legend>
+        <label><input type="radio" name="role" id="roleOptionUser" value="DEFAULT"> <spring:message code="common:userDetails.roles.user"/></label><br>
+        <label><input type="radio" name="role" id="roleOptionAdmin" value="RS_LAB_ADMIN"> <spring:message code="groups.view.role.labAdmin"/></label>
       </fieldset>
         <p/>
         <div id="adminPermissions" style="display:none">
           <fieldset>
-            <legend>Lab Admin permissions</legend>
-            <label><input type="radio" name="isAuthorized" id="adminViewOptionPersonal" value="false"> Lab Admin cannot view all group's documents.</label><br/>
-            <label><input type="radio" name="isAuthorized" id="adminViewOptionAll" value="true"> Lab Admin <em>can</em> view all group's documents.</label>
+            <legend><spring:message code="groups.view.labAdminPermissions.legend"/></legend>
+            <label><input type="radio" name="isAuthorized" id="adminViewOptionPersonal" value="false"> <spring:message code="groups.view.labAdminPermissions.personalOnly"/></label><br/>
+            <label><input type="radio" name="isAuthorized" id="adminViewOptionAll" value="true"> <spring:message code="groups.view.labAdminPermissions.viewAll"/></label>
           </fieldset>
         </div>
     </c:otherwise>
@@ -533,16 +542,18 @@ See  <a href="https://researchspace.helpdocs.io/article/8qekgz9y5b-the-lab-admin
 </div>
 
 <div id="removeMeFromGrp" style="display: none">
-    By accepting, you will be removed from the group '${group.displayName}':
+    <spring:message code="groups.view.removeMe.confirmText">
+        <spring:argument value="${group.displayName}"/>
+    </spring:message>
     <ul>
-     <li> You will no longer be able to see shared content within the group.
-     <li> Any of your work that you shared will no longer be visible to other group members.
+     <li> <spring:message code="groups.view.removeMe.noSharedContent"/>
+     <li> <spring:message code="groups.view.removeMe.workNotVisible"/>
      <c:if test="${group.groupType != 'PROJECT_GROUP'}">
-       <li> The PI of the group will no longer be able to see your work.
+       <li> <spring:message code="groups.view.removeMe.piNoAccess"/>
      </c:if>
       <rst:hasDeploymentProperty name="profileHidingEnabled" value="true">
         <c:if test="${group.privateProfile}">
-         <li>  This group is private -  you will no longer be able to view the group's profile
+         <li>  <spring:message code="groups.view.removeMe.privateProfileWarning"/>
         </c:if>
      </rst:hasDeploymentProperty>
     </ul>

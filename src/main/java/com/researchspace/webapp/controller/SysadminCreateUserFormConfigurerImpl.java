@@ -2,11 +2,11 @@ package com.researchspace.webapp.controller;
 
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
-import java.util.Locale;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserLocaleService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.MessageSource;
 
 public class SysadminCreateUserFormConfigurerImpl implements SysadminCreateUserFormConfigurer {
 
@@ -14,7 +14,8 @@ public class SysadminCreateUserFormConfigurerImpl implements SysadminCreateUserF
   private boolean ssoBackdoorUserCreationEnabled;
 
   private IPropertyHolder properties;
-  private @Autowired MessageSource messageSource;
+  private @Autowired MessageSourceUtils messages;
+  private @Autowired UserLocaleService userLocaleService;
 
   public SysadminCreateUserFormConfigurerImpl(@Autowired IPropertyHolder propertyHolder) {
     this.properties = propertyHolder;
@@ -55,11 +56,11 @@ public class SysadminCreateUserFormConfigurerImpl implements SysadminCreateUserF
   @Override
   public String getUsernamePatternTitle() {
     if (isStrictUsername()) {
-      return messageSource.getMessage(
-          "system.createAccountForm.userName.strictTitle", new Object[] {}, Locale.getDefault());
+      return messages.getMessageForLocale(
+          "system.createAccountForm.userName.strictTitle", userLocaleService.getLocale());
     } else {
-      return messageSource.getMessage(
-          "system.createAccountForm.userName.relaxedTitle", new Object[] {}, Locale.getDefault());
+      return messages.getMessageForLocale(
+          "system.createAccountForm.userName.relaxedTitle", userLocaleService.getLocale());
     }
   }
 

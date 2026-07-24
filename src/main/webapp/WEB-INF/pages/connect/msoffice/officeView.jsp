@@ -33,14 +33,12 @@
 
 <div id="convertDlg" style="display:none">
   <div class="bootstrap-custom-flat">
-    <h5>Do you want to convert this RSpace file?</h5>
+    <h5><spring:message code="connect.msoffice.officeView.convertHeading"/></h5>
     <p>
-        Office.com cannot edit a file with <strong>.${docExtension}</strong> extension, but it can convert the file
-        to <strong>.${convertActionTargetext}</strong>, which will be editable. Conversion shouldn't, but may result 
-        in lost content.
+        <spring:message code="connect.msoffice.officeView.convertNotice" arguments="${docExtension},${convertActionTargetext}"/>
     </p>
     <p>
-        Do you want to convert the file <strong>${docName}</strong> so you can edit it in Office.com?
+        <spring:message code="connect.msoffice.officeView.convertFilePrompt"><spring:argument value="${docName}"/></spring:message>
     </p>
   </div>
 </div>

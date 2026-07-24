@@ -11,11 +11,13 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -90,8 +92,18 @@ public class BaseApiController implements ServletContextAware {
     pgCrit.setPageNumber(apiPgCrit.getPageNumber().longValue());
     pgCrit.setResultsPerPage(apiPgCrit.getPageSize());
     if (apiPgCrit.getOrderBy() != null) {
-      pgCrit.setOrderBy(apiPgCrit.getSort().getOrderBy());
-      pgCrit.setSortOrder(apiPgCrit.getSort().getSortOrder());
+      try {
+        pgCrit.setOrderBy(apiPgCrit.getSort().getOrderBy());
+        pgCrit.setSortOrder(apiPgCrit.getSort().getSortOrder());
+      } catch (ApiPaginationCriteria.InvalidSortParameterException e) {
+        log.warn("Invalid API sort parameter {}", e.getOrderBy(), e);
+        throw new IllegalArgumentException(
+            getMessage(
+                "errors.pagination.invalidSortParameter",
+                new Object[] {
+                  e.getOrderBy(), ListFormatUtils.formatList(Arrays.asList(e.getValidParams()))
+                }));
+      }
     }
     return pgCrit;
   }
@@ -128,6 +140,10 @@ public class BaseApiController implements ServletContextAware {
 
   protected String getMessage(String key, Object[] args) {
     return messages.getMessage(key, args);
+  }
+
+  protected String getMessage(String key) {
+    return messages.getMessage(key);
   }
 
   /**
@@ -191,6 +207,7 @@ public class BaseApiController implements ServletContextAware {
     try {
       data = IOUtils.toByteArray(in);
     } catch (IOException e) {
+      log.warn("Could not load icon {}", iconFileName, e);
       return new byte[0];
     }
     return data;

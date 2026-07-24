@@ -1,5 +1,4 @@
 <%@ include file="/common/taglibs.jsp"%>
-<fmt:bundle basename="bundles.system.system">
 <%--  Dialog contents for promote to PI  dialog in System page
  selectedInfo=UserPublicInfo
 --%>
@@ -10,11 +9,11 @@
 <%-- when creating form  for promote dialog--%>
 <c:when test="${empty newPI}">
 <div id="promoteToPIHelpText">
-<fmt:message key="system.userToPI.help1"></fmt:message>
+<spring:message code="system.userToPi.consequencesIntro"/>
 <ul>
- <li><fmt:message key="system.userToPI.help2"></fmt:message>
- <li><fmt:message key="system.userToPI.help3"></fmt:message>
- <li><fmt:message key="system.userToPI.help4"></fmt:message>
+ <li><spring:message code="system.userToPi.labGroupRemovalConsequence"/>
+ <li><spring:message code="system.userToPi.newLabGroupConsequence"/>
+ <li><spring:message code="system.userToPi.collaborationGroupConsequence"/>
 </ul>
 
 </div>
@@ -35,13 +34,9 @@
 </c:when>
 <%--otherwise form submission successful, just confirming and JS will trigger reload--%>
 <c:otherwise>
-<fmt:message key="system.userToPI.successMsg" var="msgText">
- 	<fmt:param value="${newPI.fullName}"></fmt:param>
-</fmt:message>
- <p id="formCompleted"> ${msgText}</p>
- <p> 
- <p><fmt:message key="system.pageReloading"/></p>
+ <p id="formCompleted"> <spring:message code="system.userToPi.success" arguments="${newPI.fullName}"/></p>
+ <p>
+ <p><spring:message code="system.pageReloading"/></p>
 
 </c:otherwise>
 </c:choose>
-</fmt:bundle>

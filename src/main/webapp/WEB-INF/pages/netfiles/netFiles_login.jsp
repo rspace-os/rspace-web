@@ -5,25 +5,25 @@
     var FILESYSTEMS_JSON_STRING = '${FILE_SYSTEMS_JSON}';
 </script>
 
-<div id="nfsUserPasswordLoginPanel" style="display:none" title='<spring:message code="netfilestores.login.dialog.title"/>'>
+<div id="nfsUserPasswordLoginPanel" style="display:none" title='<spring:message code="netFileStores.login.dialog.title"/>'>
 
     <p id="nfsUserPasswordLoginInfo" style="margin: 10px;">
-        <spring:message code="netfilestores.login.dialog.intro"/>
+        <spring:message code="netFileStores.login.dialog.intro"/>
         <br/>"<span class="nfsFileSystemName"></span>"
     </p>
 
     <table style="margin:0px 0px 2px 0px; width: 100%;">
         <tr>
-            <td style="padding-left:8px;"><spring:message code="netfilestores.login.username.label"/></td>
+            <td style="padding-left:8px;"><spring:message code="netFileStores.login.username.label"/></td>
             <td><input type='text' id='nfsUsername'></input></td>
         </tr>
         <tr>
-            <td style="padding-left:8px;"><spring:message code="netfilestores.login.password.label"/></td>
+            <td style="padding-left:8px;"><spring:message code="netFileStores.login.password.label"/></td>
             <td><input type='password' id='nfsPassword'></input></td>
         </tr>
         <rst:hasDeploymentProperty name="loginDirectoryOption" value="true">
         <tr id="userDirectoriesRequired">
-            <td style="padding-left:8px;"><spring:message code="netfilestores.login.user.dir.label"/></td>
+            <td style="padding-left:8px;"><spring:message code="netFileStores.login.user.dirLabel"/></td>
             <td><input  id='nfsUserDir'></input></td>
         </tr>
         </rst:hasDeploymentProperty>

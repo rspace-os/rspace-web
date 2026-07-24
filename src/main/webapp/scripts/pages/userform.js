@@ -2,7 +2,7 @@
 function initUploadImageDialog(){
   $(document).ready(function(){
     $('#uploadImageDialog').dialog({
-      title: "Upload Image",
+      title: RS.msg("legacyjs.userForm.uploadImageDialogTitle"),
       resizable: true, 
       autoOpen: false,
       height: 500,
@@ -19,11 +19,11 @@ function initUploadImageDialog(){
       },
       buttons: 
       {
-        Cancel: function(){
+        [RS.msg("legacyjs.common.cancel")]: function(){
           $("#uploadImageDialog").dialog('close');
           stopVideoStream();
         },
-        Upload: function (e){
+        [RS.msg("legacyjs.userForm.upload")]: function (e){
 
           var cfg = {
             postParamName:"imageFile",
@@ -117,7 +117,7 @@ function initPhotoTakingArea() {
               videoArea.play();
             })
             .catch(function(err) {
-              apprise('Sorry, there are some problems with accessing your camera');
+              apprise(RS.msg("legacyjs.userForm.cameraAccessProblem"));
               console.log('error: ' + err.name + " - " + err.message);
             });
         });
@@ -142,7 +142,7 @@ function stopVideoStream() {
 function initProfileDialog(){
   $(document).ready(function(){
     $('#editProfileDialog').dialog({
-      title: "Edit Profile",
+      title: RS.msg("legacyjs.userForm.editProfileDialogTitle"),
       resizable: true, 
       autoOpen: false,
       height: 500,
@@ -161,17 +161,17 @@ function initProfileDialog(){
       }, 
       buttons: 
       {
-        Cancel: function(){
+        [RS.msg("legacyjs.common.cancel")]: function(){
           $("#editProfileDialog").dialog('close');
         },
-        Save: function(){
+        [RS.msg("legacyjs.common.save")]: function(){
           var data = $('#userProfileForm').serialize();
           
-          RS.blockPage("Editing profile ...");
+          RS.blockPage(RS.msg("legacyjs.userForm.editingProfileEllipsis"));
           var jqxhr= $.post(createURL("/userform/ajax/editProfile"), data, function (result) { 
             RS.unblockPage();
             if(result.data != null){
-              RS.confirm("Profile updated", "success", 3000);
+              RS.confirm(RS.msg("legacyjs.userForm.profileUpdated"), "success", 3000);
               $("#firstName").text(result.data.firstName);
               $("#lastName").text(result.data.lastName);
               $('#affiliation').text(result.data.affiliation);
@@ -189,7 +189,7 @@ function initProfileDialog(){
           });
           jqxhr.fail(function(){
             RS.unblockPage();
-            RS.ajaxFailed("Edit profile process",false,jqxhr);
+            RS.ajaxFailed(RS.msg("legacyjs.userForm.actionEditProfileProcess"),false,jqxhr);
           });
         }
       }
@@ -202,7 +202,7 @@ function initProfileDialog(){
 function initChangePasswordDialog(){
   $(document).ready(function(){
     $('#changePasswordDialog').dialog({
-      title: "Change Password",
+      title: RS.msg("legacyjs.userForm.changePasswordDialogTitle"),
       resizable: true, 
       autoOpen: false,
       height: 500,
@@ -217,10 +217,10 @@ function initChangePasswordDialog(){
       }, 
       buttons: 
       {
-        Cancel: function(){
+        [RS.msg("legacyjs.common.cancel")]: function(){
           $("#changePasswordDialog").dialog('close');
         },
-        Save: function (){
+        [RS.msg("legacyjs.common.save")]: function (){
             const currentPassword = $("#currentPasswordInput").val();
             const newPassword   = $("#newPasswordInput").val();
             const confirmPassword = $("#newPasswordConfirm").val();
@@ -232,7 +232,7 @@ function initChangePasswordDialog(){
                   hintPassword: hintPassword
               };
           
-            RS.blockPage("Changing password...");
+            RS.blockPage(RS.msg("legacyjs.userForm.changingPasswordEllipsis"));
             const jqxhr = $.post(createURL("/userform/ajax/changePassword"), data, function (result) {
                 RS.unblockPage();
                 const msgx = new String(result.data);
@@ -249,7 +249,7 @@ function initChangePasswordDialog(){
             });
             jqxhr.fail(function(){
               RS.unblockPage();
-              RS.ajaxFailed("Change password process", false, jqxhr);
+              RS.ajaxFailed(RS.msg("legacyjs.userForm.actionChangePasswordProcess"), false, jqxhr);
             });
         }
       }
@@ -260,7 +260,7 @@ function initChangePasswordDialog(){
 function initChangeVerificationPasswordDialog(){
   $(document).ready(function(){
 	  $('#changeVerificationPasswordDialog').dialog({
-	    title: "Change Verification Password",
+	    title: RS.msg("legacyjs.userForm.changeVerificationPasswordDialogTitle"),
 	    resizable: true, 
 	    autoOpen: false,
 	    height: 500,
@@ -275,10 +275,10 @@ function initChangeVerificationPasswordDialog(){
       }, 
 	    buttons: 
 	    {
-	      Cancel: function(){
+	      [RS.msg("legacyjs.common.cancel")]: function(){
 	        $("#changeVerificationPasswordDialog").dialog('close');
 	      },
-	      Change: function (){
+	      [RS.msg("legacyjs.userForm.change")]: function (){
 	          const currentVerificationPassword = $("#currentVerificationPasswordInput").val();
               const newVerificationPassword   = $("#newVerificationPasswordInput").val();
               const confirmVerificationPassword = $("#newVerificationPasswordConfirm").val();
@@ -290,7 +290,7 @@ function initChangeVerificationPasswordDialog(){
 	            hintVerificationPassword: hintVerificationPassword
 	          };
 	        
-	        RS.blockPage("Changing verification password...");
+	        RS.blockPage(RS.msg("legacyjs.userForm.changingVerificationPasswordEllipsis"));
               const jqxhr= $.post(createURL("/vfpwd/ajax/changeVerificationPassword"), data, function (result) {
                   RS.unblockPage();
                   const msgx = new String(result.data);
@@ -307,7 +307,7 @@ function initChangeVerificationPasswordDialog(){
                 });
               jqxhr.fail(function(){
                 RS.unblockPage();
-                RS.ajaxFailed("Change verification password process",false,jqxhr);
+                RS.ajaxFailed(RS.msg("legacyjs.userForm.actionChangeVerificationPasswordProcess"),false,jqxhr);
               });
 	      }
 	    }
@@ -318,7 +318,7 @@ function initChangeVerificationPasswordDialog(){
 function initSetVerificationPasswordDialog(){
   $(document).ready(function(){
 	  $('#setVerificationPasswordDialog').dialog({
-	    title: "Set Verification Password",
+	    title: RS.msg("legacyjs.userForm.setVerificationPasswordDialogTitle"),
 	    resizable: true, 
 	    autoOpen: false,
 	    height: 500,
@@ -333,10 +333,10 @@ function initSetVerificationPasswordDialog(){
       }, 
 	    buttons: 
 	    {
-	      Cancel: function(){
+	      [RS.msg("legacyjs.common.cancel")]: function(){
 	        $("#setVerificationPasswordDialog").dialog('close');
 	      },
-	      Set: function (){
+	      [RS.msg("legacyjs.userForm.set")]: function (){
 	  
 	        var newVerificationPassword   = $("#newSetVerificationPasswordInput").val();
 	        var confirmVerificationPassword = $("#newSetVerificationPasswordConfirm").val();
@@ -347,7 +347,7 @@ function initSetVerificationPasswordDialog(){
 	            hintVerificationPassword: hintVerificationPassword
 	        };
 	        
-	        RS.blockPage("Setting verification password...");
+	        RS.blockPage(RS.msg("legacyjs.userForm.settingVerificationPasswordEllipsis"));
 	        var jqxhr= $.post(createURL("/vfpwd/ajax/setVerificationPassword"), data, function (result) { 
 	          RS.unblockPage();
 	          var msgx = new String(result.data);
@@ -364,7 +364,7 @@ function initSetVerificationPasswordDialog(){
 	        });
 	        jqxhr.fail(function(){
 	          RS.unblockPage();
-              RS.ajaxFailed("Set verification password process",false,jqxhr);
+              RS.ajaxFailed(RS.msg("legacyjs.userForm.actionSetVerificationPasswordProcess"),false,jqxhr);
             });
 	      }
 	    }
@@ -375,7 +375,7 @@ function initSetVerificationPasswordDialog(){
 function initPwdConfirmDlg () {
   $(document).ready(function(){
     $('#pwdConfirmDialog').dialog({
-      title: "Confirm Password",
+      title: RS.msg("legacyjs.userForm.confirmPasswordDialogTitle"),
       resizable: true, 
       autoOpen: false,
       height: "auto",
@@ -389,10 +389,10 @@ function initPwdConfirmDlg () {
         $(".msgArea").hide();
       },     
       buttons: {
-        Cancel: function() {
+        [RS.msg("legacyjs.common.cancel")]: function() {
           $("#pwdConfirmDialog").dialog('close');
         },
-        OK: function () {
+        [RS.msg("legacyjs.common.ok")]: function () {
           var pwd = $('#pwdConfirm').val();
           var jqxhr = $.post('/userform/ajax/apiKey', {"password":pwd})
                        .done(function(data) {
@@ -400,7 +400,7 @@ function initPwdConfirmDlg () {
                            renderApiKeyMenu(data);
                        })
                        .fail(function() {
-                          RS.ajaxFailed("Creating a new API key", false, jqxhr);
+                          RS.ajaxFailed(RS.msg("legacyjs.userForm.actionCreatingApiKey"), false, jqxhr);
                        });
           $("#pwdConfirmDialog").dialog('close');
         }
@@ -418,7 +418,7 @@ function initPwdConfirmDlg () {
 function initChangeEmailDialog(){
   $(document).ready(function(){
     $('#changeEmailDialog').dialog({
-      title: "Change Email",
+      title: RS.msg("legacyjs.userForm.changeEmailDialogTitle"),
       resizable: true, 
       autoOpen: false,
       height: 500,
@@ -437,10 +437,10 @@ function initChangeEmailDialog(){
           }, 
       buttons: 
       {
-        Cancel: function(){
+        [RS.msg("legacyjs.common.cancel")]: function(){
           $("#changeEmailDialog").dialog('close');
         },
-        Save: function (){
+        [RS.msg("legacyjs.common.save")]: function (){
     
           var newEmailInput = $("#newEmailInput").val();
           var newEmailConfirm = $("#newEmailConfirm").val();
@@ -451,17 +451,17 @@ function initChangeEmailDialog(){
               emailPasswordInput: emailPasswordInput,
           };
           
-          RS.blockPage("Changing email ...");
+          RS.blockPage(RS.msg("legacyjs.userForm.changingEmailEllipsis"));
           var jqxhr= $.post(createURL("/userform/ajax/changeEmail"), data, function (result) { 
             RS.unblockPage();
             if (result.data) {
                 var msg = '';
                 if ("SUCCESS" === result.data) {
-                    msg = 'Email changed successfully';
+                    msg = RS.msg("legacyjs.userForm.emailChangedSuccessfully");
                           $("#userEmail").text(newEmailInput);
                           $('.rs-info__email').text(newEmailInput);
                 } else if ("VERIFICATION" === result.data) {
-                    msg = 'Verification link has been sent to the new email address';
+                    msg = RS.msg("legacyjs.userForm.verificationLinkSent");
                 }
               RS.confirm(msg, "success", 3000);
               window.dispatchEvent(new CustomEvent("USER_SET_EMAIL", {
@@ -477,7 +477,7 @@ function initChangeEmailDialog(){
           });
           jqxhr.fail(function(){
             RS.unblockPage();
-            RS.ajaxFailed("Change email process",false,jqxhr);
+            RS.ajaxFailed(RS.msg("legacyjs.userForm.actionChangeEmailProcess"),false,jqxhr);
           });
         }
       }
@@ -553,7 +553,7 @@ function initApiKeyDisplay () {
 
 	  $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function(response) {  
       	if (response.data) {
-      		apprise("Please set your verification password before generating an api key.");
+		apprise(RS.msg("legacyjs.userForm.setVerificationPasswordBeforeApiKey"));
       	} else {
           $('#pwdConfirmDialog').dialog('open');
       	}
@@ -565,9 +565,9 @@ function initApiKeyDisplay () {
 
     $.post('/userform/ajax/apiKey', {"_method":"DELETE"}, function (intDeleted){
       if (intDeleted > 0) {
-        RS.defaultConfirm("Key deleted");
+        RS.defaultConfirm(RS.msg("legacyjs.userForm.apiKeyDeleted"));
       } else {
-        RS.confirm("Key was not deleted, please try again or ask support", "warning", 3000);
+        RS.confirm(RS.msg("legacyjs.userForm.apiKeyNotDeleted"), "warning", 3000);
       }
       updateApiKeyMenu();
     });
@@ -615,9 +615,9 @@ $(document).ready(function (){
   
   $('#userForgotVerificationPasswordButton').click(function(e) {
 	$.post('/vfpwd/verificationPasswordResetRequest').done(function() {
-		$().toastmessage('showSuccessToast', 'Password reset link sent.  Please check your email.');
+		$().toastmessage('showSuccessToast', RS.msg("legacyjs.userForm.passwordResetLinkSent"));
 	}).fail(function() {
-		$().toastmessage('showErrorToast', 'An error occurred while sending email, please try again.');
+		$().toastmessage('showErrorToast', RS.msg("legacyjs.userForm.passwordResetLinkError"));
 	});
   });
   
@@ -628,7 +628,7 @@ $(document).ready(function (){
   $('#userChangeEmailButton').click(function(e) {
 	  $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function(response) {  
       	if (response.data) {
-      		apprise("Please set your verification password before changing your email.");
+		apprise(RS.msg("legacyjs.userForm.setVerificationPasswordBeforeChangingEmail"));
       	} else {
       		$('#changeEmailDialog').dialog('open');
       	}
@@ -731,7 +731,7 @@ $(document).ready(function (){
               }
           });
           jqxhr.fail(function() {
-              RS.ajaxFailed("Removing Egnyte token", false, jqxhr);
+              RS.ajaxFailed(RS.msg("legacyjs.userForm.actionRemovingEgnyteToken"), false, jqxhr);
           });
       });
   }

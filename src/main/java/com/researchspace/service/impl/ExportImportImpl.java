@@ -31,7 +31,7 @@ import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSMetaDataManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
@@ -50,6 +50,7 @@ import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.archive.export.ExportFileResult;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
@@ -69,7 +70,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.AsyncResult;
@@ -102,7 +102,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   private @Autowired UserExternalIdResolver extIdResolver;
 
   @Setter(AccessLevel.PACKAGE)
-  private @Autowired MessageSource messageSource;
+  private @Autowired MessageSourceUtils messageSource;
 
   private @Autowired IPropertyHolder properties;
 
@@ -110,7 +110,6 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   private @Autowired ResponseUtil responseUtil;
 
   private @Autowired UserManager userManager;
-  private @Autowired OperationFailedMessageGenerator authGenerator;
   private @Autowired ArchiveRemover archiveRemover;
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired ArchiveExportPlanner archivePlanner;
@@ -122,9 +121,8 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     config.setExportScope(ExportScope.USER);
     if (rootRecord == null) {
       throw new IllegalStateException(
-          "User "
-              + toExport.getFullName()
-              + "'s account has not been initialised - there is nothing to export!");
+          messageSource.getMessage(
+              "export.errors.userAccountNotInitialised", new Object[] {toExport.getFullName()}));
     }
     Long[] exportIds = new Long[] {rootRecord.getId()};
     String[] exportTypes = new String[] {RecordType.FOLDER.name()};
@@ -200,9 +198,8 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   private void postArchiveExportFailure(String exportName, User u, String detailMsg) {
     String msg =
         messageSource.getMessage(
-            "workspace.export.msgFailure",
-            new String[] {StringEscapeUtils.escapeHtml4(exportName), detailMsg},
-            null);
+            "workspace.export.failureMessage",
+            new String[] {StringEscapeUtils.escapeHtml4(exportName), detailMsg});
     commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, u.getUsername(), true);
   }
 
@@ -263,7 +260,8 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     try {
       createTopLevelExportFolder(expCfg);
     } catch (IOException ie) {
-      throw new ExportFailureException("Could not create archive folder", ie);
+      throw new ExportFailureException(
+          messageSource.getMessage("export.errors.archiveFolderCreationFailed"), ie);
     }
     expCfg.setExporter(user);
   }
@@ -603,9 +601,8 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     if (!EXPORTED_ARCHIVE_NAME_PATTERN.matcher(fnm).matches()) {
       throw new IllegalArgumentException(
           messageSource.getMessage(
-              "errors.invalidstringformat",
-              new String[] {zipname, "zipname", EXPORTED_ARCHIVE_NAME_PATTERN.toString()},
-              null));
+              "errors.invalidStringFormat",
+              new String[] {zipname, "zipname", EXPORTED_ARCHIVE_NAME_PATTERN.toString()}));
     }
     if ((fnm.indexOf("zip") <= 0) && (fnm.indexOf(".csv") <= 0) && (fnm.indexOf(".eln") <= 0)) {
       fnm = fnm + ".zip"; // sometimes zip out.
@@ -627,10 +624,14 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       while ((bytesRead = in.read(buffer)) != -1) {
         outStream.write(buffer, 0, bytesRead);
       }
-    } catch (Exception ie) {
-      log.warn("Export download failure: {}", ie.getMessage());
-      String msg = messageSource.getMessage("archive.download.failure.msg", new String[] {}, null);
+    } catch (FileNotFoundException e) {
+      log.warn("Export download failure: {}", e.getMessage());
+      String msg = messageSource.getMessage("importExport.download.errors.missingFile");
       throw new ArchivalFileNotExistException(msg);
+    } catch (Exception e) {
+      log.warn("Export download failure: {}", e.getMessage());
+      String msg = messageSource.getMessage("importExport.download.errors.failed");
+      throw new ExportFailureException(msg, e);
     }
   }
 
@@ -655,8 +656,9 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       }
     } catch (AuthorizationException e) {
       String msg =
-          authGenerator.getFailedMessage(
-              exporter.getUsername(), "export records of [" + userToExport.getUsername() + "]");
+          messageSource.getMessage(
+              "errors.authorization.failure.exportRecordsOfUser",
+              new Object[] {exporter.getUsername(), userToExport.getUsername()});
       throw new AuthorizationException(msg);
     }
   }

@@ -8,7 +8,7 @@ function initWordChooserDlg() {
     $('#wordDocChooserDlg').dialog({
         modal: true,
         autoOpen: false,
-        title: "Import",
+        title: RS.msg("legacyjs.core.word.importTitle"),
         width: 400,
         open : function() {
             if (!isNotebook) {
@@ -17,12 +17,15 @@ function initWordChooserDlg() {
             $(this).find('.importfileType').text($(this).data('config').fileType);
         },
         buttons: {
-            Cancel: function() {$(this).dialog('close');},
-            Import: function() {
+            [RS.msg("legacyjs.common.cancel")]: function() {$(this).dialog('close');},
+            [RS.msg("legacyjs.core.word.importTitle")]: function() {
               var fileType = $(this).data('config').fileType;
               var formSubmitted = _submitWordImportForm(fileType);
               if (formSubmitted) {
-                  RS.blockingProgressBar.show({msg: "Importing files...", progressType:"rs-wordImporter"});
+                  RS.blockingProgressBar.show({
+                      msg: RS.msg("legacyjs.core.word.importing"),
+                      progressType:"rs-wordImporter"
+                  });
                   $(this).dialog('close');
               }
               RS.trackEvent("user:import:from_doc:workspace", { fileType });
@@ -51,12 +54,12 @@ function _toggleWordFolderChooser(listNotebooks) {
     }
     $('#folderChooser-wordimport').show();
 
-    $('#folderChooserDesc-wordimport').html('to put the imported documents. Otherwise, they will be put in the current folder.');
+    $('#folderChooserDesc-wordimport').html(RS.msg("legacyjs.core.word.folderChooserDescription"));
 }
 
 function _isFormValid(fileType) {
     if ($('#wordImportFormFileInput').get(0).files.length === 0) {
-        apprise("Please choose some "+fileType+" files to upload.");
+        apprise(RS.msg("legacyjs.core.word.chooseFiles", fileType));
         return false;
     }
 
@@ -98,15 +101,15 @@ function _submitWordImportForm(fileType) {
                 names.push(val.name);
             });
             if (names.length > 0) {
-                report = report + " These documents were converted: " + names.join(", ");
+                report = report + RS.msg("legacyjs.core.word.converted", RS.formatList(names));
             }
         }
         if (aro.errorMsg != null && aro.errorMsg.errorMessages.length > 0) {
-            report = report + "<br>These documents were not converted: "
-                    + getValidationErrorString(aro.errorMsg);
+            report = report + RS.msg("legacyjs.core.word.notConverted",
+                    getValidationErrorString(aro.errorMsg));
         }
         if (aro.errorMsg == null || aro.errorMsg.errorMessages.length === 0) {
-            RS.confirmAndNavigateTo("All documents imported, reloading page...",
+            RS.confirmAndNavigateTo(RS.msg("legacyjs.core.word.allImported"),
                     'success', 3000, createURL('/workspace/' + targetFolderId));
         } else {
             apprise(report);
@@ -114,7 +117,7 @@ function _submitWordImportForm(fileType) {
     });
 
     jqxhr.fail(function (jqXHR) {
-        RS.ajaxFailed("Importing Word Documents", true, jqXHR);
+        RS.ajaxFailed(RS.msg("legacyjs.core.word.importAction"), true, jqXHR);
     });
 
     return true;

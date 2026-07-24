@@ -25,6 +25,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.MessagedServiceOperationResult;
 import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.DocumentTagManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryTagApiManager;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,6 +56,7 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
   private @Autowired IPermissionUtils permissnUtils;
   @Autowired private InventoryTagApiManager inventoryTagApiManager;
   @Autowired private OntologyDocManager ontologyDocManager;
+  @Autowired private MessageSourceUtils messages;
   @Autowired private DetailedRecordInformationProvider detailedRecordInformationProvider;
 
   @Autowired private BioPortalOntologiesService bioPortalOntologiesService;
@@ -202,7 +204,8 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
       for (String forbidden : forbiddenValues) {
         if (newTagValue.contains(forbidden)) {
           throw new IllegalArgumentException(
-              "The value: " + forbidden + " may not be used in tags");
+              messages.getMessage(
+                  "document.tag.errors.forbiddenCharacter", new Object[] {forbidden}));
         }
       }
       // existing values saved using existing tagMetaData
@@ -211,7 +214,7 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
       } else {
         if (ontologiesEnforced && newTagValue.length() > 0) {
           throw new IllegalArgumentException(
-              "New tags cannot be saved through the API when ontologies are enforced");
+              messages.getMessage("document.tag.errors.newTagsNotAllowedWhenOntologiesEnforced"));
         }
         // new values - will be saved with the given value as tagMetaData (local ontology)
         valuesToSaveToDB.add(newTagValue);
@@ -233,8 +236,7 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
       record = folderDao.get(recordId);
     }
     if (!record.isTaggable()) {
-      throw new IllegalArgumentException(
-          "Only StructuredDocuments, Folders and Notebooks can be tagged");
+      throw new IllegalArgumentException(messages.getMessage("document.tag.errors.notTaggable"));
     }
     permissnUtils.assertIsPermitted(record, PermissionType.WRITE, user, "save tag");
 

@@ -13,7 +13,8 @@ import com.researchspace.apiutils.ApiError;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.core.util.progress.ProgressMonitorImpl;
 import com.researchspace.model.User;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,7 +38,6 @@ import org.springframework.batch.test.MetaDataInstanceFactory;
 public class JobsApiSpringBatchHandlerTest {
 
   private @Mock JobExplorer explorer;
-  private @Mock OperationFailedMessageGenerator authMsgGen;
   private @Mock JobResultFactory<Object> fac;
 
   JobsApiHandlerImpl handler;
@@ -51,7 +51,7 @@ public class JobsApiSpringBatchHandlerTest {
     params =
         ExportJobParamFactory.createJobParams(new ExportApiConfig("html", "user"), user, "abcde");
     handler = new JobsApiHandlerImpl();
-    handler.setAuthMsgGen(authMsgGen);
+    handler.setMessages(new MessageSourceUtils(new JsonMessageSource()));
     handler.setExplorer(explorer);
     handler.setApiState(new ExportApiStateTracker());
     facs.add(fac);

@@ -30,8 +30,8 @@ import com.researchspace.service.Broadcaster;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.IMessageAndNotificationTracker;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -58,7 +58,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
   private @Autowired CommunicationDao commDao;
   private @Autowired UserDao userDao;
   private @Autowired IMessageAndNotificationTracker notificnTracker;
-  private @Autowired OperationFailedMessageGenerator authMsgGen;
+  private @Autowired MessageSourceUtils messages;
 
   private List<Broadcaster> broadcasters = new ArrayList<>();
 
@@ -86,11 +86,16 @@ public class CommunicationManagerImpl implements CommunicationManager {
         commOpt.orElseThrow(
             () ->
                 new AuthorizationException(
-                    authMsgGen.getFailedMessage(subject, "view Communication")));
+                    messages.getMessage(
+                        "errors.authorization.failure.readCommunication",
+                        new Object[] {subject.getUsername()})));
     boolean isRecipient =
         comm.getRecipients().stream().anyMatch(ct -> ct.getRecipient().equals(subject));
     if (!(comm.getOriginator().equals(subject) || isRecipient)) {
-      throw new AuthorizationException(authMsgGen.getFailedMessage(subject, "view Communication"));
+      throw new AuthorizationException(
+          messages.getMessage(
+              "errors.authorization.failure.readCommunication",
+              new Object[] {subject.getUsername()}));
     }
     return comm;
   }
@@ -212,7 +217,8 @@ public class CommunicationManagerImpl implements CommunicationManager {
           usersToNotify.add(ct.getRecipient());
         }
       }
-      String sysmsg = "  Request cancelled by " + userNameCancelling;
+      String sysmsg =
+          messages.getMessage("messaging.request.cancelledBy", new Object[] {userNameCancelling});
       // Notification notification = DEAD STORE
       doCreateNotification(
           NotificationType.NOTIFICATION_REQUEST_STATUS_CHANGE,
@@ -227,7 +233,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
   public ServiceOperationResult<String> cancelSharedRecordRequest(
       String userNameCancelling, Long requestID) {
     ShareRecordMessageOrRequest mor = (ShareRecordMessageOrRequest) get(requestID);
-    String msg = "Request cancelled";
+    String msg = messages.getMessage("messaging.request.cancelled");
     // User userInSession = userDao.getUserByUserName(userNameCancelling);
     if (!userNameCancelling.equals(mor.getOriginator().getUsername())) {
       msg =
@@ -253,7 +259,7 @@ public class CommunicationManagerImpl implements CommunicationManager {
     GroupMessageOrRequest mor = (GroupMessageOrRequest) get(requestId);
     boolean toUpdateRequest = true;
     boolean hasPermission = false;
-    String msg = "Request cancelled";
+    String msg = messages.getMessage("messaging.request.cancelled");
 
     User userInSession = userDao.getUserByUsername(sessionUsername);
     Group group = mor.getGroup();

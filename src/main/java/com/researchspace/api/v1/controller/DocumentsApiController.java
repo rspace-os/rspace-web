@@ -90,7 +90,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
     boolean advancedQueryProvided = !StringUtils.isEmpty(srchConfig.getAdvancedQuery());
     if (queryProvided && advancedQueryProvided) {
       throw new IllegalArgumentException(
-          "please provide either a query or advancedQuery, not both");
+          getMessage("document.search.errors.bothQueryTypesProvided"));
     }
 
     ApiSearchQuery searchQuery = new ApiSearchQuery();
@@ -103,7 +103,9 @@ public class DocumentsApiController extends BaseApiController implements Documen
             new ObjectMapper().readValue(srchConfig.getAdvancedQuery(), ApiSearchQuery.class);
       } catch (IOException e) {
         throw new IllegalArgumentException(
-            "problem with parsing advancedQuery: " + srchConfig.getAdvancedQuery());
+            getMessage(
+                "document.search.errors.advancedQueryParseFailed",
+                new Object[] {srchConfig.getAdvancedQuery()}));
       }
     }
 
@@ -303,7 +305,10 @@ public class DocumentsApiController extends BaseApiController implements Documen
     if (doc.isSigned()) {
       errors.addError(
           new ObjectError(
-              "doc", String.format("Document %d is signed and  cannot be altered", doc.getId())));
+              "doc",
+              new String[] {"document.edit.errors.signed"},
+              new Object[] {doc.getId()},
+              null));
     }
     throwBindExceptionIfErrors(errors);
   }
@@ -330,9 +335,8 @@ public class DocumentsApiController extends BaseApiController implements Documen
         Long docFieldId = docFields.get(i).getId();
         if (apiFieldId != null && !apiFieldId.equals(docFieldId)) {
           throw new IllegalArgumentException(
-              String.format(
-                  "Provided field id: %d does not match document field id: %d",
-                  apiFieldId, docFieldId));
+              getMessage(
+                  "document.edit.errors.fieldIdMismatch", new Object[] {apiFieldId, docFieldId}));
         }
       }
       return; // provided fields list contains all fields so it can stay
@@ -360,7 +364,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
 
     // all provided apiFields should be matched at this point
     if (apiFields.size() > 0) {
-      throw new IllegalArgumentException("Provided fields don't match document fields");
+      throw new IllegalArgumentException(getMessage("document.edit.errors.fieldsMismatch"));
     }
     apiDocument.setFields(convertedApiFields);
   }
@@ -388,7 +392,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(
-                        "Item to delete must be in user's folder tree, not a shared folder"));
+                        getMessage("document.delete.errors.itemNotInFolderTree")));
 
     boolean isNotebookEntryDeletion = parent.isNotebook();
     UserSessionTracker users = getCurrentActiveUsers();
@@ -408,7 +412,8 @@ public class DocumentsApiController extends BaseApiController implements Documen
     if (result.isAllSucceeded()) {
       response.setStatus(HttpStatus.NO_CONTENT.value());
     } else {
-      throw new RuntimeException(" Unexpected error deleting item " + id);
+      throw new RuntimeException(
+          getMessage("document.delete.errors.unexpectedError", new Object[] {id}));
     }
   }
 
@@ -429,11 +434,11 @@ public class DocumentsApiController extends BaseApiController implements Documen
                 user)
             .stream()
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("No result from move operation."));
+            .orElseThrow(() -> new RuntimeException(getMessage("document.move.errors.noResult")));
 
     if (!moveResult.isSucceeded()) {
       String message = StringUtils.defaultIfBlank(moveResult.getMessage(), "");
-      throw new RuntimeException("Error performing move. " + message);
+      throw new RuntimeException(getMessage("document.move.errors.failed", new Object[] {message}));
     }
   }
 }

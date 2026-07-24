@@ -29,7 +29,7 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RestoreDeletedItemResult;
 import com.researchspace.service.UserManager;
 import java.time.Instant;
@@ -52,12 +52,12 @@ public class AuditManagerImpl implements AuditManager {
   private @Autowired RecordDao recordDao;
   private @Autowired FieldDao fieldDao;
   private @Autowired IPermissionUtils permUtils;
-  private @Autowired OperationFailedMessageGenerator messages;
   private @Autowired FolderDao folderDao;
   private @Autowired UserManager userMgr;
   private @Autowired RichTextUpdater richTextUpdater;
   private @Autowired BaseRecordAdaptable baseRecordAdapter;
   private @Autowired ApplicationEventPublisher publisher;
+  private @Autowired MessageSourceUtils messageSourceUtils;
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -104,7 +104,8 @@ public class AuditManagerImpl implements AuditManager {
   public AuditedRecord getDocumentRevisionOrVersion(
       StructuredDocument current, Number revision, Number userVersion) {
     if (revision == null && userVersion == null) {
-      throw new IllegalArgumentException("Either revision or version must be provided");
+      throw new IllegalArgumentException(
+          messageSourceUtils.getMessage("document.audit.errors.revisionOrVersionRequired"));
     }
     Number requestedRevision = revision;
     if (revision == null) {
@@ -124,7 +125,8 @@ public class AuditManagerImpl implements AuditManager {
         auditDao.getRevisionsForDocumentVersion(docId, userVersion);
     if (docRevisionList.isEmpty()) {
       throw new IllegalArgumentException(
-          "Version " + userVersion + " not found for record " + docId);
+          messageSourceUtils.getMessage(
+              "document.audit.errors.versionNotFound", new Object[] {userVersion, docId}));
     }
     return docRevisionList.get(0).getRevision().intValue();
   }
@@ -132,7 +134,8 @@ public class AuditManagerImpl implements AuditManager {
   @Override
   public AuditedRecord getMediaFileVersion(EcatMediaFile media, Number version) {
     if (version == null) {
-      throw new IllegalArgumentException("Version must be provided");
+      throw new IllegalArgumentException(
+          messageSourceUtils.getMessage("document.audit.errors.versionRequired"));
     }
     List<AuditedEntity<EcatMediaFile>> entities =
         auditDao.getRevisionsForMediaFileVersion(media.getId(), version);
@@ -152,7 +155,8 @@ public class AuditManagerImpl implements AuditManager {
         auditDao.getRevisionsForMediaFileVersion(mediaId, version);
     if (docRevisionList.isEmpty()) {
       throw new IllegalArgumentException(
-          "Version " + version + " not found for media file " + mediaId);
+          messageSourceUtils.getMessage(
+              "document.audit.errors.mediaFileVersionNotFound", new Object[] {version, mediaId}));
     }
     return docRevisionList.get(0).getRevision().intValue();
   }
@@ -220,8 +224,9 @@ public class AuditManagerImpl implements AuditManager {
     if (currentDoc.isSigned()) {
       User subject = userMgr.getAuthenticatedUserInSession();
       String msg =
-          messages.getFailedMessage(
-              subject.getUsername(), "restore an earlier revision of a signed document.");
+          messageSourceUtils.getMessage(
+              "errors.authorization.failure.restoreRevisionOfSignedDocument",
+              new Object[] {subject.getUsername()});
       throw new AuthorizationException(msg);
     }
     AuditedRecord asd = auditDao.getDocumentForRevision(currentDoc, revision);

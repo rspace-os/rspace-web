@@ -16,7 +16,7 @@ import org.hibernate.validator.constraints.NotBlank;
 /** Composed validation for a non-empty String of &gt;1 and &lt;= 50 characters */
 @NotNull
 @NotBlank
-@Size(min = 1, max = MAX_NAME_LENGTH, message = "Name must be between 1 and 50 characters")
+@Size(min = 1, max = MAX_NAME_LENGTH, message = "{validation.name.length}")
 @Target({
   ElementType.METHOD,
   ElementType.FIELD,
@@ -25,7 +25,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @Constraint(validatedBy = {})
 @Documented
 public @interface ValidName {
-  String message() default "Invalid name";
+  String message() default "{validation.name.invalid}";
 
   Class<?>[] groups() default {};
 

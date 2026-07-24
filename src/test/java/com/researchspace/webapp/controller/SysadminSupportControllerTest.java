@@ -94,7 +94,7 @@ public class SysadminSupportControllerTest {
 
     Mockito.verify(emailContentGenerator)
         .render(
-            Mockito.eq("system.support.serverlogs.supportEmailTitle"),
+            Mockito.eq("system.support.serverLogs.supportEmailTitle"),
             Mockito.any(),
             Mockito.eq("supportLogFiles.vm"),
             Mockito.argThat(
