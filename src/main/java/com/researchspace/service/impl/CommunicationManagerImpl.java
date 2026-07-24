@@ -32,7 +32,6 @@ import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.IMessageAndNotificationTracker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -59,7 +58,6 @@ public class CommunicationManagerImpl implements CommunicationManager {
   private @Autowired CommunicationDao commDao;
   private @Autowired UserDao userDao;
   private @Autowired IMessageAndNotificationTracker notificnTracker;
-  private @Autowired OperationFailedMessageGenerator authMsgGen;
   private @Autowired MessageSourceUtils messages;
 
   private List<Broadcaster> broadcasters = new ArrayList<>();
@@ -88,11 +86,16 @@ public class CommunicationManagerImpl implements CommunicationManager {
         commOpt.orElseThrow(
             () ->
                 new AuthorizationException(
-                    authMsgGen.getFailedMessage(subject, "view Communication")));
+                    messages.getMessage(
+                        "errors.authorization.failure.readCommunication",
+                        new Object[] {subject.getUsername()})));
     boolean isRecipient =
         comm.getRecipients().stream().anyMatch(ct -> ct.getRecipient().equals(subject));
     if (!(comm.getOriginator().equals(subject) || isRecipient)) {
-      throw new AuthorizationException(authMsgGen.getFailedMessage(subject, "view Communication"));
+      throw new AuthorizationException(
+          messages.getMessage(
+              "errors.authorization.failure.readCommunication",
+              new Object[] {subject.getUsername()}));
     }
     return comm;
   }

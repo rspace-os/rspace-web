@@ -150,7 +150,8 @@ public class RSFormController extends BaseController {
     User u = userManager.getUserByUsername(user.getName());
     RSForm toSave = formManager.get(formId, u);
     if (!permissionUtils.isPermitted(toSave, PermissionType.WRITE, u)) {
-      throw new AuthorizationException(authGenerator.getFailedMessage(u, "rename form"));
+      throw new AuthorizationException(
+          getText("errors.authorization.failure.renameForm", new Object[] {u.getUsername()}));
     }
     toSave.setName(newname);
     formManager.save(toSave, u);
@@ -167,7 +168,9 @@ public class RSFormController extends BaseController {
     User u = userManager.getUserByUsername(user.getName());
     RSForm toSave = formManager.get(recordId, u);
     if (!permissionUtils.isPermitted(toSave, PermissionType.WRITE, u)) {
-      throw new AuthorizationException(authGenerator.getFailedMessage(u, "Set form description"));
+      throw new AuthorizationException(
+          getText(
+              "errors.authorization.failure.editFormDescription", new Object[] {u.getUsername()}));
     }
     toSave.setDescription(desc);
     formManager.save(toSave, u);

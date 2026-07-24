@@ -48,7 +48,6 @@ import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RequiresActiveLicense;
@@ -87,7 +86,6 @@ public class FolderManagerImpl implements FolderManager {
   private UserManager userManager;
   private IPermissionUtils permissionUtils;
   private IPropertyHolder properties;
-  private OperationFailedMessageGenerator messages;
   private ApplicationEventPublisher publisher;
   private CommunityServiceManager communityServiceManager;
   private PermissionFactory permFac = new DefaultPermissionFactory();
@@ -102,7 +100,6 @@ public class FolderManagerImpl implements FolderManager {
       UserManager userManager,
       IPermissionUtils permissionUtils,
       IPropertyHolder properties,
-      OperationFailedMessageGenerator messages,
       ApplicationEventPublisher publisher,
       CommunityServiceManager communityServiceManager) {
     this.folderDao = folderDao;
@@ -112,20 +109,15 @@ public class FolderManagerImpl implements FolderManager {
     this.userManager = userManager;
     this.permissionUtils = permissionUtils;
     this.properties = properties;
-    this.messages = messages;
     this.publisher = publisher;
     this.communityServiceManager = communityServiceManager;
   }
 
   public FolderManagerImpl(
-      RecordFactory rfactory,
-      FolderDao folderDao,
-      IPermissionUtils permissionUtils,
-      OperationFailedMessageGenerator messages) {
+      RecordFactory rfactory, FolderDao folderDao, IPermissionUtils permissionUtils) {
     this.recordFactory = rfactory;
     this.folderDao = folderDao;
     this.permissionUtils = permissionUtils;
-    this.messages = messages;
   }
 
   public FolderManagerImpl() {}

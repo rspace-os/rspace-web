@@ -32,7 +32,6 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RSMetaDataManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
@@ -111,7 +110,6 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
   private @Autowired ResponseUtil responseUtil;
 
   private @Autowired UserManager userManager;
-  private @Autowired OperationFailedMessageGenerator authGenerator;
   private @Autowired ArchiveRemover archiveRemover;
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired ArchiveExportPlanner archivePlanner;
@@ -658,8 +656,9 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       }
     } catch (AuthorizationException e) {
       String msg =
-          authGenerator.getFailedMessage(
-              exporter.getUsername(), "export records of [" + userToExport.getUsername() + "]");
+          messageSource.getMessage(
+              "errors.authorization.failure.exportRecordsOfUser",
+              new Object[] {exporter.getUsername(), userToExport.getUsername()});
       throw new AuthorizationException(msg);
     }
   }

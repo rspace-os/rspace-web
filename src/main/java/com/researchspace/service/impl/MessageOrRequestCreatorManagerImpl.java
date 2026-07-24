@@ -22,7 +22,7 @@ import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.IMessageAndNotificationTracker;
 import com.researchspace.service.MessageOrRequestCreatorManager;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSpaceRequestOnCreateHandler;
 import java.util.ArrayList;
 import java.util.Date;
@@ -43,7 +43,7 @@ public class MessageOrRequestCreatorManagerImpl implements MessageOrRequestCreat
   private @Autowired CommunicationManager commMgr;
   private @Autowired IMessageAndNotificationTracker notificnTracker;
   private @Autowired RequestFactory reqFactory;
-  private @Autowired OperationFailedMessageGenerator authMsgGenerator;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired IPropertyHolder properties;
   private @Autowired BaseRecordManager baseRecordManager;
 
@@ -126,8 +126,9 @@ public class MessageOrRequestCreatorManagerImpl implements MessageOrRequestCreat
 
     if (!permitted) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(
-              user, String.format("create a request of type %s", reqCmnd.getMessageType())));
+          messages.getMessage(
+              "errors.authorization.failure.createRequest",
+              new Object[] {user.getUsername(), reqCmnd.getMessageType()}));
     }
   }
 
@@ -148,8 +149,9 @@ public class MessageOrRequestCreatorManagerImpl implements MessageOrRequestCreat
       if (MessageType.REQUEST_SHARE_RECORD.equals(command.getMessageType())
           && isFolderButNotNotebook(record)) {
         throw new AuthorizationException(
-            authMsgGenerator.getFailedMessage(
-                originator, String.format("share folder %s", record.getName())));
+            messages.getMessage(
+                "errors.authorization.failure.shareFolder",
+                new Object[] {originator.getUsername(), record.getName()}));
       }
     }
     Group grp = null;

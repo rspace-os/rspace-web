@@ -38,7 +38,6 @@ import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.LicenseService;
 import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.OrganisationManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserLocaleService;
@@ -84,7 +83,6 @@ public abstract class BaseController implements ServletContextAware {
   protected @Autowired BaseRecordAdaptable recordAdapter;
   protected @Autowired FolderManager folderManager;
   protected @Autowired LicenseService licenseService;
-  protected @Autowired OperationFailedMessageGenerator authGenerator;
   protected @Autowired AuditTrailService auditService;
   protected @Autowired AuditManager auditManager;
   protected @Autowired IPermissionUtils permissionUtils;

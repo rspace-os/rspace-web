@@ -682,11 +682,9 @@ public class GroupController extends BaseController {
     // if user doesn't have edit permission on this group and doesn't have correct role
     if (!groupPermUtils.subjectCanAlterGroupRole(grp, subject, toChange)) {
       throw new AuthorizationException(
-          authGenerator.getFailedMessage(
-              subject,
-              String.format(
-                  " change %s 's role in group %s. ",
-                  toChange.getUsername(), grp.getDisplayName())));
+          getText(
+              "errors.authorization.failure.changeGroupMemberRole",
+              new Object[] {subject.getUsername(), toChange.getUsername(), grp.getDisplayName()}));
     }
 
     // can't remove last PI
@@ -728,11 +726,9 @@ public class GroupController extends BaseController {
 
     if (!canPIEditAllChoiceBeChanged(subject, group)) {
       throw new AuthorizationException(
-          authGenerator.getFailedMessage(
-              subject,
-              String.format(
-                  " change PI can edit all work in lab group setting in group %s. ",
-                  group.getDisplayName())));
+          getText(
+              "errors.authorization.failure.changePiEditAllSetting",
+              new Object[] {subject.getUsername(), group.getDisplayName()}));
     }
 
     groupManager.authorizePIToEditAll(groupId, subject, canPIEditAll);
@@ -793,7 +789,8 @@ public class GroupController extends BaseController {
 
     Group grp = groupManager.getGroup(groupId);
     User newPI = userManager.get(newPiId);
-    userPermUtils.assertHasPermissionsOnTargetUser(admin, newPI, "Swap group Pis");
+    userPermUtils.assertHasPermissionsOnTargetUser(
+        admin, newPI, "errors.authorization.failure.swapGroupPis");
     BindingResult result =
         inputValidator.validate(
             new SwapPiCommand(grp.getPiusers().iterator().next(), newPI, grp),
@@ -924,7 +921,11 @@ public class GroupController extends BaseController {
 
   private AjaxReturnObject<List<UserInviteView>> createEmptyResult(User subject) {
     return new AjaxReturnObject<>(
-        null, ErrorList.of(authGenerator.getFailedMessage(subject, "list all Users")));
+        null,
+        ErrorList.of(
+            getText(
+                "errors.authorization.failure.listAllUsers",
+                new Object[] {subject.getUsername()})));
   }
 
   /** Is autoshare enabled at the group level */

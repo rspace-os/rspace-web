@@ -3,7 +3,7 @@ package com.researchspace.auth;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IUserPermissionUtils;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +13,13 @@ import org.springframework.stereotype.Component;
 public class UserPermissionUtils implements IUserPermissionUtils {
 
   private @Autowired UserManager userManager;
-  private @Autowired OperationFailedMessageGenerator authGenerator;
+  private @Autowired MessageSourceUtils messages;
 
-  public void assertHasPermissionsOnTargetUser(User admin, User newPI, String msgOnFailure) {
+  public void assertHasPermissionsOnTargetUser(User admin, User newPI, String failureMessageKey) {
     boolean ok = isTargetUserValidForSubjectRole(admin, newPI.getUsername());
     if (!ok) {
-      throw new AuthorizationException(authGenerator.getFailedMessage(admin, msgOnFailure));
+      throw new AuthorizationException(
+          messages.getMessage(failureMessageKey, new Object[] {admin.getUsername()}));
     }
   }
 

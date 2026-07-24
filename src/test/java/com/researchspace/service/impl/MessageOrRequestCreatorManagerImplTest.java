@@ -17,7 +17,7 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.IMessageAndNotificationTracker;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.Before;
@@ -39,7 +39,7 @@ public class MessageOrRequestCreatorManagerImplTest {
   private @Mock CommunicationManager commMgr;
   private @Mock IMessageAndNotificationTracker notificnTracker;
   private @Mock RequestFactory reqFactory;
-  private @Mock OperationFailedMessageGenerator authMsgGenerator;
+  private @Mock MessageSourceUtils messages;
   private @Mock IPropertyHolder properties;
   @InjectMocks MessageOrRequestCreatorManagerImpl requestCreator;
 

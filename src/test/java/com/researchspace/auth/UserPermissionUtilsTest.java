@@ -7,11 +7,13 @@ import static org.mockito.Mockito.when;
 import com.researchspace.model.Community;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,7 @@ class UserPermissionUtilsTest {
 
   User sysadminSubject, communityAdminSubject, piSubject, userSubject;
   private @Mock UserManager userManager;
+  private @Mock MessageSourceUtils messages;
   @InjectMocks UserPermissionUtils userPermissionUtils;
   static Community c1 = TestFactory.createACommunity();
   static Community c2 = TestFactory.createACommunity();
@@ -41,6 +44,24 @@ class UserPermissionUtilsTest {
     piSubject = createAnyUserWithRole("piSubject", Role.PI_ROLE.getName());
     userSubject = createAnyUserWithRole("userSubject", Role.USER_ROLE.getName());
     communityAdminSubject.setId(1L);
+  }
+
+  @Test
+  void permissionFailureResolvesCompleteMessage() {
+    String messageKey = "errors.authorization.failure.grantGlobalPiRole";
+    User target = TestFactory.createAnyUser("target");
+    when(messages.getMessage(Mockito.eq(messageKey), Mockito.any(Object[].class)))
+        .thenReturn("Unauthorized");
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            userPermissionUtils.assertHasPermissionsOnTargetUser(userSubject, target, messageKey));
+
+    Mockito.verify(messages)
+        .getMessage(
+            Mockito.eq(messageKey),
+            org.mockito.AdditionalMatchers.aryEq(new Object[] {userSubject.getUsername()}));
   }
 
   @ParameterizedTest

@@ -55,7 +55,6 @@ import com.researchspace.service.ImageProcessor;
 import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.ThumbnailManager;
@@ -101,7 +100,6 @@ public class MediaManagerImpl implements MediaManager {
   private @Autowired ThumbnailManager thumbnailMgr;
   private @Autowired ImageProcessor imageProcessor;
   private @Autowired IFileIndexer fileIndexer;
-  private @Autowired OperationFailedMessageGenerator authMsgGenerator;
 
   private @Autowired IPermissionUtils permUtils;
   private @Autowired BaseRecordAdaptable recordAdapter;
@@ -581,7 +579,8 @@ public class MediaManagerImpl implements MediaManager {
   private void assertCanAddToFolder(Folder parent, User user) {
     if (!permUtils.isPermitted(parent, PermissionType.WRITE, user)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(user.getUsername(), "add to Folder"));
+          messages.getMessage(
+              "errors.authorization.failure.addToFolder", new Object[] {user.getUsername()}));
     }
   }
 
@@ -597,18 +596,20 @@ public class MediaManagerImpl implements MediaManager {
     }
   }
 
-  private Field getFieldAndAssertAuthorised(long fieldId, User subject, String authFailureMsg) {
+  private Field getFieldAndAssertAuthorised(long fieldId, User subject, String failureMessageKey) {
     Field field = fieldDao.get(fieldId);
     if (!permUtils.isPermitted(field.getStructuredDocument(), PermissionType.WRITE, subject)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(subject.getUsername(), authFailureMsg));
+          messages.getMessage(failureMessageKey, new Object[] {subject.getUsername()}));
     }
     return field;
   }
 
   @Override
   public RSMath saveMath(String svg, long fieldId, String latex, Long mathId, User subject) {
-    Field field = getFieldAndAssertAuthorised(fieldId, subject, "save maths equation");
+    Field field =
+        getFieldAndAssertAuthorised(
+            fieldId, subject, "errors.authorization.failure.saveMathEquation");
     RSMath math = null;
     byte[] svgBytes = svg.getBytes(StandardCharsets.UTF_8);
     ImageBlob svgByteBlob = new ImageBlob(svgBytes);
@@ -670,7 +671,8 @@ public class MediaManagerImpl implements MediaManager {
   private void assertEditPermissionOnComment(User user, EcatComment ecatComment) {
     if (!permUtils.isPermitted(ecatComment.getRecord(), PermissionType.WRITE, user)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(user.getUsername(), "insert a comment"));
+          messages.getMessage(
+              "errors.authorization.failure.insertComment", new Object[] {user.getUsername()}));
     }
   }
 
@@ -722,7 +724,8 @@ public class MediaManagerImpl implements MediaManager {
     Record parentRecord = recordManager.get(ecatImageAnnotation.getRecord().getId());
     if (subject != null && !permUtils.isPermitted(parentRecord, PermissionType.READ, subject)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(subject.getUsername(), "save sketch"));
+          messages.getMessage(
+              "errors.authorization.failure.saveSketch", new Object[] {subject.getUsername()}));
     }
     ecatImageAnnotationManager.save(ecatImageAnnotation, subject);
     return ecatImageAnnotation;
@@ -771,7 +774,9 @@ public class MediaManagerImpl implements MediaManager {
           || (subject != null
               && !permUtils.isPermitted(brOpt.get(), PermissionType.WRITE, subject))) {
         throw new AuthorizationException(
-            authMsgGenerator.getFailedMessage(subject.getUsername(), "save annotation"));
+            messages.getMessage(
+                "errors.authorization.failure.saveAnnotation",
+                new Object[] {subject.getUsername()}));
       }
     }
 
@@ -833,7 +838,9 @@ public class MediaManagerImpl implements MediaManager {
   private void assertMediaFilePermission(User user, EcatMediaFile media, PermissionType permType) {
     if (!permUtils.isRecordAccessPermitted(user, media, permType)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(user, "access media file [" + media.getId() + "]."));
+          messages.getMessage(
+              "errors.authorization.failure.accessMediaFile",
+              new Object[] {user.getUsername(), media.getId()}));
     }
   }
 

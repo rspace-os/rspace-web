@@ -202,7 +202,7 @@ public class SysAdminController extends BaseController {
     User admin = userManager.getAuthenticatedUserInSession();
     User userToAmend = userManager.get(userId);
     userPermissionUtils.assertHasPermissionsOnTargetUser(
-        admin, userToAmend, "Changing enablement state of user");
+        admin, userToAmend, "errors.authorization.failure.changeUserEnabledState");
     if (enabled && !userToAmend.isEnabled()) {
       userEnablementUtils.checkLicenseForUserInRole(1, userToAmend.getRoles().iterator().next());
     }
@@ -230,7 +230,7 @@ public class SysAdminController extends BaseController {
     // the account might no longer be locked by the time the sysadmin makes this call
     if (userToUnlock.isAccountLocked()) {
       userPermissionUtils.assertHasPermissionsOnTargetUser(
-          admin, userToUnlock, "Unlocking user account");
+          admin, userToUnlock, "errors.authorization.failure.unlockUserAccount");
       lockoutPolicy.forceUnlock(userToUnlock);
       userManager.save(userToUnlock);
       return ResponseEntity.status(HttpStatus.OK).build();

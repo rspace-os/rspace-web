@@ -73,7 +73,6 @@ import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitialiserUtils;
 import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.PiChangeContext;
 import com.researchspace.service.PiChangeHandler;
 import com.researchspace.service.RecordManager;
@@ -120,7 +119,6 @@ public class GroupManagerImpl implements GroupManager {
   private @Autowired DAOUtils daoUtils;
   private @Autowired IGroupPermissionUtils groupPermUtils;
   private @Autowired RoleDao roleDao;
-  private @Autowired OperationFailedMessageGenerator authMsgGenerator;
   private @Autowired MessageSourceUtils messages;
   private @Autowired PiChangeHandler piChangeHandler;
   private @Autowired IControllerInputValidator inputValidator;
@@ -148,7 +146,9 @@ public class GroupManagerImpl implements GroupManager {
   public Group saveGroup(Group group, boolean isNew, User subject) {
     if (!isNew) {
       if (!permissnUtils.isPermitted(group, PermissionType.WRITE, subject)) {
-        throw new AuthorizationException(authMsgGenerator.getFailedMessage(subject, "edit group"));
+        throw new AuthorizationException(
+            messages.getMessage(
+                "errors.authorization.failure.editGroup", new Object[] {subject.getUsername()}));
       }
     }
     group = groupDao.save(group);
@@ -906,11 +906,11 @@ public class GroupManagerImpl implements GroupManager {
     User toChange = userDao.get(userid);
     if (!groupPermUtils.subjectCanAlterGroupRole(group, subject, toChange)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(
-              subject,
-              String.format(
-                  "change role of %s user in '%s' group",
-                  toChange.getUsername(), group.getDisplayName())));
+          messages.getMessage(
+              "errors.authorization.failure.changeGroupMemberRole",
+              new Object[] {
+                subject.getUsername(), toChange.getUsername(), group.getDisplayName()
+              }));
     }
 
     for (UserGroup ug : ugs) {
@@ -1136,11 +1136,11 @@ public class GroupManagerImpl implements GroupManager {
     for (User groupPI : group.getPiusers()) {
       if (!groupPermUtils.subjectCanAlterGroupRole(group, subject, groupPI)) {
         throw new AuthorizationException(
-            authMsgGenerator.getFailedMessage(
-                subject,
-                String.format(
-                    " change %s 's edit all work permission in group %s ",
-                    groupPI.getUsername(), group.getDisplayName())));
+            messages.getMessage(
+                "errors.authorization.failure.changeGroupPiEditPermission",
+                new Object[] {
+                  subject.getUsername(), groupPI.getUsername(), group.getDisplayName()
+                }));
       }
       authorizePIToEditAll(groupId, groupPI, canPIEditAll);
     }

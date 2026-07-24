@@ -52,7 +52,7 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
 
   @Override
   public Group promoteUserToPiWithGroup(User admin, User newPI, UserRoleChangeCmnd commd) {
-    assertAuthorizationAndInitUser(admin, newPI, "promote user to PI");
+    assertAuthorizationAndInitUser(admin, newPI, "errors.authorization.failure.promoteUserToPi");
     // we're ok to proceed. move user from existing group
     newPI = groupManager.promoteUserToPi(newPI, admin);
     // now create new LabGroup for new PI
@@ -81,7 +81,7 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
   }
 
   public User grantGlobalPiRoleToUser(User admin, User newPi) {
-    assertAuthorizationAndInitUser(admin, newPi, "grant global PI role");
+    assertAuthorizationAndInitUser(admin, newPi, "errors.authorization.failure.grantGlobalPiRole");
     return doGrantGlobalPiRoleToUser(newPi);
   }
 
@@ -108,7 +108,8 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
 
   @Override
   public User revokeGlobalPiRoleFromUser(User admin, User piToDemote) {
-    assertAuthorizationAndInitUser(admin, piToDemote, "revoke global PI role");
+    assertAuthorizationAndInitUser(
+        admin, piToDemote, "errors.authorization.failure.revokeGlobalPiRole");
     return doRevokeGlobalPiRoleFromUser(piToDemote);
   }
 

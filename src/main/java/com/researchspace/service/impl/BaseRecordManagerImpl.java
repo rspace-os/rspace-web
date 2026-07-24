@@ -16,7 +16,7 @@ import com.researchspace.model.record.Record;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FolderManager;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,7 +40,7 @@ public class BaseRecordManagerImpl implements BaseRecordManager {
   private @Autowired FolderDao folderDao;
   private @Autowired RecordDao recordDao;
   private @Autowired AuditManager auditManager;
-  private @Autowired OperationFailedMessageGenerator authGenerator;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired IPermissionUtils permissionUtils;
 
   public BaseRecord save(BaseRecord baseRecord, User user) {
@@ -132,7 +132,8 @@ public class BaseRecordManagerImpl implements BaseRecordManager {
         ecatMediaFile,
         PermissionType.READ,
         subject,
-        authGenerator.getFailedMessage(subject, "read media file"));
+        messages.getMessage(
+            "errors.authorization.failure.readMediaFile", new Object[] {subject.getUsername()}));
 
     Long revisionToUse = revisionId;
     if (version != null && ecatMediaFile.getVersion() != version) {

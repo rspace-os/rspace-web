@@ -93,7 +93,9 @@ public class NotebookEditorController extends BaseController {
 
       if (showWholeNotebook) {
         String msg =
-            authGenerator.getFailedMessage(user.getUsername(), "notebook " + notebook.getId());
+            getText(
+                "errors.authorization.failure.openNotebook",
+                new Object[] {user.getUsername(), notebook.getId()});
         throw new AuthorizationException(msg);
       }
     }

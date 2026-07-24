@@ -29,4 +29,14 @@ class MessageSourceUtilsTest {
     assertEquals(
         "Name is a required field.", messages.format("errors.required", List.of("Name"), enUS));
   }
+
+  @Test
+  void formatsCompleteAuthorizationFailure() {
+    assertEquals(
+        "Unauthorized attempt by alice to change bob's edit-all-work permission in group Lab",
+        messages.getMessage(
+            "errors.authorization.failure.changeGroupPiEditPermission",
+            new Object[] {"alice", "bob", "Lab"},
+            enUS));
+  }
 }
