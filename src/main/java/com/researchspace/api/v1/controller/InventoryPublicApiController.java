@@ -6,7 +6,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordT
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.model.User;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;

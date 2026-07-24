@@ -1,9 +1,9 @@
 package com.researchspace.service.archive.export;
 
 import com.researchspace.archive.model.IArchiveExportConfig;
+import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.IOException;
-import javax.xml.bind.JAXBException;
 
 /** Defines a handler method for exporting a subset of RSpace data to XML */
 public interface ArchiveDataHandler {

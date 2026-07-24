@@ -21,7 +21,6 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -72,9 +71,16 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
     AuditReader auditReader = getAuditReader();
     String orderBy;
     if (!StringUtils.isEmpty(pgCrit.getOrderBy())) {
-      orderBy = " order by " + pgCrit.getOrderBy() + " " + pgCrit.getSortOrder();
+      // Hibernate 6 requires fully-qualified HQL paths; map logical sort field names to HQL paths
+      Map<String, String> orderByFieldMap =
+          Map.of(
+              "name", "rtf.record.editInfo.name",
+              "creationDate", "rtf.record.editInfo.creationDate",
+              "modificationDate", "rtf.record.editInfo.modificationDate");
+      String orderByField = orderByFieldMap.getOrDefault(pgCrit.getOrderBy(), pgCrit.getOrderBy());
+      orderBy = " order by " + orderByField + " " + pgCrit.getSortOrder();
     } else {
-      orderBy = " order by deletedDate " + SortOrder.DESC;
+      orderBy = " order by rtf.deletedDate " + SortOrder.DESC;
     }
 
     // Query for all user's deleted folders; we will then exclude their contents from the final
@@ -549,7 +555,8 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
                 "select REV, id  from StructuredDocument_AUD where id =? order by REV desc");
     List ids = getIds.list();
     for (Object o : ids) {
-      Long id = ((BigInteger) o).longValue();
+      // Hibernate 6: native SQL returns Long, not BigInteger
+      Long id = ((Number) o).longValue();
       getOld.setParameter(1, id);
       getOld.setFirstResult(maxToKeep);
       List res = getOld.list();

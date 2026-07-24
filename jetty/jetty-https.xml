@@ -40,7 +40,7 @@
                         </Item>
                         <Item>
                             <New class="org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory">
-                                <Arg name="config"><Ref id="sslHttpConfig"/></Arg>
+                                <Arg name="config"><Ref refid="sslHttpConfig"/></Arg>
                             </New>
                         </Item>
 					</Array>

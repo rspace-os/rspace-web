@@ -63,6 +63,8 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1065.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1176.xml"/>
 
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-444.xml"/>
+
   <!-- These two run last: recurring-changeLog.xml (runAlways diagnostics / batch re-init) then
        customUpdates-changeLog.xml. customUpdates-changeLog.xml must ALWAYS be the final include
        (its Java customChange classes depend on the fully-migrated schema). -->

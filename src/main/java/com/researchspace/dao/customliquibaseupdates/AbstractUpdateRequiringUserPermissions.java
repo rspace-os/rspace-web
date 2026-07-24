@@ -105,7 +105,7 @@ public abstract class AbstractUpdateRequiringUserPermissions
               subject.login(new UsernamePasswordToken(sysadminUname, sysadminPwd));
               int i = 0;
               while (results.next()) {
-                User user = (User) results.get(0);
+                User user = (User) results.get();
                 logger.info("Looking at user {} / {} ", i++, user.getUsername());
                 try {
                   SimplePrincipalCollection pc = new SimplePrincipalCollection();
@@ -116,7 +116,7 @@ public abstract class AbstractUpdateRequiringUserPermissions
                   subject.releaseRunAs();
                   sessionFactory.getCurrentSession().flush();
                   sessionFactory.getCurrentSession().evict(user);
-                  sessionFactory.getCache().evictEntityRegions();
+                  sessionFactory.getCache().evictEntityData();
                 }
               }
             } finally {

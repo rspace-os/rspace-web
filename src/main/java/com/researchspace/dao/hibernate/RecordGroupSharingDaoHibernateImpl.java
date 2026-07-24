@@ -14,7 +14,6 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.TaggableElnRecord;
 import com.researchspace.model.User;
-import com.researchspace.model.UserGroup;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
@@ -28,20 +27,39 @@ import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.hibernate.Criteria;
 import org.hibernate.Session;
-import org.hibernate.criterion.DetachedCriteria;
-import org.hibernate.criterion.Disjunction;
-import org.hibernate.criterion.MatchMode;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.Subqueries;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository("recordGroupSharingDao")
 public class RecordGroupSharingDaoHibernateImpl
     extends GenericDaoHibernate<RecordGroupSharing, Long> implements RecordGroupSharingDao {
+
+  private static final String SHARED_WITH_USER_BASE =
+      " from RecordGroupSharing rgs"
+          + " join rgs.shared shared"
+          + " join shared.owner owner"
+          + " join rgs.sharee sharee"
+          + " where owner.id <> :userId"
+          + " and (sharee.id = :userId"
+          + " or sharee.id in (select ug.group.id from UserGroup ug join ug.user u"
+          + " where u.id = :userId))";
+
+  private static final String SHARED_ONTOLOGIES_BASE =
+      " from RecordGroupSharing rgs"
+          + " join rgs.shared shared"
+          + " join shared.owner owner"
+          + " join rgs.sharee sharee"
+          + " join shared.fields field"
+          + " join shared.form form"
+          + " join form.owner sdowner"
+          + " where owner.id <> :userId"
+          + " and (sharee.id = :userId"
+          + " or sharee.id in (select ug.group.id from UserGroup ug join ug.user u"
+          + " where u.id = :userId))"
+          + " and shared.deleted = false"
+          + " and form.editInfo.name = :ontologyFormName"
+          + " and sdowner.username = :sysadminUser";
 
   public RecordGroupSharingDaoHibernateImpl() {
     super(RecordGroupSharing.class);
@@ -141,56 +159,35 @@ public class RecordGroupSharingDaoHibernateImpl
   @SuppressWarnings("unchecked")
   @Override
   public List<BaseRecord> getSharedRecordsWithUser(User user) {
-    Criteria query =
-        getSharedRecordsWithUserQuery(user)
-            .setProjection(Projections.distinct(Projections.property("shared")));
-    return query.list();
+    return getSession()
+        .createQuery("select distinct shared" + SHARED_WITH_USER_BASE, BaseRecord.class)
+        .setParameter("userId", user.getId())
+        .list();
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public List<Long> getSharedRecordIdsWithUser(User user) {
-    Criteria query =
-        getSharedRecordsWithUserQuery(user)
-            .setProjection(Projections.distinct(Projections.property("id")));
-    return query.list();
+    return getSession()
+        .createQuery("select distinct rgs.id" + SHARED_WITH_USER_BASE, Long.class)
+        .setParameter("userId", user.getId())
+        .list();
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public List<BaseRecord> getSharedTemplatesWithUser(User user) {
-    Criteria query =
-        getSharedRecordsWithUserQuery(user)
-            .setProjection(Projections.distinct(Projections.property("shared")));
-    query.add(
-        Restrictions.ilike("shared.type", RecordType.TEMPLATE.toString(), MatchMode.ANYWHERE));
-    return query.list();
-  }
-
-  private Criteria getSharedRecordsWithUserQuery(User user) {
-    Criteria query = getSession().createCriteria(RecordGroupSharing.class, "rgs");
-    query
-        .createAlias("rgs.shared", "shared")
-        .createAlias("shared.owner", "owner")
-        .add(Restrictions.not(Restrictions.eq("owner.id", user.getId())));
-    query.createAlias("rgs.sharee", "sharee");
-
-    DetachedCriteria subquery = DetachedCriteria.forClass(UserGroup.class, "userGroup");
-    subquery.createAlias("userGroup.user", "user").add(Restrictions.eq("user.id", user.getId()));
-    subquery.setProjection(Projections.property("userGroup.group.id"));
-
-    Disjunction or = Restrictions.disjunction();
-    or.add(Restrictions.eq("sharee.id", user.getId()));
-    or.add(Subqueries.propertyIn("sharee.id", subquery));
-    query.add(or);
-    return query;
+    return getSession()
+        .createQuery(
+            "select distinct shared" + SHARED_WITH_USER_BASE + " and shared.type like :template",
+            BaseRecord.class)
+        .setParameter("userId", user.getId())
+        .setParameter("template", "%" + RecordType.TEMPLATE.toString() + "%")
+        .list();
   }
 
   public List<String> getTagsMetaDataForRecordsSharedWithUser(User subject, String tagFilter) {
-    Criteria allDocsSharedWithUser = getSharedRecordsWithUserQuery(subject);
-    allDocsSharedWithUser.setProjection(Projections.distinct(Projections.property("shared")));
-    allDocsSharedWithUser.setReadOnly(true);
-    List<BaseRecord> allSharedDocs = allDocsSharedWithUser.list();
+    List<BaseRecord> allSharedDocs = getSharedRecordsWithUser(subject);
     List<String> result =
         allSharedDocs.stream()
             .filter(
@@ -207,39 +204,38 @@ public class RecordGroupSharingDaoHibernateImpl
 
   @Override
   public List<String> getTextDataFromOntologiesSharedWithUser(User subject) {
-    Criteria docsSharedWithUser = getOntologiesSharedWithUserQuery(subject);
-    docsSharedWithUser.setProjection(Projections.distinct(Projections.property("field.rtfData")));
-    return docsSharedWithUser.list();
+    return getSession()
+        .createQuery("select distinct field.rtfData" + SHARED_ONTOLOGIES_BASE, String.class)
+        .setParameter("userId", subject.getId())
+        .setParameter("ontologyFormName", CustomFormAppInitialiser.ONTOLOGY_FORM_NAME)
+        .setParameter("sysadminUser", "sysadmin1")
+        .list();
   }
 
   @Override
   public List<String> getTextDataFromOntologiesSharedWithUserIfSharedWithAGroup(
       User subject, Long[] ontologyIDsSharedWithAGroup) {
-    Criteria docsSharedWithUser = getOntologiesSharedWithUserQuery(subject);
-    docsSharedWithUser.add(Restrictions.in("shared.id", (Object[]) ontologyIDsSharedWithAGroup));
-    docsSharedWithUser.setProjection(Projections.distinct(Projections.property("field.rtfData")));
-    return docsSharedWithUser.list();
+    return getSession()
+        .createQuery(
+            "select distinct field.rtfData"
+                + SHARED_ONTOLOGIES_BASE
+                + " and shared.id in (:sharedIds)",
+            String.class)
+        .setParameter("userId", subject.getId())
+        .setParameter("ontologyFormName", CustomFormAppInitialiser.ONTOLOGY_FORM_NAME)
+        .setParameter("sysadminUser", "sysadmin1")
+        .setParameterList("sharedIds", ontologyIDsSharedWithAGroup)
+        .list();
   }
 
   @Override
   public List<BaseRecord> getOntologiesFilesSharedWithUser(User subject) {
-    Criteria docsSharedWithUser = getOntologiesSharedWithUserQuery(subject);
-    docsSharedWithUser.setProjection(Projections.distinct(Projections.property("shared")));
-    return docsSharedWithUser.list();
-  }
-
-  private Criteria getOntologiesSharedWithUserQuery(User subject) {
-    Criteria docsSharedWithUser = getSharedRecordsWithUserQuery(subject);
-    docsSharedWithUser.createAlias("shared.fields", "field");
-    docsSharedWithUser.add(Restrictions.eq("shared.deleted", false));
-    docsSharedWithUser
-        .createCriteria("shared.form")
-        .createAlias("owner", "sdowner")
-        .add(Restrictions.eq("editInfo.name", CustomFormAppInitialiser.ONTOLOGY_FORM_NAME))
-        .add(Restrictions.eq("sdowner.username", "sysadmin1"));
-    docsSharedWithUser.setProjection(Projections.distinct(Projections.property("field.rtfData")));
-    docsSharedWithUser.setReadOnly(true);
-    return docsSharedWithUser;
+    return getSession()
+        .createQuery("select distinct shared" + SHARED_ONTOLOGIES_BASE, BaseRecord.class)
+        .setParameter("userId", subject.getId())
+        .setParameter("ontologyFormName", CustomFormAppInitialiser.ONTOLOGY_FORM_NAME)
+        .setParameter("sysadminUser", "sysadmin1")
+        .list();
   }
 
   @Override

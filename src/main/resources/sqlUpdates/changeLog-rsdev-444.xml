@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+
+    <changeSet id="hibernate6-rename-sequence-column" author="spring6-migration" context="run">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="hibernate_sequences" columnName="sequence_next_hi_value"/>
+        </preConditions>
+        <comment>Rename hibernate_sequences value column to match Hibernate 6 default TABLE generator expectations</comment>
+        <renameColumn tableName="hibernate_sequences"
+                      oldColumnName="sequence_next_hi_value"
+                      newColumnName="next_val"
+                      columnDataType="int"/>
+    </changeSet>
+
+    <changeSet id="hibernate6-reseed-sequences" author="spring6-migration" context="run">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN"
+                       onFailMessage="hibernate_sequences not on the Hibernate 6 layout yet; nothing to reseed"
+                       onErrorMessage="hibernate_sequences not present / not MySQL; nothing to reseed">
+            <and>
+                <dbms type="mysql,mariadb"/>
+                <columnExists tableName="hibernate_sequences" columnName="next_val"/>
+            </and>
+        </preConditions>
+        <comment>
+            Re-seed the Hibernate TABLE-generator counters after the Hibernate 5 to 6 upgrade.
+
+            Under Hibernate 5 (new_generator_mappings=false) the entities annotated
+            @GeneratedValue(strategy=TABLE) used the legacy MultipleHiLoPerTableGenerator, whose stored value
+            in hibernate_sequences is a hi/lo "high" marker, not the next id. Hibernate 6's enhanced
+            TableGenerator reads next_val literally, so the small legacy values would hand out ids
+            at or below ids already in use, colliding on the primary key across roughly 40 tables.
+
+            Id allocation itself is unchanged by the upgrade: every TABLE-strategy entity carries an
+            explicit @TableGenerator in rspace-core-model and keeps its own counter, keyed by its physical
+            table name, the same one-row-per-table layout Hibernate 5 used (generators declared without
+            pkColumnValue default their segment to the entity's own table).
+
+            This changeset loops over every existing hibernate_sequences row and, for any row whose name is a
+            real base table with an "id" column, sets next_val above that table's MAX(id). Driving off the
+            existing rows makes it complete by construction: a TABLE-strategy table only has data if it has a
+            row here, so no entity can be missed (including MappedSuperclass subclasses such as Sample/SubSample/
+            Container, whose ids would be easy to omit from a hand-written list).
+
+            The two TABLE_PER_CLASS hierarchies share one counter across sibling tables and are keyed by the
+            abstract entity name (not a table), so they are handled explicitly:
+              - AbstractUserOrGroupImpl  -> shared by User + rsGroup
+              - Communication            -> shared by Notification, MessageOrRequest, GroupMessageOrRequest,
+                                            CreateGroupMessageOrRequest, ShareRecordMessageOrRequest
+            These two carry an explicit @TableGenerator(allocationSize=1, pkColumnValue=entity name) in
+            rspace-core-model.
+
+            Margin: next_val = MAX(id) + 51 clears a full allocation block (allocationSize 50) plus one,
+            which is safe for the pooled, pooled-lo and no-op optimizers alike. It is idempotent: re-running
+            never lowers an existing value, and empty tables (MAX 0) are left for Hibernate to create lazily.
+        </comment>
+        <sql splitStatements="true" stripComments="false">DROP PROCEDURE IF EXISTS rsdev444_reseed_hibernate_sequences;</sql>
+        <sql splitStatements="false" stripComments="false"><![CDATA[
+CREATE PROCEDURE rsdev444_reseed_hibernate_sequences()
+BEGIN
+    DECLARE v_done   INT DEFAULT 0;
+    DECLARE v_seg    VARCHAR(255);
+    DECLARE v_is_tbl INT DEFAULT 0;
+    DECLARE seg_cur CURSOR FOR SELECT sequence_name FROM hibernate_sequences;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;
+
+    -- 1) Per-entity (table-named) segments: bump each above its own table's MAX(id).
+    OPEN seg_cur;
+    seg_loop: LOOP
+        FETCH seg_cur INTO v_seg;
+        IF v_done = 1 THEN
+            LEAVE seg_loop;
+        END IF;
+
+        SELECT COUNT(*) INTO v_is_tbl
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = v_seg AND COLUMN_NAME = 'id';
+
+        IF v_is_tbl = 1 THEN
+            SET @m := 0;
+            SET @q := CONCAT('SELECT COALESCE(MAX(id),0) INTO @m FROM `', v_seg, '`');
+            PREPARE s FROM @q;
+            EXECUTE s;
+            DEALLOCATE PREPARE s;
+
+            IF @m > 0 THEN
+                UPDATE hibernate_sequences
+                SET next_val = @m + 51
+                WHERE sequence_name = v_seg AND (next_val IS NULL OR next_val < @m + 51);
+            END IF;
+        END IF;
+    END LOOP;
+    CLOSE seg_cur;
+
+    -- 2) TABLE_PER_CLASS: AbstractUserOrGroupImpl shares ids across User + rsGroup.
+    SET @uog := GREATEST(
+        COALESCE((SELECT MAX(id) FROM `User`), 0),
+        COALESCE((SELECT MAX(id) FROM `rsGroup`), 0));
+    IF @uog > 0 THEN
+        INSERT INTO hibernate_sequences (sequence_name, next_val)
+            SELECT 'AbstractUserOrGroupImpl', @uog + 51 FROM DUAL
+            WHERE NOT EXISTS (SELECT 1 FROM hibernate_sequences WHERE sequence_name = 'AbstractUserOrGroupImpl');
+        UPDATE hibernate_sequences
+        SET next_val = @uog + 51
+        WHERE sequence_name = 'AbstractUserOrGroupImpl' AND (next_val IS NULL OR next_val < @uog + 51);
+    END IF;
+
+    -- 3) TABLE_PER_CLASS: Communication shares ids across its concrete subclass tables.
+    SET @comm := GREATEST(
+        COALESCE((SELECT MAX(id) FROM `Notification`), 0),
+        COALESCE((SELECT MAX(id) FROM `MessageOrRequest`), 0),
+        COALESCE((SELECT MAX(id) FROM `GroupMessageOrRequest`), 0),
+        COALESCE((SELECT MAX(id) FROM `CreateGroupMessageOrRequest`), 0),
+        COALESCE((SELECT MAX(id) FROM `ShareRecordMessageOrRequest`), 0));
+    IF @comm > 0 THEN
+        INSERT INTO hibernate_sequences (sequence_name, next_val)
+            SELECT 'Communication', @comm + 51 FROM DUAL
+            WHERE NOT EXISTS (SELECT 1 FROM hibernate_sequences WHERE sequence_name = 'Communication');
+        UPDATE hibernate_sequences
+        SET next_val = @comm + 51
+        WHERE sequence_name = 'Communication' AND (next_val IS NULL OR next_val < @comm + 51);
+    END IF;
+END
+        ]]></sql>
+        <sql splitStatements="true" stripComments="false">CALL rsdev444_reseed_hibernate_sequences();</sql>
+        <sql splitStatements="true" stripComments="false">DROP PROCEDURE IF EXISTS rsdev444_reseed_hibernate_sequences;</sql>
+        <rollback>
+            <!-- Re-seeding identifier counters cannot be safely reversed (lowering next_val would risk
+                 handing out ids that are already in use). Intentionally a no-op rollback. -->
+        </rollback>
+    </changeSet>
+
+    <changeSet id="appconfigelementset-natural-id" author="spring6-migration" context="run">
+        <preConditions onFail="MARK_RAN">
+            <not><columnExists tableName="AppConfigElementSet" columnName="naturalId"/></not>
+        </preConditions>
+        <comment>Add stable UUID natural key for AppConfigElementSet so equals/hashCode are safe before and after persist.
+            Column is added nullable and non-unique first, then populated, then constrained: adding it as
+            NOT NULL UNIQUE up front fails on a populated table because every existing row is back-filled with
+            the empty-string default, colliding on the unique index before the UPDATE can run.</comment>
+        <addColumn tableName="AppConfigElementSet">
+            <column name="naturalId" type="varchar(36)"/>
+        </addColumn>
+        <update tableName="AppConfigElementSet">
+            <column name="naturalId" valueComputed="UUID()"/>
+            <where>naturalId IS NULL OR naturalId = ''</where>
+        </update>
+        <addNotNullConstraint tableName="AppConfigElementSet" columnName="naturalId" columnDataType="varchar(36)"/>
+        <addUniqueConstraint tableName="AppConfigElementSet" columnNames="naturalId"
+                             constraintName="uc_appconfigelementset_naturalid"/>
+    </changeSet>
+
+    <changeSet id="externalworkflowdata-enum-ordinal-to-string" author="spring6-migration" context="run">
+        <comment>Convert ExternalWorkFlowData enum columns from ordinal (integer-as-string) to enum name strings for Hibernate 6 compatibility</comment>
+        <update tableName="ExternalWorkFlowData">
+            <column name="externalService" value="GALAXY"/>
+            <where>externalService = '0'</where>
+        </update>
+        <update tableName="ExternalWorkFlowData">
+            <column name="rspaceDataType" value="LOCAL"/>
+            <where>rspaceDataType = '0'</where>
+        </update>
+        <update tableName="ExternalWorkFlowData">
+            <column name="rspaceDataType" value="EXTERNAL"/>
+            <where>rspaceDataType = '1'</where>
+        </update>
+        <update tableName="ExternalWorkFlowData">
+            <column name="rspaceContainerType" value="DOCUMENT"/>
+            <where>rspaceContainerType = '0'</where>
+        </update>
+        <update tableName="ExternalWorkFlowData">
+            <column name="rspaceContainerType" value="FIELD"/>
+            <where>rspaceContainerType = '1'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="hibernate6-batch5-schema-migration" author="spring6-migration" context="run">
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN"
+                       onFailMessage="BATCH_* tables absent or already on the Spring Batch 5 layout; nothing to migrate"
+                       onErrorMessage="Not MySQL/MariaDB or BATCH_* tables absent; nothing to migrate">
+            <and>
+                <dbms type="mysql,mariadb"/>
+                <tableExists tableName="BATCH_JOB_EXECUTION"/>
+                <!-- TYPE_CD exists only in the Spring Batch 3/4 BATCH_JOB_EXECUTION_PARAMS layout;
+                     Batch 5 replaced it with PARAMETER_NAME/PARAMETER_TYPE/PARAMETER_VALUE. Its presence
+                     means this is an existing deployment still on the pre-upgrade schema. -->
+                <columnExists tableName="BATCH_JOB_EXECUTION_PARAMS" columnName="TYPE_CD"/>
+            </and>
+        </preConditions>
+        <comment>
+            Migrate the Spring Batch metadata tables from the Batch 3 layout to Batch 5 on
+            existing deployments.
+
+            The fresh-install baseline (initial-seed-changeLog.xml) only creates these tables when
+            BATCH_JOB_EXECUTION is ABSENT, so an upgraded database keeps the Batch 3 schema and the async
+            export JobRepository fails at runtime against the changed columns (most notably the redesigned
+            BATCH_JOB_EXECUTION_PARAMS). This changeset drops and recreates the BATCH_* tables using the
+            Batch 5 jar's own scripts, so the layout always matches the Batch version on the classpath.
+
+            Guarded to fire ONLY on an un-migrated existing DB (BATCH_JOB_EXECUTION present AND the old
+            TYPE_CD column present): a no-op on fresh installs (the baseline already built the Batch 5
+            schema, so TYPE_CD is absent) and idempotent once migrated (TYPE_CD gone).
+
+            TRADE-OFF: drop+recreate discards historical Spring Batch job-execution rows. These back ONLY the
+            REST API v1 export (status polled via /api/v1/jobs/{id}); the interactive UI export uses a
+            separate mechanism and the archive files themselves are downloaded by filename off the filestore,
+            independent of these tables. So no archive becomes undownloadable; only the jobId-to-result lookup
+            for an API job whose result a client had not yet fetched is lost (remedy: re-export). There is no
+            FK into BATCH_*, so the drop is structurally safe. Chosen over a fragile hand-written ALTER across
+            the large 3-to-5 version jump.
+
+            ID CONTINUITY: Spring Batch allocates ids from the BATCH_*_SEQ incrementer tables (next id =
+            stored ID + 1). A plain recreate would reset them to 0 and eventually re-issue pre-upgrade jobIds.
+            To avoid that, the current MAX ids are captured into a temporary holding table BEFORE the drop,
+            then the recreated BATCH_*_SEQ rows are seeded to those maxima so new ids continue monotonically.
+
+            REQUIRES: the Liquibase user must be able to DROP/CREATE these tables (the app schema user has
+            ALL privileges in the standard deployment).
+        </comment>
+        <!-- 1) Capture current max ids before dropping (holding table survives the BATCH_* drop). -->
+        <sql splitStatements="true" stripComments="false">
+            DROP TABLE IF EXISTS rsdev444_batch_seq_backup;
+            CREATE TABLE rsdev444_batch_seq_backup (seq_name VARCHAR(64) NOT NULL PRIMARY KEY, max_id BIGINT NOT NULL)
+                ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            INSERT INTO rsdev444_batch_seq_backup (seq_name, max_id) VALUES
+                ('BATCH_JOB_EXECUTION_SEQ',  COALESCE((SELECT MAX(JOB_EXECUTION_ID)  FROM BATCH_JOB_EXECUTION), 0)),
+                ('BATCH_JOB_SEQ',            COALESCE((SELECT MAX(JOB_INSTANCE_ID)   FROM BATCH_JOB_INSTANCE),  0)),
+                ('BATCH_STEP_EXECUTION_SEQ', COALESCE((SELECT MAX(STEP_EXECUTION_ID) FROM BATCH_STEP_EXECUTION), 0));
+        </sql>
+        <!-- 2) Drop + recreate to the Batch 5 layout from the jar's own scripts (recreates BATCH_*_SEQ at 0). -->
+        <sqlFile path="/org/springframework/batch/core/schema-drop-mysql.sql"/>
+        <sqlFile path="/org/springframework/batch/core/schema-mysql.sql"/>
+        <!-- 3) Continue the id sequences from the captured maxima (next allocated id = stored ID + 1). -->
+        <sql splitStatements="true" stripComments="false">
+            UPDATE BATCH_JOB_EXECUTION_SEQ  SET ID = (SELECT max_id FROM rsdev444_batch_seq_backup WHERE seq_name = 'BATCH_JOB_EXECUTION_SEQ');
+            UPDATE BATCH_JOB_SEQ            SET ID = (SELECT max_id FROM rsdev444_batch_seq_backup WHERE seq_name = 'BATCH_JOB_SEQ');
+            UPDATE BATCH_STEP_EXECUTION_SEQ SET ID = (SELECT max_id FROM rsdev444_batch_seq_backup WHERE seq_name = 'BATCH_STEP_EXECUTION_SEQ');
+            DROP TABLE rsdev444_batch_seq_backup;
+        </sql>
+        <rollback>
+            <!-- Best-effort rollback restores the Batch 5 schema shape (history is not recoverable). -->
+            <sql splitStatements="true" stripComments="false">DROP TABLE IF EXISTS rsdev444_batch_seq_backup;</sql>
+            <sqlFile path="/org/springframework/batch/core/schema-drop-mysql.sql"/>
+            <sqlFile path="/org/springframework/batch/core/schema-mysql.sql"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

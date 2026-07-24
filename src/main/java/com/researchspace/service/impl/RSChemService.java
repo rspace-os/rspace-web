@@ -58,7 +58,7 @@ public class RSChemService implements ChemistryService {
       RSChemElementManager rsChemElementManager,
       @Qualifier("folderManagerImpl") FolderManager folderManager,
       BreadcrumbGenerator breadcrumbGenerator,
-      ChemistryProvider chemistryProvider,
+      @Qualifier("chemistryProvider") ChemistryProvider chemistryProvider,
       EcatChemistryFileManager chemistryFileManager,
       AuditManager auditManager) {
     this.rsChemElementManager = rsChemElementManager;

@@ -1,14 +1,15 @@
 package com.axiope.service.cfg;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-import net.sf.ehcache.Cache;
+import javax.cache.CacheManager;
+import org.ehcache.Cache;
+import org.ehcache.config.ResourceType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.ehcache.EhCacheManagerFactoryBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
@@ -22,52 +23,61 @@ public class EhCacheConfigurerConfigTest extends AbstractJUnit4SpringContextTest
   public void tearDown() throws Exception {}
 
   // from ehcache.xml
-  static final int DEFAULT_FILEPROPERTY_SIZE = 2500;
-  static final int DEFAULT_IMAGE_BLOB_SIZE_SIZE = 1000;
+  static final long DEFAULT_FILEPROPERTY_SIZE = 2500;
+  static final long DEFAULT_IMAGE_BLOB_SIZE = 1000;
 
   // any number > 0
   static final int OVERRIDE_FILEPROPERTY_SIZE = 1012;
-  static final int OVERRIDE_IMAGE_BLOB_SIZE_SIZE = 2312;
+  static final int OVERRIDE_IMAGE_BLOB_SIZE = 2312;
 
-  static Cache getNativeCache(String name, CacheManager cacheMgr) {
-    return (Cache) cacheMgr.getCache(name).getNativeCache();
+  static Cache<?, ?> getNativeCache(String name, CacheManager cacheMgr) {
+    javax.cache.Cache<?, ?> jcache = cacheMgr.getCache(name);
+    assertNotNull("Cache " + name + " not found", jcache);
+    return (Cache<?, ?>) jcache.unwrap(Cache.class);
+  }
+
+  static long getHeapSize(Cache<?, ?> cache) {
+    return cache
+        .getRuntimeConfiguration()
+        .getResourcePools()
+        .getPoolForResource(ResourceType.Core.HEAP)
+        .getSize();
   }
 
   static void assertCacheSettingsUseDefaults(CacheManager cacheMgr) {
-    net.sf.ehcache.Cache cache = getNativeCache("com.researchspace.model.FileProperty", cacheMgr);
-    assertEquals(DEFAULT_FILEPROPERTY_SIZE, cache.getCacheConfiguration().getMaxEntriesLocalHeap());
-    cache = getNativeCache("com.researchspace.model.ImageBlob", cacheMgr);
     assertEquals(
-        DEFAULT_IMAGE_BLOB_SIZE_SIZE, cache.getCacheConfiguration().getMaxEntriesLocalHeap());
+        DEFAULT_FILEPROPERTY_SIZE,
+        getHeapSize(getNativeCache("com.researchspace.model.FileProperty", cacheMgr)));
+    assertEquals(
+        DEFAULT_IMAGE_BLOB_SIZE,
+        getHeapSize(getNativeCache("com.researchspace.model.ImageBlob", cacheMgr)));
   }
 
-  private @Autowired CacheManager cacheMgr;
+  private @Autowired CacheManager jCacheManager;
   private @Autowired EhCacheConfigurer cacheConfigurer;
-  private @Autowired EhCacheManagerFactoryBean factory;
 
   @Test
   public void testEhCacheConfiguration() {
     // if not overridden, use defaults
-    // factory.getObject will areturn the same object each time; it is a singleton
-    cacheConfigurer.configure(factory.getObject());
-    assertCacheSettingsUseDefaults(cacheMgr);
+    cacheConfigurer.configure(jCacheManager);
+    assertCacheSettingsUseDefaults(jCacheManager);
 
     // set bad values, should be unchanged, defaults should work
     cacheConfigurer.setFilePropertyMaxElementsInMemory("abcde");
     cacheConfigurer.setImageBlobMaxElementsInMemory("-1234");
-    cacheConfigurer.configure(factory.getObject());
-    assertCacheSettingsUseDefaults(cacheMgr);
+    cacheConfigurer.configure(jCacheManager);
+    assertCacheSettingsUseDefaults(jCacheManager);
 
     // override via property injection
     cacheConfigurer.setFilePropertyMaxElementsInMemory(OVERRIDE_FILEPROPERTY_SIZE + "");
-    cacheConfigurer.setImageBlobMaxElementsInMemory(OVERRIDE_IMAGE_BLOB_SIZE_SIZE + "");
-    cacheConfigurer.configure(factory.getObject());
-    net.sf.ehcache.Cache cache = getNativeCache("com.researchspace.model.FileProperty", cacheMgr);
+    cacheConfigurer.setImageBlobMaxElementsInMemory(OVERRIDE_IMAGE_BLOB_SIZE + "");
+    cacheConfigurer.configure(jCacheManager);
 
     assertEquals(
-        OVERRIDE_FILEPROPERTY_SIZE, cache.getCacheConfiguration().getMaxEntriesLocalHeap());
-    cache = getNativeCache("com.researchspace.model.ImageBlob", cacheMgr);
+        OVERRIDE_FILEPROPERTY_SIZE,
+        getHeapSize(getNativeCache("com.researchspace.model.FileProperty", jCacheManager)));
     assertEquals(
-        OVERRIDE_IMAGE_BLOB_SIZE_SIZE, cache.getCacheConfiguration().getMaxEntriesLocalHeap());
+        OVERRIDE_IMAGE_BLOB_SIZE,
+        getHeapSize(getNativeCache("com.researchspace.model.ImageBlob", jCacheManager)));
   }
 }

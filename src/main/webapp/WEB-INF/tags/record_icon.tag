@@ -3,8 +3,8 @@
 --%>
 <%@ attribute name="record" required="true"
 	type="com.researchspace.model.record.BaseRecord"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
 
 <c:set var="imgWidth" value="32" scope="page" />
 <c:set var="imgHeight" value="32" scope="page" />

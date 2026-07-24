@@ -1,10 +1,10 @@
 package com.researchspace.archive;
 
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.xml.bind.annotation.adapters.XmlAdapter;
 
 public class MapAdapter extends XmlAdapter<ArrayList<KeyValue>, Map<String, String>> {
 

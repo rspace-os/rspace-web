@@ -22,12 +22,13 @@ filtering, so that ssl can be enabled from a build (more on this below)
 For development, we run on jetty localhost, and normally running over
 HTTP is fine for development purposes. This is the default.
 
-Jetty 10 is configured to run over HTTPS (using HTTP2) if need be though.
+Jetty (12, via the `jetty-ee10-maven-plugin`) is configured to run over
+HTTPS (using HTTP2) if need be though.
 
 Since Jetty 9, this can't be configured in Maven Jetty plugin anymore,
 but needs specific Jetty configuration files. These are in the project root /jetty
 folder and are adapted from config files here http://juplo.de/configure-https-for-jetty-maven-plugin-9-0-x/#comment-53736
-with reference to the jetty docs https://eclipse.dev/jetty/documentation/jetty-10/operations-guide/index.html#og-xml-syntax
+with reference to the jetty docs https://jetty.org/docs/jetty/12/operations-guide/xml/index.html
 
 To run, run with flag `-Dssl.enabled=true`.
 

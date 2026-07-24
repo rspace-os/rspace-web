@@ -36,11 +36,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.shiro.util.ThreadContext;
-import org.hibernate.search.Search;
+import org.hibernate.search.mapper.orm.Search;
 import org.junit.After;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +50,11 @@ import org.springframework.transaction.annotation.Transactional;
  * their own @After method which invokes super.tearDown() to ensure correct tidy up after each test.
  */
 @TestExecutionListeners(
-    value = {TransactionalTestExecutionListener.class, SqlScriptsTestExecutionListener.class})
+    value = {
+      DependencyInjectionTestExecutionListener.class,
+      TransactionalTestExecutionListener.class,
+      SqlScriptsTestExecutionListener.class
+    })
 @Transactional
 public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
 
@@ -395,7 +400,7 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   /** Triggers indexing of content for search. */
   protected void flushToSearchIndices() {
     flushDatabaseState();
-    Search.getFullTextSession(sessionFactory.getCurrentSession()).flushToIndexes();
+    Search.session(sessionFactory.getCurrentSession()).indexingPlan().execute();
   }
 
   protected void assertColumnIndicesAreTheSameForFieldsAndFormss(StructuredDocument child) {

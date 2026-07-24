@@ -89,7 +89,7 @@ public class RSFormController extends BaseController {
   private @Autowired RSFormApiHandler formHandler;
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
 
-  @PostMapping("/")
+  @PostMapping
   // permissions checking handled in service methos
   public ModelAndView createForm(Model model) throws IOException {
     final int height = 32;
@@ -185,7 +185,6 @@ public class RSFormController extends BaseController {
       return new AjaxReturnObject<DateFieldForm>(null, el);
     }
     DateFieldForm dft = formManager.createFieldForm(dto, formId, subject);
-    dft.setForm(null);
     return new AjaxReturnObject<DateFieldForm>(dft, null);
   }
 
@@ -208,7 +207,6 @@ public class RSFormController extends BaseController {
     }
 
     StringFieldForm stringField = formManager.createFieldForm(dto, formId, subject);
-    stringField.setForm(null);
 
     return new AjaxReturnObject<StringFieldForm>(stringField, null);
   }
@@ -278,7 +276,6 @@ public class RSFormController extends BaseController {
       return new AjaxReturnObject<StringFieldForm>(null, eo);
     }
     StringFieldForm updated = formManager.updateFieldForm(dto, fieldId, subject);
-    updated.setForm(null);
     return new AjaxReturnObject<StringFieldForm>(updated, null);
   }
 
@@ -292,7 +289,6 @@ public class RSFormController extends BaseController {
       return new AjaxReturnObject<TextFieldForm>(null, errors);
     }
     TextFieldForm updated = formManager.updateFieldForm(dto, fieldId, subject);
-    updated.setForm(null);
     return new AjaxReturnObject<TextFieldForm>(updated, null);
   }
 
@@ -307,7 +303,6 @@ public class RSFormController extends BaseController {
     }
 
     DateFieldForm dft = formManager.updateFieldForm(dto, fieldId, subject);
-    dft.setForm(null);
     return new AjaxReturnObject<DateFieldForm>(dft, null);
   }
 
@@ -633,7 +628,6 @@ public class RSFormController extends BaseController {
 
     NumberFieldForm numFT =
         formManager.createFieldForm(dto, Long.parseLong(dto.getParentId()), subject);
-    numFT.setForm(null);
     return new AjaxReturnObject<NumberFieldForm>(numFT, null);
   }
 
@@ -656,7 +650,6 @@ public class RSFormController extends BaseController {
 
     NumberFieldForm nft =
         formManager.updateFieldForm(dto, Long.parseLong(dto.getParentId()), subject);
-    nft.setForm(null);
     return new AjaxReturnObject<>(nft, null);
   }
 
@@ -672,7 +665,6 @@ public class RSFormController extends BaseController {
     }
 
     TextFieldForm textField = formManager.createFieldForm(dto, formId, subject);
-    textField.setForm(null);
     return new AjaxReturnObject<TextFieldForm>(textField, null);
   }
 
@@ -693,7 +685,6 @@ public class RSFormController extends BaseController {
       return new AjaxReturnObject<TimeFieldForm>(null, el);
     }
     TimeFieldForm templateField = formManager.createFieldForm(dto, formId, subject);
-    templateField.setForm(null);
     return new AjaxReturnObject<TimeFieldForm>(templateField, null);
   }
 
@@ -708,7 +699,6 @@ public class RSFormController extends BaseController {
     }
 
     TimeFieldForm temp = formManager.updateFieldForm(dto, fieldId, subject);
-    temp.setForm(null);
     return new AjaxReturnObject<TimeFieldForm>(temp, null);
   }
 
@@ -731,7 +721,6 @@ public class RSFormController extends BaseController {
     }
 
     ChoiceFieldForm cft = formManager.createFieldForm(dto, formId, subject);
-    cft.setForm(null);
     return new AjaxReturnObject<ChoiceFieldForm>(cft, null);
   }
 
@@ -754,7 +743,6 @@ public class RSFormController extends BaseController {
 
     User subject = userManager.getAuthenticatedUserInSession();
     ChoiceFieldForm updated = formManager.updateFieldForm(dto, fieldId, subject);
-    updated.setForm(null);
     return new AjaxReturnObject<ChoiceFieldForm>(updated, null);
   }
 
@@ -779,7 +767,6 @@ public class RSFormController extends BaseController {
 
     User subject = userManager.getAuthenticatedUserInSession();
     RadioFieldForm radioField = formManager.updateFieldForm(dto, fieldId, subject);
-    radioField.setForm(null);
     return new AjaxReturnObject<RadioFieldForm>(radioField, null);
   }
 
@@ -804,7 +791,6 @@ public class RSFormController extends BaseController {
 
     User subject = userManager.getAuthenticatedUserInSession();
     RadioFieldForm radioField = formManager.createFieldForm(dto, formId, subject);
-    radioField.setForm(null);
     return new AjaxReturnObject<RadioFieldForm>(radioField, null);
   }
 

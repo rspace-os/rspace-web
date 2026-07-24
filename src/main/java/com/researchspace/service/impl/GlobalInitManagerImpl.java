@@ -14,6 +14,7 @@ import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.subject.Subject;
+import org.apache.shiro.util.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Performs global initialisation actions on application startup. Should only be called once after
@@ -82,12 +84,16 @@ public class GlobalInitManagerImpl implements GlobalInitManager {
     realms.add(sysadminRealm);
     sn.setRealms(realms);
     SecurityUtils.setSecurityManager(sn);
+    // Clear any stale ThreadContext subject from a previous Spring test context to avoid
+    // GlobalInitSysadminAuthenticationToken being rejected when run in the full test suite.
+    ThreadContext.remove();
     // creates an on-the-fly subject and session
     final Subject subject = new Subject.Builder(sn).buildSubject();
     return subject;
   }
 
   @Override
+  @Transactional
   public void onApplicationEvent(final ApplicationEvent appEvent) {
     if (!(appEvent instanceof ContextRefreshedEvent)) {
       return;

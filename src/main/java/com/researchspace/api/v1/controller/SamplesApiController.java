@@ -19,6 +19,8 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -26,8 +28,6 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.validation.Valid;
-import javax.ws.rs.NotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -178,7 +178,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     throw new IllegalArgumentException("Please use /sampleTemplates endpoint for template actions");
   }
 
-  /* errors might already be populated with simple validation errors using javax.validation annotations
+  /* errors might already be populated with simple validation errors using jakarta.validation annotations
    * by Spring's automatic validation */
   public void validateCreateSampleInput(
       ApiSampleWithFullSubSamples apiSample, BindingResult errors, User user) throws BindException {
@@ -207,7 +207,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     }
   }
 
-  /* errors might already be populated with simple validation errors using javax.validation annotations by Spring's
+  /* errors might already be populated with simple validation errors using jakarta.validation annotations by Spring's
   automatic validation */
   private void validateUpdateSampleInput(
       ApiSampleWithFullSubSamples apiSample, BindingResult errors) throws BindException {

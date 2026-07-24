@@ -409,8 +409,9 @@ public abstract class AbstractArchiveExporter implements ArchiveExportServiceMan
     csum.setCheckSum(sum);
     csum.setExporter(aconfig.getExporter());
     csum.setZipContentCheckSum(contentsChecksum);
-    save(csum);
-    return csum;
+    // ArchivalCheckSum has an assigned id (uid), so save() goes through merge() and the
+    // managed instance is the returned copy, not the local one
+    return save(csum);
   }
 
   /**

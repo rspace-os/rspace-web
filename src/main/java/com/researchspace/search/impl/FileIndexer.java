@@ -11,11 +11,15 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.IndexFormatTooNewException;
+import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
@@ -70,12 +74,8 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
     File folder = getIndexFolder();
     dir = FSDirectory.open(folder.toPath());
 
-    Analyzer analyzer = new StandardAnalyzer();
-    IndexWriterConfig writerConfig = new IndexWriterConfig(analyzer);
-    writerConfig.setWriteLockTimeout(MAX_WRITELOCK_WAIT);
     if (deleteIndex) {
-      writerConfig.setOpenMode(OpenMode.CREATE);
-      writer = new IndexWriter(dir, writerConfig);
+      writer = openWriter(folder, OpenMode.CREATE);
       writer.deleteAll();
       writer.commit();
     } else {
@@ -83,11 +83,36 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
       // fly rather than throwing IndexNotFoundException. APPEND requires a pre-existing
       // committed index, which breaks on a clean environment (e.g. fresh CI runner) where
       // onInitialAppDeployment hasn't created one yet.
-      writerConfig.setOpenMode(OpenMode.CREATE_OR_APPEND);
-      writer = new IndexWriter(dir, writerConfig);
+      writer = openWriter(folder, OpenMode.CREATE_OR_APPEND);
     }
 
     initialised = true;
+  }
+
+  // An index written by an incompatible Lucene version cannot be opened at all, even
+  // just to delete it (IndexWriter reads the existing segments file in every OpenMode),
+  // so recover by wiping the folder and starting an empty index. The index is derived
+  // data: a full reindex (rs.indexOnstartup=true) rebuilds it from the file store.
+  private IndexWriter openWriter(File folder, OpenMode openMode) throws IOException {
+    try {
+      return new IndexWriter(dir, newWriterConfig(openMode));
+    } catch (IndexFormatTooOldException | IndexFormatTooNewException e) {
+      log.warn(
+          "Deleting attachment search index at {}, which was written by an incompatible"
+              + " Lucene version; set rs.indexOnstartup=true to rebuild it. Cause: {}",
+          folder.getAbsolutePath(),
+          e.getMessage());
+      dir.close();
+      FileUtils.cleanDirectory(folder);
+      dir = FSDirectory.open(folder.toPath());
+      return new IndexWriter(dir, newWriterConfig(openMode));
+    }
+  }
+
+  private IndexWriterConfig newWriterConfig(OpenMode openMode) {
+    IndexWriterConfig writerConfig = new IndexWriterConfig(new StandardAnalyzer());
+    writerConfig.setOpenMode(openMode);
+    return writerConfig;
   }
 
   @Override
@@ -163,7 +188,7 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
         log.info("{} files indexed, {} to go.", indexed, (fileList.size() - indexed));
       }
     }
-    return writer.numDocs();
+    return writer.getDocStats().numDocs;
   }
 
   public void indexFile(File file) throws IOException {
@@ -193,7 +218,7 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
     if (suffix.equals("pdf")) {
       PDDocument pdoc = Loader.loadPDF(fx);
       String content = new PDFTextStripper().getText(pdoc);
-      contentFld = new Field(FIELD_CONTENTS, content, Field.Store.NO, Field.Index.ANALYZED);
+      contentFld = new TextField(FIELD_CONTENTS, content, Field.Store.NO);
       pdoc.close();
     } else {
       try {
@@ -201,19 +226,18 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
         tika.setMaxStringLength(1_000_000);
         String wordText = tika.parseToString(fx);
         log.debug("Parsed string is {}", wordText);
-        contentFld = new Field(FIELD_CONTENTS, wordText, Field.Store.NO, Field.Index.ANALYZED);
+        contentFld = new TextField(FIELD_CONTENTS, wordText, Field.Store.NO);
       } catch (TikaException e) {
         log.warn("Error reading file {} - msg: {}", fx.getName(), e.getMessage());
         contentFld =
-            new Field(
+            new TextField(
                 FIELD_CONTENTS,
                 new InputStreamReader(new FileInputStream(fx), Charset.forName("UTF-8")));
       }
     }
 
-    Field nameFld = new Field(FIELD_NAME, fx.getName(), Field.Store.YES, Field.Index.NOT_ANALYZED);
-    Field pathFld =
-        new Field(FIELD_PATH, fx.getAbsolutePath(), Field.Store.YES, Field.Index.NOT_ANALYZED);
+    Field nameFld = new StringField(FIELD_NAME, fx.getName(), Field.Store.YES);
+    Field pathFld = new StringField(FIELD_PATH, fx.getAbsolutePath(), Field.Store.YES);
     Document dc = new Document();
     dc.add(contentFld);
     dc.add(nameFld);

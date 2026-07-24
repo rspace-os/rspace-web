@@ -24,11 +24,11 @@ import com.researchspace.service.impl.OntologyDocManager;
 import com.researchspace.service.inventory.InventoryTagApiManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
+import jakarta.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.validation.ConstraintViolationException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -65,6 +65,11 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     // GlobalInitSysadminAuthenticationToken
     // being missing.
     Object realBean = AopProxyUtils.getSingletonTarget(customFormAppInitialiser);
+    if (realBean == null) {
+      // getSingletonTarget returns null when the bean is not an AOP proxy (Spring 6 does not
+      // proxy it in this context), so the injected bean is already the raw instance.
+      realBean = customFormAppInitialiser;
+    }
     // NOTE - in these test that use TransactionalTestExecutionListener, transaction boundary is per
     // test and therefore if we use any Manager
     // classes for setupc(which have their own transaction boundaries) our test code will not see

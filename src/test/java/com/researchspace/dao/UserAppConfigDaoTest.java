@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.PropertyDescriptor;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
@@ -92,7 +91,9 @@ public class UserAppConfigDaoTest extends SpringTransactionalTest {
     AppConfigElement el = new AppConfigElement(descriptor);
     el.setValue("true");
     AppConfigElementSet elSet = new AppConfigElementSet();
-    elSet.setConfigElements(TransformerUtils.toSet(el));
+    // Use addConfigElement (not setConfigElements) so the bidirectional back-reference
+    // el.appConfigElementSet is set — required for Hibernate 6 to write the FK column.
+    elSet.addConfigElement(el);
     u2 = createAndSaveRandomUser();
     UserAppConfig c2 = new UserAppConfig(u2, app, true);
     c2.addConfigSet(elSet);
@@ -114,7 +115,8 @@ public class UserAppConfigDaoTest extends SpringTransactionalTest {
     assertNotNull(elSetId);
     assertNotNull(elId);
     // check that remove removes completely child elements
-    assertTrue(c2.removeConfigSet(elSet));
+    AppConfigElementSet loadedElSet = c2.getAppConfigElementSets().iterator().next();
+    assertTrue(c2.removeConfigSet(loadedElSet));
     c2 = dao.save(c2);
     assertEquals(0, c2.getConfigElementSetCount());
   }

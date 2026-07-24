@@ -5,10 +5,7 @@ import com.researchspace.dao.SignatureDao;
 import com.researchspace.model.Signature;
 import com.researchspace.model.User;
 import com.researchspace.model.Witness;
-import com.researchspace.model.record.BaseRecord;
 import java.util.List;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
@@ -61,25 +58,23 @@ public class SignatureDaoHibernateImpl extends GenericDaoHibernate<Signature, Lo
 
   @Override
   public Witness saveOrUpdateWitness(Witness witness) {
-    return (Witness) getSession().merge(witness);
+    return persistOrMerge(witness);
   }
 
   @Override
   public Boolean isSigned(Long recordId) {
-    return (Boolean)
-        getSession()
-            .createCriteria(BaseRecord.class)
-            .add(Restrictions.idEq(recordId))
-            .setProjection(Projections.property("signed"))
-            .uniqueResult();
+    return getSession()
+        .createQuery("select br.signed from BaseRecord br where br.id=:recordId", Boolean.class)
+        .setParameter("recordId", recordId)
+        .uniqueResult();
   }
 
   @Override
   public List<Witness> getOpenWitnessesByWitnessUser(User witness) {
     return getSession()
-        .createCriteria(Witness.class)
-        .add(Restrictions.eq("witness", witness))
-        .add(Restrictions.eq("witnessed", false))
+        .createQuery(
+            "from Witness w where w.witness = :witness and w.witnessed = false", Witness.class)
+        .setParameter("witness", witness)
         .list();
   }
 }

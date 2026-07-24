@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.AccessControl;
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.Group;
@@ -206,6 +207,9 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
 
     // counting initial forms visible to 'user'
     PaginationCriteria<RSForm> pg = new PaginationCriteria<>(RSForm.class);
+    // Use id DESC so newly-created forms appear first, independent of DB insertion order
+    pg.setOrderBy("id");
+    pg.setSortOrder(SortOrder.DESC);
     FormSearchCriteria tsc = new FormSearchCriteria(PermissionType.READ);
     int userInitFormNumber = formMgr.searchForms(piUser, tsc, pg).getTotalHits().intValue();
 
@@ -473,7 +477,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     currVersionId = formController.updateForm(tempform.getId(), mockPrincipal).getData();
 
     // now reload doc -s hould have 4 fields OK
-    created = recordMgr.get(created.getId()).asStrucDoc();
+    created = recordMgr.getRecordWithFields(created.getId(), u1).asStrucDoc();
     assertEquals(4, created.getFieldCount());
     // now create new doc with form that has had fieldform deleted, should be 2 fields
     created = recordMgr.createNewStructuredDocument(rootId, currVersionId, u1);
@@ -558,7 +562,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
   private RSForm getNewForm(User u) throws Exception {
     MvcResult result =
         mockMvc
-            .perform(post(formUrlBase).principal(u::getUsername))
+            .perform(post("/workspace/editor/form").principal(u::getUsername))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     return (RSForm) result.getModelAndView().getModelMap().get("template");

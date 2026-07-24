@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.stereotype.Repository;
 
 @Repository("sampleDao")
@@ -26,7 +26,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     implements SampleDao {
 
   private static final String PARENT_TEMPLATE_ID = "parentTemplateId";
-  private static final String FROM_SAMPLE_WHERE = "from Sample where ";
+  private static final String FROM_SAMPLE_WHERE = "from Sample s where ";
 
   public SampleDaoHibernateImpl(Class<Sample> persistentClass) {
     super(persistentClass);
@@ -41,7 +41,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
 
     return sessionFactory
         .getCurrentSession()
-        .createQuery("from Sample where name=:name and owner=:owner", Sample.class)
+        .createQuery("from Sample where editInfo.name=:name and owner=:owner", Sample.class)
         .setParameter("name", name)
         .setParameter("owner", user)
         .list();
@@ -81,7 +81,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
         limitByParentTemplate ? "and STemplate.id=:parentTemplateId " : "";
 
     // get total count
-    // raw DTYPE discriminator anchor (matching the instrument DAOs): keeps the WHERE clause
+    // type() discriminator anchor (matching the instrument DAOs): keeps the WHERE clause
     // non-empty when deletedOption=INCLUDE makes the deleted fragment blank; redundant with the
     // discriminator Hibernate adds for the concrete entity
     Query<Long> countQueryBase =
@@ -89,7 +89,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
             .getCurrentSession()
             .createQuery(
                 "select count(s) from Sample s where "
-                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='Sample' ")
+                    + connectSqlConditionsWithAnd(deletedFragment, " type(s) = Sample ")
                     + parentTemplateQueryFragment
                     + ownedByAndPermittedItemsQueryFragment,
                 Long.class);
@@ -110,7 +110,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
             .getCurrentSession()
             .createQuery(
                 FROM_SAMPLE_WHERE
-                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='Sample' ")
+                    + connectSqlConditionsWithAnd(deletedFragment, " type(s) = Sample ")
                     + parentTemplateQueryFragment
                     + ownedByAndPermittedItemsQueryFragment
                     + orderByFragment,
@@ -191,8 +191,8 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
   @Override
   public Sample saveAndReindexSubSamples(Sample sample) {
     Session ssnx = sessionFactory.getCurrentSession();
-    FullTextSession fssn = Search.getFullTextSession(ssnx);
-    sample.getSubSamples().forEach(fssn::index);
+    SearchSession searchSession = Search.session(ssnx);
+    sample.getSubSamples().forEach(searchSession.indexingPlan()::addOrUpdate);
     return save(sample);
   }
 

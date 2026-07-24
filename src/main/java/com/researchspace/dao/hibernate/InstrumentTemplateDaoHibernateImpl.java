@@ -67,7 +67,7 @@ public class InstrumentTemplateDaoHibernateImpl
             .createQuery(
                 "select count(t) from InstrumentTemplate t where "
                     + connectSqlConditionsWithAnd(
-                        deletedFragment, " DTYPE='InstrumentTemplate' ", nameFragment)
+                        deletedFragment, " type(t) = InstrumentTemplate ", nameFragment)
                     + permittedFragment,
                 Long.class);
     Query<Long> countQueryWithParams =
@@ -85,9 +85,9 @@ public class InstrumentTemplateDaoHibernateImpl
         sessionFactory
             .getCurrentSession()
             .createQuery(
-                "from InstrumentTemplate where "
+                "from InstrumentTemplate t where "
                     + connectSqlConditionsWithAnd(
-                        deletedFragment, " DTYPE='InstrumentTemplate' ", nameFragment)
+                        deletedFragment, " type(t) = InstrumentTemplate ", nameFragment)
                     + permittedFragment
                     + orderByFragment,
                 InstrumentTemplate.class)
@@ -108,7 +108,8 @@ public class InstrumentTemplateDaoHibernateImpl
     return sessionFactory
         .getCurrentSession()
         .createQuery(
-            "from InstrumentTemplate where name=:name and owner=:owner", InstrumentTemplate.class)
+            "from InstrumentTemplate where editInfo.name=:name and owner=:owner",
+            InstrumentTemplate.class)
         .setParameter("name", name)
         .setParameter("owner", user)
         .list();

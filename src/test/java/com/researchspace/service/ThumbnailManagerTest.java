@@ -63,16 +63,24 @@ public class ThumbnailManagerTest extends SpringTransactionalTest {
     thumbnailMgr.deleteImageThumbnails(image1, user);
 
     // retrieve again, thumbnail connected to first image should be re-generated
-    imgThumbnail.setId(null);
-    Thumbnail newTh1 = thumbnailMgr.getThumbnail(imgThumbnail, user);
+    Thumbnail imgThumbnailLookup = new Thumbnail();
+    imgThumbnailLookup.setSourceId(image1.getId());
+    imgThumbnailLookup.setSourceType(SourceType.IMAGE);
+    imgThumbnailLookup.setWidth(50);
+    imgThumbnailLookup.setHeight(50);
+    Thumbnail newTh1 = thumbnailMgr.getThumbnail(imgThumbnailLookup, user);
     assertNotNull(newTh1);
     assertNotNull(newTh1.getThumbnailFP());
     assertNotEquals(th1Id, newTh1.getId());
     assertNotEquals(th1FpId, newTh1.getThumbnailFP().getId());
 
     // thumbnail connected to second image should stay the same
-    img2Thumbnail.setId(null);
-    Thumbnail newTh2 = thumbnailMgr.getThumbnail(img2Thumbnail, user);
+    Thumbnail img2ThumbnailLookup = new Thumbnail();
+    img2ThumbnailLookup.setSourceId(image2.getId());
+    img2ThumbnailLookup.setSourceType(SourceType.IMAGE);
+    img2ThumbnailLookup.setWidth(50);
+    img2ThumbnailLookup.setHeight(50);
+    Thumbnail newTh2 = thumbnailMgr.getThumbnail(img2ThumbnailLookup, user);
     assertNotNull(newTh2);
     assertNotNull(newTh2.getThumbnailFP());
     assertEquals(th2Id, newTh2.getId());

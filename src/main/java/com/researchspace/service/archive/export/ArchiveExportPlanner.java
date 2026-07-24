@@ -8,8 +8,8 @@ import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.record.Record;
+import jakarta.transaction.Transactional;
 import java.util.List;
-import javax.transaction.Transactional;
 
 /** Plans export, calculating what should be exported and performing permissions checks */
 public interface ArchiveExportPlanner {

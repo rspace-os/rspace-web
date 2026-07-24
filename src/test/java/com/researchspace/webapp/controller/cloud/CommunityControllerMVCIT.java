@@ -37,10 +37,10 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestGroup;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.MVCTestBase;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.MediaType;
 import java.util.Map;
 import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.MediaType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -376,8 +376,10 @@ public class CommunityControllerMVCIT extends MVCTestBase {
     User existingUser1 = group1.getUserByPrefix("u1");
     logoutAndLoginAs(piUser1);
     Group collaborationGroup = createCollabGroupBetweenGroups(group1.getGroup(), group2.getGroup());
-    collaborationGroup.addMember(existingUser1, RoleInGroup.DEFAULT);
-    grpMgr.saveGroup(collaborationGroup, piUser1);
+    grpMgr.addUserToGroup(
+        existingUser1.getUsername(), collaborationGroup.getId(), RoleInGroup.DEFAULT);
+    existingUser1 = userMgr.get(existingUser1.getId());
+    collaborationGroup = grpMgr.getGroup(collaborationGroup.getId());
 
     // Check existingUser1 has a default role within the collaboration group
 

@@ -140,7 +140,7 @@ public class GroupController extends BaseController {
    * @return edit group view name
    * @throws AuthorizationException if user don't have group create permission
    */
-  @GetMapping(value = "admin/", params = "new")
+  @GetMapping(value = "admin", params = "new")
   public String createNew(Model model) throws AuthorizationException {
     permissionUtils.assertIsPermitted("GROUP:CREATE:", "create group");
     Group group = new Group();
@@ -171,7 +171,7 @@ public class GroupController extends BaseController {
    * @return
    * @throws AuthorizationException if user can't edit given group
    */
-  @PostMapping("admin/")
+  @PostMapping("admin")
   public String createGroup(@ModelAttribute("group") Group group, BindingResult errors, Model model)
       throws AuthorizationException {
 

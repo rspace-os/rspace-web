@@ -108,6 +108,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.shiro.authz.AuthorizationException;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -580,8 +581,19 @@ public class RecordManagerImpl implements RecordManager {
 
   @Override
   public BaseRecord getRecordWithFields(long recordId, User user) {
-    return getRecordWithLazyLoadedProperties(
-        recordId, user, new DocumentFieldInitializationPolicy(), false);
+    BaseRecord rec =
+        getRecordWithLazyLoadedProperties(
+            recordId, user, new DocumentFieldInitializationPolicy(), false);
+    // Under Hibernate 6, getTempRecord() is a lazy proxy. Initialise it inside this
+    // transactional method so callers (e.g. StructuredDocumentController.
+    // prepareDocumentForView) can read its properties after the session closes.
+    if (rec instanceof StructuredDocument) {
+      Record temp = ((StructuredDocument) rec).getTempRecord();
+      if (temp != null) {
+        Hibernate.initialize(temp);
+      }
+    }
+    return rec;
   }
 
   @Override
@@ -633,9 +645,19 @@ public class RecordManagerImpl implements RecordManager {
     return structuredDocument;
   }
 
+  /**
+   * Under Hibernate 6, {@link Record#getTempRecord()} returns a lazy {@code Record} proxy, so
+   * casting it directly to {@link StructuredDocument} throws {@code ClassCastException}. Unproxy
+   * first to reach the real subclass. Null-safe: returns {@code null} when the document has no temp
+   * record.
+   */
+  private static StructuredDocument tempRecordOf(StructuredDocument doc) {
+    return (StructuredDocument) Hibernate.unproxy(doc.getTempRecord());
+  }
+
   private StructuredDocument saveTempRecord(Long recordId, User user) {
     StructuredDocument record = (StructuredDocument) getRecordWithFields(recordId, user);
-    StructuredDocument tempRecord = (StructuredDocument) record.getTempRecord();
+    StructuredDocument tempRecord = tempRecordOf(record);
     if (tempRecord == null) {
       tempRecord = record.copyNoFields();
       tempRecord.setTemporaryDoc(true);
@@ -733,7 +755,7 @@ public class RecordManagerImpl implements RecordManager {
       warningList.addErrorMsg("content.not.changed");
     }
 
-    StructuredDocument temp = (StructuredDocument) structuredDocument.getTempRecord();
+    StructuredDocument temp = tempRecordOf(structuredDocument);
     if (temp != null) {
       structuredDocument.setModificationDate(temp.getModificationDate());
       structuredDocument.setModifiedBy(temp.getModifiedBy(), IActiveUserStrategy.CHECK_OPERATE_AS);
@@ -794,7 +816,7 @@ public class RecordManagerImpl implements RecordManager {
     }
     fieldContentSynchroniser.revertSyncDocumentWithEntitiesOnCancel(
         structuredDocument, fieldChanges);
-    StructuredDocument temp = (StructuredDocument) structuredDocument.getTempRecord();
+    StructuredDocument temp = tempRecordOf(structuredDocument);
     if (temp != null) {
       structuredDocument.setTempRecord(null);
     }

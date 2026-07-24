@@ -2,9 +2,9 @@ package com.researchspace.auth;
 
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import java.io.IOException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 
 /**
  * This blocks manual login for situations where manual login is not allowed, perhaps depending on

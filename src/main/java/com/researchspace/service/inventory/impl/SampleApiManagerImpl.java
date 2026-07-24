@@ -54,6 +54,7 @@ import com.researchspace.service.inventory.InventoryLinkValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -63,7 +64,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -862,6 +862,11 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
           /* then delete the sample */
           dbSample.setRecordDeleted(true);
+          // Recompute the active-subsample cache now the deleted flag is set: a deleted sample
+          // lists its deletedOnSampleDeletion subsamples as active, but the refresh above ran
+          // pre-deletion (leaving it empty). Hibernate 5 refreshed this transient cache as a
+          // side effect of a setter call during merge/flush; Hibernate 6 no longer does.
+          dbSample.refreshActiveSubSamples();
           dbSample = saveSampleEntity(dbSample);
           publisher.publishEvent(new InventoryDeleteEvent(dbSample, user));
         }

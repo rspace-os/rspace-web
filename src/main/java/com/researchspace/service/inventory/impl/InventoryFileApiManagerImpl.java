@@ -24,6 +24,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.InventoryRecordRetriever;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -31,7 +32,6 @@ import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -200,6 +200,9 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     fileProperty.setRoot(fileStore.getCurrentLocalFileStoreRoot());
 
     URI uri = fileStore.save(fileProperty, inputStream, fileName, FileDuplicateStrategy.AS_NEW);
+    // Explicitly persist FileProperty to DB (Hibernate 6 requires this before flush)
+    // merge() returns the managed copy — must use that, not the original transient instance
+    fileProperty = fileStoreMetaManager.save(fileProperty);
     log.debug("File property {} created at URI {}", fileProperty.getId(), uri);
     log.info("URI is {}", fileProperty.getAbsolutePathUri());
 

@@ -6,12 +6,12 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionAttributeListener;
-import javax.servlet.http.HttpSessionBindingEvent;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSessionAttributeListener;
+import jakarta.servlet.http.HttpSessionBindingEvent;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
@@ -70,7 +70,7 @@ public class UserCounterListener implements ServletContextListener, HttpSessionA
    *
    * @param event the event to process
    * @see
-   *     javax.servlet.http.HttpSessionAttributeListener#attributeAdded(javax.servlet.http.HttpSessionBindingEvent)
+   *     jakarta.servlet.http.HttpSessionAttributeListener#attributeAdded(jakarta.servlet.http.HttpSessionBindingEvent)
    */
   public void attributeAdded(HttpSessionBindingEvent event) {
     log.debug("getting notification of session binding event  {}", event.getName());
@@ -86,7 +86,7 @@ public class UserCounterListener implements ServletContextListener, HttpSessionA
    *
    * @param event the session binding event
    * @see
-   *     javax.servlet.http.HttpSessionAttributeListener#attributeRemoved(javax.servlet.http.HttpSessionBindingEvent)
+   *     jakarta.servlet.http.HttpSessionAttributeListener#attributeRemoved(jakarta.servlet.http.HttpSessionBindingEvent)
    */
   public void attributeRemoved(HttpSessionBindingEvent event) {
     log.debug("getting notification of session binding event  {}", event.getName());
@@ -102,8 +102,8 @@ public class UserCounterListener implements ServletContextListener, HttpSessionA
 
   /**
    * @param event the session binding event
-   * @see javax.servlet.http.HttpSessionAttributeListener#attributeReplaced
-   *     (javax.servlet.http.HttpSessionBindingEvent)
+   * @see jakarta.servlet.http.HttpSessionAttributeListener#attributeReplaced
+   *     (jakarta.servlet.http.HttpSessionBindingEvent)
    */
   public void attributeReplaced(HttpSessionBindingEvent event) {
     if (event.getName().equals(EVENT_KEY)) {

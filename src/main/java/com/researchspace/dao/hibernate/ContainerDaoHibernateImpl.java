@@ -162,7 +162,7 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
         (Long)
             sessionFactory
                 .getCurrentSession()
-                .createSQLQuery(
+                .createNativeQuery(
                     "select id as containerId from Container where containerType = 'WORKBENCH' and"
                         + " owner_id=:userId")
                 .addScalar("containerId", StandardBasicTypes.LONG)

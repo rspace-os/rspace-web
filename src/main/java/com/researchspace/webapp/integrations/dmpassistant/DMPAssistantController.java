@@ -18,6 +18,8 @@ import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -32,8 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -358,7 +358,10 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       // Cloudflare HTML challenge page on 403) but never surface that to the user —
       // build a clean, status-coded message from the bundle for the error envelope.
       log.warn("DMP Assistant request failed: {}", e.getMessage());
-      String statusLabel = e.getStatusCode().value() + " " + e.getStatusCode().getReasonPhrase();
+      HttpStatus resolvedStatus = HttpStatus.resolve(e.getStatusCode().value());
+      String statusLabel =
+          e.getStatusCode().value()
+              + (resolvedStatus != null ? " " + resolvedStatus.getReasonPhrase() : "");
       return new AjaxReturnObject<>(
           null, getErrorListFromMessageCode("apps.dmpassistant.error.upstream", statusLabel));
     } catch (Exception e) {

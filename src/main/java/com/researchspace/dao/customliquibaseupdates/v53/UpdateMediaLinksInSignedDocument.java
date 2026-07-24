@@ -11,8 +11,6 @@ import com.researchspace.model.record.StructuredDocument;
 import java.util.Date;
 import java.util.List;
 import liquibase.database.Database;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Restrictions;
 
 /**
  * With RSPAC-178 the signed documents are pointing to the specific revision of media items.
@@ -77,10 +75,10 @@ public class UpdateMediaLinksInSignedDocument extends AbstractCustomLiquibaseUpd
   }
 
   protected List<StructuredDocument> getSignedDocuments() {
-    Criteria criteria = sessionFactory.getCurrentSession().createCriteria(StructuredDocument.class);
-    criteria.add(Restrictions.eq("signed", Boolean.TRUE));
-    criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-    return criteria.list();
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("from StructuredDocument where signed = true", StructuredDocument.class)
+        .list();
   }
 
   private void updateLinksInDocument(StructuredDocument sd) {

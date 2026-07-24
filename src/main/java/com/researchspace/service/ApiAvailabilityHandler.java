@@ -4,7 +4,7 @@ import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettin
 import com.researchspace.model.User;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Top level interface to encapsulate the logic required to establish if the API is available to the

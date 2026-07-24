@@ -1,9 +1,9 @@
 package com.researchspace.webapp.integrations.dmpassistant;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.annotation.PostConstruct;
 import java.net.URI;
 import java.util.Collections;
-import javax.annotation.PostConstruct;
 import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;

@@ -11,7 +11,7 @@ import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolationException;
 import org.junit.Test;
 
 public class ContainerApiManagerIT extends RealTransactionSpringTestBase {

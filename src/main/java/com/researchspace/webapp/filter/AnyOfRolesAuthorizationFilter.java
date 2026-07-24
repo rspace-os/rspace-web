@@ -1,8 +1,8 @@
 package com.researchspace.webapp.filter;
 
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import java.io.IOException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.web.filter.authz.RolesAuthorizationFilter;
 import org.springframework.stereotype.Component;

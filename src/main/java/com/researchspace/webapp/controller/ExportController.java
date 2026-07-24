@@ -43,6 +43,12 @@ import com.researchspace.service.archive.export.ArchiveExportPlanner;
 import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.impl.OntologyDocManager;
 import com.researchspace.session.SessionAttributeUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -58,12 +64,6 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
@@ -300,7 +300,7 @@ public class ExportController extends BaseController {
 
     @NotNull
     @Size(max = 1024) // in case of 4 byte unicode chars; max path length is 4096 bytes on Linux
-    @javax.validation.constraints.Pattern(regexp = "^(/[^;\\*\\?'\"\\./]{1,251})+\\.zip")
+    @jakarta.validation.constraints.Pattern(regexp = "^(/[^;\\*\\?'\"\\./]{1,251})+\\.zip")
     String serverFilePath;
   }
 

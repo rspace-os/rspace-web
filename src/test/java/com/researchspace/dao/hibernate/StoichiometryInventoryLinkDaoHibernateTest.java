@@ -16,8 +16,8 @@ import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.testutils.SpringTransactionalTest;
+import jakarta.validation.ConstraintViolationException;
 import java.util.List;
-import javax.validation.ConstraintViolationException;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

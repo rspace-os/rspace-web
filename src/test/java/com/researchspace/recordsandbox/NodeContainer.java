@@ -2,14 +2,14 @@ package com.researchspace.recordsandbox;
 
 import com.researchspace.core.util.CollectionFilter;
 import com.researchspace.model.User;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Transient;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.persistence.CascadeType;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.OneToMany;
-import javax.persistence.Transient;
 
 @Inheritance(strategy = InheritanceType.JOINED)
 public class NodeContainer extends Node {

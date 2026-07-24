@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import com.researchspace.core.util.progress.ProgressMonitor;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

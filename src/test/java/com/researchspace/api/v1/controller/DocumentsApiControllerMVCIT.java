@@ -57,8 +57,6 @@ import com.researchspace.testutils.TestGroup;
 import java.math.BigDecimal;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -847,14 +845,14 @@ public class DocumentsApiControllerMVCIT extends API_MVC_TestBase {
   }
 
   private Long getApiFolderCount(User anyUser) {
-    return (Long)
-        sessionFactory
-            .getCurrentSession()
-            .createCriteria(Folder.class)
-            .add(Restrictions.eq("editInfo.name", Folder.API_INBOX_FOLDER_NAME))
-            .add(Restrictions.eq("owner", anyUser))
-            .setProjection(Projections.rowCount())
-            .uniqueResult();
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery(
+            "select count(f) from Folder f where f.editInfo.name = :name and f.owner = :owner",
+            Long.class)
+        .setParameter("name", Folder.API_INBOX_FOLDER_NAME)
+        .setParameter("owner", anyUser)
+        .getSingleResult();
   }
 
   private void assertApiFolderForUserPresent(User anyUser, boolean present) throws Exception {

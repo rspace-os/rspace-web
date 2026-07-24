@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
+import jakarta.validation.constraints.Size;
 import java.util.List;
-import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

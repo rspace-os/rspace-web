@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -62,12 +63,13 @@ public class OrcidController {
 
       ResponseEntity<Map> restResponse = getOrcidConnector().getOrcidIdForAuthorizationCode(code);
       if (!restResponse.getStatusCode().is2xxSuccessful()) {
-        HttpStatus statusCode = restResponse.getStatusCode();
-        log.warn("Status code response was not successful : {}", statusCode);
+        HttpStatusCode statusCode = restResponse.getStatusCode();
+        HttpStatus status = toHttpStatus(statusCode);
+        log.warn("Status code response was not successful : {}", status);
         OauthAuthorizationError error =
             OauthAuthorizationError.builder()
                 .appName("Orcid")
-                .errorMsg(statusCode + "")
+                .errorMsg(status.toString())
                 .errorDetails(params.get("error_description"))
                 .build();
         model.addAttribute("error", error);
@@ -108,5 +110,10 @@ public class OrcidController {
       connector = new OrcidConnector(clientId, clientSecret, tokenUrl);
     }
     return connector;
+  }
+
+  private HttpStatus toHttpStatus(HttpStatusCode statusCode) {
+    HttpStatus status = HttpStatus.resolve(statusCode.value());
+    return status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR;
   }
 }

@@ -3,12 +3,12 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.api.v1.controller.DocumentApiPaginationCriteria.FAVORITE_PARAM;
 import static com.researchspace.api.v1.controller.DocumentApiPaginationCriteria.SHARED_WITH_ME_PARAM;
 
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class DocsearchConfigValidationTest extends JavaxValidatorTest {
+public class DocsearchConfigValidationTest extends JakartaValidatorTest {
 
   ApiDocSearchConfig srchConfig;
 

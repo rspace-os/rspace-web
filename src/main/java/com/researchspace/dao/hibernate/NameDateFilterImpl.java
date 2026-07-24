@@ -12,14 +12,11 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.ObjectToIdPropertyTransformer;
 import com.researchspace.model.record.RSForm;
-import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +68,7 @@ public class NameDateFilterImpl implements NameDateFilter {
 
     String q1 = generateCountQueryString(input, pname, pval);
 
-    Query<BigInteger> countQuery = sf.getCurrentSession().createNativeQuery(q1);
+    Query<Number> countQuery = sf.getCurrentSession().createNativeQuery(q1);
     applyNamedParameterToQuery(countQuery, pname, pval);
 
     Long totalHits = countQuery.uniqueResult().longValue();
@@ -304,16 +301,21 @@ public class NameDateFilterImpl implements NameDateFilter {
 
   @SuppressWarnings("unchecked")
   private List<RSForm> searchDBForForms(String searchTerm) {
-    Criteria c = sf.getCurrentSession().createCriteria(RSForm.class);
-    c.add(Restrictions.eq("publishingState", FormState.PUBLISHED));
+    StringBuilder hql =
+        new StringBuilder("from RSForm r where r.publishingState = :publishingState");
     if (searchTerm.endsWith(SearchConstants.WILDCARD)) {
       searchTerm = StringUtils.removeEnd(searchTerm, SearchConstants.WILDCARD);
-      c.add(Restrictions.like("editInfo.name", "%" + searchTerm + "%").ignoreCase());
+      hql.append(" and lower(r.editInfo.name) like :name");
+      searchTerm = "%" + searchTerm.toLowerCase() + "%";
     } else {
-      c.add(Restrictions.eq("editInfo.name", searchTerm).ignoreCase());
+      hql.append(" and lower(r.editInfo.name) = :name");
+      searchTerm = searchTerm.toLowerCase();
     }
-
-    return c.list();
+    return sf.getCurrentSession()
+        .createQuery(hql.toString(), RSForm.class)
+        .setParameter("publishingState", FormState.PUBLISHED)
+        .setParameter("name", searchTerm)
+        .list();
   }
 
   private void addName(List<String> pname, List<Object> pval, String term, StringBuffer sbf) {

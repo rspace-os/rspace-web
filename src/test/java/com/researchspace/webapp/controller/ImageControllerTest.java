@@ -5,7 +5,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
 import com.researchspace.files.service.FileStore;
@@ -33,7 +33,7 @@ import org.mockito.junit.MockitoRule;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.http.ResponseEntity;
 
-public class ImageControllerTest extends JavaxValidatorTest {
+public class ImageControllerTest extends JakartaValidatorTest {
   @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock UserManager usrMgr;

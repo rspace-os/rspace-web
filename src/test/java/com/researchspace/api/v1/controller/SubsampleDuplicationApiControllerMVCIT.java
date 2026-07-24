@@ -36,7 +36,7 @@ public class SubsampleDuplicationApiControllerMVCIT extends API_MVC_InventoryTes
                 createBuilderForPost(
                     API_VERSION.ONE,
                     apiKey,
-                    String.format("/subSamples/%d/actions/duplicate/", basicSubSampleInfo.getId()),
+                    String.format("/subSamples/%d/actions/duplicate", basicSubSampleInfo.getId()),
                     anyUser))
             .andExpect(status().isCreated())
             .andReturn();
@@ -62,7 +62,7 @@ public class SubsampleDuplicationApiControllerMVCIT extends API_MVC_InventoryTes
             .perform(
                 createBuilderForPostWithJSONBody(
                     apiKey,
-                    String.format("/subSamples/%d/actions/split/", basicSubSampleInfo.getId()),
+                    String.format("/subSamples/%d/actions/split", basicSubSampleInfo.getId()),
                     anyUser,
                     cfg))
             .andExpect(status().isCreated())

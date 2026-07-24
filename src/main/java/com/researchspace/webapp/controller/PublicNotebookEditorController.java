@@ -6,11 +6,10 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.shiro.authz.AuthorizationException;
-import org.apache.shiro.web.util.WebUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -56,7 +55,7 @@ public class PublicNotebookEditorController extends BaseController {
     }
     User sharedBy = rgs.getSharedBy();
     if (!systemPropertyPermissionManager.isPropertyAllowed(sharedBy, "public_sharing")) {
-      WebUtils.issueRedirect(request, response, "/public/publishIsDisabled");
+      response.sendRedirect("/public/publishIsDisabled");
     }
     Long notebookId = rgs.getShared().getId();
     Notebook notebook = folderManager.getNotebook(notebookId);

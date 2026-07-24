@@ -6,7 +6,7 @@ import com.researchspace.model.RSChemElement;
 import com.researchspace.model.field.Field;
 import java.util.List;
 import liquibase.database.Database;
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 
 /** Sets parentids into thumnails */
 public class ThumbnailAddParentIds extends AbstractCustomLiquibaseUpdater {
@@ -30,7 +30,7 @@ public class ThumbnailAddParentIds extends AbstractCustomLiquibaseUpdater {
         Query q =
             sessionFactory
                 .getCurrentSession()
-                .createSQLQuery(
+                .createNativeQuery(
                     "update Thumbnail set sourceParentId =:fieldId where sourceId =:chemId and"
                         + " sourceParentId is NULL");
         q.setParameter("fieldId", field.getId());

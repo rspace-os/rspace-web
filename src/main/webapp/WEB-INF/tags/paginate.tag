@@ -6,8 +6,8 @@
 <%@ attribute name="omitATagLinkId" required="false"  type="java.lang.Boolean" %>
 
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
 
 <%-- This sets the links to previous /next pages  assuming an Ajax
  based handling to parse the link out of the ID--%>

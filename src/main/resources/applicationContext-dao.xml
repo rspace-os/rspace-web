@@ -21,13 +21,35 @@
     	<property name="configLocations" value="classpath:hibernate.cfg.xml" />
     	<property name="hibernateProperties">
     		<value>
-    			hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
-    			hibernate.search.default.directory_provider=filesystem
-    			hibernate.search.default.indexBase=${rs.hibernate.searchIndex.folder}
-                hibernate.search.default.exclusive_index_use=${rs.hibernate.searchIndex.exclusiveIndex}
-    			hibernate.query.substitutions=true 'Y', false 'N'
+    			hibernate.dialect=${hibernate.dialect}
+    			hibernate.search.backend.type=lucene
+    			hibernate.search.backend.directory.root=${rs.hibernate.searchIndex.folder}
+    			hibernate.search.backend.directory.type=local-filesystem
     			hibernate.cache.use_second_level_cache=true
-    			hibernate.cache.provider_class=org.hibernate.cache.EhCacheProvider
+    			hibernate.cache.use_query_cache=true
+    			hibernate.cache.region.factory_class=org.hibernate.cache.jcache.JCacheRegionFactory
+    			<!-- hibernate-jcache only reads the hibernate.javax.cache.* keys (JCache itself was
+    			     never migrated to the jakarta namespace). The uri is resolved as a classpath
+    			     resource by Hibernate's ClassLoaderService, so no classpath: prefix. With a wrong
+    			     key/uri Hibernate silently falls back to an EMPTY default CacheManager and every
+    			     region becomes an untuned create-warn default (unlimited size, no expiry);
+    			     SecondLevelCacheTestIT guards this wiring. -->
+    			hibernate.javax.cache.provider=org.ehcache.jsr107.EhcacheCachingProvider
+    			hibernate.javax.cache.uri=ehcache.xml
+			hibernate.search.indexing.plan.synchronization.strategy=sync
+    			<!-- Id generation for TABLE-strategy entities: every such entity carries an explicit
+    			     @TableGenerator in rspace-core-model, keyed to its own row in hibernate_sequences.
+    			     Generators declared without pkColumnValue segment by the entity's physical table
+    			     name (Hibernate defaults prefer_entity_table_as_segment_value=true for
+    			     annotation-defined table generators), preserving the one-counter-per-table layout
+    			     Hibernate 5 used. The two TABLE_PER_CLASS hierarchies (AbstractUserOrGroupImpl,
+    			     Communication) pin pkColumnValue explicitly because sibling tables must share one
+    			     counter. changeLog-rsdev-444.xml re-seeds every row above its table's MAX(id) on
+    			     upgrade, so allocation cannot collide with pre-upgrade ids. Do NOT add a bare
+    			     @GeneratedValue(strategy=TABLE) without a generator: it would allocate from a
+    			     shared "default" segment (TableIdGeneratorConfigTest guards this). See
+    			     DevDocs/DeveloperNotes/UpgradingToSpring6.md ("What the upgrade does to the
+    			     database"). -->
     		</value>
     		<!-- Turn batching off for better error messages under PostgreSQL -->
     		<!-- hibernate.jdbc.batch_size=0 -->

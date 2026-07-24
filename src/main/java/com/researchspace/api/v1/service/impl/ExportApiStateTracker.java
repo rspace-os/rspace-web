@@ -5,8 +5,9 @@ import com.researchspace.core.util.progress.ProgressMonitor;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Holds state of ExportApi that must be shared between Controller layer and Spring Batch
@@ -17,8 +18,8 @@ import org.apache.commons.lang3.Validate;
  * completed. So a progress monitor ( that needs to be consulted by a Job lookup) is not
  * retrievable, as the step is not persisted, so we need a bespoke mechanism
  */
-@Slf4j
 public class ExportApiStateTracker {
+  private static final Logger log = LoggerFactory.getLogger(ExportApiStateTracker.class);
 
   private Map<String, ExportRecordList> recordList = new ConcurrentHashMap<>();
   private Map<String, ProgressMonitor> progressMonitors = new ConcurrentHashMap<>();

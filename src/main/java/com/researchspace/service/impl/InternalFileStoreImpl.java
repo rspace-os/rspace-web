@@ -30,9 +30,11 @@ import org.joda.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** FileStore implementation for storing files locally on RSpace server */
+@Service
 @Transactional
 public class InternalFileStoreImpl implements InternalFileStore {
 

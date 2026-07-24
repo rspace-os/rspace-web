@@ -24,6 +24,7 @@ import com.researchspace.model.IFieldLinkableElement;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.search.impl.LuceneSearchTermListFactory;
 import com.researchspace.search.impl.LuceneSrchCfg;
@@ -281,5 +282,46 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     assertEquals(2, results.size());
     assertEquals("my subcontainer2", results.get(0).getName());
     assertEquals("my subcontainer3", results.get(1).getName());
+  }
+
+  /**
+   * Guards against a regression fixed during the Spring 6 migration: an inventory record's
+   * attachment filenames are indexed under {@code files.fieldData}, and that field must be one of
+   * the targets of an INVENTORY_SEARCH_OPTION search so attachments remain findable by filename.
+   * Previously filenames were indexed under {@code fields.fieldData} (the search already covered
+   * it); the Hibernate Search 6 split into named {@code @IndexedEmbedded} prefixes moved them to
+   * {@code files.fieldData}, which the search query was not updated to include.
+   */
+  @Test
+  public void testInventoryAttachmentFilenameSearch() throws IOException, InterruptedException {
+    User u = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(u);
+    logoutAndLoginAs(u);
+
+    ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(u);
+    SampleEntity dbSample = sampleApiMgr.getSampleById(apiSample.getId(), u);
+
+    InventorySearchConfig searchConfig = new InventorySearchConfig(u);
+    searchConfig.setOptions(new String[] {SearchConstants.INVENTORY_SEARCH_OPTION});
+    searchConfig.setSearchStrategy(IFullTextSearcher.ALL_LUCENE_SEARCH_STRATEGY);
+    searchConfig.setUsernameFilter(TransformerUtils.toList(u.getUsername()));
+
+    // wildcard query (matched against raw indexed terms, so independent of how the filename field
+    // is tokenised) — the helper attaches a file named "Picture1.png"
+    flushToSearchIndices();
+    searchConfig.setTerms(new String[] {"picture*"});
+    LuceneSrchCfg cfg = new LuceneSrchCfg(searchConfig, termListFactory);
+    assertEquals(
+        0,
+        fts.getLuceneInventoryQueryList(cfg).size(),
+        "no inventory record carries the filename before the attachment is added");
+
+    addFileAttachmentToInventoryItem(dbSample.getOid(), u);
+    flushToSearchIndices();
+
+    cfg = new LuceneSrchCfg(searchConfig, termListFactory);
+    List<InventoryRecord> results = fts.getLuceneInventoryQueryList(cfg);
+    assertEquals(1, results.size(), "attachment filename must be searchable via files.fieldData");
+    assertEquals(dbSample.getId(), results.get(0).getId());
   }
 }

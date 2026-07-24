@@ -16,7 +16,6 @@ import com.researchspace.model.record.Snippet;
 import java.util.List;
 import java.util.Set;
 import liquibase.database.Database;
-import org.hibernate.Criteria;
 
 /**
  * As raised in RSPAC-689 entities inside snippets were not properly linked: 1)
@@ -88,9 +87,7 @@ public class UpdateReferencesInSnippetAttachments extends AbstractCustomLiquibas
   }
 
   List<Snippet> getAllSnippets() {
-    Criteria criteria = sessionFactory.getCurrentSession().createCriteria(Snippet.class);
-    criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-    return criteria.list();
+    return sessionFactory.getCurrentSession().createQuery("from Snippet", Snippet.class).list();
   }
 
   private boolean updateRelationsInCommentSketchChemicals(FieldContents contents, Snippet snip) {

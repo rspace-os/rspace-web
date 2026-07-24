@@ -473,7 +473,7 @@ The following properties are specific to SMB filesystems:
 These optional settings configure  behaviour of the RSpace application.
 
 #### File upload and processing
-* **files.maxUploadSize** The maximum individual file size upload, in bytes. Default is 10Mb
+* **files.maxUploadSize** The maximum upload size in bytes, applied to the total multipart request. Default is 50MB (52428800). The value is read in this order: (1) JVM system property `-Dfiles.maxUploadSize=<bytes>` if set, otherwise (2) the `files.maxUploadSize` key in `${propertyFileDir}/deployment.properties`, otherwise (3) the 50MB default. See `DevDocs/DeveloperNotes/UpgradingToSpring6.md` for upgrade notes, including the Tomcat `maxSwallowSize` requirement.
 * **max.tiff.conversionSize** The max file size in bytes at which conversion of TIFF images to .png working images will be attempted. The default is 8192000 (8Mb)
 * **rs.attachment.lucene.index.dir** The directory where Lucene indexes are stored. Must be writable by Tomcat.  Default is `$TOMCAT_HOME/LuceneFTsearchIndices`
 * **rs.hibernate.searchIndex.folder** The directory where database full-text indexes are stored. Must be writable by Tomcat.  Default is `$TOMCAT_HOME/FTsearchIndices`

@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import com.researchspace.model.User;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 /** Top-level interface to handle post login actions. */
 public interface PostLoginHandler {

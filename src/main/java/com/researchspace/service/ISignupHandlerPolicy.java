@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import com.researchspace.model.User;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /** Policy or handling signup form submission, dependent on deployments. */
 public interface ISignupHandlerPolicy {

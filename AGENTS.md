@@ -45,8 +45,12 @@ Controller -> Service (*Manager) -> DAO -> Hibernate/MariaDB
 ```
 
 Controllers validate input and call services, never DAOs. Services used as
-transactional Spring beans must end in `Manager`. DAOs assume an active
-transaction. Do not introduce imports from a lower layer to a higher one.
+transactional Spring beans should end in `Manager`, which puts them under the
+AOP pointcuts in `applicationContext-service.xml`. A non-`Manager` service may
+instead declare its transaction boundary explicitly with `@Transactional`;
+`TransactionAdviceStartupCheck` verifies at startup that annotation-driven
+transaction advice was applied. DAOs assume an active transaction. Do not
+introduce imports from a lower layer to a higher one.
 
 Frontend code uses React functional components, TypeScript, MUI, Axios, and
 pnpm. Prefer React Query for new server state; MobX remains in legacy areas.

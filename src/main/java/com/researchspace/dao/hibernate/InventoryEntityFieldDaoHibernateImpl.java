@@ -5,7 +5,7 @@ import com.researchspace.dao.InventoryEntityFieldDao;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.springframework.stereotype.Repository;
 
 @Repository

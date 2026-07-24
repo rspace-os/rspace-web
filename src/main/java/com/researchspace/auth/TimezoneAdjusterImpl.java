@@ -1,10 +1,10 @@
 package com.researchspace.auth;
 
 import com.researchspace.session.SessionAttributeUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.jsp.jstl.core.Config;
 import java.util.TimeZone;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.jstl.core.Config;
 
 public class TimezoneAdjusterImpl implements TimezoneAdjuster {
 

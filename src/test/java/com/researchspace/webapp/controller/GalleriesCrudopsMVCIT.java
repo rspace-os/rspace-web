@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static org.junit.Assert.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.core.util.MediaUtils;
@@ -60,7 +60,7 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload("/gallery/ajax/uploadFile")
+                multipart("/gallery/ajax/uploadFile")
                     .file(mf)
                     .principal(new MockPrincipal(user.getUsername())))
             .andExpect(status().isOk())
@@ -120,7 +120,7 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload("/gallery/ajax/uploadFile")
+                multipart("/gallery/ajax/uploadFile")
                     .file(mf)
                     .principal(new MockPrincipal(user.getUsername())))
             .andExpect(status().isOk())
@@ -174,7 +174,7 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
             "xfile", "image.png", "png", getTestResourceFileStream("Picture1.png"));
     MvcResult result =
         mockMvc
-            .perform(fileUpload("/gallery/ajax/uploadFile").file(mf).principal(mockPrincipal))
+            .perform(multipart("/gallery/ajax/uploadFile").file(mf).principal(mockPrincipal))
             .andExpect(status().isOk())
             .andReturn();
 

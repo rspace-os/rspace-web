@@ -43,7 +43,7 @@ public class DeploymentPropertyToSysPropertyRSPAC861_1_34 extends AbstractCustom
         sessionFactory
             .getCurrentSession()
             .createQuery("from SystemPropertyValue spv where spv.property.name=:systemPropertyName")
-            .setString("systemPropertyName", systemPropertyName)
+            .setParameter("systemPropertyName", systemPropertyName)
             .uniqueResult();
   }
 
@@ -53,7 +53,7 @@ public class DeploymentPropertyToSysPropertyRSPAC861_1_34 extends AbstractCustom
         (SystemProperty)
             session
                 .createQuery("from SystemProperty spv where spv.name=:systemPropertyName")
-                .setString("systemPropertyName", systemPropertyName)
+                .setParameter("systemPropertyName", systemPropertyName)
                 .uniqueResult();
     return result;
   }

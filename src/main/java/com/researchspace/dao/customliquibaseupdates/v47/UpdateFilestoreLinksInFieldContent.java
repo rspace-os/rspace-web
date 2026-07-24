@@ -5,8 +5,6 @@ import com.researchspace.dao.customliquibaseupdates.AbstractCustomLiquibaseUpdat
 import com.researchspace.model.field.TextField;
 import java.util.List;
 import liquibase.database.Database;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Restrictions;
 
 /**
  * With RSPAC-1053 new filestore links have mceNonEditable class. This liquibase update will add the
@@ -59,10 +57,11 @@ public class UpdateFilestoreLinksInFieldContent extends AbstractCustomLiquibaseU
   }
 
   protected List<TextField> getAllTextFieldsWithLinks() {
-    Criteria criteria = sessionFactory.getCurrentSession().createCriteria(TextField.class);
-    criteria.add(Restrictions.like("rtfData", "%" + OLD_LINK_MATCHER + "%"));
-    criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-    return criteria.list();
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("from TextField where rtfData like :linkMatcher", TextField.class)
+        .setParameter("linkMatcher", "%" + OLD_LINK_MATCHER + "%")
+        .list();
   }
 
   private void updateLinksInTextField(TextField tf) {

@@ -19,7 +19,8 @@ public class OAuthTokenHibernate extends GenericDaoHibernate<OAuthToken, Long>
   @Override
   public Optional<OAuthToken> findByAccessTokenHash(String searchHash) {
     Query<OAuthToken> q =
-        getSession().createQuery("from OAuthToken where accessToken=:searchHash", OAuthToken.class);
+        getSession()
+            .createQuery("from OAuthToken where hashedAccessToken=:searchHash", OAuthToken.class);
     q.setParameter("searchHash", searchHash);
     return q.uniqueResultOptional();
   }
@@ -28,7 +29,7 @@ public class OAuthTokenHibernate extends GenericDaoHibernate<OAuthToken, Long>
   public Optional<OAuthToken> findByRefreshTokenHash(String searchHash) {
     Query<OAuthToken> q =
         getSession()
-            .createQuery("from OAuthToken where refreshToken=:searchHash", OAuthToken.class);
+            .createQuery("from OAuthToken where hashedRefreshToken=:searchHash", OAuthToken.class);
     q.setParameter("searchHash", searchHash);
     return q.uniqueResultOptional();
   }

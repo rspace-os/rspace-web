@@ -1,7 +1,7 @@
 package com.researchspace.webapp.integrations;
 
+import jakarta.validation.constraints.NotNull;
 import java.util.Map;
-import javax.validation.constraints.NotNull;
 
 public interface MultiInstanceClient<T> {
 

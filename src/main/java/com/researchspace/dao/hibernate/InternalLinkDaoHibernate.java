@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Repository;
 
 /** For manipulating internal link entities. */
@@ -19,7 +18,6 @@ public class InternalLinkDaoHibernate implements InternalLinkDao {
   private SessionFactory sessionFactory;
 
   @Autowired
-  @Required
   public void setSessionFactory(SessionFactory sessionFactory) {
     this.sessionFactory = sessionFactory;
   }
@@ -29,7 +27,7 @@ public class InternalLinkDaoHibernate implements InternalLinkDao {
     List<InternalLink> links =
         sessionFactory
             .getCurrentSession()
-            .createQuery("from InternalLink where target_id=:targetRecordId", InternalLink.class)
+            .createQuery("from InternalLink where target.id=:targetRecordId", InternalLink.class)
             .setParameter("targetRecordId", targetRecordId)
             .list();
     List<InternalLink> linksWhereSourceNotDeleted =
@@ -42,7 +40,7 @@ public class InternalLinkDaoHibernate implements InternalLinkDao {
     List<InternalLink> links =
         sessionFactory
             .getCurrentSession()
-            .createQuery("from InternalLink where source_id=:sourceRecordId", InternalLink.class)
+            .createQuery("from InternalLink where source.id=:sourceRecordId", InternalLink.class)
             .setParameter("sourceRecordId", sourceRecordId)
             .list();
     return links;
@@ -55,7 +53,7 @@ public class InternalLinkDaoHibernate implements InternalLinkDao {
       Session ss = sessionFactory.getCurrentSession();
       Record source = ss.load(Record.class, sourceRecordId);
       BaseRecord target = ss.load(BaseRecord.class, targetRecordId);
-      ss.merge(new InternalLink(source, target));
+      ss.persist(new InternalLink(source, target));
       return true;
     }
     return false;
@@ -75,7 +73,7 @@ public class InternalLinkDaoHibernate implements InternalLinkDao {
         sessionFactory
             .getCurrentSession()
             .createQuery(
-                " from InternalLink where source_id=:sourceRecordId and target_id=:targetRecordId",
+                " from InternalLink where source.id=:sourceRecordId and target.id=:targetRecordId",
                 InternalLink.class)
             .setParameter("sourceRecordId", sourceRecordId)
             .setParameter("targetRecordId", targetRecordId)

@@ -240,7 +240,8 @@ public class SignupControllerMVCIT extends MVCTestBase {
                 .param(CONFIRM_PASSWORD_PARAM, VALID_PWD)
                 .param("firstName", "pwd")
                 .param("lastName", "pwd"))
-        .andExpect(model().attributeHasNoErrors("user"));
+        // Spring 6: BindingResult not included in redirect model; redirect indicates success
+        .andExpect(status().is3xxRedirection());
 
     // now repeat with same username, should fail due to duplicate username
     mockMvc
@@ -351,7 +352,8 @@ public class SignupControllerMVCIT extends MVCTestBase {
                 .param("email", "xxx@junit")
                 .param("firstName", "fn")
                 .param("lastName", "ln"))
-        .andExpect(model().attributeHasNoErrors("user"));
+        // Spring 6: BindingResult not included in redirect model; redirect indicates success
+        .andExpect(status().is3xxRedirection());
 
     signedUser = userMgr.getUserByUsername(oxSsoUsername);
     assertNotNull(signedUser);

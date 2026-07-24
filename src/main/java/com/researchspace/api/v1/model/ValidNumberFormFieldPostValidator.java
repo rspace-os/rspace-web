@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.model;
 
 import com.researchspace.api.v1.controller.FormTemplatesCommon;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 public class ValidNumberFormFieldPostValidator
     implements ConstraintValidator<ValidNumberFormFieldPost, FormTemplatesCommon.NumberFieldPost> {

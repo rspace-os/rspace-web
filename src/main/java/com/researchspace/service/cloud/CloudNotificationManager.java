@@ -2,9 +2,9 @@ package com.researchspace.service.cloud;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
+import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import javax.mail.MessagingException;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Sends notifications and messages concerning inviting external or internal users to join a group

@@ -20,7 +20,7 @@ This document is written in Markdown format.
 - Ensure your Java @Entity-annotated class implements Serializable. 
 - If rows are likely to be read more often than written to, consider registering the class with Hibernate's second-level cache 
 - Review Hibernate association mappings - even though @ManyToOne is eager by default, consider using a lazy fetch strategy if queries don't usually need data from the associated entity.
-- consider adding javax.validation annotations on persisted fields. These are asserted by Hibernate before the
+- consider adding jakarta.validation annotations on persisted fields. These are asserted by Hibernate before the
  data is flushed to the database, thus saving load on the database handling bad data.(this validation is only performed in Hibernate's pre-commit event handler).
 
 

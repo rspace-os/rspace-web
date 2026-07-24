@@ -7,10 +7,10 @@ import static org.mockito.Mockito.when;
 
 import com.axiope.webapp.dev.ViteDevServerProxyServlet;
 import com.axiope.webapp.taglib.FrontendCacheVersion;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletRegistration;
 import java.lang.reflect.Field;
-import javax.servlet.Servlet;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletRegistration;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

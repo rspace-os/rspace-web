@@ -7,16 +7,23 @@
        default-lazy-init="true">
 
     <bean id="authc" name="authc" class="org.apache.shiro.web.filter.authc.PassThruAuthenticationFilter" />
-    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
 
-        <property name="securityManager" ref="securityManager" />
+    <!-- The shiroFilter and the AuthorizationAttributeSourceAdvisor below deliberately do
+         NOT take a securityManager ref: both beans are created before context refresh
+         completes (the filter is a BeanPostProcessor, SHIRO-829), and a direct ref would
+         drag the realms' entire service-bean dependency graph into that early window,
+         where annotation-driven advice (@Transactional, Shiro's authorization annotations)
+         is silently skipped. The Lazy* subclasses resolve the securityManager bean on
+         first use, safely after refresh; TransactionAdviceStartupCheck initialises it
+         right after refresh. See the AOP notes in applicationContext-service.xml. -->
+    <bean id="shiroFilter" class="com.researchspace.webapp.filter.LazySecurityManagerShiroFilterFactoryBean">
         <!-- override these for application-specific URLs if you like: -->
 
         <property name="loginUrl" value="/login" />
         <property name="successUrl" value="/workspace" />
         <property name="unauthorizedUrl" value="login?error=true" />
 
-        <!-- The 'filters' property is not necessary since any declared javax.servlet.Filter bean -->
+        <!-- The 'filters' property is not necessary since any declared jakarta.servlet.Filter bean -->
         <!-- defined will be automatically acquired and available via its beanName in chain -->
         <!-- definitions, but you can perform instance overrides or name aliases here if you like: -->
         <property name="filters">
@@ -86,8 +93,6 @@
     <!-- the lifecycleBeanProcessor has run: -->
     <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
           depends-on="lifecycleBeanPostProcessor" />
-    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
-        <property name="securityManager" ref="securityManager" />
-    </bean>
+    <bean class="com.researchspace.auth.LazySecurityManagerAuthorizationAttributeSourceAdvisor" />
 
 </beans>

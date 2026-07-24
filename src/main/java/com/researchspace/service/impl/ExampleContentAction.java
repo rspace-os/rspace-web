@@ -11,7 +11,7 @@ import com.researchspace.service.UserFolderSetup;
 import com.researchspace.service.archive.ExportImport;
 import com.researchspace.service.archive.ImportArchiveReport;
 import com.researchspace.service.archive.ImportStrategy;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

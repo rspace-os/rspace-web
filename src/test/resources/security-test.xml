@@ -11,7 +11,7 @@
 		override these for application-specific URLs if you like: <property 
 			name="loginUrl" value="/login.jsp"/> <property name="successUrl" value="/home.jsp"/> 
 			<property name="unauthorizedUrl" value="/unauthorized.jsp"/>
-		The 'filters' property is not necessary since any declared javax.servlet.Filter 
+		The 'filters' property is not necessary since any declared jakarta.servlet.Filter 
 			bean
 		defined will be automatically acquired and available via its beanName 
 			in chain
@@ -62,4 +62,3 @@
      
 
 </beans>
-

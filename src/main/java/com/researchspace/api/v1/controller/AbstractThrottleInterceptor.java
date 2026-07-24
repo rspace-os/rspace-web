@@ -2,10 +2,10 @@ package com.researchspace.api.v1.controller;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
-import javax.servlet.http.HttpServletRequest;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.servlet.HandlerInterceptor;
 
-public class AbstractThrottleInterceptor extends HandlerInterceptorAdapter {
+public class AbstractThrottleInterceptor implements HandlerInterceptor {
 
   String assertApiAccess(HttpServletRequest request) {
     String identifier = request.getHeader("apiKey");

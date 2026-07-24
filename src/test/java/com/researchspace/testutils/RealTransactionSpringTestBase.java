@@ -84,7 +84,6 @@ import javax.sql.DataSource;
 import lombok.Value;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.hibernate.criterion.Projections;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,6 +94,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.ui.ExtendedModelMap;
@@ -107,7 +107,8 @@ import org.springframework.web.multipart.MultipartFile;
  * (E.g., tests that require cache refreshes, or post-commit listeners, such as auditing, or where
  * we want to test what fields are initialized from a service call).
  */
-@TestExecutionListeners(value = {SqlScriptsTestExecutionListener.class})
+@TestExecutionListeners(
+    value = {DependencyInjectionTestExecutionListener.class, SqlScriptsTestExecutionListener.class})
 @Configuration()
 @Profile("dev")
 public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
@@ -1160,12 +1161,10 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
   protected Long getTotalGroupCount() throws Exception {
     return doInTransaction(
         () ->
-            (Long)
-                sessionFactory
-                    .getCurrentSession()
-                    .createCriteria(Group.class)
-                    .setProjection(Projections.rowCount())
-                    .uniqueResult());
+            sessionFactory
+                .getCurrentSession()
+                .createQuery("select count(g) from Group g", Long.class)
+                .getSingleResult());
   }
 
   protected User doCreateAndInitUser(String username, String role) {

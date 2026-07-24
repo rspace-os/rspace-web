@@ -881,7 +881,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
   public void assertUserCanReadInstrument_withTemplateId_throwsNotFoundNotClassCast() {
     ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
     assertThrows(
-        javax.ws.rs.NotFoundException.class,
+        jakarta.ws.rs.NotFoundException.class,
         () -> instrumentApiMgr.assertUserCanReadInstrument(template.getId(), testUser));
   }
 
@@ -889,7 +889,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
   public void assertUserCanReadInstrumentTemplate_withInstrumentId_throwsNotFoundNotClassCast() {
     ApiInstrument instrument = createBasicInstrumentForUser(testUser, "type-mismatch-test");
     assertThrows(
-        javax.ws.rs.NotFoundException.class,
+        jakarta.ws.rs.NotFoundException.class,
         () -> instrumentApiMgr.assertUserCanReadInstrumentTemplate(instrument.getId(), testUser));
   }
 

@@ -2,9 +2,9 @@ package com.researchspace.model.repository;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
+import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
-import javax.validation.Valid;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

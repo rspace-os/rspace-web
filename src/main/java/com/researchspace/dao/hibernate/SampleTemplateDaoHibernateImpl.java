@@ -18,8 +18,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.stereotype.Repository;
 
 @Repository("sampleTemplateDao")
@@ -63,7 +63,7 @@ public class SampleTemplateDaoHibernateImpl extends InventoryDaoHibernate<Sample
     int startPosition = pgCrit.getFirstResultIndex();
     int maxResult = pgCrit.getResultsPerPage();
 
-    // raw DTYPE discriminator anchor (matching the instrument DAOs): keeps the WHERE clause
+    // type() discriminator anchor (matching the instrument DAOs): keeps the WHERE clause
     // non-empty when deletedOption=INCLUDE makes the deleted fragment blank; redundant with the
     // discriminator Hibernate adds for the concrete entity
     Query<Long> countQueryBase =
@@ -71,7 +71,7 @@ public class SampleTemplateDaoHibernateImpl extends InventoryDaoHibernate<Sample
             .getCurrentSession()
             .createQuery(
                 "select count(s) from SampleTemplate s where "
-                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='SampleTemplate' ")
+                    + connectSqlConditionsWithAnd(deletedFragment, " type(s) = SampleTemplate ")
                     + ownedByAndPermittedItemsQueryFragment,
                 Long.class);
     Query<Long> countQueryWithParams =
@@ -86,8 +86,8 @@ public class SampleTemplateDaoHibernateImpl extends InventoryDaoHibernate<Sample
         sessionFactory
             .getCurrentSession()
             .createQuery(
-                "from SampleTemplate where "
-                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='SampleTemplate' ")
+                "from SampleTemplate s where "
+                    + connectSqlConditionsWithAnd(deletedFragment, " type(s) = SampleTemplate ")
                     + ownedByAndPermittedItemsQueryFragment
                     + orderByFragment,
                 SampleTemplate.class)
@@ -165,8 +165,8 @@ public class SampleTemplateDaoHibernateImpl extends InventoryDaoHibernate<Sample
   @Override
   public SampleTemplate saveAndReindexSubSamples(SampleTemplate sample) {
     Session ssnx = sessionFactory.getCurrentSession();
-    FullTextSession fssn = Search.getFullTextSession(ssnx);
-    sample.getSubSamples().forEach(fssn::index);
+    SearchSession searchSession = Search.session(ssnx);
+    sample.getSubSamples().forEach(searchSession.indexingPlan()::addOrUpdate);
     return save(sample);
   }
 

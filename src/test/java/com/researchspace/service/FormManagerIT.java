@@ -20,7 +20,7 @@ import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolationException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

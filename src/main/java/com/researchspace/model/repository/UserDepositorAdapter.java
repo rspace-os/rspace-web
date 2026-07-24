@@ -3,12 +3,12 @@ package com.researchspace.model.repository;
 import com.researchspace.model.User;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IDepositor;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
-import javax.validation.constraints.Size;
-import org.hibernate.validator.constraints.Email;
-import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  * Adapter to adapt a {@link User} to the {@link IDepositor} interface required for archive

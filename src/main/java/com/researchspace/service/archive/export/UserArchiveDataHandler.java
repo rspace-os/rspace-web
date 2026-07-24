@@ -7,9 +7,9 @@ import com.researchspace.core.util.XMLReadWriteUtils;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.service.archive.ExportImport;
+import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.IOException;
-import javax.xml.bind.JAXBException;
 
 /** Archive handler for exporting User and Group data */
 public class UserArchiveDataHandler extends AbstractDataHandler implements ArchiveDataHandler {

@@ -11,9 +11,9 @@
 <%@ attribute name="postURL" required="true" type="java.lang.String" %>
 <%@ attribute name="editStatus" required="false" type="com.researchspace.model.EditStatus" %>
 <%@ attribute name="itemType" required="false" type="java.lang.String" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
+<%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
 <script>
 function getFormName () {
 	return $('#documentName').find('.recordName').text();

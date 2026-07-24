@@ -51,12 +51,12 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -752,11 +752,11 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     incompleteLocation.setNewLocationRequest(true);
     incorrectUpdate.setId(savedImageContainer.getId());
     incorrectUpdate.getLocations().add(incompleteLocation);
-    IllegalArgumentException iae =
+    NullPointerException npe =
         assertThrows(
-            IllegalArgumentException.class,
+            NullPointerException.class,
             () -> containerApiMgr.updateApiContainer(incorrectUpdate, testUser));
-    assertEquals("The validated object is null", iae.getMessage());
+    assertEquals("The validated object is null", npe.getMessage());
 
     ApiContainer updatedImageContainer =
         containerApiMgr.getApiContainerById(savedImageContainer.getId(), testUser);
@@ -785,7 +785,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     ApiContainer storedContentUpdate = new ApiContainer();
     storedContentUpdate.setId(updatedImageContainer.getId());
     storedContentUpdate.setCanStoreContainers(false);
-    iae =
+    IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class,
             () -> containerApiMgr.updateApiContainer(storedContentUpdate, testUser));

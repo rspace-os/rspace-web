@@ -210,6 +210,9 @@ public class AuditManagerImpl implements AuditManager {
         if (doc.getThumbNail() != null) {
           doc.getThumbNail().getId();
         }
+        if (doc.getDocThumbnailFP() != null) {
+          doc.getDocThumbnailFP().getRoot();
+        }
       }
     }
     return auditedMedia;

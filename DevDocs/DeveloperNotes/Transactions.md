@@ -5,17 +5,24 @@ RSpace.
 
 ## Transaction declarations
 
-Transactions are declared using Spring AOP configuration to wrap all
+Transactions are normally declared using Spring AOP configuration to wrap all
 service classes matching the pointcut
 ```
 pointcut="execution(* *..service.**Manager.**(..))" '
 ```
 with a TransactionManager.
 
-So, when writing a new Service interface in `com.researchspace.service`, if it
-needs to be transactional, the name of the interface needs to end in 'Manager'.
+When writing a new service interface in `com.researchspace.service`, prefer the
+`Manager` suffix so it is covered by this pointcut automatically.
 
-This is set up in `src/main/resources/applicationContext-service.xml`.
+Some services do not fit the `Manager` naming pattern. These may declare their
+transaction boundary explicitly with Spring's `@Transactional` annotation.
+`TransactionAdviceStartupCheck` runs after application-context refresh and
+fails startup if an instantiated `@Transactional` service is missing transaction
+advice. This guard is important because beans created too early in the Spring
+lifecycle can otherwise miss annotation-driven advisors.
+
+Both mechanisms are set up in `src/main/resources/applicationContext-service.xml`.
 
 ### Transaction behaviour
 

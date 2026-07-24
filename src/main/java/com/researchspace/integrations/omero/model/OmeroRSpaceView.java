@@ -1,7 +1,7 @@
 package com.researchspace.integrations.omero.model;
 
+import jakarta.json.JsonObject;
 import java.util.List;
-import javax.json.JsonObject;
 
 public interface OmeroRSpaceView {
   Long getId();

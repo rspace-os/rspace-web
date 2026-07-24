@@ -1,5 +1,5 @@
 package com.researchspace.auth;
 
-import org.apache.shiro.cache.ehcache.EhCacheManager;
+import org.apache.shiro.cache.MemoryConstrainedCacheManager;
 
-public class TestEhCacheManager extends EhCacheManager {}
+public class TestEhCacheManager extends MemoryConstrainedCacheManager {}

@@ -3,11 +3,11 @@ package com.researchspace.api.v1.model;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static org.junit.Assert.*;
 
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import java.util.Collections;
 import org.junit.Test;
 
-public class SharePostValidatorTest extends JavaxValidatorTest {
+public class SharePostValidatorTest extends JakartaValidatorTest {
 
   @Test
   public void sharePostValidation() {

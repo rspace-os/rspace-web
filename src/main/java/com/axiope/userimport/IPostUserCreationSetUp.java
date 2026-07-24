@@ -1,7 +1,7 @@
 package com.axiope.userimport;
 
 import com.researchspace.model.User;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Interface to customize post-registration behaviour after manual or automated user registration.

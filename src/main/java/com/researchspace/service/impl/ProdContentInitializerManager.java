@@ -198,10 +198,16 @@ public class ProdContentInitializerManager extends AbstractContentInitializer
   void addZipImports(UserFolderSetup folders, User user) throws Exception {
     ImportArchiveReport report = addChemicalDataSheets(folders, user);
     for (EcatMediaFile emf : report.getImportedMedia()) {
-
+      // Re-fetch from session to ensure entity is managed (Hibernate 6 bulk queries can evict
+      // entities from the first-level cache, making imported EcatMediaFile instances detached).
+      BaseRecord managed = recordDao.get(emf.getId());
+      if (managed == null || managed.getParents().isEmpty()) {
+        log.warn("Could not find parents for imported media file {}, skipping move", emf.getId());
+        continue;
+      }
       int updated =
           recordDao.updateRecordToFolder(
-              emf.getParents().iterator().next(), folders.getMediaImgExamples().getId());
+              managed.getParents().iterator().next(), folders.getMediaImgExamples().getId());
       log.info(updated > 0 ? "Success" : "Failed");
     }
   }

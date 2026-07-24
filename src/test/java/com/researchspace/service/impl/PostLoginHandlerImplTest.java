@@ -15,8 +15,8 @@ import com.researchspace.service.PostAnyLoginAction;
 import com.researchspace.service.PostFirstLoginAction;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.TestFactory;
+import jakarta.servlet.http.HttpSession;
 import java.util.List;
-import javax.servlet.http.HttpSession;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.junit.Before;
@@ -80,6 +80,17 @@ public class PostLoginHandlerImplTest {
 
   private void assertNoContentInitIsInvoked() {
     verify(contentInit, never()).init(anyUser.getId());
+  }
+
+  @Test
+  public void afterInitActionsSkippedWhenUserAlreadyContentInitialised() {
+    setupAsFirstLogin();
+    anyUser.setContentInitialized(true);
+    TestAfterHelper afterHelper = createAfterHelper(AFTER_INIT_REDIRECT);
+    postLoginHandler.setPostFirstLoginActions(toList(afterHelper));
+    assertNull(postLoginHandler.handlePostLogin(anyUser, mockSession));
+    assertEquals(0, afterHelper.invocationCountSpy);
+    assertNoContentInitIsInvoked();
   }
 
   @Test

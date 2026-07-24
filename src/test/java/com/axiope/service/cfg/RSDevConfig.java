@@ -50,14 +50,15 @@ import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * Dev profile spring configuration for running tests <br>
  * Activate using property -Dspring.profiles.active=dev (which is active in Spring test classes)
  */
 @Configuration
-@EnableAsync
+// No @EnableAsync: the dev profile deliberately runs async work synchronously for
+// deterministic tests (every task executor below is a SyncTaskExecutor). Async proxying
+// itself is exercised by the contexts that load TestAppConfig/ProductionConfig.
 @Profile("dev")
 public class RSDevConfig extends BaseConfig {
 
@@ -185,7 +186,9 @@ public class RSDevConfig extends BaseConfig {
   }
 
   @Bean
-  @Override
+  // Disambiguates against the component-scanned @Service InternalFileStoreImpl so the
+  // temp-dir test file store wins injection.
+  @Primary
   public InternalFileStore internalFileStore() throws IOException {
     File tempDir = FileUtils.getTempDirectory();
     File root = new File(tempDir, "rs-test-fs");

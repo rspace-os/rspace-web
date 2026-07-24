@@ -219,7 +219,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError err = getErrorFromJsonResponseBody(addNewNoteResult, ApiError.class);
-    assertApiErrorContainsMessage(err, "empty");
+    assertApiErrorContainsMessage(err, "blank");
     assertEquals(b4Count, getCountOfEntityTable("SubSampleNote"));
 
     // happy case
@@ -719,7 +719,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
       throws Exception {
     return mockMvc
         .perform(
-            createBuilderForGet(API_VERSION.ONE, apiKey, "/subSamples/", anyUser)
+            createBuilderForGet(API_VERSION.ONE, apiKey, "/subSamples", anyUser)
                 .param("deletedItems", includeDeleted ? "INCLUDE" : null))
         .andExpect(status().is2xxSuccessful())
         .andReturn();
