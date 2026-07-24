@@ -20,5 +20,10 @@ public record ApiV2CurrentUser(
 
   public record Capabilities(boolean canUseInventory, boolean canPublish, boolean canViewSystem) {}
 
-  public record Session(boolean operatedAs, String lastSession) {}
+  public record Session(
+      boolean operatedAs,
+      String lastSession,
+      boolean canUseDevtools,
+      boolean canOverrideFeatureFlags,
+      boolean canChangeFeatureFlagBaselines) {}
 }

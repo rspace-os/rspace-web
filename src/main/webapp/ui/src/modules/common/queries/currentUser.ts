@@ -18,6 +18,9 @@ const CurrentUserCapabilitiesSchema = v.object({
 const CurrentUserSessionSchema = v.object({
   operatedAs: v.boolean(),
   lastSession: v.nullable(v.pipe(v.string(), v.isoTimestamp())),
+  canUseDevtools: v.boolean(),
+  canOverrideFeatureFlags: v.boolean(),
+  canChangeFeatureFlagBaselines: v.boolean(),
 });
 
 const CurrentUserResponseSchema = v.object({

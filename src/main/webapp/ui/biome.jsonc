@@ -55,6 +55,16 @@
   },
   "overrides": [
     {
+      "includes": ["src/featureFlags/FeatureFlagDevtools.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noJsxLiterals": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["src/components/PublicPages/IdentifierPublicPage.tsx"],
       "linter": {
         "rules": {

@@ -837,6 +837,7 @@ export default interface Resources {
       "save": "Save",
       "search": "Search",
       "select": "Select",
+      "set": "Set",
       "share": "Share",
       "sign": "Sign",
       "submit": "Submit",
@@ -963,6 +964,29 @@ export default interface Resources {
     },
     "errorBoundary": {
       "message": "Something went wrong! Please refresh the page. If this error persists, please contact <externalLink href=\"mailto:support@researchspace.com\">support@researchspace.com</externalLink> with details of when the issue happens."
+    },
+    "featureFlags": {
+      "baseline": {
+        "controlLabel": "{flagName} baseline",
+        "description": "The instance-wide value used when a user has no override. The properties file can force it and make the flag read-only.",
+        "helpLabel": "What is the baseline value?",
+        "label": "Baseline"
+      },
+      "columns": {
+        "myValue": "My Value",
+        "name": "Name",
+        "source": "Source"
+      },
+      "overrideLabel": "{flagName} override",
+      "reload": {
+        "action": "Reload page to apply changes"
+      },
+      "tableLabel": "Feature flags",
+      "values": {
+        "off": "Off",
+        "on": "On"
+      },
+      "warning": "Baseline changes affect every user. Changes made without RSpace support are not covered by RSpace support agreements."
     },
     "folderSelectionDialog": {
       "selectedFolder": "Selected folder",

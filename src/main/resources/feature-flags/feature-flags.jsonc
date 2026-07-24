@@ -1,0 +1,11 @@
+{
+  "flags": [
+    {
+      "name": "bookingEnabled",
+      "description": "Shows the Booking action in the application bar.",
+      "owner": "RSpace",
+      "expires": "2027-06-30",
+      "default": false
+    }
+  ]
+}

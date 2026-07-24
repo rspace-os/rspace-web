@@ -1,0 +1,45 @@
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <!-- MARK_RAN preserves dev databases created by the former runtime schema path. -->
+  <changeSet id="2026-06-30a" context="run" author="tchoi">
+    <preConditions onFail="MARK_RAN">
+      <not><tableExists tableName="FeatureFlagBaseline"/></not>
+    </preConditions>
+    <createTable tableName="FeatureFlagBaseline">
+      <column name="flag_name" type="VARCHAR(128)">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="enabled" type="BOOLEAN">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="2026-06-30b" context="run" author="tchoi">
+    <preConditions onFail="MARK_RAN">
+      <not><tableExists tableName="FeatureFlagUserOverride"/></not>
+    </preConditions>
+    <createTable tableName="FeatureFlagUserOverride">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="user_id" type="BIGINT">
+        <constraints nullable="false" foreignKeyName="fk_feature_flag_override_user"
+          references="User(id)"/>
+      </column>
+      <column name="flag_name" type="VARCHAR(128)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="enabled" type="BOOLEAN">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <addUniqueConstraint tableName="FeatureFlagUserOverride"
+      constraintName="uq_feature_flag_user_flag" columnNames="user_id,flag_name"/>
+  </changeSet>
+
+</databaseChangeLog>

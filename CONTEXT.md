@@ -37,3 +37,51 @@ resolved during design. This file is a glossary only — no implementation detai
 - **No-orchestration gap** — the period before Weblate is connected. While the
   product is English-only, this gap is invisible: every string falls back to its
   English default.
+
+## Platform Configuration
+
+Canonical terms for Feature Flags. Implementation and operational details live
+in `DevDocs/adr/0003-feature-flags.md`.
+
+**Feature Flag**:
+An internal boolean control for rollout, kill switches, and temporary changes.
+It is never an authorization, licensing, tenant-isolation, or secrecy boundary.
+_Avoid_: sysadmin setting, deployment property, app setting, toggle
+
+**Feature Flag Definition**:
+The manifest entry that declares a flag's identity and default state.
+_Avoid_: database row, property key, frontend constant
+
+**Feature Flag Manifest**:
+The checked-in JSONC source of Feature Flag Definitions, read directly at
+runtime and used to generate backend constants and frontend types.
+_Avoid_: Java enum, TypeScript constant list, database seed
+
+**Feature Flag Baseline**:
+The instance-wide value before a User Feature Flag Override is applied.
+Anonymous requests always receive this value.
+_Avoid_: global final value, deployment setting
+
+**User Feature Flag Override**:
+An explicitly stored per-user value that replaces the Feature Flag Baseline for
+that user. Without one, the baseline applies.
+_Avoid_: targeted rollout, group override, community override
+
+**Feature Flag Override Permission**:
+The capability to set one's own overrides. It applies to every Feature Flag,
+not selected flags.
+_Avoid_: special user, per-flag permission, sysadmin setting
+
+**Feature Flag State Map**:
+The API response containing each flag's evaluated value, baseline, source, and
+override availability.
+_Avoid_: requested flag subset, private flag list
+
+**Retired Feature Flag**:
+A flag removed from the manifest. Startup removes its stored baseline and user
+overrides.
+_Avoid_: deprecated flag, disabled forever, archived flag
+
+**Expired Feature Flag**:
+A flag whose `expires` date has passed. It fails CI validation but not startup.
+_Avoid_: runtime-failing flag, startup blocker
