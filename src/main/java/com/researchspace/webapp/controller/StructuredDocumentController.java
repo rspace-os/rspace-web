@@ -1294,8 +1294,7 @@ public class StructuredDocumentController extends BaseController {
     if (!isBlank(tagFilter)) {
       Validate.isTrue(
           tagFilter.length() <= MAX_TAG_LENGTH,
-          getText(
-              "errors.maxLength", new String[] {getText("label.tagFilter"), MAX_TAG_LENGTH + ""}));
+          getText("errors.maxLength", new Object[] {getText("label.tagFilter"), MAX_TAG_LENGTH}));
     }
     User user = userManager.getAuthenticatedUserInSession();
     return new AjaxReturnObject<>(
@@ -1311,8 +1310,7 @@ public class StructuredDocumentController extends BaseController {
     if (!isBlank(tagFilter)) {
       Validate.isTrue(
           tagFilter.length() <= MAX_TAG_LENGTH,
-          getText(
-              "errors.maxLength", new String[] {getText("label.tagFilter"), MAX_TAG_LENGTH + ""}));
+          getText("errors.maxLength", new Object[] {getText("label.tagFilter"), MAX_TAG_LENGTH}));
     }
     User user =
         userManager.getUserByUsername(

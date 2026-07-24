@@ -102,7 +102,7 @@ public class ExportControllerTest {
   private final String tooManyFailure =
       exportFailureMsg(
           messages.getMessage(
-              "errors.valueCount.tooMany", new Object[] {ExportController.maxIdsToProcess + ""}));
+              "errors.valueCount.tooMany", new Object[] {ExportController.maxIdsToProcess}));
 
   private String exportFailureMsg(String detail) {
     return messages.getMessage(

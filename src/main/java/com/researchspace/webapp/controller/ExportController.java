@@ -435,8 +435,7 @@ public class ExportController extends BaseController {
         if (exportSelection.getExportTypes().length > maxIdsToProcess
             || exportSelection.getExportIds().length > maxIdsToProcess
             || exportSelection.getExportNames().length > maxIdsToProcess) {
-          errorBuffer.append(
-              getText("errors.valueCount.tooMany", new String[] {maxIdsToProcess + ""}));
+          errorBuffer.append(getText("errors.valueCount.tooMany", new Object[] {maxIdsToProcess}));
           return true;
         }
         break;

@@ -423,7 +423,7 @@ public class UserProfileController extends BaseController {
               ERRORS_MAXLENGTH,
               new Object[] {
                 new DefaultMessageSourceResolvable("label.affiliation"),
-                "" + Organisation.MAX_INDEXABLE_UTF_LENGTH
+                Organisation.MAX_INDEXABLE_UTF_LENGTH
               },
               null);
         }

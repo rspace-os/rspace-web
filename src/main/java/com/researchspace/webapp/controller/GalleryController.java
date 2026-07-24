@@ -467,7 +467,8 @@ public class GalleryController extends BaseController {
 
   private AjaxReturnObject<Boolean> generateTooManyItemsFailureMsg() {
     return new AjaxReturnObject<>(
-        null, ErrorList.of(getText("errors.valueCount.tooMany", MAX_IDS_TO_PROCESS + "")));
+        null,
+        ErrorList.of(getText("errors.valueCount.tooMany", new Object[] {MAX_IDS_TO_PROCESS})));
   }
 
   private void doMove(User user, Folder target, Long id) {

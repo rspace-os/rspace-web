@@ -191,7 +191,7 @@ public class UserValidator implements Validator {
           "email",
           ERRORS_MAXLENGTH_KEY,
           new Object[] {
-            new DefaultMessageSourceResolvable("label.email"), User.DEFAULT_MAXFIELD_LEN + ""
+            new DefaultMessageSourceResolvable("label.email"), User.DEFAULT_MAXFIELD_LEN
           });
     }
 
@@ -253,9 +253,7 @@ public class UserValidator implements Validator {
           errors,
           "password",
           ERRORS_MAXLENGTH_KEY,
-          new Object[] {
-            new DefaultMessageSourceResolvable("label.password"), User.MAX_PWD_LENGTH + ""
-          });
+          new Object[] {new DefaultMessageSourceResolvable("label.password"), User.MAX_PWD_LENGTH});
     }
     if (!passwordHasValidCharacters(password)) {
       return addToErrorsAndGetMessage(
@@ -361,7 +359,7 @@ public class UserValidator implements Validator {
             "errors.maxLength",
             new Object[] {
               new DefaultMessageSourceResolvable("label.affiliation"),
-              "" + Organisation.MAX_INDEXABLE_UTF_LENGTH
+              Organisation.MAX_INDEXABLE_UTF_LENGTH
             });
       }
     }

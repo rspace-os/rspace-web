@@ -90,8 +90,7 @@ public class SVGMathController extends BaseController {
     if (latex.length() > RSMath.LATEX_COLUMN_SIZE) {
       msg =
           getText(
-              "errors.maxLength",
-              new Object[] {getText("label.latex"), RSMath.LATEX_COLUMN_SIZE + ""});
+              "errors.maxLength", new Object[] {getText("label.latex"), RSMath.LATEX_COLUMN_SIZE});
       throw new IllegalArgumentException(msg);
     }
     msg = validateSVGXML(svg, msg);
