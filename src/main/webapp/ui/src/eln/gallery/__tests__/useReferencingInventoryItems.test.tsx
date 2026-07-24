@@ -7,6 +7,7 @@ vi.mock("@/common/axios", () => ({
   default: { get: mockAxiosGet },
 }));
 
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import useReferencingInventoryItems from "../useReferencingInventoryItems";
 
 type Row = Record<string, unknown>;
@@ -177,7 +178,8 @@ describe("useReferencingInventoryItems", () => {
     expect(result.current.items).toHaveLength(0);
   });
 
-  it("surfaces an error message when a request fails", async () => {
+  it("surfaces an error message when the links request fails", async () => {
+    const restoreConsole = silenceConsole(["error"], [/.*/]);
     mockAxiosGet.mockRejectedValue(new Error("boom"));
 
     const { result } = renderHook(() => useReferencingInventoryItems("GL5"));
@@ -185,11 +187,86 @@ describe("useReferencingInventoryItems", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.errorMessage).toContain("gallery:referencingInventoryItems.loadFailed");
     expect(result.current.items).toHaveLength(0);
+    restoreConsole();
+  });
+
+  it("renders links when only the attachments endpoint fails", async () => {
+    // a failing attachments lookup is a supplementary back-reference; it must not blank the links
+    // that loaded fine, so the section degrades to links-only with no error
+    const restoreConsole = silenceConsole(["error"], [/.*/]);
+    mockAxiosGet.mockImplementation((url: string) => {
+      if (url.includes("getAttachingInventoryItems")) {
+        return Promise.reject(new Error("attachments 500"));
+      }
+      return Promise.resolve({
+        data: {
+          referencingItems: [
+            { sourceGlobalId: "SA1", sourceName: "Linked sample", sourceType: "SAMPLE", relationType: "IsPartOf" },
+          ],
+        },
+      });
+    });
+
+    const { result } = renderHook(() => useReferencingInventoryItems("GL5"));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.errorMessage).toBeNull();
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].globalId).toBe("SA1");
+    restoreConsole();
+  });
+
+  it("drops a row missing a required field rather than failing the whole payload", async () => {
+    // the two endpoints' payloads are merged; one malformed row must not blank the grid
+    mockEndpoints({
+      links: [
+        { sourceGlobalId: "SA1", sourceName: "Good row", sourceType: "SAMPLE", relationType: "IsPartOf" },
+        { sourceGlobalId: "SA2", sourceType: "SAMPLE", relationType: "IsPartOf" }, // missing sourceName
+      ],
+    });
+
+    const { result } = renderHook(() => useReferencingInventoryItems("GL5"));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].globalId).toBe("SA1");
+  });
+
+  it("ignores a stale response after the global id changes", async () => {
+    // clicking between gallery files must not let an earlier in-flight response overwrite the
+    // current target's rows
+    const deferred: Array<(v: unknown) => void> = [];
+    mockAxiosGet.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          deferred.push(resolve);
+        }),
+    );
+
+    const initialProps: { id: string } = { id: "SD1" };
+    const { result, rerender } = renderHook(({ id }: { id: string }) => useReferencingInventoryItems(id), {
+      initialProps,
+    });
+    // SD1 and SD2 are non-gallery, so each fires exactly one (links) request
+    await waitFor(() => expect(deferred).toHaveLength(1));
+    rerender({ id: "SD2" });
+    await waitFor(() => expect(deferred).toHaveLength(2));
+
+    // resolve the current target (SD2) first, then the stale SD1 request
+    deferred[1]({
+      data: { referencingItems: [{ sourceGlobalId: "SA2", sourceName: "current", sourceType: "SAMPLE" }] },
+    });
+    deferred[0]({ data: { referencingItems: [{ sourceGlobalId: "SA1", sourceName: "stale", sourceType: "SAMPLE" }] } });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.items[0].globalId).toBe("SA2");
   });
 
   it("clears a stale error when the global id becomes null", async () => {
     // a failure for one record must not leave its error showing once the hook
     // is pointed at no record at all (the early-return path)
+    const restoreConsole = silenceConsole(["error"], [/.*/]);
     mockAxiosGet.mockRejectedValue(new Error("boom"));
 
     const initialProps: { id: string | null } = { id: "GL5" };
@@ -204,5 +281,6 @@ describe("useReferencingInventoryItems", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.errorMessage).toBeNull();
     expect(result.current.items).toHaveLength(0);
+    restoreConsole();
   });
 });

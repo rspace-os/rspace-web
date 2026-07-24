@@ -20,9 +20,10 @@ public interface InventoryFileDao extends GenericDao<InventoryFile, Long> {
   List<InventoryFile> findByMediaFileId(Long mediaFileId);
 
   /**
-   * The sample/template attachment fields holding a live (non-deleted) attachment of the given
-   * Gallery media file. Used to resolve field-level attachments back to their owning item, which
-   * the attachment's own {@code getInventoryRecord()} cannot reach.
+   * The live (non-deleted) sample/template attachment fields holding a live (non-deleted)
+   * attachment of the given Gallery media file. Used to resolve field-level attachments back to
+   * their owning item, which the attachment's own {@code getInventoryRecord()} cannot reach. Both
+   * flags are checked because deleting a field does not soft-delete its {@code InventoryFile}.
    *
    * @param mediaFileId the db id of the Gallery {@code EcatMediaFile}
    */

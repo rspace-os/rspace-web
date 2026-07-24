@@ -21,11 +21,10 @@ import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.InventoryRecord.InventoryRecordType;
 import com.researchspace.model.inventory.field.InventoryAttachmentField;
-import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.service.inventory.LinkTargetResolver;
 import java.util.Collections;
 import java.util.List;
-import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,7 +43,7 @@ class InventoryFileApiManagerImplAttachingTest {
 
   @Mock private InventoryFileDao inventoryFileDao;
   @Mock private InventoryPermissionUtils invPermissions;
-  @Mock private BaseRecordManager baseRecordManager;
+  @Mock private LinkTargetResolver linkTargetResolver;
   @InjectMocks private InventoryFileApiManagerImpl manager;
 
   private User actor;
@@ -52,8 +51,9 @@ class InventoryFileApiManagerImplAttachingTest {
   @BeforeEach
   void setUp() {
     actor = new User("viewer");
-    // most tests exercise the source query, so the target read-gate is open by default (a mock
-    // retrieveMediaFile returns null without throwing); the gate tests override this
+    // most tests exercise the source query, so the target read-gate is open by default; the gate
+    // test overrides this
+    lenient().when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
     lenient()
         .when(inventoryFileDao.findByMediaFileId(anyLong()))
         .thenReturn(Collections.emptyList());
@@ -182,10 +182,11 @@ class InventoryFileApiManagerImplAttachingTest {
   }
 
   @Test
-  void rejectsTargetTheCallerCannotRead() {
-    // same not-found as a missing file, so the response never confirms the file exists
-    when(baseRecordManager.retrieveMediaFile(any(), any()))
-        .thenThrow(new AuthorizationException("no read"));
+  void rejectsTargetThatIsNotAReadableGalleryFile() {
+    // the resolver returns false for an unreadable, missing, or wrong-type (non-media) target; all
+    // collapse to the same not-found so the response never confirms the file exists, and the source
+    // queries never run
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
 
     assertThrows(ApiRuntimeException.class, () -> manager.findAttachingItems("GL5", actor));
     verify(inventoryFileDao, never()).findByMediaFileId(anyLong());

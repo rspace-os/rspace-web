@@ -39,11 +39,15 @@ public class InventoryFileDaoHibernate extends GenericDaoHibernate<InventoryFile
 
   @Override
   public List<InventoryAttachmentField> findAttachmentFieldsByMediaFileId(Long mediaFileId) {
+    // both the attachment and its owning field must be live: deleting a field only flips the
+    // field's flag, leaving its InventoryFile non-deleted, so filtering the file alone would
+    // surface a stale back-reference. Mirrors the field-soft-delete filter the link queries use.
     return sessionFactory
         .getCurrentSession()
         .createQuery(
             "select af from InventoryAttachmentField af join af.files f"
-                + " where f.mediaFile.id = :mediaFileId and f.deleted = false",
+                + " where f.mediaFile.id = :mediaFileId and f.deleted = false"
+                + " and af.deleted = false",
             InventoryAttachmentField.class)
         .setParameter("mediaFileId", mediaFileId)
         .list();

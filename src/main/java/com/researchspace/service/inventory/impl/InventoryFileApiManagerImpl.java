@@ -27,6 +27,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.InventoryRecordRetriever;
+import com.researchspace.service.inventory.LinkTargetResolver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -40,7 +41,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 @Service("inventoryFileApiManager")
@@ -57,6 +57,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
   private @Autowired MessageSourceUtils messages;
   private @Autowired IRecordFactory recordFactory;
   private @Autowired BaseRecordManager baseRecordManager;
+  private @Autowired LinkTargetResolver linkTargetResolver;
 
   @Autowired
   @Qualifier("compositeFileStore")
@@ -77,10 +78,11 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
     GlobalIdentifier target = parseGalleryTargetOrThrow(galleryFileGlobalId);
     // read-gate: the caller must be able to READ the target Gallery file. Unreadable, missing,
     // malformed and non-Gallery ids all raise the same not-found so the endpoint never discloses a
-    // file's existence or its inbound attachments (ADR-0002).
-    try {
-      baseRecordManager.retrieveMediaFile(actor, target.getDbId());
-    } catch (AuthorizationException | IllegalStateException | DataAccessException e) {
+    // file's existence or its inbound attachments (ADR-0002). Resolve through the shared
+    // LinkTargetResolver (as the sibling links endpoint does): it is collision-safe for the GL/
+    // FL/SD id space and returns false rather than throwing when the id resolves to a non-media
+    // record, so a crafted GL<non-media-id> cannot become an existence oracle via a 500.
+    if (!linkTargetResolver.targetExistsAndIsReadable(target, actor)) {
       throw new ApiRuntimeException(
           "errors.inventory.field.link.targetNotFound", galleryFileGlobalId);
     }

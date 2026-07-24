@@ -41,50 +41,59 @@ export default function useReferencingInventoryItems(globalId: string | null): {
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const { t } = useTranslation(["gallery", "common", "inventory"]);
 
-  const fetchReferencingItems = React.useCallback(async (): Promise<void> => {
-    if (!globalId) {
-      setItems([]);
-      setErrorMessage(null);
-      setLoading(false);
-      return;
-    }
-    setItems([]);
-    setLoading(true);
-    setErrorMessage(null);
-    try {
-      const itemFallbackLabel = t("common:recordTypes.item.singular");
-      const isGalleryFile = globalId.startsWith(GALLERY_FILE_PREFIX);
-      const requests: Array<Promise<unknown>> = [
-        axios
-          .get<unknown>(`/workspace/getReferencingInventoryItems/${encodeURIComponent(globalId)}`)
-          .then((r) => r.data),
-      ];
-      if (isGalleryFile) {
-        requests.push(
-          axios
-            .get<unknown>(`/workspace/getAttachingInventoryItems/${encodeURIComponent(globalId)}`)
-            .then((r) => r.data),
-        );
-      }
-      const [linksBody, attachmentsBody] = await Promise.all(requests);
-      const rows = parseRows(linksBody, null, itemFallbackLabel);
-      if (isGalleryFile) {
-        // attachments carry no DataCite relation type, so their Relation column shows a fixed label
-        const attachmentLabel = t("inventory:fields.link.relatedInventoryItems.attachment");
-        rows.push(...parseRows(attachmentsBody, attachmentLabel, itemFallbackLabel));
-      }
-      setItems(rows);
-    } catch (e) {
-      console.error(e);
-      setErrorMessage(t("referencingInventoryItems.loadFailed"));
-    } finally {
-      setLoading(false);
-    }
-  }, [globalId, t]);
-
   React.useEffect(() => {
+    // guard against a stale in-flight response overwriting a newer target's rows, and against
+    // setState after unmount (matches the InfoPanel convention in this module)
+    let cancelled = false;
+    const fetchReferencingItems = async (): Promise<void> => {
+      if (!globalId) {
+        setItems([]);
+        setErrorMessage(null);
+        setLoading(false);
+        return;
+      }
+      setItems([]);
+      setLoading(true);
+      setErrorMessage(null);
+      try {
+        const itemFallbackLabel = t("common:recordTypes.item.singular");
+        const isGalleryFile = globalId.startsWith(GALLERY_FILE_PREFIX);
+        const linksBody = axios
+          .get<unknown>(`/workspace/getReferencingInventoryItems/${encodeURIComponent(globalId)}`)
+          .then((r) => r.data);
+        // a failed attachments lookup must not blank the links that loaded fine: degrade to
+        // links-only by resolving the attachments half to an empty payload on error
+        const attachmentsBody: Promise<unknown> = isGalleryFile
+          ? axios
+              .get<unknown>(`/workspace/getAttachingInventoryItems/${encodeURIComponent(globalId)}`)
+              .then((r) => r.data)
+              .catch((e: unknown) => {
+                console.error(e);
+                return { referencingItems: [] };
+              })
+          : Promise.resolve({ referencingItems: [] });
+        const [links, attachments] = await Promise.all([linksBody, attachmentsBody]);
+        if (cancelled) return;
+        const rows = parseRows(links, null, itemFallbackLabel);
+        if (isGalleryFile) {
+          // attachments carry no DataCite relation type, so their Relation column shows a fixed label
+          const attachmentLabel = t("inventory:fields.link.relatedInventoryItems.attachment");
+          rows.push(...parseRows(attachments, attachmentLabel, itemFallbackLabel));
+        }
+        setItems(rows);
+      } catch (e) {
+        if (cancelled) return;
+        console.error(e);
+        setErrorMessage(t("referencingInventoryItems.loadFailed"));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
     void fetchReferencingItems();
-  }, [fetchReferencingItems]);
+    return () => {
+      cancelled = true;
+    };
+  }, [globalId, t]);
 
   return { items, loading, errorMessage };
 }
