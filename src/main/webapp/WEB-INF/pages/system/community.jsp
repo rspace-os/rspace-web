@@ -48,7 +48,7 @@
     <div id="propertyView">
         <h2>
             <span id="displayName" class="editableProperty">${community.displayName}</span>
-            <span style="font-size: initial">(created: <fmt:formatDate type="date" value="${community.creationDate}" />)</span>
+            <span style="font-size: initial">(<spring:message code="community.createdLabel"/>: <fmt:formatDate type="date" value="${community.creationDate}" />)</span>
         </h2>
         <h3><spring:message code="community.profileHeading" /></h3>
         <span id="profileText" class="editableProperty"> <c:choose>

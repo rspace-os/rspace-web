@@ -55,12 +55,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<InstrumentEntity>
     implements InstrumentEntityApiManager {
 
@@ -956,6 +958,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     try {
       return inventoryEntityFieldDao.getParentInventoryEntityFromFieldId(fieldId);
     } catch (NotFoundException nfe) {
+      log.warn("Could not find the parent inventory entity for field {}", fieldId, nfe);
       throw new NotFoundException(
           messages.getMessage("errors.inventory.field.notFound", new Object[] {fieldId}));
     }

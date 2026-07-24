@@ -570,6 +570,7 @@
     },
     "textField": {
       "documentEditorAriaLabel": "Document editor",
+      "hiddenInputAriaLabel": "Hidden input",
       "insertFileToGalleryAriaLabel": "Insert file to Gallery from local computer",
       "insertMediaAriaLabel": "Insert media from your device",
       "openJupyterNotebooks": "Open Jupyter Notebook(s)"
@@ -925,6 +926,7 @@
       "inconsistentSharingStatus": "The folder you're browsing seems to have inconsistent sharing status. Please contact your System Admin, citing folder ID: {0}. More details at {1}",
       "notMediaRecord": "Not a media record"
     },
+    "selectRecordAriaLabel": "Select record",
     "export": {
       "failureMessage": "Your export [{0}] failed for the following reason: {1}",
       "groupPermissionDenied": "Only PIs or LabAdmins with view-all permission can export a group.",

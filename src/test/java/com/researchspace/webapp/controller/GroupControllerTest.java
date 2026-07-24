@@ -87,7 +87,10 @@ public class GroupControllerTest {
     assertNotNull(response.getError());
     assertEquals(
         messages.getMessage(
-            "errors.maxLength", new Object[] {Organisation.MAX_INDEXABLE_UTF_LENGTH}),
+            "errors.maxLength",
+            new Object[] {
+              messages.getMessage("label.name"), Organisation.MAX_INDEXABLE_UTF_LENGTH
+            }),
         response.getError().getAllErrorMessagesAsStringsSeparatedBy(""));
     Mockito.verifyZeroInteractions(publisher);
     verify(grpMgr, never()).saveGroup(group, false, userPI);

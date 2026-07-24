@@ -7,7 +7,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>About RSpace</title>
+    <title><spring:message code="about:title"/></title>
     <rst:viteClient />
     <rst:bundle bundle="about" />
     <style>
@@ -22,8 +22,7 @@
   </head>
 
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript><spring:message code="common:javascriptRequired"/></noscript>
     <div id="about-page"></div>
   </body>
 </html>
-

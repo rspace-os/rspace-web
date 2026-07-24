@@ -7,7 +7,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>RSpace Inventory</title>
+    <title><spring:message code="inventory:pageTitle"/></title>
     <rst:viteClient />
     <rst:bundle bundle="inventoryEntry" />
     <style>
@@ -22,8 +22,7 @@
   </head>
 
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript><spring:message code="common:javascriptRequired"/></noscript>
     <div id="app"></div>
   </body>
 </html>
-

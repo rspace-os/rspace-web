@@ -34,7 +34,9 @@ const MoveAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, MoveAc
       [() => invalidTypeSelected(), t("contextMenu.move.templatesCannotBeMoved")],
       [
         () => selectedResults.some((r) => !r.canEdit),
-        `You do not have permission to move ${selectedResults.length > 1 ? "these items" : "this item"}.`,
+        t("contextMenu.move.noPermission", {
+          count: selectedResults.length,
+        }),
       ],
       [() => true, ""],
     ])();

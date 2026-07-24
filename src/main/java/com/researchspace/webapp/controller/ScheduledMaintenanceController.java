@@ -85,21 +85,23 @@ public class ScheduledMaintenanceController extends BaseController {
   @ResponseBody
   public Long createScheduledMaintenance(
       @Valid @RequestBody ScheduledMaintenance newMaintenance, BindingResult errors) {
-    handleInvalidRequest(errors, "Creating new maintenance failed");
+    handleInvalidRequest(errors, "system.maintenance.errors.create");
     User user = userManager.getAuthenticatedUserInSession();
     ScheduledMaintenance savedMaintenance =
         maintenanceManager.saveScheduledMaintenance(newMaintenance, user);
     return savedMaintenance.getId();
   }
 
-  private void handleInvalidRequest(BindingResult errors, String messagePart) {
+  private void handleInvalidRequest(BindingResult errors, String messageKey) {
     if (errors.hasErrors()) {
       ErrorList el = new ErrorList();
       inputValidator.populateErrorList(errors, el);
       throw new IllegalArgumentException(
           getText(
               "errors.operation.failed.message",
-              new String[] {messagePart, ListFormatUtils.formatList(el.getErrorMessages())}));
+              new String[] {
+                getText(messageKey), ListFormatUtils.formatList(el.getErrorMessages())
+              }));
     }
   }
 
@@ -107,7 +109,7 @@ public class ScheduledMaintenanceController extends BaseController {
   @ResponseBody
   public String updateScheduledMaintenance(
       @Valid @RequestBody ScheduledMaintenance updatedMaintenance, BindingResult errors) {
-    handleInvalidRequest(errors, "Updating new maintenance failed");
+    handleInvalidRequest(errors, "system.maintenance.errors.update");
     User user = userManager.getAuthenticatedUserInSession();
     maintenanceManager.saveScheduledMaintenance(updatedMaintenance, user);
     return OK_RESPONSE;

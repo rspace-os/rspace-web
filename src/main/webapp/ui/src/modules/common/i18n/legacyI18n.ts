@@ -46,9 +46,5 @@ export function formatIcuMessage(pattern: string, args: PrimitiveType[]): string
   return formatter.format(values) as string;
 }
 
-export function formatLegacyList(items: Array<string | number>, languageTag = locale): string {
-  return formatLocalizedList(items, languageTag);
-}
-
 legacyWindow.RS.formatIcuMessage = formatIcuMessage;
-legacyWindow.RS.formatList = (items) => formatLegacyList(items);
+legacyWindow.RS.formatList = (items) => formatLocalizedList(items, locale);

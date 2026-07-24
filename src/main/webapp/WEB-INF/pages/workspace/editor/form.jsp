@@ -15,14 +15,14 @@
 </head>
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
 <jsp:include page="formMustacheTemplates.html" />
-<p style="visibility:hidden;">Text</p>
+<p style="visibility:hidden;"></p>
 
 <axt:toolbar hideSearch="true">
 	<jsp:attribute name="menu">
 		<div class="container-fluid toolbar-small">
 			<ul class="nav navbar-nav" style="float:right;"> 
 	      <li>
-					<img id="iconImgSrc" src="/image/getIconImage/${template.iconId}" alt="Icon Image" height="32" width="32"  style='display:inline'/>
+					<img id="iconImgSrc" src="/image/getIconImage/${template.iconId}" alt="<spring:message code='dialogs.createFromForm.iconAlt'/>" height="32" width="32"  style='display:inline'/>
 				</li>
 			</ul>
 
@@ -164,7 +164,7 @@
 					<tr>
 						<td><label for="fieldEditorSelect"><spring:message code="form.editor.fieldTypeLabel"/></label></td>
 						<td><select name="fieldType" id="fieldEditorSelect">
-								<option><spring:message code="form.create.fieldTypeSelect" /></option>
+								<option value=""><spring:message code="form.create.fieldTypeSelect" /></option>
 								<c:forEach var="fieldKey" items="${fieldKeys}">
 									<option>${fieldKey}</option>
 								</c:forEach>

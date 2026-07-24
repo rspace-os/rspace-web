@@ -155,7 +155,7 @@ public class RSFormApiHandlerImpl implements RSFormApiHandler {
     if (!img.isPresent()) {
       throw new IllegalArgumentException(
           messages.getMessage(
-              "inventory.errors.icon.imageParseFailure",
+              "errors.inventory.icon.imageParseFailure",
               new Object[] {file.getOriginalFilename()}));
     }
     String suffix = getExtension(file.getOriginalFilename());

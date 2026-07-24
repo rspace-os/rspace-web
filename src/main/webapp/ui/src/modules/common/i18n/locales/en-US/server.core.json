@@ -21,9 +21,6 @@
       }
     }
   },
-  "date": {
-    "format": "yyyy-MM-dd"
-  },
   "errors": {
     "form": {
       "invalidFieldIds": "At least one ID in the incoming form fields does not exist in form [{0}]. Persisted field form IDs are [{1}]; supplied IDs are [{2}]."
@@ -269,6 +266,11 @@
   "requestType": {
     "passwordReminder": "password reminder",
     "usernameReminder": "username reminder"
+  },
+  "relativeDate": {
+    "daysAgo": "{0, plural, one {# day ago at {1}} other {# days ago at {1}}}",
+    "today": "Today at {0}",
+    "yesterday": "Yesterday at {0}"
   },
   "resourceType": {
     "community": "Community",

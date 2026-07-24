@@ -49,6 +49,7 @@
     },
     "more": "More...",
     "signup": {
+      "label": "Sign up",
       "with": {
         "google": "Or sign up with Google"
       }
@@ -84,7 +85,8 @@
       "usernameRequired": "Please specify a username."
     },
     "heading": "Log in",
-    "title": "Log in"
+    "title": "Log in",
+    "welcomeHeading": "Welcome to RSpace"
   },
   "logo": {
     "alt": "RSpace logo"
@@ -120,7 +122,8 @@
   },
   "publishIsDisabled": {
     "disabledNotice": "Sorry - Admin has disabled all public documents.",
-    "heading": "Public Documents are disabled"
+    "heading": "Public Documents are disabled",
+    "recordLabel": "Publication disabled"
   },
   "remindUsernameEmailSent": {
     "sentNotice": "Your username has been sent to {0}.",
@@ -159,7 +162,8 @@
     "newPasswordLabel": "New {0}",
     "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
     "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
-    "submitButton": "Reset"
+    "submitButton": "Reset",
+    "title": "Reset {0}"
   },
   "resetPasswordComplete": {
     "loginPasswordNotice": "You can now <a href=\"/workspace\">login</a> with your new password.",

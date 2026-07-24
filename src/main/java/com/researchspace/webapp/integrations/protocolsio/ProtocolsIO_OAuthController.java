@@ -146,7 +146,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
               .appName("Protocols.io")
-              .errorMsg("Exception during token exchange")
+              .errorMsg(getText("apps.oauth.errors.tokenExchange"))
               .errorDetails(e.getResponseBodyAsString())
               .build();
       ConnectionResultPage.addError(
@@ -224,14 +224,16 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
                 " General error refreshing token for {}:{}",
                 subject.getName(),
                 err.getErrorMessage());
-            return new ResponseEntity<String>("General error ", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<String>(
+                getText("apps.oauth.errors.general"), HttpStatus.INTERNAL_SERVER_ERROR);
         }
       }
       log.warn(
           " General error refreshing token for {}: {}",
           subject.getName(),
           e.getResponseBodyAsString());
-      return new ResponseEntity<String>("Unknown error", HttpStatus.INTERNAL_SERVER_ERROR);
+      return new ResponseEntity<String>(
+          getText("apps.oauth.errors.unknown"), HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

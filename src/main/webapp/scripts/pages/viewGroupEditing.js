@@ -68,32 +68,32 @@ $(document).ready(function () {
   $(document).ready(function(){
   	$('#setNewPiDialog').dialog({
   		autoOpen:false,
-  		title: RS.msg("legacyjs.groupEditing.changePiDialogTitle"),
+		title: RS.msg("legacyjs.groupEditing.changePiDialogTitle"),
   		modal: true,
   		buttons :{
-  			[RS.msg("legacyjs.common.cancel")]: function () {
+			[RS.msg("legacyjs.common.cancel")]: function () {
   				$(this).dialog('close');
   			},
-  			[RS.msg("legacyjs.groupEditing.submit")]: function () {
+			[RS.msg("legacyjs.groupEditing.submit")]: function () {
   				var newPiId = $("input[name='setNewPi']:checked").val();
   				if(!newPiId) {
-  					apprise(RS.msg("legacyjs.groupEditing.pleaseSelectNewPi"));
+					apprise(RS.msg("legacyjs.groupEditing.pleaseSelectNewPi"));
             // RSPAC-1287 can't give focus to the apprise dialog
             RS.focusAppriseDialog(true);
   					return;
   				}
-  				RS.blockPage(RS.msg("legacyjs.groupEditing.changingPi"), false);
+				RS.blockPage(RS.msg("legacyjs.groupEditing.changingPi"), false);
   				var jqxhr = $.post("/groups/ajax/admin/swapPi/" + groupId, {newPiId:newPiId}, function(resp) {
   					if (resp.data) {
   						RS.unblockPage();
-  						RS.confirm(RS.msg("legacyjs.groupEditing.piChangedReloading"));
+						RS.confirm(RS.msg("legacyjs.groupEditing.piChangedReloading"));
   						window.location = "/groups/view/" + groupId;
   					} else {
   						apprise(RS.getValidationErrorString(resp.errorMsg));
   					}
   				});
   				jqxhr.fail (function (xhr) {
-  			        RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionChangingPi"), true, jqxhr);
+			        RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionChangingPi"), true, jqxhr);
   			    });
   			}
   		 },
@@ -153,7 +153,7 @@ $(document).ready(function () {
     function setUpchangeRoleDialog(){
       $(document).ready(function() {
         $('#changeRoleDialog').dialog({
-       		title: RS.msg("legacyjs.groupEditing.changeUserRoleDialogTitle"),
+		title: RS.msg("legacyjs.groupEditing.changeUserRoleDialogTitle"),
        		resizable: true,
        		autoOpen: false,
        		height:350,
@@ -173,10 +173,10 @@ $(document).ready(function () {
      				}
        		},
      		  buttons: {
-         		[RS.msg("legacyjs.common.cancel")]: function (){
+		[RS.msg("legacyjs.common.cancel")]: function (){
          			$(this).dialog('close');
          		},
-         		[RS.msg("legacyjs.common.ok")]: function (){
+		[RS.msg("legacyjs.common.ok")]: function (){
       				var groupId = $(this).data("groupId");
      				  var userid = $(this).data("userid");
          			var newRole = $('input[name=role]:checked').val();
@@ -186,20 +186,20 @@ $(document).ready(function () {
          			var jqxhr = $.post("/groups/ajax/admin/changeRole/"+groupId+"/"+userid, data, function (data){
        					if(data.data) {
        						console.log("UPDATED!!!" + data.data);
-       						RS.confirm(
-       							RS.msg(
-       								"legacyjs.groupEditing.roleUpdatedTo",
-       								data.data.roleText,
-       								data.data.isAuthorized
-       							)
-       						);
+						RS.confirm(
+							RS.msg(
+								"legacyjs.groupEditing.roleUpdatedTo",
+								data.data.roleText,
+								data.data.isAuthorized
+							)
+						);
        						window.location="/groups/view/" +groupId;
        					} else {
        						apprise(getValidationErrorString(data.errorMsg));
        				  }
          			});
          			jqxhr.fail (function (xhr) {
-         				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionUpdatingRoles"), false, jqxhr);
+				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionUpdatingRoles"), false, jqxhr);
          			})
          			$(this).dialog('close');
      			  }
@@ -257,7 +257,7 @@ $(document).ready(function () {
 
       $('#inviteNewMembersDlg').dialog({
       	autoOpen: false,
-      	title: RS.msg("legacyjs.groupEditing.inviteNewMembersDialogTitle"),
+	title: RS.msg("legacyjs.groupEditing.inviteNewMembersDialogTitle"),
       	modal: true,
       	height: 400,
       	width: 400,
@@ -270,10 +270,10 @@ $(document).ready(function () {
       		$("#nonExistingUsersTag").tagit("removeAll");
       	},
       	buttons :{
-      		[RS.msg("legacyjs.common.cancel")]: function (){
+		[RS.msg("legacyjs.common.cancel")]: function (){
       			$(this).dialog('close');
       		},
-      		[RS.msg("legacyjs.groupEditing.invite")]: function (){
+		[RS.msg("legacyjs.groupEditing.invite")]: function (){
 
       			var url = "/cloud/inviteCloudUser";
       			var existingArr = $("#existingUsersTag").tagit("assignedTags");
@@ -281,7 +281,7 @@ $(document).ready(function () {
       			var emails = [].concat(nonExistingArr, existingArr);
 
       			if(!emails.length) {
-      				RS.confirm(RS.msg("legacyjs.groupEditing.noEmailFoundForInvitation"), "notice", 3000);
+				RS.confirm(RS.msg("legacyjs.groupEditing.noEmailFoundForInvitation"), "notice", 3000);
       				return false;
       			}
 
@@ -297,15 +297,15 @@ $(document).ready(function () {
       					$.each(data, function(index, obj) {
       						emails += "<li>"+obj+"</li>";
       					});
-      					var s = RS.msg("legacyjs.groupEditing.invitedPeopleList", emails);
+					var s = RS.msg("legacyjs.groupEditing.invitedPeopleList", emails);
       					RS.confirmAndNavigateTo(s, "notice", 2000, "/groups/view/"+groupId);
       				} else {
-      					RS.confirm(RS.msg("legacyjs.groupEditing.checkEmailAddresses"), "notice", 3000);
+					RS.confirm(RS.msg("legacyjs.groupEditing.checkEmailAddresses"), "notice", 3000);
       				}
       			});
 
       			jqxhr.fail (function (xhr) {
-        				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionInvitingNewUsers"), false, jqxhr);
+				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionInvitingNewUsers"), false, jqxhr);
         			});
       		 }
       	 }, //end buttons
@@ -345,27 +345,27 @@ $(document).ready(function () {
 function  setUpLeaveGroupDialog () {
 	$('#removeMeFromGrp').dialog({
 		autoOpen: false,
-	  	title: RS.msg("legacyjs.groupEditing.confirmLeaveGroupTitle"),
+		title: RS.msg("legacyjs.groupEditing.confirmLeaveGroupTitle"),
 	  	modal: true,
 	  	buttons: {
-	  		[RS.msg("legacyjs.common.cancel")]: function (){
+			[RS.msg("legacyjs.common.cancel")]: function (){
 	  			$(this).dialog('close');
 	  		},
-	  		[RS.msg("legacyjs.groupEditing.leaveGroup")]: function () {
+			[RS.msg("legacyjs.groupEditing.leaveGroup")]: function () {
 	  			$(this).dialog('close');
 	  			var jxqr = $.post("/groups/admin/removeSelf/" + groupId,  function(result) {
       				var data = result.data;
       				if(data == true) {
-      					RS.confirmAndNavigateTo(RS.msg("legacyjs.groupEditing.leftGroup"), "notice", 3000, "/groups/view/"+groupId);
+					RS.confirmAndNavigateTo(RS.msg("legacyjs.groupEditing.leftGroup"), "notice", 3000, "/groups/view/"+groupId);
       				}else if(data == false) {
-      					RS.confirm(RS.msg("legacyjs.groupEditing.leftPrivateGroup"), "notice", 6000, "/groups/view/"+groupId);
+					RS.confirm(RS.msg("legacyjs.groupEditing.leftPrivateGroup"), "notice", 6000, "/groups/view/"+groupId);
       				} else {
       					apprise(getValidationErrorString(result.errorMsg));
       				}
       			});
 
       			jxqr.fail (function (xhr) {
-      				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionLeavingGroup"), false, xhr);
+				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionLeavingGroup"), false, xhr);
         		});
 	  		}
 	  	}
@@ -429,7 +429,7 @@ function initInviteNewMembersDlg(){
 	        });
 
 	        if(isAutocompleteList === false){
-	        	RS.confirm(RS.msg("legacyjs.common.selectExistingUserEmail"), "notice", 2000);
+		RS.confirm(RS.msg("legacyjs.common.selectExistingUserEmail"), "notice", 2000);
 	        	return false;
 	        }
 	    },
@@ -450,7 +450,7 @@ function initInviteNewMembersDlg(){
 	    beforeTagAdded: function(event, ui) {
 	        console.log("beforeTagAdded \t"+ui.tagLabel);
 	        if(! validateEmail(ui.tagLabel)) {
-	        	RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", 1000);
+		RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", 1000);
 	        	return false;
 	        }
 	    },

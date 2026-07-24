@@ -160,7 +160,7 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       return CONNECTED_VIEW;
     } catch (Exception ex) {
       log.error("Couldn't complete the token request on DMP Assistant", ex);
-      error.errorMsg("Error during token creation");
+      error.errorMsg(getText("apps.oauth.errors.tokenCreation"));
       error.errorDetails(ex.getMessage());
       ConnectionResultPage.addError(
           model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());
@@ -196,7 +196,7 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       return CONNECTED_VIEW;
     } catch (Exception e) {
       log.error("Error while refreshing DMP Assistant token: {}", e.getMessage());
-      error.errorMsg("Error during token refresh");
+      error.errorMsg(getText("apps.oauth.errors.tokenRefresh"));
       error.errorDetails(e.getMessage());
       ConnectionResultPage.addError(
           model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());

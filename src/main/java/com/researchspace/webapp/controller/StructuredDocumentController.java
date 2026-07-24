@@ -462,9 +462,9 @@ public class StructuredDocumentController extends BaseController {
   public String validateNewRecordName(String newName) {
     String message = null;
     if (StringUtils.isBlank(newName)) {
-      message = getText("errors.required", "Name");
+      message = getText("errors.required", getText("label.name"));
     } else if (newName.contains("/")) {
-      message = getText("errors.invalidChars", new Object[] {"/", "name"});
+      message = getText("errors.invalidChars", new Object[] {"/", getText("label.nameLowercase")});
     }
     return message;
   }

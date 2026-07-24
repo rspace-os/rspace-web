@@ -44,26 +44,26 @@
 
   <%-- BEGIN: navigation --%>
   <div id="browser-warning" class="bootstrap-custom-flat">
-    <h4>Browser upgrade recommended to use RSpace</h4>
-    <p>It looks like you are using a Microsoft browser - sorry, we don't support either Internet Explorer or Edge. Some RSpace features will not work properly with these browsers.</p>
-    <p>We <strong>do</strong> fully support Chrome, Firefox and Safari. You can use the links below to install one of these browsers if you don't already have it.</p>
+    <h4><spring:message code="signup.browserWarning.heading"/></h4>
+    <p><spring:message code="signup.browserWarning.notice1"/></p>
+    <p><spring:message code="signup.browserWarning.notice2"/></p>
     <div class="row">
       <a href="https://www.google.co.uk/chrome/" target="_blank" rel="noopener">
         <div class="col-md-4 browser-container">
-          <img src="/images/icons/chrome-icon.png" alt="Icon by Martin Leblanc"><br />
-          Chrome
+          <img src="/images/icons/chrome-icon.png" alt="<spring:message code='signup.browserWarning.iconAlt'/>"><br />
+          <spring:message code="signup.browserWarning.chrome"/>
         </div>
       </a>
       <a href="https://www.mozilla.org/en-GB/firefox/" target="_blank" rel="noopener">
         <div class="col-md-4 browser-container">
-          <img src="/images/icons/firefox-icon.png" alt="Icon by Martin Leblanc"><br />
-          Firefox
+          <img src="/images/icons/firefox-icon.png" alt="<spring:message code='signup.browserWarning.iconAlt'/>"><br />
+          <spring:message code="signup.browserWarning.firefox"/>
         </div>
       </a>
       <a href="https://www.apple.com/uk/safari/" target="_blank" rel="noopener">
         <div class="col-md-4 browser-container">
-          <img src="/images/icons/safari-icon.png" alt="Icon by Martin Leblanc"><br />
-          Safari
+          <img src="/images/icons/safari-icon.png" alt="<spring:message code='signup.browserWarning.iconAlt'/>"><br />
+          <spring:message code="signup.browserWarning.safari"/>
         </div>
       </a>
     </div>
@@ -74,7 +74,7 @@
   <%-- BEGIN: login form --%>
   <div class="rs-sign-in-form bootstrap-custom-flat">
     <div class="rs-sign-in-form__head ">
-      <span>Welcome to RSpace</span>
+      <span><spring:message code="login.welcomeHeading"/></span>
     </div>
 
 
@@ -88,7 +88,7 @@
       <fieldset>
 
         <div class="form-group col-lg-12 rs-field rs-field--input">
-          <input id="username" type="text" name="username" placeholder="User" required="required" autofocus
+          <input id="username" type="text" name="username" placeholder="<spring:message code='adminLogin.usernamePlaceholder'/>" required="required" autofocus
                   class="form-control rs-field__input
                         <c:if test='${requestScope.shiroLoginFailure != null}'>
                         rs-field__input--invalid
@@ -97,7 +97,7 @@
           <div class="rs-field__icon glyphicon glyphicon-user"></div>
 
           <div class="rs-tooltip resetUsernameDiv">
-              <a href='<c:url value="public/requestUsernameReminder"/>' tabindex="1"> Forgotten your username?</a>
+              <a href='<c:url value="public/requestUsernameReminder"/>' tabindex="1"><spring:message code="requestUsernameReminder.heading"/></a>
           </div>
         </div>
 
@@ -108,7 +108,7 @@
 
           <input type="hidden" id="timezone_field" name="timezone" />
 
-          <input id="password" type="password" name="password" placeholder="Password" required="required"
+          <input id="password" type="password" name="password" placeholder="<spring:message code='adminLogin.passwordPlaceholder'/>" required="required"
                  class="form-control rs-field__input
                         <c:if test='${requestScope.shiroLoginFailure != null}'>
                         rs-field__input--invalid
@@ -119,7 +119,7 @@
 
           <%-- BEGIN: tooltips --%>
           <div class="rs-tooltip resetPasswordDiv">
-            <a href='<c:url value="public/requestPasswordReset" />'tabindex="2"> Forgotten your password?</a>
+            <a href='<c:url value="public/requestPasswordReset" />'tabindex="2"><spring:message code="requestPasswordReset.heading"/></a>
           </div>
 
           <c:if test="${requestScope.shiroLoginFailure != null}">

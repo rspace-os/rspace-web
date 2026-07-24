@@ -6,6 +6,7 @@ import com.box.sdk.BoxFile.Info;
 import com.box.sdk.BoxFileVersion;
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
@@ -20,6 +21,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -42,12 +44,8 @@ public class BoxController {
   protected static final String API_OTHER_ERROR = "API_OTHER_ERROR";
   protected static final String API_NO_VERSION_HISTORY = "API_NO_VERSION_HISTORY";
 
-  protected static final String AUTHORIZATION_ERROR_MSG = "Authorization problem";
-  protected static final String DOWNLOAD_ERROR_MSG =
-      "A problem occured when trying to download the file from Box. "
-          + "Please close this window and try again.";
-
   private Logger log = LoggerFactory.getLogger(BoxController.class);
+  private @Autowired MessageSourceUtils messages;
 
   @Value("${box.client.id}")
   private String clientId;
@@ -178,7 +176,7 @@ public class BoxController {
     }
 
     if (stream.size() == 0) {
-      response.getWriter().print(DOWNLOAD_ERROR_MSG);
+      response.getWriter().print(messages.getMessage("apps.box.errors.download"));
       resetBoxApiConnection(session);
       return;
     }
@@ -227,8 +225,10 @@ public class BoxController {
       log.warn("error on creating Box connection", bae);
       OauthAuthorizationError error =
           getAuthErrorBuilder()
-              .errorMsg("Box API exception: " + bae.getResponseCode())
-              .errorDetails(AUTHORIZATION_ERROR_MSG)
+              .errorMsg(
+                  messages.getMessage(
+                      "apps.box.errors.apiException", new Object[] {bae.getResponseCode()}))
+              .errorDetails(messages.getMessage("apps.box.errors.authorization"))
               .build();
       model.addAttribute("error", error);
       return "connect/authorizationError";

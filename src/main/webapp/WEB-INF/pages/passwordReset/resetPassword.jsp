@@ -2,7 +2,7 @@
 <%@ page import="com.researchspace.webapp.controller.PasswordType" %>
 
 <head>
-    <title>Reset ${passwordType.toString()}</title>
+    <title><spring:message code="resetPassword.title" arguments="${passwordType.toString()}"/></title>
 </head>
 <div class="container" style="max-width:960px;padding:0 5% 0 5%;">
     <div class="row">

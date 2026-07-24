@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import useOauthToken from "../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import type { InventoryRecord } from "../stores/definitions/InventoryRecord";
@@ -25,7 +26,7 @@ function getErrorMessage(error: unknown): Result<string> {
     .flatMap(Parsers.isString)
     .orElseTry(() =>
       Parsers.isObject(error).flatMap((e) =>
-        e instanceof Error ? Result.Ok(e.message) : Result.Error([new Error("Unknown error")]),
+        e instanceof Error ? Result.Ok(e.message) : Result.Error([new Error(i18n.t("common:apiErrors.unknown"))]),
       ),
     );
 }
@@ -127,7 +128,7 @@ export function useIdentifiers(): {
                   } catch (e) {
                     console.error(e);
                     if (!(e instanceof Error)) {
-                      return Result.Error<Identifier>([new Error("Unknown error")]);
+                      return Result.Error<Identifier>([new Error(i18n.t("common:apiErrors.unknown"))]);
                     }
                     return Result.Error<Identifier>([e]);
                   }

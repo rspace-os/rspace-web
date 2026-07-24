@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
 <head>
-  <title>Insert from Clustermarket</title>
+  <title><spring:message code="apps.dialogTitles.clustermarket"/></title>
   <rst:viteClient />
   <script src="<rst:assetUrl value='/scripts/bower_components/jquery/dist/jquery.min.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/bower_components/jquery-ui/jquery-ui.min.js'/>"></script>
@@ -20,4 +20,3 @@
 </div>
 </body>
 </html>
-

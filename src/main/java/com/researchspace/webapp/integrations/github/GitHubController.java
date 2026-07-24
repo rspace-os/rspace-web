@@ -228,7 +228,8 @@ public class GitHubController {
       log.error("GitHub access denied", e);
       OauthAuthorizationError error =
           getAuthorizationBuilder()
-              .errorMsg("GitHub access denied")
+              .errorMsg(
+                  messages.getMessage("apps.oauth.errors.accessDenied", new Object[] {"GitHub"}))
               .errorDetails(e.getMessage())
               .build();
       ConnectionResultPage.addError(
@@ -238,7 +239,7 @@ public class GitHubController {
       log.error("Exception during GitHub token exchange", e);
       OauthAuthorizationError error =
           getAuthorizationBuilder()
-              .errorMsg("Exception during token exchange")
+              .errorMsg(messages.getMessage("apps.oauth.errors.tokenExchange"))
               .errorDetails(e.getMessage())
               .build();
       ConnectionResultPage.addError(
@@ -252,7 +253,7 @@ public class GitHubController {
       log.error("Getting GitHub repositories list failed", e);
       OauthAuthorizationError error =
           getAuthorizationBuilder()
-              .errorMsg("Getting repositories list failed")
+              .errorMsg(messages.getMessage("apps.oauth.errors.repositoryList"))
               .errorDetails(e.getMessage())
               .build();
       ConnectionResultPage.addError(

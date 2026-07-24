@@ -51,7 +51,7 @@ Reusable tag for incorporating a notifications section into a page.
 						  ${notification.notificationMessage}
 						</c:when>
 									<c:otherwise>
-							 <rst:notificationTypeLabel notificationType="${notification.notificationType}" var="notificationTypeLabel"/>
+							 <spring:message code="${rst:notificationTypeMessageKey(notification.notificationType)}" var="notificationTypeLabel"/>
 							 <spring:message code="notifications.generatedEvent" arguments="${notification.originator.username},${notificationTypeLabel}"/>
 						</c:otherwise>
 								</c:choose>

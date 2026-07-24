@@ -70,7 +70,7 @@
           >
             ${field.fieldData}
           </textarea>
-          <input type="hidden" name="fieldId" value="${field.id}" aria-label="Hidden input" />
+          <input type="hidden" name="fieldId" value="${field.id}" aria-label="<spring:message code='form.textField.hiddenInputAriaLabel'/>" />
         </td>
       </tr>   
     </table>

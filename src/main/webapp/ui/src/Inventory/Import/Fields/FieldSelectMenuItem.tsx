@@ -14,12 +14,6 @@ type FieldSelectMenuItemArgs = {
   value?: string | null; // unused here, but required by the parent MUI Select component
 };
 
-const label = (field: (typeof Fields)[keyof typeof Fields]): string =>
-  match<(typeof Fields)[keyof typeof Fields], string>([
-    [(f) => f === Fields.custom, "Custom Field (Various Types)"],
-    [() => true, toTitleCase(Symbol.keyFor(field) ?? "")],
-  ])(field);
-
 const FieldSelectMenuItem = React.forwardRef<HTMLLIElement, FieldSelectMenuItemArgs>(
   ({ field, currentField, typeIsCompatibleWithField, onClick }: FieldSelectMenuItemArgs, ref) => {
     const { t } = useTranslation("inventory");
@@ -29,6 +23,8 @@ const FieldSelectMenuItem = React.forwardRef<HTMLLIElement, FieldSelectMenuItemA
     const customIsChosen = field === Fields.custom;
     const compatibleType = customIsChosen || typeIsCompatibleWithField;
     const disabled = !customIsChosen && ((fieldIsChosen && !fieldIsChosenHere) || !compatibleType);
+    const label =
+      field === Fields.custom ? t("import.fieldSelect.customField") : toTitleCase(Symbol.keyFor(field) ?? "");
     const helpText = match<void, string>([
       [() => fieldIsChosenHere, ""],
       [() => customIsChosen, ""],
@@ -39,7 +35,7 @@ const FieldSelectMenuItem = React.forwardRef<HTMLLIElement, FieldSelectMenuItemA
 
     return (
       <MenuItem disabled={disabled} ref={ref} onClick={onClick}>
-        <ListItemText primary={label(field)} secondary={helpText} sx={{ marginTop: "2px", marginBottom: "2px" }} />
+        <ListItemText primary={label} secondary={helpText} sx={{ marginTop: "2px", marginBottom: "2px" }} />
       </MenuItem>
     );
   },

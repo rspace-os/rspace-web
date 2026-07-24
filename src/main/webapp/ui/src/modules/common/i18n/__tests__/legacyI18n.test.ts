@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatIcuMessage, formatLegacyList, selectLegacyCatalogue } from "../legacyI18n";
+import { formatIcuMessage, selectLegacyCatalogue } from "../legacyI18n";
 import legacyMessages from "../locales/en-US/server.legacyJs.json";
 
 describe("legacy ICU messages", () => {
@@ -25,10 +25,6 @@ describe("legacy ICU messages", () => {
     expect(formatIcuMessage(message, ["publication", "full", 1, 0, ""])).toBe(
       "Publication was unsuccessful. Maybe the document is already published?",
     );
-  });
-
-  test("formats natural-language lists", () => {
-    expect(formatLegacyList(["Ada", "Grace", "Linus"], "en-US")).toBe("Ada, Grace, and Linus");
   });
 
   test("selects the catalogue matching the deployment locale", () => {

@@ -188,7 +188,9 @@
     "title": "Leave the editor?"
   },
   "enhancedTableHead": {
-    "selectAllLabel": "select/deselect all"
+    "selectAllLabel": "select/deselect all",
+    "sortedAscending": "sorted ascending",
+    "sortedDescending": "sorted descending"
   },
   "errorBoundary": {
     "message": "Something went wrong! Please refresh the page. If this error persists, please contact <externalLink href=\"mailto:support@researchspace.com\">support@researchspace.com</externalLink> with details of when the issue happens."
@@ -357,6 +359,7 @@
     "tryAgainLater": "There is a problem, please try again later",
     "unknownRelogin": "Unknown issue, please attempt to relogin to RSpace."
   },
+  "javascriptRequired": "You need to enable JavaScript to run this app.",
   "ketcher": {
     "discardChangesDialog": {
       "discard": "Discard",
@@ -686,6 +689,7 @@
     "thisItem": "this {itemType, select, snippet {snippet} other {document}}",
     "titleMultiple": "Share {count, plural, one {# {itemType, select, snippet {snippet} other {document}}} other {# {itemType, select, snippet {snippets} other {documents}}}}",
     "titleSingle": "Share <strong>{name}</strong>",
+    "unknownFolder": "Unknown folder",
     "updatedSuccessfully": "Shares updated successfully."
   },
   "stoichiometry": {

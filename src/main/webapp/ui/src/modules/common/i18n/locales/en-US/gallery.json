@@ -88,6 +88,29 @@
     "renamePrompt": "Please give a new name for {name}.",
     "saveAsNewImage": "Save as new image",
     "uploadNewVersion": "Upload New Version",
+    "validation": {
+      "cannotDownloadFolders": "Cannot download folders.",
+      "cannotDownloadSnippets": "Cannot download snippets.",
+      "cannotEdit": "Cannot edit this item.",
+      "cannotLogOut": "Cannot log out of this item.",
+      "currentFolderUnknown": "Current folder is not known.",
+      "deleteLimit": "Cannot delete more than 50 items at once.",
+      "duplicateLimit": "Cannot duplicate more than 50 items at once.",
+      "exportLimit": "Cannot export more than 100 items at once.",
+      "loadingUser": "Loading user information...",
+      "missingGlobalId": "Cannot share snippets that are missing global IDs.",
+      "moveLimit": "Cannot move more than 50 items at once.",
+      "noFilesSelected": "No files selected.",
+      "nothingSelected": "Nothing selected.",
+      "onlyOneLogout": "Only one item may be logged out of at once.",
+      "onlyOneNewVersion": "Only one item may be updated with a new version at once.",
+      "onlyOneRename": "Only one item may be renamed at once.",
+      "onlyOwnerCanShare": "Only owners of the snippet can change its share settings.",
+      "onlySnippetsShareable": "Only snippets can be shared.",
+      "selectSnippet": "At least one snippet must be selected.",
+      "tooManyItems": "Too many items selected.",
+      "userLoadFailed": "Unable to load user information. Sharing is temporarily unavailable."
+    },
     "view": "View"
   },
   "addFilestoreDialog": {
@@ -181,6 +204,7 @@
       "unknown": "Unknown"
     }
   },
+  "insertFileFailed": "Could not insert file \"{fileName}\"",
   "irods": {
     "errors": {
       "authenticationFailed": "Authentication failed",
@@ -412,5 +436,6 @@
     "shiftSelectionUnsupportedMessage": "Either use command/ctrl to select each in turn, or use grid view.",
     "shiftSelectionUnsupportedTitle": "Shift selection is not supported in tree view."
   },
+  "unknownError": "",
   "unknownOwner": "Unknown owner"
 }

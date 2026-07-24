@@ -226,6 +226,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       assertDeletable(target.audit(), user);
       client.deleteByKey(target.objectKey());
     } catch (UnsupportedOperationException e) {
+      log.warn("Filestore {} does not support deleting {}", filestoreId, path, e);
       throw new UnsupportedOperationException(
           messages.getMessage("netFileStores.write.delete.unsupportedBackend"));
     } catch (IOException e) {
@@ -245,6 +246,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     try {
       client = resolveWritableClient(user, filestore, null, errors);
     } catch (UnsupportedOperationException | BindException e) {
+      log.warn("Could not resolve audit metadata client for filestore {}", filestoreId, e);
       // unsupported backend, or missing per-user credentials: no RSpace metadata to read
       return FilestoreAuditMetadata.from(null);
     }
@@ -324,6 +326,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     try {
       return toFilestoreRelative(filestore, client.moveWithin(absoluteSource, absoluteDestFolder));
     } catch (UnsupportedOperationException e) {
+      log.warn("Filestore {} does not support moving {}", filestoreId, sourcePath, e);
       throw new UnsupportedOperationException(
           messages.getMessage("netFileStores.write.move.unsupportedBackend"));
     } catch (IOException e) {

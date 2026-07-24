@@ -32,7 +32,9 @@ const PrintBarcodeAction: ComponentType<PrintBarcodeActionArgs> = forwardRef<
     ],
     [
       () => selectedResults.some((r) => !r.canRead),
-      `You do not have permission to print ${selectedResults.length > 1 ? "these items" : "this item"}.`,
+      t("contextMenu.printBarcode.noPermission", {
+        count: selectedResults.length,
+      }),
     ],
     [() => searchStore.activeResultIsBeingEdited, t("contextMenu.printBarcode.recordBeingEdited")],
     [() => true, ""],

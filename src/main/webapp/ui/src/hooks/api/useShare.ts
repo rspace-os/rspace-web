@@ -122,7 +122,7 @@ export default function useShare(): {
           message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
-      throw new Error("Could not fetch sharing information", {
+      throw new Error(t("apiErrors.share.fetchFailed"), {
         cause: e,
       });
     }
@@ -176,7 +176,7 @@ export default function useShare(): {
           message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
-      throw new Error("Could not fetch sharing information for multiple items", {
+      throw new Error(t("apiErrors.share.fetchFailed"), {
         cause: e,
       });
     }
@@ -219,7 +219,7 @@ export default function useShare(): {
           message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
-      throw new Error("Could not create share", {
+      throw new Error(t("apiErrors.share.createFailed"), {
         cause: e,
       });
     }
@@ -245,7 +245,7 @@ export default function useShare(): {
           message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
-      throw new Error("Could not update share", {
+      throw new Error(t("apiErrors.share.updateFailed"), {
         cause: e,
       });
     }
@@ -266,7 +266,7 @@ export default function useShare(): {
           message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
-      throw new Error("Could not delete share", {
+      throw new Error(t("apiErrors.share.deleteFailed"), {
         cause: e,
       });
     }

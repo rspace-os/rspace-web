@@ -1,12 +1,14 @@
 package com.axiope.webapp.taglib;
 
-import static java.lang.String.format;
 import static org.joda.time.format.DateTimeFormat.shortTime;
 
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.session.SessionAttributeUtils;
 import java.io.IOException;
 import java.util.Date;
 import java.util.TimeZone;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.TagSupport;
@@ -16,6 +18,8 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
 /**
  * Formats a date for UI display to show 'Today at time', 'Yesterday at time' . Note since 1.54, if
@@ -25,6 +29,8 @@ public class RelativeDateTag extends TagSupport {
 
   private static final Logger LOG = LoggerFactory.getLogger(RelativeDateTag.class.getName());
   private static final long serialVersionUID = -8491659018947980799L;
+  private static final MessageSourceUtils DEFAULT_MESSAGES =
+      new MessageSourceUtils(new JsonMessageSource());
 
   private Date input;
 
@@ -74,28 +80,35 @@ public class RelativeDateTag extends TagSupport {
     }
 
     if (inputDt.toLocalDate().isEqual(nowDate.toLocalDate())) {
-      DateTimeFormatter df = shortTime();
-      return "Today at " + df.print(inputDt);
+      return getMessage("relativeDate.today", shortTime().print(inputDt));
     }
 
     DateTime yesterday = nowDate.dayOfYear().addToCopy(-1);
     if (inputDt.dayOfYear().get() == yesterday.dayOfYear().get()
         && inputDt.year().get() == yesterday.year().get()) {
-      DateTimeFormatter df = shortTime();
-      return "Yesterday at " + df.print(inputDt);
+      return getMessage("relativeDate.yesterday", shortTime().print(inputDt));
     }
 
     if (inputDt.dayOfYear().getDifference(nowDate) * -1 < relativeForNDays) {
-      String rc =
-          format(
-              "%d days ago at %s",
-              inputDt.dayOfYear().getDifference(nowDate) * -1, shortTime().print(inputDt));
-      return rc;
+      int daysAgo = inputDt.dayOfYear().getDifference(nowDate) * -1;
+      return getMessage("relativeDate.daysAgo", daysAgo, shortTime().print(inputDt));
     } else {
       DateTimeFormatter df = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm");
 
       return df.print(inputDt);
     }
+  }
+
+  private String getMessage(String key, Object... args) {
+    if (pageContext == null) {
+      return DEFAULT_MESSAGES.getMessage(key, args);
+    }
+    HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+    WebApplicationContext context =
+        RequestContextUtils.findWebApplicationContext(request, pageContext.getServletContext());
+    return context
+        .getBean(MessageSourceUtils.class)
+        .getMessage(key, args, RequestContextUtils.getLocale(request));
   }
 
   /**

@@ -123,7 +123,11 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
       const exists = await checkLinkTargetExists(nextLink.targetGlobalId);
       setCheckingTarget(false);
       if (!exists) {
-        setTargetExistenceError(`${nextLink.targetGlobalId} does not exist, or you do not have permission to view it.`);
+        setTargetExistenceError(
+          t("fields.extraFields.link.targetNotFound", {
+            globalId: nextLink.targetGlobalId,
+          }),
+        );
         return;
       }
     }
@@ -188,13 +192,13 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
         onRelationTypeChange={(value) => setStagedRelationType(value)}
         relationOptions={relationOptions}
         relationFreeSolo={false}
-        relationLabel="Relationship type"
+        relationLabel={t("fields.extraFields.fields.relationType")}
         targetGlobalId={stagedTargetGlobalId}
         onTargetChange={(globalId) => setStagedTarget(globalId)}
         targetError={Boolean(targetExistenceError) || !targetValidity.ok}
         targetHelperText={
           targetExistenceError ??
-          (!targetValidity.ok ? targetValidity.reason : "Paste a Global ID, or use the Browse buttons above.")
+          (!targetValidity.ok ? targetValidity.reason : t("fields.extraFields.link.targetHelper"))
         }
         validationMessage={validationMessage}
         versionPin={stagedVersionPin}

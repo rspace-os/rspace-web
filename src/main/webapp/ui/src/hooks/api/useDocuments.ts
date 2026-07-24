@@ -55,7 +55,7 @@ export default function useDocuments(): {
           message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
-      throw new Error("Could not move document", {
+      throw new Error(t("apiErrors.documents.moveFailed"), {
         cause: e,
       });
     }

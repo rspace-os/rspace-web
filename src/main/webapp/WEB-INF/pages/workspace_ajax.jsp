@@ -91,7 +91,7 @@
                                     id="chk_${record.id}"
                                     class="record_checkbox"
                                     type="checkbox"
-                                    aria-label="Select record"
+                                    aria-label="<spring:message code='workspace.selectRecordAriaLabel'/>"
                             />
                             <input  id="type_${record.id}"
                                     value="${record.type}"
@@ -252,4 +252,3 @@
     <axt:paginate_new paginationList="${paginationList}" omitATagLinkId="true"></axt:paginate_new>
     <axt:numRecords></axt:numRecords>
 </div>
-

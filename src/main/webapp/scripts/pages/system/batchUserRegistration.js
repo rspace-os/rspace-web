@@ -280,7 +280,7 @@ $(document).ready(function() {
         addBatchCreationHandlers(jqxhr);
         RS.blockingProgressBar.show({
         	progressType:"rs-userBatchRegistration",
-        	msg: RS.msg("legacyjs.system.batchUserRegistration.startingUserCreation")} );
+	msg: RS.msg("legacyjs.system.batchUserRegistration.startingUserCreation")} );
     });
     
     function getDataFromBatchTables() {

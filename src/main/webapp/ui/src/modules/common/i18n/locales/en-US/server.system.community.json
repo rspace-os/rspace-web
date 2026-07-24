@@ -28,6 +28,7 @@
     "choose": {
       "label": "Please choose a community"
     },
+    "createdLabel": "created",
     "communities": {
       "title": "Communities"
     },

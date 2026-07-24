@@ -1,5 +1,10 @@
 {
   "errorPage": {
+    "details": {
+      "messageLabel": "Message",
+      "occurredAtLabel": "At",
+      "referenceIdLabel": "With ID"
+    },
     "explanation": {
       "message": "Sorry, but RSpace has encountered a problem, which has been logged. If this problem persists, please contact the ResearchSpace development team for assistance."
     },
@@ -327,6 +332,12 @@
       "integrationEnabledMessage": "LDAP integration is enabled.",
       "sidVerificationEnabledMessage": "SID Verification is enabled."
     },
+    "maintenance": {
+      "errors": {
+        "create": "Creating new maintenance failed",
+        "update": "Updating maintenance failed"
+      }
+    },
     "netFileSystem": {
       "add": {
         "header": "Add File System:"
@@ -557,6 +568,9 @@
       "folder": {
         "deletedUsers": "Deleted Users"
       }
+    },
+    "users": {
+      "accountAlreadyUnlocked": "Account is already unlocked"
     }
   }
 }

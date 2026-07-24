@@ -52,7 +52,7 @@ $(document).ready(function() {
     	$(this).closest(".auditRow").appendTo('#storedRowSet');
     });
     $(document).on('click', '.downloadAudit', function(e) {
-    	RS.blockPage(RS.msg("legacyjs.audit.queryingAuditTable"));
+	RS.blockPage(RS.msg("legacyjs.audit.queryingAuditTable"));
     	e.preventDefault();
         resetSort();
 		if ($(this).hasClass('action')) {
@@ -182,17 +182,17 @@ function _convertAuditTrailResults (xhr){
      		var desc = "";
      		if(resultObj.exported) { // is an archive operation
      		  if(resultObj.configuration) {
-     			desc = RS.msg(
-    			  "legacyjs.audit.itemsExportedWithConfiguration",
-    			  resultObj.exported.length,
-    			  resultObj.configuration.exportScope,
-    			  resultObj.configuration.archiveType
-    			);
+			desc = RS.msg(
+			  "legacyjs.audit.itemsExportedWithConfiguration",
+			  resultObj.exported.length,
+			  resultObj.configuration.exportScope,
+			  resultObj.configuration.archiveType
+			);
 		  } else {
-     			desc = RS.msg("legacyjs.audit.itemsExported", resultObj.exported.length);
+			desc = RS.msg("legacyjs.audit.itemsExported", resultObj.exported.length);
      		  }
      		} else if (resultObj.scope) {
-     			desc = RS.msg("legacyjs.audit.itemsExportedAs", resultObj.scope, resultObj.format);
+			desc = RS.msg("legacyjs.audit.itemsExportedAs", resultObj.scope, resultObj.format);
      		}
      		result.event.description = desc; 
      	}
@@ -200,13 +200,13 @@ function _convertAuditTrailResults (xhr){
      		var resultObj = result.data.data.data;
      		var desc = result.data.description;
      		if (!desc) {
-     		    desc = RS.msg(
-    		      "legacyjs.audit.movedFromTo",
-    		      resultObj.from.data.name,
-    		      resultObj.from.data.id,
-    		      resultObj.to.data.name,
-    		      resultObj.to.data.id
-    		    );
+		    desc = RS.msg(
+		      "legacyjs.audit.movedFromTo",
+		      resultObj.from.data.name,
+		      resultObj.from.data.id,
+		      resultObj.to.data.name,
+		      resultObj.to.data.id
+		    );
      		}
      		result.event.description = desc; 
      	}

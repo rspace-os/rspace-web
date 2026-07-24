@@ -114,7 +114,7 @@ function FilesystemSelectionStep(props: {
                       url: string;
                       canRead: boolean;
                       clientType: string;
-                    }>([e instanceof Error ? e : new Error("Unknown error")]);
+                    }>([e instanceof Error ? e : new Error(t("unknownError"))]);
                   }
                 }),
             ),

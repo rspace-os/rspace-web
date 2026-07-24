@@ -32,7 +32,9 @@ const ExportAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Expo
       [() => disabled !== "", disabled],
       [
         () => selectedResults.some((r) => !r.canRead),
-        `You do not have permission to export ${selectedResults.length > 1 ? "these items" : "this item"}.`,
+        t("contextMenu.export.noPermission", {
+          count: selectedResults.length,
+        }),
       ],
       [() => true, ""],
     ])();

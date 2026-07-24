@@ -96,6 +96,7 @@ public class BaseApiController implements ServletContextAware {
         pgCrit.setOrderBy(apiPgCrit.getSort().getOrderBy());
         pgCrit.setSortOrder(apiPgCrit.getSort().getSortOrder());
       } catch (ApiPaginationCriteria.InvalidSortParameterException e) {
+        log.warn("Invalid API sort parameter {}", e.getOrderBy(), e);
         throw new IllegalArgumentException(
             getMessage(
                 "errors.pagination.invalidSortParameter",
@@ -206,6 +207,7 @@ public class BaseApiController implements ServletContextAware {
     try {
       data = IOUtils.toByteArray(in);
     } catch (IOException e) {
+      log.warn("Could not load icon {}", iconFileName, e);
       return new byte[0];
     }
     return data;

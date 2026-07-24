@@ -943,7 +943,9 @@ export default interface Resources {
       "title": "Leave the editor?"
     },
     "enhancedTableHead": {
-      "selectAllLabel": "select/deselect all"
+      "selectAllLabel": "select/deselect all",
+      "sortedAscending": "sorted ascending",
+      "sortedDescending": "sorted descending"
     },
     "errorBoundary": {
       "message": "Something went wrong! Please refresh the page. If this error persists, please contact <externalLink href=\"mailto:support@researchspace.com\">support@researchspace.com</externalLink> with details of when the issue happens."
@@ -1112,6 +1114,7 @@ export default interface Resources {
       "tryAgainLater": "There is a problem, please try again later",
       "unknownRelogin": "Unknown issue, please attempt to relogin to RSpace."
     },
+    "javascriptRequired": "You need to enable JavaScript to run this app.",
     "ketcher": {
       "discardChangesDialog": {
         "discard": "Discard",
@@ -1441,6 +1444,7 @@ export default interface Resources {
       "thisItem": "this {itemType, select, snippet {snippet} other {document}}",
       "titleMultiple": "Share {count, plural, one {# {itemType, select, snippet {snippet} other {document}}} other {# {itemType, select, snippet {snippets} other {documents}}}}",
       "titleSingle": "Share <strong>{name}</strong>",
+      "unknownFolder": "Unknown folder",
       "updatedSuccessfully": "Shares updated successfully."
     },
     "stoichiometry": {
@@ -1790,6 +1794,29 @@ export default interface Resources {
       "renamePrompt": "Please give a new name for {name}.",
       "saveAsNewImage": "Save as new image",
       "uploadNewVersion": "Upload New Version",
+      "validation": {
+        "cannotDownloadFolders": "Cannot download folders.",
+        "cannotDownloadSnippets": "Cannot download snippets.",
+        "cannotEdit": "Cannot edit this item.",
+        "cannotLogOut": "Cannot log out of this item.",
+        "currentFolderUnknown": "Current folder is not known.",
+        "deleteLimit": "Cannot delete more than 50 items at once.",
+        "duplicateLimit": "Cannot duplicate more than 50 items at once.",
+        "exportLimit": "Cannot export more than 100 items at once.",
+        "loadingUser": "Loading user information...",
+        "missingGlobalId": "Cannot share snippets that are missing global IDs.",
+        "moveLimit": "Cannot move more than 50 items at once.",
+        "noFilesSelected": "No files selected.",
+        "nothingSelected": "Nothing selected.",
+        "onlyOneLogout": "Only one item may be logged out of at once.",
+        "onlyOneNewVersion": "Only one item may be updated with a new version at once.",
+        "onlyOneRename": "Only one item may be renamed at once.",
+        "onlyOwnerCanShare": "Only owners of the snippet can change its share settings.",
+        "onlySnippetsShareable": "Only snippets can be shared.",
+        "selectSnippet": "At least one snippet must be selected.",
+        "tooManyItems": "Too many items selected.",
+        "userLoadFailed": "Unable to load user information. Sharing is temporarily unavailable."
+      },
       "view": "View"
     },
     "addFilestoreDialog": {
@@ -1883,6 +1910,7 @@ export default interface Resources {
         "unknown": "Unknown"
       }
     },
+    "insertFileFailed": "Could not insert file \"{fileName}\"",
     "irods": {
       "errors": {
         "authenticationFailed": "Authentication failed",
@@ -2114,6 +2142,7 @@ export default interface Resources {
       "shiftSelectionUnsupportedMessage": "Either use command/ctrl to select each in turn, or use grid view.",
       "shiftSelectionUnsupportedTitle": "Shift selection is not supported in tree view."
     },
+    "unknownError": "",
     "unknownOwner": "Unknown owner"
   },
   "groups": {
@@ -2529,6 +2558,12 @@ export default interface Resources {
         "noOptions": "No options available.",
         "title": "Create new items from <strong>{name}</strong>"
       },
+      "delete": {
+        "noPermission": "{count, plural, one {You do not have permission to delete this item.} other {You do not have permission to delete these items.}}"
+      },
+      "duplicate": {
+        "noPermission": "{count, plural, one {You do not have permission to duplicate this item.} other {You do not have permission to duplicate these items.}}"
+      },
       "edit": {
         "batchEdit": "Batch Edit",
         "batchUnsupported": "Cannot batch edit {globalIds}.",
@@ -2546,14 +2581,22 @@ export default interface Resources {
           "title": "Unsaved changes"
         }
       },
+      "export": {
+        "noPermission": "{count, plural, one {You do not have permission to export this item.} other {You do not have permission to export these items.}}"
+      },
       "historicalVersion": "Cannot modify a historical version.",
       "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
       "move": {
+        "noPermission": "{count, plural, one {You do not have permission to move this item.} other {You do not have permission to move these items.}}",
         "templatesCannotBeMoved": "Templates cannot be moved."
       },
       "printBarcode": {
+        "noPermission": "{count, plural, one {You do not have permission to print this item.} other {You do not have permission to print these items.}}",
         "recordBeingEdited": "Cannot print barcodes whilst a record is being edited.",
         "templatesHaveNoBarcodes": "Templates do not have barcodes."
+      },
+      "restore": {
+        "noPermission": "{count, plural, one {You do not have permission to restore this item.} other {You do not have permission to restore these items.}}"
       },
       "splitButton": {
         "label": "More selection options",
@@ -3524,6 +3567,7 @@ export default interface Resources {
       "customFieldName": "Custom Field Name",
       "fieldSelect": {
         "alreadyMapped": "This field is already mapped to another column.",
+        "customField": "Custom Field (Various Types)",
         "incompatibleData": "Incompatible data in this column."
       },
       "fieldTypeMenu": {
@@ -3893,6 +3937,9 @@ export default interface Resources {
         "standardPrinter": "Standard Printer",
         "standardPrinterHint": "Print multiple labels per sheet (e.g. A4 / A3 / Letter)."
       }
+    },
+    "publicIdentifierPage": {
+      "pageTitle": "RSpace Inventory - Public Item"
     },
     "recordDetails": {
       "labels": {
@@ -4751,7 +4798,8 @@ export default interface Resources {
     "header": {
       "runAs": {
         "activeBanner": "Currently operating as"
-      }
+      },
+      "switchToEnglish": "{0} in English"
     },
     "mainMenu": {
       "heading": "Welcome!"
@@ -4964,6 +5012,25 @@ export default interface Resources {
   },
   "server.apps": {
     "apps": {
+      "box": {
+        "errors": {
+          "apiException": "Box API exception: {0}",
+          "authorization": "Authorization problem",
+          "download": "A problem occurred when trying to download the file from Box. Please close this window and try again."
+        }
+      },
+      "deposit": {
+        "errors": {
+          "noFile": "No file to deposit"
+        }
+      },
+      "dialogTitles": {
+        "clustermarket": "Insert from Clustermarket",
+        "galaxy": "Use a Galaxy Workflow",
+        "ketcher": "Insert from Ketcher",
+        "omero": "Insert from Omero",
+        "shortcuts": "Configure keyboard shortcuts"
+      },
       "dmp": {
         "errors": {
           "bothArgosAndDmpToolEnabled": "DMPTool and Argos cannot both be enabled",
@@ -5019,7 +5086,8 @@ export default interface Resources {
         "invalidIntegrationName": "Invalid integration name {0}, must be one of [{1}]",
         "noneValid": "There were no valid Apps: {0}",
         "notFoundByName": "No app with name [{0}]",
-        "notFoundByProperty": "App could not be identified for property {0}"
+        "notFoundByProperty": "App could not be identified for property {0}",
+        "requestSupport": "There is a problem with your request, please contact support."
       },
       "fieldmark": {
         "errors": {
@@ -5039,6 +5107,26 @@ export default interface Resources {
       "nextcloud": {
         "errors": {
           "notConfigured": "Nextcloud cannot be enabled because it has not been fully configured for this deployment. A server URL and OAuth credentials (client id and secret) are required. Please contact your System Administrator."
+        }
+      },
+      "oauth": {
+        "errors": {
+          "accessDenied": "{0} access denied",
+          "connection": "Error connecting to {0}",
+          "general": "General error",
+          "repositoryList": "Getting repositories list failed",
+          "tokenCreation": "Error during token creation",
+          "tokenCreationWithDetails": "Error during token creation: {0}",
+          "tokenExchange": "Exception during token exchange",
+          "tokenRefresh": "Error during token refresh",
+          "tokenRefreshWithDetails": "Error during token refresh: {0}",
+          "unknown": "Unknown error"
+        }
+      },
+      "omero": {
+        "errors": {
+          "authenticationExpired": "Omero authentication expired, please connect to Omero on the Apps page",
+          "login": "Could not log in to OMERO: {0}"
         }
       },
       "owncloud": {
@@ -5215,9 +5303,6 @@ export default interface Resources {
           "unexpected": "An unexpected error occurred."
         }
       }
-    },
-    "date": {
-      "format": "yyyy-MM-dd"
     },
     "errors": {
       "ajax": {
@@ -5460,6 +5545,11 @@ export default interface Resources {
       "uniqueName": "Unique name",
       "username": "Username",
       "yourComment": "your comment"
+    },
+    "relativeDate": {
+      "daysAgo": "{0, plural, one {# day ago at {1}} other {# days ago at {1}}}",
+      "today": "Today at {0}",
+      "yesterday": "Yesterday at {0}"
     },
     "requestType": {
       "passwordReminder": "password reminder",
@@ -7848,6 +7938,7 @@ export default interface Resources {
       },
       "more": "More...",
       "signup": {
+        "label": "Sign up",
         "with": {
           "google": "Or sign up with Google"
         }
@@ -7889,7 +7980,8 @@ export default interface Resources {
         "usernameRequired": "Please specify a username."
       },
       "heading": "Log in",
-      "title": "Log in"
+      "title": "Log in",
+      "welcomeHeading": "Welcome to RSpace"
     },
     "logo": {
       "alt": "RSpace logo"
@@ -7925,7 +8017,8 @@ export default interface Resources {
     },
     "publishIsDisabled": {
       "disabledNotice": "Sorry - Admin has disabled all public documents.",
-      "heading": "Public Documents are disabled"
+      "heading": "Public Documents are disabled",
+      "recordLabel": "Publication disabled"
     },
     "remindUsernameEmailSent": {
       "sentNotice": "Your username has been sent to {0}.",
@@ -7964,7 +8057,8 @@ export default interface Resources {
       "newPasswordLabel": "New {0}",
       "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
       "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
-      "submitButton": "Reset"
+      "submitButton": "Reset",
+      "title": "Reset {0}"
     },
     "resetPasswordComplete": {
       "loginPasswordNotice": "You can now <a href=\"/workspace\">login</a> with your new password.",
@@ -8115,6 +8209,11 @@ export default interface Resources {
   },
   "server.system": {
     "errorPage": {
+      "details": {
+        "messageLabel": "Message",
+        "occurredAtLabel": "At",
+        "referenceIdLabel": "With ID"
+      },
       "explanation": {
         "message": "Sorry, but RSpace has encountered a problem, which has been logged. If this problem persists, please contact the ResearchSpace development team for assistance."
       },
@@ -8442,6 +8541,12 @@ export default interface Resources {
         "integrationEnabledMessage": "LDAP integration is enabled.",
         "sidVerificationEnabledMessage": "SID Verification is enabled."
       },
+      "maintenance": {
+        "errors": {
+          "create": "Creating new maintenance failed",
+          "update": "Updating maintenance failed"
+        }
+      },
       "netFileSystem": {
         "add": {
           "header": "Add File System:"
@@ -8672,6 +8777,9 @@ export default interface Resources {
         "folder": {
           "deletedUsers": "Deleted Users"
         }
+      },
+      "users": {
+        "accountAlreadyUnlocked": "Account is already unlocked"
       }
     }
   },
@@ -8702,6 +8810,7 @@ export default interface Resources {
       "communities": {
         "title": "Communities"
       },
+      "createdLabel": "created",
       "defaultCommunity": {
         "noLabGroups": {
           "emptyState": "There are no groups in default 'All Groups' community. To add a group belonging to other Community, go to that community and 'Move' the group."
@@ -9310,6 +9419,7 @@ export default interface Resources {
       },
       "textField": {
         "documentEditorAriaLabel": "Document editor",
+        "hiddenInputAriaLabel": "Hidden input",
         "insertFileToGalleryAriaLabel": "Insert file to Gallery from local computer",
         "insertMediaAriaLabel": "Insert media from your device",
         "openJupyterNotebooks": "Open Jupyter Notebook(s)"
@@ -9744,6 +9854,7 @@ export default interface Resources {
           "missingScope": "Either search terms or parent folder must be set"
         }
       },
+      "selectRecordAriaLabel": "Select record",
       "settings": {
         "errors": {
           "invalidKey": "Invalid settings key",

@@ -81,14 +81,15 @@ type ConfirmFunction = (
  */
 export function useConfirm(): ConfirmFunction {
   const cc = React.useContext(ConfirmContext);
+  const { t } = useTranslation("common");
 
-  return function confirm(title, message, yesLabel = "OK", noLabel = "Cancel", onConfirm): Promise<boolean> {
+  return function confirm(title, message, yesLabel, noLabel, onConfirm): Promise<boolean> {
     return new Promise((resolve) => {
       cc.setConfirmState({
         title,
         message,
-        yesLabel,
-        noLabel,
+        yesLabel: yesLabel ?? t("actions.ok"),
+        noLabel: noLabel ?? t("actions.cancel"),
         yes: () => {
           const returnYes = () => {
             cc.setConfirmState(null);

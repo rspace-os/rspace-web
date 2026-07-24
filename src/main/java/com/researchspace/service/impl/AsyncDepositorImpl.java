@@ -324,7 +324,9 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         Files.delete(symbolicLinkPath);
         Files.delete(tempDir);
       } else {
-        repoDepositResult = new RepositoryOperationResult(false, "No file to deposit", null, null);
+        repoDepositResult =
+            new RepositoryOperationResult(
+                false, messages.getMessage("apps.deposit.errors.noFile"), null, null);
       }
     } catch (IOException | URISyntaxException e) {
       log.error("Submitting deposit failed: {}", e.getMessage());

@@ -15,11 +15,9 @@ import org.springframework.stereotype.Component;
 public class MessageSourceUtils {
 
   private MessageSourceAccessor messages;
-  private MessageSource messageSource;
 
   @Autowired
   public void setMessageSource(MessageSource messageSource) {
-    this.messageSource = messageSource;
     this.messages = new MessageSourceAccessor(messageSource);
   }
 
@@ -37,17 +35,17 @@ public class MessageSourceUtils {
 
   /** Resolves a message without arguments against an explicit locale. */
   public String getMessageForLocale(String key, Locale locale) {
-    return messageSource.getMessage(key, null, locale);
+    return messages.getMessage(key, locale);
   }
 
   /** Resolves a message against an explicit locale. */
   public String getMessage(String key, Object[] args, Locale locale) {
-    return messageSource.getMessage(key, args, locale);
+    return messages.getMessage(key, args, locale);
   }
 
   /** Resolves a {@link MessageSourceResolvable} against an explicit locale. */
   public String getMessage(MessageSourceResolvable resolvable, Locale locale) {
-    return messageSource.getMessage(resolvable, locale);
+    return messages.getMessage(resolvable, locale);
   }
 
   /** Accepts Velocity array literals, which are passed as {@link List Lists}. */
@@ -57,7 +55,7 @@ public class MessageSourceUtils {
 
   /** Locale-explicit variant of {@link #format(String, List)}. */
   public String format(String key, List<Object> args, Locale locale) {
-    return messageSource.getMessage(key, args == null ? null : args.toArray(), locale);
+    return messages.getMessage(key, args == null ? null : args.toArray(), locale);
   }
 
   /**

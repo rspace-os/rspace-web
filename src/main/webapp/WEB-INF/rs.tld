@@ -169,21 +169,10 @@
         <tag-class>com.axiope.webapp.taglib.I18nMessagesTag</tag-class>
     </tag>
 
-    <tag>
-        <name>notificationTypeLabel</name>
-        <tag-class>com.axiope.webapp.taglib.NotificationTypeLabelTag</tag-class>
-        <attribute>
-            <name>notificationType</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>com.researchspace.model.comms.NotificationType</type>
-        </attribute>
-        <attribute>
-            <name>var</name>
-            <required>true</required>
-            <rtexprvalue>true</rtexprvalue>
-            <type>java.lang.String</type>
-        </attribute>
-    </tag>
+    <function>
+        <name>notificationTypeMessageKey</name>
+        <function-class>com.researchspace.service.NotificationTypeMessages</function-class>
+        <function-signature>java.lang.String keyFor(com.researchspace.model.comms.NotificationType)</function-signature>
+    </function>
 
 </taglib>

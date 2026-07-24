@@ -119,7 +119,7 @@ export default function useChemicalImport(): {
           message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
-      throw new Error("Could not search for chemical compounds", {
+      throw new Error(t("apiErrors.chemicals.searchFailed"), {
         cause: e,
       });
     }
@@ -167,7 +167,7 @@ export default function useChemicalImport(): {
           message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
-      throw new Error("Could not save chemical compounds", { cause: e });
+      throw new Error(t("apiErrors.chemicals.saveFailed"), { cause: e });
     }
   }
 
@@ -200,7 +200,7 @@ export default function useChemicalImport(): {
           message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
-      throw new Error("Could not save chemical compounds", { cause: e });
+      throw new Error(t("apiErrors.chemicals.saveFailed"), { cause: e });
     }
   }
 

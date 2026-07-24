@@ -79,7 +79,7 @@ export default function useGroups(): {
           message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
-      throw new Error("Could not fetch groups", {
+      throw new Error(t("apiErrors.groups.fetchManyFailed"), {
         cause: e,
       });
     }
@@ -102,7 +102,7 @@ export default function useGroups(): {
             message: getErrorMessage(e, t("apiErrors.unknown")),
           }),
         );
-        throw new Error("Could not fetch group", {
+        throw new Error(t("apiErrors.groups.fetchOneFailed"), {
           cause: e,
         });
       }

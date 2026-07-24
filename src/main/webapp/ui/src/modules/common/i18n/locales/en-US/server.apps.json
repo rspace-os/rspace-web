@@ -1,5 +1,17 @@
 {
   "apps": {
+    "box": {
+      "errors": {
+        "apiException": "Box API exception: {0}",
+        "authorization": "Authorization problem",
+        "download": "A problem occurred when trying to download the file from Box. Please close this window and try again."
+      }
+    },
+    "deposit": {
+      "errors": {
+        "noFile": "No file to deposit"
+      }
+    },
     "dmp": {
       "errors": {
         "bothArgosAndDmpToolEnabled": "DMPTool and Argos cannot both be enabled",
@@ -43,12 +55,20 @@
         "serverUrl": "Cannot access the specified server URL"
       }
     },
+    "dialogTitles": {
+      "clustermarket": "Insert from Clustermarket",
+      "galaxy": "Use a Galaxy Workflow",
+      "ketcher": "Insert from Ketcher",
+      "omero": "Insert from Omero",
+      "shortcuts": "Configure keyboard shortcuts"
+    },
     "errors": {
       "invalidChoice": "App [{0}] is an invalid choice - it must be of type {1}",
       "invalidIntegrationName": "Invalid integration name {0}, must be one of [{1}]",
       "noneValid": "There were no valid Apps: {0}",
       "notFoundByName": "No app with name [{0}]",
-      "notFoundByProperty": "App could not be identified for property {0}"
+      "notFoundByProperty": "App could not be identified for property {0}",
+      "requestSupport": "There is a problem with your request, please contact support."
     },
     "egnyte": {
       "errors": {
@@ -77,9 +97,29 @@
         "notConfigured": "Nextcloud cannot be enabled because it has not been fully configured for this deployment. A server URL and OAuth credentials (client id and secret) are required. Please contact your System Administrator."
       }
     },
+    "oauth": {
+      "errors": {
+        "accessDenied": "{0} access denied",
+        "connection": "Error connecting to {0}",
+        "general": "General error",
+        "repositoryList": "Getting repositories list failed",
+        "tokenCreation": "Error during token creation",
+        "tokenCreationWithDetails": "Error during token creation: {0}",
+        "tokenExchange": "Exception during token exchange",
+        "tokenRefresh": "Error during token refresh",
+        "tokenRefreshWithDetails": "Error during token refresh: {0}",
+        "unknown": "Unknown error"
+      }
+    },
     "owncloud": {
       "errors": {
         "notConfigured": "ownCloud cannot be enabled because it has not been fully configured for this deployment. A server URL and OAuth credentials (client id and secret) are required. Please contact your System Administrator."
+      }
+    },
+    "omero": {
+      "errors": {
+        "authenticationExpired": "Omero authentication expired, please connect to Omero on the Apps page",
+        "login": "Could not log in to OMERO: {0}"
       }
     },
     "raid": {

@@ -13,238 +13,46 @@ class EmailNotificationsTemplateI18nTest {
   private final EmailTemplateTestRenderer templates =
       new EmailTemplateTestRenderer("messageAndNotificationEmails/");
 
-  public static class FakeUser {
-    private final String fullName;
-    private final String email;
-    private final long id;
-    private final String username;
-
-    FakeUser(String fullName, String email) {
-      this(fullName, email, 1L, "testuser");
-    }
-
-    FakeUser(String fullName, String email, long id, String username) {
-      this.fullName = fullName;
-      this.email = email;
-      this.id = id;
-      this.username = username;
-    }
-
-    public String getFullName() {
-      return fullName;
-    }
-
-    public String getEmail() {
-      return email;
-    }
-
-    public long getId() {
-      return id;
-    }
-
-    public String getUsername() {
-      return username;
-    }
+  private static Map<String, Object> communication(boolean notification, String message, long id) {
+    Map<String, Object> communication = new HashMap<>();
+    communication.put(
+        "originator",
+        Map.of(
+            "fullName", "Jane Doe",
+            "email", "jane@example.com",
+            "id", 1L,
+            "username", "jdoe"));
+    communication.put("notification", notification);
+    communication.put("message", message);
+    communication.put("id", id);
+    communication.put("ignoreRecordLinkInMessage", false);
+    return communication;
   }
 
-  public static class FakeRecord {
-    private final String name;
-    private final long id;
-    private final String globalIdentifier;
-    private final boolean notebook;
-
-    FakeRecord(String name) {
-      this(name, 42L, "SD42", false);
-    }
-
-    FakeRecord(String name, long id, String globalIdentifier, boolean notebook) {
-      this.name = name;
-      this.id = id;
-      this.globalIdentifier = globalIdentifier;
-      this.notebook = notebook;
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    public long getId() {
-      return id;
-    }
-
-    public String getGlobalIdentifier() {
-      return globalIdentifier;
-    }
-
-    public boolean isNotebook() {
-      return notebook;
-    }
+  private static Map<String, Object> makeSimpleMessage() {
+    Map<String, Object> communication = communication(false, "Hello there!", 10L);
+    communication.put("messageType", "SIMPLE_MESSAGE");
+    return communication;
   }
 
-  public static class FakeGroup {
-    private final String displayName;
-
-    FakeGroup(String displayName) {
-      this.displayName = displayName;
+  private static Map<String, Object> makeNotification(
+      boolean withType, Map<String, Object> record) {
+    Map<String, Object> communication = communication(true, "Check your export.", 20L);
+    communication.put("notificationMessage", "Your action was processed.");
+    if (withType) {
+      communication.put("notificationType", "SYSTEM");
     }
-
-    public String getDisplayName() {
-      return displayName;
+    if (record != null) {
+      communication.put("record", record);
     }
+    return communication;
   }
 
-  public static class FakeCommunication {
-    private final FakeUser originator;
-    private FakeRecord record;
-    private final boolean notification;
-    private final String notificationType;
-    private final String notificationMessage;
-    private final String message;
-    private final String messageType;
-    private FakeGroup group;
-    private final long id;
-    private final boolean ignoreRecordLinkInMessage;
-
-    FakeCommunication(
-        FakeUser originator,
-        FakeRecord record,
-        boolean notification,
-        String notificationType,
-        String notificationMessage,
-        String message,
-        String messageType,
-        FakeGroup group,
-        long id,
-        boolean ignoreRecordLinkInMessage) {
-      this.originator = originator;
-      this.record = record;
-      this.notification = notification;
-      this.notificationType = notificationType;
-      this.notificationMessage = notificationMessage;
-      this.message = message;
-      this.messageType = messageType;
-      this.group = group;
-      this.id = id;
-      this.ignoreRecordLinkInMessage = ignoreRecordLinkInMessage;
-    }
-
-    public FakeUser getOriginator() {
-      return originator;
-    }
-
-    public FakeRecord getRecord() {
-      return record;
-    }
-
-    public boolean isNotification() {
-      return notification;
-    }
-
-    public String getNotificationType() {
-      return notificationType;
-    }
-
-    public String getNotificationMessage() {
-      return notificationMessage;
-    }
-
-    public String getMessage() {
-      return message;
-    }
-
-    public String getMessageType() {
-      return messageType;
-    }
-
-    public FakeGroup getGroup() {
-      return group;
-    }
-
-    public long getId() {
-      return id;
-    }
-
-    public boolean isIgnoreRecordLinkInMessage() {
-      return ignoreRecordLinkInMessage;
-    }
-  }
-
-  public static class FakeResult {
-    private final boolean succeeded;
-    private final String message;
-    private final String url;
-
-    FakeResult(boolean succeeded, String message, String url) {
-      this.succeeded = succeeded;
-      this.message = message;
-      this.url = url;
-    }
-
-    public boolean isSucceeded() {
-      return succeeded;
-    }
-
-    public String getMessage() {
-      return message;
-    }
-
-    public String getUrl() {
-      return url;
-    }
-  }
-
-  public static class FakeApp {
-    private final String label;
-
-    FakeApp(String label) {
-      this.label = label;
-    }
-
-    public String getLabel() {
-      return label;
-    }
-  }
-
-  private FakeCommunication makeSimpleMessage() {
-    return new FakeCommunication(
-        new FakeUser("Jane Doe", "jane@example.com", 1L, "jdoe"),
-        null,
-        false,
-        null,
-        null,
-        "Hello there!",
-        "SIMPLE_MESSAGE",
-        null,
-        10L,
-        false);
-  }
-
-  private FakeCommunication makeNotification(boolean withType, FakeRecord record) {
-    return new FakeCommunication(
-        new FakeUser("Jane Doe", "jane@example.com", 1L, "jdoe"),
-        record,
-        true,
-        withType ? "SYSTEM" : null,
-        "Your action was processed.",
-        "Check your export.",
-        null,
-        null,
-        20L,
-        false);
-  }
-
-  private FakeCommunication makeRequest(String messageType, FakeGroup group) {
-    return new FakeCommunication(
-        new FakeUser("Jane Doe", "jane@example.com", 1L, "jdoe"),
-        null,
-        false,
-        null,
-        null,
-        "Please join my group.",
-        messageType,
-        group,
-        30L,
-        false);
+  private static Map<String, Object> makeRequest(String messageType, String groupName) {
+    Map<String, Object> communication = communication(false, "Please join my group.", 30L);
+    communication.put("messageType", messageType);
+    communication.put("group", Map.of("displayName", groupName));
+    return communication;
   }
 
   @Test
@@ -331,8 +139,13 @@ class EmailNotificationsTemplateI18nTest {
   @Test
   void repoDepositSuccessRendersI18nText() {
     Map<String, Object> model = new HashMap<>();
-    model.put("result", new FakeResult(true, "Deposited successfully.", "https://zenodo.org/r/1"));
-    model.put("app", new FakeApp("Zenodo"));
+    model.put(
+        "result",
+        Map.of(
+            "succeeded", true,
+            "message", "Deposited successfully.",
+            "url", "https://zenodo.org/r/1"));
+    model.put("app", Map.of("label", "Zenodo"));
 
     String out = templates.render("repoDepositCompleteNotification.vm", model);
     assertTrue(out.contains("is complete"), "rendered: " + out);
@@ -342,8 +155,8 @@ class EmailNotificationsTemplateI18nTest {
   @Test
   void repoDepositFailureRendersI18nText() {
     Map<String, Object> model = new HashMap<>();
-    model.put("result", new FakeResult(false, "Server error.", null));
-    model.put("app", new FakeApp("Zenodo"));
+    model.put("result", Map.of("succeeded", false, "message", "Server error."));
+    model.put("app", Map.of("label", "Zenodo"));
 
     String out = templates.render("repoDepositCompleteNotification.vm", model);
     assertTrue(out.contains("failed"), "rendered: " + out);
@@ -353,7 +166,7 @@ class EmailNotificationsTemplateI18nTest {
   @Test
   void requestHtmlRendersI18nText() {
     Map<String, Object> model = new HashMap<>();
-    model.put("cmm", makeRequest("REQUEST_JOIN_LAB_GROUP", new FakeGroup("Smith Lab")));
+    model.put("cmm", makeRequest("REQUEST_JOIN_LAB_GROUP", "Smith Lab"));
     model.put("dateOb", new Date());
     model.put("baseURL", "http://localhost:8080");
     model.put("date", new DateTool());
@@ -368,7 +181,7 @@ class EmailNotificationsTemplateI18nTest {
   @Test
   void requestHtmlProjectGroupRendersI18nText() {
     Map<String, Object> model = new HashMap<>();
-    model.put("cmm", makeRequest("REQUEST_JOIN_PROJECT_GROUP", new FakeGroup("Science Project")));
+    model.put("cmm", makeRequest("REQUEST_JOIN_PROJECT_GROUP", "Science Project"));
     model.put("dateOb", new Date());
     model.put("baseURL", "http://localhost:8080");
     model.put("date", new DateTool());
@@ -382,7 +195,7 @@ class EmailNotificationsTemplateI18nTest {
   @Test
   void requestPlaintextRendersI18nText() {
     Map<String, Object> model = new HashMap<>();
-    model.put("cmm", makeRequest("REQUEST_JOIN_LAB_GROUP", new FakeGroup("Smith Lab")));
+    model.put("cmm", makeRequest("REQUEST_JOIN_LAB_GROUP", "Smith Lab"));
     model.put("dateOb", new Date());
     model.put("baseURL", "http://localhost:8080");
     model.put("date", new DateTool());

@@ -25,7 +25,7 @@ $(document).ready(function() {
 	    tagLimit: 1,
 	    beforeTagAdded: function(event, ui) {
 	        if(!validateEmail(ui.tagLabel)) {
-	        	RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", RS.defaultToastDisplayTime);
+		RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", RS.defaultToastDisplayTime);
 	        	return false;
 	        }
 	    },
@@ -37,7 +37,7 @@ $(document).ready(function() {
 	    	$("#principalEmail li.tagit-new").show();
 	    },
 	    onTagLimitExceeded: function(event, ui) {
-        	RS.confirm(RS.msg("legacyjs.cloudGroup.emailAlreadyAdded"), "notice", RS.defaultToastDisplayTime);
+	RS.confirm(RS.msg("legacyjs.cloudGroup.emailAlreadyAdded"), "notice", RS.defaultToastDisplayTime);
         	return false;
 	    },
 	    autocomplete: autocompleteConfig,
@@ -58,7 +58,7 @@ $(document).ready(function() {
 	        });  
 	        
 	        if(isAutocompleteList === false){
-	        	RS.confirm(RS.msg("legacyjs.common.selectExistingUserEmail"), "notice", 5000);
+		RS.confirm(RS.msg("legacyjs.common.selectExistingUserEmail"), "notice", 5000);
 	        	return false;
 	        }
 	    },
@@ -76,7 +76,7 @@ $(document).ready(function() {
 	    placeholderText: RS.msg("legacyjs.common.enterEmailPlaceholder"),
 	    beforeTagAdded: function(event, ui) {
 	        if(!validateEmail(ui.tagLabel)) {
-	        	RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", RS.defaultToastDisplayTime);
+		RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", RS.defaultToastDisplayTime);
 	        	return false;
 	        }
 	    },

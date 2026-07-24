@@ -372,7 +372,9 @@ public class GroupController extends BaseController {
     if (newName.length() > BaseRecord.DEFAULT_VARCHAR_LENGTH) {
       ErrorList el =
           ErrorList.of(
-              getText("errors.maxLength", new Object[] {Organisation.MAX_INDEXABLE_UTF_LENGTH}));
+              getText(
+                  "errors.maxLength",
+                  new Object[] {getText("label.name"), Organisation.MAX_INDEXABLE_UTF_LENGTH}));
       return new AjaxReturnObject<String>(null, el);
     }
     group.setDisplayName(newName);

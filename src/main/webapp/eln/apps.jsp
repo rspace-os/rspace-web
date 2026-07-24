@@ -7,16 +7,15 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=2.0"
     />
-    <title>Apps</title>
+    <title><spring:message code="apps:page.title"/></title>
     <rst:viteClient />
     <rst:bundle bundle="apps" />
 
   </head>
 
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript><spring:message code="common:javascriptRequired"/></noscript>
     <div id="app"></div>
   </body>
 </html>
-
 

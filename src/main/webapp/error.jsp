@@ -24,12 +24,12 @@
 				</h1>
 				<% if (exception != null) { %>
 				<spring:message code="errorPage.explanation.message" />
-				 <pre class="message">Message: <%out.write(EscapeXml.escape(exception.getMessage()));%>
+				 <pre class="message"><spring:message code="errorPage.details.messageLabel" />: <%out.write(EscapeXml.escape(exception.getMessage()));%>
 				 <br/>
-					 at: <% out.write(
+					 <spring:message code="errorPage.details.occurredAtLabel" />: <% out.write(
 								DateUtil.convertDateToISOFormat(new Date(), TimeZone.getDefault())); %>
 				<br/>
-					 with ID:  <% out.write(
+					 <spring:message code="errorPage.details.referenceIdLabel" />:  <% out.write(
 								LoggingUtils.logException(exception)); %> </pre>
 				<rst:hasDeploymentProperty name="showStackTraceInErrorPageEnabled" value="true">
 					 <% out.write(

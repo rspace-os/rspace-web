@@ -116,7 +116,7 @@ public class SlackController extends BaseController {
     if (params.containsKey("error")) {
       OauthAuthorizationError error =
           getAuthErrorBuilder()
-              .errorMsg("Error connecting to Slack")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {APP_DISPLAY_NAME}))
               .errorDetails(params.get("error"))
               .build();
       model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error));

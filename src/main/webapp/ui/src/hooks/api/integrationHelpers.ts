@@ -5,6 +5,7 @@
 
 import React from "react";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import type * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -64,7 +65,7 @@ export async function fetchIntegrationInfo(name: IntegrationName): Promise<Integ
         });
       } catch (e) {
         if (e instanceof Error) return Result.Error<IntegrationInfo>([e]);
-        return Result.Error<IntegrationInfo>([new Error("Unknown error")]);
+        return Result.Error<IntegrationInfo>([new Error(i18n.t("common:apiErrors.unknown"))]);
       }
     })
     .elseThrow();

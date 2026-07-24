@@ -172,7 +172,7 @@ $(document).ready(function () {
       close: function () {
         fieldId = -1;
         $('.form_field').remove();
-        $("#fieldEditorSelect").val('1');
+        $("#fieldEditorSelect").val('');
         $('#fieldEditorSelect').attr('disabled', false);
         $('#field-loading').hide();
       }
@@ -193,7 +193,7 @@ $(document).ready(function () {
     $(window).bind('beforeunload', function () {
       if (wasAutosaved) {
         autosave(true);
-        return 'Are you sure you want to exit without saving changes?';
+        return RS.msg("legacyjs.workspace.documentEdit.exitWithoutSavingConfirm");
       }
     });
 
@@ -381,7 +381,7 @@ function loadFieldForm() {
   // get selected option
   var name = $('#fieldEditorSelect').val();
   $('.form_field').remove();
-  if (name != "Select Field Type") {
+  if (name !== "") {
     // disablw hile loading
     $('#fieldEditorSelect').attr('disabled', true);
     // loading imahe
@@ -1799,7 +1799,7 @@ function fieldFormValid(field) {
     fieldType = $("#fieldFormType").val();
   }
 
-  if (fieldType == "Select Field Type") {
+  if (fieldType === "") {
     isValid = addError("#fieldEditorSelect", RS.msg("legacyjs.workspace.form.noFieldTypeSelected"));
   } else {
     var MAX_FIELD_NAME_LENGTH = 50;

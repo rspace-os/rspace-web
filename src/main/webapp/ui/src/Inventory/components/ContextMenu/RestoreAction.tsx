@@ -24,7 +24,9 @@ const RestoreAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Res
       [() => disabled !== "", disabled],
       [
         () => selectedResults.some((r) => !r.canEdit),
-        `You do not have permission to restore ${selectedResults.length > 1 ? "these items" : "this item"}.`,
+        t("contextMenu.restore.noPermission", {
+          count: selectedResults.length,
+        }),
       ],
       [() => true, ""],
     ])();

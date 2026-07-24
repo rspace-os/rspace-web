@@ -73,35 +73,34 @@
 
 <div class="header-wrapper">
   <div id="browser-warning" class="bootstrap-custom-flat">
-    <h4>Browser upgrade recommended to use RSpace</h4>
-    <p>It looks like you are using a Microsoft browser - sorry, we don't support either Internet Explorer or Edge. Some
-      RSpace features will not work properly with these browsers.</p>
-    <p>We <strong>do</strong> fully support Chrome, Firefox and Safari. You can use the links below to install one of
-      these browsers if you don't already have it.</p>
+    <h4><spring:message code="signup.browserWarning.heading"/></h4>
+    <p><spring:message code="signup.browserWarning.notice1"/></p>
+    <p><spring:message code="signup.browserWarning.notice2"/></p>
     <div class="row">
       <a rel="noreferrer" href="https://www.google.co.uk/chrome/" target="_blank">
         <div class="col-md-4 browser-container">
-          <img src="/images/icons/chrome-icon.png" alt="Icon by Martin Leblanc"><br />
-          Chrome
+          <img src="/images/icons/chrome-icon.png" alt="<spring:message code='signup.browserWarning.iconAlt'/>"><br />
+          <spring:message code="signup.browserWarning.chrome"/>
         </div>
       </a>
       <a rel="noreferrer" href="https://www.mozilla.org/en-GB/firefox/" target="_blank">
         <div class="col-md-4 browser-container">
-          <img src="/images/icons/firefox-icon.png" alt="Icon by Martin Leblanc"><br />
-          Firefox
+          <img src="/images/icons/firefox-icon.png" alt="<spring:message code='signup.browserWarning.iconAlt'/>"><br />
+          <spring:message code="signup.browserWarning.firefox"/>
         </div>
       </a>
       <a rel="noreferrer" href="https://www.apple.com/uk/safari/" target="_blank">
         <div class="col-md-4 browser-container">
-          <img src="/images/icons/safari-icon.png" alt="Icon by Martin Leblanc"><br />
-          Safari
+          <img src="/images/icons/safari-icon.png" alt="<spring:message code='signup.browserWarning.iconAlt'/>"><br />
+          <spring:message code="signup.browserWarning.safari"/>
         </div>
       </a>
     </div>
   </div>
   <c:if test="${pageContext.request.locale.language != 'en'}">
+    <spring:message code="webapp.name" var="localizedWebappName"/>
     <div id="switchLocale"><a href="<c:url value='/?locale=en'/>">
-        <spring:message code="webapp.name"/> in English</a></div>
+        <spring:message code="header.switchToEnglish" arguments="${localizedWebappName}"/></a></div>
   </c:if>
 
   <rst:hasDeploymentProperty name="standalone" value="false">
@@ -112,7 +111,7 @@
     <div>
       <shiro:authenticated>
         <div id="incomingMaintenanceDiv" class="header-info" style="display:none">
-          <a id="maintenanceDetailsLink" href="#">More</a>
+          <a id="maintenanceDetailsLink" href="#"><spring:message code="button.more"/></a>
         </div>
       </shiro:authenticated>
 
@@ -127,7 +126,7 @@
              style="padding:0 2px 0 2px;"
              onclick="removeInventoryAuthOnRunAs()"
           >
-            Release
+            <spring:message code="common:appBar.release"/>
           </a>
         </span>
       </rs:isRunAs>

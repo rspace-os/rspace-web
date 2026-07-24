@@ -235,7 +235,8 @@ public class SysAdminController extends BaseController {
       userManager.save(userToUnlock);
       return ResponseEntity.status(HttpStatus.OK).build();
     }
-    return getAjaxMessageResponseEntity(HttpStatus.BAD_REQUEST, "Account is already unlocked");
+    return getAjaxMessageResponseEntity(
+        HttpStatus.BAD_REQUEST, getText("system.users.accountAlreadyUnlocked"));
   }
 
   @PostMapping("/ajax/removeUserAccount")

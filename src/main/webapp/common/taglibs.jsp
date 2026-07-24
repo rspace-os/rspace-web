@@ -12,4 +12,3 @@
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
-<spring:message code="date.format" var="datePattern"/>

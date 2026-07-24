@@ -93,7 +93,7 @@ $(document).ready(function (){
   $(document).on("click", "#resetSearch", function(e) {
   	if (!settings.searchMode) return;
   	document.dispatchEvent(new Event('reset-search-input'));
-  	RS.blockPage(RS.msg("legacyjs.workspace.formList.abandoningSearch"), false, $(tableElement));
+	RS.blockPage(RS.msg("legacyjs.workspace.formList.abandoningSearch"), false, $(tableElement));
   	resetOrdering();
   	displayData("");
   });

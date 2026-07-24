@@ -135,11 +135,11 @@ function addNewMaintenance() {
         contentType:"application/json",
         dataType: "json",
         success: function (result) {
-        	 $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.maintenance.scheduledNewDowntime"));
+	 $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.maintenance.scheduledNewDowntime"));
              loadScheduledMaintenances();
         },
         error: function (xhr, ajaxOptions, thrownError) {
-        	 RS.ajaxFailed(RS.msg("legacyjs.system.maintenance.schedulingNewDowntimeAction"), false, xhr);
+	 RS.ajaxFailed(RS.msg("legacyjs.system.maintenance.schedulingNewDowntimeAction"), false, xhr);
         }
     });
 //        var jqxrh = $.post('', data);
@@ -177,11 +177,11 @@ function updateMaintenance() {
         data: JSON.stringify(data),
         contentType:"application/json",
         success: function (result) {
-        	 $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.maintenance.downtimeDetailsUpdated"));
+	 $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.maintenance.downtimeDetailsUpdated"));
              loadScheduledMaintenances();
         },
         error: function (xhr, ajaxOptions, thrownError) {
-        	  RS.ajaxFailed(RS.msg("legacyjs.system.maintenance.updatingScheduledDowntimeAction"), false, xhr);
+	  RS.ajaxFailed(RS.msg("legacyjs.system.maintenance.updatingScheduledDowntimeAction"), false, xhr);
         }
     });
     

@@ -3,7 +3,7 @@
 <html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
 
 <head>
-  <title>Configure keyboard shortcuts</title>
+  <title><spring:message code="apps.dialogTitles.shortcuts"/></title>
   <rst:viteClient />
   <rst:bundle bundle="tinymceShortcuts" />
   <link rel="stylesheet" type="text/css" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
@@ -19,4 +19,3 @@
 </body>
 
 </html>
-
