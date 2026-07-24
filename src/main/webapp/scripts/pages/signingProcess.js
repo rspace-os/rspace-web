@@ -14,8 +14,8 @@ function initSignDialog(dialogTitle) {
     			$('.statement').removeClass('ui-helper-hidden-accessible');
     			$('.statement').prop('disabled',false);
     			$('.statement[value=statement1]').prop('checked', true);
-			RS.disableJQueryDialogButtonById('sign-dialog-proceed-btn');
-			RS.enableJQueryDialogButtonById('sign-dialog-sign-btn');
+    			RS.disableJQueryDialogButtonById('sign-dialog-proceed-btn');
+    			RS.enableJQueryDialogButtonById('sign-dialog-sign-btn');
     			
     			var rid = $(this).data('recordId');
     			var data = {
@@ -35,14 +35,20 @@ function initSignDialog(dialogTitle) {
             	$("#witnessesList").children().remove();
             	$(".passSignInput").val("");
             }, 
-    		buttons: 
-		[
-			{ id: 'sign-dialog-cancel-btn', text: RS.msg("legacyjs.workspace.signingProcess.cancelButton"), click: function(){
+    		buttons: [
+    			{
+    				id: 'sign-dialog-cancel-btn',
+    				text: RS.msg("legacyjs.workspace.signingProcess.cancelButton"),
+    				click: function(){
     				$("#signDocumentDialog").dialog('close');
-			}},
-			{ id: 'sign-dialog-sign-btn', text: RS.msg("legacyjs.workspace.signingProcess.signButton"), click: function (){
+    				}
+    			},
+    			{
+    				id: 'sign-dialog-sign-btn',
+    				text: RS.msg("legacyjs.workspace.signingProcess.signButton"),
+    				click: function (){
     				if (editable != 'VIEW_MODE'){
-					apprise(RS.msg("legacyjs.workspace.signingProcess.editedCannotSign"));
+    					apprise(RS.msg("legacyjs.workspace.signingProcess.editedCannotSign"));
     					// TO-DO: RSPAC-1287 Focus the apprise dialog
     					$("#signDocumentDialog").dialog('close');
     					return false;
@@ -51,10 +57,14 @@ function initSignDialog(dialogTitle) {
     				$('.userSignInput').prop('disabled',false);
     				$('#confirmationSection').slideDown('slow');
     				$('#confirmationSection .passSignInput').focus();
-				RS.disableJQueryDialogButtonById('sign-dialog-sign-btn');
-				RS.enableJQueryDialogButtonById('sign-dialog-proceed-btn');
-			}},
-			{ id: 'sign-dialog-proceed-btn', text: RS.msg("legacyjs.workspace.signingProcess.proceedButton"), click: function (){
+    				RS.disableJQueryDialogButtonById('sign-dialog-sign-btn');
+    				RS.enableJQueryDialogButtonById('sign-dialog-proceed-btn');
+    				}
+    			},
+    			{
+    				id: 'sign-dialog-proceed-btn',
+    				text: RS.msg("legacyjs.workspace.signingProcess.proceedButton"),
+    				click: function (){
     
     				var statementInputs = $('.statement');
     				var statement = statementInputs.filter(':checked').val();
@@ -75,7 +85,7 @@ function initSignDialog(dialogTitle) {
     						password:password
     				};
     				
-				RS.blockPage(RS.msg("legacyjs.workspace.signingProcess.signingInProgress"));
+    				RS.blockPage(RS.msg("legacyjs.workspace.signingProcess.signingInProgress"));
     				var jqxhr= $.post(createURL("/workspace/editor/structuredDocument/ajax/proceedSigning"), data, function (result) { 
     					RS.unblockPage();
     					var msgx = result.data, 
@@ -104,10 +114,11 @@ function initSignDialog(dialogTitle) {
     				});
     				jqxhr.fail(function(){
     					RS.unblockPage();
-		            RS.ajaxFailed(RS.msg("legacyjs.workspace.signingProcess.signingAction"),false,jqxhr);
+    		            RS.ajaxFailed(RS.msg("legacyjs.workspace.signingProcess.signingAction"),false,jqxhr);
     		        });
-			}}
-		]
+    				}
+    			}
+    		]
     	});
     	RS.switchToJQueryUIButton();
     });
@@ -129,24 +140,34 @@ function initWitnessDialog(dialogTitle) {
     			$('.option').prop('disabled',false);
     			$('.option[value=statement1]').prop('checked', true);
     			$('#inputOption2').prop('disabled',false);
-			RS.disableJQueryDialogButtonById('witness-dialog-proceed-btn');
-			RS.enableJQueryDialogButtonById('witness-dialog-witness-btn');
+    			RS.disableJQueryDialogButtonById('witness-dialog-proceed-btn');
+    			RS.enableJQueryDialogButtonById('witness-dialog-witness-btn');
             },
             close: function ( e ) {
             	$(".passWitnessInput").val("");
             }, 
-    		buttons: 
-		[
-			{ id: 'witness-dialog-cancel-btn', text: RS.msg("legacyjs.workspace.signingProcess.cancelButton"), click: function(){
+    		buttons: [
+    			{
+    				id: 'witness-dialog-cancel-btn',
+    				text: RS.msg("legacyjs.workspace.signingProcess.cancelButton"),
+    				click: function(){
     				$("#witnessDocumentDialog").dialog('close');
-			}},
-			{ id: 'witness-dialog-witness-btn', text: RS.msg("legacyjs.workspace.signingProcess.witnessButton"), click: function (){
+    				}
+    			},
+    			{
+    				id: 'witness-dialog-witness-btn',
+    				text: RS.msg("legacyjs.workspace.signingProcess.witnessButton"),
+    				click: function (){
     				$('#confirmationWitnessSection').slideDown('slow');
     				$('#confirmationSection .passSignInput').focus();
-				RS.disableJQueryDialogButtonById('witness-dialog-witness-btn');
-				RS.enableJQueryDialogButtonById('witness-dialog-proceed-btn');
-			}},
-			{ id: 'witness-dialog-proceed-btn', text: RS.msg("legacyjs.workspace.signingProcess.proceedButton"), click: function (){
+    				RS.disableJQueryDialogButtonById('witness-dialog-witness-btn');
+    				RS.enableJQueryDialogButtonById('witness-dialog-proceed-btn');
+    				}
+    			},
+    			{
+    				id: 'witness-dialog-proceed-btn',
+    				text: RS.msg("legacyjs.workspace.signingProcess.proceedButton"),
+    				click: function (){
     
     				var optionInputs = $('.option');
     				var option = optionInputs.filter(':checked').val();
@@ -161,7 +182,7 @@ function initWitnessDialog(dialogTitle) {
     						declineMsg:declineMsg
     				};
     				
-				RS.blockPage(RS.msg("legacyjs.workspace.signingProcess.witnessingInProgress"));
+    				RS.blockPage(RS.msg("legacyjs.workspace.signingProcess.witnessingInProgress"));
     				var jqxhr= $.post(createURL("/workspace/editor/structuredDocument/ajax/proceedWitnessing"), data, function (result) { 
     					RS.unblockPage();
     					var signature = result.data,
@@ -176,17 +197,18 @@ function initWitnessDialog(dialogTitle) {
     					signatureRecalculateStatus();
     					RS.trackEvent('Document Witness Completed');
     	                if (option === 'true') {
-						_closeWitnessingDlgAndConfirm(RS.msg("legacyjs.workspace.signingProcess.witnessed"));
+    						_closeWitnessingDlgAndConfirm(RS.msg("legacyjs.workspace.signingProcess.witnessed"));
     					} else { // witnessing declined
-						_closeWitnessingDlgAndConfirm(RS.msg("legacyjs.workspace.signingProcess.witnessingDeclined"));
+    						_closeWitnessingDlgAndConfirm(RS.msg("legacyjs.workspace.signingProcess.witnessingDeclined"));
     					}
     				});
     				jqxhr.fail(function(){
     					RS.unblockPage();
-		            RS.ajaxFailed(RS.msg("legacyjs.workspace.signingProcess.witnessingAction"),false,jqxhr);
+    		            RS.ajaxFailed(RS.msg("legacyjs.workspace.signingProcess.witnessingAction"),false,jqxhr);
     		        });
-			}}
-		]
+    				}
+    			}
+    		]
     	});
     	RS.switchToJQueryUIButton();
     });

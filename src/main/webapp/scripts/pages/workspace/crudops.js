@@ -519,8 +519,13 @@ function registerFavoritesRecordsHandler() {
 
         RS.trackEvent("user:favorite:documents:workspace", { count: favIds.length });
         RS.confirm(RS.msg("legacyjs.workspace.crudOps.markedAsFavorite", favIds.length), "success", 3000);
-        } else {
-        apprise(RS.msg("legacyjs.workspace.crudOps.favoriteFailed", getValidationErrorString(result.errorMsg)));
+      } else {
+        apprise(
+          RS.msg(
+            "legacyjs.workspace.crudOps.favoriteFailed",
+            getValidationErrorString(result.errorMsg)
+          )
+        );
       }
     }).fail(function () {
       RS.ajaxFailed(RS.msg("legacyjs.workspace.crudOps.addingToFavoritesAction"), true, jqxhr);

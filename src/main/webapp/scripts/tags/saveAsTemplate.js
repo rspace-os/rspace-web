@@ -48,9 +48,9 @@ function initSaveAsTemplateDlg() {
                     RS.unblockPage();
                     //RSPAC-1712. Show special message if not authorised
                     if(jqxhr.status == 404) {
-	apprise(RS.msg("legacyjs.core.saveTemplate.notOwner"))
+                    	apprise(RS.msg("legacyjs.core.saveTemplate.notOwner"))
                     } else {
-	 RS.ajaxFailed(RS.msg("legacyjs.core.saveTemplate.createAction"), false, jqxhr);
+                    	 RS.ajaxFailed(RS.msg("legacyjs.core.saveTemplate.createAction"), false, jqxhr);
                     }
                    
                 });

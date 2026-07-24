@@ -86,7 +86,7 @@
 				function (xhr) {
 					tr$.hide("fade", function () {
 						if( $('tr.notificationRow').filter(":visible").size() == 0 ){
-		contentDiv$.html(RS.msg("legacyjs.messaging.noActiveMessages"));
+          		contentDiv$.html(RS.msg("legacyjs.messaging.noActiveMessages"));
         	  }  
 					});
           decrementMessagesBadge();
@@ -102,7 +102,7 @@
 
     		var link$= $(this);
     		// progress indicator
-		link$.parent().append("<p>" + RS.msg("legacyjs.messaging.updating") + "</p>");
+    		link$.parent().append("<p>" + RS.msg("legacyjs.messaging.updating") + "</p>");
     		var tr$ = link$.closest('tr');
     		var id = getNotificnIDArrayFromRows (tr$);
     		var postData = {
@@ -110,7 +110,7 @@
 			};
     		var optMessageTxtBox=tr$.find('.replyMessageArea');
     		if(isBlank(optMessageTxtBox.val())){
-			optMessageTxtBox.val(RS.msg("legacyjs.messaging.enterMessageHere"));
+    			optMessageTxtBox.val(RS.msg("legacyjs.messaging.enterMessageHere"));
     			return;
     		}
 			
@@ -143,7 +143,7 @@
     	
     		var status =tr$.find('.messageStatusChooser').find(":selected").val();
     		if (curStatus == status){
-			tr$.find('.updateDetails').append("<p class='temp'>" + RS.msg("legacyjs.messaging.noChangeInStatus"));
+    			tr$.find('.updateDetails').append("<p class='temp'>" + RS.msg("legacyjs.messaging.noChangeInStatus"));
     			return;
     		}
     		var postData={
@@ -179,7 +179,7 @@
     	// set up pop-up dialog with message listings, dialog defined in headers.jsp
     	$('#messageDlg').dialog({
     		resizable: true,
-		title: RS.msg("legacyjs.messaging.messagesAndRequestsDialogTitle"),
+    		title: RS.msg("legacyjs.messaging.messagesAndRequestsDialogTitle"),
     		modal: true,
     		autoOpen:false,
     		height:500,
@@ -200,7 +200,7 @@
     		},
     		close: doPoll,// refresh count after possible modification. This is defined in notifications.js
     		buttons: {
-			[RS.msg("legacyjs.common.close")]: function() {
+    			[RS.msg("legacyjs.common.close")]: function() {
     				$(this).dialog("close");
    				}
     		}

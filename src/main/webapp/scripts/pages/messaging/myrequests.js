@@ -53,7 +53,7 @@
 				function (xhr) {
 					tr$.hide("fade", function () {
 						if( $('tr.myrequestRow').filter(":visible").size() == 0 ) {
-					contentDiv$.html(RS.msg("legacyjs.messaging.noRequestsSent"));
+			          		contentDiv$.html(RS.msg("legacyjs.messaging.noRequestsSent"));
 			          	}
 					});
 				}

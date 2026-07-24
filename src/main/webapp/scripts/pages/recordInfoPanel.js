@@ -351,8 +351,15 @@ function _setInfoPanelInternalLinksHtml($internalLinksDiv, info, recordTypeNameT
     return;
   }
 
-  var internalLinksHtml = RS.msg("legacyjs.workspace.recordInfoPanel.linkedByCount", escapedRecordTypeName, info.linkedByCount)
-    + " <br /><a href='#' class='showLinkedDocs'>" + RS.msg("legacyjs.workspace.recordInfoPanel.showLinkedDocs", info.linkedByCount) + "</a>";
+  var internalLinksHtml =
+    RS.msg(
+      "legacyjs.workspace.recordInfoPanel.linkedByCount",
+      escapedRecordTypeName,
+      info.linkedByCount
+    ) +
+    " <br /><a href='#' class='showLinkedDocs'>" +
+    RS.msg("legacyjs.workspace.recordInfoPanel.showLinkedDocs", info.linkedByCount) +
+    "</a>";
 
   $internalLinksDiv.empty().append(internalLinksHtml);
   $internalLinksDiv.find('.showLinkedDocs').click(function () {
@@ -367,8 +374,14 @@ function _setInfoPanelInternalLinksHtml($internalLinksDiv, info, recordTypeNameT
             var globalId = recordInfo.oid.idString;
             var name = recordInfo.name;
             var encodedGlobalId = encodeURIComponent(globalId).replace(/'/g, "%27");
-            fullLinkedByHtml += "<li><a href='/globalId/" + encodedGlobalId + "'>" + RS.escapeHtml(globalId) + "</a>"
-              + ": " + RS.escapeHtml(name) + "</li>";
+            fullLinkedByHtml +=
+              "<li><a href='/globalId/" +
+              encodedGlobalId +
+              "'>" +
+              RS.escapeHtml(globalId) +
+              "</a>: " +
+              RS.escapeHtml(name) +
+              "</li>";
           } else {
             var count = privateRecordLinks[owner] || 0;
             privateRecordLinks[owner] = ++count;

@@ -109,7 +109,7 @@ $(document).ready(function (){
 			function (data) {
 		    	if (currSelection === 'WRITE') { currSelection = 'EDIT'};
 		    	$(this).closest('td').html(generateSelectionView(currSelection));
-			RS.confirm(RS.msg("legacyjs.sharedRecords.permissionsUpdated"), "success", 3000);
+		    	RS.confirm(RS.msg("legacyjs.sharedRecords.permissionsUpdated"), "success", 3000);
 		    }
 		).always(function(){
 			RS.unblockPage($(tableElement));

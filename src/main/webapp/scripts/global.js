@@ -948,9 +948,12 @@ $(function () {
       if (nextMaint) {
         var headerInfoMsg = RS.msg("legacyjs.core.maintenance.header", nextMaint.formattedStartDate);
         var warningMsg = RS.msg("legacyjs.core.maintenance.warning", nextMaint.formattedStartDate);
-        var noticeMsg = RS.msg("legacyjs.core.maintenance.notice",
-          nextMaint.formattedStartDate, nextMaint.formattedEndDate,
-          RS.escapeHtml(nextMaint.message));
+        var noticeMsg = RS.msg(
+          "legacyjs.core.maintenance.notice",
+          nextMaint.formattedStartDate,
+          nextMaint.formattedEndDate,
+          RS.escapeHtml(nextMaint.message)
+        );
 
         if (!nextMaint.canUserLoginNow) {
           var event = new CustomEvent('show-toast-message', {

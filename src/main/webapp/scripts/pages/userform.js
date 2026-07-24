@@ -553,7 +553,7 @@ function initApiKeyDisplay () {
 
 	  $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function(response) {  
       	if (response.data) {
-		apprise(RS.msg("legacyjs.userForm.setVerificationPasswordBeforeApiKey"));
+      		apprise(RS.msg("legacyjs.userForm.setVerificationPasswordBeforeApiKey"));
       	} else {
           $('#pwdConfirmDialog').dialog('open');
       	}
@@ -628,7 +628,7 @@ $(document).ready(function (){
   $('#userChangeEmailButton').click(function(e) {
 	  $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function(response) {  
       	if (response.data) {
-		apprise(RS.msg("legacyjs.userForm.setVerificationPasswordBeforeChangingEmail"));
+      		apprise(RS.msg("legacyjs.userForm.setVerificationPasswordBeforeChangingEmail"));
       	} else {
       		$('#changeEmailDialog').dialog('open');
       	}

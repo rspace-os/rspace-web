@@ -6,9 +6,18 @@ $(document).ready(function() {
     width: 600,
     height: 750,
     buttons: [
-      { text: RS.msg("legacyjs.common.cancel"), click: function() {$(this).dialog('close');} },
+      {
+        text: RS.msg("legacyjs.common.cancel"),
+        click: function() {
+          $(this).dialog('close');
+        }
+      },
       // Import button works, because onClick handler is added by protocols_io-dialog.js
-      { text: RS.msg("legacyjs.core.word.importTitle"), class: 'protocolsImportButton', click: function() {} }
+      {
+        text: RS.msg("legacyjs.core.word.importTitle"),
+        class: 'protocolsImportButton',
+        click: function() {}
+      }
     ]
   });
 });
