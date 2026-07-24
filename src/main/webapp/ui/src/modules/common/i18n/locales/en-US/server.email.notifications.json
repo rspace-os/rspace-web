@@ -35,7 +35,7 @@
       "request": {
         "concerningDocument": "This request concerns the document <a href=\"{0}\">{1}</a>.",
         "concerningNotebook": "This request concerns the notebook <a href=\"{0}\">{1}</a>.",
-        "joinInstruction": "In order to join the {0, select, labGroup {Lab Group} other {Project Group}} \"<b>{1}</b>\", click to <a href=\"{2}\">ACCEPT</a> or <a href=\"{3}\">REJECT</a> this invitation, then log in to RSpace with your credentials.",
+        "joinInstruction": "In order to join the {0, select, labGroup {Lab Group} other {Project Group}} \"<b>{1}</b>\", click to <a href=\"{2}\" rel=\"nofollow\" target=\"_blank\" class=\"word-wrap\">ACCEPT</a> or <a href=\"{3}\" rel=\"nofollow\" target=\"_blank\" class=\"word-wrap\">REJECT</a> this invitation, then log in to RSpace with your credentials.",
         "joinPermissionNote": "{0, select, labGroup {If you accept, the group''s PI will be permitted to view your documents.} other {Project Groups have no PI, your documents won''t be visible to other group members until you explicitly share them.}}",
         "rspaceRequestFromUser": "RSpace Request from \"{0}\" (user \"{1}\")",
         "sentRequest": "The RSpace {0, select, pi {Principal Investigator} other {User}} \"<b>{1}</b>\" sent you a request on {2} at {3}."

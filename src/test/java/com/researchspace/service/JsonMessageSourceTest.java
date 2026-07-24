@@ -54,6 +54,14 @@ class JsonMessageSourceTest {
         "'value' cannot be parsed",
         "errors.inventory.field.validation",
         "'value' cannot be parsed");
+    assertMessage(
+        "Incorrect id format - should be '\\d+-\\d+' but was 'bad-id'",
+        "errors.composedId.invalidFormat",
+        "bad-id");
+    assertMessage(
+        "By accepting, you will be removed from the group 'Example Group':",
+        "groups.view.removeMe.confirmText",
+        "Example Group");
   }
 
   @Test

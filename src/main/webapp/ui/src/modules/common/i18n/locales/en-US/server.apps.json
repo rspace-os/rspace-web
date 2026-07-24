@@ -36,12 +36,12 @@
     "dmpTool": {
       "errors": {
         "alreadyExists": "A DMP with id {0}, title: {1} already exists",
-        "download": "Couldn't download DMP for id: {0}. {1}",
-        "downloadFile": "Couldn't download DMP file for id: {0}",
-        "getDetails": "Couldn't get details of DMP with id: {0}",
+        "download": "Couldn''t download DMP for id: {0}. {1}",
+        "downloadFile": "Couldn''t download DMP file for id: {0}",
+        "getDetails": "Couldn''t get details of DMP with id: {0}",
         "loadUnavailable": "Unable to load your DMPs. For more information visit {0}",
         "noAccessToken": "Access token isn't enabled - user must connect in Apps page",
-        "updateDoi": "Couldn't update DMP with DOI: {0}"
+        "updateDoi": "Couldn''t update DMP with DOI: {0}"
       },
       "update": {
         "success": "DMP updated"
@@ -239,7 +239,7 @@
       "refreshGrantMissingToken": "Refresh grant requires parameter `refresh_token` to be present.",
       "tokenCreationFailed": "OAuth token could not be created.",
       "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time.",
-      "userApiAccessDisabled": "User ''{0}'' doesn't have access to API",
+      "userApiAccessDisabled": "User ''{0}'' doesn''t have access to API",
       "userLockedOrDisabled": "User ''{0}'' has their account locked or disabled."
     }
   },
@@ -262,7 +262,7 @@
       "invalidAppId": "Invalid app Id",
       "noUserConnection": "No UserConnection exists for: {0}",
       "unknownIntegration": "Unknown or undefined integration",
-      "urlCreationFailed": "Couldn't create {0} repositoryURL: {1}"
+      "urlCreationFailed": "Couldn''t create {0} repositoryURL: {1}"
     }
   },
   "search": {

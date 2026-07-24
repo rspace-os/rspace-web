@@ -15,7 +15,7 @@
       "success": {
         "conclusion1": "Invited users will be added to the group when they accept their invitation.",
         "conclusion2a": "View and manage your new group {0}",
-        "conclusion2b": "Once the group is created, you'll be able to link to it from your {0} page.",
+        "conclusion2b": "Once the group is created, you''ll be able to link to it from your {0} page.",
         "currentPiCreated": "You have created a group called {0}.",
         "currentPiInvitations": "The following people have been invited to join the group:",
         "heading": "Congratulations!",

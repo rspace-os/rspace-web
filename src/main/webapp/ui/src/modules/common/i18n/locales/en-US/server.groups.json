@@ -9,7 +9,7 @@
       "operationInProgress": "Cannot launch new bulk share operation; already running",
       "unsupportedItem": "{0} ({1}) cannot be autoshared: autosharing must be enabled and the item must be a {2}.",
       "userAlreadySet": "Autosharing for user {0} in group {1} has already been set to {2}",
-      "userForbidden": "User {0} attempted to modify user's {1} autoshare status without permission"
+      "userForbidden": "User {0} attempted to modify user''s {1} autoshare status without permission"
     },
     "notification": {
       "allSucceededDisabled": "Automatic sharing is now disabled. All your previously shared work is now unshared.",
@@ -162,7 +162,7 @@
     },
     "swapPi": {
       "errors": {
-        "labGroupRequired": "Can't alter PIs of a collaboration group {0}, aborting set new PI"
+        "labGroupRequired": "Can''t alter PIs of a collaboration group {0}, aborting set new PI"
       },
       "requiredNewPi": "New PI must be different from old PI",
       "requiredPi": {
@@ -221,7 +221,7 @@
         "canView": "Can View Group's Documents"
       },
       "removeMe": {
-        "confirmText": "By accepting, you will be removed from the group '{0}':",
+        "confirmText": "By accepting, you will be removed from the group ''{0}'':",
         "noSharedContent": "You will no longer be able to see shared content within the group.",
         "piNoAccess": "The PI of the group will no longer be able to see your work.",
         "privateProfileWarning": "This group is private - you will no longer be able to view the group's profile",

@@ -480,7 +480,7 @@ public class ExportControllerMVCIT extends MVCTestBase {
                 .principal(u::getUsername)
                 .content(requestContent)
                 .contentType(APPLICATION_JSON_UTF8))
-        .andExpect(status().isOk())
+        .andExpect(status().isBadRequest())
         .andExpect(
             content()
                 .string(

@@ -189,7 +189,7 @@
       "upload": {
         "notAnImage": "The file type is not an image.",
         "nothingSelected": "Please select something to upload",
-        "tooLarge": "Please upload a smaller file, that's less than {0}kB"
+        "tooLarge": "Please upload a smaller file, that''s less than {0}kB"
       },
       "useTemplate": {
         "folderChooserDescription": "to put the document there.",
@@ -232,7 +232,7 @@
       "importFile": "Import File",
       "insertingChemFiles": "Inserting chem files...",
       "uploadCancellationAttempted": "File upload cancellation attempted...",
-      "uploadFailedTooBigOrFolder": "Couldn't upload to server - possibly either a folder (not supported), or too big ({0})",
+      "uploadFailedTooBigOrFolder": "Couldn''t upload to server - possibly either a folder (not supported), or too big ({0})",
       "uploaded": "Uploaded {0}",
       "uploadingEllipsis": "Uploading..."
     },
@@ -415,7 +415,7 @@
         "gettingSettingsPageAction": "Getting Settings page",
         "gettingSettingsValuesAction": "Getting Settings values",
         "updateAction": "Update",
-        "updateFailed": "Community App Setting ''{0}'' couldn't be updated.",
+        "updateFailed": "Community App Setting ''{0}'' couldn''t be updated.",
         "updated": "Community App Setting ''{0}'' updated to ''{1}''"
       },
       "config": {
@@ -478,7 +478,7 @@
       "netFileSystem": {
         "confirmDeleteFileSystem": "Delete File System ''{0}''?",
         "deleting": "Deleting...",
-        "fileSystemDeleteFailed": "The File System ''{0}'' couldn't be deleted.<br><br>That could happen if users already created some File Stores for this File System.",
+        "fileSystemDeleteFailed": "The File System ''{0}'' couldn''t be deleted.<br><br>That could happen if users already created some File Stores for this File System.",
         "fileSystemDeleted": "File System deleted",
         "fileSystemSaved": "File System saved",
         "gettingFileSystemsPageAction": "Getting File Systems page",
@@ -494,7 +494,7 @@
         "gettingSettingsPageAction": "Getting Settings page",
         "gettingSettingsValuesAction": "Getting Settings values",
         "updateAction": "Update",
-        "updateFailed": "System Setting ''{0}'' couldn't be updated.",
+        "updateFailed": "System Setting ''{0}'' couldn''t be updated.",
         "updated": "System Setting ''{0}'' updated to ''{1}''"
       },
       "settingsCategory": {
@@ -604,7 +604,7 @@
       "oneDriveConfigMissing": "OneDrive integration has not been set up (\"clientId\" or \"redirectUri\" missing). Contact your system administrator.",
       "protocols": {
         "changeHandlerCalled": "Handler for .change() called.",
-        "importFailed": "{0, plural, one {Couldn't import selected protocol.} other {Couldn't import selected protocols.}}",
+        "importFailed": "{0, plural, one {Couldn''t import selected protocol.} other {Couldn''t import selected protocols.}}",
         "noResults": "No results found",
         "retrieveListFailed": "Could not retrieve the list of protocols.",
         "retrieveProtocolFailed": "Could not retrieve protocol {0} from Protocols.io",
@@ -739,8 +739,8 @@
         "embeddedVideoFrom": "embedded video from {0}",
         "errorsPrefix": "Errors: {0}",
         "externalLinkInfoDialogTitle": "External Link Info",
-        "forbiddenCharInName": "Sorry, ''{0}'' is a forbidden character that you can't use in document name",
-        "forbiddenCharInTag": "Sorry, ''{0}'' is a forbidden character that you can't use in tags",
+        "forbiddenCharInName": "Sorry, ''{0}'' is a forbidden character that you can''t use in document name",
+        "forbiddenCharInTag": "Sorry, ''{0}'' is a forbidden character that you can''t use in tags",
         "imageDetails": "Image details",
         "linkAtServer": "at {0}",
         "markushNotSupported": "RSpace doesn't currently support the generation of Markush or R-Group structure images, your file is stored in the gallery but cannot be inserted into a document",
@@ -768,7 +768,7 @@
         "copyAction": "Copy",
         "copyingProgress": "Copying...",
         "deleteAction": "Delete",
-        "deleteConfirmConsequences": "{0, plural, one {Do you want to delete the following document?} other {Do you want to delete the following documents?}}<br><strong>{1}</strong><br><br>Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.",
+        "deleteConfirmConsequences": "{0, plural, one {Do you want to delete the following document?} other {Do you want to delete the following documents?}}<br><strong>{1}</strong><br><br>Deleting documents that you <em>own</em> will also delete them from the view of those you''re sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.",
         "deletingFromFavoritesAction": "Deleting from favorites",
         "deletingProgress": "Deleting...",
         "depositSuccessful": "Deposit successfully at {0}",
@@ -798,7 +798,7 @@
         "cancellingEdits": "Cancelling autosaved document edits",
         "cannotCancelDocument": "You cannot cancel the current document",
         "cannotEdit": "Sorry, you can't edit the document",
-        "cannotEditOtherEditing": "Sorry, you can't edit the document now - it is currently being edited by {0}",
+        "cannotEditOtherEditing": "Sorry, you can''t edit the document now - it is currently being edited by {0}",
         "cannotSaveAndCopy": "You cannot perform 'Save and Copy' here - maybe you don't have permission to create a document here",
         "cannotSaveAndNew": "You cannot perform 'Save and New' here - maybe you don't have permission to create a document here",
         "cannotSaveDocument": "You cannot save the current document",
@@ -820,7 +820,7 @@
         "valueNotANumber": "Value [{0}] is not a number!"
       },
       "documentView": {
-        "deleteConfirm": "<div style='line-height:1.3em'>Do you want to delete the following this document? - {0}. <a href='#' id='moreDeleteInfoLnk' class='moreDeleteInfo'>Details...</a><div style='display:none;' id='moreDeleteInfoContent'>Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with.</br>Deleting a document <em>shared with you</em> will only delete it from your view.<br/><a href='#' class='moreDeleteInfo'>Hide...</a></div></div>",
+        "deleteConfirm": "<div style=''line-height:1.3em''>Do you want to delete the following this document? - {0}. <a href=''#'' id=''moreDeleteInfoLnk'' class=''moreDeleteInfo''>Details...</a><div style=''display:none;'' id=''moreDeleteInfoContent''>Deleting documents that you <em>own</em> will also delete them from the view of those you''re sharing with.</br>Deleting a document <em>shared with you</em> will only delete it from your view.<br/><a href=''#'' class=''moreDeleteInfo''>Hide...</a></div></div>",
         "deleteConfirmOk": "Delete",
         "deleteDocumentAction": "Delete operation",
         "fieldTooWideWarning": "The content of last edited field is wider than the page. It may affect PDF export and printout",
@@ -895,7 +895,7 @@
         "changingPermissions": "Changing permissions...",
         "configureAccessTitle": "Configure access to Forms",
         "copyingForms": "Copying selected forms...",
-        "deleteFailed": "Deleting selected items wasn't successful. Server returned message: {0}",
+        "deleteFailed": "Deleting selected items wasn''t successful. Server returned message: {0}",
         "deleteFormAction": "Delete form",
         "deletingForms": "Deleting selected forms...",
         "genericError": "Error",
@@ -952,7 +952,7 @@
         "cancelButton": "Cancel",
         "chooseFormTitle": "Choose a form",
         "confirmDeletionTitle": "Confirm Deletion",
-        "deleteEntryConfirm": "Are you sure you want to delete the following entry?<br><strong>{0}</strong><br /><br />Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.",
+        "deleteEntryConfirm": "Are you sure you want to delete the following entry?<br><strong>{0}</strong><br /><br />Deleting documents that you <em>own</em> will also delete them from the view of those you''re sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.",
         "exitWithoutSavingConfirm": "Are you sure you want to exit without saving changes?",
         "importWordTitle": "Import from Word/Open Office",
         "noEntriesToEdit": "There are no entries to edit yet in this notebook - please click on Create > New Entry to start editing.",
@@ -982,8 +982,8 @@
         "retrievingCollaboraExtsAction": "retrieving Collabora supported extensions",
         "retrievingMsOfficeExtsAction": "retrieving MS Office supported extensions",
         "sharedHeader": "{0, select, notebook {This notebook is shared:} other {This document is shared:}}",
-        "sharedImplicitly": "implicitly - is in shared Notebook <a href='/globalId/{0}'>{0}</a> (shared with: {1})",
-        "sharedIntoNotebook": "into Notebook <a href='/globalId/{0}'>{0}</a> (owner: {1})",
+        "sharedImplicitly": "implicitly - is in shared Notebook <a href=''/globalId/{0}''>{0}</a> (shared with: {1})",
+        "sharedIntoNotebook": "into Notebook <a href=''/globalId/{0}''>{0}</a> (owner: {1})",
         "sharedWithGroup": "with {0} (group) for {1, select, read {read} write {write} edit {edit} owner {owner} other {unknown access}}",
         "sharedWithUser": "with {0} (user) for {1, select, read {read} write {write} edit {edit} owner {owner} other {unknown access}}",
         "showLinkedDocs": "Show linked {0, plural, one {doc} other {docs}}",

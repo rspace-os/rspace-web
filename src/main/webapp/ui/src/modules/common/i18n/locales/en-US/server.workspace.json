@@ -6,7 +6,7 @@
       "elementsUnavailable": "RSChemElements with Chemistry File Id: {0} could not be retrieved. Details: {1}",
       "fileUnavailable": "Chemistry File with Id: {0} could not be retrieved. Details: {1}",
       "imageUpdateFailed": "An Error Occurred While Updating Chemical Element Images Details: {0}",
-      "infoUnavailable": "Couldn't retrieve info for chemId: {0}"
+      "infoUnavailable": "Couldn''t retrieve info for chemId: {0}"
     },
     "validation": {
       "searchTermRequired": "Search term is required",
@@ -923,7 +923,7 @@
     },
     "errors": {
       "homeFolderMissing": "Home folder should be present, but is not for user {0}",
-      "inconsistentSharingStatus": "The folder you're browsing seems to have inconsistent sharing status. Please contact your System Admin, citing folder ID: {0}. More details at {1}",
+      "inconsistentSharingStatus": "The folder you''re browsing seems to have inconsistent sharing status. Please contact your System Admin, citing folder ID: {0}. More details at {1}",
       "notMediaRecord": "Not a media record"
     },
     "selectRecordAriaLabel": "Select record",

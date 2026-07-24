@@ -178,7 +178,7 @@
       "pageHeader": "Create a new individual account"
     },
     "createAccountForm": {
-      "backdoorAccountInfo": "Should this be a backdoor login account? Backdoor accounts don't use SSO for authentication, can be only logged into through Admin Login screen - see {0}.",
+      "backdoorAccountInfo": "Should this be a backdoor login account? Backdoor accounts don''t use SSO for authentication, can be only logged into through Admin Login screen - see {0}.",
       "backdoorUsernameWarning": "Backdoor account - pick a username that won't conflict with potential SSO user!",
       "communitySelectionLabel": "Select the new user's Community",
       "confirmPassword": {
@@ -263,13 +263,13 @@
         "wrongNumberOfFields": "Community line [{0}] at line [{1}] needs at least 2 fields: community name and at least one LabGroup"
       },
       "communityAdmin": {
-        "noAdminRole": "Attempt to make User [{0}] the Community Admin at line [{1}], but is not assigned an Admin role. Alter this user's role to ROLE_ADMIN",
+        "noAdminRole": "Attempt to make User [{0}] the Community Admin at line [{1}], but is not assigned an Admin role. Alter this user''s role to ROLE_ADMIN",
         "wrongNumberOfFields": "Community Admin line [{0}] at line [{1}] needs at least 2 fields: community name and at least one Admin user"
       },
       "group": {
         "blankGroupName": "Group name is blank at line [{0}]",
         "blankPi": "PI username name is blank at line [{0}]",
-        "piWithoutPiRole": "Attempt to make User [{0}] the group PI at line [{1}], but is not assigned a PI role. Alter this user's role to ROLE_PI",
+        "piWithoutPiRole": "Attempt to make User [{0}] the group PI at line [{1}], but is not assigned a PI role. Alter this user''s role to ROLE_PI",
         "wrongNumberOfFields": "Group line [{0}] at line [{1}] needs at least 2 fields: group name and a PI user"
       },
       "unknownLabGroup": "LabGroup [{0}] not found among groups to create at line [{1}]",
@@ -421,7 +421,7 @@
     },
     "piToUser": {
       "validation": {
-        "piRoleNotAssigned": "{0} does not have a 'PI' role to be revoked.",
+        "piRoleNotAssigned": "{0} does not have a ''PI'' role to be revoked.",
         "piRoleStillAssignedInGroup": "{0} cannot yet have PI role revoked, as they are still the PI of at least one group. Please assign a new PI to these groups. Once {0} is no longer a PI of a group, the PI role can be revoked."
       }
     },
@@ -486,7 +486,7 @@
       },
       "label": "Please choose a user you want to 'operate as'.",
       "permissionsNotice": "You can impersonate other users through this form, and will have exactly the same roles and permissions as that user.",
-      "userNotInCommunity": "Either {0} is not in your Community, or you are not authorised to 'Operate As' them.",
+      "userNotInCommunity": "Either {0} is not in your Community, or you are not authorised to ''Operate As'' them.",
       "userNotificationNotice": "The user will be notified that you are impersonating them, unless you choose the incognito option.",
       "usernamePlaceholder": "Enter a name, email or username..."
     },
@@ -555,7 +555,7 @@
       "success": "PI role successfully created for {0}",
       "validation": {
         "alreadyPi": "{0} is already a PI, please choose another user or cancel.",
-        "userRoleRequired": "{0} does not have a 'User' role - only users can be promoted to PIs."
+        "userRoleRequired": "{0} does not have a ''User'' role - only users can be promoted to PIs."
       }
     }
   },

@@ -120,7 +120,7 @@
     "existing": {
       "user": "This username ({0}) or e-mail address ({1}) already exists. Please try a different username and/or email.",
       "username": "This username ({0}) already exists. Please try a different username.",
-      "usernameAlias": "This username ({0}) is already registered as a username alias. Please try a different username, or contact System Admin if you think that username shouldn't be taken by an alias"
+      "usernameAlias": "This username ({0}) is already registered as a username alias. Please try a different username, or contact System Admin if you think that username shouldn''t be taken by an alias"
     },
     "fromDateLaterThanToDate": "From date should be before to date.",
     "invalid": "{0} is invalid.",
@@ -174,7 +174,7 @@
     "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
     "composedId": {
       "missing": "No id to retrieve",
-      "invalidFormat": "Incorrect id format - should be '\\d+-\\d+' but was '{0}'"
+      "invalidFormat": "Incorrect id format - should be ''\\d+-\\d+'' but was ''{0}''"
     },
     "globalId": {
       "invalidSyntax": "Invalid syntax of oid [{0}]",

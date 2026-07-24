@@ -12,7 +12,7 @@
         "widthNonNegative": "Requested width cannot be less than zero"
       },
       "bulk": {
-        "creationUnsupportedType": "Bulk creation only supports records with the 'type' field set to {0}; was: {1}.",
+        "creationUnsupportedType": "Bulk creation only supports records with the ''type'' field set to {0}; was: {1}.",
         "operationTypeRequired": "Bulk operation must specify operationType",
         "recordCount": "Bulk operation must specify at least 1, at most 100 records",
         "recordsRequired": "Bulk operation must specify list of records"
