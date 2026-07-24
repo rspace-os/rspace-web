@@ -21,6 +21,7 @@ import com.axiope.search.WorkspaceSearchInputValidator;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.TextSearchDao;
 import com.researchspace.model.Group;
@@ -42,8 +43,10 @@ import com.researchspace.service.inventory.SampleApiManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.UrlValidator;
@@ -65,6 +68,7 @@ public class SearchManagerImpl implements SearchManager {
   private @Autowired FolderManager folderMgr;
   private @Autowired SampleApiManager sampleApiManager;
   private @Autowired SampleTemplateDao sampleTemplateDao;
+  private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   private @Autowired BasketApiManager basketApiManager;
   private @Autowired InventoryPermissionUtils invPermissionUtils;
   private @Autowired MessageSourceUtils messages;
@@ -299,13 +303,26 @@ public class SearchManagerImpl implements SearchManager {
      * so default templates are included in search.
      */
     if (searchConfig.isRestrictByUser()) {
-      String defaultTemplatesOwner = sampleTemplateDao.getDefaultTemplatesOwner();
-      if (defaultTemplatesOwner != null
-          && !invPermissionUtils.isInventoryOwnerReadableByUser(defaultTemplatesOwner, user)) {
-        // let's also search templates of default templates owner
-        ownersFilter.add(defaultTemplatesOwner);
-        searchConfig.setDefaultTemplatesOwner(defaultTemplatesOwner);
+      // Include the default SAMPLE and INSTRUMENT template owners so their locked default templates
+      // appear in restricted global search (RSDEV-1219 E2). Track every such owner (not just the
+      // last one) so the full-text post-filter suppresses each owner's non-template records;
+      // otherwise, when the two defaults resolve to different owners, one owner's ordinary
+      // inventory could leak into another user's restricted search results.
+      Set<String> defaultTemplatesOwners = new HashSet<>();
+      for (String defaultOwner :
+          new String[] {
+            sampleTemplateDao.getDefaultTemplatesOwner(),
+            instrumentTemplateDao.getDefaultTemplatesOwner()
+          }) {
+        if (defaultOwner != null
+            && !invPermissionUtils.isInventoryOwnerReadableByUser(defaultOwner, user)) {
+          if (!ownersFilter.contains(defaultOwner)) {
+            ownersFilter.add(defaultOwner);
+          }
+          defaultTemplatesOwners.add(defaultOwner);
+        }
       }
+      searchConfig.setDefaultTemplatesOwners(defaultTemplatesOwners);
       searchConfig.setUsernameFilter(ownersFilter);
 
       List<String> userGroupUniqueNames =

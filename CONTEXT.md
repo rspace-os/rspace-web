@@ -3,6 +3,40 @@
 The shared, canonical vocabulary for this project. Terms are added as they are
 resolved during design. This file is a glossary only — no implementation details.
 
+## Inventory templates
+
+- **Instrument template** — a reusable definition (name + custom fields) from which
+  a user creates concrete Instruments. Persisted in the single-table
+  `InstrumentEntity` hierarchy under `DTYPE='InstrumentTemplate'`; its sibling
+  discriminator is the concrete `Instrument`.
+- **Sample template** — the analogous reusable definition for Samples, in the
+  `Sample`/`SampleTemplate` hierarchy. The instrument side is being brought to
+  behavioural parity with it, not merged into it.
+- **Default (system) template** — a template shipped by RSpace itself and made
+  readable and duplicable by every user on every deployment, while remaining
+  read-only to non-owners. The first such instrument template is named
+  `Instrument (PIDINST 1.0)`: its fields map 1-to-1 to the PIDINST/B2INST payload.
+  For samples the equivalents are the seeded standard templates (Antibody,
+  Bacteria, etc.).
+- **Default templates owner** — the single account that owns the default templates.
+  All users may read (and therefore duplicate) any template owned by this account.
+  For samples this account is resolved as the owner of the oldest template row,
+  which is safe only because samples are seeded before any user can create one.
+  For instruments the account is resolved explicitly as the sysadmin, because
+  user-created instrument templates may already predate the default one.
+- **Locked template** — a default template that cannot be edited, deleted, or
+  transferred by anyone, enforced by a persisted `isEditable=false` flag rather
+  than by ownership alone. Editability is a property of templates only: a
+  concrete Instrument is never locked, and one created from a locked template is
+  an ordinary, fully mutable instrument. Distinct from ordinary non-owner
+  read-only access, which merely prevents *other* users from mutating a template
+  they do not own.
+- **Custom field** — a typed field that is part of a template's definition and is
+  stamped onto every record created from that template (for the PIDINST template:
+  Owner, Manufacturer, etc.).
+- **Extra field** — an ad-hoc field (text, number or link) a user attaches to an
+  individual record after creation, outside any template definition.
+
 ## Internationalization (i18n)
 
 - **Canonical translation catalog** — i18next JSON. The runtime and

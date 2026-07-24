@@ -369,12 +369,20 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   public ISearchResults<InventoryRecord> getSearchedInventoryRecords(
       InventorySearchConfig srchConfigInput) {
     LuceneSrchCfg srchConfig = new LuceneSrchCfg(srchConfigInput, termListFactory);
+    // The default-owner and read-permission filters apply to LUCENE hits only. Direct global-id /
+    // barcode hits are deliberately exempt: by design they may return records the user cannot
+    // fully read, which the API layer then strips down to public-view fields
+    // (ApiInventoryRecordInfo.clearPropertiesForPublicView; contract pinned by
+    // SearchManagerTest.inventorySearchForLimitedAndPublicView). The default-owner post-filter
+    // exists only to compensate for the default owners being added to the Lucene username filter
+    // (RSDEV-1219 E2), so it has no role on the direct-lookup path either: a default owner's
+    // ordinary record found by exact id/barcode is public-view sanitised like anyone else's.
     List<InventoryRecord> luceneHits =
         getLuceneInventoryQueryList(srchConfig).stream()
             .filter(
                 rec ->
                     isNotOwnedByDefaultTemplatesOwnerOrTemplate(
-                        rec, srchConfigInput.getDefaultTemplatesOwner()))
+                        rec, srchConfigInput.getDefaultTemplatesOwners()))
             .filter(rec -> canCurrentUserReadInvRec(rec, srchConfigInput.getAuthenticatedUser()))
             .collect(Collectors.toList());
     List<InventoryRecord> dbHits =
@@ -502,14 +510,16 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     return isTemplate || searchType != InventorySearchType.SAMPLE_TEMPLATE;
   }
 
-  private boolean isNotOwnedByDefaultTemplatesOwnerOrTemplate(
-      InventoryRecord rec, String defaultTemplatesOwner) {
-    if (defaultTemplatesOwner == null) {
-      return true; // we were not adding default templates owner to search filter
+  // package-private + static for unit testing: a pure predicate over (record, default owners).
+  static boolean isNotOwnedByDefaultTemplatesOwnerOrTemplate(
+      InventoryRecord rec, Set<String> defaultTemplatesOwners) {
+    if (defaultTemplatesOwners == null || defaultTemplatesOwners.isEmpty()) {
+      return true; // we were not adding any default templates owner to the search filter
     }
     boolean notOwnedByDefaultTemplateOwner =
-        !defaultTemplatesOwner.equals(rec.getOwner().getUsername());
-    return notOwnedByDefaultTemplateOwner || rec.isSampleTemplate();
+        !defaultTemplatesOwners.contains(rec.getOwner().getUsername());
+    // keep every default owner's templates (sample and instrument) but exclude their other records
+    return notOwnedByDefaultTemplateOwner || rec.isSampleTemplate() || rec.isInstrumentTemplate();
   }
 
   private boolean canCurrentUserReadInvRec(InventoryRecord rec, User authenticatedUser) {
