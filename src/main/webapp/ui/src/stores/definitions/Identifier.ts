@@ -137,6 +137,7 @@ export interface Identifier {
   publish({
     confirm,
     addAlert,
+    onPublished,
   }: {
     confirm: (
       title: React.ReactNode,
@@ -145,6 +146,7 @@ export interface Identifier {
       cancelLabel: string,
     ) => Promise<boolean>;
     addAlert: (alert: Alert) => void;
+    onPublished?: () => void;
   }): Promise<void>;
   retract({
     confirm,
