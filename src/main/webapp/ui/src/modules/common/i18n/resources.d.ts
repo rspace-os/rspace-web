@@ -3797,6 +3797,135 @@ export default interface Resources {
       },
       "showItems": "Show items being moved"
     },
+    "operations": {
+      "action": {
+        "process": "Process",
+        "subsampleOnly": "Operations can only be run on a subsample."
+      },
+      "aliquot": {
+        "description": "Take equal-volume aliquots. Same material; parent volume decremented.",
+        "label": "Aliquot",
+        "linkFieldName": "Derived from"
+      },
+      "confirm": {
+        "cardSubheader": "New sample · via {operation}",
+        "cardSubheaderTerminal": "Origin subsample · via {operation}",
+        "labels": {
+          "amountTaken": "Amount taken",
+          "amountTakenEach": "Amount taken from each subsample",
+          "documentation": "Documented by",
+          "linkBack": "Links back to",
+          "originEmptied": "Origin volume",
+          "process": "Process",
+          "storageTemp": "Storage temperature",
+          "subsamples": "New subsamples",
+          "template": "Template"
+        },
+        "values": {
+          "amountTaken": "{amount} {unit}",
+          "emptied": "Will be set to 0",
+          "storageTemp": "{temp} °C",
+          "subsamples": "{count} × {amount} {unit} each",
+          "takeAll": "All (subsamples emptied)"
+        }
+      },
+      "cryopreserve": {
+        "cryomediumField": "Cryomedium",
+        "description": "Freeze material into new vials at a chosen storage temperature.",
+        "label": "Cryopreserve",
+        "linkFieldName": "Frozen from"
+      },
+      "derive": {
+        "description": "Extract or process material into a new sample, recording a derivation.",
+        "label": "Derive",
+        "linkFieldName": "Is Derived From using process: {processName}"
+      },
+      "destroy": {
+        "description": "Dispose of the subsample: set its volume to zero and record today's disposal date. Creates nothing.",
+        "disposedField": "Disposed",
+        "label": "Destroy"
+      },
+      "documentation": {
+        "choose": "Choose document",
+        "description": "Optionally link this operation to a document in ELN or Gallery, such as a protocol (SOP).",
+        "fieldName": "Documented by",
+        "none": "No document linked.",
+        "selected": "Linked document: {name}"
+      },
+      "fields": {
+        "amountMode": "Amount to take",
+        "amountModeAll": "Take all",
+        "amountModeAllHelp": "Every selected subsample will be emptied (reduced to 0).",
+        "amountModePerSubsample": "Per subsample",
+        "amountModeSame": "Same amount",
+        "amountTaken": "Amount taken from original",
+        "amountTakenEach": "Amount taken from each",
+        "amountTakenExceedsOrigin": "Cannot take more than the original holds.",
+        "count": "Number of new subsamples",
+        "cryomedium": "Cryomedium",
+        "eachAmount": "Amount per new subsample",
+        "originAmountZero": "Subsample has an amount of 0.",
+        "processName": "Process name",
+        "processNameRequired": "Enter a process name first.",
+        "rememberProcessValues": "Remember values for this process: {name}",
+        "rememberProcessValuesHelp": "Reuses this process's template, amounts and documentation next time.",
+        "sampleName": "New sample name",
+        "storageTemp": "Storage temperature",
+        "storageTempMax": "Storage temperature must be at most {max}°C.",
+        "storageTempMin": "Storage temperature must be at least {min}°C.",
+        "temperatureUnit": "°C"
+      },
+      "passage": {
+        "description": "Create the next passage as a new sample, numbering it from the parent's passage number.",
+        "label": "Passage",
+        "linkFieldName": "Passaged from",
+        "numberField": "Passage number"
+      },
+      "picker": {
+        "needsMultiple": "Select two or more subsamples to pool.",
+        "sameCategory": "Select subsamples of the same measurement type to pool.",
+        "singleOnly": "Select a single subsample for this operation."
+      },
+      "pool": {
+        "description": "Combine an equal amount from several subsamples into one new pooled sample.",
+        "label": "Pool",
+        "linkFieldName": "Pooled from: {originName}"
+      },
+      "revive": {
+        "description": "Revive frozen material into a new sample, recorded as a variant of the original.",
+        "label": "Revive",
+        "linkFieldName": "Revived from"
+      },
+      "template": {
+        "checking": "Checking template…",
+        "description": "Optionally choose a template for the new sample.",
+        "fromSample": "Use the parent sample's template",
+        "loadingTemplates": "Loading templates…",
+        "mandatoryFieldsError": "This template cannot be used: the required field(s) {fields} have no default value. Choose another template.",
+        "noTemplates": "No templates found",
+        "none": "No template",
+        "parentHasNoTemplate": "The parent sample has no template, so this option is unavailable. Choose an existing template or none.",
+        "pick": "Choose an existing template",
+        "searchLabel": "Search templates",
+        "selectedLabel": "Selected template",
+        "valueFromSample": "From {name}",
+        "valueNone": "None (ad-hoc sample)"
+      },
+      "wizard": {
+        "failed": "The operation could not be completed",
+        "inProgress": "Performing operation…",
+        "perform": "Perform",
+        "reviewEdit": "Review / edit",
+        "step": {
+          "amounts": "Amounts",
+          "confirm": "Confirm",
+          "details": "Details",
+          "documentation": "Documentation",
+          "template": "Template"
+        },
+        "title": "Process subsample"
+      }
+    },
     "pageTitle": "RSpace Inventory",
     "pageTitleWithContext": "{pageContext} | RSpace Inventory",
     "peopleField": {

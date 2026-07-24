@@ -1,0 +1,191 @@
+package com.researchspace.api.v1.controller;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
+import com.researchspace.api.v1.model.ApiInventoryOperationPost;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.model.units.RSUnitDef;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.Errors;
+
+class InventoryOperationPostValidatorTest {
+
+  private final InventoryOperationPostValidator validator = new InventoryOperationPostValidator();
+
+  private Errors validate(ApiInventoryOperationPost request) {
+    Errors errors = new BeanPropertyBindingResult(request, "request");
+    validator.validate(request, errors);
+    return errors;
+  }
+
+  private static ApiInventoryOperationPost validRequest() {
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    ApiInventoryOperationOriginUpdate origin = new ApiInventoryOperationOriginUpdate();
+    origin.setId(100L);
+    origin.setAmountTaken(new ApiQuantityInfo(new BigDecimal("0.6"), 3));
+    List<ApiInventoryOperationOriginUpdate> origins = new ArrayList<>();
+    origins.add(origin);
+    request.setOrigins(origins);
+    return request;
+  }
+
+  @Test
+  void validRequestHasNoErrors() {
+    assertFalse(validate(validRequest()).hasErrors());
+  }
+
+  @Test
+  void allowsMissingNewSample() {
+    // A terminal operation (noOutput, e.g. Destroy) creates nothing, so a null new sample is valid
+    // as long as the origins are (adr/0008).
+    ApiInventoryOperationPost request = validRequest();
+    request.setNewSample(null);
+    assertFalse(validate(request).hasErrors());
+  }
+
+  @Test
+  void rejectsBlankSampleName() {
+    ApiInventoryOperationPost request = validRequest();
+    request.setNewSample(new ApiSampleWithFullSubSamples("   "));
+    assertTrue(validate(request).hasFieldErrors("newSample.name"));
+  }
+
+  @Test
+  void rejectsEmptyOrigins() {
+    ApiInventoryOperationPost request = validRequest();
+    request.setOrigins(new ArrayList<>());
+    assertTrue(validate(request).hasFieldErrors("origins"));
+  }
+
+  @Test
+  void rejectsOriginWithoutId() {
+    ApiInventoryOperationPost request = validRequest();
+    request.getOrigins().get(0).setId(null);
+    assertTrue(validate(request).hasErrors());
+  }
+
+  @Test
+  void rejectsNegativeAmountTaken() {
+    ApiInventoryOperationPost request = validRequest();
+    request.getOrigins().get(0).setAmountTaken(new ApiQuantityInfo(new BigDecimal("-1"), 3));
+    assertTrue(validate(request).hasErrors());
+  }
+
+  @Test
+  void allowsZeroAmountTaken() {
+    // Zero is a valid no-op decrement: it means "act on but do not reduce this origin" (Passage
+    // links
+    // to the origin without taking from it). The backend treats a 0 decrement as a no-op. See
+    // adr/0002.
+    ApiInventoryOperationPost request = validRequest();
+    request.getOrigins().get(0).setAmountTaken(new ApiQuantityInfo(BigDecimal.ZERO, 3));
+    assertFalse(validate(request).hasErrors());
+  }
+
+  @Test
+  void rejectsMissingAmountTaken() {
+    ApiInventoryOperationPost request = validRequest();
+    request.getOrigins().get(0).setAmountTaken(null);
+    assertTrue(validate(request).hasErrors());
+  }
+
+  @Test
+  void rejectsAmountTakenWithoutNumericValue() {
+    ApiInventoryOperationPost request = validRequest();
+    request.getOrigins().get(0).setAmountTaken(new ApiQuantityInfo(null, 3));
+    assertTrue(validate(request).hasErrors());
+  }
+
+  @Test
+  void rejectsAmountTakenWithoutUnit() {
+    // A null unitId passes the numeric check but fails later in the manager (toQuantityInfo needs a
+    // unit for the unit-aware subtraction); reject it here with a clean 400 rather than a 500.
+    ApiInventoryOperationPost request = validRequest();
+    request
+        .getOrigins()
+        .get(0)
+        .setAmountTaken(new ApiQuantityInfo(new BigDecimal("1"), (Integer) null));
+    assertTrue(validate(request).hasErrors());
+  }
+
+  @Test
+  void rejectsAmountTakenWithNonPositiveUnit() {
+    // The frontend uses unitId <= 0 (UNSET_UNIT = 0) as an "unset" marker; a non-positive unit id
+    // is
+    // not a real unit and would fail the unit-aware subtraction, so reject it here with a clean
+    // 400.
+    ApiInventoryOperationPost request = validRequest();
+    request.getOrigins().get(0).setAmountTaken(new ApiQuantityInfo(new BigDecimal("1"), 0));
+    assertTrue(validate(request).hasErrors());
+  }
+
+  @Test
+  void rejectsDuplicateOriginIds() {
+    // The same subsample listed twice would be decremented twice while each entry is validated
+    // against the same original quantity, so it could be drained past the over-removal limit.
+    ApiInventoryOperationPost request = validRequest();
+    ApiInventoryOperationOriginUpdate duplicate = new ApiInventoryOperationOriginUpdate();
+    duplicate.setId(100L);
+    duplicate.setAmountTaken(new ApiQuantityInfo(new BigDecimal("0.6"), 3));
+    request.getOrigins().add(duplicate);
+    assertTrue(validate(request).hasErrors());
+  }
+
+  private static ApiQuantityInfo grams(String value) {
+    return new ApiQuantityInfo(new BigDecimal(value), RSUnitDef.GRAM.getId());
+  }
+
+  @Test
+  void detectsOverRemovalInTheSameUnit() {
+    assertTrue(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("6"), grams("5")));
+  }
+
+  @Test
+  void allowsTakingUpToAndWithinTheOriginQuantity() {
+    assertFalse(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("5"), grams("5")));
+    assertFalse(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("4"), grams("5")));
+  }
+
+  @Test
+  void comparesUnitAwareAcrossUnitsInTheSameCategory() {
+    // 0.006 kg = 6 g, which exceeds a 5 g origin.
+    ApiQuantityInfo sixGramsAsKilos =
+        new ApiQuantityInfo(new BigDecimal("0.006"), RSUnitDef.KILO.getId());
+    assertTrue(
+        InventoryOperationPostValidator.amountTakenExceedsOrigin(sixGramsAsKilos, grams("5")));
+    ApiQuantityInfo fourGramsAsKilos =
+        new ApiQuantityInfo(new BigDecimal("0.004"), RSUnitDef.KILO.getId());
+    assertFalse(
+        InventoryOperationPostValidator.amountTakenExceedsOrigin(fourGramsAsKilos, grams("5")));
+  }
+
+  @Test
+  void doesNotFlagNullAmountTakenOrDifferentCategories() {
+    assertFalse(InventoryOperationPostValidator.amountTakenExceedsOrigin(null, grams("5")));
+    // a volume amount against a mass origin is not commensurate, so it is not treated as
+    // over-removal
+    ApiQuantityInfo sixMillilitres =
+        new ApiQuantityInfo(new BigDecimal("6"), RSUnitDef.MILLI_LITRE.getId());
+    assertFalse(
+        InventoryOperationPostValidator.amountTakenExceedsOrigin(sixMillilitres, grams("5")));
+  }
+
+  @Test
+  void flagsPositiveAmountTakenFromOriginWithNoQuantity() {
+    // A subsample whose quantity was never set holds nothing, so taking any positive amount from it
+    // is over-removal (adr/0005). A null origin quantity, or one with a null numeric value, is
+    // treated as zero available rather than as "no limit".
+    assertTrue(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("6"), null));
+    assertTrue(
+        InventoryOperationPostValidator.amountTakenExceedsOrigin(
+            grams("6"), new ApiQuantityInfo(null, RSUnitDef.GRAM.getId())));
+  }
+}

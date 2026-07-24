@@ -39,7 +39,9 @@ function UnitSelect({ disabled, handleChange, value, categories }: UnitSelectArg
           inputProps={{
             "aria-label": t("inputs.unitSelect.quantityUnits"),
           }}
-          value={value}
+          // A non-positive id means "no unit chosen" (e.g. after amounts are cleared for a new
+          // process); render the dropdown empty rather than as an out-of-range value.
+          value={(value > 0 ? value : "") as number}
           size="small"
           sx={{
             [`& .${selectClasses.select}`]: {

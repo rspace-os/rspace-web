@@ -26,7 +26,7 @@ import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
@@ -322,10 +322,14 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     InventorySearchType searchType = srchConfig.getSearchType();
     switch (searchType) {
       case SAMPLE_TEMPLATE:
+        // Target the concrete SampleTemplate, not the abstract @Indexed SampleEntity: Hibernate
+        // Search cannot load results against an abstract indexed superclass whose concrete
+        // subclasses (Sample, SampleTemplate) are each also @Indexed ("an entity got loaded even
+        // though it was not part of the EntityInfo list").
+        resultClasses = new Class[] {SampleTemplate.class};
+        break;
       case SAMPLE:
-        // Sample and SampleTemplate have separate Lucene indexes; targeting the abstract
-        // SampleEntity searches both, and search-type post-filtering picks the right kind
-        resultClasses = new Class[] {SampleEntity.class};
+        resultClasses = new Class[] {Sample.class};
         break;
       case SUBSAMPLE:
         resultClasses = new Class[] {SubSample.class};
@@ -342,7 +346,8 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
       case ALL:
         resultClasses =
             new Class[] {
-              SampleEntity.class,
+              Sample.class,
+              SampleTemplate.class,
               SubSample.class,
               Container.class,
               Instrument.class,
