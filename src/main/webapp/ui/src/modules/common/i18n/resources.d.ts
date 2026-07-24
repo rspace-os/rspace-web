@@ -3137,6 +3137,7 @@ export default interface Resources {
           "targetDeleted": "Target deleted"
         },
         "relatedInventoryItems": {
+          "attachment": "Attachment",
           "columns": {
             "globalId": "Global ID",
             "name": "Name",

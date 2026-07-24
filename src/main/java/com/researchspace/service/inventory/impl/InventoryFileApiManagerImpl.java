@@ -1,5 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiInventoryReferencingItem;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.dao.InstrumentEntityDao;
 import com.researchspace.dao.InventoryEntityFieldDao;
@@ -15,6 +17,7 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.field.InventoryAttachmentField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.service.BaseRecordManager;
@@ -24,10 +27,12 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.InventoryRecordRetriever;
+import com.researchspace.service.inventory.LinkTargetResolver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +57,7 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
   private @Autowired MessageSourceUtils messages;
   private @Autowired IRecordFactory recordFactory;
   private @Autowired BaseRecordManager baseRecordManager;
+  private @Autowired LinkTargetResolver linkTargetResolver;
 
   @Autowired
   @Qualifier("compositeFileStore")
@@ -64,6 +70,68 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
   @Override
   public boolean exists(long id) {
     return inventoryFileDao.exists(id);
+  }
+
+  @Override
+  public List<ApiInventoryReferencingItem> findAttachingItems(
+      String galleryFileGlobalId, User actor) {
+    GlobalIdentifier target = parseGalleryTargetOrThrow(galleryFileGlobalId);
+    // read-gate: the caller must be able to READ the target Gallery file. Unreadable, missing,
+    // malformed and non-Gallery ids all raise the same not-found so the endpoint never discloses a
+    // file's existence or its inbound attachments (ADR-0002). Resolve through the shared
+    // LinkTargetResolver (as the sibling links endpoint does): it is collision-safe for the GL/
+    // FL/SD id space and returns false rather than throwing when the id resolves to a non-media
+    // record, so a crafted GL<non-media-id> cannot become an existence oracle via a 500.
+    if (!linkTargetResolver.targetExistsAndIsReadable(target, actor)) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.targetNotFound", galleryFileGlobalId);
+    }
+    List<ApiInventoryReferencingItem> rows = new ArrayList<>();
+    // record-level attachments: the attachment resolves its own owning record
+    for (InventoryFile file : inventoryFileDao.findByMediaFileId(target.getDbId())) {
+      addAttachmentRowIfReadable(rows, file.getInventoryRecord(), actor);
+    }
+    // field-level attachments: resolved through the owning attachment field, since the attachment
+    // itself cannot reach the record it hangs off a field on
+    for (InventoryAttachmentField field :
+        inventoryFileDao.findAttachmentFieldsByMediaFileId(target.getDbId())) {
+      addAttachmentRowIfReadable(rows, field.getInventoryRecord(), actor);
+    }
+    return rows;
+  }
+
+  private GlobalIdentifier parseGalleryTargetOrThrow(String galleryFileGlobalId) {
+    GlobalIdentifier gid;
+    try {
+      gid = new GlobalIdentifier(galleryFileGlobalId);
+    } catch (IllegalArgumentException | NullPointerException e) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.targetNotFound", galleryFileGlobalId);
+    }
+    // attachments only ever target a Gallery media file; any other kind is treated as not-found so
+    // a caller cannot probe non-Gallery ids through this endpoint
+    if (gid.getPrefix() != GlobalIdPrefix.GL) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.targetNotFound", galleryFileGlobalId);
+    }
+    return gid;
+  }
+
+  private void addAttachmentRowIfReadable(
+      List<ApiInventoryReferencingItem> rows, InventoryRecord owningRecord, User actor) {
+    if (owningRecord == null || owningRecord.isDeleted()) {
+      return;
+    }
+    if (!invPermissions.canUserReadInventoryRecord(owningRecord, actor)) {
+      return;
+    }
+    ApiInventoryReferencingItem row = new ApiInventoryReferencingItem();
+    row.setSourceGlobalId(owningRecord.getOid().toString());
+    row.setSourceName(owningRecord.getName());
+    row.setSourceType(owningRecord.getType().toString());
+    // relationType/versionPin/modifiedAt stay null: an attachment carries no DataCite relation; the
+    // client labels these rows "Attachment"
+    rows.add(row);
   }
 
   @Override
