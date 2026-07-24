@@ -15,7 +15,7 @@
 </head>
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
 <jsp:include page="formMustacheTemplates.html" />
-<p style="visibility:hidden;"></p>
+<p style="visibility:hidden;">Text</p>
 
 <axt:toolbar hideSearch="true">
 	<jsp:attribute name="menu">

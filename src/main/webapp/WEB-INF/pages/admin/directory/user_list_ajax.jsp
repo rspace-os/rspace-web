@@ -105,13 +105,13 @@
 				</c:when>
 				<%--  otherwise the search is retrieving no results --%>
 				<c:otherwise>
-					<span class="directoryMsg searchError"><spring:message code="directory.noResults.emptySearchResults" arguments="users" /></span>
+					<span class="directoryMsg searchError"><spring:message code="directory.noResults.emptySearchResults" /></span>
 				</c:otherwise>
 			</c:choose>
 		</rst:hasDeploymentProperty>
 		<rst:hasDeploymentProperty name="cloud" value="true" match="false">
 			<span class="directoryMsg searchError">
-				<spring:message code="directory.noResults.emptySearchResults" arguments="users" />
+				<spring:message code="directory.noResults.emptySearchResults" />
 			</span>
 		</rst:hasDeploymentProperty>
 	</div>

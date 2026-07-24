@@ -768,8 +768,8 @@
     }
   },
   "requestFeedback": {
-    "memberOfGroupNotice": "Request {0}! - you''re now a member of \"{1}\" group",
-    "notJoiningGroupNotice": "Request {0}! - you''re not joining the group \"{1}\"",
+    "memberOfGroupNotice": "Request <b>accepted</b>! - you''re now a member of \"{0}\" group",
+    "notJoiningGroupNotice": "Request <b>declined</b>! - you''re not joining the group \"{0}\"",
     "returnToWorkspaceLink": "Return to workspace",
     "title": "Request Declined"
   },

@@ -70,7 +70,12 @@
     },
     "status": {
       "accepted": "ACCEPTED",
-      "acceptedShareWithPi": "ACCEPTED - share data with PI"
+      "acceptedShareWithPi": "ACCEPTED - share data with PI",
+      "cancelled": "CANCELLED",
+      "completed": "COMPLETED",
+      "new": "NEW",
+      "rejected": "REJECTED",
+      "replied": "REPLIED"
     },
     "title": "My Messages",
     "type": {

@@ -9,7 +9,7 @@
 	<link rel="stylesheet" href="<rst:assetUrl value='/styles/audit.css'/>" />
 </head>
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
-<p style="visibility:hidden;" aria-hidden="true"></p>
+<p style="visibility:hidden;" aria-hidden="true">Text</p>
 <form style="font-size:1em;">
 <spring:message code="audit.domains.label" var="domainsLabel"/>
 <spring:message code="audit.actions.label" var="actionsLabel"/>

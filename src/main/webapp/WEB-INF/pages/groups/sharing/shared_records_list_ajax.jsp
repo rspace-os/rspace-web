@@ -60,7 +60,7 @@
                 </c:when>
                 <c:otherwise>
                   <select class='update' style="font-size: inherit; padding: 2px 13px 2px 4px;" aria-label="<spring:message code='common:shareDialog.columns.permission'/>">
-                    <option value="" disabled selected>${groupSharing.permType.displayName}</option>
+                    <option value="" disabled selected><spring:message code="${groupSharing.permType == 'WRITE' ? 'groups.sharing.permission.edit' : 'groups.sharing.permission.read'}"/></option>
                     <option value='READ'><spring:message code="groups.sharing.permission.read"/></option>
                     <option value='WRITE'><spring:message code="groups.sharing.permission.edit"/></option>
                   </select>

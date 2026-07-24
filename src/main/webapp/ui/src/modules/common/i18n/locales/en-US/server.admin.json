@@ -153,7 +153,7 @@
       "nameHeader": "LabGroup Name"
     },
     "noResults": {
-      "emptySearchResults": "No {0} were found. Please try searching again."
+      "emptySearchResults": "No users were found. Please try searching again."
     },
     "projectGroupList": {
       "nameHeader": "Project Group Name"

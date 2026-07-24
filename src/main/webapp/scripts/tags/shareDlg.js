@@ -117,13 +117,14 @@ const getSharedFolderTarget = (type) => {
  * - dialogTitle
  * - idsToShareGetter - a function to get all the ids to share
  * - onshare - an optional function, can be null
+ * - isPublishDialog - true if this is the publish-only dialog (as opposed to the legacy share dialog)
  */
 function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelector='#share-dialog',
-                           type= SHARE_DOCS_TYPE) {
+                           type= SHARE_DOCS_TYPE, isPublishDialog=false) {
     onshare = onshare || function(sharedIds) {};
     const shareLabel = RS.msg("legacyjs.core.share.share");
     const publishLabel = RS.msg("legacyjs.core.share.publish");
-    if (dialogTitle !== publishLabel) {
+    if (!isPublishDialog) {
         throw new Error("Legacy share dialog triggered, please remove");
     }
 
@@ -132,7 +133,7 @@ function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelec
         _updateShareIntoFolderView();
     });
 
-    if (dialogTitle !== publishLabel && typeof initFolderChooser === 'function') {
+    if (!isPublishDialog && typeof initFolderChooser === 'function') {
         initFolderChooser('-share', function () {
             return $('input[name="grpId"]:checked').first().attr(getSharedFolderTarget(type));
         }, function ($selectedRow) {

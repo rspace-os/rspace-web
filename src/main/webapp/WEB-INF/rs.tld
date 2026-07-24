@@ -175,4 +175,10 @@
         <function-signature>java.lang.String keyFor(com.researchspace.model.comms.NotificationType)</function-signature>
     </function>
 
+    <function>
+        <name>communicationStatusMessageKey</name>
+        <function-class>com.researchspace.service.CommunicationStatusMessages</function-class>
+        <function-signature>java.lang.String keyFor(com.researchspace.model.comms.CommunicationStatus)</function-signature>
+    </function>
+
 </taglib>

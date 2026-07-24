@@ -319,7 +319,7 @@ public class RSCommunityController extends BaseController {
     }
 
     if (errorMsg != null) {
-      model.addAttribute("errorMsg", getText(errorMsg));
+      model.addAttribute("errorMsg", errorMsg);
       return new ModelAndView("cloud/verifyEmailChange/emailChangeFailed");
     }
 

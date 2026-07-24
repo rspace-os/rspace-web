@@ -542,7 +542,9 @@
 </div>
 
 <div id="removeMeFromGrp" style="display: none">
-    <spring:message code="groups.view.removeMe.confirmText" arguments="${group.displayName}"/>
+    <spring:message code="groups.view.removeMe.confirmText">
+        <spring:argument value="${group.displayName}"/>
+    </spring:message>
     <ul>
      <li> <spring:message code="groups.view.removeMe.noSharedContent"/>
      <li> <spring:message code="groups.view.removeMe.workNotVisible"/>

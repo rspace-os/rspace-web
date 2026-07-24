@@ -125,7 +125,7 @@ function setUpShareDialog() {
     });
   };
 
-  createShareDialog(RS.msg("legacyjs.workspace.crudOps.publishDialogTitle"), idsToShareGetter, onshare, '#publish-dialog');
+  createShareDialog(RS.msg("legacyjs.workspace.crudOps.publishDialogTitle"), idsToShareGetter, onshare, '#publish-dialog', undefined, true);
 }
 
 function setUpExportDialogs() {

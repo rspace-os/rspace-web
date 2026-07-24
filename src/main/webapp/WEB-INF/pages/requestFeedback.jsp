@@ -7,17 +7,14 @@
 </head>
 <body>
 <p style="font-size:18px">
-    <c:set var="formattedRequestStatus"><b>${requestStatus}</b></c:set>
     <c:choose>
         <c:when test="${requestStatus == 'declined'}">
             <spring:message code="requestFeedback.notJoiningGroupNotice">
-                <spring:argument value="${formattedRequestStatus}"/>
                 <spring:argument value="${comm.group.displayName}"/>
             </spring:message>
         </c:when>
         <c:otherwise>
             <spring:message code="requestFeedback.memberOfGroupNotice">
-                <spring:argument value="${formattedRequestStatus}"/>
                 <spring:argument value="${comm.group.displayName}"/>
             </spring:message>
         </c:otherwise>

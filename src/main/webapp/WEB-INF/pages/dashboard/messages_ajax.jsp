@@ -152,7 +152,7 @@
                                 <span style="color:#C1C1C1;"><spring:message code="messages.setStatus.label"/></span>
                                 <br/>
                                 <select class="messageStatusChooser" name="messageStatus" style="margin-top:4px;">
-                                    <option value="${message.status}" selected="selected">${message.status}</option>
+                                    <option value="${message.status}" selected="selected"><spring:message code="${rst:communicationStatusMessageKey(message.status)}"/></option>
                                     <c:forEach items="${message.messageType.validStatusesByRecipient}" var="stat">
                                         <c:if test="${message.status ne stat}">
                                             <c:choose>
@@ -164,7 +164,7 @@
                                                     <option value="${stat}"><spring:message code="messages.status.acceptedShareWithPi"/></option>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <option value="${stat}">${stat}</option>
+                                                    <option value="${stat}"><spring:message code="${rst:communicationStatusMessageKey(stat)}"/></option>
                                                 </c:otherwise>
                                             </c:choose>
                                         </c:if>

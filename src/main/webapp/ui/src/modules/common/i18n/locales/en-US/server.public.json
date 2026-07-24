@@ -273,7 +273,7 @@
     "title": "Login attempt with username, to account that has an username alias"
   },
   "ssologout": {
-    "clickHereToLogOut": "You can <a href={0}>click here</a> to fully log out.",
+    "clickHereToLogOut": "You can <a href=\"{0}\">click here</a> to fully log out.",
     "heading": "Logged out of RSpace",
     "pleaseLogOutReminder": "Please don't forget to fully log out.",
     "stillLoggedInNotice": "You are <b>still logged</b> into your <b>institutional Single Sign-On</b> account.",

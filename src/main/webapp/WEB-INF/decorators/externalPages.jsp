@@ -27,8 +27,8 @@
 				$('#timezone_field').val(tz.name());
 			});
 		</script>
-		<sitemesh:write property='head'/>
 		<rst:i18nMessages />
+		<sitemesh:write property='head'/>
 	</head>
 
 	<jsp:include page="/scripts/templates/blockUI.html"/>

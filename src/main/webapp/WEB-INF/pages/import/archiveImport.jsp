@@ -83,7 +83,7 @@
 
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
 
-<p style="visibility:hidden;"></p>
+<p style="visibility:hidden;">Text</p>
 
 <div id="container">
 	<div id="exportBlock">
