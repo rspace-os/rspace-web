@@ -1,3 +1,38 @@
+<!-- intent-skills:start -->
+# TanStack Intent - before editing files, run the matching guidance command.
+tanstackIntent:
+  - id: "@tanstack/router-core#router-core"
+    run: "pnpm dlx @tanstack/intent@latest load @tanstack/router-core#router-core"
+    for: "Framework-agnostic core concepts for TanStack Router: route trees, createRouter, createRoute, createRootRoute, createRootRouteWithContext, addChildren, Register type declaration, route matching, route sorting, file naming conventions. Entry point for all router skills."
+  - id: "@tanstack/router-core#router-core/auth-and-guards"
+    run: "pnpm dlx @tanstack/intent@latest load @tanstack/router-core#router-core/auth-and-guards"
+    for: "Route protection with beforeLoad, redirect()/throw redirect(), isRedirect helper, authenticated layout routes (_authenticated), non-redirect auth (inline login), RBAC with roles and permissions, auth provider integration (Auth0, Clerk, Supabase), router context for auth state."
+  - id: "@tanstack/router-core#router-core/code-splitting"
+    run: "pnpm dlx @tanstack/intent@latest load @tanstack/router-core#router-core/code-splitting"
+    for: "Automatic code splitting (autoCodeSplitting), .lazy.tsx convention, createLazyFileRoute, createLazyRoute, lazyRouteComponent, getRouteApi for typed hooks in split files, codeSplitGroupings per-route override, splitBehavior programmatic config, critical vs non-critical properties."
+  - id: "@tanstack/router-core#router-core/data-loading"
+    run: "pnpm dlx @tanstack/intent@latest load @tanstack/router-core#router-core/data-loading"
+    for: "Route loader option, loaderDeps for cache keys, staleTime/gcTime/ defaultPreloadStaleTime SWR caching, pendingComponent/pendingMs/ pendingMinMs, errorComponent/onError/onCatch, beforeLoad, router context and createRootRouteWithContext DI pattern, router.invalidate, Await component, deferred data loading with unawaited promises."
+  - id: "@tanstack/router-core#router-core/navigation"
+    run: "pnpm dlx @tanstack/intent@latest load @tanstack/router-core#router-core/navigation"
+    for: "Link component, useNavigate, Navigate component, router.navigate, ToOptions/NavigateOptions/LinkOptions, from/to relative navigation, activeOptions/activeProps, preloading (intent/viewport/render), preloadDelay, navigation blocking (useBlocker, Block), createLink, linkOptions helper, scroll restoration, MatchRoute."
+  - id: "@tanstack/router-core#router-core/not-found-and-errors"
+    run: "pnpm dlx @tanstack/intent@latest load @tanstack/router-core#router-core/not-found-and-errors"
+    for: "notFound() function, notFoundComponent, defaultNotFoundComponent, notFoundMode (fuzzy/root), errorComponent, CatchBoundary, CatchNotFound, isNotFound, NotFoundRoute (deprecated), route masking (mask option, createRouteMask, unmaskOnReload)."
+  - id: "@tanstack/router-core#router-core/path-params"
+    run: "pnpm dlx @tanstack/intent@latest load @tanstack/router-core#router-core/path-params"
+    for: "Dynamic path segments ($paramName), splat routes ($ / _splat), optional params ({-$paramName}), prefix/suffix patterns ({$param}.ext), useParams, params.parse/stringify, pathParamsAllowedCharacters, i18n locale patterns."
+  - id: "@tanstack/router-core#router-core/search-params"
+    run: "pnpm dlx @tanstack/intent@latest load @tanstack/router-core#router-core/search-params"
+    for: "validateSearch, search param validation with Zod/Valibot/ArkType adapters, fallback(), search middlewares (retainSearchParams, stripSearchParams), custom serialization (parseSearch, stringifySearch), search param inheritance, loaderDeps for cache keys, reading and writing search params."
+  - id: "@tanstack/router-core#router-core/ssr"
+    run: "pnpm dlx @tanstack/intent@latest load @tanstack/router-core#router-core/ssr"
+    for: "Non-streaming and streaming SSR, RouterClient/RouterServer, renderRouterToString/renderRouterToStream, createRequestHandler, defaultRenderHandler/defaultStreamHandler, HeadContent/Scripts components, head route option (meta/links/styles/scripts), ScriptOnce, automatic loader dehydration/hydration, memory history on server, data serialization, document head management."
+  - id: "@tanstack/router-core#router-core/type-safety"
+    run: "pnpm dlx @tanstack/intent@latest load @tanstack/router-core#router-core/type-safety"
+    for: "Full type inference philosophy (never cast, never annotate inferred values), Register module declaration, from narrowing on hooks and Link, strict:false for shared components, getRouteApi for code-split typed access, addChildren with object syntax for TS perf, LinkProps and ValidateLinkOptions type utilities, as const satisfies pattern."
+<!-- intent-skills:end -->
+
 # Agent instructions
 
 These instructions apply to the whole repository. A nested `AGENTS.md` takes
@@ -103,7 +138,9 @@ Frontend test conventions:
   focused helpers only when needed: `findTableCell` / `getIndexOfTableCell`
   from `@/__tests__/tableQueries`, and `expectAccessible` from
   `@/__tests__/accessibility`.
-- Use `vitest-fetch-mock`; global polyfills live in `src/__tests__/setup.ts`.
+- `vitest-fetch-mock` is enabled globally in test setup (`src/__tests__/setup.ts`)
+  but is deprecated for new components. Use MSW (`msw/node`'s `setupServer`,
+  scoped per test file) instead; see `nextMaintenance.test.ts` for the pattern.
 - Use `toBeAccessible` for accessibility assertions and `silenceConsole()` for
   expected console errors.
 - Prefer semantic jest-dom assertions such as `toBeInTheDocument`,
@@ -161,6 +198,20 @@ review the catalog diff, remove `defaultValue`, and run `pnpm run i18n:types`,
 clears matching secondary-locale values. Wrap raw JSX text in `t()` first —
 `i18n:extract` does not see it. Use ICU syntax in `defaultValue` for
 interpolation and plurals.
+
+### Zustand stores (new `modules/` surface)
+
+- One small store per domain in `src/modules/common/stores/`, created by an
+  exported `create<Name>Store()` factory (`createStore` from `zustand/vanilla`)
+  wrapped in `devtools` with a stable name, and delivered through React context
+  (`<NameStoreProvider>` plus a `use<Name>Store(selector)` hook that throws
+  outside the provider). No module-level global stores.
+- Subscribe with single-value selectors; use `useShallow` when a component
+  needs several fields. Never subscribe to the whole store.
+- Server state belongs in React Query, not in a store. Do not mirror query
+  results into zustand; derive router state from router hooks, not a store.
+- Persist user preferences inside the store's actions (or `persist`
+  middleware), not in ad-hoc per-hook localStorage code.
 
 ### Database changes
 

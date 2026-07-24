@@ -1,7 +1,5 @@
 {
-  "about": "src/eln/about/index.tsx",
   "accountActivity": "src/my-rspace/profile/AccountActivity.tsx",
-  "apiDocs": "src/modules/api/ApiDocsEntrypoint.tsx",
   "appBar": "src/eln/AppBar.tsx",
   "apps": "src/eln/apps/index.tsx",
   "associatedInventoryRecords": "src/eln-inventory-integration/AssociatedInventoryRecords/index.tsx",
@@ -25,6 +23,7 @@
   "materialsListing": "src/eln-inventory-integration/MaterialsListing/MaterialsListing.tsx",
   "memberAutoshareStatusWrapper": "src/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper.tsx",
   "myLabGroups": "src/my-rspace/directory/groups/MyLabGroups.tsx",
+  "newApp": "src/modules/common/app/index.tsx",
   "newLabGroup": "src/system-groups/NewLabGroup.tsx",
   "notebookToolbar": "src/Toolbar/Notebook/Toolbar.tsx",
   "oAuth": "src/my-rspace/profile/OAuthTrigger.tsx",

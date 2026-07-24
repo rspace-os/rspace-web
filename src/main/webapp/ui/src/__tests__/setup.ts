@@ -48,6 +48,8 @@ setup();
 expect.extend(jestDomMatchers);
 expect.extend({ toBeAccessible });
 
+// Deprecated for new tests — use MSW (`msw/node` `setupServer`, per-file) instead.
+// Existing suites keep this global mock; new components should not add fetchMock usages.
 const fetchMocker = createFetchMock(vi);
 
 fetchMocker.enableMocks();
@@ -134,6 +136,8 @@ if (typeof globalThis.DOMMatrix !== "function") {
     d = 1;
     e = 0;
     f = 0;
+    // biome-ignore lint/complexity/noUselessConstructor: documents the real DOMMatrix(init) signature so callers can pass an init arg to the stub
+    constructor(_init?: string | number[]) {}
     multiplySelf(): this {
       return this;
     }

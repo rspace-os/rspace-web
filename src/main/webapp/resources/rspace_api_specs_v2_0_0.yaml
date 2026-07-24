@@ -1,0 +1,310 @@
+openapi: 3.0.0
+info:
+  title: RSpace API v2
+  version: 2.0.0
+  description: >
+    Current-user, deployment configuration, and maintenance APIs for the RSpace
+    v2 surface. Errors are returned as RFC 9457 problem details
+    (application/problem+json).
+servers:
+  - url: /api/v2
+security:
+  - ApiKeySecurity: []
+  - OAuth: []
+paths:
+  /users/me:
+    get:
+      summary: Get the current user and session
+      operationId: getCurrentUserV2
+      responses:
+        "200":
+          description: The current user and its session state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+  /users/me/profile-image:
+    get:
+      summary: Get the current user's profile image
+      operationId: getCurrentUserProfileImageV2
+      responses:
+        "200":
+          description: The current profile image.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /config:
+    get:
+      summary: Get deployment UI configuration
+      description: >
+        Public deployment branding, help links, and About-page details.
+      operationId: getConfigV2
+      security: []
+      responses:
+        "200":
+          description: Deployment configuration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Config"
+  /maintenances:
+    get:
+      summary: List upcoming maintenance windows
+      description: >
+        Publicly returns active or future scheduled maintenance windows ordered
+        by start date, in the standard v2 paginated envelope.
+      operationId: listMaintenancesV2
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: A page of maintenance windows.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceListResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+components:
+  securitySchemes:
+    ApiKeySecurity:
+      description: RSpace API key.
+      type: apiKey
+      in: header
+      name: apiKey
+    OAuth:
+      type: oauth2
+      x-scalar-credentials-location: body
+      flows:
+        password:
+          tokenUrl: /oauth/token
+          x-scalar-security-body:
+            is_jwt: "true"
+          scopes:
+            all: Full API access.
+  parameters:
+    Page:
+      name: page
+      in: query
+      required: false
+      description: One-based page number.
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Page size.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+  responses:
+    AuthenticationRequired:
+      description: API key or OAuth authentication is required.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: The requested resource was not found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    Problem:
+      type: object
+      description: RFC 9457 problem details using the default about:blank type.
+      required: [title, status]
+      properties:
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+    CurrentUser:
+      type: object
+      required:
+        - id
+        - username
+        - email
+        - firstName
+        - lastName
+        - homeFolderId
+        - workbenchId
+        - hasPiRole
+        - hasSysAdminRole
+        - profileImageUrl
+        - profileImageApiUrl
+        - orcid
+        - capabilities
+        - session
+      properties:
+        id: { type: integer, format: int64 }
+        username: { type: string }
+        email: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        homeFolderId: { type: integer, format: int64, nullable: true }
+        workbenchId: { type: integer, format: int64, nullable: true }
+        hasPiRole: { type: boolean }
+        hasSysAdminRole: { type: boolean }
+        profileImageUrl:
+          type: string
+          nullable: true
+          description: Session-authenticated URL suitable for display in a browser.
+        profileImageApiUrl:
+          type: string
+          nullable: true
+          description: API-authenticated URL for retrieving the current profile image.
+        orcid:
+          $ref: "#/components/schemas/CurrentUserOrcid"
+        capabilities:
+          $ref: "#/components/schemas/CurrentUserCapabilities"
+        session:
+          $ref: "#/components/schemas/Session"
+    CurrentUserOrcid:
+      type: object
+      required: [available, id]
+      properties:
+        available:
+          type: boolean
+        id:
+          type: string
+          nullable: true
+          description: Null when ORCID is unavailable or the user has not connected an ORCID.
+    CurrentUserCapabilities:
+      type: object
+      required: [canUseInventory, canPublish, canViewSystem]
+      properties:
+        canUseInventory:
+          type: boolean
+        canPublish:
+          type: boolean
+        canViewSystem:
+          type: boolean
+          description: True for community administrators and sysadmins.
+    Session:
+      type: object
+      required: [operatedAs, lastSession]
+      properties:
+        operatedAs:
+          type: boolean
+        lastSession:
+          type: string
+          nullable: true
+          format: date-time
+    Config:
+      type: object
+      required:
+        - branding
+        - helpLinks
+        - deploymentDescription
+        - deploymentHelpEmail
+      properties:
+        branding:
+          $ref: "#/components/schemas/Branding"
+        helpLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/HelpLink"
+        deploymentDescription:
+          type: string
+          description: Deployment-specific About-page description; empty when unset.
+        deploymentHelpEmail:
+          type: string
+          description: Deployment-specific support email; empty when unset.
+    Branding:
+      type: object
+      required: [bannerImageUrl]
+      properties:
+        bannerImageUrl:
+          type: string
+    HelpLink:
+      type: object
+      required: [label, url]
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+          format: uri
+    Maintenance:
+      type: object
+      required: [id, startDate, endDate, stopUserLoginDate, message]
+      properties:
+        id:
+          type: integer
+          format: int64
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        stopUserLoginDate:
+          type: string
+          format: date-time
+          nullable: true
+        message:
+          type: string
+          nullable: true
+    MaintenanceListResult:
+      type: object
+      description: The standard v2 paginated-list envelope.
+      required:
+        - docs
+        - totalDocs
+        - limit
+        - page
+        - totalPages
+        - hasPrevPage
+        - hasNextPage
+        - prevPage
+        - nextPage
+      properties:
+        docs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Maintenance"
+        totalDocs:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        hasPrevPage:
+          type: boolean
+        hasNextPage:
+          type: boolean
+        prevPage:
+          type: integer
+          nullable: true
+        nextPage:
+          type: integer
+          nullable: true

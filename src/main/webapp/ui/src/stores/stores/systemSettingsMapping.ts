@@ -1,11 +1,10 @@
 /*
- * Mapping between the inventory system-settings API shape and the datacite-shaped model the
+ * Mapping between the inventory system-settings API shape and the model the
  * "Configure Inventory (for System Administrators)" dialog uses.
  *
- * The GET /system/settings endpoint now returns an `identifiersSettings` map keyed by identifier
- * type (IGSN, PIDINST), each entry carrying a `provider`. The dialog still only configures the
- * IGSN/DataCite credentials, so we adapt the IGSN entry to/from the existing `datacite` model and
- * leave the rest of the UI untouched. PIDINST configuration is out of scope for this dialog.
+ * The GET /system/settings endpoint returns an `identifiersSettings` map keyed by identifier
+ * type (IGSN, PIDINST), each entry carrying a `provider`. The dialog configures IGSN and PIDINST
+ * credentials. We adapt each entry from the API response to/from typed models.
  */
 
 export type IntegrationState = "true" | "false";
@@ -14,7 +13,7 @@ export type DataCiteServerUrl = "https://api.datacite.org" | "https://api.test.d
 
 export type IdentifierProvider = "IGSN_DATACITE" | "PIDINST_DATACITE" | "PIDINST_B2INST";
 
-/** The datacite-shaped settings the dialog reads and edits. */
+/** The DataCite-shaped settings model used by IGSN and PIDINST DataCite panels. */
 export type DataciteSettings = {
   enabled: IntegrationState;
   serverUrl: DataCiteServerUrl;
@@ -23,8 +22,19 @@ export type DataciteSettings = {
   repositoryPrefix: string;
 };
 
+/** The B2INST-shaped settings model. username = community id, password = token, repositoryPrefix always empty. */
+export type B2InstSettings = {
+  enabled: IntegrationState;
+  serverUrl: string;
+  username: string;
+  password: string;
+  repositoryPrefix: string;
+};
+
 export type SystemSettings = {
-  datacite: DataciteSettings;
+  igsnDatacite: DataciteSettings;
+  pidinstDatacite: DataciteSettings;
+  pidinstB2Inst: B2InstSettings;
 };
 
 /**
@@ -39,8 +49,7 @@ export type IdentifierSettings = Omit<DataciteSettings, "serverUrl"> & {
 
 /**
  * Shape returned by GET /system/settings. Each setting type holds an array of providers (PIDINST
- * carries both PIDINST_DATACITE and PIDINST_B2INST). The full multi-provider settings UI is
- * RSDEV-1180; here we only keep the existing IGSN/DataCite dialog working.
+ * carries both PIDINST_DATACITE and PIDINST_B2INST).
  */
 export type ApiInventorySystemSettings = {
   identifiersSettings: {
@@ -57,31 +66,54 @@ const DEFAULT_DATACITE_SETTINGS: DataciteSettings = {
   repositoryPrefix: "",
 };
 
-/**
- * Adapts the API response to the dialog's datacite model, using only the IGSN entry and dropping
- * the `provider` field. Falls back to safe defaults if the IGSN entry is absent.
- */
-export function systemSettingsFromApiResponse(response: ApiInventorySystemSettings): SystemSettings {
-  const igsnEntries = response?.identifiersSettings?.IGSN;
-  const igsn = igsnEntries?.find((entry) => entry.provider === "IGSN_DATACITE") ?? igsnEntries?.[0];
-  if (!igsn) {
-    return { datacite: { ...DEFAULT_DATACITE_SETTINGS } };
-  }
+const DEFAULT_B2INST_SETTINGS: B2InstSettings = {
+  enabled: "false",
+  serverUrl: "",
+  username: "",
+  password: "",
+  repositoryPrefix: "",
+};
+
+function toDataciteSettings(entry: IdentifierSettings): DataciteSettings {
   return {
-    datacite: {
-      enabled: igsn.enabled,
-      // the IGSN/DataCite entry is expected to use one of the DataCite URLs the dialog offers
-      serverUrl: igsn.serverUrl as DataCiteServerUrl,
-      username: igsn.username,
-      password: igsn.password,
-      repositoryPrefix: igsn.repositoryPrefix,
-    },
+    enabled: entry.enabled,
+    serverUrl: entry.serverUrl as DataCiteServerUrl,
+    username: entry.username,
+    password: entry.password,
+    repositoryPrefix: entry.repositoryPrefix,
+  };
+}
+
+function toB2InstSettings(entry: IdentifierSettings): B2InstSettings {
+  return {
+    enabled: entry.enabled,
+    serverUrl: entry.serverUrl,
+    username: entry.username,
+    password: entry.password,
+    repositoryPrefix: "",
   };
 }
 
 /**
- * Wraps the datacite settings into a single IGSN identifier-settings object for PUT
- * /system/settings, which is now routed by `provider`.
+ * Adapts the API response to the dialog's system settings model.
+ */
+export function systemSettingsFromApiResponse(response: ApiInventorySystemSettings): SystemSettings {
+  const igsnEntries = response?.identifiersSettings?.IGSN;
+  const igsnEntry = igsnEntries?.find((e) => e.provider === "IGSN_DATACITE") ?? igsnEntries?.[0];
+
+  const pidinstEntries = response?.identifiersSettings?.PIDINST;
+  const pidinstDataciteEntry = pidinstEntries?.find((e) => e.provider === "PIDINST_DATACITE");
+  const pidinstB2InstEntry = pidinstEntries?.find((e) => e.provider === "PIDINST_B2INST");
+
+  return {
+    igsnDatacite: igsnEntry ? toDataciteSettings(igsnEntry) : { ...DEFAULT_DATACITE_SETTINGS },
+    pidinstDatacite: pidinstDataciteEntry ? toDataciteSettings(pidinstDataciteEntry) : { ...DEFAULT_DATACITE_SETTINGS },
+    pidinstB2Inst: pidinstB2InstEntry ? toB2InstSettings(pidinstB2InstEntry) : { ...DEFAULT_B2INST_SETTINGS },
+  };
+}
+
+/**
+ * Wraps IGSN DataCite settings into the API payload shape.
  */
 export function dataciteSettingsToIgsnPayload(datacite: DataciteSettings): IdentifierSettings {
   return {
@@ -91,5 +123,33 @@ export function dataciteSettingsToIgsnPayload(datacite: DataciteSettings): Ident
     username: datacite.username,
     password: datacite.password,
     repositoryPrefix: datacite.repositoryPrefix,
+  };
+}
+
+/**
+ * Wraps PIDINST DataCite settings into the API payload shape.
+ */
+export function pidinstDataciteSettingsToPayload(datacite: DataciteSettings): IdentifierSettings {
+  return {
+    provider: "PIDINST_DATACITE",
+    enabled: datacite.enabled,
+    serverUrl: datacite.serverUrl,
+    username: datacite.username,
+    password: datacite.password,
+    repositoryPrefix: datacite.repositoryPrefix,
+  };
+}
+
+/**
+ * Wraps PIDINST B2INST settings into the API payload shape.
+ */
+export function pidinstB2InstSettingsToPayload(b2inst: B2InstSettings): IdentifierSettings {
+  return {
+    provider: "PIDINST_B2INST",
+    enabled: b2inst.enabled,
+    serverUrl: b2inst.serverUrl,
+    username: b2inst.username,
+    password: b2inst.password,
+    repositoryPrefix: "",
   };
 }

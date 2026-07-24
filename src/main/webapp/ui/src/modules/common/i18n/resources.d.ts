@@ -2,7 +2,11 @@
 export default interface Resources {
   "about": {
     "copyright": "© 2026 ResearchSpace",
-    "license": "RSpace is open-source under AGPL, and powered by open-source libraries.",
+    "description": "RSpace is open-source software for collaborative research data management, built around electronic lab notebooks, inventory, and external integrations.",
+    "license": "RSpace is powered by open-source libraries and distributed under the AGPL.",
+    "licensing": {
+      "heading": "Licensing"
+    },
     "links": {
       "changelog": "Changelog",
       "sourceCode": "Source Code",
@@ -12,11 +16,14 @@ export default interface Resources {
       "alt": "RSpace Logo"
     },
     "support": {
-      "accountLabel": "For account and group queries, email:",
-      "generalLabel": "For general support, email:"
+      "accountsLink": "Accounts and groups",
+      "generalLink": "General support",
+      "heading": "Support"
     },
+    "tagline": "RSpace - Research Data Platform",
     "title": "About RSpace",
     "version": {
+      "label": "Version {version}",
       "loading": "Loading version...",
       "unavailable": "Version unavailable"
     }
@@ -854,9 +861,11 @@ export default interface Resources {
       "warningTitle": "Could not authenticate via API"
     },
     "apiDocs": {
+      "pageTitle": "RSpace API Documentation | ResearchSpace",
       "sources": {
         "eln": "RSpace ELN",
-        "inventory": "RSpace Inventory"
+        "inventory": "RSpace Inventory",
+        "v2": "RSpace v2 (beta)"
       }
     },
     "apiErrors": {
@@ -898,6 +907,7 @@ export default interface Resources {
       "dialogHeader": "dialog header",
       "errorLoadingDetails": "Error loading your details",
       "goTo": "Go to...",
+      "logIn": "Log In",
       "logOut": "Log Out",
       "mainLinks": "main links",
       "mainNavigation": "Main Navigation",
@@ -912,6 +922,10 @@ export default interface Resources {
       "published": "Published",
       "release": "Release",
       "sections": {
+        "booking": {
+          "subheader": "Reserve instruments and equipment",
+          "title": "Booking"
+        },
         "gallery": {
           "subheader": "Your files in RSpace and connected filestores",
           "title": "Gallery"
@@ -932,7 +946,9 @@ export default interface Resources {
           "subheader": "Notebooks and documents",
           "title": "Workspace"
         }
-      }
+      },
+      "switchSection": "Switch section",
+      "userIdentity": "{fullName} ({username})"
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
@@ -1025,6 +1041,7 @@ export default interface Resources {
       "owncloud": "v8ss2uso0a-owncloud-integration",
       "panelAdjuster": "bt6kx098eq-more-info-sidebar#panel_adjuster",
       "permissions": "n09nmg4ax7-permissions",
+      "pidinstIdentifiers": "pidinst-identifiers",
       "protocolsio": "nid9q64pas-protocols-io-integration",
       "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
       "pyrat": "9kkeooveia-pyrat-integration",
@@ -1041,6 +1058,7 @@ export default interface Resources {
       "zenodo": "8i37k8kjqz-zenodo-integration"
     },
     "helpDocs": {
+      "brand": "Support",
       "chatWithUs": "Chat with us",
       "documentation": "RSpace Documentation",
       "openHelp": "Open Help",
@@ -1115,6 +1133,17 @@ export default interface Resources {
       "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
     },
     "loading": "Loading",
+    "maintenanceMode": {
+      "description": "Scheduled maintenance is in progress now. Please try again later.",
+      "heading": "Maintenance mode",
+      "recheckNotice": "This page rechecks automatically every 30 seconds, or you can <internalLink to=\"/login\">check the status now</internalLink>."
+    },
+    "notFound": {
+      "message": "Page not found"
+    },
+    "pageTitles": {
+      "withProduct": "{pageTitle} | RSpace"
+    },
     "profile": {
       "accountActivity": {
         "action": "Action",
@@ -2918,13 +2947,17 @@ export default interface Resources {
           },
           "hide": "Hide",
           "igsnDocLink": "See IGSN Documentation for details",
+          "pidinstDocLink": "See PIDINST Documentation for details",
           "preview": "Preview",
           "rorError": "Could not get RoR data.",
           "show": "Show",
           "stateInfo": {
             "draft": "This IGSN ID is a Draft. Metadata can be specified, but no information is publicly available.",
+            "draftPidinst": "This PIDINST is a Draft. Metadata can be specified, but no information is publicly available.",
             "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
-            "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API."
+            "findablePidinst": "This PIDINST is Findable. The PIDINST is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
+            "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API.",
+            "registeredPidinst": "This PIDINST is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API."
           },
           "toggleId": {
             "hide": "Hide identifier's details",
@@ -2985,6 +3018,7 @@ export default interface Resources {
           "fieldLabel": "{label}:",
           "inventoryFields": {
             "alert": "You can include Inventory fields in the item's landing page, to openly share domain-specific metadata outside the IGSN schema. <strong>Before publishing the IGSN ID, please ensure the fields do not contain sensitive information.</strong>",
+            "alertPidinst": "You can include Inventory fields in the item's landing page, to openly share domain-specific metadata outside the PIDINST schema. <strong>Before publishing the PIDINST, please ensure the fields do not contain sensitive information.</strong>",
             "customFields": "Custom Fields",
             "description": "Description",
             "extraFields": "Extra Fields",
@@ -3316,18 +3350,24 @@ export default interface Resources {
     "identifierConfirm": {
       "create": {
         "body": "An IGSN ID in <strong>Draft</strong> state will be created. No metadata will be made public at this stage.",
+        "bodyPidinst": "A PIDINST in <strong>Draft</strong> state will be created. No metadata will be made public at this stage.",
         "title": "You are about to create an Identifier"
       },
       "delete": {
         "body": "The IGSN ID will be deleted, and this item will no longer have an IGSN ID associated with it. Do you want to proceed?",
+        "bodyPidinst": "The PIDINST ID will be deleted, and this item will no longer have a PIDINST associated with it. Do you want to proceed?",
         "title": "You are about to delete this Identifier"
       },
       "publish": {
-        "body": "The IGSN ID landing page, DataCite Commons, and the DataCite APIs will be updated with these changes.<br /><br /><strong>Please ensure the IGSN ID metadata you provided does not contain any information you do not want to make public before publishing, as this action cannot be fully undone.</strong><br /><br />Do you want to proceed?",
+        "body": "You are about to publish this IGSN ID. Once published, it will resolve to a public landing page, and its metadata will be discoverable in DataCite Commons and programmatically through the DataCite API.<br /><br /><strong>Please check that the metadata contains nothing you do not want to make public, as this action cannot be fully undone.</strong><br /><br />Do you want to proceed?",
+        "bodyPidinst": "You are about to publish this PIDINST ID. Once published, it will resolve to a public landing page, and its metadata will be discoverable in DataCite Commons and programmatically through the DataCite API.<br /><br /><strong>Please check that the metadata contains nothing you do not want to make public, as this action cannot be fully undone.</strong><br /><br />Do you want to proceed?",
+        "bodyPidinstB2Inst": "You are about to publish this PIDINST ID. Once published, it will resolve to a public landing page, and its metadata will be discoverable through the B2INST website and programmatically through the B2INST API.<br /><br /><strong>Please check that the metadata contains nothing you do not want to make public, as this action cannot be fully undone.</strong><br /><br />Do you want to proceed?",
         "title": "You are about to publish this Identifier"
       },
       "retract": {
-        "body": "The IGSN ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the Public API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other DataCite Members via the Member API.</strong><br /><br />Do you want to proceed?",
+        "body": "The IGSN ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the DataCite API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other DataCite Members via the Member API.</strong><br /><br />Do you want to proceed?",
+        "bodyPidinst": "The PIDINST ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the DataCite API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other DataCite Members via the Member API.</strong><br /><br />Do you want to proceed?",
+        "bodyPidinstB2Inst": "The PIDINST ID will be set to <strong>Registered</strong>. It will be removed from B2INST and the B2INST API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other B2INST Members via the Member API.</strong><br /><br />Do you want to proceed?",
         "title": "You are about to retract this Identifier"
       }
     },
@@ -3543,7 +3583,6 @@ export default interface Resources {
         "location": {
           "label": "Location",
           "listExplanation": "No location selection required for list containers.",
-          "mustStoreTypes": "inventory:instrument.createOptions.location.mustStoreTypes",
           "specificExplanation": "Specify a single location for where the new instrument should be placed."
         },
         "template": {
@@ -4293,7 +4332,72 @@ export default interface Resources {
       },
       "dialog": {
         "error": "Error",
-        "title": "Configure Inventory (for System Administrators)"
+        "title": "Configure Identifier Registries"
+      },
+      "pidinst": {
+        "b2inst": {
+          "connectionFailed": "Connection failed. {message}",
+          "connectionSucceeded": "Connection succeeded",
+          "detailsLabel": "Details",
+          "enableLabel": "Enable PIDINST for Instruments via B2INST",
+          "fieldRequiredError": "A valid value is required",
+          "formHelperText": "You can associate PIDINST IDs with Instruments by connecting to a <externalLink href=\"https://docs.eudat.eu/b2inst/\">B2INST</externalLink> server.",
+          "formLabel": "PIDINST B2INST Integration",
+          "helpTitle": "PIDINST B2INST help",
+          "labels": {
+            "enabled": "Enabled",
+            "password": "Token",
+            "serverUrl": "Server URL",
+            "username": "Community ID"
+          },
+          "placeholder": "Please enter a value for {label}",
+          "testConnection": "Test Connection"
+        },
+        "conflictWarning": "Only one PIDINST provider can be enabled",
+        "datacite": {
+          "connectionFailed": "Connection failed. {message}",
+          "connectionSucceeded": "Connection succeeded",
+          "detailsLabel": "Details",
+          "enableLabel": "Enable PIDINST for Instruments via DataCite",
+          "fieldRequiredError": "A valid value is required",
+          "formHelperText": "You can associate PIDINST IDs with Instruments by connecting to <externalLink href=\"https://datacite.org/\">DataCite</externalLink> using your Repository account credentials.",
+          "formLabel": "PIDINST DataCite Integration",
+          "helpTitle": "PIDINST DataCite help",
+          "labels": {
+            "enabled": "Enabled",
+            "password": "Password",
+            "repositoryPrefix": "Repository Prefix",
+            "serverUrl": "Server URL",
+            "username": "Repository Account ID"
+          },
+          "placeholder": "Please enter a value for {label}",
+          "serverOptions": {
+            "production": "Production",
+            "test": "Test"
+          },
+          "serverUrlLabel": "DataCite Server URL",
+          "testConnection": "Test Connection"
+        },
+        "providerLabel": "Provider",
+        "providerOptions": {
+          "b2inst": "B2INST",
+          "datacite": "DataCite"
+        },
+        "providerSelectLabel": "Choose a PIDINST Registry provider to be used"
+      },
+      "tabs": {
+        "igsn": {
+          "connected": "DataCite Connected",
+          "notConnected": "Not connected",
+          "samplesLabel": "- Samples",
+          "typeLabel": "IGSN"
+        },
+        "pidinst": {
+          "connected": "{provider} Connected",
+          "instrumentsLabel": "- Instruments",
+          "nothingConnected": "Nothing connected",
+          "typeLabel": "PIDINST"
+        }
       }
     },
     "sortProperties": {
@@ -4438,7 +4542,8 @@ export default interface Resources {
     },
     "images": {
       "igsnLogo": "IGSN Logo",
-      "institutionLogo": "Institution Logo"
+      "institutionLogo": "Institution Logo",
+      "pidinstLogo": "PIDINST Logo"
     },
     "labels": {
       "alternateIdentifiers": "alternate identifiers",
@@ -4451,6 +4556,7 @@ export default interface Resources {
       "igsnId": "IGSN ID:",
       "name": "Name:",
       "organisation": "Organisation:",
+      "pidinstId": "PIDINST:",
       "publicationYear": "Publication Year:",
       "resourceType": "Resource Type:",
       "subjects": "subjects",
@@ -4459,7 +4565,8 @@ export default interface Resources {
     "links": {
       "doiAddress": "DOI - address",
       "igsnHomepage": "IGSN Homepage",
-      "itemLandingPage": "Item landing page"
+      "itemLandingPage": "Item landing page",
+      "pidinstHomepage": "PIDINST Homepage"
     },
     "resourceTypes": {
       "physicalObject": "Physical Object"

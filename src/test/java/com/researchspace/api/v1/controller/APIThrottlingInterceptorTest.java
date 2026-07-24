@@ -20,6 +20,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.web.method.HandlerMethod;
 
 public class APIThrottlingInterceptorTest {
   private static final String ANY_KEY = "any";
@@ -57,6 +58,23 @@ public class APIThrottlingInterceptorTest {
     assertEquals("anonymousApiUser", apiThrottlingInterceptor.assertApiAccess(req));
     req.addHeader("apiKey", ANY_KEY);
     assertEquals(ANY_KEY, apiThrottlingInterceptor.assertApiAccess(req));
+  }
+
+  @Test
+  public void publicApiThrottleIdentityIgnoresSpoofableCredentialHeaders() throws Exception {
+    req.setRemoteAddr("192.0.2.10");
+    req.addHeader("apiKey", "attacker-chosen-bucket");
+    HandlerMethod handler =
+        new HandlerMethod(
+            new PublicController(), PublicController.class.getMethod("publicEndpoint"));
+
+    assertEquals(
+        "publicApiUser:192.0.2.10", apiThrottlingInterceptor.assertApiAccess(req, handler));
+  }
+
+  @PublicApi
+  public static class PublicController {
+    public void publicEndpoint() {}
   }
 
   @SuppressWarnings("unchecked")

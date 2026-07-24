@@ -5,8 +5,10 @@ import static org.junit.Assert.assertTrue;
 
 import com.researchspace.auth.MaintenanceLoginAuthorizer;
 import com.researchspace.core.testutil.CoreTestUtils;
+import com.researchspace.core.util.ISearchResults;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
+import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -41,6 +43,11 @@ public class BaseShiroFormAuthFilterExtTest extends SpringTransactionalTest {
         }
 
         public List<ScheduledMaintenance> getAllFutureMaintenances() {
+          return null;
+        }
+
+        public ISearchResults<ScheduledMaintenance> getFutureMaintenances(
+            PaginationCriteria<ScheduledMaintenance> pagination) {
           return null;
         }
 

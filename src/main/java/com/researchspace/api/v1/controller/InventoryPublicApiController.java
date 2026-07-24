@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
 
 @ApiController
+@PublicApi
 public class InventoryPublicApiController extends BaseApiInventoryController
     implements InventoryPublicApi {
 

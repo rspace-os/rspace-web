@@ -82,6 +82,36 @@ the optional Maven/system flag
 proxied — the `@vite/client` script connects directly to the dev server using
 `hmr.clientPort` from `vite.config.ts`.
 
+## Storybook
+
+The new design system (`src/modules/common/ui`) is developed and documented in
+Storybook (Storybook 10 + the Vite builder). Stories live next to their
+components as `*.stories.tsx`.
+
+Run all `pnpm` commands from the **repo root** (the scripts `cd` into
+`src/main/webapp/ui` themselves):
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile   # first time only
+pnpm run storybook               # dev server at http://localhost:6006
+```
+
+Open <http://localhost:6006> in a browser. The dev server hot-reloads as you
+edit components or stories.
+
+Other Storybook scripts:
+
+- `pnpm run build-storybook` — build the static catalog into
+  `src/main/webapp/ui/storybook-static` (gitignored).
+- `pnpm run test-storybook` — run every story as a browser test
+  (play-function assertions + the `addon-a11y` axe gate) via the isolated
+  `.storybook/vitest.config.ts`.
+
+Storybook is a standalone dev tool; it is **not** served by Jetty and is not
+bundled into the application. The booking surface (`/booking`, the `newApp`
+entrypoint) is a separate MUI-free island that consumes the same design system.
+
 ## Testing Strategy
 
 ### Testing Frameworks
