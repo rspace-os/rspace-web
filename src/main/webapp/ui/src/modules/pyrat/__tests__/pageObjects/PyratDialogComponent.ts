@@ -16,13 +16,22 @@ export class PyratDialogComponent {
   async waitForOpen(): Promise<void> {
     await this.root.waitFor({ state: "visible" });
     const errorAlert = this.root.getByRole("alert");
-    await Promise.race([
-      this.resultsTable.waitFor({ state: "visible" }),
-      errorAlert.waitFor({ state: "visible" }).then(async () => {
-        const message = await errorAlert.textContent();
-        throw new Error(`PyRAT dialog showed an error instead of loading results: ${message}`);
-      }),
-    ]);
+
+    let resultsVisible = false;
+    const resultsPromise = this.resultsTable.waitFor({ state: "visible" }).then(() => {
+      resultsVisible = true;
+    });
+    const errorPromise = errorAlert.waitFor({ state: "visible" }).then(async () => {
+      if (resultsVisible) return;
+      const message = await errorAlert.textContent();
+      throw new Error(`PyRAT dialog showed an error instead of loading results: ${message}`);
+    });
+
+    try {
+      await Promise.race([resultsPromise, errorPromise]);
+    } finally {
+      void Promise.allSettled([resultsPromise, errorPromise]);
+    }
   }
 
   async selectAnimal(eartagOrId: string): Promise<void> {
