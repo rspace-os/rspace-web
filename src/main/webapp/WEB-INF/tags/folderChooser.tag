@@ -6,11 +6,15 @@
 <script src="<rst:assetUrl value='/scripts/tags/folderChooser.js'/>"></script>
 
 <div id="folderChooser${folderChooserId}" style="display: none;">
-    <c:if test="${folderChooserId != '-shareIntoFolder'}">
-        <spring:message code="dialogs.folderChooser.optionally"/>
-    </c:if>
     <a href="#" class="nobutton" id="folderChooserLnk${folderChooserId}">
-        <spring:message code="dialogs.folderChooser.linkText"/>
+        <c:choose>
+            <c:when test="${folderChooserId == '-shareIntoFolder'}">
+                <spring:message code="dialogs.folderChooser.linkText"/>
+            </c:when>
+            <c:otherwise>
+                <spring:message code="dialogs.folderChooser.optionalLinkText"/>
+            </c:otherwise>
+        </c:choose>
     </a>
     <span id="folderChooserDesc${folderChooserId}"></span>
 

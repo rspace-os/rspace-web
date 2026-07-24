@@ -13,7 +13,7 @@
         "userApiDisabled": "Access to API has been disabled for user ''{0}''",
         "userOAuthDisabled": "Access through OAuth tokens has been disabled for user ''{0}''"
       },
-      "detected": "Errors detected : {0}"
+      "detected": "Errors detected: {0}"
     },
     "pubchem": {
       "errors": {
@@ -41,18 +41,6 @@
       "required": "Please fill in all the fields."
     },
     "authorization": {
-      "action": {
-        "createFolderIn": "create folder in [{0}]",
-        "editFirstName": " edit first name",
-        "editLastName": " edit last name",
-        "exportSelection": "Export a selection of ",
-        "exportUserOrGroup": "Export a user or group",
-        "openDeletedFolder": "open a deleted folder.",
-        "openUnauthorisedFolder": "open an unauthorised folder.",
-        "renameRecord": " attempted rename of {0} [id={1}]",
-        "restoreRevisionOfSignedDocument": "restore an earlier revision of a signed document.",
-        "retrieveJobById": "Retrieving job by id"
-      },
       "apiError": "Authorisation error",
       "audit": {
         "community": "Unauthorized attempt to audit a community",
@@ -65,11 +53,21 @@
       },
       "failed": "Attempt to access resource of type {0} identified by {1} by user {2} to perform action {3}",
       "failure": {
+        "createFolderIn": "Unauthorized attempt by {0} to create a folder in [{1}]",
         "detailed": "Unauthorized attempt by {0} to {1}",
-        "polite": "Sorry, you don''t have permission to {0}"
+        "editFirstName": "Unauthorized attempt by {0} to edit their first name",
+        "editLastName": "Unauthorized attempt by {0} to edit their last name",
+        "exportSelection": "Unauthorized attempt by {0} to export a selection",
+        "exportUserOrGroup": "Unauthorized attempt by {0} to export a user or group",
+        "openDeletedFolder": "Unauthorized attempt by {0} to open a deleted folder",
+        "openUnauthorisedFolder": "Unauthorized attempt by {0} to open an unauthorised folder",
+        "polite": "Sorry, you don''t have permission to {0}",
+        "renameRecord": "Unauthorized attempt by {0} to rename {1} [id={2}]",
+        "restoreRevisionOfSignedDocument": "Unauthorized attempt by {0} to restore an earlier revision of a signed document",
+        "retrieveJobById": "Unauthorized attempt by {0} to retrieve job by id"
       },
       "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
-      "signing": "Only the  record owner can sign the record.",
+      "signing": "Only the record owner can sign the record.",
       "sysadminApiOnly": "Only sysadmin can use this API",
       "sysadminCreateSysadminOnly": "Only a sysadmin can create another sysadmin!",
       "sysadminIpRequired": "Sysadmin role with valid IP required for admin operations",
@@ -111,7 +109,7 @@
     },
     "invalidXml": {
       "content": "XML content for field {0} was invalid: {1}",
-      "namespace": "XML content for property {0} has invalid namespace - it  should be {1} but was {2}."
+      "namespace": "XML content for property {0} has invalid namespace - it should be {1} but was {2}."
     },
     "login": {
       "adminLogin": {
@@ -172,7 +170,7 @@
       "conflict": "Password and Confirm Password fields are not identical.",
       "insecurePassword": "Please choose a more secure password.",
       "invalid": "Invalid password.",
-      "notEqualUsername": "Please use a  password other than your username."
+      "notEqualUsername": "Please use a password other than your username."
     },
     "reauthentication": {
       "failed": "Reauthentication failed, please try again."

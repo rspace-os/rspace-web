@@ -2,16 +2,14 @@
   "email": {
     "notification": {
       "exportCompleteNotification": {
-        "andLinkedItem": " and {0, plural, one {# linked filestore item} other {# linked filestore items}}",
-        "archiveIncludes": "{0, plural, =0 {No records were exported} one {The archive includes # record} other {The archive includes # records}}",
+        "archiveSummary": "{0, plural, =0 {No records were exported.} one {The archive includes # record.} other {The archive includes # records.}}",
+        "archiveSummaryWithNfs": "{0, plural, =0 {No records were exported} one {The archive includes # record} other {The archive includes # records}}{1, plural, =0 {. No filestore links were included} one { and # linked filestore item} other { and # linked filestore items}}{2, plural, =0 {.} one {.<br/><br/># filestore link was not included.} other {.<br/><br/># filestore links were not included.}}",
         "clickOrCopy": "Please click on, or copy the link into a browser to access the export:",
         "completedWithSize": "Your export {0} is completed and generated an archive of size {1}.",
         "moreDetails": "More details are available on the <a href=\"{0}\">export report page</a>.",
-        "noFilestoreLinks": ". No filestore links were included",
         "removalPolicyAfterHours": "{0, plural, one {The export will be eligible for deletion after # hour.} other {The export will be eligible for deletion after # hours.}}",
         "removalPolicyNever": "This archive will never be removed.",
-        "removalPolicyNow": "This archive is now eligible for removal.",
-        "skippedLinks": ".<br/><br/>{0, plural, one {# filestore link was not included} other {# filestore links were not included}}"
+        "removalPolicyNow": "This archive is now eligible for removal."
       },
       "message": {
         "concerningDocument": "This message concerns the document <a href=\"{0}\">{1}</a>.",

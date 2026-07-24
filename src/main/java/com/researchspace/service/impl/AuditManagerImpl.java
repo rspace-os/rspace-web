@@ -30,7 +30,6 @@ import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RestoreDeletedItemResult;
 import com.researchspace.service.UserManager;
 import java.time.Instant;
@@ -53,7 +52,6 @@ public class AuditManagerImpl implements AuditManager {
   private @Autowired RecordDao recordDao;
   private @Autowired FieldDao fieldDao;
   private @Autowired IPermissionUtils permUtils;
-  private @Autowired OperationFailedMessageGenerator messages;
   private @Autowired FolderDao folderDao;
   private @Autowired UserManager userMgr;
   private @Autowired RichTextUpdater richTextUpdater;
@@ -226,10 +224,9 @@ public class AuditManagerImpl implements AuditManager {
     if (currentDoc.isSigned()) {
       User subject = userMgr.getAuthenticatedUserInSession();
       String msg =
-          messages.getFailedMessage(
-              subject.getUsername(),
-              messageSourceUtils.getMessage(
-                  "errors.authorization.action.restoreRevisionOfSignedDocument"));
+          messageSourceUtils.getMessage(
+              "errors.authorization.failure.restoreRevisionOfSignedDocument",
+              new Object[] {subject.getUsername()});
       throw new AuthorizationException(msg);
     }
     AuditedRecord asd = auditDao.getDocumentForRevision(currentDoc, revision);

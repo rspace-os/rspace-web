@@ -281,7 +281,6 @@
   },
   "moveToIrods": {
     "description": "You have selected {count} {count, plural, one {item} other {items}} to move to the iRODS server",
-    "descriptionSuffix": ". By default, the items will be added to iRODS and removed from RSpace. You will be able to link to the iRODS items inside of RSpace documents and include them into any exports through our iRODS integration.",
     "destination": {
       "explanation": "The available folders are configured in the Gallery's filestore section.",
       "label": "Destination in iRODS",

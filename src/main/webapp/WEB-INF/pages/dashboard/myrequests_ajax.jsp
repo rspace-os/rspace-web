@@ -49,9 +49,8 @@
                 </td>
                 <td id="midRequest" valign="top" class="mainMessage">
                     <div style="font-size: 1em;line-height:1.1em;">
-                        <span class="messageText"> <spring:message code="myrequests.youSentA"/>
-                            <span class="boldtext"> ${message.messageType.label}</span>
-                                <spring:message code="myrequests.requestWord"/>
+                        <span class="messageText">
+                            <c:set var="messageType"><span class="boldtext">${message.messageType.label}</span></c:set>
                             <c:if test="${not empty message.record}">
                                 <c:choose>
                                     <c:when test="${message.record.notebook}">
@@ -63,14 +62,38 @@
                                             value="/workspace/editor/structuredDocument/${message.record.id}" />
                                     </c:otherwise>
                                 </c:choose>
-                                  <spring:message code="notifications.concerning"/> <a href="${recordURL}">${message.record.name}</a>
+                                <c:set var="recordLink"><a href="${recordURL}">${message.record.name}</a></c:set>
                             </c:if>
                             <c:if test="${not empty message.requestedCompletionDate }">
-                               <spring:message code="myrequests.dueForCompletionBy"/>
-                               <span class="boldtext">
-                               <fmt:formatDate pattern="E dd MMM yyyy" value="${message.requestedCompletionDate}"></fmt:formatDate>
-                            </span>
+                                <fmt:formatDate pattern="E dd MMM yyyy" value="${message.requestedCompletionDate}" var="completionDate"/>
+                                <c:set var="formattedCompletionDate"><span class="boldtext">${completionDate}</span></c:set>
                             </c:if>
+                            <c:choose>
+                                <c:when test="${not empty message.record and not empty message.requestedCompletionDate}">
+                                    <spring:message code="myrequests.summary.withRecordAndDueDate">
+                                        <spring:argument value="${messageType}"/>
+                                        <spring:argument value="${recordLink}"/>
+                                        <spring:argument value="${formattedCompletionDate}"/>
+                                    </spring:message>
+                                </c:when>
+                                <c:when test="${not empty message.record}">
+                                    <spring:message code="myrequests.summary.withRecord">
+                                        <spring:argument value="${messageType}"/>
+                                        <spring:argument value="${recordLink}"/>
+                                    </spring:message>
+                                </c:when>
+                                <c:when test="${not empty message.requestedCompletionDate}">
+                                    <spring:message code="myrequests.summary.withDueDate">
+                                        <spring:argument value="${messageType}"/>
+                                        <spring:argument value="${formattedCompletionDate}"/>
+                                    </spring:message>
+                                </c:when>
+                                <c:otherwise>
+                                    <spring:message code="myrequests.summary.basic">
+                                        <spring:argument value="${messageType}"/>
+                                    </spring:message>
+                                </c:otherwise>
+                            </c:choose>
                             <c:if test="${not empty message.message }">
                                 <spring:message code="notifications.withMessage"/> <br /> ${message.message}
                             </c:if>

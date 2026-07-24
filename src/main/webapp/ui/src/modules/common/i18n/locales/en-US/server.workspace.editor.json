@@ -8,7 +8,7 @@
         "willNotBeWitnessed": "This document will not be witnessed."
       },
       "noWitness": {
-        "shareDocumentHelp": "If you can't find your witness in the list below, please share the document with them first. "
+        "shareDocumentHelp": "If you can't find your witness in the list below, please share the document with them first."
       },
       "optionChoice": {
         "declineReason": "I decline to add a witness statement at this time for the following reason:",
@@ -21,7 +21,7 @@
       "statement": {
         "chooseLabel": "Choose a signing statement:",
         "finalVersionAffirmation": "This is the final version of this document and I have locked it to prevent additional edits.",
-        "workRecordAffirmation": "I affirm that this document is a true and accurate description of work performed by me on the dates indicated in the system records. "
+        "workRecordAffirmation": "I affirm that this document is a true and accurate description of work performed by me on the dates indicated in the system records."
       },
       "witness": {
         "label": "Optionally, please choose 1 or more witnesses:"

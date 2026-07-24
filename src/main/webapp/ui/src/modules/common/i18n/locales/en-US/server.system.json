@@ -16,7 +16,7 @@
   },
   "errors": {
     "adminNotInCommunity": "The admin does not belong to any community.",
-    "deleteAdminUser": "This user  is the only administrator of a Community. Please replace the adminstrator so that this user can be deleted",
+    "deleteAdminUser": "This user is the only administrator of a Community. Please replace the adminstrator so that this user can be deleted",
     "deleteSysadminUser": "Invalid attempt to delete sysadmin user - there must be at least one remaining active, enabled sysadmin user. Also, can't delete the internal sysadmin account 'sysadmin1'",
     "deleteUser": {
       "disabled": "Delete user is disabled!",
@@ -32,7 +32,7 @@
       "name": "Please type an initial group name and choose a community."
     },
     "user": {
-      "activeSession": "{0} is currently logged into RSpace - this operation is best performed when the user is offline, to prevent  data corruption",
+      "activeSession": "{0} is currently logged into RSpace - this operation is best performed when the user is offline, to prevent data corruption",
       "notFound": "User with ID [{0}] could not be found. The user may have been deleted.",
       "notInGroup": "The user does not belong to any group."
     }
@@ -92,9 +92,9 @@
       },
       "upload": {
         "emptyFile": "The selected CSV file is empty. Please choose a CSV file that contains user data.",
-        "helpTextCloud": "To import users please upload a CSV file with 7 columns:<br/> First name, Last name, Email, Affiliation, Role, Username, Password.",
-        "helpTextSso": "To import users please upload a CSV file with 5 columns:<br/> First name, Last name, Email, Role, Username.",
-        "helpTextStandalone": "To import users please upload a CSV file with 6 columns:<br/> First name, Last name, Email, Role, Username, Password.",
+        "helpTextCloud": "To import users please upload a CSV file with 7 columns:<br/>First name, Last name, Email, Affiliation, Role, Username, Password.",
+        "helpTextSso": "To import users please upload a CSV file with 5 columns:<br/>First name, Last name, Email, Role, Username.",
+        "helpTextStandalone": "To import users please upload a CSV file with 6 columns:<br/>First name, Last name, Email, Role, Username, Password.",
         "noFile": "No CSV file was provided. Please select a CSV file to upload."
       }
     },
@@ -111,7 +111,7 @@
       },
       "optionColumnLabel": "Option",
       "profileText": {
-        "label": "Optionally, enter a short  description of this community."
+        "label": "Optionally, enter a short description of this community."
       },
       "removeCommunityLink": "Remove community",
       "uniqueName": {
@@ -240,7 +240,7 @@
       },
       "displayNamePlaceholder": "A display name for this community",
       "errors": {
-        "noAdmins": "There are no available admins for this community, please  create a new admin user first."
+        "noAdmins": "There are no available admins for this community, please create a new admin user first."
       },
       "moveGroupsPrompt": "If you wish to move any groups into this Community, select them below.",
       "noGroupsAvailable": "There are no groups yet that can be added to this community",
@@ -381,7 +381,7 @@
         "url": "URL"
       },
       "filestores": {
-        "disabled": "Filestore linking is <strong>disabled</strong> for RSpace users - they won't see \"Filestores\" section in their Gallery. <br/> To enable the functionality set <strong>netfilestores.enabled</strong> deployment property to <strong>true</strong> and restart RSpace.",
+        "disabled": "Filestore linking is <strong>disabled</strong> for RSpace users - they won't see \"Filestores\" section in their Gallery.<br/>To enable the functionality set <strong>netfilestores.enabled</strong> deployment property to <strong>true</strong> and restart RSpace.",
         "enabled": "Filestore linking is <strong>enabled</strong> for RSpace users.",
         "exportDisabled": "Option to include filestore files in archive export is <strong>disabled</strong>.",
         "exportEnabled": "Option to include filestore files in archive export is <strong>enabled</strong>."
@@ -473,7 +473,7 @@
       "incognito": {
         "label": "Operate incognito (without user knowing)"
       },
-      "label": "Please choose  a user you want to 'operate as'.",
+      "label": "Please choose a user you want to 'operate as'.",
       "permissionsNotice": "You can impersonate other users through this form, and will have exactly the same roles and permissions as that user.",
       "userNotInCommunity": "Either {0} is not in your Community, or you are not authorised to 'Operate As' them.",
       "userNotificationNotice": "The user will be notified that you are impersonating them, unless you choose the incognito option.",
@@ -521,7 +521,7 @@
       }
     },
     "unauthorized": {
-      "userRole": "Unauthorized role manipulation attempt  by [{0}]"
+      "userRole": "Unauthorized role manipulation attempt by [{0}]"
     },
     "unpublish": {
       "button": {
@@ -539,7 +539,7 @@
     "userToPi": {
       "collaborationGroupConsequence": "He/she will remain in any CollaborationGroups, and assume a PI role in these groups.",
       "consequencesIntro": "Promoting this user to PI will have the following consequences:",
-      "labGroupRemovalConsequence": "He/she will  be removed from any LabGroups they belong to.",
+      "labGroupRemovalConsequence": "He/she will be removed from any LabGroups they belong to.",
       "newLabGroupConsequence": "A new LabGroup will be created.",
       "success": "PI role successfully created for {0}",
       "validation": {
@@ -553,11 +553,9 @@
       "audit": {
         "description": "Ownership of template transferred from {0} to {1}"
       },
+      "deletedUserName": "{0} (Deleted)",
       "folder": {
         "deletedUsers": "Deleted Users"
-      },
-      "suffix": {
-        "deleted": " (Deleted)"
       }
     }
   }

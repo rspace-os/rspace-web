@@ -95,10 +95,10 @@
     },
     "folderChooser": {
       "createNewFolderInstruction": "Optionally, create a new folder in the chosen folder:",
-      "linkText": "choose a folder or notebook",
+      "linkText": "Choose a folder or notebook",
       "newFolderAriaLabel": "New folder name",
       "newFolderPlaceholder": "New Folder Name",
-      "optionally": "Optionally,",
+      "optionalLinkText": "Optionally, choose a folder or notebook",
       "shareTitle": "Select a folder to share into"
     },
     "importFromWord": {
@@ -110,9 +110,7 @@
       "selection": "Your path selection is"
     },
     "permissionChooser": {
-      "groupToBeAbleTo": "group to be able to",
-      "intro": "I want members of the",
-      "mySharedItems": "my shared item(s).",
+      "sentence": "I want members of the {0} group to be able to {1} my shared item(s).",
       "selectAriaLabel": "Share privileges",
       "title": "Specify permissions"
     },
@@ -356,7 +354,7 @@
       "optionRequired": "Please provide at least one option",
       "radioDefaultInvalid": "Default option must be one of the possible options",
       "stringTooLong": "String fields must be less than {max} characters",
-      "typeUnsupported": "Please supply a supported 'type' property: was '${validatedValue}' but must match {regexp} "
+      "typeUnsupported": "Please supply a supported 'type' property: was '${validatedValue}' but must match {regexp}"
     },
     "editor": {
       "addFieldButton": "Add Field",
@@ -463,7 +461,7 @@
       "defaultTime": "Default Time",
       "defaultValue": "Default Value",
       "deleteOption": "(Delete)",
-      "displayAsPicklist": "Display as a picklist ?",
+      "displayAsPicklist": "Display as a picklist?",
       "dragToSortHint": "(Or drag to sort by hand)",
       "isPassword": "Is Password",
       "maxValue": "Max Value",
@@ -476,7 +474,7 @@
       "readDataFromUploaded": "Read data from uploaded",
       "readFile": "Read file",
       "required": "Required?",
-      "sortAlphabetically": "Sort alphabetically ?",
+      "sortAlphabetically": "Sort alphabetically?",
       "time12Hour": "hh:mm AM/PM(12 hours)",
       "time24Hour": "HH:mm(24 hours)",
       "timeFormat": "Time Format",
@@ -577,7 +575,7 @@
       "openJupyterNotebooks": "Open Jupyter Notebook(s)"
     },
     "update": {
-      "explanation": "Editing a form. Click 'Update' to commit this edit and make available.<br/> Abandoning the editing (by clicking 'Revert') will revert to the previous form version."
+      "explanation": "Editing a form. Click 'Update' to commit this edit and make available.<br/>Abandoning the editing (by clicking 'Revert') will revert to the previous form version."
     },
     "welcome": {
       "name": "Getting started",
@@ -769,9 +767,8 @@
     }
   },
   "requestFeedback": {
-    "memberOfGroupNotice": "you''re now a member of \"{0}\" group ",
-    "notJoiningGroupNotice": "you''re not joining the group \"{0}\" ",
-    "requestLabel": "Request",
+    "memberOfGroupNotice": "Request {0}! - you''re now a member of \"{1}\" group",
+    "notJoiningGroupNotice": "Request {0}! - you''re not joining the group \"{1}\"",
     "returnToWorkspaceLink": "Return to workspace",
     "title": "Request Declined"
   },
@@ -849,7 +846,7 @@
       "description": "Saves current changes - does not re-version or alter publishing status."
     },
     "unpublish": {
-      "description": "Hides a form from  users"
+      "description": "Hides a form from users"
     }
   },
   "userform": {
@@ -882,7 +879,7 @@
       "setupHeading": "Egnyte filestore setup"
     },
     "lastLoginLabel": "Last Login:",
-    "loginAliasSuffix": ", login alias: {0}",
+    "usernameWithAlias": "{0}, login alias: {1}",
     "otherProfileHeading": "User Profile",
     "ownProfileHeading": "My Profile",
     "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",

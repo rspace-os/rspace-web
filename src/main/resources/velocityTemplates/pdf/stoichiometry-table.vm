@@ -1,6 +1,6 @@
 <div id='stoichiometry'>
   <br>
-  <h4>$msg.format("export.pdf.stoichiometry.title", [$header])</h4>
+  <h4>$title</h4>
   <div class="stoichiometry-table-container">
     <table id='stoichiometry-table' class='stoichiometry-table'>
       <thead>

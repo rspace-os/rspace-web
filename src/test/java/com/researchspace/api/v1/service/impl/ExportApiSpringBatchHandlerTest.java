@@ -23,7 +23,6 @@ import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.archive.ExportImport;
@@ -70,8 +69,6 @@ public class ExportApiSpringBatchHandlerTest {
   private @Mock BaseRecordManager brMgr;
   private @Mock RecordManager recMgr;
   private @Mock DiskSpaceChecker diskSpaceChecker;
-
-  private @Mock OperationFailedMessageGenerator authGen;
 
   private @Spy MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
   JobExecution exe;

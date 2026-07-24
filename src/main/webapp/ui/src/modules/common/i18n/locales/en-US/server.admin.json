@@ -58,7 +58,10 @@
     },
     "activity": {
       "filter": {
-        "label": "You can filter this audit"
+        "admin": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4} or by {5}",
+        "pi": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4}",
+        "sysadmin": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4}, by {5}, or by {6}",
+        "user": "You can filter this audit by {0}, by {1}, by {2}, and by {3}"
       }
     },
     "communities": {
@@ -77,14 +80,11 @@
       "limit": "(maximum of 10,000 events per download)"
     },
     "filter": {
-      "and": "and",
-      "by": "by",
       "communityPrompt": "Enter a Community to audit",
       "dateRangePrompt": "Date range to audit",
       "from": "from",
       "globalIdPrompt": "Enter a global ID of a document, notebook, or Inventory item, e.g. SD12345",
       "labGroupPrompt": "Enter a LabGroup to audit",
-      "or": "or",
       "to": "to",
       "usersPrompt": "Enter a user or users to audit"
     },
@@ -141,7 +141,7 @@
       "instruction": "Please upload a gif, jpeg, or png format profile image"
     },
     "verificationPassword": {
-      "description": "This password provides an additional layer of security when performing sensitive actions such as changing email address or signing documents.<strong> It should <em> not </em> be the same as your SingleSignOn or Google password. </strong>"
+      "description": "This password provides an additional layer of security when performing sensitive actions such as changing email address or signing documents. <strong>It should <em>not</em> be the same as your SingleSignOn or Google password.</strong>"
     }
   },
   "directory": {

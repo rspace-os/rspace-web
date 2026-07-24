@@ -1983,7 +1983,6 @@ export default interface Resources {
     },
     "moveToIrods": {
       "description": "You have selected {count} {count, plural, one {item} other {items}} to move to the iRODS server",
-      "descriptionSuffix": ". By default, the items will be added to iRODS and removed from RSpace. You will be able to link to the iRODS items inside of RSpace documents and include them into any exports through our iRODS integration.",
       "destination": {
         "explanation": "The available folders are configured in the Gallery's filestore section.",
         "label": "Destination in iRODS",
@@ -3779,12 +3778,12 @@ export default interface Resources {
           "modified": "Modified",
           "version": "Version{version, select, none {} other { {version}}}"
         },
-        "current": " (current)",
+        "current": "(current)",
         "loadFailed": "Could not load version history.",
         "none": "No version history is available for this item yet.",
         "title": "Version history",
         "view": "View version history",
-        "viewing": " (viewing)"
+        "viewing": "(viewing)"
       }
     },
     "moveToTarget": {
@@ -4592,7 +4591,10 @@ export default interface Resources {
       },
       "activity": {
         "filter": {
-          "label": "You can filter this audit"
+          "admin": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4} or by {5}",
+          "pi": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4}",
+          "sysadmin": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4}, by {5}, or by {6}",
+          "user": "You can filter this audit by {0}, by {1}, by {2}, and by {3}"
         }
       },
       "communities": {
@@ -4611,14 +4613,11 @@ export default interface Resources {
         "limit": "(maximum of 10,000 events per download)"
       },
       "filter": {
-        "and": "and",
-        "by": "by",
         "communityPrompt": "Enter a Community to audit",
         "dateRangePrompt": "Date range to audit",
         "from": "from",
         "globalIdPrompt": "Enter a global ID of a document, notebook, or Inventory item, e.g. SD12345",
         "labGroupPrompt": "Enter a LabGroup to audit",
-        "or": "or",
         "to": "to",
         "usersPrompt": "Enter a user or users to audit"
       },
@@ -4704,7 +4703,7 @@ export default interface Resources {
         "instruction": "Please upload a gif, jpeg, or png format profile image"
       },
       "verificationPassword": {
-        "description": "This password provides an additional layer of security when performing sensitive actions such as changing email address or signing documents.<strong> It should <em> not </em> be the same as your SingleSignOn or Google password. </strong>"
+        "description": "This password provides an additional layer of security when performing sensitive actions such as changing email address or signing documents. <strong>It should <em>not</em> be the same as your SingleSignOn or Google password.</strong>"
       }
     },
     "directory": {
@@ -5141,7 +5140,7 @@ export default interface Resources {
         "redirectPageTitle": "One Drive Redirect Page"
       },
       "orcid": {
-        "connectedPrefix": "Success - Your Orcid ID is",
+        "connectedId": "Success - Your Orcid ID is {0}.",
         "connectedSuffix": "This window will close shortly."
       },
       "snapgene": {
@@ -5209,7 +5208,7 @@ export default interface Resources {
           "userApiDisabled": "Access to API has been disabled for user ''{0}''",
           "userOAuthDisabled": "Access through OAuth tokens has been disabled for user ''{0}''"
         },
-        "detected": "Errors detected : {0}"
+        "detected": "Errors detected: {0}"
       },
       "pubchem": {
         "errors": {
@@ -5234,18 +5233,6 @@ export default interface Resources {
         "required": "Please fill in all the fields."
       },
       "authorization": {
-        "action": {
-          "createFolderIn": "create folder in [{0}]",
-          "editFirstName": " edit first name",
-          "editLastName": " edit last name",
-          "exportSelection": "Export a selection of ",
-          "exportUserOrGroup": "Export a user or group",
-          "openDeletedFolder": "open a deleted folder.",
-          "openUnauthorisedFolder": "open an unauthorised folder.",
-          "renameRecord": " attempted rename of {0} [id={1}]",
-          "restoreRevisionOfSignedDocument": "restore an earlier revision of a signed document.",
-          "retrieveJobById": "Retrieving job by id"
-        },
         "apiError": "Authorisation error",
         "audit": {
           "community": "Unauthorized attempt to audit a community",
@@ -5257,12 +5244,22 @@ export default interface Resources {
         },
         "failed": "Attempt to access resource of type {0} identified by {1} by user {2} to perform action {3}",
         "failure": {
+          "createFolderIn": "Unauthorized attempt by {0} to create a folder in [{1}]",
           "detailed": "Unauthorized attempt by {0} to {1}",
-          "polite": "Sorry, you don''t have permission to {0}"
+          "editFirstName": "Unauthorized attempt by {0} to edit their first name",
+          "editLastName": "Unauthorized attempt by {0} to edit their last name",
+          "exportSelection": "Unauthorized attempt by {0} to export a selection",
+          "exportUserOrGroup": "Unauthorized attempt by {0} to export a user or group",
+          "openDeletedFolder": "Unauthorized attempt by {0} to open a deleted folder",
+          "openUnauthorisedFolder": "Unauthorized attempt by {0} to open an unauthorised folder",
+          "polite": "Sorry, you don''t have permission to {0}",
+          "renameRecord": "Unauthorized attempt by {0} to rename {1} [id={2}]",
+          "restoreRevisionOfSignedDocument": "Unauthorized attempt by {0} to restore an earlier revision of a signed document",
+          "retrieveJobById": "Unauthorized attempt by {0} to retrieve job by id"
         },
         "formIconUpdate": "Unauthorized attempt to update form icon",
         "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
-        "signing": "Only the  record owner can sign the record.",
+        "signing": "Only the record owner can sign the record.",
         "sysadminApiOnly": "Only sysadmin can use this API",
         "sysadminCreateSysadminOnly": "Only a sysadmin can create another sysadmin!",
         "sysadminIpRequired": "Sysadmin role with valid IP required for admin operations",
@@ -5315,7 +5312,7 @@ export default interface Resources {
       },
       "invalidXml": {
         "content": "XML content for field {0} was invalid: {1}",
-        "namespace": "XML content for property {0} has invalid namespace - it  should be {1} but was {2}."
+        "namespace": "XML content for property {0} has invalid namespace - it should be {1} but was {2}."
       },
       "login": {
         "adminLogin": {
@@ -5367,7 +5364,7 @@ export default interface Resources {
         "conflict": "Password and Confirm Password fields are not identical.",
         "insecurePassword": "Please choose a more secure password.",
         "invalid": "Invalid password.",
-        "notEqualUsername": "Please use a  password other than your username."
+        "notEqualUsername": "Please use a password other than your username."
       },
       "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
       "reauthentication": {
@@ -5520,7 +5517,7 @@ export default interface Resources {
         "warning": "If you accept, the group PI will be able to see all of your data"
       },
       "joinProjectGroup": {
-        "warning": "Project Groups have no PI, your documents won't be visible <br/> to other group members until you explicitly share them."
+        "warning": "Project Groups have no PI, your documents won't be visible<br/>to other group members until you explicitly share them."
       },
       "joinRequest": {
         "toJoin": "To join:"
@@ -5552,8 +5549,10 @@ export default interface Resources {
       "title": "My Messages",
       "type": {
         "global": "Global",
+        "globalMessageRequest": "Global Message request",
         "message": "Message",
-        "requestSuffix": "request"
+        "messageRequest": "Message request",
+        "request": "{0} request"
       },
       "updateReply": {
         "label": "Update & Reply"
@@ -5581,7 +5580,6 @@ export default interface Resources {
     },
     "myrequests": {
       "cancelRequest": "Cancel Request",
-      "dueForCompletionBy": "due for completion by",
       "empty": "There are no sent requests.",
       "orderBy": {
         "completionDate": "Completion date",
@@ -5591,13 +5589,17 @@ export default interface Resources {
       "request": {
         "sentLabel": "Request<br>Sent:"
       },
-      "requestWord": "request",
       "sentToAllUsers": "Sent to all users",
       "status": {
         "label": "Status:"
       },
-      "title": "My Sent Requests",
-      "youSentA": "You sent a"
+      "summary": {
+        "basic": "You sent a {0} request",
+        "withDueDate": "You sent a {0} request due for completion by {1}",
+        "withRecord": "You sent a {0} request concerning {1}",
+        "withRecordAndDueDate": "You sent a {0} request concerning {1}, due for completion by {2}"
+      },
+      "title": "My Sent Requests"
     },
     "notificationType": {
       "archiveExportCompleted": "Export Completed",
@@ -5676,12 +5678,12 @@ export default interface Resources {
           "subjectEnabled": "RSpace account enabled"
         },
         "activationRequest": {
-          "accept": "To <b>accept</b> this request, please click <a href=\"{0}\"> to accept. </a>",
+          "accept": "To <b>accept</b> this request, please click <a href=\"{0}\">to accept.</a>",
           "body": "A new registrant for the {0} installation has signed up.",
           "details": "The details are as follows:",
           "email": "Email: {0}",
           "fullName": "Full name: {0}",
-          "reject": "To <b>reject</b> this request, please click <a href=\"{0}\"> to deny. </a>",
+          "reject": "To <b>reject</b> this request, please click <a href=\"{0}\">to deny.</a>",
           "subject": "Sign up request from {0}"
         },
         "defaultWelcome": {
@@ -5823,16 +5825,14 @@ export default interface Resources {
     "email": {
       "notification": {
         "exportCompleteNotification": {
-          "andLinkedItem": " and {0, plural, one {# linked filestore item} other {# linked filestore items}}",
-          "archiveIncludes": "{0, plural, =0 {No records were exported} one {The archive includes # record} other {The archive includes # records}}",
+          "archiveSummary": "{0, plural, =0 {No records were exported.} one {The archive includes # record.} other {The archive includes # records.}}",
+          "archiveSummaryWithNfs": "{0, plural, =0 {No records were exported} one {The archive includes # record} other {The archive includes # records}}{1, plural, =0 {. No filestore links were included} one { and # linked filestore item} other { and # linked filestore items}}{2, plural, =0 {.} one {.<br/><br/># filestore link was not included.} other {.<br/><br/># filestore links were not included.}}",
           "clickOrCopy": "Please click on, or copy the link into a browser to access the export:",
           "completedWithSize": "Your export {0} is completed and generated an archive of size {1}.",
           "moreDetails": "More details are available on the <a href=\"{0}\">export report page</a>.",
-          "noFilestoreLinks": ". No filestore links were included",
           "removalPolicyAfterHours": "{0, plural, one {The export will be eligible for deletion after # hour.} other {The export will be eligible for deletion after # hours.}}",
           "removalPolicyNever": "This archive will never be removed.",
-          "removalPolicyNow": "This archive is now eligible for removal.",
-          "skippedLinks": ".<br/><br/>{0, plural, one {# filestore link was not included} other {# filestore links were not included}}"
+          "removalPolicyNow": "This archive is now eligible for removal."
         },
         "message": {
           "concerningDocument": "This message concerns the document <a href=\"{0}\">{1}</a>.",
@@ -6038,8 +6038,8 @@ export default interface Resources {
           "headerInventory": "Inventory",
           "headerName": "Name",
           "headerRole": "Role",
-          "reactionHeader": " the chemical reaction above.",
-          "reactionlessHeader": " this reactionless stoichiometry.",
+          "reactionTitle": "Stoichiometry Information for the chemical reaction above.",
+          "reactionlessTitle": "Stoichiometry Information for this reactionless stoichiometry.",
           "title": "Stoichiometry Information for {0}"
         }
       },
@@ -6053,7 +6053,8 @@ export default interface Resources {
         "comment": "Comment:",
         "dataset": "Dataset:",
         "equipment": "Equipment",
-        "importedFrom": "Imported from",
+        "importedFrom": "Imported from {0}",
+        "importedFromLink": "Imported from <a target=\"_blank\" href=\"{0}\">Protocols.io</a>",
         "linkOut": "Link out",
         "materials": "Materials",
         "metadata": "Metadata",
@@ -6066,7 +6067,7 @@ export default interface Resources {
         "publishedOn": "Published on:",
         "repository": "Repository:",
         "safetyInformation": "Safety information",
-        "seePreviousStep": "See <a href=\"#{0}\"> previous step </a>",
+        "seePreviousStep": "See <a href=\"#{0}\">previous step</a>",
         "shaker": "Shaker:",
         "softwarePackage": "Software package:",
         "source": "Source",
@@ -6104,7 +6105,7 @@ export default interface Resources {
     },
     "gallery": {
       "api": {
-        "noTopLevelFolder": "You cannot create a top-level folder in the Gallery; create folder in one of the sub-galleries, e.g.  Images, Documents"
+        "noTopLevelFolder": "You cannot create a top-level folder in the Gallery; create folder in one of the sub-galleries, e.g. Images, Documents"
       },
       "errors": {
         "accessDenied": "Access denied",
@@ -6175,16 +6176,16 @@ export default interface Resources {
       },
       "info": {
         "dialog": {
-          "bucketLabel": "Bucket: ",
+          "bucketLabel": "Bucket:",
           "downloadButton": "Download",
           "downloadButtonTitle": "Download through RSpace",
-          "nameLabel": "Name: ",
-          "originalPathLabel": "Original path: ",
-          "shareLabel": "Share: ",
+          "nameLabel": "Name:",
+          "originalPathLabel": "Original path:",
+          "shareLabel": "Share:",
           "storedOnFileSystemLabel": "Stored on a File System:",
           "updatePathButton": "Update Path",
           "updatePathButtonTitle": "Update Current Path",
-          "urlLabel": "URL: "
+          "urlLabel": "URL:"
         }
       },
       "login": {
@@ -6301,7 +6302,7 @@ export default interface Resources {
           "notMember": "You are not a member of the group.",
           "onlyPiRoleChange": "Attempt to change the role of the only PI in the group!",
           "piCannotBeDemoted": "PI [{0}] cannot be demoted to user as is PI of at least 1 group: {1}",
-          "piEditNotAllowed": "System admin or community admin has not allowed  this setting to be changed",
+          "piEditNotAllowed": "System admin or community admin has not allowed this setting to be changed",
           "piEditOnlyPi": "Only a PI of this group can change this setting",
           "piEditWrongGroupType": "PI can only edit all documents in a lab group, but this group is {0}",
           "piRequiredForBioOntologies": "Only PI can allow group to use Bio Ontologies",
@@ -6471,7 +6472,7 @@ export default interface Resources {
           "workNotVisible": "Any of your work that you shared will no longer be visible to other group members."
         },
         "rename": {
-          "prompt": "Please  enter a new name for this group"
+          "prompt": "Please enter a new name for this group"
         },
         "role": {
           "groupOwner": "Group Owner",
@@ -6595,7 +6596,7 @@ export default interface Resources {
           "parentSampleNotEditable": "Parent sample with global id ''{0}'' doesn''t exist, or user has no permission to add new subsamples into it",
           "parentSampleNotFound": "Parent sample with import id ''{0}'' could not be found",
           "parentSampleNotSet": "Parent sample import id or global id must be set, but both were empty",
-          "subSampleImportRequiresParentSampleMapping": "Subsample import requires mapping to 'parent sample' or 'parent sample import id' ",
+          "subSampleImportRequiresParentSampleMapping": "Subsample import requires mapping to 'parent sample' or 'parent sample import id'",
           "subSampleImportRequiresSamplesImport": "Subsample import with 'parent sample' mapping requires Sample import, but sampleSettings were empty",
           "templateInfoEmpty": "'templateInfo' property must be provided and describe a template for imported samples",
           "unrecognizedFileType": "Unrecognized fileType: {0}"
@@ -6688,7 +6689,7 @@ export default interface Resources {
           "emptyFieldName": "Field name cannot be empty",
           "emptyFieldType": "Field type cannot be empty",
           "fieldNameTooLong": "{0} is too long for a template field name, max length is {1}",
-          "invalidFieldContent": "Field validation error: {0} ",
+          "invalidFieldContent": "Field validation error: {0}",
           "invalidRelationType": "{0} is not a valid DataCite relation type",
           "invalidUnitIdDefault": "Unit id was {0} must be the id of a unit (see /units)",
           "invalidUnitIdNotAmount": "Unit id {0} is not a valid sample-template default unit; must be a mass, volume, or dimensionless (\"items\") unit (see /units)",
@@ -6729,8 +6730,8 @@ export default interface Resources {
           "added": "Added List of Materials {0}.",
           "deleted": "Deleted List of Materials {0}.",
           "edited": "Edited List of Materials {0}.",
-          "itemsAdded": " Added inventory items: {0}.",
-          "itemsRemoved": " Removed inventory items: {0}."
+          "itemsAdded": "Added inventory items: {0}.",
+          "itemsRemoved": "Removed inventory items: {0}."
         }
       },
       "listOfMaterials": {
@@ -6744,7 +6745,7 @@ export default interface Resources {
         "gettingUserActivity": "Getting user activity information"
       },
       "ajax": {
-        "failed": "{0} could not complete: <br/>{1}<br/>{2}",
+        "failed": "{0} could not complete:<br/>{1}<br/>{2}",
         "noDetails": "No error details in response",
         "status": {
           "generic": "Status: {0}",
@@ -6775,7 +6776,7 @@ export default interface Resources {
         "principalEmailPlaceholder": "Type and find PI or enter new email"
       },
       "columnSort": {
-        "actionGettingUserInformation": "Getting user  information"
+        "actionGettingUserInformation": "Getting user information"
       },
       "common": {
         "abandoningSearch": "Abandoning search...",
@@ -6786,13 +6787,13 @@ export default interface Resources {
         "enterEmailPlaceholder": "Type and enter email",
         "hide": "Hide",
         "loadingChosenPage": "Loading the chosen page...",
-        "noResultsForSearchTerm": "Your search for ''{0}'' returned no results. Please search again or",
+        "noResultsForSearchTerm": "Your search for ''{0}'' returned no results. Please modify your search or clear it below.",
         "ok": "OK",
         "save": "Save",
         "searchEllipsis": "Search...",
         "searchTermTooShort": "Please enter at least three characters.",
         "searchingEllipsis": "Searching...",
-        "selectExistingUserEmail": "Please check email. <br> Select an existing RSpace user email from the autocompleted list.",
+        "selectExistingUserEmail": "Please check email.<br>Select an existing RSpace user email from the autocompleted list.",
         "send": "Send",
         "show": "Show",
         "userSearchPlaceholder": "Type and find users by name, username or email",
@@ -6892,37 +6893,30 @@ export default interface Resources {
           "chooseField": "Please choose at least one field!",
           "createAction": "Create template",
           "creating": "Creating template...",
-          "notOwner": "Sorry, you may not create a template from a file you do not own. <br/>Please ask the owner to create a template from this document, and share it with you.",
+          "notOwner": "Sorry, you may not create a template from a file you do not own.<br/>Please ask the owner to create a template from this document, and share it with you.",
           "title": "Save Template"
         },
         "share": {
           "action": "Sharing",
-          "becauseErrors": "{0, plural, one {because of the following error} other {because of the following errors}}: <br/> - {1}",
-          "chooseFolder": "choose a folder {0}",
+          "chooseFolder": "Choose a folder",
+          "chooseFolderOrNotebook": "Choose a folder or notebook",
           "clipboardButtonHint": "There is a copy button at the top left of this screen which will copy document names with their published links to your clipboard.",
           "clipboardHint": "Document names with their published links are in your clipboard.",
           "confirmed": "(confirmed)",
           "copyLatestLinks": "copy latest links",
           "didNotComplete": "Sharing did not complete: {0}",
-          "folderChooserDescription": "to share into. Otherwise, documents will be shared into the top of your LabGroup Shared folder.",
-          "maybeAlreadyPublished": "{0, plural, one {Maybe the document is already published?} other {Maybe the documents are already published?}}",
-          "maybeAlreadyShared": "{0, plural, one {Maybe the document is already shared?} other {Maybe the documents are already shared?}}",
+          "failure": "{0, select, publication {{1, select, partial {Publication was partially unsuccessful, {2, plural, one {# document was skipped} other {# documents were skipped}}} other {Publication was unsuccessful}}} other {{1, select, partial {Sharing was partially unsuccessful, {2, plural, one {# document was skipped} other {# documents were skipped}}} other {Sharing was unsuccessful}}}}{3, plural, =0 {. {0, select, publication {{2, plural, one {Maybe the document is already published?} other {Maybe the documents are already published?}}} other {{2, plural, one {Maybe the document is already shared?} other {Maybe the documents are already shared?}}}}} one { because of the following error:<br/>- {4}} other { because of the following errors:<br/>- {4}}}",
+          "folderChooserDescription": "The selected folder will be used as the share destination. Otherwise, documents will be shared into the top of your LabGroup Shared folder.",
           "notAllPublished": "Not all documents were published",
           "notAllShared": "Not all documents were shared",
           "notPublished": "{0, plural, one {Document not published} other {Documents not published}}",
           "notShared": "{0, plural, one {Document not shared} other {Documents not shared}}",
-          "orNotebook": "or notebook",
-          "publicationPartiallyUnsuccessful": "Publication was partially unsuccessful",
-          "publicationUnsuccessful": "Publication was unsuccessful",
           "publish": "Publish",
           "publishOption": "publish",
           "selectOption": "<p>Please select a sharing option. Either:<ul><li> Share with a group you belong to, or a member of that group<li> Invite by email an individual to share with<li> Invite members of another group to view your document <li> Cancel to abort.</ul></p>",
           "selectionSelected": "({0} selected)",
           "share": "Share",
           "sharing": "{0, plural, one {Sharing document} other {Sharing documents}}",
-          "sharingPartiallyUnsuccessful": "Sharing was partially unsuccessful",
-          "sharingUnsuccessful": "Sharing was unsuccessful",
-          "skipped": "{0, plural, one {1 document was skipped} other {# documents were skipped}}",
           "successPublished": "{0, plural, one {Document published} other {# documents published}}",
           "successShared": "{0, plural, one {Document shared} other {# documents shared}}",
           "usersSelectedCount": "{0, plural, one {user selected} other {users selected}}"
@@ -6998,7 +6992,7 @@ export default interface Resources {
         "actionUpdatingProfileVisibility": "Updating profile visibility",
         "actionUpdatingRoles": "Updating roles",
         "changePiDialogTitle": "Change LabGroup's PI",
-        "changeUserRoleDialogTitle": "Change  User's Role",
+        "changeUserRoleDialogTitle": "Change User's Role",
         "changingPi": "Changing PI",
         "checkEmailAddresses": "Please check the email addresses.",
         "confirmDeleteGroupConsequences": "Are you sure you want to delete the following group: <strong>{0}</strong>?",
@@ -7007,7 +7001,7 @@ export default interface Resources {
         "groupRemoved": "Group removed",
         "invite": "Invite",
         "inviteNewMembersDialogTitle": "Invite new members",
-        "invitedPeopleList": "<br>The following people have been invited to join the group : <ul>{0}</ul><br> Invited users will be added to the group when they accept their invitation.",
+        "invitedPeopleList": "<br>The following people have been invited to join the group: <ul>{0}</ul><br>Invited users will be added to the group when they accept their invitation.",
         "leaveGroup": "Leave Group",
         "leftGroup": "You have left the group",
         "leftPrivateGroup": "You have left the group. This was a private group; you are no longer authorised to view its profile.",
@@ -7033,7 +7027,7 @@ export default interface Resources {
         "actionUpdateMessageStatus": "Update message status",
         "enterMessageHere": "Please enter a message here!",
         "extMessageDialogTitle": "Send message to external messaging platform",
-        "extMessageLinkLimit": "There is a limit of 20 links that can be included with the external message.<br> Please select fewer records.",
+        "extMessageLinkLimit": "There is a limit of 20 links that can be included with the external message.<br>Please select fewer records.",
         "extMessageNoLinkableEntry": "There is no entry that could be linked in external message.",
         "messageSent": "Message sent",
         "messagesAndRequestsDialogTitle": "Messages and Requests",
@@ -7045,9 +7039,9 @@ export default interface Resources {
         "noRequestsSent": "No requests sent.",
         "notificationsDialogTitle": "Notifications",
         "notificationsTooltip": "Notifications",
-        "optionalMessageTooLong": "Optional message is too long <br /> ({0}/2000 characters)",
+        "optionalMessageTooLong": "Optional message is too long<br />({0}/2000 characters)",
         "replyFailed": "Message sending failed - please try again, or report the error.",
-        "replyMessageTooLong": "Reply message is too long <br /> ({0}/2000 characters)",
+        "replyMessageTooLong": "Reply message is too long<br />({0}/2000 characters)",
         "requestAccepted": "Request accepted",
         "requestDeclined": "Request declined",
         "requestSent": "Request Sent",
@@ -7109,7 +7103,7 @@ export default interface Resources {
         "currentChecksum": "Current checksum: {0}",
         "declinedWitnessRequests": "Declined witness requests: {0}.",
         "gettingCurrentHashValue": "Getting current hash value",
-        "hashesIntro": "Secure checksums and exports were generated on signing: ",
+        "hashesIntro": "Secure checksums and exports were generated on signing:",
         "infoUnavailable": "-- signature info unavailable --",
         "pendingWitnessRequests": "Pending witness requests: {0}.",
         "signedBy": "This document was signed by <b>{0}</b> on {1}.",
@@ -7168,7 +7162,7 @@ export default interface Resources {
         "config": {
           "addingIpAddressAction": "Adding ip address",
           "deletingIpAddressAction": "Deleting ip address",
-          "invalidIpAddress": "Please enter a valid IPv4, CIDR, or IPv6  address",
+          "invalidIpAddress": "Please enter a valid IPv4, CIDR, or IPv6 address",
           "missingIpDescription": "Please enter a human-readable identifier for this IP address",
           "saveSeparator": "Save |",
           "savingIpAddressAction": "Saving ip address"
@@ -7225,7 +7219,7 @@ export default interface Resources {
         "netFileSystem": {
           "confirmDeleteFileSystem": "Delete File System ''{0}''?",
           "deleting": "Deleting...",
-          "fileSystemDeleteFailed": "The File System ''{0}'' couldn't be deleted. <br><br>That could happen if users already created some File Stores for this File System.",
+          "fileSystemDeleteFailed": "The File System ''{0}'' couldn't be deleted.<br><br>That could happen if users already created some File Stores for this File System.",
           "fileSystemDeleted": "File System deleted",
           "fileSystemSaved": "File System saved",
           "gettingFileSystemsPageAction": "Getting File Systems page",
@@ -7430,7 +7424,7 @@ export default interface Resources {
         "editingProfileEllipsis": "Editing profile ...",
         "emailChangedSuccessfully": "Email changed successfully",
         "passwordResetLinkError": "An error occurred while sending email, please try again.",
-        "passwordResetLinkSent": "Password reset link sent.  Please check your email.",
+        "passwordResetLinkSent": "Password reset link sent. Please check your email.",
         "profileUpdated": "Profile updated",
         "set": "Set",
         "setVerificationPasswordBeforeApiKey": "Please set your verification password before generating an api key.",
@@ -7467,7 +7461,7 @@ export default interface Resources {
           "ajaxRetrievingRecordInfo": "Retrieving record information",
           "ajaxSavingComment": "Saving comment",
           "ajaxTagging": "Tagging",
-          "attachmentDetailsLoadProblem": "There was a problem with loading attachment details: <br/>{0}",
+          "attachmentDetailsLoadProblem": "There was a problem with loading attachment details:<br/>{0}",
           "bioOntologiesDisabled": "Use My LabGroups page to enable inclusion of BioPortal Ontologies suggestions.",
           "bioOntologiesEnabled": "BioPortal Ontologies being added to suggestions.Disable on My LabGroups Page.",
           "boxConfigProblem": "There is a problem with RSpace Box configuration for Versioned links. Please contact your System Admin.",
@@ -7475,7 +7469,7 @@ export default interface Resources {
           "cancelCommentConfirm": "Please confirm that you wish to cancel - the changes you made won't be saved.",
           "cancelCommentConfirmNo": "No, don't",
           "cancelCommentConfirmYes": "Yes, cancel",
-          "chemCreationProblem": "There was a problem creating chemical: {0} <br/>{1}",
+          "chemCreationProblem": "There was a problem creating chemical: {0}<br/>{1}",
           "chemFileIncompatibleExtension": "{0, plural, one {The following file has an incompatible extension:} other {The following files have an incompatible extension:}} <ul>{1}</ul>",
           "closeButton": "Close",
           "commentByAt": "Comment by {0} at {1}",
@@ -7484,7 +7478,7 @@ export default interface Resources {
           "downloadAsImage": "Download as image",
           "downloadFullImage": "Download full image",
           "embeddedVideoFrom": "embedded video from {0}",
-          "errorsPrefix": "Errors : {0}",
+          "errorsPrefix": "Errors: {0}",
           "externalLinkInfoDialogTitle": "External Link Info",
           "forbiddenCharInName": "Sorry, ''{0}'' is a forbidden character that you can't use in document name",
           "forbiddenCharInTag": "Sorry, ''{0}'' is a forbidden character that you can't use in tags",
@@ -7527,7 +7521,7 @@ export default interface Resources {
           "noRecordsFound": "No records have been found.",
           "publishDialogTitle": "Publish",
           "removedFromFavorites": "{0, plural, one {Item removed from favorites} other {# documents removed from favorites}}",
-          "searchNoResults": "Your search returned no results. Please search again or",
+          "searchNoResults": "Your search returned no results. Please modify your search or clear it below.",
           "searchResultsShown": "Showing results of your search.",
           "selectTargetFolderTitle": "Select target folder",
           "sharedAltTitle": "Shared"
@@ -7546,7 +7540,7 @@ export default interface Resources {
           "cannotCancelDocument": "You cannot cancel the current document",
           "cannotEdit": "Sorry, you can't edit the document",
           "cannotEditOtherEditing": "Sorry, you can't edit the document now - it is currently being edited by {0}",
-          "cannotSaveAndCopy": "You cannot perform 'Save and Copy' here - maybe you don't have  permission to create a document here",
+          "cannotSaveAndCopy": "You cannot perform 'Save and Copy' here - maybe you don't have permission to create a document here",
           "cannotSaveAndNew": "You cannot perform 'Save and New' here - maybe you don't have permission to create a document here",
           "cannotSaveDocument": "You cannot save the current document",
           "documentSaved": "Document saved",
@@ -7561,13 +7555,13 @@ export default interface Resources {
           "savingAndCopying": "Saving and copying...",
           "savingAndCreatingNew": "Saving and creating new...",
           "someoneElse": "someone else",
-          "unchangedContentWarning": "The last few save actions didn't detect any changes to document content, is this expected? <br><br>If you <em>did</em> make changes to the content, then there may be a communication problem between your browser and RSpace server, and your latest changes may be lost. Please copy and save your content outside RSpace, close and reopen the document, and check if everything is there.<br><br>If some content is missing, or if you keep seeing this message, please contact your System Admin.",
+          "unchangedContentWarning": "The last few save actions didn't detect any changes to document content, is this expected?<br><br>If you <em>did</em> make changes to the content, then there may be a communication problem between your browser and RSpace server, and your latest changes may be lost. Please copy and save your content outside RSpace, close and reopen the document, and check if everything is there.<br><br>If some content is missing, or if you keep seeing this message, please contact your System Admin.",
           "valueGreaterThanMax": "Value greater than max value ({0}).",
           "valueLessThanMin": "Value less than min value ({0}).",
           "valueNotANumber": "Value [{0}] is not a number!"
         },
         "documentView": {
-          "deleteConfirm": "<div style='line-height:1.3em'>Do you want to delete the following this document ? - {0}. <a href='#' id='moreDeleteInfoLnk' class='moreDeleteInfo'>Details...</a><div style='display:none;' id='moreDeleteInfoContent'>Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with.</br> Deleting a document <em>shared with you</em> will only delete it from your view. <br/><a href='#' class='moreDeleteInfo'>Hide... </a></div></div>",
+          "deleteConfirm": "<div style='line-height:1.3em'>Do you want to delete the following this document? - {0}. <a href='#' id='moreDeleteInfoLnk' class='moreDeleteInfo'>Details...</a><div style='display:none;' id='moreDeleteInfoContent'>Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with.</br>Deleting a document <em>shared with you</em> will only delete it from your view.<br/><a href='#' class='moreDeleteInfo'>Hide...</a></div></div>",
           "deleteConfirmOk": "Delete",
           "deleteDocumentAction": "Delete operation",
           "fieldTooWideWarning": "The content of last edited field is wider than the page. It may affect PDF export and printout",
@@ -7594,7 +7588,7 @@ export default interface Resources {
           "deletingFieldBlock": "Deleting field...",
           "doneButton": "Done",
           "editButton": "Edit",
-          "fieldErrors": "Errors : {0}",
+          "fieldErrors": "Errors: {0}",
           "fieldNameMaxLength": "Field name maximum length is {0} characters",
           "fieldNamePicklist": "{0} (Picklist)",
           "fieldNameRadio": "{0} (Radio)",
@@ -7627,7 +7621,7 @@ export default interface Resources {
           "submitButton": "Submit",
           "unpublishingFormAction": "Unpublishing form",
           "updatingFormAction": "Updating form",
-          "updatingFormBlock": "Updating  form...",
+          "updatingFormBlock": "Updating form...",
           "valueGreaterThanMaxNumber": "Value greater than max value({0}).",
           "valueLessThanMinNumber": "Value less than min value({0}).",
           "valueNotANumber": "Value [{0}] is not a number!",
@@ -7657,7 +7651,7 @@ export default interface Resources {
           "removeFromMenuAction": "Removing form from Create Menu",
           "removingFromCreateMenu": "Removing from Create Menu...",
           "reorderingForms": "Reordering forms...",
-          "searchNoResults": "Your search for ''{0}'' returned no results. Please search again or",
+          "searchNoResults": "Your search for ''{0}'' returned no results. Please modify your search or clear it below.",
           "searchResultsShown": "Showing forms for search term ''{0}''.",
           "searchTermTooShort": "Please enter at least three characters.",
           "searching": "Searching...",
@@ -7690,7 +7684,7 @@ export default interface Resources {
           "openFolderAction": "Opening folder",
           "orderByTitle": "Order by {0}",
           "saveSettingsFailedAction": "Failed to save workspace settings",
-          "searchNoResults": "Your search returned no results. Please search again or",
+          "searchNoResults": "Your search returned no results. Please modify your search or clear it below.",
           "searchResultsShown": "Showing results of your search.",
           "treeView": "Tree View"
         },
@@ -7729,7 +7723,7 @@ export default interface Resources {
           "retrievingCollaboraExtsAction": "retrieving Collabora supported extensions",
           "retrievingMsOfficeExtsAction": "retrieving MS Office supported extensions",
           "sharedHeader": "{0, select, notebook {This notebook is shared:} other {This document is shared:}}",
-          "sharedImplicitly": "implicitly - is in shared Notebook <a href='/globalId/{0}'>{0}</a> (shared with : {1})",
+          "sharedImplicitly": "implicitly - is in shared Notebook <a href='/globalId/{0}'>{0}</a> (shared with: {1})",
           "sharedIntoNotebook": "into Notebook <a href='/globalId/{0}'>{0}</a> (owner: {1})",
           "sharedWithGroup": "with {0} (group) for {1, select, read {read} write {write} edit {edit} owner {owner} other {unknown access}}",
           "sharedWithUser": "with {0} (user) for {1, select, read {read} write {write} edit {edit} owner {owner} other {unknown access}}",
@@ -7750,7 +7744,7 @@ export default interface Resources {
           "updatingRecordInformation": "Updating record information..."
         },
         "revisionHistory": {
-          "ownedBy": "Owned by",
+          "description": "{0} {1} Owned by {2}",
           "restoreAction": "Restore",
           "restoredToast": "Restored"
         },
@@ -7916,7 +7910,7 @@ export default interface Resources {
     },
     "resendEmail": {
       "awaitingEmailConfirmation": {
-        "activationInstructions": "Access to your account is not enabled at the moment. To activate your account and verify your email, click a link in the email that has been sent to you.  In case you do not receive this email, please check the spam folder. You can click the button below to resend the verification email.",
+        "activationInstructions": "Access to your account is not enabled at the moment. To activate your account and verify your email, click a link in the email that has been sent to you. In case you do not receive this email, please check the spam folder. You can click the button below to resend the verification email.",
         "resendButtonText": "Resend email",
         "supportInstructions": "If this is unexpected, please contact support@researchspace.com to have our System Admin complete the registration process for you.",
         "title": "Awaiting Email Confirmation"
@@ -7975,8 +7969,8 @@ export default interface Resources {
           "completeTitle": "Account Activation Complete",
           "failTitle": "Account Activation Failed",
           "failureHeading": "There was a problem with this link!",
-          "loginPromptLink": "log in to use RSpace",
-          "loginPromptPrefix": "You can now"
+          "loginPrompt": "You can now {0}",
+          "loginPromptLink": "log in to use RSpace"
         },
         "confirm": {
           "activationEmailInstructions": "You will shortly receive an email confirming your account creation. Please read this email and click on the validation link to activate your account. In case you do not receive this email, please check the spam folder. You can click the button below to resend the verification email.",
@@ -8106,7 +8100,7 @@ export default interface Resources {
     },
     "errors": {
       "adminNotInCommunity": "The admin does not belong to any community.",
-      "deleteAdminUser": "This user  is the only administrator of a Community. Please replace the adminstrator so that this user can be deleted",
+      "deleteAdminUser": "This user is the only administrator of a Community. Please replace the adminstrator so that this user can be deleted",
       "deleteSysadminUser": "Invalid attempt to delete sysadmin user - there must be at least one remaining active, enabled sysadmin user. Also, can't delete the internal sysadmin account 'sysadmin1'",
       "deleteUser": {
         "disabled": "Delete user is disabled!",
@@ -8122,7 +8116,7 @@ export default interface Resources {
         "name": "Please type an initial group name and choose a community."
       },
       "user": {
-        "activeSession": "{0} is currently logged into RSpace - this operation is best performed when the user is offline, to prevent  data corruption",
+        "activeSession": "{0} is currently logged into RSpace - this operation is best performed when the user is offline, to prevent data corruption",
         "notFound": "User with ID [{0}] could not be found. The user may have been deleted.",
         "notInGroup": "The user does not belong to any group."
       }
@@ -8182,9 +8176,9 @@ export default interface Resources {
         },
         "upload": {
           "emptyFile": "The selected CSV file is empty. Please choose a CSV file that contains user data.",
-          "helpTextCloud": "To import users please upload a CSV file with 7 columns:<br/> First name, Last name, Email, Affiliation, Role, Username, Password.",
-          "helpTextSso": "To import users please upload a CSV file with 5 columns:<br/> First name, Last name, Email, Role, Username.",
-          "helpTextStandalone": "To import users please upload a CSV file with 6 columns:<br/> First name, Last name, Email, Role, Username, Password.",
+          "helpTextCloud": "To import users please upload a CSV file with 7 columns:<br/>First name, Last name, Email, Affiliation, Role, Username, Password.",
+          "helpTextSso": "To import users please upload a CSV file with 5 columns:<br/>First name, Last name, Email, Role, Username.",
+          "helpTextStandalone": "To import users please upload a CSV file with 6 columns:<br/>First name, Last name, Email, Role, Username, Password.",
           "noFile": "No CSV file was provided. Please select a CSV file to upload."
         }
       },
@@ -8201,7 +8195,7 @@ export default interface Resources {
         },
         "optionColumnLabel": "Option",
         "profileText": {
-          "label": "Optionally, enter a short  description of this community."
+          "label": "Optionally, enter a short description of this community."
         },
         "removeCommunityLink": "Remove community",
         "uniqueName": {
@@ -8330,7 +8324,7 @@ export default interface Resources {
         },
         "displayNamePlaceholder": "A display name for this community",
         "errors": {
-          "noAdmins": "There are no available admins for this community, please  create a new admin user first."
+          "noAdmins": "There are no available admins for this community, please create a new admin user first."
         },
         "moveGroupsPrompt": "If you wish to move any groups into this Community, select them below.",
         "noGroupsAvailable": "There are no groups yet that can be added to this community",
@@ -8471,7 +8465,7 @@ export default interface Resources {
           "url": "URL"
         },
         "filestores": {
-          "disabled": "Filestore linking is <strong>disabled</strong> for RSpace users - they won't see \"Filestores\" section in their Gallery. <br/> To enable the functionality set <strong>netfilestores.enabled</strong> deployment property to <strong>true</strong> and restart RSpace.",
+          "disabled": "Filestore linking is <strong>disabled</strong> for RSpace users - they won't see \"Filestores\" section in their Gallery.<br/>To enable the functionality set <strong>netfilestores.enabled</strong> deployment property to <strong>true</strong> and restart RSpace.",
           "enabled": "Filestore linking is <strong>enabled</strong> for RSpace users.",
           "exportDisabled": "Option to include filestore files in archive export is <strong>disabled</strong>.",
           "exportEnabled": "Option to include filestore files in archive export is <strong>enabled</strong>."
@@ -8563,7 +8557,7 @@ export default interface Resources {
         "incognito": {
           "label": "Operate incognito (without user knowing)"
         },
-        "label": "Please choose  a user you want to 'operate as'.",
+        "label": "Please choose a user you want to 'operate as'.",
         "permissionsNotice": "You can impersonate other users through this form, and will have exactly the same roles and permissions as that user.",
         "userNotInCommunity": "Either {0} is not in your Community, or you are not authorised to 'Operate As' them.",
         "userNotificationNotice": "The user will be notified that you are impersonating them, unless you choose the incognito option.",
@@ -8611,7 +8605,7 @@ export default interface Resources {
         }
       },
       "unauthorized": {
-        "userRole": "Unauthorized role manipulation attempt  by [{0}]"
+        "userRole": "Unauthorized role manipulation attempt by [{0}]"
       },
       "unpublish": {
         "button": {
@@ -8629,7 +8623,7 @@ export default interface Resources {
       "userToPi": {
         "collaborationGroupConsequence": "He/she will remain in any CollaborationGroups, and assume a PI role in these groups.",
         "consequencesIntro": "Promoting this user to PI will have the following consequences:",
-        "labGroupRemovalConsequence": "He/she will  be removed from any LabGroups they belong to.",
+        "labGroupRemovalConsequence": "He/she will be removed from any LabGroups they belong to.",
         "newLabGroupConsequence": "A new LabGroup will be created.",
         "success": "PI role successfully created for {0}",
         "validation": {
@@ -8643,11 +8637,9 @@ export default interface Resources {
         "audit": {
           "description": "Ownership of template transferred from {0} to {1}"
         },
+        "deletedUserName": "{0} (Deleted)",
         "folder": {
           "deletedUsers": "Deleted Users"
-        },
-        "suffix": {
-          "deleted": " (Deleted)"
         }
       }
     }
@@ -8693,7 +8685,7 @@ export default interface Resources {
       "errors": {
         "moveSrcTargetSame": "Source and target communities are the same!",
         "removeAdminFailed": "Could not remove admin from this community!",
-        "removeFromDefaultProhibited": "Cannot remove a group from  the default community"
+        "removeFromDefaultProhibited": "Cannot remove a group from the default community"
       },
       "invitation": {
         "errors": {
@@ -8821,10 +8813,10 @@ export default interface Resources {
       },
       "folderChooser": {
         "createNewFolderInstruction": "Optionally, create a new folder in the chosen folder:",
-        "linkText": "choose a folder or notebook",
+        "linkText": "Choose a folder or notebook",
         "newFolderAriaLabel": "New folder name",
         "newFolderPlaceholder": "New Folder Name",
-        "optionally": "Optionally,",
+        "optionalLinkText": "Optionally, choose a folder or notebook",
         "shareTitle": "Select a folder to share into"
       },
       "importFromWord": {
@@ -8836,10 +8828,8 @@ export default interface Resources {
         "selection": "Your path selection is"
       },
       "permissionChooser": {
-        "groupToBeAbleTo": "group to be able to",
-        "intro": "I want members of the",
-        "mySharedItems": "my shared item(s).",
         "selectAriaLabel": "Share privileges",
+        "sentence": "I want members of the {0} group to be able to {1} my shared item(s).",
         "title": "Specify permissions"
       },
       "publish": {
@@ -9180,7 +9170,7 @@ export default interface Resources {
         "defaultTime": "Default Time",
         "defaultValue": "Default Value",
         "deleteOption": "(Delete)",
-        "displayAsPicklist": "Display as a picklist ?",
+        "displayAsPicklist": "Display as a picklist?",
         "dragToSortHint": "(Or drag to sort by hand)",
         "isPassword": "Is Password",
         "maxValue": "Max Value",
@@ -9193,7 +9183,7 @@ export default interface Resources {
         "readDataFromUploaded": "Read data from uploaded",
         "readFile": "Read file",
         "required": "Required?",
-        "sortAlphabetically": "Sort alphabetically ?",
+        "sortAlphabetically": "Sort alphabetically?",
         "time12Hour": "hh:mm AM/PM(12 hours)",
         "time24Hour": "HH:mm(24 hours)",
         "timeFormat": "Time Format",
@@ -9294,7 +9284,7 @@ export default interface Resources {
         "openJupyterNotebooks": "Open Jupyter Notebook(s)"
       },
       "update": {
-        "explanation": "Editing a form. Click 'Update' to commit this edit and make available.<br/> Abandoning the editing (by clicking 'Revert') will revert to the previous form version."
+        "explanation": "Editing a form. Click 'Update' to commit this edit and make available.<br/>Abandoning the editing (by clicking 'Revert') will revert to the previous form version."
       },
       "validation": {
         "choiceDefaultsInvalid": "Default options must be included in the possible options",
@@ -9303,7 +9293,7 @@ export default interface Resources {
         "optionRequired": "Please provide at least one option",
         "radioDefaultInvalid": "Default option must be one of the possible options",
         "stringTooLong": "String fields must be less than {max} characters",
-        "typeUnsupported": "Please supply a supported 'type' property: was '${validatedValue}' but must match {regexp} "
+        "typeUnsupported": "Please supply a supported 'type' property: was '${validatedValue}' but must match {regexp}"
       },
       "welcome": {
         "name": "Getting started",
@@ -9495,9 +9485,8 @@ export default interface Resources {
       "viewFileTitle": "View this file in browser"
     },
     "requestFeedback": {
-      "memberOfGroupNotice": "you''re now a member of \"{0}\" group ",
-      "notJoiningGroupNotice": "you''re not joining the group \"{0}\" ",
-      "requestLabel": "Request",
+      "memberOfGroupNotice": "Request {0}! - you''re now a member of \"{1}\" group",
+      "notJoiningGroupNotice": "Request {0}! - you''re not joining the group \"{1}\"",
       "returnToWorkspaceLink": "Return to workspace",
       "title": "Request Declined"
     },
@@ -9575,7 +9564,7 @@ export default interface Resources {
         "description": "Saves current changes - does not re-version or alter publishing status."
       },
       "unpublish": {
-        "description": "Hides a form from  users"
+        "description": "Hides a form from users"
       }
     },
     "userform": {
@@ -9608,7 +9597,6 @@ export default interface Resources {
         "setupHeading": "Egnyte filestore setup"
       },
       "lastLoginLabel": "Last Login:",
-      "loginAliasSuffix": ", login alias: {0}",
       "otherProfileHeading": "User Profile",
       "ownProfileHeading": "My Profile",
       "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
@@ -9622,7 +9610,8 @@ export default interface Resources {
         "ssoBackdoor": "This is an administrative SSO account used for RSpace maintenance"
       },
       "takePictureButton": "Take a Picture",
-      "uploadImageTabLink": "Upload Image"
+      "uploadImageTabLink": "Upload Image",
+      "usernameWithAlias": "{0}, login alias: {1}"
     },
     "validation": {
       "name": {
@@ -9776,7 +9765,7 @@ export default interface Resources {
           "willNotBeWitnessed": "This document will not be witnessed."
         },
         "noWitness": {
-          "shareDocumentHelp": "If you can't find your witness in the list below, please share the document with them first. "
+          "shareDocumentHelp": "If you can't find your witness in the list below, please share the document with them first."
         },
         "optionChoice": {
           "declineReason": "I decline to add a witness statement at this time for the following reason:",
@@ -9789,7 +9778,7 @@ export default interface Resources {
         "statement": {
           "chooseLabel": "Choose a signing statement:",
           "finalVersionAffirmation": "This is the final version of this document and I have locked it to prevent additional edits.",
-          "workRecordAffirmation": "I affirm that this document is a true and accurate description of work performed by me on the dates indicated in the system records. "
+          "workRecordAffirmation": "I affirm that this document is a true and accurate description of work performed by me on the dates indicated in the system records."
         },
         "witness": {
           "label": "Optionally, please choose 1 or more witnesses:"
@@ -9893,9 +9882,7 @@ export default interface Resources {
       "export": {
         "allRows": "Export all rows to CSV",
         "onlyOneUser": "Only one user's work can be exported at a time.",
-        "selected": "selected",
-        "thisPageOf": "this page of",
-        "visibleRows": "Export {scope} rows to CSV",
+        "visibleRows": "{scope, select, selected {Export selected rows to CSV} other {Export this page of rows to CSV}}",
         "work": "Export Work"
       },
       "filterLabel": "Filter users",
@@ -10110,7 +10097,7 @@ export default interface Resources {
           },
           "name": "File name",
           "nameHelper": "Name your file",
-          "pageFormatLabel": "Page format: ",
+          "pageFormatLabel": "Page format:",
           "pageSize": {
             "a4": "A4",
             "letter": "Letter"
@@ -10119,7 +10106,7 @@ export default interface Resources {
         },
         "word": {
           "name": "Name your file",
-          "pageFormatLabel": "Page format: ",
+          "pageFormatLabel": "Page format:",
           "pageSize": {
             "a4": "A4",
             "letter": "Letter"
@@ -10318,7 +10305,7 @@ export default interface Resources {
         "largeThumbnail": "large thumbnail",
         "loadingData": "Data is loading...",
         "noImage": "no image",
-        "parentLink": " -> parent_{parentType}",
+        "parentLink": "-> parent_{parentType}",
         "redrawImage": "Redraw image",
         "seeInOmero": "See in OMERO",
         "selectedCount": "Selected: {count}",

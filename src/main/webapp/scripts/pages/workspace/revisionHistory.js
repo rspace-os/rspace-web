@@ -89,9 +89,12 @@ function init (){
 }
 
 function _getMustacheTemplate(){
-	return "<span class='templateCreateRevision'> {{deltaType}}  <a href='/globalId/{{globalId}}'>{{globalId}}</a> "
-		+ RS.msg("legacyjs.workspace.revisionHistory.ownedBy")
-		+ " <a href='/userform?userId={{ownerId}}'>{{ownerName}} </span>";
+	return "<span class='templateCreateRevision'>"
+		+ RS.msg("legacyjs.workspace.revisionHistory.description",
+			"{{deltaType}}",
+			"<a href='/globalId/{{globalId}}'>{{globalId}}</a>",
+			"<a href='/userform?userId={{ownerId}}'>{{ownerName}}</a>")
+		+ "</span>";
 }
 
 function returnKeyPress(e){

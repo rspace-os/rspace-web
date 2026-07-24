@@ -19,7 +19,6 @@ import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.archive.ExportImport;
@@ -63,7 +62,6 @@ public class ExportApiSpringBatchHandlerImpl implements ExportApiHandler {
   private @Autowired UserManager userMgr;
   private @Autowired GroupManager grpMgr;
   private @Autowired ExportImport exportManager;
-  private @Autowired OperationFailedMessageGenerator authGen;
   private @Autowired MessageSourceUtils messages;
   private @Autowired JobExplorer explorer;
   private @Autowired ExportApiStateTracker idStore;
@@ -208,8 +206,9 @@ public class ExportApiSpringBatchHandlerImpl implements ExportApiHandler {
             "Export selection: ids were %s, but these did not exist",
             StringUtils.join(selections, ","));
         throw new AuthorizationException(
-            authGen.getFailedMessage(
-                apiClient, messages.getMessage("errors.authorization.action.exportSelection")));
+            messages.getMessage(
+                "errors.authorization.failure.exportSelection",
+                new Object[] {apiClient.getUsername()}));
       }
       // these will be the same size
       String[] types = recordViews.stream().map(RSpaceDocView::getType).toArray(String[]::new);
@@ -220,8 +219,9 @@ public class ExportApiSpringBatchHandlerImpl implements ExportApiHandler {
     }
     if (!permOK) {
       throw new AuthorizationException(
-          authGen.getFailedMessage(
-              apiClient, messages.getMessage("errors.authorization.action.exportUserOrGroup")));
+          messages.getMessage(
+              "errors.authorization.failure.exportUserOrGroup",
+              new Object[] {apiClient.getUsername()}));
     }
 
     return exportSelection;

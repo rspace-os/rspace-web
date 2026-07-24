@@ -1,8 +1,8 @@
 <div>
 <h1>${protocol.title}</h1>
-$msg.getMessage("export.protocolsIo.importedFrom") #if($protocol.link) <a target="_blank" href="$protocol.link">Protocols.io</a>
-              #else Protocols.io
-              #end
+#if($protocol.link)$msg.format("export.protocolsIo.importedFromLink", [$protocol.link])
+#else$msg.format("export.protocolsIo.importedFrom", ["Protocols.io"])
+#end
 <h2>$msg.getMessage("export.protocolsIo.metadata")</h2>
 <b>$msg.getMessage("export.protocolsIo.originalCreator")</b> #if($protocol.creator.link)<a target="_blank" href="$protocol.creator.link">$protocol.creator.name</a>
                          #else $protocol.creator.name

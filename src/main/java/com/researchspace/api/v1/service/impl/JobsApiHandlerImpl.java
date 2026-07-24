@@ -7,7 +7,6 @@ import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.User;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -27,7 +26,6 @@ import org.springframework.http.HttpStatus;
 public class JobsApiHandlerImpl implements JobsApiHandler {
 
   private @Autowired JobExplorer jobExplorer;
-  private @Autowired OperationFailedMessageGenerator authMsgGen;
   private @Autowired MessageSourceUtils messages;
   private @Autowired ExportApiStateTracker apiState;
   private List<JobResultFactory<?>> jobResultFactories = new ArrayList<>();
@@ -121,8 +119,9 @@ public class JobsApiHandlerImpl implements JobsApiHandler {
     String executorUName = getJobParam(exe);
     if (!apiClient.getUsername().equals(executorUName)) {
       throw new AuthorizationException(
-          authMsgGen.getFailedMessage(
-              apiClient, messages.getMessage("errors.authorization.action.retrieveJobById")));
+          messages.getMessage(
+              "errors.authorization.failure.retrieveJobById",
+              new Object[] {apiClient.getUsername()}));
     }
   }
 
@@ -136,10 +135,6 @@ public class JobsApiHandlerImpl implements JobsApiHandler {
 
   void setMessages(MessageSourceUtils messages) {
     this.messages = messages;
-  }
-
-  void setAuthMsgGen(OperationFailedMessageGenerator authMsgGen) {
-    this.authMsgGen = authMsgGen;
   }
 
   void setJobResultFactories(List<JobResultFactory<?>> jobResultFactories) {

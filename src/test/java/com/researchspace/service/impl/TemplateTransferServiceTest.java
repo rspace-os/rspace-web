@@ -56,8 +56,10 @@ class TemplateTransferServiceTest {
         .when(messageSource.getMessage(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER))
         .thenReturn("Deleted Users");
     Mockito.lenient()
-        .when(messageSource.getMessage(TemplateTransferService.DELETED_USER_NAME_SUFFIX))
-        .thenReturn(" (Deleted)");
+        .when(
+            messageSource.getMessage(
+                Mockito.eq(TemplateTransferService.DELETED_USER_NAME), Mockito.any(Object[].class)))
+        .thenAnswer(invocation -> ((Object[]) invocation.getArgument(1))[0] + " (Deleted)");
     Mockito.lenient()
         .when(
             messageSource.getMessage(

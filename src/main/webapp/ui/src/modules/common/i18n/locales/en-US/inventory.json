@@ -1582,12 +1582,12 @@
         "modified": "Modified",
         "version": "Version{version, select, none {} other { {version}}}"
       },
-      "current": " (current)",
+      "current": "(current)",
       "loadFailed": "Could not load version history.",
       "none": "No version history is available for this item yet.",
       "title": "Version history",
       "view": "View version history",
-      "viewing": " (viewing)"
+      "viewing": "(viewing)"
     }
   },
   "moveToTarget": {

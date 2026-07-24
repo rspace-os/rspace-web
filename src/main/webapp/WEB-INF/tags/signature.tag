@@ -104,7 +104,7 @@
 
         $('#signatureHashesContainer').remove();
         if (_contentHash) {
-          var initMsg = '<span>' + RS.msg("legacyjs.signature.hashesIntro") + '</span>'
+          var initMsg = '<span>' + RS.msg("legacyjs.signature.hashesIntro") + '</span> '
               + '<a class="signatureHashesToggle">' + RS.msg("legacyjs.common.show") + '</a> '
               + '<a class="signatureHashesToggle" style="display:none">' + RS.msg("legacyjs.common.hide") + '</a>';
           $('.signatureContainer').append(initMsg);

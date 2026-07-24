@@ -96,7 +96,7 @@
         "parentSampleNotEditable": "Parent sample with global id ''{0}'' doesn''t exist, or user has no permission to add new subsamples into it",
         "parentSampleNotFound": "Parent sample with import id ''{0}'' could not be found",
         "parentSampleNotSet": "Parent sample import id or global id must be set, but both were empty",
-        "subSampleImportRequiresParentSampleMapping": "Subsample import requires mapping to 'parent sample' or 'parent sample import id' ",
+        "subSampleImportRequiresParentSampleMapping": "Subsample import requires mapping to 'parent sample' or 'parent sample import id'",
         "subSampleImportRequiresSamplesImport": "Subsample import with 'parent sample' mapping requires Sample import, but sampleSettings were empty",
         "templateInfoEmpty": "'templateInfo' property must be provided and describe a template for imported samples"
       },
@@ -191,7 +191,7 @@
         "emptyFieldName": "Field name cannot be empty",
         "emptyFieldType": "Field type cannot be empty",
         "fieldNameTooLong": "{0} is too long for a template field name, max length is {1}",
-        "invalidFieldContent": "Field validation error: {0} ",
+        "invalidFieldContent": "Field validation error: {0}",
         "invalidRelationType": "{0} is not a valid DataCite relation type",
         "invalidUnitIdDefault": "Unit id was {0} must be the id of a unit (see /units)",
         "invalidUnitIdNotAmount": "Unit id {0} is not a valid sample-template default unit; must be a mass, volume, or dimensionless (\"items\") unit (see /units)",
@@ -205,8 +205,8 @@
         "added": "Added List of Materials {0}.",
         "deleted": "Deleted List of Materials {0}.",
         "edited": "Edited List of Materials {0}.",
-        "itemsAdded": " Added inventory items: {0}.",
-        "itemsRemoved": " Removed inventory items: {0}."
+        "itemsAdded": "Added inventory items: {0}.",
+        "itemsRemoved": "Removed inventory items: {0}."
       }
     },
     "listOfMaterials": {

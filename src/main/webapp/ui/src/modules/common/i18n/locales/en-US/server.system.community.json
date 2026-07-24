@@ -45,7 +45,7 @@
     "errors": {
       "moveSrcTargetSame": "Source and target communities are the same!",
       "removeAdminFailed": "Could not remove admin from this community!",
-      "removeFromDefaultProhibited": "Cannot remove a group from  the default community"
+      "removeFromDefaultProhibited": "Cannot remove a group from the default community"
     },
     "labGroups": {
       "header": "Lab groups in this community:"

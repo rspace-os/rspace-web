@@ -94,9 +94,7 @@
     "export": {
       "allRows": "Export all rows to CSV",
       "onlyOneUser": "Only one user's work can be exported at a time.",
-      "selected": "selected",
-      "thisPageOf": "this page of",
-      "visibleRows": "Export {scope} rows to CSV",
+      "visibleRows": "{scope, select, selected {Export selected rows to CSV} other {Export this page of rows to CSV}}",
       "work": "Export Work"
     },
     "filterLabel": "Filter users",

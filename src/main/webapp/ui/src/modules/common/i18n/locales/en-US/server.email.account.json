@@ -8,12 +8,12 @@
         "subjectEnabled": "RSpace account enabled"
       },
       "activationRequest": {
-        "accept": "To <b>accept</b> this request, please click <a href=\"{0}\"> to accept. </a>",
+        "accept": "To <b>accept</b> this request, please click <a href=\"{0}\">to accept.</a>",
         "body": "A new registrant for the {0} installation has signed up.",
         "details": "The details are as follows:",
         "email": "Email: {0}",
         "fullName": "Full name: {0}",
-        "reject": "To <b>reject</b> this request, please click <a href=\"{0}\"> to deny. </a>",
+        "reject": "To <b>reject</b> this request, please click <a href=\"{0}\">to deny.</a>",
         "subject": "Sign up request from {0}"
       },
       "defaultWelcome": {

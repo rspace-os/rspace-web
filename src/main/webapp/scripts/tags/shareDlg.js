@@ -63,8 +63,9 @@ function _setShowNotebooksInShareIntoFolderView(selectedTypes) {
         var urlParam = 'showNotebooksForShare=' + showNotebooks;
         setFolderChooserDirListingParams('-share', urlParam);
 
-        var linkDesc = RS.msg("legacyjs.core.share.chooseFolder",
-            showNotebooks ? RS.msg("legacyjs.core.share.orNotebook") : "");
+        var linkDesc = RS.msg(showNotebooks
+            ? "legacyjs.core.share.chooseFolderOrNotebook"
+            : "legacyjs.core.share.chooseFolder");
         setFolderChooserLinkDesc('-share', linkDesc);
 
         clearFolderChooser('-share');
@@ -443,25 +444,14 @@ function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelec
                         : RS.msg("legacyjs.core.share.notAllShared"), "notice", 3000);
                 }
 
-                var errorMsg = publishAttempted
-                    ? (sharedLength > 0
-                        ? RS.msg("legacyjs.core.share.publicationPartiallyUnsuccessful")
-                        : RS.msg("legacyjs.core.share.publicationUnsuccessful"))
-                    : (sharedLength > 0
-                        ? RS.msg("legacyjs.core.share.sharingPartiallyUnsuccessful")
-                        : RS.msg("legacyjs.core.share.sharingUnsuccessful"));
-                if (sharedLength > 0) {
-                    errorMsg += ", " + RS.msg("legacyjs.core.share.skipped", unsharedLength);
-                }
                 var errorsLength = (result.errorMsg && result.errorMsg.errorMessages) ? result.errorMsg.errorMessages.length : 0;
-                if (errorsLength) {
-                    errorMsg += " " + RS.msg("legacyjs.core.share.becauseErrors", errorsLength,
-                        getValidationErrorString(result.errorMsg, "<br/> - "));
-                } else {
-                    errorMsg += ". " + (publishAttempted
-                        ? RS.msg("legacyjs.core.share.maybeAlreadyPublished", unsharedLength)
-                        : RS.msg("legacyjs.core.share.maybeAlreadyShared", unsharedLength));
-                }
+                var errorMsg = RS.msg(
+                    "legacyjs.core.share.failure",
+                    publishAttempted ? "publication" : "sharing",
+                    sharedLength > 0 ? "partial" : "full",
+                    unsharedLength,
+                    errorsLength,
+                    errorsLength ? getValidationErrorString(result.errorMsg, "<br/> - ") : "");
                 apprise(errorMsg);
 
                 // TO-DO: RSPAC-1287 Focus the apprise dialog

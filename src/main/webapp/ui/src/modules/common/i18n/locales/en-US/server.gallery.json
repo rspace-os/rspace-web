@@ -16,7 +16,7 @@
   },
   "gallery": {
     "api": {
-      "noTopLevelFolder": "You cannot create a top-level folder in the Gallery; create folder in one of the sub-galleries, e.g.  Images, Documents"
+      "noTopLevelFolder": "You cannot create a top-level folder in the Gallery; create folder in one of the sub-galleries, e.g. Images, Documents"
     },
     "filestore": {
       "folder": {

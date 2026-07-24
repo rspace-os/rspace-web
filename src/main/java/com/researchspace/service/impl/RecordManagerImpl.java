@@ -86,7 +86,6 @@ import com.researchspace.service.DocumentCopyManager;
 import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RequiresActiveLicense;
@@ -154,7 +153,6 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired RichTextUpdater updater;
   private @Autowired DocumentCopyManager copyMgr;
   private @Autowired ApplicationEventPublisher publisher;
-  private @Autowired OperationFailedMessageGenerator authMsgGenerator;
 
   @Override
   public Record get(long id) {
@@ -1023,11 +1021,9 @@ public class RecordManagerImpl implements RecordManager {
     }
     if (!permissnUtils.isPermitted(toSave, PermissionType.RENAME, user)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(
-              user,
-              messages.getMessage(
-                  "errors.authorization.action.renameRecord",
-                  new Object[] {toSave.getName(), toSave.getId()})));
+          messages.getMessage(
+              "errors.authorization.failure.renameRecord",
+              new Object[] {user.getUsername(), toSave.getName(), toSave.getId()}));
     }
     // only get here if name OK, has permission, and is not a system folder.
     toSave.setName(newname);

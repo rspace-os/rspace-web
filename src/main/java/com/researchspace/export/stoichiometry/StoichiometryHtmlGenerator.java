@@ -53,16 +53,18 @@ public class StoichiometryHtmlGenerator {
       context.put("molecules", molecules);
       context.put("msg", new LocaleBoundMessages(messages, locale));
       String header = stoichiometryElement.attr("alt");
-      if (header.isEmpty()) {
-        header = messages.getMessageForLocale("export.pdf.stoichiometry.reactionHeader", locale);
-      }
       boolean isReactionLess =
           stoichiometryElement.attr("data-stoichiometry-table-only").equals("true");
+      String title;
       if (isReactionLess) {
-        header =
-            messages.getMessageForLocale("export.pdf.stoichiometry.reactionlessHeader", locale);
+        title = messages.getMessageForLocale("export.pdf.stoichiometry.reactionlessTitle", locale);
+      } else if (header.isEmpty()) {
+        title = messages.getMessageForLocale("export.pdf.stoichiometry.reactionTitle", locale);
+      } else {
+        title =
+            messages.getMessage("export.pdf.stoichiometry.title", new Object[] {header}, locale);
       }
-      context.put("header", header);
+      context.put("title", title);
       String stoichiometryTableHtml =
           VelocityEngineUtils.mergeTemplateIntoString(
               velocityEngine, "pdf/stoichiometry-table.vm", "UTF-8", context);

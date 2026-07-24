@@ -12,7 +12,10 @@
     </div>
     <div style="max-width:450px;margin: 0 auto;margin-top:30px;text-align:center;">
 		<spring:message code="signup.community.activation.completeHeading"/>!
-		 <br/><spring:message code="signup.community.activation.loginPromptPrefix"/>&nbsp;
-		 <a href="/workspace"><spring:message code="signup.community.activation.loginPromptLink"/></a>
+		<br/>
+		<spring:message code="signup.community.activation.loginPromptLink" var="loginPromptLink"/>
+		<spring:message code="signup.community.activation.loginPrompt">
+			<spring:argument value='<a href="/workspace">${loginPromptLink}</a>'/>
+		</spring:message>
 	</div>
 </div>

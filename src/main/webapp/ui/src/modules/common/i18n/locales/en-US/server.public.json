@@ -136,7 +136,7 @@
   },
   "resendEmail": {
     "awaitingEmailConfirmation": {
-      "activationInstructions": "Access to your account is not enabled at the moment. To activate your account and verify your email, click a link in the email that has been sent to you.  In case you do not receive this email, please check the spam folder. You can click the button below to resend the verification email.",
+      "activationInstructions": "Access to your account is not enabled at the moment. To activate your account and verify your email, click a link in the email that has been sent to you. In case you do not receive this email, please check the spam folder. You can click the button below to resend the verification email.",
       "resendButtonText": "Resend email",
       "supportInstructions": "If this is unexpected, please contact support@researchspace.com to have our System Admin complete the registration process for you.",
       "title": "Awaiting Email Confirmation"
@@ -195,8 +195,8 @@
         "completeTitle": "Account Activation Complete",
         "failTitle": "Account Activation Failed",
         "failureHeading": "There was a problem with this link!",
-        "loginPromptLink": "log in to use RSpace",
-        "loginPromptPrefix": "You can now"
+        "loginPrompt": "You can now {0}",
+        "loginPromptLink": "log in to use RSpace"
       },
       "confirm": {
         "activationEmailInstructions": "You will shortly receive an email confirming your account creation. Please read this email and click on the validation link to activate your account. In case you do not receive this email, please check the spam folder. You can click the button below to resend the verification email.",

@@ -41,16 +41,16 @@
     },
     "info": {
       "dialog": {
-        "bucketLabel": "Bucket: ",
+        "bucketLabel": "Bucket:",
         "downloadButton": "Download",
         "downloadButtonTitle": "Download through RSpace",
-        "nameLabel": "Name: ",
-        "originalPathLabel": "Original path: ",
-        "shareLabel": "Share: ",
+        "nameLabel": "Name:",
+        "originalPathLabel": "Original path:",
+        "shareLabel": "Share:",
         "storedOnFileSystemLabel": "Stored on a File System:",
         "updatePathButton": "Update Path",
         "updatePathButtonTitle": "Update Current Path",
-        "urlLabel": "URL: "
+        "urlLabel": "URL:"
       }
     },
     "login": {

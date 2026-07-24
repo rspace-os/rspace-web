@@ -116,7 +116,7 @@ function DialogContents({
                 </Link>
                 {/* on a historical view, record.version is the pinned version, not the live one */}
                 {row.version === currentVersion &&
-                  (historical ? t("moreInfo.versionHistory.viewing") : t("moreInfo.versionHistory.current"))}
+                  ` ${historical ? t("moreInfo.versionHistory.viewing") : t("moreInfo.versionHistory.current")}`}
               </TableCell>
               <TableCell>{row.lastModified ? isoToLocale(row.lastModified) : "—"}</TableCell>
               <TableCell>{row.modifiedByFullName ?? "—"}</TableCell>

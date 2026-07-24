@@ -551,13 +551,11 @@ public class UserProfileController extends BaseController {
     ErrorList el = new ErrorList();
     if ((!user.getFirstName().equals(firstNameInput)) && (!properties.isProfileNameEditable())) {
       el.addErrorMsg(
-          authGenerator.getFailedMessage(
-              user, getText("errors.authorization.action.editFirstName")));
+          getText("errors.authorization.failure.editFirstName", new Object[] {user.getUsername()}));
     }
     if ((!user.getLastName().equals(surnameInput)) && (!properties.isProfileNameEditable())) {
       el.addErrorMsg(
-          authGenerator.getFailedMessage(
-              user, getText("errors.authorization.action.editLastName")));
+          getText("errors.authorization.failure.editLastName", new Object[] {user.getUsername()}));
     }
     return el;
   }

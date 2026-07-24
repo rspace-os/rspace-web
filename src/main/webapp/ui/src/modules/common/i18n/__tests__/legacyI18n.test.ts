@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { formatIcuMessage, formatLegacyList, selectLegacyCatalogue } from "../legacyI18n";
+import legacyMessages from "../locales/en-US/server.legacyJs.json";
 
 describe("legacy ICU messages", () => {
   test("formats positional arguments", () => {
@@ -13,6 +14,17 @@ describe("legacy ICU messages", () => {
 
   test("preserves literal HTML", () => {
     expect(formatIcuMessage('<a href="{0}">Open</a>', ["/workspace"])).toBe('<a href="/workspace">Open</a>');
+  });
+
+  test("formats complete sharing failure variants", () => {
+    const message = legacyMessages.legacyjs.core.share.failure;
+
+    expect(formatIcuMessage(message, ["sharing", "partial", 2, 1, "Not permitted"])).toBe(
+      "Sharing was partially unsuccessful, 2 documents were skipped because of the following error:<br/>- Not permitted",
+    );
+    expect(formatIcuMessage(message, ["publication", "full", 1, 0, ""])).toBe(
+      "Publication was unsuccessful. Maybe the document is already published?",
+    );
   });
 
   test("formats natural-language lists", () => {

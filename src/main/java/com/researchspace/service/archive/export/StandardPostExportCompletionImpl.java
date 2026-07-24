@@ -144,13 +144,9 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
   protected String getExportedRecordsSummary(IArchiveExportConfig expCfg, ArchiveResult result) {
     int archivedRecordsCount =
         result.getArchivedRecords() == null ? 0 : result.getArchivedRecords().size();
-    String exportSummaryMsg =
-        messages.getMessage(
-            "email.notification.exportCompleteNotification.archiveIncludes",
-            new Object[] {archivedRecordsCount});
+    long includedNfsCount = 0;
+    long skippedNfsCount = 0;
     if (expCfg.isIncludeNfsLinks()) {
-      long includedNfsCount = 0;
-      long skippedNfsCount = 0;
       if (result.getArchivedNfsFiles() != null) {
         for (ArchivalNfsFile nfsFile : result.getArchivedNfsFiles()) {
           if (nfsFile.isAddedToArchive()) {
@@ -160,24 +156,14 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
           }
         }
       }
-      if (includedNfsCount == 0) {
-        exportSummaryMsg +=
-            messages.getMessage("email.notification.exportCompleteNotification.noFilestoreLinks");
-      } else {
-        exportSummaryMsg +=
-            messages.getMessage(
-                "email.notification.exportCompleteNotification.andLinkedItem",
-                new Object[] {includedNfsCount});
-      }
-      if (skippedNfsCount > 0) {
-        exportSummaryMsg +=
-            messages.getMessage(
-                "email.notification.exportCompleteNotification.skippedLinks",
-                new Object[] {skippedNfsCount});
-      }
     }
-    exportSummaryMsg += ".";
-    return exportSummaryMsg;
+    return expCfg.isIncludeNfsLinks()
+        ? messages.getMessage(
+            "email.notification.exportCompleteNotification.archiveSummaryWithNfs",
+            new Object[] {archivedRecordsCount, includedNfsCount, skippedNfsCount})
+        : messages.getMessage(
+            "email.notification.exportCompleteNotification.archiveSummary",
+            new Object[] {archivedRecordsCount});
   }
 
   protected ArchiveExportNotificationData createExportNotificationData(

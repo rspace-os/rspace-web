@@ -49,14 +49,18 @@ public class ListOfMaterialsAuditTrail {
   private String generateDescriptionForAddedDeletedItems(String addedItems, String removedItems) {
     StringBuilder description = new StringBuilder();
     if (StringUtils.isNotBlank(addedItems)) {
-      description.append(
-          messages.getMessage(
-              "inventory.audit.listOfMaterials.itemsAdded", new Object[] {addedItems}));
+      description
+          .append(" ")
+          .append(
+              messages.getMessage(
+                  "inventory.audit.listOfMaterials.itemsAdded", new Object[] {addedItems}));
     }
     if (StringUtils.isNotBlank(removedItems)) {
-      description.append(
-          messages.getMessage(
-              "inventory.audit.listOfMaterials.itemsRemoved", new Object[] {removedItems}));
+      description
+          .append(" ")
+          .append(
+              messages.getMessage(
+                  "inventory.audit.listOfMaterials.itemsRemoved", new Object[] {removedItems}));
     }
     return description.toString();
   }

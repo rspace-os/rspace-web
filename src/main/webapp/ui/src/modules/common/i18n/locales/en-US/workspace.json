@@ -139,7 +139,7 @@
         },
         "name": "File name",
         "nameHelper": "Name your file",
-        "pageFormatLabel": "Page format: ",
+        "pageFormatLabel": "Page format:",
         "pageSize": {
           "a4": "A4",
           "letter": "Letter"
@@ -148,7 +148,7 @@
       },
       "word": {
         "name": "Name your file",
-        "pageFormatLabel": "Page format: ",
+        "pageFormatLabel": "Page format:",
         "pageSize": {
           "a4": "A4",
           "letter": "Letter"
@@ -347,7 +347,7 @@
       "largeThumbnail": "large thumbnail",
       "loadingData": "Data is loading...",
       "noImage": "no image",
-      "parentLink": " -> parent_{parentType}",
+      "parentLink": "-> parent_{parentType}",
       "redrawImage": "Redraw image",
       "seeInOmero": "See in OMERO",
       "selectedCount": "Selected: {count}",

@@ -11,6 +11,20 @@
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
 <p style="visibility:hidden;" aria-hidden="true"></p>
 <form style="font-size:1em;">
+<spring:message code="audit.domains.label" var="domainsLabel"/>
+<spring:message code="audit.actions.label" var="actionsLabel"/>
+<spring:message code="inventory:formSections.identifiers" var="identifiersLabel"/>
+<spring:message code="audit.date.label" var="dateLabel"/>
+<spring:message code="system:usersPage.title" var="usersLabel"/>
+<spring:message code="common:profile.groups.title" var="groupsLabel"/>
+<spring:message code="audit.communities.label" var="communitiesLabel"/>
+<c:set var="domainsLink"><a href="#" id="domains" class="addRow">${domainsLabel}</a></c:set>
+<c:set var="actionsLink"><a href="#" id="actions" class="addRow">${actionsLabel}</a></c:set>
+<c:set var="identifiersLink"><a href="#" id="oid" class="addRow">${identifiersLabel}</a></c:set>
+<c:set var="datesLink"><a href="#" id="dates" class="addRow">${dateLabel}</a></c:set>
+<c:set var="usersLink"><a href="#" id="users" class="addRow">${usersLabel}</a></c:set>
+<c:set var="groupsLink"><a href="#" id="groups" class="addRow">${groupsLabel}</a></c:set>
+<c:set var="communitiesLink"><a href="#" id="communities" class="addRow">${communitiesLabel}</a></c:set>
 <shiro:hasRole name="ROLE_USER">
 <shiro:lacksRole name="ROLE_PI">
 <div id="auditUser" class="auditIt">
@@ -18,12 +32,12 @@
 		<spring:message code="action.audit"/>: <spring:message code="audit.my"/>
 	</h3>
 	<h4>
-		<spring:message code="audit.activity.filter.label"/>
-		<spring:message code="audit.filter.by"/> <a href="#" id="domains" class="addRow"><spring:message code="audit.domains.label"/></a>,
-		<spring:message code="audit.filter.by"/> <a href="#" id="actions" class="addRow"><spring:message code="audit.actions.label"/></a>,
-		<spring:message code="audit.filter.by"/> <a href="#" id="oid" class="addRow"><spring:message code="inventory:formSections.identifiers"/></a>
-		<spring:message code="audit.filter.and"/>
-		<spring:message code="audit.filter.by"/> <a href="#" id="dates" class="addRow"><spring:message code="audit.date.label"/></a>
+		<spring:message code="audit.activity.filter.user">
+			<spring:argument value="${domainsLink}"/>
+			<spring:argument value="${actionsLink}"/>
+			<spring:argument value="${identifiersLink}"/>
+			<spring:argument value="${datesLink}"/>
+		</spring:message>
 	</h4>
 	<div class="auditRow"></div>
 </div>
@@ -34,15 +48,15 @@
 <div id="auditPI" class="auditIt">
 	<h3>
 		<spring:message code="action.audit"/>: <spring:message code="audit.myGroup.label"/>
-	</h3>
+  </h3>
   <h4>
-		<spring:message code="audit.activity.filter.label"/>
-		<spring:message code="audit.filter.by"/> <a href="#" id="domains" class="addRow"><spring:message code="audit.domains.label"/></a>,
-		<spring:message code="audit.filter.by"/> <a href="#" id="actions" class="addRow"><spring:message code="audit.actions.label"/></a>,
-		<spring:message code="audit.filter.by"/> <a href="#" id="oid" class="addRow"><spring:message code="inventory:formSections.identifiers"/></a>,
-		<spring:message code="audit.filter.by"/> <a href="#" id="dates" class="addRow"><spring:message code="audit.date.label"/></a>
-    <spring:message code="audit.filter.and"/>
-		<spring:message code="audit.filter.by"/> <a href="#" id="users" class="addRow"><spring:message code="system:usersPage.title"/></a>
+		<spring:message code="audit.activity.filter.pi">
+			<spring:argument value="${domainsLink}"/>
+			<spring:argument value="${actionsLink}"/>
+			<spring:argument value="${identifiersLink}"/>
+			<spring:argument value="${datesLink}"/>
+			<spring:argument value="${usersLink}"/>
+		</spring:message>
 	</h4>
 	<div class="auditRow"></div>
 </div>
@@ -52,17 +66,16 @@
 <div id="auditAdmin" class="auditIt">
 	<h3>
 		<spring:message code="action.audit"/>: <spring:message code="audit.myCommunity.label"/>
-	</h3>
+  </h3>
   <h4>
-		<spring:message code="audit.activity.filter.label"/>
-		<spring:message code="audit.filter.by"/> <a href="#" id="domains" class="addRow"><spring:message code="audit.domains.label"/></a>,
-		<spring:message code="audit.filter.by"/> <a href="#" id="actions" class="addRow"><spring:message code="audit.actions.label"/></a>,
-		<spring:message code="audit.filter.by"/> <a href="#" id="oid" class="addRow"><spring:message code="inventory:formSections.identifiers"/></a>,
-		<spring:message code="audit.filter.by"/> <a href="#" id="dates" class="addRow"><spring:message code="audit.date.label"/></a>,
-    <spring:message code="audit.filter.and"/>
-		<spring:message code="audit.filter.by"/> <a href="#" id="users" class="addRow"><spring:message code="system:usersPage.title"/></a>
-    <spring:message code="audit.filter.or"/>
-		<spring:message code="audit.filter.by"/> <a href="#" id="groups" class="addRow"><spring:message code="common:profile.groups.title"/></a>
+		<spring:message code="audit.activity.filter.admin">
+			<spring:argument value="${domainsLink}"/>
+			<spring:argument value="${actionsLink}"/>
+			<spring:argument value="${identifiersLink}"/>
+			<spring:argument value="${datesLink}"/>
+			<spring:argument value="${usersLink}"/>
+			<spring:argument value="${groupsLink}"/>
+		</spring:message>
 	</h4>
 	<div class="auditRow"></div>
 </div>
@@ -73,15 +86,15 @@
     <spring:message code="action.audit"/>: <spring:message code="audit.global.label"/>
   </h3>
   <h4>
-		<spring:message code="audit.activity.filter.label"/>
-		<spring:message code="audit.filter.by"/> <a href="#" id="domains" class="addRow"><spring:message code="audit.domains.label"/></a>,
-		<spring:message code="audit.filter.by"/> <a href="#" id="actions" class="addRow"><spring:message code="audit.actions.label"/></a>,
-		<spring:message code="audit.filter.by"/> <a href="#" id="oid" class="addRow"><spring:message code="inventory:formSections.identifiers"/></a>,
-		<spring:message code="audit.filter.by"/> <a href="#" id="dates" class="addRow"><spring:message code="audit.date.label"/></a>,
-    <spring:message code="audit.filter.and"/>
-		<spring:message code="audit.filter.by"/> <a href="#" id="users" class="addRow"><spring:message code="system:usersPage.title"/></a>,
-		<spring:message code="audit.filter.by"/> <a href="#" id="groups" class="addRow"><spring:message code="common:profile.groups.title"/></a>
-    <spring:message code="audit.filter.or"/> <spring:message code="audit.filter.by"/> <a href="#" id="communities" class="addRow"><spring:message code="audit.communities.label"/></a>
+		<spring:message code="audit.activity.filter.sysadmin">
+			<spring:argument value="${domainsLink}"/>
+			<spring:argument value="${actionsLink}"/>
+			<spring:argument value="${identifiersLink}"/>
+			<spring:argument value="${datesLink}"/>
+			<spring:argument value="${usersLink}"/>
+			<spring:argument value="${groupsLink}"/>
+			<spring:argument value="${communitiesLink}"/>
+		</spring:message>
    </h4>
    <div class="auditRow"></div>
 </div>

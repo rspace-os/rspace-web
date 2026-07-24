@@ -43,7 +43,7 @@
       "warning": "If you accept, the group PI will be able to see all of your data"
     },
     "joinProjectGroup": {
-      "warning": "Project Groups have no PI, your documents won't be visible <br/> to other group members until you explicitly share them."
+      "warning": "Project Groups have no PI, your documents won't be visible<br/>to other group members until you explicitly share them."
     },
     "joinRequest": {
       "toJoin": "To join:"
@@ -75,8 +75,10 @@
     "title": "My Messages",
     "type": {
       "global": "Global",
+      "globalMessageRequest": "Global Message request",
       "message": "Message",
-      "requestSuffix": "request"
+      "messageRequest": "Message request",
+      "request": "{0} request"
     },
     "updateReply": {
       "label": "Update & Reply"
@@ -104,7 +106,6 @@
   },
   "myrequests": {
     "cancelRequest": "Cancel Request",
-    "dueForCompletionBy": "due for completion by",
     "empty": "There are no sent requests.",
     "orderBy": {
       "completionDate": "Completion date",
@@ -114,13 +115,17 @@
     "request": {
       "sentLabel": "Request<br>Sent:"
     },
-    "requestWord": "request",
     "sentToAllUsers": "Sent to all users",
     "status": {
       "label": "Status:"
     },
-    "title": "My Sent Requests",
-    "youSentA": "You sent a"
+    "summary": {
+      "basic": "You sent a {0} request",
+      "withDueDate": "You sent a {0} request due for completion by {1}",
+      "withRecord": "You sent a {0} request concerning {1}",
+      "withRecordAndDueDate": "You sent a {0} request concerning {1}, due for completion by {2}"
+    },
+    "title": "My Sent Requests"
   },
   "notificationType": {
     "archiveExportCompleted": "Export Completed",

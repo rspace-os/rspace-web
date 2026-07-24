@@ -176,7 +176,7 @@
       "redirectPageTitle": "One Drive Redirect Page"
     },
     "orcid": {
-      "connectedPrefix": "Success - Your Orcid ID is",
+      "connectedId": "Success - Your Orcid ID is {0}.",
       "connectedSuffix": "This window will close shortly."
     },
     "snapgene": {

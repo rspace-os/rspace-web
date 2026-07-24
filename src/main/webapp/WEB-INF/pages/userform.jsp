@@ -29,7 +29,15 @@
 	</c:choose>
 	<span style="font-size: .7em;">
 		<spring:message code="system:usersPage.columns.username"/>:
-		${user.username}<c:if test="${not empty user.usernameAlias}"><spring:message code="userform.loginAliasSuffix" arguments="${user.usernameAlias}"/></c:if>
+		<c:choose>
+			<c:when test="${not empty user.usernameAlias}">
+				<spring:message code="userform.usernameWithAlias">
+					<spring:argument value="${user.username}"/>
+					<spring:argument value="${user.usernameAlias}"/>
+				</spring:message>
+			</c:when>
+			<c:otherwise>${user.username}</c:otherwise>
+		</c:choose>
 	</span>
 </div>
 

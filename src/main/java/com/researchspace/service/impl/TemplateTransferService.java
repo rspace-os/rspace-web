@@ -28,7 +28,7 @@ public class TemplateTransferService implements TransferService {
 
   public static final String DELETED_USER_TEMPLATES_FOLDER =
       "templates.transfer.folder.deletedUsers";
-  public static final String DELETED_USER_NAME_SUFFIX = "templates.transfer.suffix.deleted";
+  public static final String DELETED_USER_NAME = "templates.transfer.deletedUserName";
 
   private final MessageSourceUtils messageSource;
   private final AuditTrailService auditTrailService;
@@ -78,7 +78,7 @@ public class TemplateTransferService implements TransferService {
       recordManager.moveUsersRecordsToFolder(templateIds, originalOwner, deletedUserFolder);
 
       String deletedUserName =
-          originalOwner.getUsername() + messageSource.getMessage(DELETED_USER_NAME_SUFFIX);
+          messageSource.getMessage(DELETED_USER_NAME, new Object[] {originalOwner.getUsername()});
       recordManager.transferTemplates(originalOwner, newOwner, templateIds, deletedUserName);
 
       transferGalleryItemsForTemplates(originalOwner, newOwner, templateIds);
@@ -144,7 +144,7 @@ public class TemplateTransferService implements TransferService {
     }
 
     String deletedUserName =
-        originalOwner.getUsername() + messageSource.getMessage(DELETED_USER_NAME_SUFFIX);
+        messageSource.getMessage(DELETED_USER_NAME, new Object[] {originalOwner.getUsername()});
     recordManager.transferTemplates(originalOwner, newOwner, mediaIds, deletedUserName);
     recordManager.updateFilePropertyOwnerForMediaFiles(mediaIds, newOwner.getUsername());
   }

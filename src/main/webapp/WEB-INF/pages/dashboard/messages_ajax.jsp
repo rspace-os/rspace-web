@@ -60,11 +60,18 @@
                         <div class="messageText">
                           <strong>
                             <c:if test="${message.simpleMessage}">
-                                <c:if test="${message.messageType == 'GLOBAL_MESSAGE'}"><spring:message code="messages.type.global"/> </c:if><spring:message code="messages.type.message"/>
+                                <c:choose>
+                                  <c:when test="${message.messageType == 'GLOBAL_MESSAGE'}">
+                                    <spring:message code="messages.type.globalMessageRequest"/>
+                                  </c:when>
+                                  <c:otherwise>
+                                    <spring:message code="messages.type.messageRequest"/>
+                                  </c:otherwise>
+                                </c:choose>
                             </c:if>
                             <c:if test="${not message.simpleMessage}">
-                                ${message.messageType.label}
-                              </c:if> <spring:message code="messages.type.requestSuffix"/>
+                                <spring:message code="messages.type.request" arguments="${message.messageType.label}"/>
+                            </c:if>
                                <c:if test = "${fn:contains(message.messageType.label, 'Collaboration')}">
                               <spring:message code="common:help.collaborationBetweenLabs" var="collaborationHelpSlug"/>
                               <a rel="noreferrer" href="${f:helpDocsUrl(collaborationHelpSlug)}" target="_blank">
