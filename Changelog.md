@@ -2,6 +2,9 @@
 
 Summary of important or breaking changes.
 
+## 2.31.0 2026-07-24
+- Added `isEditable` flag to the Instrument Template 
+
 ## 2.30.0 2026-06-25
 - Added `com.researchspace.b2inst.model` PIDINST/B2INST domain wrappers
 

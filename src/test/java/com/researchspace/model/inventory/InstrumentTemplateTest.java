@@ -12,6 +12,7 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryTextField;
 import com.researchspace.model.record.TestFactory;
+import javax.persistence.Column;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -89,6 +90,45 @@ public class InstrumentTemplateTest {
     assertEquals(template, copiedInstrument.getInstrumentTemplate());
     assertEquals(template.getVersion(), copiedInstrument.getTemplateLinkedVersion());
     assertEquals(1L, copiedInstrument.getVersion());
+  }
+
+  @Test
+  @DisplayName("An instrument template is editable by default")
+  public void isEditableTrueByDefault() {
+    assertTrue(template.isEditable());
+  }
+
+  @Test
+  @DisplayName("Duplicating a locked (non-editable) template yields an editable copy")
+  public void copyOfNonEditableTemplateIsEditable() {
+    template.setEditable(false);
+    assertFalse(template.isEditable());
+
+    InstrumentTemplate copied = (InstrumentTemplate) template.copy(anyUser);
+    assertTrue(copied.isEditable(), "a duplicate of a locked template must be editable");
+  }
+
+  @Test
+  @DisplayName("An instrument can still be created from a locked template")
+  public void instrumentCanBeCreatedFromNonEditableTemplate() {
+    template.setEditable(false);
+
+    // instruments carry no editability flag at all (it is template-only), so an instrument built
+    // from a locked template is an ordinary instrument
+    Instrument fromTemplate = (Instrument) template.copyFromTemplate(anyUser);
+    assertEquals(template, fromTemplate.getInstrumentTemplate());
+  }
+
+  @Test
+  @DisplayName("isEditable is mapped non-nullable so existing rows never hydrate as locked")
+  public void isEditableColumnIsMappedNonNullable() throws NoSuchMethodException {
+    Column column = InstrumentTemplate.class.getMethod("isEditable").getAnnotation(Column.class);
+    assertNotNull(column, "isEditable() must carry an explicit @Column mapping");
+    assertEquals("isEditable", column.name());
+    assertFalse(
+        column.nullable(),
+        "isEditable must be non-nullable to match the not-null, default-1 schema so pre-existing"
+            + " rows stay editable rather than hydrating a NULL as false");
   }
 
   @Test

@@ -2,6 +2,7 @@ package com.researchspace.model.inventory;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.Transient;
@@ -26,6 +27,16 @@ public class InstrumentTemplate extends InstrumentEntity {
   private static final String TEMPLATE_MOVE_NOT_ALLOWED =
       "InstrumentTemplate cannot be moved or attached to containers";
 
+  /**
+   * Whether this template may be edited, deleted or transferred. Defaults to {@code true}; the only
+   * writer of {@code false} is the seeder of a default (system) template, which must stay read-only
+   * for everyone including its owning sysadmin. A duplicate of a template is a fresh instance that
+   * keeps the default {@code true}, and an instrument created from a template has no such flag.
+   * Lives on the concrete template (not {@link InstrumentEntity}) because editability is only
+   * meaningful for templates; single-table inheritance keeps the column on the shared table.
+   */
+  private boolean editable = true;
+
   public InstrumentTemplate() {
     super();
   }
@@ -34,6 +45,20 @@ public class InstrumentTemplate extends InstrumentEntity {
     this();
     shallowCopyBasicFields(originInstrument, this);
     copy(originInstrument, this, this::defaultNameCopy, currentuser);
+  }
+
+  /**
+   * Explicit getter (wins over the class-level Lombok {@code @Getter}) so the persisted column is
+   * named {@code isEditable} rather than the JavaBeans default {@code editable}. Envers picks the
+   * property up automatically via the class-level {@code @Audited}.
+   */
+  @Column(name = "isEditable", nullable = false)
+  public boolean isEditable() {
+    return editable;
+  }
+
+  public void setEditable(boolean editable) {
+    this.editable = editable;
   }
 
 
