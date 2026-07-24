@@ -22,7 +22,7 @@
     }
   },
   "date": {
-    "format": "MM/dd/yyyy"
+    "format": "yyyy-MM-dd"
   },
   "errors": {
     "form": {

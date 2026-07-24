@@ -5218,7 +5218,7 @@ export default interface Resources {
       }
     },
     "date": {
-      "format": "MM/dd/yyyy"
+      "format": "yyyy-MM-dd"
     },
     "errors": {
       "ajax": {
