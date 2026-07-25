@@ -124,7 +124,7 @@ function setUpShareDialog() {
     });
   };
 
-  createShareDialog("Publish", idsToShareGetter, onshare, '#publish-dialog');
+  createPublishDialog(idsToShareGetter, onshare, '#publish-dialog');
 }
 
 function setUpExportDialogs() {
