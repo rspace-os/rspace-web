@@ -83,6 +83,9 @@ import org.springframework.web.servlet.ModelAndView;
 @SessionAttributes("formSharingCommand")
 public class RSFormController extends BaseController {
 
+  private static final List<String> FIELD_KEYS =
+      List.of("Number", "String", "Text", "Radio", "Choice", "Date", "Time");
+
   private static final String ANY_FIELD_NAME = "Field";
 
   private @Autowired FormManager formManager;
@@ -110,7 +113,7 @@ public class RSFormController extends BaseController {
     }
     form.setIconId(icon.getId());
     model.addAttribute("template", form);
-    model.addAttribute("fieldKeys", SDocHelper.popoulateFieldTypeList());
+    model.addAttribute("fieldKeys", FIELD_KEYS);
     model.addAttribute("editStatus", form.getEditStatus());
     model.addAttribute("templateOperation", FormOperation.CREATE);
     model.addAttribute(
@@ -405,7 +408,7 @@ public class RSFormController extends BaseController {
 
   private void populateModelForEditing(Model model, RSForm form) {
     model.addAttribute("template", form);
-    model.addAttribute("fieldKeys", SDocHelper.popoulateFieldTypeList());
+    model.addAttribute("fieldKeys", FIELD_KEYS);
     model.addAttribute("editStatus", form.getEditStatus());
     model.addAttribute("templateOperation", FormOperation.EDIT);
   }

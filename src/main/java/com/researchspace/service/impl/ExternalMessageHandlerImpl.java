@@ -12,7 +12,6 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ExternalMessageHandler;
-import com.researchspace.service.ExternalMessageSenderFactory;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserAppConfigManager;
@@ -37,7 +36,7 @@ public class ExternalMessageHandlerImpl implements ExternalMessageHandler {
   Logger log = LoggerFactory.getLogger(ExternalMessageHandlerImpl.class);
 
   private @Autowired UserAppConfigManager userAppMgr;
-  private @Autowired ExternalMessageSenderFactory messageSenderFactory;
+  private @Autowired List<ExternalMessageSender> messageSenders;
   private @Autowired IPermissionUtils permUtils;
   private @Autowired MessageSourceUtils messageSource;
 
@@ -54,7 +53,7 @@ public class ExternalMessageHandlerImpl implements ExternalMessageHandler {
           cfg.getUserAppConfig(), PermissionType.READ, user, " use AppConfig  ");
       App app = cfg.getUserAppConfig().getApp();
       Optional<ExternalMessageSender> extMessageSender =
-          messageSenderFactory.findMessageSenderForApp(app);
+          messageSenders.stream().filter(sender -> sender.supportsApp(app)).findFirst();
       if (extMessageSender.isPresent()) {
         ExternalMessageSender sender = extMessageSender.get();
         return sendMessage(message, optCfg.get(), sender, recordIds, user);

@@ -18,10 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 abstract class AbstractFieldExporter<T extends IFieldLinkableElement> {
 
-  void setSupport(FieldExporterSupport support) {
-    this.support = support;
-  }
-
   ArchiveModelFactory archiveModelFactory;
   FieldExporterSupport support;
 

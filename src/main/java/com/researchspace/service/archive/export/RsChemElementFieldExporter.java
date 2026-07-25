@@ -16,8 +16,6 @@ class RsChemElementFieldExporter extends AbstractFieldExporter<RSChemElement> {
     super(support);
   }
 
-  RsChemElementFieldExporter() {}
-
   @Override
   void createFieldArchiveObject(RSChemElement item, String newLink, FieldExportContext context) {
     ArchivalGalleryMetadata agm = new ArchivalGalleryMetadata();

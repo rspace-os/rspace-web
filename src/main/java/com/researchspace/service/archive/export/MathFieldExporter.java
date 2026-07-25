@@ -14,8 +14,6 @@ class MathFieldExporter extends AbstractFieldExporter<RSMath> {
     super(support);
   }
 
-  MathFieldExporter() {}
-
   void createFieldArchiveObject(RSMath math, String newLink, FieldExportContext context) {
     ArchivalGalleryMetadata agm = new ArchivalGalleryMetadata();
     ArchivalField archiveField = context.getArchiveField();
