@@ -35,3 +35,9 @@ knowledge the viewer is not entitled to.
   Open could only produce an error page.
 * Inventory targets ignore `readable` in the UI: every logged-in user retains
   the limited-read view, so Open keeps working and no pill is shown.
+* The gallery "Related inventory items" attachments endpoint (RSDEV-173,
+  `GET /workspace/getAttachingInventoryItems/{globalId}`) applies the same
+  non-disclosure gate: an unreadable, nonexistent, or malformed target Global ID
+  all return one identical not-found, so it never reveals a gallery file exists
+  or which Inventory items attached it. This mirrors the links referencing-items
+  endpoint.
