@@ -37,6 +37,38 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Extra field** — an ad-hoc field (text, number or link) a user attaches to an
   individual record after creation, outside any template definition.
 
+## Instrument PID registration (B2INST/PIDINST)
+
+- **PIDINST-mapped field** — a custom field on a concrete Instrument that feeds
+  the B2INST/PIDINST registration metadata because both its name (compared
+  case-insensitively, ignoring surrounding whitespace) and its declared field
+  type match a field of the default PIDINST template. A field matching by name
+  but not by type is ignored. Participation is decided by name+type
+  conformance, never by template lineage: any instrument carrying conforming
+  fields is mapped, however it was created. The template's field names are the
+  canonical spelling of the mapping contract.
+- **Documentation-only field** — a field of the default PIDINST template that
+  deliberately feeds no registration metadata, existing purely so users can
+  record the fact against the instrument. The measurement technique, the
+  calibration and the last calibration date are documentation-only: they have no
+  PIDINST property that fits them, and inventing one was tried and rejected. A
+  documentation-only field is still an ordinary instrument field, so users fill,
+  edit and read it as usual; it simply never leaves RSpace.
+- **Materialised default** — a value RSpace fills into a PIDINST-mapped field
+  the user left empty, applied whenever the Instrument is saved rather than at
+  PID registration, so the field is populated from the moment the instrument
+  exists and regardless of whether it is ever registered. Applies to the landing
+  page, whose default is the instrument's own public RSpace address. Only a blank
+  field is filled and a user's own value is never replaced; once written it is an
+  ordinary field value the user may edit, and clearing it and saving fills it
+  again. Instruments carrying no conforming field are untouched, and templates
+  are never filled, since one instrument's address must not be stamped onto every
+  instrument later created from that template.
+- **Provider record page** — the registered record's own page on the issuing
+  provider, distinct from a citable public URL: it exists from registration
+  onwards and may require signing in to that provider, so it is never presented
+  as the identifier's public address.
+
 ## Internationalization (i18n)
 
 - **Canonical translation catalog** — i18next JSON. The runtime and
