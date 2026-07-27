@@ -22,8 +22,6 @@ import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import jakarta.ws.rs.NotFoundException;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -155,13 +153,19 @@ public class BaseApiInventoryController extends BaseApiController {
     barcode.addEnclosureLink(buildBarcodeLink(barcode));
   }
 
+  /*
+   * The barcode data must travel as a genuine query string. Appending "?content=..." via path()
+   * encodes the "?" into the path and double-encodes the data, producing a link that never
+   * resolved to an image and that Jetty 12 rejects outright as an ambiguous URI.
+   */
   private String buildBarcodeLink(ApiBarcode barcode) {
-    String path =
-        BARCODES_ENDPOINT
-            + "?content="
-            + URLEncoder.encode(barcode.getData(), StandardCharsets.UTF_8)
-            + "&barcodeType=QR";
-    return getInventoryApiBaseURIBuilder().path(path).build().encode().toUriString();
+    return getInventoryApiBaseURIBuilder()
+        .path(BARCODES_ENDPOINT)
+        .queryParam("content", "{content}")
+        .queryParam("barcodeType", "QR")
+        .encode()
+        .buildAndExpand(barcode.getData())
+        .toUriString();
   }
 
   protected InventoryRecord assertUserCanEditInventoryRecord(
