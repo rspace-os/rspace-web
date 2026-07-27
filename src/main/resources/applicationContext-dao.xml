@@ -36,6 +36,12 @@
     			     SecondLevelCacheTestIT guards this wiring. -->
     			hibernate.javax.cache.provider=org.ehcache.jsr107.EhcacheCachingProvider
     			hibernate.javax.cache.uri=ehcache.xml
+    			<!-- The hibernate-jcache default, made explicit and pinned by
+    			     EhcacheRegionConfigTest: a region absent from ehcache.xml is created
+    			     untuned (unbounded heap, no expiry) with only a logged warning, rather
+    			     than failing startup. EhcacheRegionConfigTest keeps ehcache.xml complete
+    			     so this should never fire. -->
+    			hibernate.javax.cache.missing_cache_strategy=create-warn
 			hibernate.search.indexing.plan.synchronization.strategy=sync
     			<!-- Id generation for TABLE-strategy entities: every such entity carries an explicit
     			     @TableGenerator in rspace-core-model, keyed to its own row in hibernate_sequences.
