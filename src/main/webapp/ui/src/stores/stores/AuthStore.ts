@@ -9,7 +9,12 @@ import { mkAlert } from "../contexts/Alert";
 import type { RootStore } from "./RootStore";
 import {
   type ApiInventorySystemSettings,
+  type B2InstSettings,
+  type DataciteSettings,
   dataciteSettingsToIgsnPayload,
+  type IdentifierSettings,
+  pidinstB2InstSettingsToPayload,
+  pidinstDataciteSettingsToPayload,
   type SystemSettings,
   systemSettingsFromApiResponse,
 } from "./systemSettingsMapping";
@@ -18,7 +23,9 @@ import {
 const publicView = document.getElementById("public_document_view") !== null;
 
 export type {
+  B2InstSettings,
   DataCiteServerUrl,
+  DataciteSettings,
   IntegrationState,
   SystemSettings,
 } from "./systemSettingsMapping";
@@ -30,6 +37,7 @@ export default class AuthStore {
   isSigningOut: boolean = false;
   timeoutId: null | NodeJS.Timeout = null;
   systemSettings: SystemSettings | undefined;
+  pidinstEnabled: boolean = false;
 
   constructor(rootStore: RootStore) {
     makeObservable(this, {
@@ -37,11 +45,13 @@ export default class AuthStore {
       isSynchronizing: observable,
       isSigningOut: observable,
       systemSettings: observable,
+      pidinstEnabled: observable,
       authenticate: action,
       signOut: action,
       synchronizeWithSessionStorage: action,
       getSystemSettings: action,
       setSystemSettings: action,
+      fetchPidinstEnabled: action,
     });
     this.rootStore = rootStore;
   }
@@ -115,6 +125,15 @@ export default class AuthStore {
     this.systemSettings = settings;
   }
 
+  async fetchPidinstEnabled(): Promise<void> {
+    try {
+      const { data } = await InvApiService.get<boolean>("identifiers/pidinstEnabled", "");
+      this.pidinstEnabled = data;
+    } catch {
+      // Non-critical — leave pidinstEnabled as false if the call fails
+    }
+  }
+
   async getSystemSettings(): Promise<void> {
     try {
       const { data } = await InvApiService.get<ApiInventorySystemSettings>("system/settings", "");
@@ -134,18 +153,19 @@ export default class AuthStore {
   }
 
   async updateSystemSettings<SettingFor extends keyof SystemSettings>(
-    _settingFor: SettingFor,
+    settingFor: SettingFor,
     newSettings: SystemSettings[SettingFor],
   ): Promise<void> {
     try {
-      // PUT now takes a single identifier-settings object routed by `provider`. The dialog only
-      // configures IGSN, so send the IGSN payload (provider = IGSN_DATACITE).
-      // This is needed because the payload has changed but the UI has not, this adapt the old UI
-      // to work with the new payload.
-      // The UI strategic solution that will handle both configurations
-      // (PDINST Datacite, PDINST b2inst and IGSN datacite)
-      // will be handled by the jira ticket https://researchspace.atlassian.net/browse/RSDEV-1180
-      await InvApiService.put<void>("system/settings", dataciteSettingsToIgsnPayload(newSettings));
+      let payload: IdentifierSettings;
+      if (settingFor === "igsnDatacite") {
+        payload = dataciteSettingsToIgsnPayload(newSettings as DataciteSettings);
+      } else if (settingFor === "pidinstDatacite") {
+        payload = pidinstDataciteSettingsToPayload(newSettings as DataciteSettings);
+      } else {
+        payload = pidinstB2InstSettingsToPayload(newSettings as B2InstSettings);
+      }
+      await InvApiService.put<void>("system/settings", payload);
       this.rootStore.uiStore.addAlert(
         mkAlert({
           message: i18n.t("inventory:settings.alerts.updateSuccess"),

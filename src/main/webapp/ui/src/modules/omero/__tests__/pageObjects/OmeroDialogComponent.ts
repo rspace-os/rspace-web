@@ -21,7 +21,7 @@ export class OmeroDialogComponent {
   }
 
   async selectFirstItem(): Promise<void> {
-    await this.resultsTable.getByRole("checkbox").first().click();
+    await this.resultsTable.locator('input[type="checkbox"][aria-labelledby]').first().click();
   }
 
   async clickInsert(): Promise<void> {

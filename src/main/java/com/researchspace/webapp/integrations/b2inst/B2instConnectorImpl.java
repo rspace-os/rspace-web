@@ -5,6 +5,7 @@ import com.researchspace.b2inst.model.request.B2instReviewReceiver;
 import com.researchspace.b2inst.model.request.B2instReviewRequest;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
@@ -19,6 +20,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -81,7 +83,8 @@ public class B2instConnectorImpl implements B2instConnector {
       return restTemplate.postForObject(
           apiBase() + "/records", new HttpEntity<>(doi), B2instDraftRecord.class);
     } catch (RestClientException e) {
-      throw new B2instConnectionException("Error creating B2INST draft record", e);
+      throw new B2instConnectionException(
+          "Error creating B2INST draft record: " + describeFailure(e), e);
     }
   }
 
@@ -91,7 +94,8 @@ public class B2instConnectorImpl implements B2instConnector {
       restTemplate.delete(apiBase() + "/records/" + rid + "/draft");
       return true;
     } catch (RestClientException e) {
-      throw new B2instConnectionException("Error deleting B2INST draft record " + rid, e);
+      throw new B2instConnectionException(
+          "Error deleting B2INST draft record " + rid + ": " + describeFailure(e), e);
     }
   }
 
@@ -120,7 +124,8 @@ public class B2instConnectorImpl implements B2instConnector {
       return restTemplate.postForObject(submitUrl, HttpEntity.EMPTY, B2instRequestResponse.class);
     } catch (RestClientException e) {
       throw new B2instConnectionException(
-          "Error submitting B2INST record " + rid + " for community review", e);
+          "Error submitting B2INST record " + rid + " for community review: " + describeFailure(e),
+          e);
     }
   }
 
@@ -140,6 +145,39 @@ public class B2instConnectorImpl implements B2instConnector {
       log.warn("B2INST connection test failed: {}", e.getMessage());
       return false;
     }
+  }
+
+  /**
+   * Builds a human-readable reason for a failed B2INST call. When the server replied, prefers the
+   * parsed field-validation errors, then the payload's top-level message, then the HTTP status;
+   * without a response (transport error) falls back to the client exception message, or the
+   * exception type when even that is blank.
+   */
+  private String describeFailure(RestClientException e) {
+    if (e instanceof RestClientResponseException restError) {
+      String body = restError.getResponseBodyAsString();
+      String parsedDescription =
+          JacksonUtil.fromJsonOpt(body, B2instErrorResponse.class)
+              .map(B2instErrorResponse::describe)
+              .orElse(null);
+      if (parsedDescription != null) {
+        return parsedDescription;
+      }
+      log.warn(
+          "No usable failure reason in B2INST error response (HTTP {}): {}",
+          restError.getRawStatusCode(),
+          StringUtils.abbreviate(redactToken(body), 500));
+      return "B2INST returned HTTP "
+          + restError.getRawStatusCode()
+          + " "
+          + restError.getStatusText();
+    }
+    return StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName());
+  }
+
+  /** The bearer token is the one secret we hold that a proxy error page could echo back. */
+  private String redactToken(String body) {
+    return StringUtils.isBlank(token) ? body : body.replace(token, "***");
   }
 
   private String submitUrlOf(B2instRequestResponse created) {

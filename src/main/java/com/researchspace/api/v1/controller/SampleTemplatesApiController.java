@@ -205,7 +205,7 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
       @PathVariable Long templateId, MultipartFile file, @RequestAttribute(name = "user") User user)
       throws BindException, IOException {
 
-    SampleEntity template = sampleApiMgr.assertUserCanReadSampleTemplate(templateId, user);
+    SampleEntity template = sampleApiMgr.assertUserCanEditSampleTemplate(templateId, user);
     Optional<BufferedImage> img =
         getBufferedImageFromUploadedFile(new SpringMultipartFileAdapter(file));
     if (!img.isPresent()) {

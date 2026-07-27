@@ -24,11 +24,12 @@ import useStores from "../../../stores/use-stores";
 import { getErrorMessage } from "../../../util/error";
 
 type DataciteCardArgs = {
-  currentSettings: SystemSettings["datacite"];
+  currentSettings: SystemSettings["igsnDatacite"];
+  onEnabledChange: (enabled: IntegrationState) => void;
 };
 
-export default function DataciteCard({ currentSettings }: DataciteCardArgs): React.ReactNode {
-  const [updatedSettings, setUpdatedSettings] = useState<SystemSettings["datacite"]>(currentSettings);
+export default function IGSNDataciteCard({ currentSettings, onEnabledChange }: DataciteCardArgs): React.ReactNode {
+  const [updatedSettings, setUpdatedSettings] = useState<SystemSettings["igsnDatacite"]>(currentSettings);
   const [savedSettings, setSavedSettings] = useState(currentSettings);
   const [lastTestResult, setLastTestResult] = useState<
     { response: "success" } | { response: "failed"; message: string } | null
@@ -37,7 +38,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
   const [savingInFlight, setSavingInFlight] = useState(false);
   const { authStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
-  const settingsLabels: Record<keyof SystemSettings["datacite"], string> = {
+  const settingsLabels: Record<keyof SystemSettings["igsnDatacite"], string> = {
     enabled: t("settings.datacite.labels.enabled"),
     serverUrl: t("settings.datacite.labels.serverUrl"),
     username: t("settings.datacite.labels.username"),
@@ -57,7 +58,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
     if (updatedSettings) {
       setLastTestResult(null);
       setSavingInFlight(true);
-      await authStore.updateSystemSettings("datacite", updatedSettings);
+      await authStore.updateSystemSettings("igsnDatacite", updatedSettings);
       setSavingInFlight(false);
       setSavedSettings(updatedSettings);
     }
@@ -88,6 +89,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
                   ...updatedSettings,
                   enabled: target.value,
                 });
+                onEnabledChange(target.value);
               }
             }}
             options={dataciteIntegrationOptions}

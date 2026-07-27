@@ -62,6 +62,7 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1175.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1065.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1176.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1219.xml"/>
 
     <include relativeToChangelogFile="true" file="changeLog-rsdev-444.xml"/>
 

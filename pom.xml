@@ -372,6 +372,7 @@
           <include>velocityTemplates/**</include>
           <include>archiveResources/**</include>
           <include>StartUpData/**</include>
+          <include>inventory/**</include>
           <!-- see Spring application-resources.xml which uses this variable as
             well for deployment-dependent property files. -->
           <include>deployments/${deployment}/**</include>
@@ -1666,7 +1667,7 @@
            "default" id segment) be built into the WAR, so ids collided at runtime. This commit includes
            the per-entity @TableGenerator work for every TABLE-strategy entity. Re-float to the branch
            SNAPSHOT once the migration branches merge. -->
-      <version>25ccb50b250deca550ccf68fa968a1f1c737df53</version>
+      <version>8d02295b88c10484b28fc39631e1d35e4bb82298</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -2579,6 +2580,7 @@
               <include>bundles/**</include>
               <include>velocityTemplates/**</include>
               <include>StartUpData/**</include>
+              <include>inventory/**</include>
               <!-- see Spring application-resources.xml which uses this variable
                 as well for deployment-dependent property files. -->
               <include>deployments/defaultDeployment.properties</include>

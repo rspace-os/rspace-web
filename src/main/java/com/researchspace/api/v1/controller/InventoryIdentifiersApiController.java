@@ -177,6 +177,11 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     return dataCiteConnector.testDataCiteConnection(InventorySettingType.PIDINST);
   }
 
+  @Override
+  public boolean pidinstEnabled(@RequestAttribute(name = "user") User user) {
+    return apiHandler.isInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PIDINST);
+  }
+
   private InventoryRecord retrieveInvRecByIdentifierId(Long identifierId, User user) {
     InventoryRecord invRec = identifierMgr.getInventoryRecordByIdentifierId(identifierId);
     if (invRec == null) {

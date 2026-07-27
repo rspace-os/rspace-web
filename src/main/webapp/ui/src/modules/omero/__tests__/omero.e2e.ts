@@ -10,10 +10,11 @@ const OMERO_USERNAME = INTEGRATION_MODE === "real" ? env.omeroUsername : "mock-o
 const OMERO_PASSWORD = INTEGRATION_MODE === "real" ? env.omeroPassword : "mock-omero-password";
 
 test.describe(`OMERO integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () => {
-  test.skip(
-    INTEGRATION_MODE === "real" && !(OMERO_USERNAME && OMERO_PASSWORD),
-    "real mode needs OMERO_USERNAME and OMERO_PASSWORD in .env / CI secrets",
-  );
+  test.beforeAll(async () => {
+    if (INTEGRATION_MODE === "real" && !(OMERO_USERNAME && OMERO_PASSWORD)) {
+      throw new Error("OMERO_USERNAME and OMERO_PASSWORD must be set in .env / CI secrets for real mode");
+    }
+  });
 
   test.beforeEach(async ({ flowSysadminConfig }) => {
     await flowSysadminConfig.ensureSetting("omero.available", "ALLOWED");

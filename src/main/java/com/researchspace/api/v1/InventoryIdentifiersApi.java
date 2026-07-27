@@ -67,4 +67,11 @@ public interface InventoryIdentifiersApi {
   /** Test the connection to the DataCite PIDINST identifier service. */
   @GetMapping(value = "/testPidinstConnection")
   boolean testPidinstConnection(User user);
+
+  /**
+   * Returns whether PIDINST identifier registration is configured and enabled for the current user.
+   * Accessible to any authenticated Inventory user, not sysadmin-only.
+   */
+  @GetMapping(value = "/pidinstEnabled")
+  boolean pidinstEnabled(User user);
 }

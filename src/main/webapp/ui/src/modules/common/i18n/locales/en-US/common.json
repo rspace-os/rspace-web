@@ -270,6 +270,7 @@
     "owncloud": "v8ss2uso0a-owncloud-integration",
     "panelAdjuster": "bt6kx098eq-more-info-sidebar#panel_adjuster",
     "permissions": "n09nmg4ax7-permissions",
+    "pidinstIdentifiers": "pidinst-identifiers",
     "protocolsio": "nid9q64pas-protocols-io-integration",
     "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
     "pyrat": "9kkeooveia-pyrat-integration",

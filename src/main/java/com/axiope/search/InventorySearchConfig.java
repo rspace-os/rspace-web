@@ -6,7 +6,9 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.dtos.WorkspaceFilters;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.record.BaseRecord;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -38,7 +40,7 @@ public class InventorySearchConfig extends SearchConfig {
 
   private List<String> limitResultsToGlobalIds;
 
-  private String defaultTemplatesOwner;
+  private Set<String> defaultTemplatesOwners = new HashSet<>();
 
   private GlobalIdentifier parentOid;
 

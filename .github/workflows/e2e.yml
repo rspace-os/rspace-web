@@ -143,17 +143,22 @@ jobs:
       # Start the app in the background first so its ~2.5 min boot overlaps the
       # pnpm/Playwright install below instead of stacking after it.
       - name: Start RSpace (prebuilt WAR)
+        env:
+          PYRAT_SERVER_TOKEN: ${{ inputs.mode == 'real' && secrets.PYRAT_SERVER_TOKEN || '' }}
         run: |
           set -euo pipefail
-          MOCK_ARGS=()
           if [ "${{ inputs.mode }}" = "mock" ]; then
-            MOCK_ARGS=(
+            INTEGRATION_ARGS=(
               "-Dpubchem.base.url=http://localhost:$E2E_MOCK_PORT"
               "-Dfieldmark.api.url=http://localhost:$E2E_MOCK_PORT"
               "-Dzenodo.url=http://localhost:$E2E_MOCK_PORT"
               "-Dgalaxy.server.config=[{\"alias\":\"mock\",\"url\":\"http://localhost:$E2E_MOCK_PORT\"}]"
               "-Dpyrat.server.config={\"mock\":{\"url\":\"http://localhost:$E2E_MOCK_PORT\",\"token\":\"mock-server-token\"}}"
               "-Domero.api.url=http://localhost:$E2E_MOCK_PORT"
+            )
+          else
+            INTEGRATION_ARGS=(
+              "-Dpyrat.server.config={\"default-server\":{\"url\":\"https://demo.pyrat.cloud/rspace511/api/v3/\",\"token\":\"$PYRAT_SERVER_TOKEN\"}}"
             )
           fi
           nohup ./mvnw jetty:run-war \
@@ -169,7 +174,7 @@ jobs:
             -Djdbc.db.maven=rspace \
             -DRS_FILE_BASE="$RS_FILE_BASE" \
             -DRS.devlogLevel=INFO \
-            "${MOCK_ARGS[@]}" \
+            "${INTEGRATION_ARGS[@]}" \
             > /tmp/jetty.log 2>&1 &
 
       - run: pnpm install --frozen-lockfile

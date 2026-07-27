@@ -36,6 +36,7 @@ import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import IGSNlogo from "../../assets/graphics/IGSNlogo.jpg";
+import PIDINSTlogo from "../../assets/graphics/PIDINST.svg";
 import { decodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
 import Description from "../../Inventory/components/Fields/Description";
 import MapViewer from "../../Inventory/components/Fields/Identifiers/MapViewer";
@@ -101,6 +102,35 @@ function DividedPair({ children }: DividedPairArgs) {
 export const INSTITUTION_LOGO_ADDRESS = "/public/banner";
 
 const IGSN_BASE_URL = `https://www.igsn.org/`;
+const PIDINST_BASE_URL = `https://www.pidinst.org/`;
+
+function IgsnLogoLink(): ReactNode {
+  const { t } = useTranslation("public");
+  return (
+    <a href={IGSN_BASE_URL} title={t("links.igsnHomepage")} target="_blank" rel="noreferrer">
+      <img
+        src={IGSNlogo}
+        alt={t("images.igsnLogo")}
+        title={t("images.igsnLogo")}
+        style={{ padding: "0 4px", width: "70px" }}
+      />
+    </a>
+  );
+}
+
+function PidinstLogoLink(): ReactNode {
+  const { t } = useTranslation("public");
+  return (
+    <a href={PIDINST_BASE_URL} title={t("links.pidinstHomepage")} target="_blank" rel="noreferrer">
+      <img
+        src={PIDINSTlogo}
+        alt={t("images.pidinstLogo")}
+        title={t("images.pidinstLogo")}
+        style={{ padding: "0 4px", width: "70px" }}
+      />
+    </a>
+  );
+}
 const formatDegrees = (value: string): string => `${value}˚`;
 
 /**
@@ -170,6 +200,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
   const { t, i18n } = useTranslation("public");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const institutionName: string = identifier.publisher.split(" (")[0];
+  const isPidinst = identifier.doiType.startsWith("PIDINST");
 
   const anyRecommendedGiven: boolean = [
     identifier.subjects,
@@ -224,7 +255,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
           alignItems: "flex-start",
           backgroundColor: "#e3f0ff",
           margin: theme.spacing(3, 2, 0, 2),
-          padding: theme.spacing(0, 1, 1, 0),
+          padding: theme.spacing(1),
           borderRadius: theme.spacing(0.75),
           border: "2px solid black",
         })}
@@ -246,16 +277,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
         </Grid>
         <Grid>
           <Grid container sx={{ flexDirection: "column", alignItems: "center" }} spacing={0.5}>
-            <Grid>
-              <a href={IGSN_BASE_URL} title={t("links.igsnHomepage")} target="_blank" rel="noreferrer">
-                <img
-                  src={IGSNlogo}
-                  alt={t("images.igsnLogo")}
-                  title={t("images.igsnLogo")}
-                  style={{ padding: "0 4px", width: "70px" }}
-                />
-              </a>
-            </Grid>
+            <Grid>{isPidinst ? <PidinstLogoLink /> : <IgsnLogoLink />}</Grid>
             <Grid>
               <Typography variant="caption">
                 {identifier.resourceTypeGeneral === "PhysicalObject"
@@ -276,7 +298,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
         <Grid>{identifier.title}</Grid>
       </Grid>
       <Grid container direction="row" sx={ROW_SX} spacing={1}>
-        <Grid sx={LABEL_SX}>{t("labels.igsnId")}</Grid>
+        <Grid sx={LABEL_SX}>{t(isPidinst ? "labels.pidinstId" : "labels.igsnId")}</Grid>
         <Grid data-testid="identifier-public-url">
           {identifier.publicUrl ? (
             <a href={identifier.publicUrl} title={t("links.doiAddress")}>

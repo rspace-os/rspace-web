@@ -72,6 +72,8 @@ const IdentifierWrapper = observer(
       "name" in field &&
       typeof field.name === "string";
 
+    const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
+
     const rawCustomFields: Array<unknown> =
       "fields" in activeResult && Array.isArray(activeResult.fields) ? activeResult.fields : [];
     const customFields = rawCustomFields.filter(isCustomField);
@@ -185,7 +187,13 @@ const IdentifierWrapper = observer(
             {t("fields.identifiers.wrapper.inventoryFields.title")}
           </Typography>
           <Alert severity="info">
-            <TransRichText i18nKey="inventory:fields.identifiers.wrapper.inventoryFields.alert" />
+            <TransRichText
+              i18nKey={
+                isInstrument
+                  ? "inventory:fields.identifiers.wrapper.inventoryFields.alertPidinst"
+                  : "inventory:fields.identifiers.wrapper.inventoryFields.alert"
+              }
+            />
           </Alert>
           <FormControlLabel
             control={
@@ -244,6 +252,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
   const { addAlert } = useContext(AlertContext);
   const { uiStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
+  const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
   const identifierStateLabel = (state: IGSNPublishingState): string =>
     match<IGSNPublishingState, string>([
       [(s) => s === "draft", t("igsnTable.filters.stateOptions.draft.title")],
@@ -258,18 +267,33 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
     identifierState: IGSNPublishingState;
     identifierUrl: string | null | undefined;
   }): ReactNode => {
-    if (identifierState === "draft") return <>{t("fields.identifiers.list.stateInfo.draft")}</>;
+    if (identifierState === "draft")
+      return (
+        <>
+          {isInstrument
+            ? t("fields.identifiers.list.stateInfo.draftPidinst")
+            : t("fields.identifiers.list.stateInfo.draft")}
+        </>
+      );
     if (identifierState === "findable")
       return (
         <TransRichText
-          i18nKey="inventory:fields.identifiers.list.stateInfo.findable"
+          i18nKey={
+            isInstrument
+              ? "inventory:fields.identifiers.list.stateInfo.findablePidinst"
+              : "inventory:fields.identifiers.list.stateInfo.findable"
+          }
           values={{ link: identifierUrl || "" }}
         />
       );
     if (identifierState === "registered")
       return (
         <TransRichText
-          i18nKey="inventory:fields.identifiers.list.stateInfo.registered"
+          i18nKey={
+            isInstrument
+              ? "inventory:fields.identifiers.list.stateInfo.registeredPidinst"
+              : "inventory:fields.identifiers.list.stateInfo.registered"
+          }
           values={{ link: identifierUrl || "" }}
         />
       );
@@ -456,8 +480,12 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
             </Grid>
             <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
               <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
-              <a href={helpDocsArticleUrl("igsnIdentifiers")} target="_blank" rel="noreferrer">
-                {t("fields.identifiers.list.igsnDocLink")}
+              <a
+                href={helpDocsArticleUrl(isInstrument ? "pidinstIdentifiers" : "igsnIdentifiers")}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {isInstrument ? t("fields.identifiers.list.pidinstDocLink") : t("fields.identifiers.list.igsnDocLink")}
               </a>
             </Alert>
             <Collapse in={openIdForm}>
@@ -568,6 +596,7 @@ const AssignDialog = observer(
 const IdentifiersCard = observer((): ReactNode => {
   const {
     searchStore: { activeResult },
+    authStore,
   } = useStores();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
   const identifiers = activeResult.identifiers ?? [];
@@ -576,6 +605,7 @@ const IdentifiersCard = observer((): ReactNode => {
   const { t } = useTranslation(["inventory", "common"]);
   const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
   const identifierLabel = isInstrument ? t("fields.identifiers.card.pidinst") : t("fields.identifiers.card.igsnId");
+  const { pidinstEnabled } = authStore;
 
   return (
     <>
@@ -585,27 +615,30 @@ const IdentifiersCard = observer((): ReactNode => {
           <Button
             color="primary"
             variant="outlined"
-            disabled={isInstrument}
+            disabled={isInstrument && !pidinstEnabled}
             onClick={() => void activeResult.addIdentifier()}
           >
             {t("fields.identifiers.card.createNew", { identifierLabel })}
           </Button>
-          <Button
-            color="primary"
-            variant="outlined"
-            disabled={isInstrument}
-            onClick={() => {
-              setAssignDialogOpen(true);
-              trackEvent("user:open:assign-existing-igsn-dialog");
-            }}
-          >
-            {t("fields.identifiers.card.linkExisting", { identifierLabel })}
-          </Button>
-          <AssignDialog
-            recordToAssignTo={activeResult}
-            open={assignDialogOpen}
-            onClose={() => setAssignDialogOpen(false)}
-          />
+          {!isInstrument && (
+            <>
+              <Button
+                color="primary"
+                variant="outlined"
+                onClick={() => {
+                  setAssignDialogOpen(true);
+                  trackEvent("user:open:assign-existing-igsn-dialog");
+                }}
+              >
+                {t("fields.identifiers.card.linkExisting", { identifierLabel })}
+              </Button>
+              <AssignDialog
+                recordToAssignTo={activeResult}
+                open={assignDialogOpen}
+                onClose={() => setAssignDialogOpen(false)}
+              />
+            </>
+          )}
         </Stack>
       )}
       {identifiers.length > 0 && (

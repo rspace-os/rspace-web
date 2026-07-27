@@ -2,13 +2,13 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 import materialTheme from "../../../../theme";
-import DataciteCard from "../DataciteCard";
+import IGSNDataciteCard from "../IGSNDataciteCard";
 
-describe("DataciteCard", () => {
+describe("IGSNDataciteCard", () => {
   test("Should have no axe violations.", async () => {
     const { container } = render(
       <ThemeProvider theme={materialTheme}>
-        <DataciteCard
+        <IGSNDataciteCard
           currentSettings={{
             enabled: "true",
             serverUrl: "https://api.datacite.org",
@@ -16,6 +16,7 @@ describe("DataciteCard", () => {
             password: "",
             repositoryPrefix: "",
           }}
+          onEnabledChange={() => {}}
         />
       </ThemeProvider>,
     );

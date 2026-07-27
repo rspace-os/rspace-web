@@ -424,9 +424,11 @@ export default class IdentifierModel implements Identifier {
   async publish({
     confirm,
     addAlert,
+    onPublished,
   }: {
     confirm: (title: React.ReactNode, message: React.ReactNode, yesLabel: string, noLabel: string) => Promise<boolean>;
     addAlert: (alert: Alert) => void;
+    onPublished?: () => void;
   }): Promise<void> {
     if (!this.ApiServiceBase) throw new Error("This operation requires the user be authenticated");
     const ApiServiceBase = this.ApiServiceBase;
@@ -434,7 +436,15 @@ export default class IdentifierModel implements Identifier {
       if (
         await confirm(
           i18n.t("inventory:identifierConfirm.publish.title"),
-          <TransRichText i18nKey="inventory:identifierConfirm.publish.body" />,
+          <TransRichText
+            i18nKey={
+              this.doiType === "PIDINST_B2INST"
+                ? "inventory:identifierConfirm.publish.bodyPidinstB2Inst"
+                : this.doiType === "PIDINST_DATACITE"
+                  ? "inventory:identifierConfirm.publish.bodyPidinst"
+                  : "inventory:identifierConfirm.publish.body"
+            }
+          />,
           i18n.t("common:actions.ok"),
           i18n.t("common:actions.cancel"),
         )
@@ -463,6 +473,7 @@ export default class IdentifierModel implements Identifier {
             variant: "success",
           }),
         );
+        onPublished?.();
       }
     } catch (error) {
       // in case of errors like 422 the server provides a specific response message that we want to display
@@ -497,7 +508,15 @@ export default class IdentifierModel implements Identifier {
       if (
         await confirm(
           i18n.t("inventory:identifierConfirm.retract.title"),
-          <TransRichText i18nKey="inventory:identifierConfirm.retract.body" />,
+          <TransRichText
+            i18nKey={
+              this.doiType === "PIDINST_B2INST"
+                ? "inventory:identifierConfirm.retract.bodyPidinstB2Inst"
+                : this.doiType === "PIDINST_DATACITE"
+                  ? "inventory:identifierConfirm.retract.bodyPidinst"
+                  : "inventory:identifierConfirm.retract.body"
+            }
+          />,
           i18n.t("common:actions.ok"),
           i18n.t("common:actions.cancel"),
         )

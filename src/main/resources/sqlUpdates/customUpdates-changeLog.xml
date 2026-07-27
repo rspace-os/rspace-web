@@ -8,5 +8,7 @@
     <include relativeToChangelogFile="true" file="rsdev-310-perform-hash-apiKeys.xml"/>
     <include relativeToChangelogFile="true" file="rsdev-292-custom.xml"/>
     <include relativeToChangelogFile="true" file="rsdev-607-perform-doi-bulk-update.xml"/>
+    <include relativeToChangelogFile="true"
+      file="rsdev-1219-create-default-instrument-template.xml"/>
 
 </databaseChangeLog>

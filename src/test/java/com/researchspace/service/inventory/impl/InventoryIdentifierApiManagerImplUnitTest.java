@@ -1,9 +1,12 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,6 +16,8 @@ import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
+import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
@@ -21,8 +26,10 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
+import com.researchspace.webapp.integrations.b2inst.B2instConnectionException;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -89,6 +96,68 @@ class InventoryIdentifierApiManagerImplUnitTest {
     assertEquals("draft", result.getState());
     assertEquals(IdentifierType.PIDINST_B2INST.name(), result.getDoiType());
     assertEquals("Instrument", result.getResourceType());
+  }
+
+  @Test
+  void publishB2instSurfacesConnectorFailureReason() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    MessageSourceUtils messages = mock(MessageSourceUtils.class);
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    ReflectionTestUtils.setField(mgr, "messages", messages);
+
+    DigitalObjectIdentifier doi = mock(DigitalObjectIdentifier.class);
+    when(doi.getIdentifier()).thenReturn("k2j9p-7yh21");
+    B2instConnectionException original =
+        new B2instConnectionException(
+            "Error submitting B2INST record k2j9p-7yh21 for community review: "
+                + "instrument_type: Missing data for required field.");
+    when(b2instConnector.publishDoi("k2j9p-7yh21")).thenThrow(original);
+    when(messages.getMessage(
+            eq("errors.inventory.identifier.b2inst.publish.failed"), any(Object[].class)))
+        .thenAnswer(
+            invocation ->
+                "Could not publish the instrument PID in B2INST. "
+                    + ((Object[]) invocation.getArgument(1))[0]);
+
+    Method publish =
+        InventoryIdentifierApiManagerImpl.class.getDeclaredMethod(
+            "createUpdateWithPublishedB2instDoi", DigitalObjectIdentifier.class);
+    publish.setAccessible(true);
+    InvocationTargetException wrapped =
+        assertThrows(InvocationTargetException.class, () -> publish.invoke(mgr, doi));
+
+    Throwable thrown = wrapped.getCause();
+    assertTrue(thrown instanceof B2instConnectionException);
+    assertEquals(
+        "Could not publish the instrument PID in B2INST. Error submitting B2INST record"
+            + " k2j9p-7yh21 for community review: instrument_type: Missing data for required"
+            + " field.",
+        thrown.getMessage());
+    assertSame(original, thrown.getCause());
+  }
+
+  @Test
+  void publishB2instMapsSubmissionStatusOntoDoi() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+
+    DigitalObjectIdentifier doi = mock(DigitalObjectIdentifier.class);
+    when(doi.getIdentifier()).thenReturn("k2j9p-7yh21");
+    when(doi.getId()).thenReturn(7L);
+    B2instRequestResponse submitted =
+        JacksonUtil.fromJson("{\"status\":\"submitted\"}", B2instRequestResponse.class);
+    when(b2instConnector.publishDoi("k2j9p-7yh21")).thenReturn(submitted);
+
+    Method publish =
+        InventoryIdentifierApiManagerImpl.class.getDeclaredMethod(
+            "createUpdateWithPublishedB2instDoi", DigitalObjectIdentifier.class);
+    publish.setAccessible(true);
+    ApiInventoryDOI result = (ApiInventoryDOI) publish.invoke(mgr, doi);
+
+    assertEquals(7L, result.getId());
+    assertEquals("submitted", result.getState());
   }
 
   @Test

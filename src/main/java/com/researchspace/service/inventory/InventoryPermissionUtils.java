@@ -2,6 +2,7 @@ package com.researchspace.service.inventory;
 
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
+import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.ListOfMaterialsDao;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.SampleTemplateDao;
@@ -14,6 +15,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.elninventory.ListOfMaterials;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.model.inventory.MovableInventoryRecord;
@@ -36,6 +38,7 @@ public class InventoryPermissionUtils {
 
   private @Autowired SampleDao sampleDao;
   private @Autowired SampleTemplateDao sampleTemplateDao;
+  private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   private @Autowired ListOfMaterialsDao lomDao;
 
   private @Autowired UserManager userMgr;
@@ -106,6 +109,7 @@ public class InventoryPermissionUtils {
         || canViewWithUserRole(record, user)
         || isContainerRelatedReadAccessAllowed(record, user)
         || isDefaultSampleTemplate(record)
+        || isDefaultInstrumentTemplate(record)
         || canAccessAsSystemOrCommunityAdmin(record.getOwner().getUsername(), user);
   }
 
@@ -189,6 +193,17 @@ public class InventoryPermissionUtils {
     return false;
   }
 
+  private boolean isDefaultInstrumentTemplate(InventoryRecord record) {
+    if (record.isInstrumentTemplate()) {
+      // null-safe: getDefaultTemplatesOwner() returns null before a default template is seeded
+      return record
+          .getOwner()
+          .getUsername()
+          .equals(instrumentTemplateDao.getDefaultTemplatesOwner());
+    }
+    return false;
+  }
+
   public void assertUserCanReadOrLimitedReadInventoryRecord(InventoryRecord invRec, User user) {
     boolean canRead = canUserReadOrLimitedReadInventoryRecord(invRec, user);
     if (!canRead) {
@@ -209,10 +224,20 @@ public class InventoryPermissionUtils {
   }
 
   public boolean canUserEditInventoryRecord(InventoryRecord record, User user) {
+    if (isLockedInstrumentTemplate(record)) {
+      // a locked (default/system) instrument template is read-only for everyone, including its
+      // owning sysadmin; this central check also drives the permittedActions in API responses
+      return false;
+    }
     if (isUserAnItemOwner(record, user)) {
       return true; // owner has full access
     }
     return canAccessDirectlyWithSharingPermission(record, user);
+  }
+
+  /** A default/system instrument template whose {@code isEditable} flag has been set to false. */
+  private boolean isLockedInstrumentTemplate(InventoryRecord invRec) {
+    return invRec instanceof InstrumentTemplate && !((InstrumentTemplate) invRec).isEditable();
   }
 
   private boolean isUserAnItemOwner(InventoryRecord item, User user) {
@@ -270,10 +295,13 @@ public class InventoryPermissionUtils {
     if (!canRead) {
       throwNotFoundException(record.getId());
     }
-    // can read, just can't transfer. we can show more useful message
+    // can read, just can't transfer. we can show more useful message. A locked (default/system)
+    // instrument template cannot be transferred by anyone (transfer does not consult
+    // canUserEditInventoryRecord, so the lock is enforced explicitly here too).
     String invRecOwner = record.getOwner().getUsername();
-    if (!user.getUsername().equals(invRecOwner)
-        && !isPiOrAdminOfRecordOwnerGroup(user, invRecOwner)) {
+    if (isLockedInstrumentTemplate(record)
+        || (!user.getUsername().equals(invRecOwner)
+            && !isPiOrAdminOfRecordOwnerGroup(user, invRecOwner))) {
       throw new IllegalArgumentException(
           record.getType()
               + " with id ["
@@ -311,9 +339,10 @@ public class InventoryPermissionUtils {
     } else if (canUserLimitedReadInventoryRecord(invRec, user)) {
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.LIMITED_READ);
     }
-    if (user.getUsername().equals(invRecOwner)
-        || isPiOrAdminOfRecordOwnerGroup(user, invRecOwner)
-        || user.hasSysadminRole()) {
+    if (!isLockedInstrumentTemplate(invRec)
+        && (user.getUsername().equals(invRecOwner)
+            || isPiOrAdminOfRecordOwnerGroup(user, invRecOwner)
+            || user.hasSysadminRole())) {
       // FIXME community admin should also have TRANSFER permission
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.CHANGE_OWNER);
     }
