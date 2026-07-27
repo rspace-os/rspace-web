@@ -18,10 +18,17 @@ export class TransferDialogComponent {
     await this.root.waitFor({ state: "visible" });
   }
 
-  async selectRecipient(query: string): Promise<void> {
+  async selectRecipient(username: string): Promise<void> {
     await this.recipientCombobox.click();
-    await this.recipientCombobox.fill(query);
-    await this.page.getByRole("option", { name: query }).first().click();
+    await this.recipientCombobox.fill(username);
+    /*
+     * Options are labelled "First Last (username)", so a substring match on the username alone
+     * also matches anyone whose own username contains it - "user6f" matches the dynamic-user
+     * account "e2eDynUser6fb7179aaab", and .first() then silently transfers to the wrong person.
+     * Match the parenthesised username instead; usernames are unique, so this resolves to one
+     * option and a future ambiguity fails loudly as a strict-mode violation.
+     */
+    await this.page.getByRole("option", { name: new RegExp(`\\(${username}\\)`) }).click();
   }
 
   async confirmTransfer(): Promise<void> {

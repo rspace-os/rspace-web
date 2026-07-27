@@ -84,6 +84,8 @@ import javax.sql.DataSource;
 import lombok.Value;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.util.ThreadContext;
 import org.hibernate.criterion.Projections;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -345,10 +347,32 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
    */
   protected Folder initUser(User user, boolean createContent) throws IllegalAddChildOperation {
     contentInitializer.setCustomInitActive(createContent);
+    if (createContent) {
+      replaceSubjectIfItsUserHasBeenDeleted(user);
+    }
     Folder rc = contentInitializer.init(user.getId()).getUserRoot();
     contentInitializer.setCustomInitActive(true);
     user.setRootFolder(rc);
     return rc;
+  }
+
+  /**
+   * Creating example content saves a media file, and MediaManagerImpl.assertCanAddToFolder runs a
+   * Shiro permission check against the current Subject. Integration tests share one JVM fork and
+   * the Subject is thread-bound, while DatabaseCleaner.cleanUp() deletes every User row in {@link
+   * #after()}, so an earlier test class can leave us authenticated as a user that no longer exists.
+   * The realm then fails to reload authorisation info for that dead principal and throws
+   * ObjectRetrievalFailureException.
+   *
+   * <p>Only swap the Subject out when it is already dead. A live one may be a sysadmin the caller
+   * deliberately logged in as and still expects to be acting as once init returns.
+   */
+  private void replaceSubjectIfItsUserHasBeenDeleted(User user) {
+    Object principal = SecurityUtils.getSubject().getPrincipal();
+    if (principal instanceof String && !userMgr.userExists((String) principal)) {
+      ThreadContext.remove();
+      RSpaceTestUtils.login(user.getUsername(), TESTPASSWD);
+    }
   }
 
   /**
