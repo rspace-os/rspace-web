@@ -6,15 +6,9 @@ Shiro 2.1 / the `jakarta.*` (Jakarta EE 10) APIs. rspace-web and all of the rspa
 libraries it depends on upgrade together, and each library carries a major version bump.
 The rspace-web version number itself stays on its normal release train.
 
-## Who this page is for
-
-- **Operators** (you run an RSpace server and are upgrading it): read
-  [Upgrading a server](#upgrading-a-server). This is not a routine upgrade: the
-  deployment prerequisites change and the database migration is one-way.
-- **Developers** (you build or change RSpace code): read
-  [Developer notes](#developer-notes). Local Jetty development works as before, and the
-  Tomcat items in the server section do not apply to you unless you also run a
-  Tomcat deployment.
+Operators should read [Upgrading a server](#upgrading-a-server); developers should read
+[Developer notes](#developer-notes). This is not a routine server upgrade: deployment
+prerequisites change and the database migration is one-way.
 
 ## Upgrading a server
 
@@ -32,30 +26,26 @@ The rspace-web version number itself stays on its normal release train.
 1. **Back up the database.** The migration rewrites id-sequence counters and replaces
    the Spring Batch tables in place. There is no downgrade path: rolling back means
    restoring the backup and redeploying the previous WAR.
-2. **Install Tomcat 10.1.**
-3. **Update the JDBC driver class name** in any configuration of your own that pins it
+2. **Update the JDBC driver class name** in any configuration of your own that pins it
    (context.xml, JNDI definitions, properties files): `com.mysql.jdbc.Driver` becomes
    `com.mysql.cj.jdbc.Driver`.
-4. **Check `jdbc.url` for `useSSL=true`.** The new driver treats `useSSL=true` as
-   "TLS required" and refuses to connect to a database without TLS; the old driver
-   silently fell back to plaintext. If the app fails to boot with
-   `Cannot create PoolableConnectionFactory (Communications link failure)`, this is the
-   most likely cause. Set `useSSL=false` if the connection does not actually use TLS;
-   otherwise configure certificates and use `sslMode=VERIFY_CA` or `VERIFY_IDENTITY`.
-5. **Check DB user privileges.** The migration creates a stored procedure, so the DB
+3. **Make the JDBC TLS mode explicit.** Connector/J 8.4 deprecates `useSSL`; replace it
+   with `sslMode=DISABLED` for an intentionally unencrypted connection, or configure
+   certificates and use `sslMode=VERIFY_CA` or `VERIFY_IDENTITY` for TLS.
+4. **Check DB user privileges.** The migration creates a stored procedure, so the DB
    user needs `CREATE ROUTINE` / `DROP ROUTINE`. The standard `ALL` grant on the RSpace
    schema covers this; a locked-down user may not.
-6. **Leave the Liquibase context at `run`** (the production default). Running the
+5. **Leave the Liquibase context at `run`** (the production default). Running the
    migration with a dev/test context risks executing test fixtures against real data.
-7. **Only if you customised the upload limit:** it is no longer set in `web.xml`. Set
+6. **Only if you customised the upload limit:** it is no longer set in `web.xml`. Set
    the JVM property `-Dfiles.maxUploadSize=<bytes>` or the `files.maxUploadSize` key in
    `deployment.properties` (default 50 MB, capping the total multipart request size).
-   On Tomcat, make sure the connector's `maxSwallowSize` is `-1` or larger than the
-   limit, otherwise oversize uploads reset the connection instead of returning HTTP 413.
-8. **Download any pending API exports.** The upgrade discards Spring Batch job metadata,
-   so any export started via `POST /api/v1/export` and not yet fetched must be re-run
-   afterwards. UI-initiated exports are unaffected and existing archives stay
-   downloadable.
+   On Tomcat, set the connector's `maxSwallowSize` to `-1` to ensure clients receive
+   HTTP 413 for oversized uploads instead of a connection reset.
+7. **Resolve pending API exports.** The upgrade discards Spring Batch job metadata, so
+   wait for exports under `/api/v1/export/...` to finish and obtain their download URLs.
+   Jobs that remain pending or have not been polled for their result must be re-run.
+   UI-initiated exports are unaffected.
 
 ### What the migration changes in the database
 
@@ -91,17 +81,15 @@ WebSocket under Jetty uses the SockJS fallback; native WebSocket is supported on
 which is why Tomcat 10.1 is the production target. The rules below are what changed in
 the stack.
 
-- **`javax.*` is gone.** All servlet, persistence, validation, mail, JAXB, EL, and
-  ws.rs imports are now `jakarta.*`; JSP taglibs use the `jakarta.tags.*` URIs. Code
-  importing the old namespaces will not compile.
+- **Java EE APIs moved from `javax.*` to `jakarta.*`.** This includes servlet,
+  persistence, validation, mail, JAXB, EL, and JAX-RS; JSP taglibs use
+  `jakarta.tags.*`. Java SE packages and JCache still use `javax.*`.
 - **Transaction wiring.** Service-layer transactions come from the XML
   `<tx:annotation-driven>` config plus the pattern pointcut advisors in
-  `applicationContext-service.xml`. The pattern advisors are load-bearing: many
-  `*Manager` classes carry no annotations. Beans outside those patterns use class-level
-  `@Transactional`, and `TransactionAdviceStartupCheck` fails startup if an
-  early-instantiated bean is missing transaction advice. Verify any change to this
-  wiring in the running app, not tests: the test context uses different XML and never
-  loads security.xml. See `Transactions.md`.
+  `applicationContext-service.xml`; many `*Manager` classes rely on those advisors
+  rather than annotations. Beans outside those patterns use class-level
+  `@Transactional`. Verify wiring changes in the running app because tests use different
+  XML and do not load `security.xml`. See `Transactions.md`.
 - **`Session.saveOrUpdate` is deprecated** (removed in Hibernate 7).
   `GenericDaoHibernate.save()` now branches between `persist` and `merge`; for entities
   with assigned (non-generated) ids, use the instance returned by `save()`, as its
@@ -110,7 +98,7 @@ the stack.
   transient properties (use the persistent path, e.g. `editInfo.name`, not the
   `@Transient` delegate) and raw discriminator columns (use `type(alias) = EntityName`,
   not `DTYPE='...'`).
-- **Search mappings** use Hibernate Search 6/7 annotations (`@FullTextField`,
+- **Search mappings** use Hibernate Search 7 annotations (`@FullTextField`,
   `@GenericField`, `@KeywordField`, named `@IndexedEmbedded`). Index field names such as
   `extraFields.fieldData` are a contract between rspace-core-model mappings and
   rspace-web query builders; changing one side silently breaks search.
@@ -120,8 +108,6 @@ the stack.
   objects). `EhcacheRegionConfigTest` enforces the region/entity correspondence.
 - **Multipart config** is programmatic (`DispatcherServletInitializer`), not in
   `web.xml`.
-- **SiteMesh 3 decorators** are referenced by bare file name (the prefix
-  `/WEB-INF/decorators/` is added automatically); an absolute path double-prefixes the
-  URI and breaks every decorated page. Fragments included into a page body must not
-  carry their own `<head>`: SiteMesh keeps only the first, silently dropping scripts in
-  a second one.
+- **SiteMesh 3 decorators** use bare file names because `/WEB-INF/decorators/` is added
+  automatically. Included fragments must not contain `<head>` because SiteMesh keeps
+  only the first one.
