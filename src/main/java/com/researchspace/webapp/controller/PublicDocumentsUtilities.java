@@ -1,15 +1,10 @@
 package com.researchspace.webapp.controller;
 
-import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
-import com.researchspace.model.User;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
-import org.springframework.ui.Model;
 
 class PublicDocumentsUtilities {
 
@@ -29,11 +24,5 @@ class PublicDocumentsUtilities {
     } catch (InterruptedException ie) {
       Thread.currentThread().interrupt();
     }
-  }
-
-  public static void addGroupAttributes(Model model, User usr, Set<Group> groups) {
-    model.addAttribute("groups", groups);
-    List<User> users = Group.getUniqueUsersInGroups(groups, User.LAST_NAME_COMPARATOR, usr);
-    model.addAttribute("uniqueUsers", users);
   }
 }

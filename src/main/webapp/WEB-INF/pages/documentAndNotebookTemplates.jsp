@@ -294,7 +294,6 @@
 </div>
 
 <axt:export />
-<axt:shareDlg shareDlgGroups="${groups}" shareDlgUsers="${uniqueUsers}" />
 
 <jsp:include page="recordInfoPanel.jsp" />
 

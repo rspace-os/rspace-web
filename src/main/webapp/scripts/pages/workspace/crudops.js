@@ -235,6 +235,19 @@ function checkLoad() {
   }
 }
 
+function onlyNormalDocsOnTypesList(types) {
+  var onlyNormalDocs = true;
+  if (types) {
+    $.each(types, function(i, type) {
+      if (type !== 'NORMAL') {
+        onlyNormalDocs = false;
+        return false;
+      }
+    });
+  }
+  return onlyNormalDocs;
+}
+
 function createMoveDialog(onmove, moveparams) {
   var targetFolder = "";
   $('#move-dialog').dialog({

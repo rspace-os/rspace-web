@@ -89,14 +89,22 @@ function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector =
                         const nameAndurl = link.split('_&_&_');
                         linksText+=nameAndurl[0] + " "+window.location.origin + nameAndurl[1] + "\n"
                     });
+                    const finishPublish = (clipboardButton) =>
+                        postPublish(publishedIds, idsToPublish, numPublicLinks, result, clipboardButton);
                     try {
-                        navigator.clipboard.writeText(linksText).catch(err=>{
-                            console.error(err);
-                            return fallbackCopyTextToClipboard(linksText);
-                        })
-                            .then((clipboardButton) => postPublish(publishedIds, idsToPublish, numPublicLinks, result, clipboardButton));
-                    } catch (err){
+                        if (navigator.clipboard?.writeText) {
+                            navigator.clipboard.writeText(linksText)
+                                .catch(err => {
+                                    console.error(err);
+                                    return fallbackCopyTextToClipboard(linksText);
+                                })
+                                .then(finishPublish);
+                        } else {
+                            finishPublish(fallbackCopyTextToClipboard(linksText));
+                        }
+                    } catch (err) {
                         console.error(err);
+                        finishPublish(fallbackCopyTextToClipboard(linksText));
                     }
                     RS.trackEvent("user:publish:documents:workspace");
                 });
@@ -163,57 +171,43 @@ function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector =
             onpublish(publishedIds);
 
             const unpublishedLength = toPublishLength - numPublished;
+            // Each branch produces a whole sentence, so no message is assembled from fragments.
             if (numPublished === toPublishLength) {
-                var successMsg = (toPublishLength == 1 ? "Document" : (toPublishLength + " documents")) + " published";
-                if (numPublicLinks>0) {
-                    if(clipboardButton){
-                        successMsg += ". There is a copy button at the top left of this screen" +
-                            " which will copy document names with their published links to your clipboard."
-                    } else {
-                        successMsg += ". Document names with their published links are in your clipboard."
-                    }
-                }
-                RS.confirm(successMsg, "success", clipboardButton ? 5000 : 3000);
+                const publishedMsg = toPublishLength === 1
+                    ? "Document published."
+                    : `${toPublishLength} documents published.`;
+                const clipboardMsg = clipboardButton
+                    ? "There is a copy button at the top left of this screen which will copy document names with their published links to your clipboard."
+                    : "Document names with their published links are in your clipboard.";
+                RS.confirm(numPublicLinks > 0 ? `${publishedMsg} ${clipboardMsg}` : publishedMsg,
+                    "success", clipboardButton ? 5000 : 3000);
             } else {
                 if (publishedLength === 0) {
-                    RS.confirm("Document(s) not published", "warning", 3000);
+                    RS.confirm("No documents were published.", "warning", 3000);
                 } else {
-                    RS.confirm("Not all documents were published", "notice", 3000);
+                    RS.confirm("Not all documents were published.", "notice", 3000);
                 }
 
-                var errorMsg = "Publication was " + (publishedLength > 0 ? "partially" : "") + " unsuccessful";
-                if (publishedLength > 0) {
-                    errorMsg += ", " + unpublishedLength + " document" + (unpublishedLength === 1 ? " was" : "s were") + " skipped";
-                }
-                var errorsLength = (result.errorMsg && result.errorMsg.errorMessages) ? result.errorMsg.errorMessages.length : 0;
-                if (errorsLength) {
-                    errorMsg += " because of the following error" + (errorsLength > 1 ? "s" : "") + ": <br/> - "
-                        + getValidationErrorString(result.errorMsg, "<br/> - ");
-                } else {
-                    errorMsg += ". Maybe the document" + (unpublishedLength === 1 ? " is" : "s are") + " already published?";
-                }
-                apprise(errorMsg);
+                const outcomeMsg = publishedLength === 0
+                    ? "Publication was unsuccessful."
+                    : (unpublishedLength === 1
+                        ? "Publication was partially unsuccessful, 1 document was skipped."
+                        : `Publication was partially unsuccessful, ${unpublishedLength} documents were skipped.`);
+                const errorsLength = (result.errorMsg && result.errorMsg.errorMessages) ? result.errorMsg.errorMessages.length : 0;
+                const reasonMsg = errorsLength
+                    ? `${errorsLength === 1 ? "The following error was reported:" : "The following errors were reported:"}<br/> - ${getValidationErrorString(result.errorMsg, "<br/> - ")}`
+                    : (unpublishedLength === 1
+                        ? "Maybe the document is already published?"
+                        : "Maybe the documents are already published?");
+                apprise(`${outcomeMsg} ${reasonMsg}`);
 
                 // TO-DO: RSPAC-1287 Focus the apprise dialog
             }
         } else {
-            apprise("Publishing did not complete: " + getValidationErrorString(result.errorMsg));
+            apprise("Publishing did not complete. " + getValidationErrorString(result.errorMsg));
             // TO-DO: RSPAC-1287 Focus the apprise dialog
         }
     }
-}
-
-function onlyNormalDocsOnTypesList(types) {
-    var onlyNormalDocs = true;
-    if (types) {
-        $.each(types, function(i, type) {
-            if (type !== 'NORMAL') {
-                onlyNormalDocs = false;
-                return false;
-            }
-        });
-    }
-    return onlyNormalDocs;
 }
 
 const clearPublishOnInternetFields = () => {
@@ -221,14 +215,14 @@ const clearPublishOnInternetFields = () => {
     $("#publicationDescription").val('');
     $("#displayContactDetails").prop( "checked", false );
     disablePublishButton();
-    updateSelection(".publishSelected", 'publish', true);
+    setConfirmedLabel(".publishSelected", false);
 }
 const clearPublishLinkFields = () => {
     $('input[id="make_public_link_confirmation"]').val('');
     $("#publicationLinkDescription").val('');
     $("#displayLinkContactDetails").prop( "checked", false );
     disablePublishButton();
-    updateSelection(".publishLinkSelected", 'publish', true);
+    setConfirmedLabel(".publishLinkSelected", false);
 }
 
 $(document).on("click", "#shareRecord", function (e) {
@@ -298,31 +292,25 @@ $(document).on('click', '#clearPublishLink', function() {
 
 $(document).on('input','#make_public_confirmation', function() {
     if($('input[id="make_public_confirmation"]').val().toLowerCase() === 'confirm'){
-        updateSelection(".publishSelected", 'publish', false);
-        $(".publishSelected").text("(confirmed)");
+        setConfirmedLabel(".publishSelected", true);
         enablePublishButton();
     } else {
-        updateSelection(".publishSelected", 'publish', true);
+        setConfirmedLabel(".publishSelected", false);
         disablePublishButton();
     }
 });
 
 $(document).on('input','#make_public_link_confirmation', function() {
     if($('input[id="make_public_link_confirmation"]').val().toLowerCase() === 'confirm'){
-        updateSelection(".publishLinkSelected", 'publish', false);
-        $(".publishLinkSelected").text("(confirmed)");
+        setConfirmedLabel(".publishLinkSelected", true);
         enablePublishButton();
     } else {
-        updateSelection(".publishLinkSelected", 'publish', true);
+        setConfirmedLabel(".publishLinkSelected", false);
         disablePublishButton();
     }
 });
 
-//Updates the class with a specfic piece of text. If clear is supplied and true then empty text.
-function updateSelection (className, groupName, clear) {
-    if(clear) {
-        $(className).text("");
-    } else {
-        $(className).text("(" + groupName + " selected)");
-    }
+// Shows or clears the confirmation marker next to a publish section heading.
+function setConfirmedLabel(className, confirmed) {
+    $(className).text(confirmed ? "(confirmed)" : "");
 }

@@ -1101,77 +1101,8 @@ bootstrap-custom-flat .navbar-inverse .navbar-nav > .open > a, .bootstrap-custom
   background-color: #00aeef;
 }
 
-/* Sharing checkbox */
-.folderShare .groupSelectContainer {
-  display: flex;
-  margin-bottom: 10px;
-  background-color: #00aeef;
-  border-top-left-radius: 25px;
-  border-bottom-left-radius: 25px;
-  transition: background-color 0.5s ease;
-}
-
-.folderShare .groupSelectContainer.active {
-  background-color: #575c70;
-}
-
-.folderShare .groupSelectContainer:hover {
-  background-color: #575c70;
-}
-
-.folderShare .radioContainer {
-  background-color: #575c70;
-  padding: 10px;
-  border-top-left-radius: 25px;
-  border-bottom-left-radius: 25px;
-}
-
-.folderShare .labelContainer {
-  flex: 1;
-  color: #ffffff;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  position: relative;
-}
-
-.folderShare .labelContainer select {
-  position: absolute;
-  right: 10px;
-}
-
-.labelContainer label {
-  display: inline-block;
-  width: 100%;
-  padding: 11px;
-  text-align: left;
-}
-
-.folderShare .labelContainer label:hover, .folderShare .radioContainer input:hover {
-  cursor: pointer;
-}
-
-.resetContainer {
-  margin-top: 20px;
-  display: none;
-}
-
-.accordion .resetContainer button {
-  width: auto;
-  background-color: #00aeef;
-  padding: 0px 10px 0 10px;
-}
-
-.accordion .resetContainer button:hover {
-  background-color: #575c70;;
-}
-
 .accordion p {
   margin-bottom: 5px;
-}
-
-#folderChooserInfo-shareIntoFolder {
-  margin-top: 10px;
 }
 
 /* Modal button changes */
