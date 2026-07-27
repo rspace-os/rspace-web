@@ -15,6 +15,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import java.security.Principal;
 import java.util.List;
@@ -29,6 +30,7 @@ import org.springframework.http.ResponseEntity;
 class ReferencingInventoryItemsControllerTest {
 
   @Mock private InventoryLinkManager inventoryLinkManager;
+  @Mock private InventoryFileApiManager inventoryFileApiManager;
   @Mock private UserManager userManager;
   @Mock private MessageSourceUtils messageSource;
   @InjectMocks private ReferencingInventoryItemsController controller;
@@ -74,6 +76,38 @@ class ReferencingInventoryItemsControllerTest {
     Principal principal = () -> "bob";
 
     ResponseEntity<?> response = controller.getReferencingInventoryItems("bad!", principal);
+
+    assertEquals(404, response.getStatusCode().value());
+    assertTrue(response.getBody() instanceof ErrorList);
+  }
+
+  @Test
+  void attachingEndpointDelegatesToFileManager() {
+    User user = new User("bob");
+    when(userManager.getUserByUsername("bob")).thenReturn(user);
+    List<ApiInventoryReferencingItem> rows = List.of(new ApiInventoryReferencingItem());
+    when(inventoryFileApiManager.findAttachingItems("GL5", user)).thenReturn(rows);
+    Principal principal = () -> "bob";
+
+    ResponseEntity<?> response = controller.getAttachingInventoryItems("GL5", principal);
+
+    assertSame(rows, ((ApiInventoryReferencingItems) response.getBody()).getReferencingItems());
+    verify(inventoryFileApiManager).findAttachingItems(eq("GL5"), eq(user));
+  }
+
+  @Test
+  void attachingEndpointMalformedGlobalIdReturnsJsonNotFound() {
+    // the file manager throws ApiRuntimeException for a bad/non-gallery id; this @Controller has no
+    // @ControllerAdvice, so it must translate that to a JSON 404 rather than an HTML 500
+    User user = new User("bob");
+    when(userManager.getUserByUsername("bob")).thenReturn(user);
+    when(inventoryFileApiManager.findAttachingItems("bad!", user))
+        .thenThrow(new ApiRuntimeException("errors.inventory.field.link.targetNotFound", "bad!"));
+    when(messageSource.getMessage(eq("errors.inventory.field.link.targetNotFound"), any()))
+        .thenReturn("bad! does not exist, or you do not have permission to view it.");
+    Principal principal = () -> "bob";
+
+    ResponseEntity<?> response = controller.getAttachingInventoryItems("bad!", principal);
 
     assertEquals(404, response.getStatusCode().value());
     assertTrue(response.getBody() instanceof ErrorList);

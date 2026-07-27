@@ -790,4 +790,21 @@ function journal($, extensions = default_extensions) {
   $(window).on('resize', function(e) {
     repositionEntryNavButtons();
   });
+
+  // When a notebook is created directly in a shared group folder the server
+  // redirects here with ?sharedWithGroup=<group>. Mirror the document editor
+  // (coreEditor.js) and confirm the automatic share to the user, since the
+  // notebook editor does not load coreEditor.js.
+  $(document).ready(function() {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has("sharedWithGroup")) {
+      RS.confirm(
+        "<b>This notebook has been automatically shared with edit rights with all members of " +
+          RS.escapeHtml(searchParams.get("sharedWithGroup")) +
+          ". It remains available in your own workspace.</b><br />To amend the permissions, visit the <a href=\"/record/share/manage\">Shared Documents</a> page.",
+        "success",
+        "infinite"
+      );
+    }
+  });
 };
