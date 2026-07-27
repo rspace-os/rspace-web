@@ -42,7 +42,7 @@ public class InventorySearchInputValidator extends SearchInputValidator {
     for (int i = 0; i < terms.length; i++) {
       if (options[i].equals(INVENTORY_SEARCH_OPTION)) {
         if (terms[i].startsWith("*") || terms[i].startsWith("?")) {
-          errors.reject("errors.textquerywildcardstartdisallowed", new String[] {terms[i]}, null);
+          errors.reject("errors.textQueryWildcardStartDisallowed", new String[] {terms[i]}, null);
           return;
         }
       }

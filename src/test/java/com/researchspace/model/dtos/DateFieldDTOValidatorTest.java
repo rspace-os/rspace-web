@@ -52,7 +52,7 @@ public class DateFieldDTOValidatorTest {
 
     validator.validate(dto, errors);
     assertTrue(errors.hasErrors());
-    assertTrue(ValidationTestUtils.hasError("no.name", errors));
+    assertTrue(ValidationTestUtils.hasError("errors.noValue.name", errors));
   }
 
   @Test

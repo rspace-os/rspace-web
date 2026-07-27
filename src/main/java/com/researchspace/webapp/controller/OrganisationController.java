@@ -23,8 +23,7 @@ public class OrganisationController extends BaseController {
       @RequestParam(value = "term", required = true) String term) {
     final int minLength = 4;
     if (term.length() < minLength) {
-      ErrorList error =
-          ErrorList.of(getText("errors.minlength", new String[] {"Search term", "4"}));
+      ErrorList error = ErrorList.of(getText("errors.searchTermMinLength", new Object[] {4}));
       return new AjaxReturnObject<List<Organisation>>(new ArrayList<Organisation>(), error);
     }
 

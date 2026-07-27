@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.MediaUtils.getExtension;
+import static com.researchspace.core.util.StringAbbreviationUtils.abbreviate;
 import static com.researchspace.model.preference.Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL;
 import static com.researchspace.model.preference.Preference.BROADCAST_REQUEST_BY_EMAIL;
 import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMENT_DELETED_PREF;
@@ -11,7 +12,6 @@ import static com.researchspace.model.preference.Preference.NOTIFICATION_REQUEST
 import static com.researchspace.model.preference.Preference.PROCESS_COMPLETED_PREF;
 import static com.researchspace.model.preference.Preference.PROCESS_FAILED_PREF;
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.StringUtils.abbreviate;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -107,7 +107,7 @@ import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.MessageSource;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -140,12 +140,11 @@ public class UserProfileController extends BaseController {
   private static final long MAX_PROFILE_SIZE = 1_000_000; // 1Mb
   private static final String FIRST_NAME = "firstName";
   private static final String ERRORS_REQUIRED = "errors.required";
-  private static final String ERRORS_MAXLENGTH = "errors.maxlength";
+  private static final String ERRORS_MAXLENGTH = "errors.maxLength";
   private static final String AFFILIATION = "affiliation";
   public static final String API_KEY_IS_ACTIVE = "apiKey is ACTIVE";
-  private static final String USER_NOT_FOUND = "errors.user.notfound";
+  private static final String USER_NOT_FOUND = "errors.user.notFound";
 
-  private @Autowired MessageSource messageSource;
   private @Autowired IReauthenticator reauthenticator;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissionUtils;
   private @Autowired CommunityUserManager cloudUserManager;
@@ -212,8 +211,7 @@ public class UserProfileController extends BaseController {
       try {
         user = userManager.getUser(userId + "");
       } catch (ObjectRetrievalFailureException e) {
-        throw new UserNotFoundException(
-            messageSource.getMessage(USER_NOT_FOUND, new Object[] {userId}, null));
+        throw new UserNotFoundException(messages.getMessage(USER_NOT_FOUND, new Object[] {userId}));
       }
     }
 
@@ -388,26 +386,46 @@ public class UserProfileController extends BaseController {
     public void validate(Object target, Errors errors) {
       User u = (User) target;
       ValidationUtils.rejectIfEmpty(
-          errors, FIRST_NAME, ERRORS_REQUIRED, new Object[] {"First name"});
+          errors,
+          FIRST_NAME,
+          ERRORS_REQUIRED,
+          new Object[] {new DefaultMessageSourceResolvable("label.firstName")});
       ValidationUtils.rejectIfEmpty(
-          errors, "lastName", ERRORS_REQUIRED, new Object[] {"Last name"});
+          errors,
+          "lastName",
+          ERRORS_REQUIRED,
+          new Object[] {new DefaultMessageSourceResolvable("label.lastName")});
       if (u.getFirstName().length() > User.DEFAULT_MAXFIELD_LEN) {
-        errors.rejectValue(FIRST_NAME, ERRORS_MAXLENGTH, new String[] {FIRST_NAME, "255"}, "");
+        errors.rejectValue(
+            FIRST_NAME,
+            ERRORS_MAXLENGTH,
+            new Object[] {new DefaultMessageSourceResolvable("label.firstName"), "255"},
+            null);
       }
       if (u.getLastName().length() > User.DEFAULT_MAXFIELD_LEN) {
-        errors.rejectValue("lastName", ERRORS_MAXLENGTH, new String[] {FIRST_NAME, "255"}, "");
+        errors.rejectValue(
+            "lastName",
+            ERRORS_MAXLENGTH,
+            new Object[] {new DefaultMessageSourceResolvable("label.lastName"), "255"},
+            null);
       }
       if (properties.isCloud()) {
         ValidationUtils.rejectIfEmpty(
-            errors, AFFILIATION, ERRORS_REQUIRED, new Object[] {"Affiliation"});
+            errors,
+            AFFILIATION,
+            ERRORS_REQUIRED,
+            new Object[] {new DefaultMessageSourceResolvable("label.affiliation")});
         // rspac-932
         if (!StringUtils.isBlank(u.getAffiliation())
             && u.getAffiliation().length() > Organisation.MAX_INDEXABLE_UTF_LENGTH) {
           errors.rejectValue(
               AFFILIATION,
               ERRORS_MAXLENGTH,
-              new String[] {AFFILIATION, "" + Organisation.MAX_INDEXABLE_UTF_LENGTH},
-              "");
+              new Object[] {
+                new DefaultMessageSourceResolvable("label.affiliation"),
+                Organisation.MAX_INDEXABLE_UTF_LENGTH
+              },
+              null);
         }
       }
     }
@@ -434,22 +452,20 @@ public class UserProfileController extends BaseController {
     String errorMsg = null;
     if (email.length() >= User.DEFAULT_MAXFIELD_LEN) {
       errorMsg =
-          "Email address is too long - should be less than "
-              + User.DEFAULT_MAXFIELD_LEN
-              + " characters";
+          getText("userProfile.email.errors.tooLong", new Object[] {User.DEFAULT_MAXFIELD_LEN});
     } else if (checkInputString(email)
         || checkInputString(emailConfirm)
         || checkInputString(password)) {
-      errorMsg = "Please enter data in all fields";
+      errorMsg = getText("errors.allFields.required");
     } else if (!reauthenticator.reauthenticate(user, password)) {
       logAuthenticationFailureOnEmailChange(request, user);
-      errorMsg = "The current password is incorrect";
+      errorMsg = getText("userProfile.email.errors.incorrectPassword");
     } else if (!email.equalsIgnoreCase(emailConfirm)) {
-      errorMsg = "New email field does not match the confirm email";
+      errorMsg = getText("userProfile.email.errors.confirmationMismatch");
     } else if (email.equals(user.getEmail())) {
-      errorMsg = "Provided email is the same as your current email";
+      errorMsg = getText("userProfile.email.errors.unchanged");
     } else if (CollectionUtils.isNotEmpty(userManager.getUserByEmail(email))) {
-      errorMsg = "There is already user registered with this email";
+      errorMsg = getText("userProfile.email.errors.alreadyRegistered");
     }
     if (errorMsg != null) {
       return new AjaxReturnObject<>(null, ErrorList.of(errorMsg));
@@ -492,14 +508,22 @@ public class UserProfileController extends BaseController {
     if (!StringUtils.isEmpty(affiliation) && properties.isCloud()) {
 
       if (affiliation.length() > User.DEFAULT_MAXFIELD_LEN) {
-        errors = ErrorList.of(getText(ERRORS_MAXLENGTH, new String[] {AFFILIATION, "255"}));
+        errors =
+            ErrorList.of(
+                getText(
+                    ERRORS_MAXLENGTH,
+                    new Object[] {new DefaultMessageSourceResolvable("label.affiliation"), "255"}));
         return new AjaxReturnObject<>(null, errors);
       } else {
         user.setAffiliation(affiliation, ProductType.COMMUNITY);
       }
 
     } else if (StringUtils.isEmpty(affiliation) && properties.isCloud()) {
-      errors = ErrorList.of(getText(ERRORS_REQUIRED, new String[] {"Affiliation"}));
+      errors =
+          ErrorList.of(
+              getText(
+                  ERRORS_REQUIRED,
+                  new Object[] {new DefaultMessageSourceResolvable("label.affiliation")}));
       return new AjaxReturnObject<>(null, errors);
     }
 
@@ -526,10 +550,12 @@ public class UserProfileController extends BaseController {
       User user, String firstNameInput, String surnameInput) {
     ErrorList el = new ErrorList();
     if ((!user.getFirstName().equals(firstNameInput)) && (!properties.isProfileNameEditable())) {
-      el.addErrorMsg(authGenerator.getFailedMessage(user, " edit first name"));
+      el.addErrorMsg(
+          getText("errors.authorization.failure.editFirstName", new Object[] {user.getUsername()}));
     }
     if ((!user.getLastName().equals(surnameInput)) && (!properties.isProfileNameEditable())) {
-      el.addErrorMsg(authGenerator.getFailedMessage(user, " edit last name"));
+      el.addErrorMsg(
+          getText("errors.authorization.failure.editLastName", new Object[] {user.getUsername()}));
     }
     return el;
   }
@@ -589,9 +615,8 @@ public class UserProfileController extends BaseController {
 
   private void throwUnacceptableImage(MultipartFile imageFile) {
     throw new IllegalArgumentException(
-        String.format(
-            "RSpace could not interpret  file %s as an image file",
-            imageFile.getOriginalFilename()));
+        getText(
+            "userProfile.image.errors.notAnImage", new Object[] {imageFile.getOriginalFilename()}));
   }
 
   /** Get the profile image */
@@ -655,7 +680,7 @@ public class UserProfileController extends BaseController {
       userManager.setAsPrivateProfile(prefsToEnable.contains("PRIVATE_PROFILE"), user);
     }
     analyticsManager.usersPreferencesChanged(user, req);
-    return new AjaxReturnObject<>(getText("userProfile.messageSettingsChanged.msg"), null);
+    return new AjaxReturnObject<>(getText("userProfile.messageSettingsChanged.confirmation"), null);
   }
 
   /**
@@ -699,12 +724,11 @@ public class UserProfileController extends BaseController {
       @RequestParam("password") String pwd, HttpServletRequest req) {
     if (isEmpty(pwd)) {
       return new AjaxReturnObject<>(
-          null, ErrorList.of(getText(ERRORS_REQUIRED, new Object[] {"Password"})));
+          null, ErrorList.of(getText(ERRORS_REQUIRED, new Object[] {getText("label.password")})));
     }
 
     if (SecurityUtils.getSubject().isRunAs() && !sysadminApiKeyGeneration) {
-      return new AjaxReturnObject<>(
-          null, ErrorList.of("API key value cannot be accessed when 'operating as' another user"));
+      return new AjaxReturnObject<>(null, ErrorList.of(getText("userProfile.apiKey.errors.runAs")));
     }
 
     User user = userManager.getAuthenticatedUserInSession();
@@ -713,7 +737,7 @@ public class UserProfileController extends BaseController {
           "Failed attempt to authenticate creation of a new API Key for User [{}], from {}",
           user.getUsername(),
           RequestUtil.remoteAddr(req));
-      return new AjaxReturnObject<>(null, ErrorList.of("Invalid password"));
+      return new AjaxReturnObject<>(null, ErrorList.of(getText("errors.password.invalid")));
     }
 
     UserApiKey apiKey = apiKeyMgr.createKeyForUser(user);
@@ -772,14 +796,14 @@ public class UserProfileController extends BaseController {
   @GetMapping("/ajax/apiKeyValue")
   public @ResponseBody AjaxReturnObject<String> getApiKeyValue() {
     if (SecurityUtils.getSubject().isRunAs()) {
-      return new AjaxReturnObject<>(
-          null, ErrorList.of("API key value cannot be accessed when 'operating as' another user"));
+      return new AjaxReturnObject<>(null, ErrorList.of(getText("userProfile.apiKey.errors.runAs")));
     }
     User user = userManager.getAuthenticatedUserInSession();
     SECURITY_LOG.info("User [{}] asked to see their API key", user.getUsername());
 
     if (!apiKeyMgr.isKeyExistingForUser(user)) {
-      return new AjaxReturnObject<>(null, ErrorList.of("API key is not set"));
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(getText("userProfile.apiKey.errors.notSet")));
     }
     return new AjaxReturnObject<>(API_KEY_IS_ACTIVE, null);
   }
@@ -1159,17 +1183,17 @@ public class UserProfileController extends BaseController {
 
     if (!subject.equals(targetUser)
         && !systemPropertyPermissionUtils.isPropertyAllowed(group, "group_autosharing.available")) {
-      return "Please contact your system administrator to enable this feature";
+      return getText("common:profile.groups.manager.contactAdmin");
     } else if (!group.isLabGroup()) {
-      return "Can only manage autoshare status for lab groups";
+      return getText("autoshare.errors.labGroupRequired");
     }
 
     boolean isAutoshareEnabled =
         groupManager.getGroup(group.getId()).getUserGroupForUser(targetUser).isAutoshareEnabled();
     if (isAutoshareEnabled == targetAutoshareStatus) {
-      return String.format(
-          "Autosharing for user %s in group %s has already been set to %s",
-          subject.getUsername(), group.getDisplayName(), targetAutoshareStatus);
+      return getText(
+          "autoshare.errors.userAlreadySet",
+          new Object[] {subject.getUsername(), group.getDisplayName(), targetAutoshareStatus});
     }
 
     if (subject.equals(targetUser)
@@ -1177,9 +1201,9 @@ public class UserProfileController extends BaseController {
       return null;
     }
 
-    return String.format(
-        "User %s attempted to modify user's %s autoshare status without permission",
-        subject.getUsername(), targetUser.getUsername());
+    return getText(
+        "autoshare.errors.userForbidden",
+        new Object[] {subject.getUsername(), targetUser.getUsername()});
   }
 
   /** Boolean query as to whether autoshare is currently in progress. */
@@ -1236,15 +1260,17 @@ public class UserProfileController extends BaseController {
   @ResponseBody
   public AjaxReturnObject<Boolean> selfDeclareAsPi(Principal subject) {
     if (!properties.isSSOSelfDeclarePiEnabled()) {
-      return new AjaxReturnObject<>(false, ErrorList.of("Self-declaring PI not enabled"));
+      return new AjaxReturnObject<>(
+          false, ErrorList.of(getText("userProfile.selfDeclarePi.errors.disabled")));
     }
 
     User user = userManager.getUserByUsername(subject.getName(), true);
     if (user.isPI()) {
-      return new AjaxReturnObject<>(false, ErrorList.of("User is already a PI."));
+      return new AjaxReturnObject<>(
+          false, ErrorList.of(getText("userProfile.selfDeclarePi.errors.alreadyPi")));
     } else if (!user.isAllowedPiRole()) {
       return new AjaxReturnObject<>(
-          false, ErrorList.of("User cannot self-declare as a PI (isAllowedPiRole=false)."));
+          false, ErrorList.of(getText("userProfile.selfDeclarePi.errors.notAllowed")));
     }
     userRoleHandler.doGrantGlobalPiRoleToUser(user);
     permissionUtils.refreshCache();
@@ -1261,21 +1287,20 @@ public class UserProfileController extends BaseController {
   @ResponseBody
   public AjaxReturnObject<Boolean> selfDeclareAsRegularUser(Principal subject) {
     if (!properties.isSSOSelfDeclarePiEnabled()) {
-      return new AjaxReturnObject<>(false, ErrorList.of("Self-declaring PI not enabled."));
+      return new AjaxReturnObject<>(
+          false, ErrorList.of(getText("userProfile.selfDeclarePi.errors.disabled")));
     }
     User user = userManager.getUserByUsername(subject.getName(), true);
     if (!user.isPI()) {
-      return new AjaxReturnObject<>(false, ErrorList.of("User is not a PI."));
+      return new AjaxReturnObject<>(
+          false, ErrorList.of(getText("userProfile.selfDeclarePi.errors.notPi")));
     }
     try {
       userRoleHandler.doRevokeGlobalPiRoleFromUser(user);
     } catch (IllegalStateException ise) {
       log.warn("Couldn't revoke pi role", ise);
       return new AjaxReturnObject<>(
-          false,
-          ErrorList.of(
-              "You must delete "
-                  + "or transfer over all LabGroups before you can remove your PI status."));
+          false, ErrorList.of(getText("userProfile.selfDeclarePi.errors.hasLabGroups")));
     }
     permissionUtils.refreshCache();
     return new AjaxReturnObject<>(!user.isPI(), null);

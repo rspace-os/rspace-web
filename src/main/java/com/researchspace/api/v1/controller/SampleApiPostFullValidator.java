@@ -23,7 +23,6 @@ import org.springframework.validation.Validator;
 public class SampleApiPostFullValidator implements Validator {
 
   @Autowired private ApiFieldsHelper fieldHelper;
-  private static final String SAMPLE_ENTITY_NAME_TYPE = "sample";
 
   @Data
   @AllArgsConstructor
@@ -33,7 +32,7 @@ public class SampleApiPostFullValidator implements Validator {
     @Override
     public void accept(String errorMessage) {
       if (!StringUtils.isEmpty(errorMessage)) {
-        errors.reject("", errorMessage);
+        errors.reject("errors.inventory.field.validation", new Object[] {errorMessage}, null);
       }
     }
   }
@@ -58,7 +57,7 @@ public class SampleApiPostFullValidator implements Validator {
     // if we are defining instructions to create subsamples,we can't include subsample definition as
     // well.
     if (subSamplesCount != null && !CollectionUtils.isEmpty(apiSample.getSubSamples())) {
-      errors.reject("", "subSamples array must be empty if newSampleSubSamplesCount is provided");
+      errors.reject("errors.inventory.sample.subSamplesArrayNotEmpty");
     }
     if (subSamplesCount != null) {
       verifyAcceptableCount(subSamplesCount, "subSamplesCount", errors);
@@ -67,7 +66,8 @@ public class SampleApiPostFullValidator implements Validator {
 
   private void verifyAcceptableCount(Integer actual, String field, Errors errors) {
     if (actual < 1 || actual > 100) {
-      errors.reject("", String.format("%s supported values are 1-100, was [%d]", field, actual));
+      errors.reject(
+          "errors.inventory.sample.subSamplesCountOutOfRange", new Object[] {field, actual}, null);
     }
   }
 
@@ -85,8 +85,7 @@ public class SampleApiPostFullValidator implements Validator {
             new ErrorAggregator(errors));
       }
 
-      fieldHelper.validateMandatoryFieldsForEntityPost(
-          SAMPLE_ENTITY_NAME_TYPE, incomingApiFields, templateFields, errors);
+      fieldHelper.validateMandatoryFieldsForEntityPost(incomingApiFields, templateFields, errors);
     }
   }
 
@@ -99,11 +98,11 @@ public class SampleApiPostFullValidator implements Validator {
       if (!templateUnit.isComparable(sampleUnit)) {
         errors.rejectValue(
             "quantity",
-            "errors.inventory.sample.unit.incompatible.with.template",
+            "errors.inventory.sample.unitIncompatibleWithTemplate",
             new Object[] {
               sampleUnit.getId(), sampleUnit.name(), templateUnit.getId(), templateUnit.name()
             },
-            "incompatible sample unit");
+            null);
       }
     }
   }

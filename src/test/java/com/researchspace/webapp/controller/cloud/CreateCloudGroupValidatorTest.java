@@ -42,7 +42,7 @@ public class CreateCloudGroupValidatorTest extends SpringTransactionalTest {
     Errors errors = setUpErrorsObject();
     createCloudGroupValidator.validate(createCloudGroup, errors);
     assertTrue(errors.hasFieldErrors());
-    assertTrue(ValidationTestUtils.hasError("groupName.required", errors));
+    assertTrue(ValidationTestUtils.hasError("groups.creation.errors.groupNameRequired", errors));
 
     createCloudGroup.setGroupName("testGroup");
 
@@ -58,28 +58,29 @@ public class CreateCloudGroupValidatorTest extends SpringTransactionalTest {
     errors = setUpErrorsObject();
     createCloudGroupValidator.validate(createCloudGroup, errors);
     assertTrue(errors.hasFieldErrors());
-    assertTrue(ValidationTestUtils.hasError("emails.incorrect", errors));
+    assertTrue(ValidationTestUtils.hasError("groups.creation.errors.memberEmailInvalid", errors));
 
     // too long
     createCloudGroup.setEmails(new String[] {randomAlphanumeric(maxEmailLength) + "@mail.com"});
     errors = setUpErrorsObject();
     createCloudGroupValidator.validate(createCloudGroup, errors);
     assertTrue(errors.hasFieldErrors());
-    assertTrue(ValidationTestUtils.hasError("emails.incorrect", errors));
+    assertTrue(ValidationTestUtils.hasError("groups.creation.errors.memberEmailInvalid", errors));
 
     // invalid syntax
     createCloudGroup.setEmails(new String[] {randomAlphanumeric(normalEmailLength)});
     errors = setUpErrorsObject();
     createCloudGroupValidator.validate(createCloudGroup, errors);
     assertTrue(errors.hasFieldErrors());
-    assertTrue(ValidationTestUtils.hasError("emails.incorrect", errors));
+    assertTrue(ValidationTestUtils.hasError("groups.creation.errors.memberEmailInvalid", errors));
 
     // login user should not be in invitee list
     createCloudGroup.setEmails(new String[] {loginUser.getEmail()});
     errors = setUpErrorsObject();
     createCloudGroupValidator.validate(createCloudGroup, errors);
     assertTrue(errors.hasFieldErrors());
-    assertTrue(ValidationTestUtils.hasError("emails.invalid", errors));
+    assertTrue(
+        ValidationTestUtils.hasError("groups.creation.errors.currentUserAlreadyMember", errors));
 
     createCloudGroup.setEmails(
         new String[] {"user@mail.com", "user2@mail.com", "user3@mail.com", "user4@mail.com"});
@@ -92,20 +93,20 @@ public class CreateCloudGroupValidatorTest extends SpringTransactionalTest {
     createCloudGroup.setPiEmail(null);
     createCloudGroupValidator.validate(createCloudGroup, errors);
     assertTrue(errors.hasFieldErrors());
-    assertTrue(ValidationTestUtils.hasError("principalEmail.required", errors));
+    assertTrue(ValidationTestUtils.hasError("groups.creation.errors.piEmailRequired", errors));
     // another user = pi, therefore is nominated
     createCloudGroup.setPiEmail(randomAlphanumeric(maxEmailLength) + "@mail.com");
     errors = setUpErrorsObject();
     createCloudGroupValidator.validate(createCloudGroup, errors);
     assertTrue(errors.hasFieldErrors());
-    assertTrue(ValidationTestUtils.hasError("principalEmail.incorrect", errors));
+    assertTrue(ValidationTestUtils.hasError("groups.creation.errors.piEmailInvalid", errors));
 
     // pi email too long
     createCloudGroup.setPiEmail(randomAlphanumeric(normalEmailLength));
     errors = setUpErrorsObject();
     createCloudGroupValidator.validate(createCloudGroup, errors);
     assertTrue(errors.hasFieldErrors());
-    assertTrue(ValidationTestUtils.hasError("principalEmail.incorrect", errors));
+    assertTrue(ValidationTestUtils.hasError("groups.creation.errors.piEmailInvalid", errors));
 
     createCloudGroup.setPiEmail(randomAlphanumeric(normalEmailLength) + "@.mail.com");
     errors = setUpErrorsObject();

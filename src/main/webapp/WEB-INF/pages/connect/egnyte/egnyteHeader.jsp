@@ -11,8 +11,7 @@
 
     function showEgnyteNotConfiguredToast() {
         $().toastmessage('showToast', {
-          text: 'Connection to your Egnyte account is not configured correctly, please fix it on' 
-                 + '<a href="/egnyte/egnyteConnectionSetup">connection setup page</a>',
+          text: RS.msg("legacyjs.egnyte.notConfiguredToast"),
           sticky: true,
           type: 'warning'
         });

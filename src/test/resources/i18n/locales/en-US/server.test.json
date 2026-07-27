@@ -1,0 +1,7 @@
+{
+  "test": {
+    "required": "{0} is a required field.",
+    "itemCount": "{0, plural, one {# item} other {# items}}",
+    "role": "{0, select, admin {Administrator} other {Regular user}}"
+  }
+}

@@ -2,8 +2,8 @@
 
 
 <head>
-    <meta name="heading" content="History"/>
-    <title>Document History</title>
+    <meta name="heading" content="<spring:message code='pageHeadings.history'/>"/>
+    <title><spring:message code="revisionHistory.pageTitle"/></title>
 
     <!-- moved to default.jsp -->
     <!-- <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" /> -->

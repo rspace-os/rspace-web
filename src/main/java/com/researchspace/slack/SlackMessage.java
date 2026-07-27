@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +57,11 @@ public class SlackMessage {
    * @return
    */
   public String toHTML(Map<String, SlackUser> userMap, @Nullable DateTimeZone timezone) {
+    return toHTML(userMap, timezone, Locale.forLanguageTag("en-US"));
+  }
+
+  public String toHTML(
+      Map<String, SlackUser> userMap, @Nullable DateTimeZone timezone, Locale locale) {
     StringBuilder htmlMessage = new StringBuilder();
 
     htmlMessage.append("<p>");
@@ -63,7 +69,7 @@ public class SlackMessage {
     // Add timestamp if available
     if (timestamp != null && !timestamp.isEmpty() && timezone != null) {
       htmlMessage.append(
-          new SimpleDateFormat(DATE_FORMAT)
+          new SimpleDateFormat(DATE_FORMAT, locale)
               .format(
                   new DateTime(
                           Timestamp.from(

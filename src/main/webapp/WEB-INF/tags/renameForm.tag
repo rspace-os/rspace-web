@@ -14,6 +14,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
 <%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 <script>
 function getFormName () {
 	return $('#documentName').find('.recordName').text();
@@ -21,10 +22,10 @@ function getFormName () {
 
 </script>
 <div id="documentName" class="breadcrumb">
-  Name: <span class="recordName" tabindex="0">${editInfo.name}</span>
+  <spring:message code="dialogs.renameRecord.label.name"/> <span class="recordName" tabindex="0">${editInfo.name}</span>
 </div>
 <div id="renameRecordDirect" style="display:none">
-	<label><fmt:message key="dialogs.renameRecord.label.newName"></fmt:message>
+	<label><spring:message code="dialogs.renameRecord.label.newName"/>
 		<input id="nameFieldDirect" type="text" width="30" value="${editInfo.name}">
 	</label>
 </div>
@@ -40,20 +41,21 @@ function getFormName () {
 		$('#renameRecordDirect').dialog({
 			modal : true,
 			autoOpen:false,
-			title: "Rename",
-			buttons :{
-				Cancel: function (){
+			title: RS.msg("legacyjs.core.action.rename"),
+			buttons :
+			{
+				[RS.msg("legacyjs.common.cancel")]: function (){
 					$(this).dialog('close');
 				},
-				Rename: function (){
+				[RS.msg("legacyjs.core.action.rename")]: function (){
 					var newName=$('#nameFieldDirect').val();
 					if(newName == ""){
-						apprise("Please enter a name!");
-						RS.focusAppriseDialog(true);						
+						apprise(RS.msg("legacyjs.core.renameForm.nameRequired"));
+						RS.focusAppriseDialog(true);
 						return;
 					}
-					$(this).dialog('close');				
-					
+					$(this).dialog('close');
+
 					var data={
 							recordId:recordId,
 							newName:newName
@@ -72,7 +74,7 @@ function getFormName () {
 						}
 					});
 				}
-			}		
+			}
 		});
 		RS.onEnterSubmitJQueryUIDialog('#renameRecordDirect');
 	});

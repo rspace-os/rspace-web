@@ -1,5 +1,8 @@
 package com.researchspace.service.inventory.impl;
 
+import static com.researchspace.service.ListFormatUtils.formatList;
+
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v1.controller.ApiControllerAdvice;
 import com.researchspace.api.v1.controller.ContainersApiController;
 import com.researchspace.api.v1.controller.InstrumentTemplatesApiController;
@@ -23,11 +26,11 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.User;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import java.util.List;
 import java.util.function.BiFunction;
 import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -49,6 +52,7 @@ public class InventoryBulkOperationHandler {
 
   private @Autowired SmartValidator mvcValidator;
   private @Autowired ApiControllerAdvice apiControllerAdvice;
+  private @Autowired MessageSourceUtils messages;
 
   @Getter
   public static class InventoryBulkOperationException extends RuntimeException {
@@ -58,7 +62,7 @@ public class InventoryBulkOperationHandler {
 
     public InventoryBulkOperationException(
         ApiError apiError, ApiInventoryBulkOperationResult partialResult) {
-      super(StringUtils.join(apiError.getErrors(), "; "));
+      super(formatList(apiError.getErrors()));
       this.partialResult = partialResult;
     }
 
@@ -134,8 +138,9 @@ public class InventoryBulkOperationHandler {
                     new ApiError(
                         HttpStatus.NOT_ACCEPTABLE,
                         ApiErrorCodes.CONSTRAINT_VIOLATION.getCode(),
-                        "Errors detected : 1",
-                        "The Sample has at least one Subsample located inside a container");
+                        messages.getMessage("api.errors.detected", new Object[] {1}),
+                        messages.getMessage(
+                            "errors.inventory.sample.deletion.hasStoredSubsamples"));
                 result.addErrorWithRecord(operationResult, err);
                 continue;
               }
@@ -158,7 +163,8 @@ public class InventoryBulkOperationHandler {
     BindException errors = new BindException(recInfo, "record");
     mvcValidator.validate(recInfo, errors);
     if (errors.hasErrors()) {
-      throw new IllegalArgumentException("Validation failed for provided record", errors);
+      throw new IllegalArgumentException(
+          messages.getMessage("errors.inventory.validation.failed"), errors);
     }
   }
 
@@ -170,7 +176,7 @@ public class InventoryBulkOperationHandler {
     return new ApiError(
         HttpStatus.BAD_REQUEST,
         ApiErrorCodes.INVALID_FIELD.getCode(),
-        "Errors detected : 1",
+        messages.getMessage("api.errors.detected", new Object[] {1}),
         e.getMessage());
   }
 
@@ -186,9 +192,16 @@ public class InventoryBulkOperationHandler {
           return containersApiController.createNewContainer((ApiContainer) recInfo, errors, user);
         default:
           throw new IllegalArgumentException(
-              "bulk creation only supports record with "
-                  + "'type' field set to 'SAMPLE' or 'CONTAINER', was: "
-                  + recInfoType);
+              messages.getMessage(
+                  "errors.inventory.bulk.creationUnsupportedType",
+                  new Object[] {
+                    formatList(
+                        List.of(
+                            ApiInventoryRecordType.SAMPLE.name(),
+                            ApiInventoryRecordType.CONTAINER.name()),
+                        ListFormatter.Type.OR),
+                    recInfoType
+                  }));
       }
     } catch (BindException be) {
       throw new IllegalArgumentException(be);

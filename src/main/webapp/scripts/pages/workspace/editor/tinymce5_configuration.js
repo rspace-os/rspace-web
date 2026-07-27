@@ -4,31 +4,31 @@ var tinymcesetup = {
 	height: "580px",
 	menu: {
 		file: {
-			title: 'File',
+			title: RS.msg("legacyjs.tinymce.menu.file"),
 			items: 'optSave optSaves | print | undo redo | searchreplace selectall | optSnip | confShortcuts confToolbar'
 		},
 		insert: {
-			title: 'Insert',
+			title: RS.msg("legacyjs.tinymce.menu.insert"),
 			items: 'optMediaGallery optFromComputer | anchor charmap nonbreaking insertdatetime hr | link optInternallink optComments optSketch optMathjax codesample'
 		},
 		format: {
-			title: 'Format',
+			title: RS.msg("legacyjs.tinymce.menu.format"),
 			items: 'bold italic underline strikethrough superscript subscript | formats | indent outdent | removeformat'
 		},
 		table: {
-			title: 'Table',
+			title: RS.msg("legacyjs.tinymce.menu.table"),
 			items: 'inserttable inserttabledialog optHandsontable tableprops deletetable | cell row column'
 		},
 		view: {
-			title: 'View',
+			title: RS.msg("legacyjs.tinymce.menu.view"),
 			items: 'visualaid visualblocks visualchars optHideShowToolbar | code preview fullscreen'
 		},
 		tools: {
-			title: 'Science Tools',
+			title: RS.msg("legacyjs.tinymce.menu.scienceTools"),
 			items: 'optDilutionCalc optMasterMix optRSpaceTools'
 		},
 		onlineTools: {
-			title: 'Online Tools',
+			title: RS.msg("legacyjs.tinymce.menu.onlineTools"),
 			items: 'optOnlineBC optOnlineCS optOnlinePM optOnlineSA optOnlineSG'
 		},
   },
@@ -65,22 +65,22 @@ var tinymcesetup = {
 
 	table_default_attributes: { width: '300', border: '1', cellpadding: '5' },
 	codesample_languages: [
-		{ text: 'HTML/XML', value: 'markup' },
-		{ text: 'C', value: 'c' },
-		{ text: 'C#', value: 'csharp' },
-		{ text: 'C++', value: 'cpp' },
-		{ text: 'CSS', value: 'css' },
-		{ text: 'Java', value: 'java' },
-		{ text: 'JavaScript', value: 'javascript' },
-		{ text: 'JSON', value: 'json' },
-		{ text: 'LaTeX', value: 'latex' },
-		{ text: 'MATLAB', value: 'matlab' },
-		{ text: 'PHP', value: 'php' },
-		{ text: 'Python', value: 'python' },
-		{ text: 'R', value: 'r' },
-		{ text: 'Ruby', value: 'ruby' },
-		{ text: 'SQL', value: 'sql' },
-		{ text: 'Wiki markup', value: 'wiki' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.htmlXml"), value: 'markup' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.c"), value: 'c' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.csharp"), value: 'csharp' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.cpp"), value: 'cpp' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.css"), value: 'css' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.java"), value: 'java' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.javascript"), value: 'javascript' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.json"), value: 'json' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.latex"), value: 'latex' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.matlab"), value: 'matlab' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.php"), value: 'php' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.python"), value: 'python' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.r"), value: 'r' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.ruby"), value: 'ruby' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.sql"), value: 'sql' },
+		{ text: RS.msg("legacyjs.tinymce.codeSample.wikiMarkup"), value: 'wiki' },
 	],
 	elementpath: false,
 	fontsize_formats: '9px 10px 12px 14px 16px 20px 24px 30px 40px 64px',
@@ -129,7 +129,7 @@ var tinymcesetup = {
 						result = tinyMCE.activeEditor.execCommand("cmdKetcherEditable");
 					}
 					if (!result) {
-						apprise('To operate on a chemical structure please active Chemistry integration on Apps page');
+						apprise(RS.msg("legacyjs.tinymce.chemistryIntegrationRequired"));
 					}
 				} else if ($target.hasClass("attachmentIcon") && $target.parents(".boxVersionLink").length) {
 					showBoxLinkInfo($target.parents(".boxVersionLink"));
@@ -160,29 +160,29 @@ var tinymcesetup = {
 			var $target = $(e.target ? e.target : e.explicitOriginalTarget);
 			if ($target.is('img')) {
 				if ($target.hasClass("commentIcon")) {
-					showFieldHint($fieldName, "Hint: double-click on the comment to see the details");
+					showFieldHint($fieldName, RS.msg("legacyjs.tinymce.hint.comment"));
 				} else if ($target.hasClass("imageDropped") || $target.hasClass("sketch")) {
-					showFieldHint($fieldName, "Hint: double-click on the image to open annotation tool");
+					showFieldHint($fieldName, RS.msg("legacyjs.tinymce.hint.image"));
 				} else if ($target.hasClass("chem")) {
-					showFieldHint($fieldName, "Hint: double-click on the chemical structure to edit");
+					showFieldHint($fieldName, RS.msg("legacyjs.tinymce.hint.chemical"));
 				}
 			} else if ($target.is('a') && $target.hasClass("rsEquationClickableWrapper")) {
-				showFieldHint($fieldName, "Hint: double-click on the math equation to edit");
+				showFieldHint($fieldName, RS.msg("legacyjs.tinymce.hint.equation"));
 			}
 
 			var $targetAttachmentDivArea = $target.is(attachmentSelector) ? $target : $target.parents(attachmentSelector);
 			if ($targetAttachmentDivArea.length) {
-				showFieldHint($fieldName, "Hint: double-click on the attachment to see the details");
+				showFieldHint($fieldName, RS.msg("legacyjs.tinymce.hint.attachment"));
 			}
 
 			var $targetCodeSampleArea = $target.is(codeSampleAreaSelector) ? $target : $target.parents(codeSampleAreaSelector);
 			if ($targetCodeSampleArea.length) {
-				showFieldHint($fieldName, "Hint: double-click on code sample to edit");
+				showFieldHint($fieldName, RS.msg("legacyjs.tinymce.hint.codeSample"));
 			}
 
 			var $targetCalcTableArea = $target.is(calcTableSelector) ? $target : $target.parents(calcTableSelector);
 			if ($targetCalcTableArea.length) {
-				showFieldHint($fieldName, "Hint: double-click on calculation table to edit");
+				showFieldHint($fieldName, RS.msg("legacyjs.tinymce.hint.calculationTable"));
 			}
 		});
 
@@ -384,13 +384,13 @@ var tinymcesetup = {
 			var userRole = "userRole=" + item.role;
 			var recipientnames = "&recipientnames=" + item.username;
 			var messageType = "&messageType=SIMPLE_MESSAGE";
-			var optionalMessage = "&optionalMessage=You were mentioned in " + name + " ( " + global_id + " ).";
+			var optionalMessage = "&optionalMessage=" + RS.msg("legacyjs.tinymce.mentionMessage", name, global_id);
 			var targetFinderPolicy = "&targetFinderPolicy=ALL";
 			var recordId = "&recordId=" + id;
 			var requestParams = userRole + recipientnames + messageType + optionalMessage + targetFinderPolicy + recordId;
 			var jqxhr = $.post('/messaging/ajax/createMention', requestParams);
 			jqxhr.fail(function () {
-				RS.ajaxFailed("Sending message", false, jqxhr);
+				RS.ajaxFailed(RS.msg("legacyjs.messaging.actionSendingMessage"), false, jqxhr);
 			});
 			return '<span style="color: #1465b7"> + ' + item.fullname + ' </span>&nbsp;';
 		}
@@ -401,49 +401,49 @@ var tinymcesetup = {
 tinymce.PluginManager.add('commandpalette', function (editor) {
   if(!window.insertActions) window.insertActions = new Map();
   window.insertActions.set("charmap", {
-    text: 'Special character...',
+    text: RS.msg("legacyjs.tinymce.command.specialCharacter"),
     icon: 'insert-character',
     action: () => {
       editor.execCommand('mceShowCharmap');
     },
   });
   window.insertActions.set("nonbreaking", {
-    text: 'Nonbreaking space',
+    text: RS.msg("legacyjs.tinymce.command.nonbreakingSpace"),
     icon: 'non-breaking',
     action: () => {
       editor.execCommand('mceNonBreaking');
     },
   });
   window.insertActions.set("insertdate", {
-    text: 'Date',
+    text: RS.msg("legacyjs.tinymce.command.date"),
     icon: 'insert-time',
     action: () => {
       editor.execCommand('mceInsertDate');
     },
   });
   window.insertActions.set("inserttime", {
-    text: 'Time',
+    text: RS.msg("legacyjs.tinymce.command.time"),
     icon: 'insert-time',
     action: () => {
       editor.execCommand('mceInsertTime');
     },
   });
   window.insertActions.set("hr", {
-    text: 'Horizontal line',
+    text: RS.msg("legacyjs.tinymce.command.horizontalLine"),
     icon: 'horizontal-rule',
     action: () => {
       editor.execCommand('InsertHorizontalRule');
     },
   });
   window.insertActions.set("link", {
-    text: 'External link',
+    text: RS.msg("legacyjs.tinymce.command.externalLink"),
     icon: 'link',
     action: () => {
       editor.execCommand('mceLink');
     },
   });
   window.insertActions.set("codesample", {
-    text: 'Code sample',
+    text: RS.msg("legacyjs.tinymce.command.codeSample"),
     icon: 'code-sample',
     action: () => {
       editor.execCommand('CodeSample');
@@ -748,7 +748,7 @@ function initTinyMCE(selector) {
 
 		// Backwards-compatiblity warning
 		if (boxEnabled && !hasValidBoxClientId) {
-			apprise('Box integration has not been set up ("clientId" or "clientSecret" missing). Contact your system administrator.');
+			apprise(RS.msg("legacyjs.tinymce.boxConfigMissing"));
 		}
 
 		const chemistryProvider = properties["chemistry.provider"];
@@ -797,7 +797,7 @@ function initTinyMCE(selector) {
 				typeof oneDriveRedirect === "string" && oneDriveRedirect.trim() !== "";
 
 			if (!hasValidOneDriveConfig) {
-				apprise('OneDrive integration has not been set up ("clientId" or "redirectUri" missing). Contact your system administrator.');
+				apprise(RS.msg("legacyjs.tinymce.oneDriveConfigMissing"));
 				oneDriveEnabled = false;
 			} else {
 				localTinymcesetup.external_plugins["onedrive"] = "/scripts/externalTinymcePlugins/onedrive/plugin.min.js";
@@ -986,7 +986,7 @@ function uploadChemFile(event, ed) {
 				let removed_files = files.filter(file => !allowed_extensions.includes(file.name.split('.').pop()));
 
 				if (removed_files.length) {
-					RS.confirm(`The following file${removed_files.length > 1 ? 's have' : ' has'} an incompatible extension: <ul>${removed_files.map(f => `<li>${f.name}</li>`)}</ul>`, 'error', 5000 + removed_files.length * 1000);
+					RS.confirm(RS.msg("legacyjs.workspace.coreEditor.chemFileIncompatibleExtension", removed_files.length, removed_files.map(f => `<li>${f.name}</li>`).join('')), 'error', 5000 + removed_files.length * 1000);
 				}
 				if (allowed_files.length) {
 					var fieldEditing = getFieldIdFromTextFieldId(ed.id);

@@ -60,8 +60,8 @@ public class NfsController extends BaseController {
   protected static final String SESSION_NFS_CLIENTS = "SESSION_NFS_CLIENTS";
   protected static final String SESSION_NFS_DOWNLOAD_PATH = "SESSION_NFS_DOWNLOAD_PATH";
 
-  private static final String NO_FILE_PATHS_IN_DIR_NAME =
-      "netfilestores.login.no.file.paths.in.dir";
+  private static final String NO_FILE_PATHS_IN_DIRECTORY_KEY =
+      "netFileStores.login.noFilePathsInDirectory";
   private static final int DOWNLOAD_BUFFER_SIZE = 1024;
 
   @Autowired private NfsManager nfsManager;
@@ -138,7 +138,7 @@ public class NfsController extends BaseController {
     String targetDirectory = nfsLoginData.getNfsuserdir();
     if (targetDirectory != null) {
       if (targetDirectory.indexOf("/") != -1 || targetDirectory.indexOf("\\") != -1)
-        return getText(NO_FILE_PATHS_IN_DIR_NAME);
+        return getText(NO_FILE_PATHS_IN_DIRECTORY_KEY);
     }
     User user = getPrincipalUser(p);
     aclChecker.assertCanRead(user, nfsManager.getFileSystem(nfsLoginData.getFileSystemId()));
@@ -206,7 +206,8 @@ public class NfsController extends BaseController {
       Principal p) {
 
     if (StringUtils.isEmpty(namePath) || !namePath.contains(":")) {
-      throw new IllegalArgumentException("wrong format of namePath: " + namePath);
+      throw new IllegalArgumentException(
+          getText("netFileStores.errors.invalidNamePathFormat", new Object[] {namePath}));
     }
 
     User user = getPrincipalUser(p);
@@ -221,7 +222,8 @@ public class NfsController extends BaseController {
 
     NfsFileStore fileStore = nfsManager.getNfsFileStore(fileStoreId);
     if (fileStore == null) {
-      throw new IllegalArgumentException("could not find file store with id: " + fileStoreId);
+      throw new IllegalArgumentException(
+          getText("netFileStores.errors.fileStoreNotFound", new Object[] {fileStoreId}));
     }
     aclChecker.assertCanRead(user, fileStore.getFileSystem());
 
@@ -254,7 +256,8 @@ public class NfsController extends BaseController {
       Principal p) {
 
     if (StringUtils.isEmpty(namePath) || !namePath.contains(":")) {
-      throw new IllegalArgumentException("wrong format of namePath: " + namePath);
+      throw new IllegalArgumentException(
+          getText("netFileStores.errors.invalidNamePathFormat", new Object[] {namePath}));
     }
 
     User user = getPrincipalUser(p);
@@ -268,11 +271,12 @@ public class NfsController extends BaseController {
 
     NfsFileStore fileStore = nfsManager.getNfsFileStore(fileStoreId);
     if (fileStore == null) {
-      throw new IllegalArgumentException("could not find file store with id: " + fileStoreId);
+      throw new IllegalArgumentException(
+          getText("netFileStores.errors.fileStoreNotFound", new Object[] {fileStoreId}));
     }
     aclChecker.assertCanRead(user, fileStore.getFileSystem());
     if (fileStore.getFileSystem().isDisabled()) {
-      return getText("net.filestores.error.disabled");
+      return getText("netFileStores.errors.disabled");
     }
 
     Long fileSystemId = fileStore.getFileSystem().getId();
@@ -290,7 +294,7 @@ public class NfsController extends BaseController {
 
     } catch (IOException ex) {
       log.warn(ex.getMessage(), ex);
-      return getText("net.filestores.error.download");
+      return getText("netFileStores.errors.download");
     }
 
     return SUCCESS_MSG;

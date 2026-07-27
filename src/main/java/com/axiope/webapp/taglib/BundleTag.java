@@ -83,7 +83,7 @@ public class BundleTag extends TagSupport {
     }
 
     for (String scriptUrl : assets.getScripts()) {
-      renderModuleScriptTag(scriptUrl);
+      renderScriptTag(scriptUrl);
     }
   }
 
@@ -94,7 +94,19 @@ public class BundleTag extends TagSupport {
     }
 
     renderModuleScriptTag(toDevServerUrl(VITE_CLIENT_PATH));
-    renderModuleScriptTag(toDevServerUrl(entryPath));
+    renderScriptTag(toDevServerUrl(entryPath));
+  }
+
+  boolean usesModuleScripts() {
+    return true;
+  }
+
+  void renderScriptTag(String src) throws JspException {
+    if (usesModuleScripts()) {
+      renderModuleScriptTag(src);
+    } else {
+      renderClassicScriptTag(src);
+    }
   }
 
   boolean isHmrEnabled() {
@@ -174,6 +186,15 @@ public class BundleTag extends TagSupport {
     }
 
     writeTag("<script type=\"module\" src=\"" + escapeHtml(src) + "\"></script>");
+  }
+
+  void renderClassicScriptTag(String src) throws JspException {
+    String dedupeKey = "script:classic:" + src;
+    if (!getRenderedAssetKeys().add(dedupeKey)) {
+      return;
+    }
+
+    writeTag("<script src=\"" + escapeHtml(src) + "\"></script>");
   }
 
   void writeTag(String html) throws JspException {

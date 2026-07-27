@@ -3,8 +3,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title><fmt:message key="${param.titleKey}"/></title>
-    <meta name="heading" content="<fmt:message key='${param.titleKey}'/>"/>
+    <title><spring:message code="${param.titleKey}"/></title>
+    <meta name="heading" content="<spring:message code='${param.titleKey}'/>"/>
     <style>
     	.errorBlock {
     		max-width: 449px;
@@ -26,13 +26,12 @@
 <body>
 <div id="errorContainer" style="margin-top: 20px;">
 <div class="errorBlock">
-    <img src="<c:url value="/images/mainLogo3.svg"/>" alt="RSpace" />
-    <h2><fmt:message key="${param.titleKey}"/></h2>
+    <img src="<c:url value="/images/mainLogo3.svg"/>" alt="<spring:message code='webapp.name'/>" />
+    <h2><spring:message code="${param.titleKey}"/></h2>
 </div>
 <div class="errorBlock">
-    <fmt:message key="${param.messageKey}">
-        <fmt:param><c:url value="${param.linkUrl}"/></fmt:param>
-    </fmt:message>
+    <c:url value="${param.linkUrl}" var="linkUrl"/>
+    <spring:message code="${param.messageKey}" arguments="${linkUrl}"/>
 </div>
 </div>
 </body>

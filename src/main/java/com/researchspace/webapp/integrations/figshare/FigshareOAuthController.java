@@ -140,7 +140,7 @@ public class FigshareOAuthController extends BaseOAuth2Controller {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
               .appName("Figshare")
-              .errorMsg("Exception during token exchange")
+              .errorMsg(getText("apps.oauth.errors.tokenExchange"))
               .errorDetails(e.getResponseBodyAsString())
               .build();
       ConnectionResultPage.addError(

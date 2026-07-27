@@ -23,6 +23,6 @@ public class NfsRSpaceProvidedAuthentication implements NfsAuthentication {
 
   @Override
   public String getMessageCodeForAuthException(NfsAuthException auth) {
-    return "net.filestores.error.connection";
+    return "netFileStores.errors.connection";
   }
 }

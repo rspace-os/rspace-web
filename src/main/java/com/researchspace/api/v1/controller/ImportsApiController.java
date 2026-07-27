@@ -63,7 +63,8 @@ public class ImportsApiController extends BaseApiController implements ImportApi
       @RequestAttribute(name = "user") User user)
       throws IOException {
     if (!file.getOriginalFilename().endsWith("enex")) {
-      throw new IllegalArgumentException("File must be in Evernote XML ending in .enex");
+      throw new IllegalArgumentException(
+          getMessage("workspace.word.import.evernoteExtensionRequired"));
     }
     Folder targetFolder = getTargetFolder(folderId, user);
     permissionUtils.isRecordAccessPermitted(user, targetFolder, PermissionType.READ);

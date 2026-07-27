@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiContainerInfo;
 import com.researchspace.api.v1.model.ApiContainerLocation;
@@ -442,24 +443,21 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("export2"));
     ApiSampleWithFullSubSamples otherUserBasicSample = createBasicSampleForUser(otherUser);
 
-    IllegalArgumentException iae =
+    ApiRuntimeException are =
         assertThrows(
-            IllegalArgumentException.class,
+            ApiRuntimeException.class,
             () ->
                 exportMgr.exportUserItemsAsCsvContent(
                     List.of(testUser.getUsername(), otherUser.getUsername(), "unexisting"),
                     CsvExportMode.FULL,
                     true,
                     testUser));
-    assertEquals(
-        "Cannot export data of users ["
-            + otherUser.getUsername()
-            + ", unexisting] - users not found, or no permission",
-        iae.getMessage());
+    assertEquals("errors.inventory.export.unexportableUsers", are.getErrorCode());
+    assertEquals(otherUser.getUsername() + " and unexisting", (String) are.getArgs()[0]);
 
-    iae =
+    are =
         assertThrows(
-            IllegalArgumentException.class,
+            ApiRuntimeException.class,
             () ->
                 exportMgr.exportSelectedItemsAsCsvContent(
                     List.of(
@@ -470,11 +468,8 @@ public class InventoryExportManagerTest extends SpringTransactionalTest {
                     false,
                     false,
                     testUser));
-    assertEquals(
-        "Cannot export items with global id ["
-            + otherUserBasicSample.getGlobalId()
-            + ", IT0] - items not found, or no permission",
-        iae.getMessage());
+    assertEquals("errors.inventory.export.unexportableGlobalIds", are.getErrorCode());
+    assertEquals(otherUserBasicSample.getGlobalId() + " and IT0", (String) are.getArgs()[0]);
   }
 
   @Test

@@ -1,109 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import i18n from "@/modules/common/i18n";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { type Alert, mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import type * as FetchingData from "../../../util/fetchingData";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
-
-const parseOperationError = (error: unknown): Result<string> =>
-  Parsers.objectPath(["response", "data", "errors"], error)
-    .flatMap(Parsers.isArray)
-    .flatMap(ArrayUtils.head)
-    .flatMap(Parsers.isString)
-    .map((errorMsg) => {
-      if (/attempt to overwrite file/.test(errorMsg)) return i18n.t("gallery:irods.errors.filesAlreadyExist");
-      if (/AuthenticationException/.test(errorMsg)) return i18n.t("gallery:irods.errors.authenticationFailed");
-      if (/InvalidUserException/.test(errorMsg)) return i18n.t("gallery:irods.errors.authenticationFailed");
-      if (/java.net.UnknownHostException/.test(errorMsg)) return i18n.t("gallery:irods.errors.couldNotReachServer");
-      return errorMsg;
-    });
-
-function handleErrors(
-  response: unknown,
-  successMessage: string = i18n.t("gallery:irods.success.moved"),
-  partialFailureMessage: string = i18n.t("gallery:irods.errors.partialMoveFailed"),
-): Alert {
-  const data = Parsers.objectPath(["data"], response).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
-
-  return data
-    .flatMap(Parsers.getValueWithKey("numFilesInput"))
-    .flatMap(Parsers.isNumber)
-    .flatMap((numFilesInput) =>
-      data
-        .flatMap(Parsers.getValueWithKey("numFilesSucceed"))
-        .flatMap(Parsers.isNumber)
-        .flatMap((numFilesSucceed) => {
-          if (numFilesInput === numFilesSucceed)
-            return Result.Ok(
-              mkAlert({
-                variant: "success",
-                message: successMessage,
-              }),
-            );
-          return data
-            .flatMap(Parsers.getValueWithKey("fileInfoDetails"))
-            .flatMap(Parsers.isArray)
-            .flatMap((fileInfoDetails) =>
-              Result.all(
-                ...fileInfoDetails.map((d) =>
-                  Parsers.isObject(d)
-                    .flatMap(Parsers.isNotNull)
-                    .flatMap((obj) => {
-                      const succeeded = Parsers.getValueWithKey("succeeded")(obj)
-                        .flatMap(Parsers.isBoolean)
-                        .flatMap(Parsers.isTrue);
-
-                      /*
-                       * If "succeeded" is true, then just parse the filename
-                       * and display a green alert
-                       */
-                      return succeeded
-                        .flatMap(() =>
-                          Parsers.getValueWithKey("fileName")(obj)
-                            .flatMap(Parsers.isString)
-                            .map((filename) => ({
-                              variant: "success" as const,
-                              title: filename,
-                            })),
-                        )
-                        .orElseTry(() =>
-                          /*
-                           * Otherwise parse filename and reason, and show a red
-                           * alert
-                           */
-                          Result.lift2((filename: string, reason: string) => ({
-                            variant: "error" as const,
-                            title: filename,
-                            help: reason,
-                          }))(
-                            Parsers.getValueWithKey("fileName")(obj).flatMap(Parsers.isString),
-                            Parsers.getValueWithKey("reason")(obj).flatMap(Parsers.isString),
-                          ),
-                        );
-                    }),
-                ),
-              ).map((details) =>
-                mkAlert({
-                  variant: "warning",
-                  message: partialFailureMessage,
-                  details,
-                  isInfinite: true,
-                }),
-              ),
-            );
-        }),
-    )
-    .orElse(
-      mkAlert({
-        variant: "error",
-        message: i18n.t("gallery:errors.parseResponse"),
-      }),
-    );
-}
 
 /**
  * Credentials for an iRODS filesystem. iRODS auth is per-filesystem, so these
@@ -149,6 +52,90 @@ export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLoca
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const { t } = useTranslation("gallery");
+
+  const parseOperationError = (error: unknown): Result<string> =>
+    Parsers.objectPath(["response", "data", "errors"], error)
+      .flatMap(Parsers.isArray)
+      .flatMap(ArrayUtils.head)
+      .flatMap(Parsers.isString)
+      .map((errorMsg) => {
+        if (/attempt to overwrite file/.test(errorMsg)) return t("irods.errors.filesAlreadyExist");
+        if (/AuthenticationException/.test(errorMsg)) return t("irods.errors.authenticationFailed");
+        if (/InvalidUserException/.test(errorMsg)) return t("irods.errors.authenticationFailed");
+        if (/java.net.UnknownHostException/.test(errorMsg)) return t("irods.errors.couldNotReachServer");
+        return errorMsg;
+      });
+
+  const handleErrors = (response: unknown, successMessage: string, partialFailureMessage: string): Alert => {
+    const data = Parsers.objectPath(["data"], response).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
+
+    return data
+      .flatMap(Parsers.getValueWithKey("numFilesInput"))
+      .flatMap(Parsers.isNumber)
+      .flatMap((numFilesInput) =>
+        data
+          .flatMap(Parsers.getValueWithKey("numFilesSucceed"))
+          .flatMap(Parsers.isNumber)
+          .flatMap((numFilesSucceed) => {
+            if (numFilesInput === numFilesSucceed)
+              return Result.Ok(
+                mkAlert({
+                  variant: "success",
+                  message: successMessage,
+                }),
+              );
+            return data
+              .flatMap(Parsers.getValueWithKey("fileInfoDetails"))
+              .flatMap(Parsers.isArray)
+              .flatMap((fileInfoDetails) =>
+                Result.all(
+                  ...fileInfoDetails.map((d) =>
+                    Parsers.isObject(d)
+                      .flatMap(Parsers.isNotNull)
+                      .flatMap((obj) => {
+                        const succeeded = Parsers.getValueWithKey("succeeded")(obj)
+                          .flatMap(Parsers.isBoolean)
+                          .flatMap(Parsers.isTrue);
+
+                        return succeeded
+                          .flatMap(() =>
+                            Parsers.getValueWithKey("fileName")(obj)
+                              .flatMap(Parsers.isString)
+                              .map((filename) => ({
+                                variant: "success" as const,
+                                title: filename,
+                              })),
+                          )
+                          .orElseTry(() =>
+                            Result.lift2((filename: string, reason: string) => ({
+                              variant: "error" as const,
+                              title: filename,
+                              help: reason,
+                            }))(
+                              Parsers.getValueWithKey("fileName")(obj).flatMap(Parsers.isString),
+                              Parsers.getValueWithKey("reason")(obj).flatMap(Parsers.isString),
+                            ),
+                          );
+                      }),
+                  ),
+                ).map((details) =>
+                  mkAlert({
+                    variant: "warning",
+                    message: partialFailureMessage,
+                    details,
+                    isInfinite: true,
+                  }),
+                ),
+              );
+          }),
+      )
+      .orElse(
+        mkAlert({
+          variant: "error",
+          message: t("errors.parseResponse"),
+        }),
+      );
+  };
   const [loading, setLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
   const [configuredLocations, setConfiguredLocations] = React.useState<Result<ReadonlyArray<IrodsLocation>>>(

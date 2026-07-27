@@ -1100,7 +1100,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> containerApiMgr.updateApiContainer(updateRequest, testUser));
-    assertEquals("move.failure.cannot.locate.target.container", are.getMessage());
+    assertEquals("errors.inventory.move.targetContainer.unavailable", are.getMessage());
 
     // sanity check - can move to another subcontainer
     updateRequest.setId(subContainer.getId());
@@ -1154,7 +1154,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> containerApiMgr.markContainerAsDeleted(testContainer.getId(), testUser));
-    assertEquals("container.deletion.failure.not.empty", are.getMessage());
+    assertEquals("errors.inventory.container.deletion.notEmpty", are.getMessage());
     assertEquals(testContainer.getGlobalId(), are.getArgs()[0]);
     Mockito.verify(mockPublisher, Mockito.never())
         .publishEvent(Mockito.any(InventoryDeleteEvent.class));

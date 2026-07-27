@@ -16,7 +16,7 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IGroupCreationStrategy;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class DefaultGroupCreationStrategy implements IGroupCreationStrategy {
 
   @Autowired private CommunityServiceManager communityServiceManager;
 
-  @Autowired private OperationFailedMessageGenerator authGenerator;
+  @Autowired private MessageSourceUtils messages;
 
   @Autowired
   public void setGrpManager(GroupManager grpManager) {
@@ -192,8 +192,9 @@ public class DefaultGroupCreationStrategy implements IGroupCreationStrategy {
             group.getId(), comms.get(0).getId(), groupCreator);
       } else {
         throw new AuthorizationException(
-            authGenerator.getFailedMessage(
-                groupCreator, "create group - please ask to be assigned to a community"));
+            messages.getMessage(
+                "errors.authorization.failure.createGroupWithoutCommunity",
+                new Object[] {groupCreator.getUsername()}));
       }
     } else {
       group = grpManager.saveGroup(group, groupCreator);

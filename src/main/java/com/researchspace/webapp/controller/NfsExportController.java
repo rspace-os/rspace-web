@@ -94,7 +94,9 @@ public class NfsExportController extends BaseController {
 
     Map<String, NfsExportPlan> plansFromSession = getNfsExportPlansFromSession(request);
     if (!plansFromSession.containsKey(quickPlanId)) {
-      throw new IllegalArgumentException("No plan for id " + quickPlanId);
+      throw new IllegalArgumentException(
+          messages.getResourceNotFoundMessage(
+              messages.getMessage("resourceType.exportPlan"), quickPlanId));
     }
     NfsExportPlan plan = plansFromSession.get(quickPlanId);
 

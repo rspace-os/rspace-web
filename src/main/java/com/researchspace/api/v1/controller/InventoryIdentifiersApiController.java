@@ -84,11 +84,11 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     Validate.isTrue(
         count > 0,
         messages.getMessage(
-            "errors.inventory.identifier.bulk.positive.required", new Object[] {count}));
+            "errors.inventory.identifier.bulkPositiveRequired", new Object[] {count}));
     Validate.isTrue(
         count <= MAX_BULK_IGSN_ALLOCATION,
         messages.getMessage(
-            "errors.inventory.identifier.bulk.max.exceeded",
+            "errors.inventory.identifier.bulkMaxExceeded",
             new Object[] {MAX_BULK_IGSN_ALLOCATION}));
     List<ApiInventoryDOI> result = identifierMgr.registerBulkIdentifiers(count, user);
     if (!count.equals(result.size())) {

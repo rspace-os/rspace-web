@@ -230,7 +230,7 @@ function _scanAllTextFieldsForAttachments() {
   });
 
   if (listAttachments.length === 0) {
-    $(".attachmentUL").append("The document has no attachments.");
+    $(".attachmentUL").append(RS.msg("legacyjs.workspace.documentView.noAttachments"));
   }
 }
 
@@ -312,7 +312,7 @@ function initTopBarButtonsForEditableDoc() {
   renderToolbar({ eventHandlers: { onCanSign: () => {
     $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function (response) {
       if (response.data) {
-        apprise("Please set your verification password in <a href=\"/userform\" target=\"_blank\">My RSpace</a> before signing.");
+        apprise(RS.msg("legacyjs.workspace.documentView.verificationPasswordRequiredSigning"));
       } else {
         $('#signDocumentDialog').data("recordId", recordId).dialog('open');
       }
@@ -376,7 +376,7 @@ function _informUserIfFieldContentTooWide() {
     var viewModeNode = $('#div_' + getTextFieldId(lastTextEdited))[0];
     if (viewModeNode.scrollWidth > viewModeNode.clientWidth) {
       $().toastmessage('showToast', {
-        text: 'The content of last edited field is wider than the page. It may affect PDF export and printout',
+        text: RS.msg("legacyjs.workspace.documentView.fieldTooWideWarning"),
         type: 'warning',
         stayTime: 8000
       });
@@ -464,13 +464,9 @@ function disableInputs() {
 }
 
 function deleteStructuredDocument(recordId) {
-  apprise("<div style='line-height:1.3em'>Do you want to delete the following document(s) ? - " + RS.escapeHtml(recordName) +
-    ". <a href='#' id='moreDeleteInfoLnk' class='moreDeleteInfo'>Details...</a>" +
-    "<div style='display:none;' id='moreDeleteInfoContent'>Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with.</br>" +
-    " Deleting a document <em>shared with you</em> will only delete it from your view. <br/>" +
-    "<a href='#' class='moreDeleteInfo'>Hide... </a></div></div>", {
+  apprise(RS.msg("legacyjs.workspace.documentView.deleteConfirm", RS.escapeHtml(recordName)), {
       confirm: true,
-      textOk: 'Delete'
+      textOk: RS.msg("legacyjs.workspace.documentView.deleteConfirmOk")
     },
     function () {
       var jqxhr = $.post("/workspace/editor/structuredDocument/ajax/deleteStructuredDocument/" + recordId + "/",
@@ -483,7 +479,7 @@ function deleteStructuredDocument(recordId) {
           }
         });
       jqxhr.fail(function () {
-        RS.ajaxFailed("Delete operation", false, jqxhr);
+        RS.ajaxFailed(RS.msg("legacyjs.workspace.documentView.deleteDocumentAction"), false, jqxhr);
       });
     });
   RS.focusAppriseDialog(false);
@@ -692,8 +688,8 @@ $(document).ready(function () {
   //init dialogs
   initCommentDialog();
   initCommentViewDialog();
-  initSignDialog("Signing Document");
-  initWitnessDialog("Witnessing Document");
+  initSignDialog(RS.msg("legacyjs.workspace.documentView.signDialogTitle"));
+  initWitnessDialog(RS.msg("legacyjs.workspace.documentView.witnessDialogTitle"));
   const publicView = $("#public_document_view").length > 0;
   if (canBeEditable()) {
     // is editable, make buttons available
@@ -739,7 +735,7 @@ $(document).ready(function () {
     $('#witnessDocument').click(function () {
       $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function (response) {
         if (response.data) {
-          apprise("Please set your verification password in <a href=\"/userform\" target=\"_blank\">My RSpace</a> before witnessing.");
+          apprise(RS.msg("legacyjs.workspace.documentView.verificationPasswordRequiredWitnessing"));
         } else {
           $('#witnessDocumentDialog').data("recordId", recordId).dialog('open');
         }

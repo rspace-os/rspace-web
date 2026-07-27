@@ -270,7 +270,7 @@ describe("ActionsMenu", () => {
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       await waitFor(() => expectMenuItemDisabled(share));
-      expect(share).toHaveTextContent("Cannot share snippets that are missing global IDs.");
+      expect(share).toHaveTextContent("gallery:actionsMenu.validation.missingGlobalId");
     });
 
     test("Share should be enabled when the current user owns a snippet in a shared folder", async () => {
@@ -289,7 +289,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       await waitFor(() => expectMenuItemDisabled(share));
-      expect(share).toHaveTextContent("Only owners of the snippet can change its share settings.");
+      expect(share).toHaveTextContent("gallery:actionsMenu.validation.onlyOwnerCanShare");
     });
 
     test("Share should not be enabled for a snippet in a system shared folder", async () => {
@@ -299,7 +299,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       await waitFor(() => expectMenuItemDisabled(share));
-      expect(share).toHaveTextContent("Only owners of the snippet can change its share settings.");
+      expect(share).toHaveTextContent("gallery:actionsMenu.validation.onlyOwnerCanShare");
     });
 
     test("Share should be disabled while the current user details are still loading", async () => {
@@ -317,7 +317,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       expectMenuItemDisabled(share);
-      expect(share).toHaveTextContent("Loading user information...");
+      expect(share).toHaveTextContent("gallery:actionsMenu.validation.loadingUser");
     });
 
     test("Saving a gallery share should show success alert and close dialog", async () => {

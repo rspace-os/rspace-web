@@ -10,6 +10,8 @@ import static org.mockito.Mockito.verify;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.impl.ShiroTestUtils;
 import com.researchspace.testutils.TestFactory;
@@ -68,6 +70,7 @@ public class ProtocolsIOOAuthTest {
 
   @Before
   public void setUp() throws Exception {
+    ctrller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
     shiroUtils = new ShiroTestUtils();
     shiroUtils.setSubject(subjct);
     Mockito.when(subjct.getSession()).thenReturn(new SimpleSession());

@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import com.axiope.model.record.init.AntibodySampleTemplate;
 import com.axiope.model.record.init.BacterialSampleTemplate;
+import com.axiope.model.record.init.BuiltinContentMessages;
 import com.axiope.model.record.init.Elisa;
 import com.axiope.model.record.init.Experiment;
 import com.axiope.model.record.init.FFPESampleTemplate;
@@ -10,7 +11,6 @@ import com.axiope.model.record.init.LabProtocol;
 import com.axiope.model.record.init.RtPCR;
 import com.axiope.model.record.init.SampleTemplateBuiltIn;
 import com.axiope.model.record.init.SyntheticWaxSampleTemplate;
-import com.researchspace.Constants;
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.EcatMediaFile;
@@ -24,6 +24,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.UserFolderSetup;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.service.archive.ExportImport;
 import com.researchspace.service.archive.ImportArchiveReport;
 import com.researchspace.service.archive.ImportStrategy;
@@ -38,7 +39,6 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Profile;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -56,6 +56,7 @@ public class ProdContentInitializerManager extends AbstractContentInitializer
 
   private @Autowired @Qualifier("importRecordsOnly") ImportStrategy importRecordsOnly;
   private @Autowired FolderManager fMger;
+  private @Autowired UserLocaleService userLocaleService;
 
   // this class is supposed to be a singleton but spring creates > 1 instance, so
   // this is static for now till it gets sorted.
@@ -156,10 +157,11 @@ public class ProdContentInitializerManager extends AbstractContentInitializer
     }
 
     log.info("Adding Notebook example in system; for user [{}]", user.getFullName());
-    Locale locale = LocaleContextHolder.getLocale();
-    ResourceBundle resources = ResourceBundle.getBundle(Constants.BUNDLE_KEY, locale);
+    Locale locale = userLocaleService.getLocaleFor(user);
+    ResourceBundle resources = BuiltinContentMessages.forLocale(locale);
     Notebook notebookFolder =
-        recordFactory.createNotebook(resources.getString("form.notebookE1.folder"), user);
+        recordFactory.createNotebook(
+            resources.getString("common:recordTypes.notebook.singular"), user);
     addChild(folders.getExamples(), notebookFolder, user);
 
     try {
@@ -174,12 +176,13 @@ public class ProdContentInitializerManager extends AbstractContentInitializer
   private void createBuiltIns() {
     if (builtins == null) {
       BuiltInPersistorFacade persistor = new BuiltInPersistorFacade(this);
+      Locale locale = userLocaleService.getLocale();
       builtins =
           new IBuiltinContent[] {
-            new LabProtocol(persistor),
-            new Experiment(persistor),
-            new RtPCR(persistor),
-            new Elisa(persistor)
+            new LabProtocol(persistor, locale),
+            new Experiment(persistor, locale),
+            new RtPCR(persistor, locale),
+            new Elisa(persistor, locale)
           };
     }
 

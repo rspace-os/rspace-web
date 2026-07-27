@@ -381,7 +381,6 @@
           <include>META-INF/**</include>
           <include>sqlUpdates/**</include>
           <include>scripts/**</include>
-          <include>bundles/**</include>
           <include>velocityTemplates/**</include>
           <include>archiveResources/**</include>
           <include>StartUpData/**</include>
@@ -421,15 +420,17 @@
         </includes>
       </resource>
       <resource>
-        <directory>src/main/resources</directory>
-        <includes>
-          <include>ApplicationResources*.properties</include>
-        </includes>
-        <filtering>false</filtering>
-      </resource>
-      <resource>
         <directory>target/resources</directory>
         <filtering>true</filtering>
+      </resource>
+      <!-- Copy shared i18next phrases for JsonMessageSource. Keep prodRelease in sync. -->
+      <resource>
+        <directory>src/main/webapp/ui/src/modules/common/i18n/locales</directory>
+        <targetPath>i18n/locales</targetPath>
+        <includes>
+          <include>**/*.json</include>
+        </includes>
+        <filtering>false</filtering>
       </resource>
     </resources>
 
@@ -1365,6 +1366,11 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>3.18.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.ibm.icu</groupId>
+      <artifactId>icu4j</artifactId>
+      <version>${icu4j.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -2583,7 +2589,6 @@
               <include>META-INF/**</include>
               <include>sqlUpdates/**</include>
               <include>scripts/**</include>
-              <include>bundles/**</include>
               <include>velocityTemplates/**</include>
               <include>StartUpData/**</include>
               <include>inventory/**</include>
@@ -2609,6 +2614,14 @@
             <includes>
               <include>**/*.properties</include>
             </includes>
+          </resource>
+          <resource>
+            <directory>src/main/webapp/ui/src/modules/common/i18n/locales</directory>
+            <targetPath>i18n/locales</targetPath>
+            <includes>
+              <include>**/*.json</include>
+            </includes>
+            <filtering>false</filtering>
           </resource>
         </resources>
         <plugins>
@@ -2794,6 +2807,7 @@
     <apache.batik.version>1.19</apache.batik.version>
     <commons.fileupload.version>1.4</commons.fileupload.version>
     <guava.version>23.4-jre</guava.version>
+    <icu4j.version>78.3</icu4j.version>
     <javassist.version>3.24.0-GA</javassist.version>
     <jsonwebtoken.version>0.11.2</jsonwebtoken.version>
     <jstl.version>3.0.0</jstl.version>

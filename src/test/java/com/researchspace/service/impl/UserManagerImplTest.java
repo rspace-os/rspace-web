@@ -20,6 +20,8 @@ import com.researchspace.dao.UserDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
@@ -35,6 +37,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserManagerImplTest extends BaseManagerMockTestCase {
@@ -49,7 +52,10 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   private @Mock AnalyticsManager analyticsManager;
 
   @Before
-  public void setUp() throws Exception {}
+  public void setUp() throws Exception {
+    ReflectionTestUtils.setField(
+        userManager, "messages", new MessageSourceUtils(new JsonMessageSource()));
+  }
 
   @Test
   public void testGetUser() throws Exception {

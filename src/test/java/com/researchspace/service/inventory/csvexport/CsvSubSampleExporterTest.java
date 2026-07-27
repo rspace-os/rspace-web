@@ -177,7 +177,7 @@ public class CsvSubSampleExporterTest extends SpringTransactionalTest {
         subSampleExporter
             .getCsvCommentFragmentForSubSamples(ExportScope.SELECTION, CsvExportMode.FULL, testUser)
             .toString();
-    assertTrue(csvComment.startsWith("# " + subSampleExporter.CSV_COMMENT_HEADER), csvComment);
+    assertTrue(csvComment.startsWith("# " + subSampleExporter.getCsvCommentHeader()), csvComment);
     assertTrue(csvComment.contains("# Exported content: SUBSAMPLES"), csvComment);
     assertTrue(csvComment.contains("# Export scope: SELECTION"), csvComment);
     assertTrue(csvComment.contains("# Export mode: FULL"), csvComment);

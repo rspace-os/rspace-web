@@ -7,4 +7,4 @@ Used to generate image thumbnail img tag src attribute only.
   - rotation 0-3
   - milliseconds - modification date of the image
 *#
-#imgThumbnailSrc ($fieldId $itemId $width $height  $rotation $milliseconds)
+/thumbnail/data?sourceType=IMAGE&sourceId=$itemId&sourceParentId=$fieldId&width=$width&height=$height&rotation=$rotation&time=$milliseconds

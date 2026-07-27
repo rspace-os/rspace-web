@@ -166,8 +166,7 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
 
   private void assertIsInstrumentTemplate(InstrumentTemplate template) {
     Validate.isTrue(
-        template.isTemplate(),
-        messages.getMessage("errors.inventory.instrument.template.required"));
+        template.isTemplate(), messages.getMessage("errors.inventory.instrument.templateRequired"));
   }
 
   @Override
@@ -220,7 +219,7 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
     if (!img.isPresent()) {
       throw new IllegalArgumentException(
           getMessage(
-              "errors.inventory.icon.image.parse.failure",
+              "errors.inventory.icon.imageParseFailure",
               new Object[] {file.getOriginalFilename()}));
     }
     String suffix = getExtension(file.getOriginalFilename());

@@ -210,7 +210,9 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
         getBufferedImageFromUploadedFile(new SpringMultipartFileAdapter(file));
     if (!img.isPresent()) {
       throw new IllegalArgumentException(
-          String.format("Couldn't parse file [%s] as an image.", file.getOriginalFilename()));
+          getMessage(
+              "errors.inventory.icon.imageParseFailure",
+              new Object[] {file.getOriginalFilename()}));
     }
     String suffix = getExtension(file.getOriginalFilename());
     IconEntity ice = IconEntity.createIconEntityFromImage(templateId, img.get(), suffix);

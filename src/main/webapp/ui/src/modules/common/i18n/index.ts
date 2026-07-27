@@ -14,9 +14,8 @@ void i18next
   .use(resourcesToBackend((language: string, namespace: string) => import(`./locales/${language}/${namespace}.json`)))
   .use(initReactI18next)
   .init({
-    lng: "en-US",
+    lng: document.documentElement.lang || "en-US",
     fallbackLng: "en-US",
-    supportedLngs: ["en-US"],
     load: "currentOnly",
     defaultNS: "common",
     ns: ["common"],

@@ -12,6 +12,9 @@ import com.researchspace.archive.ArchiveExternalWorkFlowData;
 import com.researchspace.archive.ArchiveExternalWorkFlowInvocation;
 import com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.service.archive.ArchiveExternalWorkFlowDataTestMother;
 import com.researchspace.service.archive.ArchiveExternalWorkFlowInvocationTestMother;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -31,6 +34,9 @@ public class ExternalWorkflowHtmlGeneratorTest {
         generator,
         "velocityEngine",
         RSpaceTestUtils.setupVelocity("src/main/resources/velocityTemplates"));
+    ReflectionTestUtils.setField(
+        generator, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    ReflectionTestUtils.setField(generator, "userLocaleService", new UserLocaleService());
   }
 
   @Test

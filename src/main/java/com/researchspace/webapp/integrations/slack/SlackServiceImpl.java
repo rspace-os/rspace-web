@@ -5,7 +5,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.slack.SlackMessage;
 import com.researchspace.slack.SlackUser;
 import java.net.URI;
@@ -40,6 +42,8 @@ public class SlackServiceImpl implements SlackService {
 
   private @Autowired ApplicationEventPublisher publisher;
   private @Autowired RecordManager recordManager;
+  private @Autowired MessageSourceUtils messages;
+  private @Autowired UserLocaleService userLocaleService;
 
   @Value("${slack.api.base.url}")
   private String slackApiBaseUrl;
@@ -61,7 +65,9 @@ public class SlackServiceImpl implements SlackService {
           getMessagesFromChannel(accessToken, channelId, sinceTimestamp, toTimestamp);
 
       if (messages.isEmpty()) {
-        String msg = "No messages found in a selected time period.";
+        String msg =
+            this.messages.getMessageForLocale(
+                "apps.slack.saveConversation.noMessages", userLocaleService.getLocaleFor(user));
         sendResponseToSlack(responseURI, msg);
         return;
       }
@@ -88,7 +94,8 @@ public class SlackServiceImpl implements SlackService {
             LOG.error("Error while creating timezone for input string: ", e);
           }
         }
-        messagesFormatted.append(message.toHTML(mapping, timezone));
+        messagesFormatted.append(
+            message.toHTML(mapping, timezone, userLocaleService.getLocaleFor(user)));
       }
       StructuredDocument newDocument =
           recordManager.createBasicDocumentWithContent(
@@ -97,7 +104,11 @@ public class SlackServiceImpl implements SlackService {
       publisher.publishEvent(new GenericEvent(user, newDocument, AuditAction.CREATE));
 
       // Format results as a SlackMessage
-      String msg = String.format("Done. %d messages saved from Slack.", messages.size());
+      String msg =
+          this.messages.getMessage(
+              "apps.slack.saveConversation.done",
+              new Object[] {messages.size()},
+              userLocaleService.getLocaleFor(user));
       ResponseEntity<String> resp = sendResponseToSlack(responseURI, msg);
       if (!HttpStatus.OK.equals(resp.getStatusCode())) {
         throw new SlackErrorResponseException("Slack responded with " + resp.getStatusCodeValue());
@@ -105,7 +116,10 @@ public class SlackServiceImpl implements SlackService {
     } catch (RuntimeException | SlackErrorResponseException | URISyntaxException exception) {
       // Format error message as a SlackMessage
       String msg =
-          String.format("Error while saving Slack conversation [%s]", exception.getMessage());
+          this.messages.getMessage(
+              "apps.slack.saveConversation.error",
+              new Object[] {exception.getMessage()},
+              userLocaleService.getLocaleFor(user));
       sendResponseToSlack(responseURI, msg);
     }
   }

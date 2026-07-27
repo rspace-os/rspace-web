@@ -2,7 +2,6 @@ import { action, makeObservable, observable } from "mobx";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import i18n from "@/modules/common/i18n";
 import useOauthToken from "../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
@@ -520,6 +519,7 @@ export class Filestore implements GalleryFile {
   // Per-user write permission from the filestore's userPermissions snapshot.
   // Defaults to true when the backend supplies no snapshot (see Filestore parsing).
   readonly canWrite: boolean;
+  readonly ownerName: string;
 
   constructor({
     id,
@@ -528,6 +528,7 @@ export class Filestore implements GalleryFile {
     filesystemName,
     filesystemType,
     canWrite,
+    ownerName,
   }: {
     id: Id;
     name: string;
@@ -535,6 +536,7 @@ export class Filestore implements GalleryFile {
     filesystemName: string;
     filesystemType: string;
     canWrite: boolean;
+    ownerName: string;
   }) {
     this.id = id;
     this.name = name;
@@ -545,6 +547,7 @@ export class Filestore implements GalleryFile {
     this.filesystemName = filesystemName;
     this.filesystemType = filesystemType;
     this.canWrite = canWrite;
+    this.ownerName = ownerName;
     this.path = [];
     this.metadata = {};
   }
@@ -565,10 +568,6 @@ export class Filestore implements GalleryFile {
 
   get ownerId(): number | null {
     return null;
-  }
-
-  get ownerName(): string {
-    return i18n.t("gallery:unknownOwner");
   }
 
   get ownerUsername(): string | null {
@@ -666,6 +665,7 @@ export class RemoteFile implements GalleryFile {
   private cachedDownloadHref?: UrlType;
   readonly extension: string | null;
   readonly metadata: Record<string, string>;
+  readonly ownerName: string;
 
   constructor({
     nfsId,
@@ -676,6 +676,7 @@ export class RemoteFile implements GalleryFile {
     path,
     logicPath,
     token,
+    ownerName,
   }: {
     nfsId: number | null;
     name: string;
@@ -685,6 +686,7 @@ export class RemoteFile implements GalleryFile {
     path: ReadonlyArray<GalleryFile>;
     logicPath: string;
     token: string;
+    ownerName: string;
   }) {
     this.nfsId = nfsId;
     this.name = name;
@@ -694,6 +696,7 @@ export class RemoteFile implements GalleryFile {
     this.modificationDate = modificationDate;
     this.path = path;
     this.logicPath = logicPath;
+    this.ownerName = ownerName;
     this.remotePath = logicPath.split(":").slice(1).join(":");
     this.metadata = {};
     if (!this.isFolder) {
@@ -753,10 +756,6 @@ export class RemoteFile implements GalleryFile {
 
   get ownerId(): number | null {
     return null;
-  }
-
-  get ownerName(): string {
-    return i18n.t("gallery:unknownOwner");
   }
 
   get ownerUsername(): string | null {
@@ -895,59 +894,6 @@ export function asWritableS3Filestore(candidate: GalleryFile | undefined): Files
     : null;
 }
 
-function parseGalleryFileFromFolderApiResponse(
-  obj: object,
-  path: ReadonlyArray<GalleryFile>,
-): Result<LocalGalleryFile> {
-  try {
-    const id = Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber).elseThrow();
-    const globalId = Parsers.getValueWithKey("globalId")(obj).flatMap(Parsers.isString).elseThrow();
-    const name = Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString).elseThrow();
-    const creationDate = Parsers.getValueWithKey("created")(obj)
-      .flatMap(Parsers.isString)
-      .flatMap(Parsers.parseDate)
-      .elseThrow();
-    const modificationDate = Parsers.getValueWithKey("lastModified")(obj)
-      .flatMap(Parsers.isString)
-      .flatMap(Parsers.parseDate)
-      .elseThrow();
-    const mediaType = Parsers.getValueWithKey("mediaType")(obj)
-      .flatMap(Parsers.isString)
-      .flatMap(parseGallerySection)
-      .elseThrow();
-    const isSystemFolder = Parsers.getValueWithKey("systemFolder")(obj).flatMap(Parsers.isBoolean).elseThrow();
-    const isSharedFolder = Parsers.getValueWithKey("sharedFolder")(obj).flatMap(Parsers.isBoolean).elseThrow();
-
-    return Result.Ok(
-      new LocalGalleryFile({
-        id,
-        globalId,
-        name,
-        extension: null,
-        creationDate,
-        modificationDate,
-        description: Description.Missing(),
-        type: "Folder",
-        isSystemFolder,
-        isSharedFolder,
-        ownerId: null,
-        ownerName: i18n.t("gallery:unknownOwner"),
-        ownerUsername: null,
-        path,
-        gallerySection: mediaType,
-        size: 0,
-        version: 1,
-        thumbnailId: null,
-        originalImageId: null,
-        metadata: {},
-        token: "",
-      }),
-    );
-  } catch (e) {
-    return Result.Error([e instanceof Error ? e : new Error("Unknown error")]);
-  }
-}
-
 /**
  * Hook that gets a listing of Gallery files, for displaying in the UI.
  */
@@ -1011,7 +957,60 @@ export function useGalleryListing({
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
-  const { t } = useTranslation("gallery");
+  const { t } = useTranslation(["gallery", "common"]);
+
+  const parseGalleryFileFromFolderApiResponse = (
+    obj: object,
+    path: ReadonlyArray<GalleryFile>,
+  ): Result<LocalGalleryFile> => {
+    try {
+      const id = Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber).elseThrow();
+      const globalId = Parsers.getValueWithKey("globalId")(obj).flatMap(Parsers.isString).elseThrow();
+      const name = Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString).elseThrow();
+      const creationDate = Parsers.getValueWithKey("created")(obj)
+        .flatMap(Parsers.isString)
+        .flatMap(Parsers.parseDate)
+        .elseThrow();
+      const modificationDate = Parsers.getValueWithKey("lastModified")(obj)
+        .flatMap(Parsers.isString)
+        .flatMap(Parsers.parseDate)
+        .elseThrow();
+      const mediaType = Parsers.getValueWithKey("mediaType")(obj)
+        .flatMap(Parsers.isString)
+        .flatMap(parseGallerySection)
+        .elseThrow();
+      const isSystemFolder = Parsers.getValueWithKey("systemFolder")(obj).flatMap(Parsers.isBoolean).elseThrow();
+      const isSharedFolder = Parsers.getValueWithKey("sharedFolder")(obj).flatMap(Parsers.isBoolean).elseThrow();
+
+      return Result.Ok(
+        new LocalGalleryFile({
+          id,
+          globalId,
+          name,
+          extension: null,
+          creationDate,
+          modificationDate,
+          description: Description.Missing(),
+          type: "Folder",
+          isSystemFolder,
+          isSharedFolder,
+          ownerId: null,
+          ownerName: t("unknownOwner"),
+          ownerUsername: null,
+          path,
+          gallerySection: mediaType,
+          size: 0,
+          version: 1,
+          thumbnailId: null,
+          originalImageId: null,
+          metadata: {},
+          token: "",
+        }),
+      );
+    } catch (e) {
+      return Result.Error([e instanceof Error ? e : new Error(t("common:apiErrors.unknown"))]);
+    }
+  };
   const [loading, setLoading] = React.useState(true);
   const [errorState, setErrorState] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -1370,6 +1369,7 @@ export function useGalleryListing({
                         filesystemName,
                         filesystemType,
                         canWrite,
+                        ownerName: t("unknownOwner"),
                       }),
                     );
                   } catch (e) {
@@ -1471,6 +1471,7 @@ export function useGalleryListing({
                         path: pa,
                         logicPath,
                         token,
+                        ownerName: t("unknownOwner"),
                       }),
                     );
                   } catch (e) {

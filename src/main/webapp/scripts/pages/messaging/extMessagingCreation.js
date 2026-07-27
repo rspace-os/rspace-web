@@ -4,7 +4,7 @@ function _initialiseExtMessageRequestDlg(recordIdsGetter, appName) {
   $(document).ready(function() { 
     RS.switchToBootstrapButton();
   	$('#extMessageRequestDlg_'+appName).dialog({
-  		title: "Send message to external messaging platform",
+		title: RS.msg("legacyjs.messaging.extMessageDialogTitle"),
   		resizable: true, 
   		autoOpen: false,
   		height: 330,
@@ -17,10 +17,10 @@ function _initialiseExtMessageRequestDlg(recordIdsGetter, appName) {
   			$('.extMessageRequestMessageLegend_manyDocs').toggle(!singleDocSelected);
   		},
   		buttons: {
-  		    Cancel: function() {
+		    [RS.msg("legacyjs.common.cancel")]: function() {
       			$(this).dialog('close');
   			},
-  			Send: function() {
+			[RS.msg("legacyjs.common.send")]: function() {
   			    console.log('sending to '+appName);
   			    
   			    var channelId = $(this).find('.channelSelect').val();
@@ -32,13 +32,13 @@ function _initialiseExtMessageRequestDlg(recordIdsGetter, appName) {
   		            "message": message
   			    }
   			    
-  			    RS.blockPage("Sending the message to Channel...");
+			    RS.blockPage(RS.msg("legacyjs.messaging.sendingToChannel"));
   			    
   			    var jqxhr = $.post('/messaging/ajax/sendExternalMessage', data);
   			    jqxhr.done(function(result) {
   	                var sendResult = result.data;
   	                if (sendResult) {
-  	                    $().toastmessage('showSuccessToast', 'Message sent');
+	                    $().toastmessage('showSuccessToast', RS.msg("legacyjs.messaging.messageSent"));
   	                    $('.extMessageRequestDlg').dialog('close');
   	                } else if (result.errorMsg) {
   	                    $().toastmessage('showErrorToast', getValidationErrorString(result.errorMsg));
@@ -46,7 +46,7 @@ function _initialiseExtMessageRequestDlg(recordIdsGetter, appName) {
 	                    RS.trackEvent('user:external_message:sent:' + appName.toLowerCase());
   			    });
   	            jqxhr.fail(function() {
-  	                RS.ajaxFailed("Sending message", false, jqxhr);
+	                RS.ajaxFailed(RS.msg("legacyjs.messaging.actionSendingMessage"), false, jqxhr);
   	            });
                   jqxhr.always(function () {
                       RS.unblockPage();
@@ -80,10 +80,10 @@ function initialiseExtMessageChannelListButtonAndDialog(recordIdsGetter, btnSele
 	$('body').on('click', btnSelector, function() {
 		var selectedDocs = recordIdsGetter();
 	    if (selectedDocs.length > 20) {
-	    	apprise("There is a limit of 20 links that can be included with the external message.<br> Please select fewer records.");
+		apprise(RS.msg("legacyjs.messaging.extMessageLinkLimit"));
 	    	return;
 	    } else if (selectedDocs.length == 1 && selectedDocs[0] == null) {
-	    	apprise("There is no entry that could be linked in external message.");
+		apprise(RS.msg("legacyjs.messaging.extMessageNoLinkableEntry"));
 	    	return;
 	    }
 	    var appName = $(this).data('app');
@@ -92,7 +92,7 @@ function initialiseExtMessageChannelListButtonAndDialog(recordIdsGetter, btnSele
     		var data = resp.data;
     		console.log(data);
     		if($.isEmptyObject(data.options)) {
-    			 apprise('No messaging channels were set up yet. Please go to <a href="/apps" target="_blank">Apps</a> page and add the communication channels that you want to use.');
+			 apprise(RS.msg("legacyjs.messaging.noChannelsSetUp"));
     		} else {
     			var dlgTemplate = $('#extMessageRequestDlg-template').html();
     			var channels = [];

@@ -8,6 +8,7 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -72,11 +73,19 @@ public class SysAdminConfigController extends BaseController {
   private AjaxReturnObject<WhiteListedSysAdminIPAddress> validate(
       String ipAddress, String description) {
     if (StringUtils.isEmpty(ipAddress)) {
-      ErrorList msg = ErrorList.of(getText("errors.required", new String[] {"ipAddress"}));
+      ErrorList msg =
+          ErrorList.of(
+              getText(
+                  "errors.required",
+                  new Object[] {new DefaultMessageSourceResolvable("label.ipAddress")}));
       return new AjaxReturnObject<WhiteListedSysAdminIPAddress>(null, msg);
     }
     if (StringUtils.isEmpty(description)) {
-      ErrorList msg = ErrorList.of(getText("errors.required", new String[] {"description"}));
+      ErrorList msg =
+          ErrorList.of(
+              getText(
+                  "errors.required",
+                  new Object[] {new DefaultMessageSourceResolvable("label.description")}));
       return new AjaxReturnObject<WhiteListedSysAdminIPAddress>(null, msg);
     }
     return null;

@@ -150,7 +150,7 @@ public class PublicController extends BaseController {
   @ResponseBody
   @GetMapping("/version")
   public String version() {
-    return getText("webapp.version");
+    return properties.getWebappVersion();
   }
 
   @ResponseBody

@@ -18,7 +18,7 @@ public class NfsPublicKeyAuthentication implements NfsAuthentication {
   public String validateCredentials(String nfsusername, String nfspassword, User user) {
     UserKeyPair userKey = getKeyForUser(user);
     if (userKey == null) {
-      return "net.filestores.validation.no.key";
+      return "netFileStores.validation.noKey";
     }
     return null;
   }
@@ -33,7 +33,7 @@ public class NfsPublicKeyAuthentication implements NfsAuthentication {
 
   @Override
   public String getMessageCodeForAuthException(NfsAuthException auth) {
-    return "net.filestores.error.auth.publicKey";
+    return "netFileStores.errors.authPublicKey";
   }
 
   private UserKeyPair getKeyForUser(User user) {

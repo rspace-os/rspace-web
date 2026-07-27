@@ -114,8 +114,9 @@ public class PublicRecordsController extends BaseController {
       User publisher = publishedRecord.getSharedBy();
       if (!getPublishAllowedBySysAdmin()
           || !systemPropertyPermissionManager.isPropertyAllowed(publisher, "public_sharing")) {
-        publishedRecord.setPublicationSummary("Publication disabled");
-        publishedRecord.getShared().setName("Publication disabled");
+        String publicationDisabled = getText("publishIsDisabled.recordLabel");
+        publishedRecord.setPublicationSummary(publicationDisabled);
+        publishedRecord.getShared().setName(publicationDisabled);
       }
     }
     model.addAttribute(SHARED_RECORDS_ATTR_NAME, published);

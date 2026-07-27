@@ -34,7 +34,7 @@ function resetSearch() {
 // with an empty search term (in simple search, not in advanced one).
 function abandonSearch() {
   resetSearch();
-  RS.blockPage("Abandoning search...", false, $(".mainTable tbody"));
+  RS.blockPage(RS.msg("legacyjs.workspace.search.abandoningSearchBlock"), false, $(".mainTable tbody"));
   workspaceSettings.parentFolderId = $('#currFolderId').val();
   workspaceSettings.url = "/workspace/ajax/view/" + workspaceSettings.parentFolderId;
   resetPageNumber();

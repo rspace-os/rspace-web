@@ -7,6 +7,7 @@ import com.researchspace.archive.ExportScope;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.ExtraField;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.csvexport.CsvExportCommentGenerator.ExportedCommentProperty;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,9 +15,9 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,50 +26,56 @@ import org.springframework.beans.factory.annotation.Autowired;
 public abstract class InventoryItemCsvExporter {
 
   public static final String CSV_COMMENT_PREFIX = "#";
-  public static final String CSV_COMMENT_HEADER = "RSpace Inventory Export";
 
   public static final String CSV_VALUE_LIST_SEPARATOR = "\n----\n";
 
   public static final String CSV_VALUE_UNAVAILABLE_ITEM_PROPERTY = "#N/A";
 
+  /** CSV headings remain en-US because scripts and re-import treat them as a stable contract. */
+  public static final Locale CSV_HEADER_LOCALE = Locale.US;
+
   public enum ExportableInvRecProperty {
-    GLOBAL_ID("Global ID"),
-    NAME("Name"),
-    DESCRIPTION("Description"),
-    TAGS("Tags"),
-    OWNER("Owner"),
-    EXTRA_FIELDS("Extra Fields"),
+    GLOBAL_ID("inventory:recordDetails.labels.globalId"),
+    NAME("inventory:fields.name.label"),
+    DESCRIPTION("inventory:fields.description.label"),
+    TAGS("inventory:fields.tags.label"),
+    OWNER("inventory:fields.owner.label"),
+    EXTRA_FIELDS("inventory:fields.identifiers.wrapper.inventoryFields.extraFields"),
 
-    CONTAINER_GLOBAL_ID("Parent Container (Global ID)"),
-    SAMPLE_GLOBAL_ID("Parent Sample (Global ID)"),
-    QUANTITY("Quantity"),
-    NOTES("Notes"),
-    EXPIRY_DATE("Expiry Date"),
+    CONTAINER_GLOBAL_ID("export.inventory.csv.headerContainerGlobalId"),
+    SAMPLE_GLOBAL_ID("export.inventory.csv.headerSampleGlobalId"),
+    QUANTITY("inventory:fields.quantity.label"),
+    NOTES("inventory:fields.notes.label"),
+    EXPIRY_DATE("inventory:tableColumns.expiryDate"),
 
-    SAMPLE_SOURCE("Sample Source"),
-    STORAGE_TEMPERATURE_MIN("Storage Temperature (min)"),
-    STORAGE_TEMPERATURE_MAX("Storage Temperature (max)"),
-    TOTAL_QUANTITY("Total Quantity"),
-    TEMPLATE_GLOBAL_ID("Parent Template (Global ID)"),
-    TEMPLATE_NAME("Parent Template (name)"),
+    SAMPLE_SOURCE("export.inventory.csv.headerSampleSource"),
+    STORAGE_TEMPERATURE_MIN("export.inventory.csv.headerStorageTemperatureMin"),
+    STORAGE_TEMPERATURE_MAX("export.inventory.csv.headerStorageTemperatureMax"),
+    TOTAL_QUANTITY("inventory:fields.quantity.totalLabel"),
+    TEMPLATE_GLOBAL_ID("export.inventory.csv.headerTemplateGlobalId"),
+    TEMPLATE_NAME("export.inventory.csv.headerTemplateName"),
 
-    CONTAINER_TYPE("Container Type"),
-    CAN_STORE_CONTAINERS("Can Store Containers (Y/N)"),
-    CAN_STORE_SUBSAMPLES("Can Store Subsamples (Y/N)"),
-    STORED_CONTAINERS_COUNT("Number of Stored Containers"),
-    STORED_SUBSAMPLES_COUNT("Number of Stored Subsamples"),
+    CONTAINER_TYPE("inventory:tableColumns.containerType"),
+    CAN_STORE_CONTAINERS("export.inventory.csv.headerCanStoreContainers"),
+    CAN_STORE_SUBSAMPLES("export.inventory.csv.headerCanStoreSubsamples"),
+    STORED_CONTAINERS_COUNT("export.inventory.csv.headerStoredContainersCount"),
+    STORED_SUBSAMPLES_COUNT("export.inventory.csv.headerStoredSubsamplesCount"),
 
-    LOM_GLOBAL_ID("List of Materials (Global ID)"),
-    LOM_NAME("List of Materials (Name)"),
-    MATERIAL_GLOBAL_ID("Used Material (Global ID)"),
-    MATERIAL_TYPE("Used Material (Type)"),
-    MATERIAL_NAME("Used Material (Name)"),
-    USED_QUANTITY("Used Quantity");
+    LOM_GLOBAL_ID("export.inventory.csv.headerLomGlobalId"),
+    LOM_NAME("export.inventory.csv.headerLomName"),
+    MATERIAL_GLOBAL_ID("export.inventory.csv.headerMaterialGlobalId"),
+    MATERIAL_TYPE("export.inventory.csv.headerMaterialType"),
+    MATERIAL_NAME("export.inventory.csv.headerMaterialName"),
+    USED_QUANTITY("export.inventory.csv.headerUsedQuantity");
 
-    @Getter private final String csvColumnHeader;
+    private final String messageKey;
 
-    private ExportableInvRecProperty(String csvColumnHeader) {
-      this.csvColumnHeader = csvColumnHeader;
+    private ExportableInvRecProperty(String messageKey) {
+      this.messageKey = messageKey;
+    }
+
+    public String getCsvColumnHeader(MessageSourceUtils messages) {
+      return messages.getMessageForLocale(messageKey, CSV_HEADER_LOCALE);
     }
   }
 
@@ -92,6 +99,11 @@ public abstract class InventoryItemCsvExporter {
   }
 
   protected @Autowired CsvExportCommentGenerator exportCommentGenerator;
+  protected @Autowired MessageSourceUtils messages;
+
+  public String getCsvCommentHeader() {
+    return messages.getMessageForLocale("export.inventory.csv.commentHeader", CSV_HEADER_LOCALE);
+  }
 
   protected OutputStream getCsvCommentFragment(
       String exportedContentString, ExportScope selection, CsvExportMode exportMode, User user)
@@ -104,7 +116,7 @@ public abstract class InventoryItemCsvExporter {
     OutputStream outputStream = new ByteArrayOutputStream();
     CsvMapper csvMapper = getCsvMapper();
 
-    writeCsvCommentLine(csvMapper, outputStream, CSV_COMMENT_HEADER);
+    writeCsvCommentLine(csvMapper, outputStream, getCsvCommentHeader());
     for (Map.Entry<ExportedCommentProperty, String> commentEntry :
         propertiesForCsvComment.entrySet()) {
       writeCsvCommentLine(
@@ -182,7 +194,7 @@ public abstract class InventoryItemCsvExporter {
   protected List<String> getBasicColumnNamesForCsv(CsvExportMode exportMode) {
     List<String> columnNames = new ArrayList<>();
     for (ExportableInvRecProperty prop : INV_REC_CORE_PROPS) {
-      columnNames.add(prop.getCsvColumnHeader());
+      columnNames.add(prop.getCsvColumnHeader(messages));
     }
     return columnNames;
   }

@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.dao.FieldDao;
 import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.model.InternalLink;
@@ -10,6 +11,8 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.InternalLinkManager;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +25,7 @@ public class InternalLinkManagerImpl implements InternalLinkManager {
   private @Autowired IPermissionUtils permissionUtils;
   private @Autowired FieldDao fieldDao;
   private @Autowired BaseRecordManager baseRecordMgr;
+  private @Autowired MessageSourceUtils messages;
 
   @Override
   public List<InternalLink> getLinksPointingToRecord(long targetRecordId) {
@@ -32,12 +36,22 @@ public class InternalLinkManagerImpl implements InternalLinkManager {
   public boolean createInternalLink(Long srcFieldId, Long linkedRecordId, User subject) {
     BaseRecord targetRecord = baseRecordMgr.get(linkedRecordId, subject);
     Validate.isTrue(
-        isValidLinkTarget(targetRecord), "Linked item must be a folder, notebook or document");
+        isValidLinkTarget(targetRecord),
+        messages.getMessage(
+            "internalLink.errors.invalidTarget",
+            new Object[] {
+              ListFormatUtils.formatList(
+                  List.of(
+                      messages.getMessage("record.types.folder"),
+                      messages.getMessage("common:recordTypes.notebook.lower"),
+                      messages.getMessage("common:recordTypes.document.lower")),
+                  ListFormatter.Type.OR)
+            }));
     permissionUtils.assertIsPermitted(
         targetRecord, PermissionType.READ, subject, "create internal link");
     Field srcField = fieldDao.get(srcFieldId);
     Validate.isTrue(
-        srcField.isTextField(), "Field that will contain the link must be a text field");
+        srcField.isTextField(), messages.getMessage("internalLink.errors.textFieldRequired"));
     permissionUtils.assertIsPermitted(
         srcField.getStructuredDocument(), PermissionType.WRITE, subject, "create internal link");
     return internalLinkDao.saveInternalLink(

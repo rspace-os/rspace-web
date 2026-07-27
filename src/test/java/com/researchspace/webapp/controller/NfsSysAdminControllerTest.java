@@ -5,8 +5,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -15,6 +13,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.Constants;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileSystem;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserManager;
@@ -34,7 +33,7 @@ public class NfsSysAdminControllerTest {
   @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock NfsManager netFilesMgr;
   @Mock UserManager userMgr;
-  @Mock MessageSourceUtils msgSource;
+  MessageSourceUtils msgSource = new MessageSourceUtils(new JsonMessageSource());
   NfsSysAdminController nfsSystemCtrller;
   User sysadmin, otherUser;
   NfsFileSystem nfs = null;
@@ -48,14 +47,6 @@ public class NfsSysAdminControllerTest {
     sysadmin = TestFactory.createAnyUserWithRole("any", Constants.SYSADMIN_ROLE);
     otherUser = TestFactory.createAnyUserWithRole("any", Constants.ADMIN_ROLE);
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(sysadmin);
-    // resolve any i18n key to a string containing the first arg so existing
-    // assertions on exception message content keep working
-    when(msgSource.getMessage(anyString(), any(Object[].class)))
-        .thenAnswer(
-            inv -> {
-              Object[] args = inv.getArgument(1);
-              return args == null || args.length == 0 ? "" : String.valueOf(args[0]);
-            });
     nfs = new NfsFileSystem();
     nfs.setId(12L);
   }

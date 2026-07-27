@@ -11,7 +11,7 @@ $(document).ready(function() {
 
         var searchQuery = $('#searchQueryInput').val();
         if (!searchQuery || searchQuery.length < 2) {
-            apprise("Search term must be at least 2 characters.");
+            apprise(RS.msg("legacyjs.recordPicker.searchTermTooShort"));
             return false;
         }
 
@@ -58,13 +58,7 @@ $(document).ready(function() {
             }
 
             var header = "<div id='resultsDiv'>";
-            if (foundDocs === 0) {
-                header += "No documents found.";
-            } else if (foundDocs === 1) {
-                header += "Found 1 document:";
-            } else {
-                header += "Found " + foundDocs + " documents:";
-            }
+            header += RS.msg("legacyjs.recordPicker.documentsFound", foundDocs);
             header += "</div>";
 
             html = header + html;
@@ -72,7 +66,7 @@ $(document).ready(function() {
 
         });
         jqxhr.fail(function() {
-            RS.ajaxFailed("Search", false, jqxhr);
+            RS.ajaxFailed(RS.msg("legacyjs.recordPicker.actionSearch"), false, jqxhr);
         });
 
         return false;

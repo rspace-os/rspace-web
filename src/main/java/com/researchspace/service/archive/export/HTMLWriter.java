@@ -8,6 +8,10 @@ import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.export.externalworkflows.ExternalWorkflowHtmlGenerator;
 import com.researchspace.export.stoichiometry.StoichiometryHtmlGenerator;
 import com.researchspace.model.record.Record;
+import com.researchspace.service.LocaleBoundMessages;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserLocaleService;
+import com.researchspace.service.impl.LocaleAwareDateTool;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,7 +22,6 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.spring.VelocityEngineUtils;
-import org.apache.velocity.tools.generic.DateTool;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +33,8 @@ public class HTMLWriter implements ExportObjectWriter {
   Logger logger = LoggerFactory.getLogger(HTMLWriter.class);
   @Autowired private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
   @Autowired private ExternalWorkflowHtmlGenerator externalWorkflowHtmlGenerator;
+  @Autowired private MessageSourceUtils messages;
+  @Autowired private UserLocaleService userLocaleService;
 
   @Override
   public void writeExportObject(File outputFile, ExportedRecord exported) {
@@ -62,7 +67,8 @@ public class HTMLWriter implements ExportObjectWriter {
       velocityModel.put("isImage", true);
     }
 
-    velocityModel.put("date", new DateTool());
+    velocityModel.put("date", new LocaleAwareDateTool(userLocaleService.getLocale()));
+    velocityModel.put("msg", new LocaleBoundMessages(messages, userLocaleService.getLocale()));
     addParentLink(velocityModel, exported.getExportedRecord());
     addTiffLinks(exported, velocityModel);
     String msg =
@@ -74,7 +80,8 @@ public class HTMLWriter implements ExportObjectWriter {
   private String createDocumentHTML(ExportedRecord exported) {
     Map<String, Object> velocityModel = new HashMap<String, Object>();
     velocityModel.put("document", exported.getArchivedRecord());
-    velocityModel.put("date", new DateTool());
+    velocityModel.put("date", new LocaleAwareDateTool(userLocaleService.getLocale()));
+    velocityModel.put("msg", new LocaleBoundMessages(messages, userLocaleService.getLocale()));
     // get all nfsFiles in the document from all fields, to add as footer: RSPAC-1354
     List<ArchivalNfsFile> nfsFiles = new ArrayList<>();
     if (exported.getArchivedRecord() != null) {

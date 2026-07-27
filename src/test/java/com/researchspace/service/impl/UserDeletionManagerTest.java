@@ -23,6 +23,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.TransferService;
 import com.researchspace.service.UserDeletionPolicy;
 import com.researchspace.service.UserDeletionPolicy.UserTypeRestriction;
@@ -31,22 +33,20 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.springframework.context.support.StaticMessageSource;
 
 public class UserDeletionManagerTest {
 
   public @Rule MockitoRule mmockery = MockitoJUnit.rule();
 
-  private StaticMessageSource msgSource;
   private @Mock GroupManager grpMgr;
   private @Mock FormDao formDao;
   private @Mock IPermissionUtils permUtils;
@@ -58,23 +58,13 @@ public class UserDeletionManagerTest {
   private @Mock RecordDao recordDao;
   private @Mock TransferService formTransferService;
   private @Mock TransferService templateTransferService;
+  private @Spy MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @InjectMocks UserDeletionManagerImpl userDeletionMgr;
   User toDelete, deleter, sysadmin1, sysadminToDelete, sysadmin3;
 
   @Before
   public void before() throws IOException {
-    msgSource = new StaticMessageSource();
-    msgSource.addMessage("errors.deleteadminuser", Locale.getDefault(), "no-admin");
-    msgSource.addMessage("errors.deleteuser.nonself", Locale.getDefault(), "no-self");
-    msgSource.addMessage("errors.deletesysadminuser", Locale.getDefault(), "failed-sysadmin");
-    msgSource.addMessage("group.edit.mustbe1.admin.error.msg", Locale.getDefault(), "pigroup");
-    msgSource.addMessage(
-        "group.edit.nogroupownerdelete.error.msg", Locale.getDefault(), "no-ownerDelete");
-    msgSource.addMessage(
-        "group.edit.emptygrouprequired.error.msg", Locale.getDefault(), "other-members-exist");
-
-    userDeletionMgr.setMessageSource(msgSource);
     toDelete = TestFactory.createAnyUser("any");
     toDelete.setId(1L);
     deleter = TestFactory.createAnyUser("deleter");
@@ -103,7 +93,7 @@ public class UserDeletionManagerTest {
     when(userDao.get(1L)).thenReturn(deleter);
     ServiceOperationResult<User> result = userDeletionMgr.removeUser(1L, noRestriction(), deleter);
     assertFalse(result.isSucceeded());
-    assertEquals("no-self", result.getMessage());
+    assertEquals("You cannot delete yourself!", result.getMessage());
     verifyDeleteNeverInvoked();
     assertFalse(userDeletionMgr.isUserRemovable(1L, noRestriction(), deleter).isSucceeded());
   }
@@ -115,7 +105,10 @@ public class UserDeletionManagerTest {
     mockSysadminListing(toList(sysadminToDelete, sysadmin1));
     ServiceOperationResult<User> result = userDeletionMgr.removeUser(1L, noRestriction(), deleter);
     assertFalse(result.isSucceeded());
-    assertEquals("failed-sysadmin", result.getMessage());
+    assertEquals(
+        "Invalid attempt to delete sysadmin user - there must be at least one remaining active, "
+            + "enabled sysadmin user. Also, can't delete the internal sysadmin account 'sysadmin1'",
+        result.getMessage());
     verifyDeleteNeverInvoked();
     assertFalse(userDeletionMgr.isUserRemovable(1L, noRestriction(), deleter).isSucceeded());
   }
@@ -165,7 +158,10 @@ public class UserDeletionManagerTest {
     ServiceOperationResult<User> result = userDeletionMgr.removeUser(1L, noRestriction(), deleter);
     verifyDeleteNeverInvoked();
     assertFalse(result.isSucceeded());
-    assertEquals("pigroup", result.getMessage());
+    assertEquals(
+        "Sorry, cannot remove the only admin or PI of this group. Please assign a new admin or PI "
+            + "role to this group before deleting this member.",
+        result.getMessage());
     assertFalse(userDeletionMgr.isUserRemovable(1L, noRestriction(), deleter).isSucceeded());
   }
 

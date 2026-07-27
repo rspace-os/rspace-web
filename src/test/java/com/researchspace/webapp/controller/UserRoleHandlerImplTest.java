@@ -14,6 +14,8 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.service.IContentInitializer;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
@@ -26,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class UserRoleHandlerImplTest {
   @Rule public MockitoRule mockery = MockitoJUnit.rule();
@@ -41,6 +44,8 @@ public class UserRoleHandlerImplTest {
   public void setUp() throws Exception {
     admin = TestFactory.createAnyUserWithRole("admin", Role.SYSTEM_ROLE.getName());
     when(roleMgr.getRole(Role.PI_ROLE.getName())).thenReturn(Role.PI_ROLE);
+    ReflectionTestUtils.setField(
+        roleHandler, "messages", new MessageSourceUtils(new JsonMessageSource()));
   }
 
   @Test

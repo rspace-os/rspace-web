@@ -31,8 +31,8 @@ import org.springframework.web.client.RestClientResponseException;
 
 public class ExternalMessageHandlerImpl implements ExternalMessageHandler {
 
-  static final String SEND_FAILED_STATUS_MSG_KEY = "external.messaging.send.failed.status";
-  static final String MSTEAMS_UNAUTHORIZED_MSG_KEY = "external.messaging.send.msteams.unauthorized";
+  static final String SEND_FAILED_STATUS_MSG_KEY = "external.messaging.send.failedStatus";
+  static final String MSTEAMS_UNAUTHORIZED_MSG_KEY = "external.messaging.send.msTeamsUnauthorized";
 
   Logger log = LoggerFactory.getLogger(ExternalMessageHandlerImpl.class);
 

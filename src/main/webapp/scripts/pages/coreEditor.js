@@ -72,17 +72,17 @@ function initCommentDialog() {
   $(document).ready(function () {
     RS.switchToBootstrapButton();
     $("#comment-editor").dialog({
-      title: "Comments",
+      title: RS.msg("legacyjs.workspace.coreEditor.commentsDialogTitle"),
       resizable: false,
       autoOpen: false,
       height: 500,
       width: 550,
       modal: true,
       buttons: {
-        Cancel: function () {
-          apprise("Please confirm that you wish to cancel - the changes you made won't be saved.", { confirm: true, textOk: "Yes, cancel", textCancel: "No, don't" }, function () { $("#comment-editor").dialog('close'); });
+        [RS.msg("legacyjs.workspace.coreEditor.cancelButton")]: function () {
+          apprise(RS.msg("legacyjs.workspace.coreEditor.cancelCommentConfirm"), { confirm: true, textOk: RS.msg("legacyjs.workspace.coreEditor.cancelCommentConfirmYes"), textCancel: RS.msg("legacyjs.workspace.coreEditor.cancelCommentConfirmNo") }, function () { $("#comment-editor").dialog('close'); });
         },
-        'Save': function () {
+        [RS.msg("legacyjs.workspace.coreEditor.saveButton")]: function () {
           $.ajaxSetup({ async: false });
           var commentId = $(this).data('id');
           var fieldId = $(this).data('fieldId');
@@ -99,11 +99,11 @@ function initCommentDialog() {
               if (data.data !== null) {
                 closeDialog = true;
               } else {
-                apprise("Errors : " + getValidationErrorString(data.errorMsg));
+                apprise(RS.msg("legacyjs.workspace.coreEditor.errorsPrefix", getValidationErrorString(data.errorMsg)));
               }
             });
           jqxhr.fail(function () {
-            RS.ajaxFailed("Saving comment", false, jqxhr);
+            RS.ajaxFailed(RS.msg("legacyjs.workspace.coreEditor.ajaxSavingComment"), false, jqxhr);
           });
 
           if (closeDialog) {
@@ -132,7 +132,7 @@ function initCommentDialog() {
             $('#comments').show();
           });
         jqxhr.fail(function () {
-          RS.ajaxFailed("Getting comments", false, jqxhr);
+          RS.ajaxFailed(RS.msg("legacyjs.workspace.coreEditor.ajaxGettingComments"), false, jqxhr);
         });
       },
       close: function () { }
@@ -144,14 +144,14 @@ function initCommentDialog() {
 function initCommentViewDialog() {
 
   $("#comment-view").dialog({
-    title: "Comments",
+    title: RS.msg("legacyjs.workspace.coreEditor.commentsDialogTitle"),
     resizable: false,
     autoOpen: false,
     height: 500,
     width: 550,
     modal: true,
     buttons: {
-      Close: function () {
+      [RS.msg("legacyjs.workspace.coreEditor.closeButton")]: function () {
         $(this).dialog('close');
       }
     },
@@ -175,7 +175,7 @@ function initCommentViewDialog() {
           $('#commentsView').show();
         });
       jqxhr.fail(function () {
-        RS.ajaxFailed("Getting comments", false, jqxhr);
+        RS.ajaxFailed(RS.msg("legacyjs.workspace.coreEditor.ajaxGettingComments"), false, jqxhr);
       });
     },
     close: function () { }
@@ -183,7 +183,7 @@ function initCommentViewDialog() {
 }
 
 function createCommentRow(commentData) {
-  var result = '<tr class="commentRow"><td style="padding-bottom: 0px; padding-top: 0px;"><table><tr><td style="color:black; font-weight: bold; background-color:#CCC; padding: 12px;">Comment by ' + commentData.lastUpdater + ' at ' + commentData.formatDate + '</td></tr>' +
+  var result = '<tr class="commentRow"><td style="padding-bottom: 0px; padding-top: 0px;"><table><tr><td style="color:black; font-weight: bold; background-color:#CCC; padding: 12px;">' + RS.msg("legacyjs.workspace.coreEditor.commentByAt", commentData.lastUpdater, commentData.formatDate) + '</td></tr>' +
     '<tr><td style="color:black; background-color:white; width:500px;">' + RS.escapeHtml(commentData.itemContent) + '</td></tr></table></td></tr>';
   return result;
 }
@@ -232,10 +232,10 @@ function _loadRSpaceElementInfo(id, version, url, $infoArea, isInfoDialog, infoP
   });
   jqxhr.fail(function () {
     if (isInfoDialog) {
-      RS.ajaxFailed("Retrieving record information", false, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.workspace.coreEditor.ajaxRetrievingRecordInfo"), false, jqxhr);
     } else {
       // RSPAC-1648 show error from attachment loading request as toast
-      RS.ajaxFailed("Retrieving attachment information", false, jqxhr, true);
+      RS.ajaxFailed(RS.msg("legacyjs.workspace.coreEditor.ajaxRetrievingAttachmentInfo"), false, jqxhr, true);
     }
   });
   return jqxhr;
@@ -266,7 +266,7 @@ function initExternalLinkedRecordInfoDialog() {
   }
   $(document).ready(function () {
     $('#externalLinkedRecordInfoDialog').dialog({
-      title: 'External Link Info',
+      title: RS.msg("legacyjs.workspace.coreEditor.externalLinkInfoDialogTitle"),
       autoOpen: false,
       modal: true,
       minWidth: 400,
@@ -274,7 +274,7 @@ function initExternalLinkedRecordInfoDialog() {
         $('.ui-dialog-buttonset button').focus();
       },
       buttons: {
-        "OK": function () {
+        [RS.msg("legacyjs.workspace.coreEditor.okButton")]: function () {
           $(this).dialog("close");
         }
       }
@@ -348,7 +348,7 @@ function checkBoxAPIAvailableForUser(onSuccess) {
       var secToken = result.data.substring("USER_NOT_AUTHORIZED:".length);
       openAuthorizationDialogForBoxAPI(onSuccess, secToken);
     } else if (result.error && result.error.errorMessages[0] === "API_CONFIGURATION_INCORRECT") {
-      apprise("There is a problem with RSpace Box configuration for Versioned links. Please contact your System Admin.");
+      apprise(RS.msg("legacyjs.workspace.coreEditor.boxConfigProblem"));
     }
   });
 }
@@ -437,7 +437,7 @@ function updateInternalLinks($internalLinks) {
     if (href && !href.startsWith('/')) {
       if (href.indexOf('/globalId/') > 0) {
         var externalServerUrl = href.substring(0, href.indexOf('/globalId/'));
-        $thisLink.append(" <span style=\"color: red\">at " + externalServerUrl + "</span>");
+        $thisLink.append(" <span style=\"color: red\">" + RS.msg("legacyjs.workspace.coreEditor.linkAtServer", externalServerUrl) + "</span>");
       }
     }
     // add info button
@@ -466,7 +466,7 @@ function updateEmbedIframes($iframeDivs) {
       brandDesc = "TIB AV-Portal";
     }
     if (brandDesc) {
-      $thisIframeDiv.append("<div class='iframeDescDiv'>embedded video from " + brandDesc + " </div>");
+      $thisIframeDiv.append("<div class='iframeDescDiv'>" + RS.msg("legacyjs.workspace.coreEditor.embeddedVideoFrom", brandDesc) + " </div>");
     }
   });
 }
@@ -613,12 +613,12 @@ function _retrieveQueriedMediaFileBasicInfos() {
     });
     if (result.error) {
       $.each(result.error.errorMessages, function () {
-        RS.confirm("There was a problem with loading attachment details: <br/>" + this, "warning", 5000);
+        RS.confirm(RS.msg("legacyjs.workspace.coreEditor.attachmentDetailsLoadProblem", this), "warning", 5000);
       });
     }
   });
   jqxhr.fail(function () {
-    RS.ajaxFailed("Retrieving attachments information", false, jqxhr, true);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.coreEditor.ajaxRetrievingAttachmentsInfo"), false, jqxhr, true);
     $.each(currentRequestsQueue, function () {
       this.deferred.reject(this.id);
     });
@@ -1078,7 +1078,7 @@ function makeRenameRequest(data) {
       RS.trackEvent("user:rename:document:document_editor");
     }
   }).fail(function () {
-    RS.ajaxFailed("Renaming record", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.coreEditor.ajaxRenamingRecord"), false, jqxhr);
   });
   return jqxhr;
 }
@@ -1091,7 +1091,7 @@ function checkEntryName(newName) {
   // check for invalid characters, warn the user, leave editor field focused without changing the name
   for (i = 0; i < nameForbiddenCharacters.length; i++) {
     if (newName.indexOf(nameForbiddenCharacters[i]) >= 0) {
-      apprise("Sorry, '" + nameForbiddenCharacters[i] + "' is a forbidden character that you can't use in document name");
+      apprise(RS.msg("legacyjs.workspace.coreEditor.forbiddenCharInName", nameForbiddenCharacters[i]));
       return { "valid": false, "saveName": false };
     }
   }
@@ -1101,7 +1101,7 @@ function checkEntryName(newName) {
   if (newName === "") {
     $(formSelector).find(editorSelector).val($('#recordNameInBreadcrumb').text());
     RS.resizeInputFieldToContent($(formSelector).find(editorSelector));
-    apprise("Please enter a name");
+    apprise(RS.msg("legacyjs.workspace.coreEditor.pleaseEnterName"));
     return { "valid": false, "saveName": false };
   }
 
@@ -1232,7 +1232,7 @@ const RSPACE_TAGS_COMMA_DELIM = "__rspactags_comma__";
 
 //View mode Functions are used when the document is first loaded, invoked by documentView.js and journal.js
 const setUpViewModeInfo = (latestTags) => {
-    const tagInfoDialogHTMLViewMode = '<div id="tag-info-dialog-viewmode" title="tag info" style="display:none">' +
+    const tagInfoDialogHTMLViewMode = '<div id="tag-info-dialog-viewmode" title="' + RS.msg("legacyjs.workspace.coreEditor.tagInfoDialogTitle") + '" style="display:none">' +
         '  <p id="tag-info-dialog-content-viewmode"></p></div>'
     if (latestTags.trim().length === 0) {
         $('#notebookTags').html(latestTags);
@@ -1349,12 +1349,14 @@ const formatTagDisplayString = (tagWithMeta) => {
     navigator.clipboard.writeText(uri);
     return displayString;
 }
-const tagInfoDialogHTML =  '<div id="tag-info-dialog" title="tag info" style="display:none">' +
+const tagInfoDialogHTML =  '<div id="tag-info-dialog" title="' + RS.msg("legacyjs.workspace.coreEditor.tagInfoDialogTitle") + '" style="display:none">' +
     '  <p id="tag-info-dialog-content"></p></div>'
 function initTagForm(selector) {
     let suggestedTags = [];
     const tags = initTagMetaData(selector);
-    const CLICK_FOR_NEXT_DATA = "============CLICK_HERE_FOR_NEXT_DATA============"
+    const CLICK_FOR_NEXT_DATA = RS.msg("legacyjs.workspace.coreEditor.tagsClickForNextData");
+    const TOO_MANY_RESULTS = RS.msg("legacyjs.workspace.coreEditor.tagsTooManyResults");
+    const BACK_TO_START = RS.msg("legacyjs.workspace.coreEditor.tagsBackToStart");
     tagsEditMode = true;
     let saveIsPossible = true;
     const forbidden = ['<', '>', '\\'];
@@ -1364,8 +1366,8 @@ function initTagForm(selector) {
         tagsHtml += "<li>" + tag.trim() + "</li>";
     });
 
-    tagsHtml = (allowBioOntologies ? '<div class="smallText">BioPortal Ontologies being added to suggestions.Disable on My LabGroups Page.</div>':
-            '<div class="smallText">Use My LabGroups page to enable inclusion of BioPortal Ontologies suggestions.</div>') +
+    tagsHtml = (allowBioOntologies ? '<div class="smallText">' + RS.msg("legacyjs.workspace.coreEditor.bioOntologiesEnabled") + '</div>':
+            '<div class="smallText">' + RS.msg("legacyjs.workspace.coreEditor.bioOntologiesDisabled") + '</div>') +
         tagInfoDialogHTML+'<img id="ajaxTagsLoadingImg" src="/public/images/ajax-loading.gif" style="display:none;" "/>'+tagsHtml;
     $(selector).html(tagsHtml);
 
@@ -1402,12 +1404,12 @@ function initTagForm(selector) {
       }
       else if (suggestedTags.includes("=========TOO_MANY_ONTOLOGY_RESULTS=========")) {
         suggestedTags = [];
-        suggestedTags.push("Too many results, please enter a specific search term");
+        suggestedTags.push(TOO_MANY_RESULTS);
       }
       else if (suggestedTags.includes("=========FINAL_DATA=========")) {
         suggestedTags = suggestedTags.filter(tag => tag !== "=========FINAL_DATA=========");
-        suggestedTags.push("================BACK_TO_START================");
-        suggestedTags.unshift("================BACK_TO_START================");
+        suggestedTags.push(BACK_TO_START);
+        suggestedTags.unshift(BACK_TO_START);
       } else {
         suggestedTags.push(CLICK_FOR_NEXT_DATA);
         suggestedTags.unshift(CLICK_FOR_NEXT_DATA);
@@ -1489,7 +1491,7 @@ function initTagForm(selector) {
               return true;
           }
       },
-    placeholderText: (enforceOntologies ? "Ontologies enforced..." : "Separate tags by comma..."),
+    placeholderText: (enforceOntologies ? RS.msg("legacyjs.workspace.coreEditor.tagsPlaceholderOntologiesEnforced") : RS.msg("legacyjs.workspace.coreEditor.tagsPlaceholderDefault")),
     allowSpaces: true,
       allowDuplicates: false,
     readOnly: !isEditable,
@@ -1516,7 +1518,7 @@ function initTagForm(selector) {
       // don't save tags that are already saved and are just being loaded on tags form init
       if (ui.duringInitialization === true) {return true};
       if (enforceOntologies && !suggestedTags.includes(ui.tagLabel) &&! tagDataValuesToMetaData.get(ui.tagLabel)) {
-          $('#tag-info-dialog-content').html("Ontologies are enforced, tag values must come from ontology files shared with a group");
+          $('#tag-info-dialog-content').html(RS.msg("legacyjs.workspace.coreEditor.ontologiesEnforcedMessage"));
           openDialog("#tag-info-dialog");
         return false;
       }
@@ -1526,12 +1528,12 @@ function initTagForm(selector) {
             clickForNextData = true;
             setTimeout(() => input.click(), 100);
             return false;
-        } else if (ui.tagLabel === "================BACK_TO_START================") {
+        } else if (ui.tagLabel === BACK_TO_START) {
             event.preventDefault();
             requestDataBlockFromPosition = 0;
             setTimeout(() => input.click(), 100);
             return false;
-        } else if (ui.tagLabel === "Too many results, please enter a specific search term") {
+        } else if (ui.tagLabel === TOO_MANY_RESULTS) {
             event.preventDefault();
             requestDataBlockFromPosition = 0;
             return false;
@@ -1540,7 +1542,7 @@ function initTagForm(selector) {
             return false;
         }
         const errorForbiddenChar = (forbidden) =>{
-            $('#tag-info-dialog-content').html("Sorry, '" + forbidden + "' is a forbidden character that you can't use in tags");
+            $('#tag-info-dialog-content').html(RS.msg("legacyjs.workspace.coreEditor.forbiddenCharInTag", forbidden));
             openDialog("#tag-info-dialog");
         }
        const tagPlusMeta =  tagDataValuesToMetaData.get(ui.tagLabel);
@@ -1564,7 +1566,7 @@ function initTagForm(selector) {
       if (ui.tagLabel.length < 2) {
           console.log("length too short ");
           event.preventDefault();
-          $('#tag-info-dialog-content').html("Sorry, the tag needs to be at least 2 characters long");
+          $('#tag-info-dialog-content').html(RS.msg("legacyjs.workspace.coreEditor.tagTooShort"));
           openDialog("#tag-info-dialog");
         return false;
       }
@@ -1619,7 +1621,7 @@ function saveRecordTags(tags) {
         openDialog("#tag-info-dialog");
     }
   }).fail(function () {
-    RS.ajaxFailed("Tagging", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.coreEditor.ajaxTagging"), false, jqxhr);
   });
 }
 
@@ -1692,9 +1694,9 @@ function getImageIdFrom$Img($image) {
 var rs_tableExport;
 
 function addDownloadImageContextButton($img) {
-  var title = 'Download as image';
+  var title = RS.msg("legacyjs.workspace.coreEditor.downloadAsImage");
   if ($img.is('.imageDropped')) {
-    title = 'Download full image';
+    title = RS.msg("legacyjs.workspace.coreEditor.downloadFullImage");
   }
   var cssClass = 'imageContextButtons imageDownloadButton';
   if ($img.attr('width') < 60) {
@@ -1721,7 +1723,7 @@ function addDownloadButtonToTables($tables) {
     }
     var $tableDownloadButton = $('<div></div>', {
       'class': 'tableContextButtons tableDownloadButton',
-      'title': 'Download as CSV',
+      'title': RS.msg("legacyjs.workspace.coreEditor.downloadAsCsv"),
       on: {
         click: function (e) {
           var $table = $(this).siblings('table');
@@ -1758,7 +1760,7 @@ function addImageInfoContextButton($img, onClick) {
   }
   var imageInfoButton = $('<div></div>', {
     'class': cssClass,
-    'title': 'Image details',
+    'title': RS.msg("legacyjs.workspace.coreEditor.imageDetails"),
     on: {
       click: function () {
         onClick($img);
@@ -1959,8 +1961,8 @@ function navigateAwayFromCurrentDocument(urlToOpen, modalTargetElem) {
       saveStructuredDocument(true, true, true, urlToOpen);
       return true;
     };
-    RS.apprise('You are currently editing the document, please save it before leaving the page.', true,
-      modalTargetElem, onConfirm, { title: 'Save current document', textOk: 'Save' });
+    RS.apprise(RS.msg("legacyjs.workspace.coreEditor.unsavedChangesConfirm"), true,
+      modalTargetElem, onConfirm, { title: RS.msg("legacyjs.workspace.coreEditor.saveCurrentDocumentTitle"), textOk: RS.msg("legacyjs.workspace.coreEditor.saveButton") });
   } else {
     RS.navigateTo(urlToOpen);
   }
@@ -2034,7 +2036,7 @@ function insertChemElement(ecatChemFileId, fieldId, fileName) {
       return response.json()
         .then(function (jsonResponse) {
           if (!response.ok && !jsonResponse.error) {
-            jsonResponse.error = { errorMessages: [response.statusText || 'Request failed'] };
+            jsonResponse.error = { errorMessages: [response.statusText || RS.msg("legacyjs.workspace.coreEditor.requestFailed")] };
           }
           return jsonResponse;
         })
@@ -2078,13 +2080,11 @@ function insertChemElement(ecatChemFileId, fieldId, fileName) {
 
 function handleChemistryError(response, fileName) {
   RS.unblockPage();
-  var errorMsg = "There was a problem creating chemical: " + fileName + " <br/>";
   console.error(response.error.errorMessages);
-  if (response.error && response.error.errorMessages[0].includes('Index 0 out of bounds for length 0')) {
-    errorMsg += "RSpace doesn't currently support the generation of Markush or R-Group structure images, you're file is stored in the gallery but cannot be inserted into a document";
-  } else {
-    errorMsg += response.error.errorMessages[0];
-  }
+  var detail = (response.error && response.error.errorMessages[0].includes('Index 0 out of bounds for length 0'))
+    ? RS.msg("legacyjs.workspace.coreEditor.markushNotSupported")
+    : response.error.errorMessages[0];
+  var errorMsg = RS.msg("legacyjs.workspace.coreEditor.chemCreationProblem", fileName, detail);
   // Sticky toasts
   $().toastmessage('showToast', {
     text: errorMsg,
@@ -2149,9 +2149,7 @@ $(document).ready(function () {
   const searchParams = new URLSearchParams(window.location.search);
   if (searchParams.has("sharedWithGroup")) {
     RS.confirm(
-      "<b>This document has been automatically shared with all members of " +
-        RS.escapeHtml(searchParams.get("sharedWithGroup")) +
-        '</b><br />To amend the permissions, visit the <a href="/record/share/manage">Shared Documents</a> page.',
+      RS.msg("legacyjs.workspace.coreEditor.sharedWithGroup", RS.escapeHtml(searchParams.get("sharedWithGroup"))),
       "success",
       "infinite"
     );

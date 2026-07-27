@@ -1,46 +1,46 @@
 <div>
 <h1>${protocol.title}</h1>
-Imported from #if($protocol.link) <a target="_blank" href="$protocol.link">Protocols.io</a>
-              #else Protocols.io
-              #end
-<h2>Metadata</h2>
-<b>Original creator:</b> #if($protocol.creator.link)<a target="_blank" href="$protocol.creator.link">$protocol.creator.name</a>
-                         #else $protocol.creator.name 
+#if($protocol.link)$msg.format("export.protocolsIo.importedFromLink", [$protocol.link])
+#else$msg.format("export.protocolsIo.importedFrom", ["Protocols.io"])
+#end
+<h2>$msg.getMessage("export.protocolsIo.metadata")</h2>
+<b>$msg.getMessage("export.protocolsIo.originalCreator")</b> #if($protocol.creator.link)<a target="_blank" href="$protocol.creator.link">$protocol.creator.name</a>
+                         #else $protocol.creator.name
                          #end
 <br>
-<b>Published on:</b>  $protocol.creationDate
+<b>$msg.getMessage("export.protocolsIo.publishedOn")</b>  $protocol.creationDate
 <br>
-<b>Original authors:</b> 
+<b>$msg.getMessage("export.protocolsIo.originalAuthors")</b>
    #foreach ($author in $protocol.authors)
       $author.name #if( $foreach.hasNext ),#end
    #end
 <br>
  #if($protocol.versionId != "0")
-  <b>Version:</b>  $protocol.versionId
+  <b>$msg.getMessage("export.protocolsIo.version")</b>  $protocol.versionId
  #end
 
  #if($protocol.description != $null)
-    Abstract <br>
+    $msg.getMessage("export.protocolsIo.abstract") <br>
     $protocol.description
  #end
 
  #if($protocol.beforeStart != $null)
-  Before start <br>
+  $msg.getMessage("export.protocolsIo.beforeStart") <br>
   $protocol.beforeStart
  #end
 
  #if($protocol.materials.size() > 0)
- <h2>Materials</h2>
+ <h2>$msg.getMessage("export.protocolsIo.materials")</h2>
    <table>
-     <tr><th> Reagent </th><th>Source</th></tr>
+     <tr><th> $msg.getMessage("common:stoichiometry.table.roles.reagent") </th><th>$msg.getMessage("export.protocolsIo.source")</th></tr>
    #foreach ($reagent in $protocol.materials)
      #reagent($reagent)
    #end
  </table>
  #end
- <h2>Steps</h2>
+ <h2>$msg.getMessage("export.protocolsIo.steps")</h2>
      #foreach ($step in $protocol.steps)
-       <h3 data-step-id="$step.id"><a id="step-$step.id">Step $foreach.count</a> </h3>
+       <h3 data-step-id="$step.id"><a id="step-$step.id">$msg.format("export.protocolsIo.stepNumber", [$foreach.count])</a> </h3>
          #foreach ($component in $step.components)
            ## Description Type **
            #if($component.typeId==1)
@@ -56,31 +56,31 @@ Imported from #if($protocol.link) <a target="_blank" href="$protocol.link">Proto
             <h4> $!component.source.title </h4>
            ## Link Type **
            #elseif($component.typeId==7)
-             <a href="$component.source.link">Link out</a>
+             <a href="$component.source.link">$msg.getMessage("export.protocolsIo.linkOut")</a>
            ## Software Package Type **
            #elseif($component.typeId==8)
-             Software package: <a target="_blank" href="$component.source.link">$component.source.name</a>  <br>
-             Operating system:$component.source.osName ($component.source.osVersion)<br>
-             Repository: $!component.source.repository
+             $msg.getMessage("export.protocolsIo.softwarePackage") <a target="_blank" href="$component.source.link">$component.source.name</a>  <br>
+             $msg.getMessage("export.protocolsIo.operatingSystem")$component.source.osName ($component.source.osVersion)<br>
+             $msg.getMessage("export.protocolsIo.repository") $!component.source.repository
            ## Dataset Type **
            #elseif($component.typeId==9)
-             Dataset: <a target="_blank" href="$component.source.link">$component.source.name</a>
+             $msg.getMessage("export.protocolsIo.dataset") <a target="_blank" href="$component.source.link">$component.source.name</a>
           ## Comment Type **
            #elseif($component.typeId==13)
-             Comment: $component.source.body
+             $msg.getMessage("export.protocolsIo.comment") $component.source.body
            ## Command Type **
            #elseif($component.typeId==15)
-             Software package: $component.source.name. Command: $component.source.command <br>
-             Operating system:$component.source.osName ($component.source.osVersion)
+             $msg.getMessage("export.protocolsIo.softwarePackage") $component.source.name. $msg.getMessage("export.protocolsIo.command") $component.source.command <br>
+             $msg.getMessage("export.protocolsIo.operatingSystem")$component.source.osName ($component.source.osVersion)
            ## Expected Result Type **
            #elseif($component.typeId==17)
              $component.source.body
            ## Embedded Protocol Type **
            #elseif($component.typeId==18)
-             Nested protocol: <a target="_blank" href="https://$component.source.doi">$component.source.title</a>
+             $msg.getMessage("export.protocolsIo.nestedProtocol") <a target="_blank" href="https://$component.source.doi">$component.source.title</a>
            ## Safety Information Type **
            #elseif($component.typeId==19)
-            <a href="$component.source.link">Safety information</a> <br>
+            <a href="$component.source.link">$msg.getMessage("export.protocolsIo.safetyInformation")</a> <br>
             $component.source.body
            ## Reagent Type **
            #elseif($component.typeId==20)
@@ -92,7 +92,7 @@ Imported from #if($protocol.link) <a target="_blank" href="$protocol.link">Proto
             #end
            ## GoTo Previous Type **
            #elseif($component.typeId==22)
-            See <a href="#$component.source.stepGuid"> previous step </a> <br>
+            $msg.format("export.protocolsIo.seePreviousStep", [$component.source.stepGuid]) <br>
             $component.source.title
            ## File Type **
            #elseif($component.typeId==23)
@@ -105,28 +105,28 @@ Imported from #if($protocol.link) <a target="_blank" href="$protocol.link">Proto
             ${component.source.getConcentrationString()}
            ## Note Type **
            #elseif($component.typeId==26)
-             Note: $component.source.body
+             $msg.getMessage("export.protocolsIo.note") $component.source.body
            ## Documents Type **
            #elseif($component.typeId==27)
-             Attached Document: <a target="_blank" href="https://$component.source.doi">$component.source.title</a>
+             $msg.getMessage("export.protocolsIo.attachedDocument") <a target="_blank" href="https://$component.source.doi">$component.source.title</a>
            ## Equipment Type **
            #elseif($component.typeId==28)
-             Equipment <br>
-             Name: $component.source.name <br>
-             Type: $component.source.type <br>
-             Brand: $component.source.brand  $component.source.sku <a target="_blank" href="#$component.source.link"></a> <br>
+             $msg.getMessage("export.protocolsIo.equipment") <br>
+             $msg.getMessage("export.protocolsIo.name") $component.source.name <br>
+             $msg.getMessage("export.protocolsIo.type") $component.source.type <br>
+             $msg.getMessage("export.protocolsIo.brand") $component.source.brand  $component.source.sku <a target="_blank" href="#$component.source.link"></a> <br>
            ## Centrifuge Type **
            #elseif($component.typeId==30)
-              Centrifuge: ${component.source.getCentrifugeString()}
+              $msg.getMessage("export.protocolsIo.centrifuge") ${component.source.getCentrifugeString()}
            ## Shaker Type **
            #elseif($component.typeId==33)
-              Shaker: ${component.source.getShakerString()}
+              $msg.getMessage("export.protocolsIo.shaker") ${component.source.getShakerString()}
            #end
            <br>
         #end
         <p>
      #end
- 
+
 </div>
 
 #macro (reagent $reagent)

@@ -132,7 +132,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
     if (params.containsKey(ERROR)) {
       OauthAuthorizationError error =
           getAuthErrorBuilder()
-              .errorMsg("Error connecting to ownCloud")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"ownCloud"}))
               .errorDetails(params.get(ERROR))
               .build();
 
@@ -144,7 +144,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
     if (userManager.getAuthenticatedUserInSession() == null) {
       OauthAuthorizationError error =
           getAuthErrorBuilder()
-              .errorMsg("Error connecting to ownCloud")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"ownCloud"}))
               .errorDetails(params.get(ERROR))
               .build();
 

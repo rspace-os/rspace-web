@@ -3,11 +3,12 @@ package com.researchspace.service.impl;
 import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
+import com.researchspace.model.comms.Notification;
 import com.researchspace.service.EmailContent;
+import com.researchspace.service.NotificationTypeMessages;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.velocity.tools.generic.DateTool;
 
 /** Selects and renders the email content for a communication. */
 class CommunicationEmailContentGenerator {
@@ -43,7 +44,12 @@ class CommunicationEmailContentGenerator {
     model.put("cmm", communication);
     model.put("baseURL", htmlDomainPrefix);
     model.put("dateOb", new Date());
-    model.put("date", new DateTool());
+    model.put("date", new LocaleAwareDateTool(contentGenerator.getLocale()));
+    if (communication instanceof Notification notification) {
+      model.put(
+          "notificationTypeKey",
+          NotificationTypeMessages.keyFor(notification.getNotificationType()));
+    }
     return model;
   }
 }

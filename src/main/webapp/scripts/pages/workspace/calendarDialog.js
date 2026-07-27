@@ -3,7 +3,7 @@ var currentlyAttachedFiles = [];
 
 function clearCalendarDialogAttachments() {
     currentlyAttachedFiles = [];
-    $('#cd_current_files').html('<li style="list-style: none;">None</li>');
+    $('#cd_current_files').html('<li style="list-style: none;">' + RS.msg("legacyjs.workspace.calendarDialog.noAttachments") + '</li>');
 }
 
 function initCreateCalendarEntryDlg() {
@@ -13,12 +13,12 @@ function initCreateCalendarEntryDlg() {
         height: 500,
         width: 600,
         autoOpen: false,
-        title: "Create a calendar entry",
+        title: RS.msg("legacyjs.workspace.calendarDialog.createTitle"),
         buttons: {
-            Cancel: function() {
+            [RS.msg("legacyjs.workspace.calendarDialog.cancelButton")]: function() {
                 $(this).dialog('close');
             },
-            Create: function() {
+            [RS.msg("legacyjs.workspace.calendarDialog.createButton")]: function() {
               var eventTitle = $('#cd_event_title').val();
               var eventStart = $('#cd_event_start').val();
               var eventEnd = $('#cd_event_end').val();
@@ -29,19 +29,21 @@ function initCreateCalendarEntryDlg() {
 
               // Event title is a required field
               if (!eventTitle || eventTitle.length === 0) {
-                  $().toastmessage('showErrorToast', 'Event title is a required field.');
+                  $().toastmessage('showErrorToast', RS.msg("errors.required",
+                      RS.msg("legacyjs.workspace.calendarDialog.eventTitle")));
                   return false;
               }
 
               // Event start is a required field
               if (!eventStart || eventStart.length === 0) {
-                  $().toastmessage('showErrorToast', 'Event start is a required field.');
+                  $().toastmessage('showErrorToast', RS.msg("errors.required",
+                      RS.msg("legacyjs.workspace.calendarDialog.eventStart")));
                   return false;
               }
 
               // Repeat for number of times should be a positive integer
               if (repeat && (!$.isNumeric(occurrences) || parseInt(occurrences) <= 0 || parseInt(occurrences) != occurrences)) {
-                  $().toastmessage('showErrorToast', 'Number of times must be a positive integer!');
+                  $().toastmessage('showErrorToast', RS.msg("legacyjs.workspace.calendarDialog.occurrencesInvalid"));
                   return false;
               }
 
@@ -77,7 +79,7 @@ function initCreateCalendarEntryDlg() {
               	});
               	   
                   if (response.data && !response.error) {
-                      $().toastmessage('showSuccessToast', 'Calendar event is being downloaded.');
+                      $().toastmessage('showSuccessToast', RS.msg("legacyjs.workspace.calendarDialog.downloading"));
                       $('#createCalendarEntryDlg').dialog('close');
 
                       window.location.href = "/messaging/get_calendar_event";
@@ -85,7 +87,7 @@ function initCreateCalendarEntryDlg() {
                       $().toastmessage('showErrorToast', response.error.errorMessages[0]);
                   }
               }).fail(function (response) {
-                  $().toastmessage('showErrorToast', 'An error occurred during the creation of the calendar event.');
+                  $().toastmessage('showErrorToast', RS.msg("legacyjs.workspace.calendarDialog.createFailed"));
               });
             }
         },
@@ -182,18 +184,18 @@ function initAttachFileToCalendarEntryDlg() {
         $('#attachFileToCalendarEntryDlg').dialog({
         modal: true,
         autoOpen: false,
-        title: "Attach a file",
+        title: RS.msg("legacyjs.workspace.calendarDialog.attachTitle"),
         width: 600,
         height: 500,
         buttons: {
-            Cancel: function() {
+            [RS.msg("legacyjs.workspace.calendarDialog.cancelButton")]: function() {
                 // Unselect the record
                 $('#selectedNode').val("");
                 currentlySelectedCalendarAttachment = null;
 
                 $(this).dialog('close');
             },
-            Attach: function() {
+            [RS.msg("legacyjs.workspace.calendarDialog.attachButton")]: function() {
                 if (currentlySelectedCalendarAttachment !== null) {
                     // Append to the selected files
                     currentlyAttachedFiles.push(currentlySelectedCalendarAttachment)
@@ -208,7 +210,7 @@ function initAttachFileToCalendarEntryDlg() {
 
                     $(this).dialog('close');
                 } else {
-                    alert('Nothing was selected!');
+                    alert(RS.msg("legacyjs.workspace.calendarDialog.nothingSelected"));
                 }
             }
         },

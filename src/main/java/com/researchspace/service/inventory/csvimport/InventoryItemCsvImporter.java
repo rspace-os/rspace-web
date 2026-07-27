@@ -248,9 +248,8 @@ public abstract class InventoryItemCsvImporter {
         || (!value.startsWith(GlobalIdPrefix.BE.name())
             && !value.startsWith(GlobalIdPrefix.IC.name()))) {
       throw new IllegalArgumentException(
-          "Parent Container Global Id '"
-              + value
-              + "' is not a valid global id of an inventory container");
+          messages.getMessage(
+              "errors.inventory.import.parentContainerGlobalIdInvalid", new Object[] {value}));
     }
   }
 
@@ -258,7 +257,7 @@ public abstract class InventoryItemCsvImporter {
     return new ApiError(
         HttpStatus.BAD_REQUEST,
         ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
-        "Errors detected : 1",
+        messages.getMessage("api.errors.detected", new Object[] {1}),
         msg);
   }
 

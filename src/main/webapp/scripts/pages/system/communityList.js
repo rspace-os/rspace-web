@@ -20,25 +20,25 @@ function addRemoveCommunityHandler(){
 		var data = getSelectedCommunities();
 
 		if(Object.keys(data).includes("-1")) {
-			apprise ("You can't delete the default all-labs community, please remove this from the selection. ");
+			apprise (RS.msg("legacyjs.system.communityList.cannotDeleteDefault"));
 			return;
 		}
 
 		var callback = function() {
-			RS.blockPage("Removing communities...")
+			RS.blockPage(RS.msg("legacyjs.system.communityList.removing"))
 			var jxqr= $.post(createURL('/community/admin/ajax/removeCommunity'), {"ids[]":Object.keys(data)}, function (e) {
-				RS.confirm(`Communit${Object.values(data).length > 1 ? 'ies' : 'y'} deleted.`, 'success', 5000);
+				RS.confirm(RS.msg("legacyjs.system.communityList.deleted", Object.values(data).length), 'success', 5000);
 				RS.unblockPage();
 				window.location.href=createURL('/community/admin/list');
 			});
 			jxqr.fail(function(){
-				RS.ajaxFailed("Removing community",true,jxqr);
+				RS.ajaxFailed(RS.msg("legacyjs.system.communityList.removingCommunityAction"),true,jxqr);
 			});
 		}
 
 		RS.createConfirmationDialog({
-			title: "Confirm deletion",
-			consequences: `Are you sure you want to delete the following communit${Object.values(data).length > 1 ? 'ies' : 'y'}: <strong>${Object.values(data).join(', ')}</strong>?`,
+			title: RS.msg("legacyjs.system.common.confirmDeletionTitle"),
+			consequences: RS.msg("legacyjs.system.communityList.confirmDeletionConsequences", Object.values(data).length, RS.formatList(Object.values(data))),
 			variant: "warning",
 			callback: callback
 		});

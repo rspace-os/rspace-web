@@ -9,6 +9,7 @@ import com.researchspace.integrations.omero.model.WellRSpaceView;
 import com.researchspace.integrations.omero.service.OmeroService;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ public class OmeroController {
   private final OmeroExceptionHandler omeroExceptionHandler;
   private final UserManager userManager;
   private final OmeroService omeroService;
+  private final MessageSourceUtils messages;
 
   @ResponseStatus(HttpStatus.UNAUTHORIZED)
   private static class OmeroAuthException extends RuntimeException {
@@ -45,9 +47,11 @@ public class OmeroController {
   @Qualifier("userNameToUserConnection")
   private Map<String, UserConnection> userUserConnectionMap;
 
-  public OmeroController(UserManager userManager, OmeroService omeroService) {
+  public OmeroController(
+      UserManager userManager, OmeroService omeroService, MessageSourceUtils messages) {
     this.userManager = userManager;
-    this.omeroExceptionHandler = new OmeroExceptionHandler();
+    this.messages = messages;
+    this.omeroExceptionHandler = new OmeroExceptionHandler(messages);
     this.omeroService = omeroService;
   }
 
@@ -62,8 +66,7 @@ public class OmeroController {
     User user = userManager.getAuthenticatedUserInSession();
     UserConnection uc = userUserConnectionMap.get("omero_" + user.getUsername());
     if (uc == null) {
-      throw new OmeroAuthException(
-          "Omero authentication expired, please connect to Omero on the Apps page");
+      throw new OmeroAuthException(messages.getMessage("apps.omero.errors.authenticationExpired"));
     }
     String cred =
         uc.getAccessToken(); // we save omero credentials as a delimited string in the access

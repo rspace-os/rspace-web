@@ -1,0 +1,271 @@
+{
+  "apps": {
+    "box": {
+      "errors": {
+        "apiException": "Box API exception: {0}",
+        "authorization": "Authorization problem",
+        "download": "A problem occurred when trying to download the file from Box. Please close this window and try again."
+      }
+    },
+    "deposit": {
+      "errors": {
+        "noFile": "No file to deposit"
+      }
+    },
+    "dmp": {
+      "errors": {
+        "bothArgosAndDmpToolEnabled": "DMPTool and Argos cannot both be enabled",
+        "import": "Couldn't import DMP",
+        "invalidLicenseUrl": "{0} is not a valid URL",
+        "list": "Couldn't list DMPs"
+      }
+    },
+    "dmpAssistant": {
+      "errors": {
+        "connect": "Error connecting to DMP Assistant.",
+        "importBatchTooLarge": "A maximum of {0} plans can be imported in one request.",
+        "refresh": "Your DMP Assistant connection has expired and could not be refreshed. Please reconnect to DMP Assistant from the Apps page.",
+        "upstream": "DMP Assistant returned an error: {0}."
+      }
+    },
+    "dmpOnline": {
+      "errors": {
+        "connect": "Error connecting to DMPonline."
+      }
+    },
+    "dmpTool": {
+      "errors": {
+        "alreadyExists": "A DMP with id {0}, title: {1} already exists",
+        "download": "Couldn''t download DMP for id: {0}. {1}",
+        "downloadFile": "Couldn''t download DMP file for id: {0}",
+        "getDetails": "Couldn''t get details of DMP with id: {0}",
+        "loadUnavailable": "Unable to load your DMPs. For more information visit {0}",
+        "noAccessToken": "Access token isn't enabled - user must connect in Apps page",
+        "updateDoi": "Couldn''t update DMP with DOI: {0}"
+      },
+      "update": {
+        "success": "DMP updated"
+      }
+    },
+    "dsw": {
+      "errors": {
+        "credentials": "Cannot access the server using the supplied API key",
+        "project": "Error retrieving DSW project",
+        "projects": "Error getting DSW projects",
+        "serverUrl": "Cannot access the specified server URL"
+      }
+    },
+    "dialogTitles": {
+      "clustermarket": "Insert from Clustermarket",
+      "galaxy": "Use a Galaxy Workflow",
+      "ketcher": "Insert from Ketcher",
+      "omero": "Insert from Omero",
+      "shortcuts": "Configure keyboard shortcuts"
+    },
+    "errors": {
+      "invalidChoice": "App [{0}] is an invalid choice - it must be of type {1}",
+      "invalidIntegrationName": "Invalid integration name {0}, must be one of [{1}]",
+      "noneValid": "There were no valid Apps: {0}",
+      "notFoundByName": "No app with name [{0}]",
+      "notFoundByProperty": "App could not be identified for property {0}",
+      "requestSupport": "There is a problem with your request, please contact support."
+    },
+    "egnyte": {
+      "errors": {
+        "authenticationFailed": "Couldn't authenticate with provided credentials.",
+        "credentialsRequired": "Egnyte username and password must be provided.",
+        "invalidAccessToken": "Received un-workable Egnyte access token for provided credentials."
+      }
+    },
+    "fieldmark": {
+      "errors": {
+        "createIgsnCandidateFields": "Error creating IGSN candidate fields for notebook \"{0}\"",
+        "createIgsnCandidateFieldsUnsupported": "Not possible to create IGSN candidate fields for notebook \"{0}\" because {1}",
+        "fetchNotebooks": "Error fetching notebooks due to the Fieldmark server",
+        "importNotebook": "Error importing notebook \"{0}\" from Fieldmark: {1}",
+        "notebookIdRequired": "Error importing notebook because the request had an empty \"notebookId\""
+      }
+    },
+    "github": {
+      "errors": {
+        "getFolderContents": "Error while getting GitHub folder contents",
+        "parseTreeRequest": "Error while parsing the request"
+      }
+    },
+    "nextcloud": {
+      "errors": {
+        "notConfigured": "Nextcloud cannot be enabled because it has not been fully configured for this deployment. A server URL and OAuth credentials (client id and secret) are required. Please contact your System Administrator."
+      }
+    },
+    "oauth": {
+      "errors": {
+        "accessDenied": "{0} access denied",
+        "connection": "Error connecting to {0}",
+        "general": "General error",
+        "repositoryList": "Getting repositories list failed",
+        "tokenCreation": "Error during token creation",
+        "tokenCreationWithDetails": "Error during token creation: {0}",
+        "tokenExchange": "Exception during token exchange",
+        "tokenRefresh": "Error during token refresh",
+        "tokenRefreshWithDetails": "Error during token refresh: {0}",
+        "unknown": "Unknown error"
+      }
+    },
+    "owncloud": {
+      "errors": {
+        "notConfigured": "ownCloud cannot be enabled because it has not been fully configured for this deployment. A server URL and OAuth credentials (client id and secret) are required. Please contact your System Administrator."
+      }
+    },
+    "omero": {
+      "errors": {
+        "authenticationExpired": "Omero authentication expired, please connect to Omero on the Apps page",
+        "login": "Could not log in to OMERO: {0}"
+      }
+    },
+    "raid": {
+      "errors": {
+        "associateGroup": "Not able to associate RAiD to group: {0}",
+        "connection": "No connection to RAiD for server alias \"{0}\"",
+        "disassociateGroup": "Not able to disassociate RAiD from group: {0}",
+        "folderLookup": "Not able to get RAiD associated to the project group with folder ID ''{0}'' for the user ''{1}''",
+        "folderNotProjectGroup": "Not able to get RAiD associated to the project group with folder ID ''{0}'' for the user ''{1}'' because that is not a Project Group shared folder",
+        "listForUser": "Not able to get RAiD list for the user \"{0}\"",
+        "noAssociationForGroup": "The group with projectGroupId {0} has no RAiDs already associated."
+      }
+    },
+    "slack": {
+      "errors": {
+        "noAccessToken": "Please, add this Slack channel again on RSpace (no access token found).",
+        "noConnectedUser": "There are no RSpace users associated with this Slack account! Please connect to Slack from the RSpace Apps tab.",
+        "tooManyConnectedUsers": "There is more than 1 RSpace user associated with this Slack account! [{0}, {1}...]",
+        "verificationCodeMismatch": "Verification token does not match!"
+      },
+      "saveConversation": {
+        "done": "Done. {0} messages saved from Slack.",
+        "error": "Error while saving Slack conversation [{0}]",
+        "genericDefault": "Please provide a valid time period, e.g. '7 days' or '7d'",
+        "help": "Typing `/rs-save-conversation [time period]` creates a document on RSpace with Slack messages from the current Slack channel. For example, `/rs-save-conversation 5 days` saves messages from the last 5 days. Other accepted time period formats are: 1d 5h 10min, from 2017-06-01 to 2017-06-02T14:12:00, to 2018, from 2017. If you've not already done so, please connect RSpace to Slack from the RSpace Apps tab to set up this feature.",
+        "maxTimePeriod": "Sorry, please provide a time period not longer than {0} days.",
+        "noMessages": "No messages found in a selected time period.",
+        "ok": "Creating a document ''{0}''..."
+      },
+      "search": {
+        "help": "Typing `/rs-search [search term]` will look up your search term using RSpace basic search and post the first five results. Search term can be a document name, tag or global ID. For example, `/rs-search Example*`. If you've not already done so, please connect RSpace to Slack from the RSpace Apps tab to set up this feature."
+      }
+    }
+  },
+  "connect": {
+    "authorizationError": {
+      "closeWindowNotice": "You can close this window.",
+      "detailsHeading": "Details",
+      "notAuthorizedNotice": "RSpace was not authorized to use {0}: {1}.",
+      "retryPrompt": "Please try again, or contact your System Admin.",
+      "stateMismatch": "The OAuth2 'state' parameter is missing or doesn't match.",
+      "title": "Authorization Error"
+    },
+    "box": {
+      "connectedNotice": "Box API connection is now established. This window will be closed shortly."
+    },
+    "connected": {
+      "closeWindowNotice": "You may now close this window.",
+      "defaultTitle": "RSpace connection result",
+      "title": "Connected"
+    },
+    "egnyte": {
+      "connectionSetup": {
+        "credentialsPrompt": "Please provide your Egnyte credential so RSpace can access your account.",
+        "passwordPlaceholder": "Egnyte Password",
+        "skipConfigLink": "Skip Egnyte configuration, go to Workspace",
+        "title": "Connect to Egnyte",
+        "usernamePlaceholder": "Egnyte Username"
+      }
+    },
+    "msoffice": {
+      "officeView": {
+        "convertFilePrompt": "Do you want to convert the file <strong>{0}</strong> so you can edit it in Office.com?",
+        "convertHeading": "Do you want to convert this RSpace file?",
+        "convertNotice": "Office.com cannot edit a file with <strong>.{0}</strong> extension, but it can convert the file to <strong>.{1}</strong>, which will be editable. Conversion shouldn''t, but may result in lost content."
+      },
+      "unsupportedView": {
+        "heading": "Unsupported action",
+        "notice": "RSpace can''t determine the way to open file <strong>{0}</strong> (.{1} type) for <strong>{2}</strong> in Office.com.<br/>That''s unexpected. Please try again, or contact your System Admin."
+      }
+    },
+    "msteams": {
+      "domainConfig": {
+        "connectHeading": "Connect to your RSpace server:",
+        "noAccountHeading": "Don't have an account yet?",
+        "signupLinkText": "https://community.researchspace.com",
+        "signupPrompt": "Sign up for free on {0}",
+        "title": "Initial Tab configuration screen for MS Teams - Domain selection"
+      },
+      "rspaceAuthentication": {
+        "title": "RSpace authentication screen for MS Teams"
+      },
+      "simpleDocView": {
+        "loggedInAs": "Logged in as: {0}",
+        "signOut": "Sign out",
+        "title": "Simple document view for MS Teams"
+      },
+      "tabConfig": {
+        "currentServerLabel": "Current RSpace Server:",
+        "title": "MS Teams Tab config"
+      }
+    },
+    "oneDrive": {
+      "redirectPageTitle": "One Drive Redirect Page"
+    },
+    "orcid": {
+      "connectedId": "Success - Your Orcid ID is {0}.",
+      "connectedSuffix": "This window will close shortly."
+    },
+    "snapgene": {
+      "errors": {
+        "fileTooLarge": "The max file size supported by Snapgene server is {0} bytes, but this file is {1} bytes",
+        "unsupportedFileType": "This file either has incorrect suffix or is not a supported DNA file - suffix must be one of {0}",
+        "webserviceFailed": "Snapgene webservice call failed: {0} - {1}",
+        "webserviceNoDetails": "Snapgene webservice call failed"
+      }
+    }
+  },
+  "oauth": {
+    "errors": {
+      "apiDisabled": "Access to API has been disabled by RSpace administrator.",
+      "authenticationDisabled": "OAuth authentication has been disabled by RSpace administrator.",
+      "clientIdRequired": "Parameter client_id must be present!",
+      "clientSecretRequired": "Parameter client_secret must be present!",
+      "invalidCredentials": "Invalid user credentials.",
+      "passwordGrantMissingCredentials": "Password grant requires parameters `username` and `password` to be present.",
+      "refreshGrantMissingToken": "Refresh grant requires parameter `refresh_token` to be present.",
+      "tokenCreationFailed": "OAuth token could not be created.",
+      "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time.",
+      "userApiAccessDisabled": "User ''{0}'' doesn''t have access to API",
+      "userLockedOrDisabled": "User ''{0}'' has their account locked or disabled."
+    }
+  },
+  "external": {
+    "messaging": {
+      "send": {
+        "failedDefault": "Could not send message.",
+        "failedStatus": "Could not send message: the webhook returned \"{0}\".",
+        "msTeamsUnauthorized": "Microsoft Teams rejected the message as unauthorized (401). This usually means the Teams workflow only accepts authenticated senders, which RSpace's webhook posts cannot be. In Teams, check the workflow is turned on, and that it was created from a template such as \"Send webhook alerts to a channel\" rather than one restricted to specific people or to people in your organisation."
+      }
+    }
+  },
+  "repository": {
+    "connection": {
+      "failed": "Failed! {0}",
+      "success": "Success! {0}"
+    },
+    "errors": {
+      "appConfigElementSetNotFound": "No app config element set found for app {0}",
+      "invalidAppId": "Invalid app Id",
+      "noUserConnection": "No UserConnection exists for: {0}",
+      "unknownIntegration": "Unknown or undefined integration",
+      "urlCreationFailed": "Couldn''t create {0} repositoryURL: {1}"
+    }
+  },
+  "search": {
+    "noResults": "Your search returned no results"
+  }
+}

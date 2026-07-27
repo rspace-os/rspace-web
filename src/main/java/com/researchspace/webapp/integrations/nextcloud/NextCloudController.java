@@ -127,7 +127,7 @@ public class NextCloudController extends BaseOAuth2Controller {
     if (params.containsKey(ERROR)) {
       OauthAuthorizationError error =
           getAuthErrorBuilder()
-              .errorMsg("Error connecting to NextCloud")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"Nextcloud"}))
               .errorDetails(params.get(ERROR))
               .build();
 
@@ -139,7 +139,7 @@ public class NextCloudController extends BaseOAuth2Controller {
     if (userManager.getAuthenticatedUserInSession() == null) {
       OauthAuthorizationError error =
           getAuthErrorBuilder()
-              .errorMsg("Error connecting to NextCloud")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"Nextcloud"}))
               .errorDetails(params.get(ERROR))
               .build();
 

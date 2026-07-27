@@ -1,10 +1,11 @@
 <%@ include file="/common/taglibs.jsp"%>
+<%@ taglib prefix="f" uri="http://researchspace.com/functions" %>
 <div style="font-size: 1.3em;line-height:1.3em; margin-bottom:1.5em">
 	<c:if test="${role eq 'ROLE_USER'}">
-		<spring:message code="system.createAccount.newUser.label" />
+		<spring:message code="system:usersPage.roleLabels.user" />
 	</c:if>
 	<c:if test="${role eq 'ROLE_PI'}">
-		<spring:message code="system.createAccount.newPi.label" />
+		<spring:message code="system:usersPage.roleLabels.pi" />
 	</c:if>
 	<c:if test="${role eq 'ROLE_ADMIN'}">
 		<spring:message code="system.createAccount.newAdmin.label" />
@@ -42,17 +43,18 @@
 				<tr>
 					<td colspan="3">
 						<label>
-							Should this be a backdoor login account? Backdoor accounts don't use SSO for authentication, 
-							can be only logged into through Admin Login screen 
-							- see <a rel="noreferrer" href="https://researchspace.helpdocs.io/article/bk9ap372vv-setting-up-multiple-rspace-accounts-with-the-same-sso-identity" 
-							target="_blank">RSpace Documentation</a>.
+							<spring:message code="common:helpDocs.documentation" var="backdoorAccountLinkText"/>
+							<spring:message code="common:help.multipleAccountsSameSso" var="multipleAccountsHelpSlug"/>
+							<spring:message code="system.createAccountForm.backdoorAccountInfo">
+								<spring:argument value='<a rel="noreferrer" href="${f:helpDocsUrl(multipleAccountsHelpSlug)}" target="_blank">${backdoorAccountLinkText}</a>'/>
+							</spring:message>
 						</label>
 					</td>
 					<td>
 						<input class="ssoBackdoorAccountRadioInput" type="radio" value="false" name="ssoBackdoorAccount" required checked style="margin-left: 10px;" />
-						<label>No</label>
+						<label><spring:message code="common:actions.no"/></label>
 						<input class="ssoBackdoorAccountRadioInput" type="radio" value="true" name="ssoBackdoorAccount" required style="margin-left: 10px;" />
-						<label>Yes</label>
+						<label><spring:message code="common:actions.yes"/></label>
 					</td>
 				</tr>
 				<tr>
@@ -67,7 +69,7 @@
 				</label>
 			</td>
 			<td width="30%">
-				<input type="text" name="firstName" placeholder="First name" class="accountsInputs" required />
+				<input type="text" name="firstName" placeholder="<spring:message code='system.createAccountForm.firstName.label'/>" class="accountsInputs" required />
 			</td>
 			<td width="20%">
 				<label>
@@ -75,27 +77,27 @@
 				</label>
 			</td>
 			<td width="30%">
-				<input type="text" name="lastName" placeholder="Last name" class="accountsInputs" required />
+				<input type="text" name="lastName" placeholder="<spring:message code='system.createAccountForm.lastName.label'/>" class="accountsInputs" required />
 			</td>
 		</tr>
 		<tr>
 			<td width="20%">
 				<label>
-					<spring:message code="system.createAccountForm.userName.label" />
+					<spring:message code="system:usersPage.columns.username" />
 					<div class="backdoorAccountAdditionalText" style="font-size: 7pt; display: none;">
-						Backdoor account - pick a username that won't conflict with potential SSO user!
-					</div> 
+						<spring:message code="system.createAccountForm.backdoorUsernameWarning"/>
+					</div>
 				</label>
 			</td>
 			<td width="30%">
-				<input 
-					type="text" 
-					name="username" 
-					placeholder="Username" 
-					class="accountsInputs" 
+				<input
+					type="text"
+					name="username"
+					placeholder="<spring:message code='system:usersPage.columns.username'/>"
+					class="accountsInputs"
 					pattern="${usernamePattern}"
-					title="${usernamePatternTitle}" 
-					required 
+					title="${usernamePatternTitle}"
+					required
 				/>
 			</td>
 			<td width="20%">
@@ -104,13 +106,13 @@
 				</label>
 			</td>
 			<td width="30%">
-				<input 
-					type="email" 
-					name="email" 
-					autocomplete="off" 
-					placeholder="E-mail" 
+				<input
+					type="email"
+					name="email"
+					autocomplete="off"
+					placeholder="<spring:message code='system.createAccountForm.email.label'/>"
 					class="accountsInputs"
-					required 
+					required
 				/>
 			</td>
 		</tr>
@@ -122,10 +124,10 @@
 					</label>
 				</td>
 				<td width="30%">
-					<input 
-						type="text" 
-						name="affiliation" 
-						placeholder="Affiliation" 
+					<input
+						type="text"
+						name="affiliation"
+						placeholder="<spring:message code='user.affiliation.label'/>"
 						class="accountsInputs"
 						required
 					/>
@@ -138,28 +140,31 @@
 			<tr>
 				<td colspan="1">
 					<label>
-						User will authenticate with LDAP?
+						<spring:message code="system.createAccountForm.ldapAuthQuestion"/>
 					</label>
 				</td>
 				<td>
 					<input class="ldapAuthChoice" id="ldapAuthYes" type="radio" value="true" name="ldapAuthChoice"
 						   required checked style="margin-left: 10px;"/>
-					<label>Yes</label>
+					<label><spring:message code="common:actions.yes"/></label>
 					<input class="ldapAuthChoice" id="ldapAuthNo" type="radio" value="false" name="ldapAuthChoice"
 						   required style="margin-left: 10px;"/>
-					<label>No</label>
+					<label><spring:message code="common:actions.no"/></label>
 				</td>
 			</tr>
 		</rst:hasDeploymentProperty>
 		<tr class="createPasswordRow">
 			<td width="20%">
 				<label for="password">
-					Enter or <a id="generatePasswordButton" href="#"> Generate </a> password
+					<spring:message code="system.createAccountForm.generatePasswordLinkLabel" var="generatePasswordLinkLabel"/>
+					<spring:message code="system.createAccountForm.generatePassword">
+						<spring:argument value='<a id="generatePasswordButton" href="#">${generatePasswordLinkLabel}</a>'/>
+					</spring:message>
 				</label>
-                <p>8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
+                <p><spring:message code="system.createAccountForm.password.helpText"/></p>
 			</td>
 			<td width="30%">
-				<input type="password" name="password" placeholder="Password" class="accountsInputs" pattern="[ -~]{8,50}" title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~" required />
+				<input type="password" name="password" placeholder="<spring:message code='system:usersPage.piRoleDialog.password'/>" class="accountsInputs" pattern="[ -~]{8,50}" title="<spring:message code='system.createAccountForm.password.title'/>" required />
 
 			</td>
 			<td width="20%">
@@ -168,7 +173,7 @@
 				</label>
 			</td>
 			<td width="30%">
-				<input type="password" name="passwordConfirmation" placeholder="Password Confirmation" class="accountsInputs" pattern="[ -~]{8,50}" title="Confirm Password" required />
+				<input type="password" name="passwordConfirmation" placeholder="<spring:message code='system.createAccountForm.passwordConfirmation.placeholder'/>" class="accountsInputs" pattern="[ -~]{8,50}" title="<spring:message code='system.createAccountForm.passwordConfirmation.title'/>" required />
 			</td>
 		</tr>
 		<tr class="createPasswordRow" >
@@ -189,11 +194,11 @@
 			<c:if test="${role eq 'ROLE_PI'}">
 				<td width="20%">
 					<label>
-						<spring:message code="system.createAccountForm.groupoName.label" />
+						<spring:message code="system.createAccountForm.labGroupName.label" />
 					</label>
 				</td>
 				<td>
-					<input type="text" name="newLabGroupName" placeholder="New LabGroup name" class="accountsInputs" required />
+					<input type="text" name="newLabGroupName" placeholder="<spring:message code='system.createAccountForm.newLabGroupName.placeholder'/>" class="accountsInputs" required />
 				</td>
 			</c:if>
 			<td>
@@ -204,16 +209,16 @@
 		<!-- Conditionals section depending of the role (option previously selected or clicked) -->
 		<c:if test="${role eq 'ROLE_USER'}">
 			<tr>
-				<td colspan="1">Select the new user's Community</td>
+				<td colspan="1"><spring:message code="system.createAccountForm.communitySelectionLabel"/></td>
 				<td colspan="1">
-					<input id="searchLabGroup" type="text" placeholder="Filter and choose a LabGroup" class="accountsInputs" />
+					<input id="searchLabGroup" type="text" placeholder="<spring:message code='system.createAccountForm.labGroupFilterPlaceholder'/>" class="accountsInputs" />
 				</td>
 			</tr>
 			<tr>
 				<td colspan="1" style="display:flex">
 					<div id="communitiesList">
 						<input class="communitiesListOption" type="radio" value="-10" name="communityId" required />
-						<label>None</label><br>
+						<label><spring:message code="common:actions.none"/></label><br>
 						<c:forEach items="${communities}" var="community">
 							<input class="communitiesListOption" type="radio" value="${community.id}" name="communityId" required />
 							<label>${community.displayName}</label>
@@ -227,9 +232,9 @@
 							<thead>
 								<tr>
 									<th width="30px"></th>
-									<th><span style="font-weight: bold;" id="sortGroupsByName">Group name</span></th>
-									<th><span style="font-weight: bold;" id="sortGroupsByPI">PI</span></th>
-									<th><span style="font-weight: bold;" id="sortGroupsBySize">Group size</span></th>
+									<th><span style="font-weight: bold;" id="sortGroupsByName"><spring:message code="system.createAccountForm.groupsTable.name"/></span></th>
+									<th><span style="font-weight: bold;" id="sortGroupsByPI"><spring:message code="system:usersPage.roleLabels.pi"/></span></th>
+									<th><span style="font-weight: bold;" id="sortGroupsBySize"><spring:message code="system.createAccountForm.groupsTable.size"/></span></th>
 								</tr>
 							</thead>
 							<tbody>
@@ -245,7 +250,7 @@
 			<shiro:hasRole name="ROLE_SYSADMIN">
 				<tr>
 					<td width="20%" valign="top"><br><label>
-							<spring:message code="system.createAccountForm.selectPICommunity.label" /> </label></td>
+							<spring:message code="system.createAccountForm.selectPiCommunity.label" /> </label></td>
 					<td>
 						<div id="communitiesList">
 							<c:forEach items="${communities}" var="community">
@@ -276,7 +281,7 @@
 					<td>
 						<div id="communitiesList">
 							<input type="radio" value="-10" name="communityId" required />
-							<label>None</label>
+							<label><spring:message code="common:actions.none"/></label>
 							<br>
 							<c:forEach items="${communities}" var="community">
 								<input type="radio" value="${community.id}" name="communityId" required />
@@ -309,12 +314,12 @@
 				</c:if>
 			</td>
 			<td align="right" style="padding-right: 20px">
-				<input type="checkbox" id="checkCreateRepeatUserAccount" value="Create & Repeat" /> Check to repeat
+				<input type="checkbox" id="checkCreateRepeatUserAccount" value="Create & Repeat" /> <spring:message code="system.createAccountForm.repeatCheckboxLabel"/>
 			</td>
 			<td align="right" width="60px">
 				<button class="btn btn-primary" type="submit" id="submitCreateUserAccount">
 					<span class="ui-button-text">
-						Create
+						<spring:message code="common:actions.create"/>
 					</span>
 				</button>
 			</td>

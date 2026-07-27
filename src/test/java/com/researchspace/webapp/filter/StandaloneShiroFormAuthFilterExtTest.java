@@ -245,7 +245,9 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     req.addHeader(RequestUtil.AJAX_REQUEST_HEADER_NAME, RequestUtil.AJAX_REQUEST_TYPE);
     req.setLocalAddr("");
     assertFalse(filter.onAccessDenied(req, resp));
-    assertEquals(getMsgFromResourceBundler("ajax.unauthenticated.msg"), resp.getContentAsString());
+    assertEquals(
+        getMsgFromResourceBundler("errors.ajax.unauthenticated.refreshRequired"),
+        resp.getContentAsString());
     assertTrue(resp.getStatus() == HttpStatus.FORBIDDEN.value());
   }
 
