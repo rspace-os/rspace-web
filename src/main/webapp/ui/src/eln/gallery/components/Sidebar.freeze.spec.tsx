@@ -53,7 +53,7 @@ describe("Gallery create menu (DMP enabled)", () => {
   beforeEach(() => {
     worker.use(...galleryAppShellHandlers(), ...integrationInfoHandlers());
   });
-  afterEach(() => cleanup());
+  afterEach(cleanup);
 
   test("the open menu and its DMP option are interactive (pointer-events not disabled)", async () => {
     await page.viewport(1440, 900);
@@ -65,7 +65,7 @@ describe("Gallery create menu (DMP enabled)", () => {
 
     // The fix disables pointer-events on the CLOSED menu; guard that it is never
     // (e.g. via an inverted condition) applied to the OPEN menu, which would make
-    // every create action dead. Real-browser hit-testing resolves the emotion
+    // every create action dead. Real-browser hit-testing resolves the Emotion
     // `sx` rule reliably, unlike jsdom.
     const menu = document.querySelector(".MuiMenu-root") as HTMLElement | null;
     expect(menu).not.toBeNull();
