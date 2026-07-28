@@ -1,5 +1,9 @@
 # Changes
 
+## 3.0.0 2026-07-28
+- Spring 6 / Hibernate 6 / Jakarta namespace migration
+- Switch to rspace-parent 3.0.0
+
 ## 2.0.4
 - switch to parent-pom 2.1.0 (upgrades various apache-commons dependencies)
 - move away from apache commons-lang dependency (use commons-lang3 instead)

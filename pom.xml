@@ -4,14 +4,14 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>rspace-test-util</artifactId>
-	<version>2.0.4</version>
+	<version>3.0.0</version>
 	<name>RSpace Test utilities</name>
 	<description>Utility classes used for testing across RSpace dependencies</description>
 
 	<parent>
 		<artifactId>rspace-parent</artifactId>
 		<groupId>com.github.rspace-os</groupId>
-		<version>2.1.0</version>
+		<version>3.0.0</version>
 	</parent>
 
 	<repositories>
@@ -30,12 +30,11 @@
 	</build>
 
 	<dependencies>
-		<!-- requires implementation on classpathe.g. hibernate validator 1.1.0 
-			is used by HibernateValidator 5.3 -->
+		<!-- requires a Jakarta Validation implementation on the classpath -->
 		<dependency>
-			<groupId>javax.validation</groupId>
-			<artifactId>validation-api</artifactId>
-			<version>${javax.validation.version}</version>
+			<groupId>jakarta.validation</groupId>
+			<artifactId>jakarta.validation-api</artifactId>
+			<version>${jakarta.validation.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
