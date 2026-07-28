@@ -11,7 +11,7 @@ import java.util.Map;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -43,7 +43,7 @@ public class PIOComponentDiscoverabilityIT {
     objectMapper.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
     HttpComponentsClientHttpRequestFactory gzipSupportingRequestFactory =
-        new HttpComponentsClientHttpRequestFactory(HttpClientBuilder.create().build());
+        new HttpComponentsClientHttpRequestFactory(HttpClients.custom().build());
     restTemplate = new RestTemplate(gzipSupportingRequestFactory);
   }
 

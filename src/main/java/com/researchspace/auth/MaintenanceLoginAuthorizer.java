@@ -3,9 +3,9 @@ package com.researchspace.auth;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.User;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import java.io.IOException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 

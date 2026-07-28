@@ -26,15 +26,16 @@ import com.researchspace.service.archive.StoichiometryImporter.IdAndRevision;
 import com.researchspace.service.archive.export.StoichiometryReader;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.chemistry.StoichiometryException;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import javax.transaction.Transactional;
-import javax.ws.rs.NotFoundException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -56,7 +57,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       ChemistryService chemistryService,
       StoichiometryManager stoichiometryManager,
       IPermissionUtils permissionUtils,
-      ChemistryProvider chemistryProvider,
+      @Qualifier("chemistryProvider") ChemistryProvider chemistryProvider,
       RSChemElementManager rsChemElementManager,
       RecordManager recordManager,
       FieldManager fieldManager) {

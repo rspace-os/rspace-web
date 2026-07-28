@@ -5,8 +5,8 @@
 <%@ attribute name="hideSearch" required="false" %>
 <%@ attribute name="menu" fragment="true" %>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
 
 <div id="toolbar" class="ui-widget-header ui-corner-all toolbar ui-buttonset">
 	<jsp:invoke fragment="menu"/>

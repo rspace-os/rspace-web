@@ -25,9 +25,9 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.List;
-import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 

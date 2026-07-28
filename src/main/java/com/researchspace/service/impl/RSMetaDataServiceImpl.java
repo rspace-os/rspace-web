@@ -37,7 +37,8 @@ public class RSMetaDataServiceImpl extends GenericManagerImpl<RSMetaData, Long>
     if (range != null
         && (currentDB.isOlderThan(range.getToExclusive())
             || (appVersion != null
-                && appVersion.startsWith("2."))) // FIXME quick fix for open-source
+                && !appVersion.startsWith("0.")
+                && !appVersion.startsWith("1."))) // open-source versions from 2.x onwards
         && currentDB.isSameOrNewerThan(range.getFromInclusive())) {
       return true;
     } else {

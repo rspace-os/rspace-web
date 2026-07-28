@@ -6,8 +6,8 @@ package com.researchspace.api.v1;
 
 import com.researchspace.api.v1.model.ApiListOfMaterials;
 import com.researchspace.model.User;
+import jakarta.validation.Valid;
 import java.util.List;
-import javax.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;

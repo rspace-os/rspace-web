@@ -1,126 +1,158 @@
 package com.researchspace.service;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.researchspace.core.testutil.CoreTestUtils;
-import com.researchspace.dao.ArchiveDao;
-import com.researchspace.dao.EcatImageDao;
-import com.researchspace.dao.IconImgDao;
-import com.researchspace.model.ArchivalCheckSum;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.record.IconEntity;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Ehcache;
-import org.apache.commons.lang3.time.StopWatch;
-import org.hibernate.CacheMode;
+import java.net.URI;
+import java.util.function.Function;
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+import javax.cache.spi.CachingProvider;
+import org.ehcache.config.ResourceType;
+import org.ehcache.config.SizedResourcePool;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.stat.Statistics;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@RunWith(ConditionalTestRunner.class)
+/**
+ * Exercises the production Hibernate second-level cache stack: {@code JCacheRegionFactory} backed
+ * by EhCache 3 configured from {@code ehcache.xml}, using the same {@code hibernate.javax.cache.*}
+ * settings as {@code applicationContext-dao.xml}.
+ *
+ * <p>The shared test {@code SessionFactory} disables L2 ({@code NoCachingRegionFactory}) to avoid
+ * JCache CacheManager lifecycle conflicts between Spring test contexts, so these tests build a
+ * dedicated {@code SessionFactory} with the production cache settings against the test database.
+ *
+ * <p>Besides hit/miss behaviour this guards the config wiring itself: with a wrong provider/uri
+ * key, hibernate-jcache silently falls back to an empty default CacheManager and every region
+ * becomes an untuned create-warn default, ignoring all of {@code ehcache.xml}.
+ */
+@RunWith(SpringJUnit4ClassRunner.class)
 public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
 
-  private static final int NUM_OBJECTS = 1000;
+  private static final String EHCACHE3_PROVIDER = "org.ehcache.jsr107.EhcacheCachingProvider";
+  private static final String ICON_REGION = "com.researchspace.model.record.IconEntity";
 
-  private @Autowired IconImgDao iconDao;
-  private @Autowired ArchiveDao archiveDao;
-  private @Autowired EcatImageDao imageDao;
   private @Autowired DocumentHTMLPreviewHandler previewer;
   private @Autowired RecordManager recordMgr;
 
+  private SessionFactory l2SessionFactory;
+
   @Before
-  public void setUp() throws Exception {
+  public void setUpL2SessionFactory() throws Exception {
     super.setUp();
-    sessionFactory.getStatistics().setStatisticsEnabled(true);
+    StandardServiceRegistryBuilder registryBuilder =
+        new StandardServiceRegistryBuilder()
+            .applySetting(AvailableSettings.DATASOURCE, dataSource)
+            .applySetting(AvailableSettings.USE_SECOND_LEVEL_CACHE, "true")
+            .applySetting(
+                AvailableSettings.CACHE_REGION_FACTORY,
+                "org.hibernate.cache.jcache.JCacheRegionFactory")
+            .applySetting("hibernate.javax.cache.provider", EHCACHE3_PROVIDER)
+            .applySetting("hibernate.javax.cache.uri", "ehcache.xml")
+            .applySetting(AvailableSettings.GENERATE_STATISTICS, "true")
+            .applySetting("hibernate.search.enabled", "false");
+    // Inherit the shared test SessionFactory's explicit dialect: Hibernate's metadata-based
+    // dialect detection fails on DB versions newer than it knows (e.g. MariaDB 12 on
+    // Hibernate 6.4), which is why the rest of the stack never relies on it.
+    Object dialect = sessionFactory.getProperties().get(AvailableSettings.DIALECT);
+    if (dialect != null) {
+      registryBuilder.applySetting(AvailableSettings.DIALECT, dialect);
+    }
+    StandardServiceRegistry registry = registryBuilder.build();
+    l2SessionFactory =
+        new MetadataSources(registry)
+            .addAnnotatedClass(IconEntity.class)
+            .buildMetadata()
+            .buildSessionFactory();
   }
 
   @After
-  public void tearDown() throws Exception {
-    sessionFactory.getStatistics().setStatisticsEnabled(false);
+  public void tearDownL2SessionFactory() throws Exception {
+    if (l2SessionFactory != null) {
+      // closes the JCache CacheManager the region factory resolved (releaseFromUse)
+      l2SessionFactory.close();
+    }
     contentInitializer.setCustomInitActive(true);
     super.tearDown();
   }
 
   @Test
-  public void dummy() {
-    // always runs so setup/cleanup is ok even if perf tests disabled.
+  public void secondLevelCacheServesEntityReadsAcrossSessions() {
+    Long id = saveIconEntity();
+    try {
+      l2SessionFactory.getCache().evictAllRegions();
+      Statistics stats = l2SessionFactory.getStatistics();
+      stats.clear();
+
+      inL2Transaction(session -> session.get(IconEntity.class, id));
+      assertEquals(
+          "first read in a fresh session must miss", 1, stats.getSecondLevelCacheMissCount());
+      assertEquals("first read must populate the region", 1, stats.getSecondLevelCachePutCount());
+
+      inL2Transaction(session -> session.get(IconEntity.class, id));
+      assertEquals(
+          "second read in a fresh session must be served from L2",
+          1,
+          stats.getSecondLevelCacheHitCount());
+    } finally {
+      deleteIconEntity(id);
+    }
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
-  public void test2ndLevelCacheofSimpleObject() throws Exception {
-    CacheManager cacheMgr = getTestCache();
+  public void hibernateRegionsAreBackedByEhcacheXmlConfiguration() throws Exception {
+    Long id = saveIconEntity();
+    try {
+      l2SessionFactory.getCache().evictAllRegions();
+      inL2Transaction(session -> session.get(IconEntity.class, id));
 
-    // create 1000 objects
-    List<String> ids = addNArchiveCSum(NUM_OBJECTS);
+      // Resolve the CacheManager exactly as JCacheRegionFactory does (same uri + classloader
+      // yields the same instance) and verify Hibernate's region is the ehcache.xml-configured
+      // cache, not a create-warn default in some other manager.
+      CachingProvider provider = Caching.getCachingProvider(EHCACHE3_PROVIDER);
+      URI uri = getClass().getClassLoader().getResource("ehcache.xml").toURI();
+      CacheManager cacheManager = provider.getCacheManager(uri, provider.getDefaultClassLoader());
+      Cache<Object, Object> iconRegion = cacheManager.getCache(ICON_REGION);
+      assertNotNull(ICON_REGION + " region missing from the ehcache.xml CacheManager", iconRegion);
 
-    Ehcache cache = cacheMgr.getEhcache("com.researchspace.model.ArchivalCheckSum");
-    cache.setStatisticsEnabled(true);
-    cache.setSampledStatisticsEnabled(true);
-    openTransaction();
+      SizedResourcePool heap =
+          iconRegion
+              .unwrap(org.ehcache.Cache.class)
+              .getRuntimeConfiguration()
+              .getResourcePools()
+              .getPoolForResource(ResourceType.Core.HEAP);
+      assertEquals(
+          "region must carry the ehcache.xml sizing, not a create-warn default",
+          1000,
+          heap.getSize());
 
-    sessionFactory.getCurrentSession().setCacheMode(CacheMode.NORMAL);
-    // this will load from DB, and should populate cachde
-    for (int i = 0; i < NUM_OBJECTS; i++) {
-      archiveDao.get(ids.get(i));
+      boolean hasEntry = iconRegion.iterator().hasNext();
+      assertTrue("Hibernate's L2 put must land in the ehcache.xml-configured region", hasEntry);
+    } finally {
+      deleteIconEntity(id);
     }
-    commitTransaction();
-
-    openTransaction();
-    // now, load again, should restore from cached
-    long start = System.currentTimeMillis();
-    for (int i = 0; i < NUM_OBJECTS; i++) {
-      archiveDao.get(ids.get(i));
-    }
-    commitTransaction();
-
-    openTransaction();
-    sessionFactory.getCurrentSession().setCacheMode(CacheMode.IGNORE);
-    sessionFactory.getStatistics().clear();
-    for (int i = 0; i < 1000; i++) {
-      archiveDao.get(ids.get(i));
-    }
-    commitTransaction();
-  }
-
-  List<String> addNArchiveCSum(int n) {
-    List<String> uuids = new ArrayList<String>();
-    openTransaction();
-    for (int i = 0; i < n; i++) {
-      if (i % 500 == 0) {
-        sessionFactory.getCurrentSession().flush();
-      }
-      ArchivalCheckSum acs = new ArchivalCheckSum();
-      acs.setUid(CoreTestUtils.getRandomName(10));
-      uuids.add(acs.getUid());
-      acs.setCheckSum(123445);
-
-      archiveDao.save(acs);
-    }
-    commitTransaction();
-    return uuids;
-  }
-
-  protected CacheManager getTestCache() {
-    CacheManager c =
-        CacheManager.create(
-            this.getClass().getClassLoader().getResourceAsStream("ehcache_DEV.xml"));
-    return c;
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void cacheDocHtmlView() throws Exception {
     User any = createInitAndLoginAnyUser();
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(any, "some text");
@@ -132,65 +164,41 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
     assertFalse(preview == previewer.generateHtmlPreview(doc.getId(), any));
   }
 
-  @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
-  public void test2ndLevelCacheofIconEntity() throws Exception {
-    int numToCache = 100;
-    List<Long> ids = saveNIconEntities(numToCache);
-    CacheManager cacheMgr = getTestCache();
-    Ehcache cache = cacheMgr.getEhcache("com.researchspace.model.record.IconEntity");
-    cache.setStatisticsEnabled(true);
-    cache.setSampledStatisticsEnabled(true);
-
-    openTransaction();
-    sessionFactory.getCurrentSession().setCacheMode(CacheMode.IGNORE);
-    StopWatch stopWatch = new StopWatch();
-
-    // add to cache
-    for (Long id : ids) {
-      iconDao.getIconEntity(id);
-    }
-    commitTransaction();
-    openTransaction();
-    stopWatch.start();
-    // add to cache
-    for (Long id : ids) {
-      iconDao.getIconEntity(id);
-    }
-    commitTransaction();
-    openTransaction();
-    sessionFactory.getCurrentSession().setCacheMode(CacheMode.IGNORE);
-    sessionFactory.getStatistics().clear();
-    stopWatch.reset();
-    stopWatch.start();
-    // we're calling each object once, so will not get 1st level cache hits, only 2ndlevel.
-    for (Long id : ids) {
-      iconDao.getIconEntity(id);
-    }
-    commitTransaction();
+  private Long saveIconEntity() {
+    return inL2Transaction(
+        session -> {
+          IconEntity icon = new IconEntity();
+          icon.setIconImage(new byte[] {1, 2, 3});
+          icon.setImgName("l2-cache-test");
+          icon.setImgType("png");
+          icon.setParentId(1L);
+          session.persist(icon);
+          return icon.getId();
+        });
   }
 
-  private List<Long> saveNIconEntities(int numObjects) {
-    openTransaction();
-    Random randGen = new Random();
-    List<Long> ids = new ArrayList<Long>();
-    for (int i = 0; i < numObjects; i++) {
-      IconEntity ie = new IconEntity();
-      byte[] random = new byte[1000];
-      randGen.nextBytes(random);
-      ie.setIconImage(random);
-      ie.setHeight(30);
-      ie.setWidth(20);
-      ie.setImgType("png");
-      ie.setImgName("random" + i);
-      ie.setParentId(1L); // any value ok for testing
-      iconDao.saveIconEntity(ie, true);
-      ids.add(ie.getId());
-      if (i % 100 == 0) {
-        sessionFactory.getCurrentSession().flush();
+  private void deleteIconEntity(Long id) {
+    inL2Transaction(
+        session -> {
+          IconEntity saved = session.get(IconEntity.class, id);
+          if (saved != null) {
+            session.remove(saved);
+          }
+          return null;
+        });
+  }
+
+  private <T> T inL2Transaction(Function<Session, T> work) {
+    try (Session session = l2SessionFactory.openSession()) {
+      session.beginTransaction();
+      try {
+        T result = work.apply(session);
+        session.getTransaction().commit();
+        return result;
+      } catch (RuntimeException e) {
+        session.getTransaction().rollback();
+        throw e;
       }
     }
-    commitTransaction();
-    return ids;
   }
 }

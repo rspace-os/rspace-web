@@ -15,9 +15,9 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.chemistry.StoichiometryException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -186,15 +186,13 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   }
 
   @Override
+  @ExceptionHandler(BindException.class)
   protected ResponseEntity<Object> handleBindException(
-      final BindException ex,
-      final HttpHeaders headers,
-      final HttpStatus status,
-      final WebRequest request) {
+      final BindException ex, final WebRequest request) {
 
     logException(ex);
     final ApiError apiError = getApiErrorFromBindException(ex);
-    return handleExceptionInternal(ex, apiError, headers, apiError.getStatus(), request);
+    return handleExceptionInternal(ex, apiError, new HttpHeaders(), apiError.getStatus(), request);
   }
 
   public ApiError getApiErrorFromBindException(final BindException ex) {

@@ -8,7 +8,7 @@ import com.researchspace.api.v1.service.SnippetService;
 import com.researchspace.model.User;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.service.MessageSourceUtils;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

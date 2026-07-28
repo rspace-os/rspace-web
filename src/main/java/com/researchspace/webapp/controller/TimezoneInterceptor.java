@@ -5,16 +5,16 @@ import static com.researchspace.session.SessionAttributeUtils.TIMEZONE;
 import com.researchspace.auth.TimezoneAdjuster;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.session.SessionAttributeUtils;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.HandlerInterceptor;
 
 /** Interceptor that handles getting Timezone from cookie. This is only needed for SSO variants. */
-public class TimezoneInterceptor extends HandlerInterceptorAdapter {
+public class TimezoneInterceptor implements HandlerInterceptor {
 
   private @Autowired IPropertyHolder properties;
   private @Autowired TimezoneAdjuster timezoneAdjuster;

@@ -2,18 +2,18 @@ package com.researchspace.webapp.controller;
 
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.core.util.TransformerUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
  * This is called around the lifecycle of a Controller and is used to log incoming requests. It is
@@ -22,7 +22,7 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
  * <p>The aim is to produce a log file of high-level records that can be searched by a sysadmin or
  * auditor.
  */
-public class LoggingInterceptor extends HandlerInterceptorAdapter {
+public class LoggingInterceptor implements HandlerInterceptor {
   // default access for testing
   private static Logger log = LogManager.getLogger(LoggingInterceptor.class);
 

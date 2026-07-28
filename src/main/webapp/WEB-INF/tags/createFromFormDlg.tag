@@ -5,8 +5,8 @@
 <%@ attribute name="createFromFormURL" required="true" type="java.lang.String" %>
 <%@ attribute name="formsForCreateMenuPagination" required="true" type="java.util.List" %>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 
 <style>

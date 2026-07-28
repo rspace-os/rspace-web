@@ -131,8 +131,6 @@ import com.researchspace.service.archive.TimeLimitedExportRemovalPolicy;
 import com.researchspace.service.archive.UserImporter;
 import com.researchspace.service.archive.UserImporterImpl;
 import com.researchspace.service.archive.export.ArchiveDataHandler;
-import com.researchspace.service.archive.export.ArchiveExportPlanner;
-import com.researchspace.service.archive.export.ArchiveExportPlannerImpl;
 import com.researchspace.service.archive.export.ArchiveNamingStrategy;
 import com.researchspace.service.archive.export.ArchiveRemover;
 import com.researchspace.service.archive.export.ExportObjectGenerator;
@@ -172,7 +170,6 @@ import com.researchspace.service.impl.CollabGroupShareRequestUpdateHandler;
 import com.researchspace.service.impl.CommunicationEmailBroadcaster;
 import com.researchspace.service.impl.ContentInitialiserUtilsImpl;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
-import com.researchspace.service.impl.DBDataIntegrityChecker;
 import com.researchspace.service.impl.DMPUpdateHandler;
 import com.researchspace.service.impl.DefaultUserFolderCreator;
 import com.researchspace.service.impl.DefaultUserSignupPolicy;
@@ -196,7 +193,6 @@ import com.researchspace.service.impl.GroupSharedSnippetsFolderAppInitialiser;
 import com.researchspace.service.impl.ImageProcessorImpl;
 import com.researchspace.service.impl.IntegrationsHandlerImpl;
 import com.researchspace.service.impl.IntegrationsHandlerInitialisor;
-import com.researchspace.service.impl.InternalFileStoreImpl;
 import com.researchspace.service.impl.JoinExistingCollGroupRequestUpdateHandler;
 import com.researchspace.service.impl.JoinGroupRequestUpdateHandler;
 import com.researchspace.service.impl.LoadUsersFromCSVOnStartUpInitialisor;
@@ -219,8 +215,6 @@ import com.researchspace.service.impl.SharingHandlerImpl;
 import com.researchspace.service.impl.SysadminUserCreationHandlerImpl;
 import com.researchspace.service.impl.SystemConfigurationInitialisor;
 import com.researchspace.service.impl.SystemPropertyPermissionManagerImpl;
-import com.researchspace.service.impl.UserContentUpdater;
-import com.researchspace.service.impl.UserContentUpdaterImpl;
 import com.researchspace.service.impl.UserExternalIdResolverImpl;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import com.researchspace.service.inventory.impl.RspaceToExternalProviderAdapterImpl;
@@ -284,24 +278,23 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.retry.annotation.EnableRetry;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.annotation.SessionScope;
 import org.springframework.web.multipart.MultipartResolver;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
 /**
  * Base class with configuration for all Spring profiles - gradually using this for new beans
  * /services rather than XML configuration.
+ *
+ * <p>Spring 6: NOT using @EnableTransactionManagement here because it conflicts when loaded via
+ * component-scan in combination with other @Enable* annotations. Transaction management configured
+ * via XML <tx:annotation-driven/> instead. @EnableAsync and @EnableScheduling live on the concrete
+ * profile configs (ProductionConfig, TestAppConfig), and @EnableRetry on ClustermarketConfig.
  */
 @Configuration
-@EnableScheduling
-@EnableTransactionManagement
-@EnableRetry
 public abstract class BaseConfig {
 
   @Autowired ApplicationContext context;
@@ -311,9 +304,6 @@ public abstract class BaseConfig {
 
   @Value("${authorised.signup}")
   private String authorizedSignup;
-
-  @Value("${files.maxUploadSize}")
-  private String maxUploadSize;
 
   @Value("${email.enabled}")
   private String emailEnabled;
@@ -563,11 +553,6 @@ public abstract class BaseConfig {
     return new SampleTemplateAppInitialiser();
   }
 
-  @Bean
-  public IApplicationInitialisor dBDataIntegrityChecker() {
-    return new DBDataIntegrityChecker();
-  }
-
   @Bean(name = "sharedSnippetsFolderCreator")
   public IApplicationInitialisor sharedSnippetsFolderCreator() {
     return new GroupSharedSnippetsFolderAppInitialiser();
@@ -778,9 +763,9 @@ public abstract class BaseConfig {
   }
 
   @Bean("compositeFileStore")
-  public FileStore compositeFileStore() throws IOException {
+  public FileStore compositeFileStore(InternalFileStore internalFileStore) throws IOException {
     FileStoreImpl impl =
-        new FileStoreImpl(internalFileStore(), externalFileStoreLocator(), externalFileService());
+        new FileStoreImpl(internalFileStore, externalFileStoreLocator(), externalFileService());
     return impl;
   }
 
@@ -792,11 +777,6 @@ public abstract class BaseConfig {
       log.info("Creating real external file service");
       return new ExternalFileServiceImpl();
     }
-  }
-
-  @Bean
-  public InternalFileStore internalFileStore() throws IOException {
-    return new InternalFileStoreImpl();
   }
 
   @Bean
@@ -891,19 +871,7 @@ public abstract class BaseConfig {
 
   @Bean
   public MultipartResolver multipartResolver() {
-    CommonsMultipartResolver rc = new CommonsMultipartResolver();
-    Long defaultLimit = 10_000_000l; // 10Mb default default
-    try {
-      long maxSize = Long.parseLong(maxUploadSize);
-      rc.setMaxUploadSize(maxSize);
-    } catch (NumberFormatException nfe) {
-      log.warn(
-          "Couldn't set max file upload size [{}], using default [{}]",
-          maxUploadSize,
-          defaultLimit);
-      rc.setMaxUploadSize(defaultLimit);
-    }
-    return rc;
+    return new StandardServletMultipartResolver();
   }
 
   @Bean
@@ -939,11 +907,6 @@ public abstract class BaseConfig {
   @Bean(name = "customFormAppInitialiser")
   public IApplicationInitialisor customForms() {
     return new CustomFormAppInitialiser();
-  }
-
-  @Bean
-  public UserContentUpdater userContentUpdater() {
-    return new UserContentUpdaterImpl();
   }
 
   @Bean()
@@ -1302,11 +1265,6 @@ public abstract class BaseConfig {
   @Bean
   OriginRefererChecker originRefererChecker() {
     return new OriginRefererCheckerImpl();
-  }
-
-  @Bean
-  ArchiveExportPlanner ArchiveExportPlannerImpl() {
-    return new ArchiveExportPlannerImpl();
   }
 
   @Bean

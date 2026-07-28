@@ -4,7 +4,7 @@ import com.researchspace.api.v1.controller.ActivityApiPaginationCriteria;
 import com.researchspace.api.v1.controller.ApiActivitySearchResult;
 import com.researchspace.api.v1.controller.ApiActivitySrchConfig;
 import com.researchspace.model.User;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;

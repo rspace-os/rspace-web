@@ -11,7 +11,7 @@ import com.researchspace.api.v1.controller.FormTemplatesCommon.DateFieldPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.FormFieldPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.LinkTemplateProvider;
 import com.researchspace.api.v1.model.ApiForm;
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.field.FieldForm;
@@ -37,7 +37,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.springframework.context.support.StaticMessageSource;
 
-public class FormTemplatesCommonTest extends JavaxValidatorTest {
+public class FormTemplatesCommonTest extends JakartaValidatorTest {
 
   public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock FormManager formMgr;

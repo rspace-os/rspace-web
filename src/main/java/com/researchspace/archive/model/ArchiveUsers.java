@@ -6,14 +6,14 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserGroup;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.UserProfile;
+import jakarta.xml.bind.Unmarshaller;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
 
 /**
  * Container for XML storage of user/ group information. After unmarshalling the XML representation

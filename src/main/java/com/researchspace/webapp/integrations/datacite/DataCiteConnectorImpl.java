@@ -12,10 +12,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.EnumMap;
 import java.util.Map;
-import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 public class DataCiteConnectorImpl implements DataCiteConnector {
@@ -28,7 +30,8 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
   private final Map<InventorySettingType, Boolean> dataCiteEnabled =
       new EnumMap<>(InventorySettingType.class);
 
-  @PostConstruct
+  @EventListener(ContextRefreshedEvent.class)
+  @Transactional(readOnly = true)
   public void reloadDataCiteClient() {
     Map<String, SystemPropertyValue> propertiesMap = sysPropertyMgr.getAllSysadminPropertiesAsMap();
     reloadClientForType(

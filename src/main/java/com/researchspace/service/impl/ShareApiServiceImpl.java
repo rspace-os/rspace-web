@@ -39,10 +39,10 @@ import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.ShareApiService;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.mapping.DocumentSharesBuilder;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -52,9 +52,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
 
 @Service
+@Transactional
 public class ShareApiServiceImpl extends BaseApiController implements ShareApiService {
 
   private static final Logger log = LoggerFactory.getLogger(ShareApiServiceImpl.class);
@@ -193,6 +195,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   }
 
   @Override
+  @Transactional(readOnly = true)
   public DocumentShares getAllSharesForDoc(Long docId, User user) {
     if (docId == null) {
       throw new IllegalArgumentException("Document id cannot be null");

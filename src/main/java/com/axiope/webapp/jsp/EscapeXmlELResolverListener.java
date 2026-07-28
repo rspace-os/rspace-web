@@ -24,9 +24,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package com.axiope.webapp.jsp;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.jsp.JspFactory;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
+import jakarta.servlet.jsp.JspFactory;
 
 /** Registers ELResolver that escapes XML in EL expression String values. */
 public class EscapeXmlELResolverListener implements ServletContextListener {

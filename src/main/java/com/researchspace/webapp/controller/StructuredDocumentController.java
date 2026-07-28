@@ -65,6 +65,7 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -73,7 +74,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import javax.servlet.http.HttpSession;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -705,8 +705,6 @@ public class StructuredDocumentController extends BaseController {
 
   private void disconnectField(Field field) {
     field.setStructuredDocument(null);
-    field.getFieldForm().setForm(null);
-    field.getFieldForm().setTempFieldForm(null); // RSPAC-1656
     if (field.getTempField() != null) {
       disconnectField(field.getTempField());
     }
@@ -761,9 +759,6 @@ public class StructuredDocumentController extends BaseController {
       for (Field field : fields) {
         field.setStructuredDocument(null);
         field.setTempField(null);
-        // setting field form to null doesn't work, it is ignored in setter.
-        field.getFieldForm().setForm(null);
-        field.getFieldForm().setTempFieldForm(null);
         result.add(field);
       }
     }

@@ -14,7 +14,12 @@ import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.DAOUtils;
 import com.researchspace.dao.RecordGroupSharingDao;
 import com.researchspace.dao.RecordUserFavoritesDao;
+import com.researchspace.model.EcatAudio;
+import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatCommentItem;
+import com.researchspace.model.EcatDocumentFile;
+import com.researchspace.model.EcatImage;
+import com.researchspace.model.EcatVideo;
 import com.researchspace.model.IFieldLinkableElement;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -32,6 +37,9 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecordAdaptable;
+import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.Notebook;
+import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.search.impl.LuceneSearchTermListFactory;
 import com.researchspace.search.impl.LuceneSrchCfg;
@@ -51,12 +59,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.lucene.search.Query;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.search.FullTextQuery;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
+import org.hibernate.search.engine.search.predicate.SearchPredicate;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.scope.SearchScope;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -263,27 +270,38 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
    * @return List<IFieldLinkableElement> found elements
    */
   @SuppressWarnings("unchecked")
+  // All @Indexed entity types that participate in ELN full-text search.
+  // Mirrors the original Hibernate Search 5 scope of BaseRecord subclasses + EcatCommentItem.
+  private static final List<Class<? extends IFieldLinkableElement>> ELN_SEARCH_CLASSES =
+      List.of(
+          StructuredDocument.class,
+          Folder.class,
+          Notebook.class,
+          Snippet.class,
+          EcatCommentItem.class,
+          EcatAudio.class,
+          EcatImage.class,
+          EcatVideo.class,
+          EcatDocumentFile.class,
+          EcatChemistryFile.class);
+
   List<IFieldLinkableElement> getElnHibernateList(LuceneSrchCfg srchConfig) {
-    FullTextSession fssn = getFullTextSession();
-    Query query = queryBuilder.getLuceneQuery(fssn, srchConfig, StructuredDocument.class);
-    if (query == null) {
+    SearchSession searchSession = getSearchSession();
+    SearchScope<IFieldLinkableElement> scope = searchSession.scope(ELN_SEARCH_CLASSES);
+    SearchPredicate predicate = queryBuilder.getSearchPredicate(scope, srchConfig);
+    if (predicate == null) {
       log.info("Field is NULL on search");
       return new ArrayList<>();
     }
-    log.debug(query.toString());
-
-    Class<?>[] resultClasses =
-        new Class[] {BaseRecord.class, StructuredDocument.class, EcatCommentItem.class};
-    FullTextQuery hibQuery = fssn.createFullTextQuery(query, resultClasses);
-    hibQuery.setMaxResults(srchConfig.getMaxResults());
-
-    return (List<IFieldLinkableElement>) hibQuery.list();
+    List<IFieldLinkableElement> results =
+        new ArrayList<>(
+            searchSession.search(scope).where(predicate).fetchHits(srchConfig.getMaxResults()));
+    return results;
   }
 
-  /** Returns Full Text Session */
-  private FullTextSession getFullTextSession() {
-    Session ssnx = sessionFactory.getCurrentSession();
-    return Search.getFullTextSession(ssnx);
+  /** Returns Search Session */
+  private SearchSession getSearchSession() {
+    return Search.session(sessionFactory.getCurrentSession());
   }
 
   /**
@@ -310,51 +328,60 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
 
   @SuppressWarnings("unchecked")
   List<InventoryRecord> getLuceneInventoryQueryList(LuceneSrchCfg srchConfig) {
-    FullTextSession fssn = getFullTextSession();
-    Query query = queryBuilder.getLuceneQuery(fssn, srchConfig, Container.class);
-    if (query == null) {
-      log.info("Query is null on search, returning empty result list");
-      return new ArrayList<>();
-    }
-    log.debug(query.toString());
-
-    Class<?>[] resultClasses;
+    SearchSession searchSession = getSearchSession();
+    List<Class<? extends InventoryRecord>> resultClasses;
+    SearchPredicate predicate;
     InventorySearchType searchType = srchConfig.getSearchType();
     switch (searchType) {
       case SAMPLE_TEMPLATE:
       case SAMPLE:
         // Sample and SampleTemplate have separate Lucene indexes; targeting the abstract
         // SampleEntity searches both, and search-type post-filtering picks the right kind
-        resultClasses = new Class[] {SampleEntity.class};
+        resultClasses = List.of(SampleEntity.class);
         break;
       case SUBSAMPLE:
-        resultClasses = new Class[] {SubSample.class};
+        resultClasses = List.of(SubSample.class);
         break;
       case CONTAINER:
-        resultClasses = new Class[] {Container.class};
+        resultClasses = List.of(Container.class);
         break;
       case INSTRUMENT:
-        resultClasses = new Class[] {Instrument.class};
+        resultClasses = List.of(Instrument.class);
         break;
       case INSTRUMENT_TEMPLATE:
-        resultClasses = new Class[] {InstrumentTemplate.class};
+        resultClasses = List.of(InstrumentTemplate.class);
         break;
       case ALL:
         resultClasses =
-            new Class[] {
-              SampleEntity.class,
-              SubSample.class,
-              Container.class,
-              Instrument.class,
-              InstrumentTemplate.class
-            };
+            List.of(
+                SampleEntity.class,
+                SubSample.class,
+                Container.class,
+                Instrument.class,
+                InstrumentTemplate.class);
         break;
       default:
         throw new IllegalArgumentException("unknown requested search type: " + searchType);
     }
-    FullTextQuery hibQuery = fssn.createFullTextQuery(query, resultClasses);
-    hibQuery.setMaxResults(srchConfig.getMaxResults());
-    List<InventoryRecord> result = hibQuery.list();
+    SearchScope<InventoryRecord> scope = searchSession.scope(resultClasses);
+    predicate = queryBuilder.getSearchPredicate(scope, srchConfig);
+    if (predicate == null) {
+      log.info("Query is null on search, returning empty result list");
+      return new ArrayList<>();
+    }
+    List<InventoryRecord> result =
+        new ArrayList<>(
+            searchSession
+                .search(scope)
+                .where(predicate)
+                .sort(
+                    f ->
+                        f.composite(
+                            b -> {
+                              b.add(f.score());
+                              b.add(f.field("id_sort").asc());
+                            }))
+                .fetchHits(srchConfig.getMaxResults()));
 
     if (!result.isEmpty()) {
       PaginationCriteria<InventoryRecord> baseRecPgCrit =

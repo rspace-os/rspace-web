@@ -9,7 +9,7 @@ import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
 import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;

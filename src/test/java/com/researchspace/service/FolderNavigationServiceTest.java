@@ -160,10 +160,13 @@ public class FolderNavigationServiceTest {
   @Test
   public void whenParentIdIsInvalidThenThrowsException() {
     Folder actualParent = TestFactory.createAFolder("actualParent", subject);
+    // Assign non-null ids — this is a unit test (no DB), TestFactory no longer pre-assigns them.
+    actualParent.setId(1L);
     Folder childFolder = TestFactory.createAFolder("child", subject);
     actualParent.addChild(childFolder, subject);
 
     Folder wrongParent = TestFactory.createAFolder("wrongParent", subject);
+    wrongParent.setId(999L);
 
     assertThrows(
         IllegalArgumentException.class,

@@ -2,33 +2,23 @@ package com.researchspace.api.v1.service.impl;
 
 import com.researchspace.api.v1.controller.ExportApiController.ExportApiConfig;
 import com.researchspace.model.User;
-import java.util.HashMap;
-import java.util.Map;
-import org.springframework.batch.core.JobParameter;
 import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
 
 class ExportJobParamFactory {
 
   static JobParameters createJobParams(ExportApiConfig cfg, User user, String jobId) {
-    JobParameter scope = new JobParameter(cfg.getScope());
-    JobParameter format = new JobParameter(cfg.getFormat());
-    JobParameter id = new JobParameter(jobId, true);
-    JobParameter subject = new JobParameter(user.getUsername());
-    JobParameter includeRevisionHistory =
-        new JobParameter(Boolean.toString(cfg.isIncludeRevisionHistory()));
-
-    Map<String, JobParameter> map = new HashMap<>();
-    map.put("export.scope", scope);
-    map.put("export.format", format);
-    map.put("export.id", id);
-    map.put("export.user", subject);
-    map.put("export.includeRevisionHistory", includeRevisionHistory);
+    JobParametersBuilder builder = new JobParametersBuilder();
+    builder.addString("export.scope", cfg.getScope());
+    builder.addString("export.format", cfg.getFormat());
+    builder.addString("export.id", jobId, true);
+    builder.addString("export.user", user.getUsername());
+    builder.addString(
+        "export.includeRevisionHistory", Boolean.toString(cfg.isIncludeRevisionHistory()));
 
     if (cfg.getId() != null) {
-      JobParameter userOrGroupId = new JobParameter(cfg.getId());
-      map.put("export.userOrGroupId", userOrGroupId);
+      builder.addLong("export.userOrGroupId", cfg.getId());
     }
-    JobParameters params = new JobParameters(map);
-    return params;
+    return builder.toJobParameters();
   }
 }

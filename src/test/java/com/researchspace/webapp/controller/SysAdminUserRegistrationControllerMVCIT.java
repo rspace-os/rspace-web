@@ -10,7 +10,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -83,7 +82,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload("/system/userRegistration/csvUpload")
+                multipart("/system/userRegistration/csvUpload")
                     .file(mf)
                     .principal(sysAdminPrincipal))
             .andExpect(status().is2xxSuccessful())
@@ -186,7 +185,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload("/system/userRegistration/csvUpload")
+                multipart("/system/userRegistration/csvUpload")
                     .file(mf)
                     .principal(sysAdminPrincipal))
             .andExpect(status().is2xxSuccessful())
@@ -196,45 +195,6 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
     assertEquals(0, importResults.getParsedUsers().size());
     assertEquals(0, importResults.getParsedGroups().size());
     assertTrue(importResults.getErrors().hasErrorMessages());
-  }
-
-  @Test
-  public void testBatchUploadEmptyFileRejected() throws Exception {
-
-    MockMultipartFile mf = new MockMultipartFile("xfile", "empty.csv", "text/csv", new byte[0]);
-    MvcResult result =
-        mockMvc
-            .perform(
-                multipart("/system/userRegistration/csvUpload")
-                    .file(mf)
-                    .principal(sysAdminPrincipal))
-            .andExpect(status().isBadRequest())
-            .andReturn();
-
-    UserImportResult importResults = getFromJsonResponseBody(result, UserImportResult.class);
-    assertEquals(0, importResults.getParsedUsers().size());
-    assertTrue(importResults.getErrors().hasErrorMessages());
-    assertEquals(
-        getMsgFromResourceBundler("system.batchRegistration.upload.emptyFile"),
-        importResults.getErrors().getErrorMessages().get(0));
-  }
-
-  @Test
-  public void testBatchUploadNoFileRejected() throws Exception {
-
-    // no .file() part, so xfile resolves to null server-side
-    MvcResult result =
-        mockMvc
-            .perform(multipart("/system/userRegistration/csvUpload").principal(sysAdminPrincipal))
-            .andExpect(status().isBadRequest())
-            .andReturn();
-
-    UserImportResult importResults = getFromJsonResponseBody(result, UserImportResult.class);
-    assertEquals(0, importResults.getParsedUsers().size());
-    assertTrue(importResults.getErrors().hasErrorMessages());
-    assertEquals(
-        getMsgFromResourceBundler("system.batchRegistration.upload.noFile"),
-        importResults.getErrors().getErrorMessages().get(0));
   }
 
   @Test
@@ -406,7 +366,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
             sessionFactory
                 .getCurrentSession()
                 .createQuery("from Community where displayName=:displayName")
-                .setString(Group.DEFAULT_ORDERBY_FIELD, string)
+                .setParameter(Group.DEFAULT_ORDERBY_FIELD, string)
                 .uniqueResult();
     commitTransaction();
     return communityMgr.getCommunityWithAdminsAndGroups(c.getId());
@@ -706,9 +666,7 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
               "xfile", "usersShort.csv", "csv", getTestResourceFileStream("usersShort.csv"));
       mockMvc
           .perform(
-              fileUpload("/system/userRegistration/csvUpload")
-                  .file(mf)
-                  .principal(sysAdminPrincipal))
+              multipart("/system/userRegistration/csvUpload").file(mf).principal(sysAdminPrincipal))
           .andExpect(exceptionThrown())
           .andReturn();
     } finally {

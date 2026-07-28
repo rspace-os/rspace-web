@@ -2,9 +2,9 @@ package com.axiope.webapp.taglib;
 
 import com.axiope.webapp.listener.StartupListener;
 import com.researchspace.properties.IPropertyHolder;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.tagext.TagSupport;
 import java.lang.reflect.InvocationTargetException;
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.tagext.TagSupport;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 

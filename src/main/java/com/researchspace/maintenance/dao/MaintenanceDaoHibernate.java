@@ -5,9 +5,6 @@ import com.researchspace.maintenance.model.ScheduledMaintenance;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.SimpleExpression;
 import org.springframework.stereotype.Repository;
 
 @Repository("maintenanceDao")
@@ -37,21 +34,21 @@ public class MaintenanceDaoHibernate extends GenericDaoHibernate<ScheduledMainte
   }
 
   private List<ScheduledMaintenance> getAllFutureMaintenanceOrderedByDateAsc() {
-    return doList(Restrictions.gt("endDate", new Date()));
+    return getSession()
+        .createQuery(
+            "from ScheduledMaintenance where endDate > :now order by startDate asc",
+            ScheduledMaintenance.class)
+        .setParameter("now", new Date())
+        .list();
   }
 
   @Override
   public List<ScheduledMaintenance> getOldMaintenances() {
-    return doList(Restrictions.le("endDate", new Date()));
-  }
-
-  @SuppressWarnings("unchecked")
-  private List<ScheduledMaintenance> doList(SimpleExpression dateRestriction) {
-    return (List<ScheduledMaintenance>)
-        getSession()
-            .createCriteria(ScheduledMaintenance.class)
-            .add(dateRestriction)
-            .addOrder(Order.asc("startDate"))
-            .list();
+    return getSession()
+        .createQuery(
+            "from ScheduledMaintenance where endDate <= :now order by startDate asc",
+            ScheduledMaintenance.class)
+        .setParameter("now", new Date())
+        .list();
   }
 }

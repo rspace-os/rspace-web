@@ -13,7 +13,7 @@ import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.model.User;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.testutils.SpringTransactionalTest;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;

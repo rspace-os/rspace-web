@@ -21,8 +21,8 @@ import com.researchspace.service.SharingHandler;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.testutils.MockAndStubUtils;
 import com.researchspace.testutils.TestGroup;
+import jakarta.servlet.ServletRequest;
 import java.time.LocalDate;
-import javax.servlet.ServletRequest;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.model;
 
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import java.util.regex.Pattern;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 
 public class ValidRoRID implements ConstraintValidator<ValidRoR, String> {
   public static final String RSPACE_ROR_FORWARD_SLASH_DELIM = "__rspacror_forsl__";

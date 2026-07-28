@@ -1,10 +1,10 @@
 package com.researchspace.webapp.integrations.wopi.models.xml;
 
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Collections;
 import java.util.List;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
 import lombok.Getter;
 
 /** POJO For reading information about a supported Office Online app from the discovery XML */

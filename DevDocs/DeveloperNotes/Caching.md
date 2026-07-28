@@ -6,11 +6,11 @@ and the database, to improve the performance for the user.
 ## Hibernate 2nd level cache
 
 This is used to cache database entities outside of individual transactions. RSpace
-uses [EHCACHE](https://www.ehcache.org/) for the implementation.
+uses [Ehcache 3](https://www.ehcache.org/) via JCache for the implementation.
 
 Entities that are read more than written to are good candidates for caching.
-To add to the cache, use Hibernate `@Cache` annotation, and configure the caching 
-policy in `ehcache.xml`.
+To add to the cache, use Hibernate `@Cache` annotation, and configure the caching
+policy in `ehcache.xml` (Ehcache 3 format).
 
 ## Spring Cache abstraction
 

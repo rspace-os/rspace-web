@@ -6,8 +6,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -78,7 +78,7 @@ public class ImageControllerMVCIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload("/gallery/ajax/uploadFile")
+                multipart("/gallery/ajax/uploadFile")
                     .file(mf)
                     .principal(new MockPrincipal(testUser.getUsername())))
             .andExpect(status().isOk())

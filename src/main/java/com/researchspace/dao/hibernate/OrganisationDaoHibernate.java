@@ -4,10 +4,6 @@ import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.OrganisationDao;
 import com.researchspace.model.Organisation;
 import java.util.List;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.MatchMode;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
 
 @Repository("organisationDao")
@@ -41,17 +37,22 @@ public class OrganisationDaoHibernate extends GenericDaoHibernate<Organisation, 
   @SuppressWarnings("unchecked")
   @Override
   public List<Organisation> getApprovedOrganisations(String term) {
-    Criteria criteria = getSession().createCriteria(Organisation.class, "organisation");
+    String likeTerm = term.toLowerCase();
     if (keywordStartsWith(term)) {
-      criteria.add(Restrictions.ilike("title", term, MatchMode.START));
+      likeTerm = likeTerm + "%";
     } else {
-      criteria.add(Restrictions.ilike("title", term, MatchMode.ANYWHERE));
+      likeTerm = "%" + likeTerm + "%";
     }
-    criteria.add(Restrictions.eq("approved", true));
-    criteria.addOrder(Order.asc("title"));
-    criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-    criteria.setReadOnly(true).setCacheable(true);
-    return criteria.list();
+    return getSession()
+        .createQuery(
+            "select distinct o from Organisation o "
+                + "where o.approved = true and lower(o.title) like :term "
+                + "order by o.title asc",
+            Organisation.class)
+        .setParameter("term", likeTerm)
+        .setReadOnly(true)
+        .setCacheable(true)
+        .list();
   }
 
   /**

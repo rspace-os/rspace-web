@@ -5,9 +5,9 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import com.researchspace.model.User;
 import com.researchspace.service.UserApiKeyManager;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import java.util.function.Function;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.Validate;
 
 /** Validates and authenticates API requests accessed using an api key. */

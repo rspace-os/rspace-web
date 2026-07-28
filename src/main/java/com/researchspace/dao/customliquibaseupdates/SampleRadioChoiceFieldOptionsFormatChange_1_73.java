@@ -70,12 +70,18 @@ public class SampleRadioChoiceFieldOptionsFormatChange_1_73 extends AbstractCust
 
   @SuppressWarnings({"deprecation", "unchecked"})
   protected List<InventoryRadioField> getRadioFields() {
-    return sessionFactory.getCurrentSession().createCriteria(InventoryRadioField.class).list();
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("from InventoryRadioField", InventoryRadioField.class)
+        .list();
   }
 
   @SuppressWarnings({"deprecation", "unchecked"})
   protected List<InventoryChoiceField> getChoiceFields() {
-    return sessionFactory.getCurrentSession().createCriteria(InventoryChoiceField.class).list();
+    return sessionFactory
+        .getCurrentSession()
+        .createQuery("from InventoryChoiceField", InventoryChoiceField.class)
+        .list();
   }
 
   private boolean isNonEmptyOldFormatOptions(String options) {

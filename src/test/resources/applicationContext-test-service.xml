@@ -1,33 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:p="http://www.springframework.org/schema/p"
        xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
             http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd"
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd"
        default-lazy-init="false">
-
-    <!-- default-lazy-init is set to "false" so spring will load all components during component-scan,
-         that is to find potential problems with component loading i.e. cyclic dependencies -->
 
     <!-- Activates scanning of @Autowired -->
     <context:annotation-config/>
 
-    <!-- Activates scanning of @Service -->
+    <!-- Activates scanning of @Service and @Configuration -->
     <context:component-scan base-package="com.axiope,com.researchspace">
         <context:exclude-filter type="assignable" expression="com.researchspace.webapp.config.WebConfig"/>
         <context:exclude-filter type="assignable" expression="com.researchspace.webapp.config.WebConfigForMethodValidation"/>
-        <!-- don't create websocket server in test context.  -->
         <context:exclude-filter type="assignable" expression="com.axiope.service.cfg.WebSocketConfig"/>
     </context:component-scan>
 
-    <!-- =================================================================== -->
-    <!-- AOP: Configuration and Aspects                                      -->
-    <!-- =================================================================== -->
+    <!-- Enable @Aspect support for custom aspects (e.g. license checks) -->
+    <aop:aspectj-autoproxy/>
+
+    <!-- AOP: XML-based transaction advisors matching production applicationContext-service.xml.
+         Restored for Spring 6/H6 migration: service methods rely on these AOP advisors for
+         transactions rather than @Transactional annotations. -->
     <aop:config>
         <aop:advisor id="userManagerTx" advice-ref="userManagerTxAdvice" pointcut="execution(* *..service.UserManager.*(..))" order="0"/>
         <aop:advisor id="managerTx" advice-ref="txAdvice" pointcut="execution(* *..service.*Manager.*(..))" order="2"/>
@@ -36,11 +34,10 @@
         <aop:advisor id="searchManagerTx" advice-ref="txAdvice" pointcut="execution(* *..search.SearchManager.*(..))" order="2"/>
         <aop:advisor id="validatorTx" advice-ref="txAdvice" pointcut="execution(* *..service.*Validator.*(..))" order="2"/>
         <aop:advisor id="recordAdapterTx" advice-ref="txAdvice" pointcut="execution(* *..BaseRecordAdapter.*(..))" order="2"/>
+        <!-- Component-scanned service-layer beans not matching *Manager patterns -->
     </aop:config>
 
-    <!-- Enable @AspectJ support -->
-    <aop:aspectj-autoproxy/>
-
+    <!-- Transaction Manager -->
     <bean id="transactionManager"
         class="org.springframework.orm.hibernate5.HibernateTransactionManager">
         <property name="sessionFactory" ref="sessionFactory" />
@@ -48,9 +45,6 @@
 
     <tx:advice id="txAdvice">
         <tx:attributes>
-            <!-- Read-only commented out to make things easier for end-users -->
-            <!-- http://issues.appfuse.org/browse/APF-556 -->
-            <!--tx:method name="get*" read-only="true"/-->
             <tx:method name="*"/>
         </tx:attributes>
     </tx:advice>
@@ -61,27 +55,17 @@
         </tx:attributes>
     </tx:advice>
 
+    <!-- Also support @Transactional annotations -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <!-- Mail Configuration -->
     <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
         <property name="host" value="${mail.host}"/>
         <property name="defaultEncoding" value="UTF-8"/>
-        <!-- Uncomment if you need to authenticate with your SMTP Server -->
-        <!--property name="username" value="${mail.username}"/>
-        <property name="password" value="${mail.password}"/>
-        <property name="javaMailProperties">
-            <value>
-                mail.smtp.auth=true
-            </value>
-        </property-->
     </bean>
 
     <bean id="mailMessage" class="org.springframework.mail.SimpleMailMessage" scope="prototype">
         <property name="from" value="${mail.default.from}"/>
     </bean>
-<!--      <bean id="cacheManager"
-      class="org.springframework.cache.ehcache.EhCacheCacheManager" p:cache-manager-ref="ehcache"/>
-
-    EhCache library setup
-    <bean id="ehcache" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean"
-        p:shared="true" p:config-location="classpath:ehcache-spring.xml"/> -->
 
 </beans>

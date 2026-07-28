@@ -78,6 +78,11 @@ public class FieldmarkToRSpaceApiConverter {
         columnIndex = addFieldToSampleTemplate(fieldDTO.getKey(), TEXT, columnIndex, fieldsPost);
         break;
       case "Integer":
+      case "Number":
+      case "Long":
+      case "Double":
+      case "Float":
+      case "BigDecimal":
         columnIndex = addFieldToSampleTemplate(fieldDTO.getKey(), NUMBER, columnIndex, fieldsPost);
         break;
       case "byte[]":
@@ -220,6 +225,11 @@ public class FieldmarkToRSpaceApiConverter {
                 currentFieldList);
         break;
       case "Integer":
+      case "Number":
+      case "Long":
+      case "Double":
+      case "Float":
+      case "BigDecimal":
         columnIndex =
             addFieldToSample(
                 currentFieldDTO.getKey(),

@@ -6,8 +6,8 @@ package com.researchspace.api.v1;
 
 import com.researchspace.api.v1.model.ApiBarcodeRequest;
 import com.researchspace.model.User;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -82,8 +82,6 @@
 
   <Loggers>
 
-    <Logger name="net.sf.ehcache" level="ERROR"/>
-
     <Logger name="org.apache" level="WARN"/>
 
     <Logger name="org.hibernate" level="${hibernate.logLevel}"/>

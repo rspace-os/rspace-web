@@ -87,7 +87,15 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
 
     user = createAndSaveUser(getRandomAlphabeticString("any"));
     logoutAndLoginAs(user);
-    InitializedContent content = doInTransaction(() -> initializer.init(user.getId()));
+    // The initializer is constructed manually (not a Spring proxy), so init() joins the
+    // test-managed transaction. Assert in a SEPARATE transaction so the test verifies the
+    // initialized content was genuinely committed and is visible to a fresh session.
+    long mediaImgExamplesId =
+        doInTransaction(
+            () -> {
+              InitializedContent content = initializer.init(user.getId());
+              return content.getFolder().getMediaImgExamples().getId();
+            });
     doInTransaction(
         () -> {
           assertEquals(
@@ -98,8 +106,7 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
                   .size()); // shared + templates + examples + media
           // 3 + 4 in chem images
           assertEquals(
-              EXPECTED_EXAMPLE_IMG_COUNT,
-              getRecordCountInFolderForUser(content.getFolder().getMediaImgExamples().getId()));
+              EXPECTED_EXAMPLE_IMG_COUNT, getRecordCountInFolderForUser(mediaImgExamplesId));
         });
   }
 
@@ -109,7 +116,6 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
     user = createAndSaveUser(getRandomAlphabeticString("any"));
     logoutAndLoginAs(user);
     doInTransaction(() -> initializer.init(user.getId()));
-
     doInTransaction(
         () -> {
           Folder imagesFolder =

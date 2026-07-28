@@ -339,7 +339,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
   @Test
   public void testListingSystem() throws Exception {
     this.mockMvc
-        .perform(get("/system/").principal(sysAdminPrincipal))
+        .perform(get("/system").principal(sysAdminPrincipal))
         .andExpect(status().isOk())
         .andExpect(model().attributeExists("publish_allowed"))
         .andReturn();
@@ -565,7 +565,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
             sessionFactory
                 .getCurrentSession()
                 .createQuery("from Community where displayName=:displayName")
-                .setString(Group.DEFAULT_ORDERBY_FIELD, string)
+                .setParameter(Group.DEFAULT_ORDERBY_FIELD, string)
                 .uniqueResult();
     commitTransaction();
     return communityMgr.getCommunityWithAdminsAndGroups(c.getId());

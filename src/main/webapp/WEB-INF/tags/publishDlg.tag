@@ -1,5 +1,5 @@
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 <%@ taglib uri="http://researchspace.com/tags" prefix="rst" %>
 <%@ taglib prefix="shiro" uri="http://shiro.apache.org/tags" %>

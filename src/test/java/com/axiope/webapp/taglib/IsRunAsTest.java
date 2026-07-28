@@ -4,8 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.service.impl.ShiroTestUtils;
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.tagext.TagSupport;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.tagext.TagSupport;
 import org.apache.shiro.subject.Subject;
 import org.junit.After;
 import org.junit.Before;

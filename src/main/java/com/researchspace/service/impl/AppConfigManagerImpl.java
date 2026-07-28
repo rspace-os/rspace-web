@@ -10,11 +10,11 @@ import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.service.UserAppConfigManager;
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
@@ -92,6 +92,8 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
       set = createAppConfigElementSetFromMap(appConfigSetData, app);
       cfg.addConfigSet(set);
       appCfgDao.save(cfg);
+      // Explicitly save the set so it gets an ID immediately
+      appCfgDao.saveAppConfigElement(set);
     } else {
       AppConfigElementSet transientSet = createAppConfigElementSetFromMap(appConfigSetData, app);
       AppConfigElementSet saved = appCfgDao.getAppConfigElementSetById(appConfigSetDataId);

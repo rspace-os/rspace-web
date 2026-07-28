@@ -12,24 +12,23 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.Query;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.exception.SearchException;
-import org.hibernate.search.query.dsl.BooleanJunction;
-import org.hibernate.search.query.dsl.MustJunction;
-import org.hibernate.search.query.dsl.QueryBuilder;
+import org.hibernate.search.engine.search.predicate.SearchPredicate;
+import org.hibernate.search.engine.search.predicate.dsl.BooleanPredicateClausesStep;
+import org.hibernate.search.engine.search.predicate.dsl.SearchPredicateFactory;
+import org.hibernate.search.mapper.orm.scope.SearchScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Class responsible for creating the seqrch query to be executed in Lucene. */
 class RSQueryBuilder {
 
-  private static final float THRESHOLD = .5f;
+  private static final int FUZZY_MAX_EDIT_DISTANCE = 2;
+  private static final int FUZZY_PREFIX_LENGTH = 1;
   private static final int SLOP = 3;
 
   /**
@@ -66,12 +65,11 @@ class RSQueryBuilder {
   private static Logger log = LoggerFactory.getLogger(RSQueryBuilder.class);
 
   /**
-   * @param fssn The Hibernate full text session the indexed fields to search over
+   * @param scope The Hibernate Search scope for the indexed types to search over
    * @param cfg LuceneSrchConfig from the client
-   * @param clazz The class whose index we're searching over.
    * @return
    */
-  protected <T> Query getLuceneQuery(FullTextSession fssn, LuceneSrchCfg cfg, Class<T> clazz) {
+  protected SearchPredicate getSearchPredicate(SearchScope<?> scope, LuceneSrchCfg cfg) {
 
     String srchTerm = "";
     if (cfg.getTermList().size() > 0) {
@@ -81,51 +79,44 @@ class RSQueryBuilder {
           new Exception("A search term is missing in the search config object"));
     }
 
-    QueryBuilder qb = fssn.getSearchFactory().buildQueryBuilder().forEntity(clazz).get();
-    Query luceneQuery = null;
+    SearchPredicateFactory f = scope.predicate();
+    SearchPredicate predicate = null;
 
     try {
       switch (cfg.getSearchStrategy()) {
         case IFullTextSearcher.ALL_LUCENE_SEARCH_STRATEGY:
-          luceneQuery = createShouldLuceneQuery(qb, fssn, cfg.getAllTerms());
+          predicate = createShouldPredicate(f, cfg.getAllTerms());
           break;
 
         case IFullTextSearcher.ADVANCED_LUCENE_SEARCH_STRATEGY:
           if (cfg.getOperator().equals(SearchOperator.AND)) {
-            luceneQuery = createMustLuceneQuery(qb, fssn, cfg.getAllTerms());
+            predicate = createMustPredicate(f, cfg.getAllTerms());
           } else {
-            luceneQuery = createShouldLuceneQuery(qb, fssn, cfg.getAllTerms());
+            predicate = createShouldPredicate(f, cfg.getAllTerms());
           }
           break;
         case IFullTextSearcher.SINGLE_LUCENE_SEARCH_STRATEGY:
-          luceneQuery = createMustLuceneQuery(qb, fssn, cfg.getAllTerms());
+          predicate = createMustPredicate(f, cfg.getAllTerms());
           break;
 
         default:
+          String[] searchFields = expandFieldDataFields(cfg.getTermListFields());
           StringTokenizer tk = new StringTokenizer(srchTerm, ",");
           if (tk.countTokens() > 1) {
-            luceneQuery = andKeywords(qb, cfg.getTermListFields().toArray(new String[0]), tk);
+            predicate = andKeywords(f, searchFields, tk);
           } else {
-            luceneQuery =
-                qb.keyword()
-                    .onFields(cfg.getTermListFields().toArray(new String[0]))
-                    .matching(srchTerm)
-                    .createQuery();
+            predicate = f.match().fields(searchFields).matching(srchTerm).toPredicate();
           }
       }
 
-      luceneQuery = addUserFilterInQuery(cfg, qb, luceneQuery);
-      luceneQuery = addRecordFilterInQuery(cfg, qb, luceneQuery);
-      luceneQuery = addParentIdFilterInQuery(cfg, qb, luceneQuery);
-
-    } catch (java.text.ParseException pe) {
-      log.warn("Unable to create native lucene query", pe);
-      luceneQuery = null;
-    } catch (SearchException ex) {
-      log.warn("Could not generate lucene query! : " + ex.toString());
-      luceneQuery = null;
+      predicate = addUserFilterInPredicate(cfg, f, predicate);
+      predicate = addRecordFilterInPredicate(cfg, f, predicate);
+      predicate = addParentIdFilterInPredicate(cfg, f, predicate);
+    } catch (RuntimeException ex) {
+      log.warn("Could not generate lucene query! : " + ex.getMessage());
+      predicate = null;
     }
-    return luceneQuery;
+    return predicate;
   }
 
   /**
@@ -134,45 +125,47 @@ class RSQueryBuilder {
    * @param luceneQuery
    * @return
    */
-  private Query addRecordFilterInQuery(LuceneSrchCfg cfg, QueryBuilder qb, Query luceneQuery) {
+  private SearchPredicate addRecordFilterInPredicate(
+      LuceneSrchCfg cfg, SearchPredicateFactory f, SearchPredicate predicate) {
 
     if (cfg.isRecordFilterListUsableInLucene()) {
-      BooleanJunction<?> baseRecordFilter = qb.bool();
+      BooleanPredicateClausesStep<?> baseRecordFilter = f.bool();
       for (BaseRecord bs : cfg.getRecordFilterList()) {
-        Query q = qb.keyword().onField("id").matching(bs.getId()).createQuery();
-        baseRecordFilter = baseRecordFilter.should(q);
+        baseRecordFilter = baseRecordFilter.should(f.match().field("id").matching(bs.getId()));
       }
-      BooleanJunction<?> recordsBooleanQuery = qb.bool();
-      luceneQuery =
-          recordsBooleanQuery.must(baseRecordFilter.createQuery()).must(luceneQuery).createQuery();
+      // Hibernate Search 7 requires explicit minimumShouldMatch for SHOULD-only boolean queries
+      baseRecordFilter = baseRecordFilter.minimumShouldMatchNumber(1);
+      BooleanPredicateClausesStep<?> recordsBooleanQuery = f.bool();
+      predicate = recordsBooleanQuery.must(baseRecordFilter).must(predicate).toPredicate();
     }
 
-    return luceneQuery;
+    return predicate;
   }
 
-  private Query addParentIdFilterInQuery(LuceneSrchCfg cfg, QueryBuilder qb, Query luceneQuery) {
+  private SearchPredicate addParentIdFilterInPredicate(
+      LuceneSrchCfg cfg, SearchPredicateFactory f, SearchPredicate predicate) {
     if (cfg.getParentId() != null) {
-      Query q =
-          qb.keyword().onField(FieldNames.PARENT_ID).matching(cfg.getParentId()).createQuery();
-      luceneQuery = qb.bool().must(q).must(luceneQuery).createQuery();
+      SearchPredicate q =
+          f.match().field(FieldNames.PARENT_ID).matching(cfg.getParentId()).toPredicate();
+      predicate = f.bool().must(q).must(predicate).toPredicate();
     }
     if (cfg.getParentTemplateId() != null) {
-      Query q =
-          qb.keyword()
-              .onField(FieldNames.PARENT_TEMPLATE_ID)
+      SearchPredicate q =
+          f.match()
+              .field(FieldNames.PARENT_TEMPLATE_ID)
               .matching(cfg.getParentTemplateId())
-              .createQuery();
-      luceneQuery = qb.bool().must(q).must(luceneQuery).createQuery();
+              .toPredicate();
+      predicate = f.bool().must(q).must(predicate).toPredicate();
     }
     if (cfg.getParentSampleId() != null) {
-      Query q =
-          qb.keyword()
-              .onField(FieldNames.PARENT_SAMPLE_ID)
+      SearchPredicate q =
+          f.match()
+              .field(FieldNames.PARENT_SAMPLE_ID)
               .matching(cfg.getParentSampleId())
-              .createQuery();
-      luceneQuery = qb.bool().must(q).must(luceneQuery).createQuery();
+              .toPredicate();
+      predicate = f.bool().must(q).must(predicate).toPredicate();
     }
-    return luceneQuery;
+    return predicate;
   }
 
   /**
@@ -184,21 +177,54 @@ class RSQueryBuilder {
    * @param luq query being built
    * @return the query with user filter added
    */
-  private Query addUserFilterInQuery(LuceneSrchCfg cfg, QueryBuilder qb, Query luq) {
+  private SearchPredicate addUserFilterInPredicate(
+      LuceneSrchCfg cfg, SearchPredicateFactory f, SearchPredicate predicate) {
     if (cfg.isRestrictByUser()) {
-      BooleanJunction<?> userFilter = qb.bool();
+      BooleanPredicateClausesStep<?> userFilter = f.bool();
       for (String username : cfg.getUsernameFilterList()) {
-        Query q = qb.keyword().onField("owner.username").matching(username).createQuery();
-        userFilter = userFilter.should(q);
+        userFilter = userFilter.should(ownerUsernameMatch(f, username));
       }
       for (String sharedWith : cfg.getSharedWithFilterList()) {
-        Query q = qb.keyword().onField("sharedWith").matching(sharedWith).createQuery();
-        userFilter = userFilter.should(q);
+        // sharedWith is a @KeywordField storing a comma-joined string of group unique names.
+        // Use wildcard to match a single group name within the potentially multi-group string.
+        userFilter =
+            userFilter.should(f.wildcard().field("sharedWith").matching("*" + sharedWith + "*"));
       }
-      BooleanJunction<?> allUsers = qb.bool();
-      luq = allUsers.must(userFilter.createQuery()).must(luq).createQuery();
+      // Hibernate Search 7 requires explicit minimumShouldMatch for SHOULD-only boolean queries
+      userFilter = userFilter.minimumShouldMatchNumber(1);
+      BooleanPredicateClausesStep<?> allUsers = f.bool();
+      predicate = allUsers.must(userFilter).must(predicate).toPredicate();
     }
-    return luq;
+    return predicate;
+  }
+
+  /**
+   * Builds a SHOULD-over-both-fields owner match for a single username. Owner is indexed two ways:
+   *
+   * <ul>
+   *   <li>{@code owner.username}: embedded path on BaseRecord subtypes (StructuredDocument,
+   *       EcatMedia, etc.) and on InventoryRecord via {@code @IndexedEmbedded owner}
+   *   <li>{@code owner_username}: flat keyword on EcatCommentItem (indexed from lastUpdater)
+   * </ul>
+   *
+   * Either field may be absent from a given scope, so each clause is added defensively. Used by
+   * both the permission filter ({@link #addUserFilterInPredicate}) and the explicit owner search
+   * term ({@link #getPredicateList}) so they stay in step.
+   */
+  private BooleanPredicateClausesStep<?> ownerUsernameMatch(
+      SearchPredicateFactory f, String username) {
+    BooleanPredicateClausesStep<?> ownerMatch = f.bool();
+    try {
+      ownerMatch = ownerMatch.should(f.match().field("owner.username").matching(username));
+    } catch (RuntimeException e) {
+      log.debug("owner.username not in scope: {}", e.getMessage());
+    }
+    try {
+      ownerMatch = ownerMatch.should(f.match().field("owner_username").matching(username));
+    } catch (RuntimeException e) {
+      log.debug("owner_username not in scope: {}", e.getMessage());
+    }
+    return ownerMatch.minimumShouldMatchNumber(1);
   }
 
   /**
@@ -211,21 +237,13 @@ class RSQueryBuilder {
    * @return Query
    * @throws java.text.ParseException
    */
-  protected Query createMustLuceneQuery(QueryBuilder qb, FullTextSession fssn, List<Term> termList)
-      throws java.text.ParseException {
-    Query luq = null;
-    MustJunction mj = null;
-    List<Query> ql = getQueryList(qb, fssn, termList);
-    for (int i = 0; i < ql.size(); i++) {
-      if (i == 0) {
-        mj = qb.bool().must(ql.get(i));
-      } else {
-        mj = mj.must(ql.get(i));
-      }
+  protected SearchPredicate createMustPredicate(SearchPredicateFactory f, List<Term> termList) {
+    BooleanPredicateClausesStep<?> mustClauses = f.bool();
+    List<SearchPredicate> predicates = getPredicateList(f, termList);
+    for (SearchPredicate predicate : predicates) {
+      mustClauses = mustClauses.must(predicate);
     }
-
-    luq = mj.createQuery();
-    return luq;
+    return mustClauses.toPredicate();
   }
 
   /**
@@ -238,21 +256,15 @@ class RSQueryBuilder {
    * @return
    * @throws java.text.ParseException
    */
-  protected Query createShouldLuceneQuery(
-      QueryBuilder qb, FullTextSession fssn, List<Term> termList) throws java.text.ParseException {
-    Query luq;
-    BooleanJunction<?> booleanJunction = null;
-    List<Query> ql = getQueryList(qb, fssn, termList);
-    for (int i = 0; i < ql.size(); i++) {
-      if (i == 0) {
-        booleanJunction = qb.bool().should(ql.get(i));
-      } else {
-        booleanJunction = booleanJunction.should(ql.get(i));
-      }
+  protected SearchPredicate createShouldPredicate(SearchPredicateFactory f, List<Term> termList) {
+    BooleanPredicateClausesStep<?> shouldClauses = f.bool();
+    List<SearchPredicate> predicates = getPredicateList(f, termList);
+    for (SearchPredicate predicate : predicates) {
+      shouldClauses = shouldClauses.should(predicate);
     }
-
-    luq = booleanJunction.createQuery();
-    return luq;
+    // Hibernate Search 7 requires explicit minimumShouldMatch for SHOULD-only boolean queries
+    // (OR semantics)
+    return shouldClauses.minimumShouldMatchNumber(1).toPredicate();
   }
 
   /**
@@ -264,9 +276,8 @@ class RSQueryBuilder {
    * @return
    * @throws java.text.ParseException
    */
-  private List<Query> getQueryList(QueryBuilder qb, FullTextSession fssn, List<Term> termList)
-      throws java.text.ParseException {
-    List<Query> ql = new ArrayList<>();
+  private List<SearchPredicate> getPredicateList(SearchPredicateFactory f, List<Term> termList) {
+    List<SearchPredicate> ql = new ArrayList<>();
 
     for (int i = 0; i < termList.size(); i++) {
       Term term = termList.get(i);
@@ -283,7 +294,7 @@ class RSQueryBuilder {
         if (toAndFrom[1].isEmpty() || toAndFrom[1].equals("null") || toAndFrom[1].equals("now"))
           dateTo = Date.from(Instant.now());
         else dateTo = Date.from(OffsetDateTime.parse(toAndFrom[1]).toInstant());
-        ql.add(qb.range().onField(term.field()).from(dateFrom).to(dateTo).createQuery());
+        ql.add(f.range().field(term.field()).between(dateFrom, dateTo).toPredicate());
 
       } else if (term.field().equals(FieldNames.TEMPLATE)) {
         /**
@@ -291,24 +302,65 @@ class RSQueryBuilder {
          * those like so: some_conditions && ( templateOid = "whatever" || temapleteName =
          * "Whatever" )
          */
-        BooleanJunction conjunction =
-            qb.bool()
-                .should(createQueryAnalyzingTerm(qb, fssn, "templateName", term.text()))
-                .should(createQueryAnalyzingTerm(qb, fssn, "templateOid", term.text()));
+        BooleanPredicateClausesStep<?> conjunction =
+            f.bool()
+                .should(createQueryAnalyzingTerm(f, "templateName", term.text()))
+                .should(createQueryAnalyzingTerm(f, "templateOid", term.text()))
+                .minimumShouldMatchNumber(1);
 
-        ql.add(conjunction.createQuery());
+        ql.add(conjunction.toPredicate());
 
-      } else if (term.field().equals("owner.username")) {
-        BooleanJunction conjunction = qb.bool();
+      } else if (term.field().equals(FieldNames.OWNER)) {
+        // Mirror addUserFilterInPredicate: owner lives at owner.username on most types and at the
+        // flat owner_username keyword on EcatCommentItem, so an owner search must cover both or it
+        // misses comments authored by the searched-for user.
+        BooleanPredicateClausesStep<?> conjunction = f.bool();
         for (String userName : term.text().split(",")) {
-          Query q = qb.keyword().onField("owner.username").matching(userName).createQuery();
-          conjunction = conjunction.should(q);
+          conjunction = conjunction.should(ownerUsernameMatch(f, userName));
         }
-        ql.add(conjunction.createQuery());
+        ql.add(conjunction.minimumShouldMatchNumber(1).toPredicate());
 
       } else {
-        /** If the field term is fields.fieldData, docTag, name, formName, globalIdentifier */
-        ql.add(createQueryAnalyzingTerm(qb, fssn, term.field(), term.text()));
+        // For fields.fieldData, also search fields_fieldData (contains description + globalId on
+        // BaseRecord, and itemContent on EcatCommentItem): Hibernate Search 7 uses two separate
+        // index fields where Hibernate Search 5 used one field name for both embedded and flat
+        // content.
+        // Wrap in try-catch: fields may not exist on all entity types (e.g. fields.fieldData
+        // doesn't exist on inventory entities) — skip gracefully rather than failing the whole
+        // query.
+        try {
+          if (term.field().equals(FieldNames.FIELD_DATA)) {
+            // Try each sub-predicate independently so that fields.fieldData on Sample scope
+            // can be searched even when fields_fieldData doesn't exist in the scope (or vice
+            // versa).
+            int clauseCount = 0;
+            BooleanPredicateClausesStep<?> fieldDataPred = f.bool();
+            try {
+              fieldDataPred =
+                  fieldDataPred.should(
+                      createQueryAnalyzingTerm(f, FieldNames.FIELD_DATA, term.text()));
+              clauseCount++;
+            } catch (RuntimeException e) {
+              log.debug("Skipping '{}' not in scope: {}", FieldNames.FIELD_DATA, e.getMessage());
+            }
+            try {
+              fieldDataPred =
+                  fieldDataPred.should(
+                      createQueryAnalyzingTerm(f, FieldNames.FLAT_FIELD_DATA, term.text()));
+              clauseCount++;
+            } catch (RuntimeException e) {
+              log.debug(
+                  "Skipping '{}' not in scope: {}", FieldNames.FLAT_FIELD_DATA, e.getMessage());
+            }
+            if (clauseCount > 0) {
+              ql.add(fieldDataPred.minimumShouldMatchNumber(1).toPredicate());
+            }
+          } else {
+            ql.add(createQueryAnalyzingTerm(f, term.field(), term.text()));
+          }
+        } catch (RuntimeException e) {
+          log.debug("Skipping field '{}' not in scope: {}", term.field(), e.getMessage());
+        }
       }
     }
 
@@ -324,8 +376,8 @@ class RSQueryBuilder {
    * @param term
    * @return
    */
-  private Query createQueryAnalyzingTerm(
-      QueryBuilder qb, FullTextSession fssn, String field, String term) {
+  private SearchPredicate createQueryAnalyzingTerm(
+      SearchPredicateFactory f, String field, String term) {
     boolean isApiPartialMatchQuery =
         term.indexOf(WILDCARD_LUCENE_INDICATOR) != -1
             || term.indexOf(QUESTION_MARK_INDICATOR) != -1
@@ -339,38 +391,46 @@ class RSQueryBuilder {
       }
       StringBuilder matchingBuilder = new StringBuilder();
       for (String phrase : allTerms) {
-        matchingBuilder.append("(\"" + phrase + "\") | ");
+        if (matchingBuilder.length() > 0) {
+          matchingBuilder.append(" | ");
+        }
+        matchingBuilder.append("(\"").append(phrase).append("\")");
       }
       String matchingText = matchingBuilder.toString().trim();
-      matchingText = matchingText.substring(0, matchingText.length() - 1);
-      return qb.simpleQueryString().onField("docTag").matching(matchingText).createQuery();
+      return f.simpleQueryString().field("docTag").matching(matchingText).toPredicate();
     }
     if (term.startsWith(SearchConstants.NATIVE_LUCENE_PREFIX)) {
-      term = term.substring(2);
-      org.apache.lucene.queryparser.classic.QueryParser parser =
-          new QueryParser(field, fssn.getSearchFactory().getAnalyzer("structureAnalyzer"));
+      term = term.substring(SearchConstants.NATIVE_LUCENE_PREFIX.length());
+      // Use Lucene's QueryParser for full native syntax support (negation, AND, OR, etc.)
       try {
-        return parser.parse(term);
-      } catch (ParseException e) {
-        log.warn("Unable to create native query");
-        return null;
+        org.apache.lucene.queryparser.classic.QueryParser parser =
+            new org.apache.lucene.queryparser.classic.QueryParser(
+                field, new org.apache.lucene.analysis.standard.StandardAnalyzer());
+        org.apache.lucene.search.Query luceneQuery = parser.parse(term);
+        return ((org.hibernate.search.backend.lucene.search.predicate.dsl
+                    .LuceneSearchPredicateFactory)
+                f.extension(org.hibernate.search.backend.lucene.LuceneExtension.get()))
+            .fromLuceneQuery(luceneQuery)
+            .toPredicate();
+      } catch (org.apache.lucene.queryparser.classic.ParseException e) {
+        throw new SearchQueryParseException(e);
       }
     } else if (term.endsWith(FUZZY_LUCENE_INDICATOR)) {
-      return qb.keyword()
-          .fuzzy()
-          .withThreshold(THRESHOLD)
-          .withPrefixLength(1)
-          .onField(field)
-          .matching(term)
-          .createQuery();
+      String fuzzyTerm = term.substring(0, term.length() - FUZZY_LUCENE_INDICATOR.length());
+      return f.match()
+          .field(field)
+          .matching(fuzzyTerm)
+          .fuzzy(FUZZY_MAX_EDIT_DISTANCE, FUZZY_PREFIX_LENGTH)
+          .toPredicate();
     } else if (term.contains(WILDCARD_LUCENE_INDICATOR) || term.contains(QUESTION_MARK_INDICATOR)) {
 
-      return qb.keyword().wildcard().onField(field).matching(term.toLowerCase()).createQuery();
+      return f.wildcard().field(field).matching(term.toLowerCase()).toPredicate();
 
     } else if ((term.startsWith(PHRASE1_LUCENE_INDICATOR)
             && term.endsWith(PHRASE1_LUCENE_INDICATOR))
         || (term.startsWith(PHRASE2_LUCENE_INDICATOR) && term.endsWith(PHRASE2_LUCENE_INDICATOR))) {
-      return qb.phrase().withSlop(SLOP).onField(field).sentence(term).createQuery();
+      String sentence = term.substring(1, term.length() - 1);
+      return f.phrase().field(field).matching(sentence).slop(SLOP).toPredicate();
     } else {
       StringTokenizer tk;
       if (term.indexOf(',') >= 0) {
@@ -379,11 +439,25 @@ class RSQueryBuilder {
         tk = new StringTokenizer(term);
       }
       if (tk.countTokens() > 1) {
-        return andKeywords(qb, new String[] {field}, tk);
+        return andKeywords(f, new String[] {field}, tk);
       } else {
-        return qb.keyword().onField(field).matching(term).createQuery();
+        return f.match().field(field).matching(term).toPredicate();
       }
     }
+  }
+
+  /**
+   * Expands the field set to include FLAT_FIELD_DATA alongside FIELD_DATA when the latter is
+   * present. This ensures description/globalId (indexed flat as fields_fieldData) and
+   * EcatCommentItem content are found alongside embedded field data (fields.fieldData).
+   */
+  private String[] expandFieldDataFields(Set<String> termFields) {
+    if (termFields.contains(FieldNames.FIELD_DATA)) {
+      Set<String> expanded = new LinkedHashSet<>(termFields);
+      expanded.add(FieldNames.FLAT_FIELD_DATA);
+      return expanded.toArray(new String[0]);
+    }
+    return termFields.toArray(new String[0]);
   }
 
   /**
@@ -394,14 +468,12 @@ class RSQueryBuilder {
    * @param tk
    * @return
    */
-  protected Query andKeywords(QueryBuilder qb, String flds[], StringTokenizer tk) {
-    Query luq = null;
-    MustJunction mj =
-        qb.bool().must(qb.keyword().onFields(flds).matching(tk.nextToken().trim()).createQuery());
+  protected SearchPredicate andKeywords(
+      SearchPredicateFactory f, String flds[], StringTokenizer tk) {
+    BooleanPredicateClausesStep<?> mustClauses = f.bool();
     while (tk.hasMoreTokens()) {
-      mj = mj.must(qb.keyword().onFields(flds).matching(tk.nextToken().trim()).createQuery());
+      mustClauses = mustClauses.must(f.match().fields(flds).matching(tk.nextToken().trim()));
     }
-    luq = mj.createQuery();
-    return luq;
+    return mustClauses.toPredicate();
   }
 }

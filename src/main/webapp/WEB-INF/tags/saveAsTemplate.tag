@@ -1,4 +1,4 @@
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
 <%@ attribute name="structuredDocument" required="true" type="com.researchspace.model.record.StructuredDocument" %>
 

@@ -1,5 +1,5 @@
 <%@ taglib uri="http://researchspace.com/tags" prefix="rst"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="shiro" uri="http://shiro.apache.org/tags"%>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 <%@ attribute name="urlTarget" required="true" type="java.lang.String" %>

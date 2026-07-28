@@ -180,7 +180,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
   public void tesDeleteRorAsSysadmin() throws Exception {
     logoutAndLoginAsSysAdmin();
     mockMvc
-        .perform(delete(rorSysadminUrl + "rorForID/"))
+        .perform(delete(rorSysadminUrl + "rorForID"))
         .andExpect(status().is2xxSuccessful())
         .andExpect(jsonPath("$.data", is(true)));
     MvcResult result =
@@ -197,7 +197,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
     logoutAndLoginAs(notSysAdmin);
     MvcResult result =
         mockMvc
-            .perform(delete(rorSysadminUrl + "rorForID/"))
+            .perform(delete(rorSysadminUrl + "rorForID"))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     assertTrue(

@@ -1,9 +1,9 @@
 package com.researchspace.integrations.omero.model;
 
 import com.researchspace.webapp.integrations.omero.JSONClient;
+import jakarta.json.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
-import javax.json.JsonObject;
 import lombok.Getter;
 
 @Getter

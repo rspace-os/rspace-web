@@ -1,7 +1,7 @@
 <%@ attribute name="parentFolderId" required="true" type="java.lang.Long" %>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 

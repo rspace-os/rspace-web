@@ -3,7 +3,7 @@ package com.researchspace.service.impl;
 import com.researchspace.model.User;
 import com.researchspace.service.InitializedContent;
 import com.researchspace.service.PostFirstLoginAction;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 /** Helper class for implementing PostFirstLoginAction */
 public abstract class AbstractPostFirstLoginHelper implements PostFirstLoginAction {

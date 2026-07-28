@@ -1,5 +1,5 @@
 <%@ include file="/common/taglibs.jsp"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags"%>
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags"%>
 <link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/messages.css'/>" />

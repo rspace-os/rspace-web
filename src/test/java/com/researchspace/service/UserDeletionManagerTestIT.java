@@ -22,7 +22,6 @@ import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
-import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
@@ -72,8 +71,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -97,6 +94,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired UserConnectionManager userConn;
   private @Autowired JdbcTemplate jdbcTemplate;
   private @Autowired StoichiometryManager stoichiometryMgr;
+  private @Autowired StoichiometryMoleculeManager stoichiometryMoleculeMgr;
   private @Autowired RSChemElementManager rsChemElementMgr;
   private @Autowired StoichiometryInventoryLinkDao stoichiometryInventoryLinkDao;
   private @Autowired InstrumentDao instrumentDao;
@@ -272,10 +270,11 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     Object rc =
         sessionFactory
             .getCurrentSession()
-            .createCriteria(FileProperty.class)
-            .add(Restrictions.eq("fileOwner", username))
-            .setProjection(Projections.countDistinct("id"))
-            .uniqueResult();
+            .createQuery(
+                "select count(distinct fp.id) from FileProperty fp where fp.fileOwner = :owner",
+                Long.class)
+            .setParameter("owner", username)
+            .getSingleResult();
     commitTransaction();
     return (Long) rc;
   }
@@ -829,7 +828,10 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private Long saveStoichiometryInventoryLink(
       StoichiometryMolecule molecule, InventoryRecord inventoryRecord) {
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
-    link.setStoichiometryMolecule(molecule);
+    // Reload the molecule within the current transaction so it is a managed (not detached)
+    // entity, mirroring StoichiometryInventoryLinkManagerImpl.createLink. Hibernate 6's persist()
+    // cannot cascade to a detached association, unlike Hibernate 5's saveOrUpdate().
+    link.setStoichiometryMolecule(stoichiometryMoleculeMgr.getById(molecule.getId()));
     link.setInventoryRecord(inventoryRecord);
     return stoichiometryInventoryLinkDao.save(link).getId();
   }

@@ -80,7 +80,8 @@ public class UpdateEmptyACLsForMediaFiles_RSPAC2559 extends AbstractCustomLiquib
 
     return sessionFactory
         .getCurrentSession()
-        .createQuery("from BaseRecord where acl = '' and type = 'MEDIA_FILE'", BaseRecord.class)
+        .createQuery(
+            "from BaseRecord where sharingACL.acl = '' and type = 'MEDIA_FILE'", BaseRecord.class)
         .list();
   }
 }

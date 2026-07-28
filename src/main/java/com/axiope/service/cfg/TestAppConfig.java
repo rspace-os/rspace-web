@@ -39,6 +39,7 @@ import io.vavr.control.Option;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,6 +47,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Run profile spring configuration used for running the web application in test/dev environments.
@@ -56,6 +58,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @Configuration
 @Profile("run")
 @EnableAsync
+@EnableScheduling
 public class TestAppConfig extends BaseConfig {
 
   @Bean(name = "postUserCreate")
@@ -119,7 +122,8 @@ public class TestAppConfig extends BaseConfig {
   }
 
   @Bean
-  public GlobalInitManager globalInitManager() {
+  public GlobalInitManager globalInitManager(
+      @Qualifier("dBDataIntegrityChecker") IApplicationInitialisor dBDataIntegrityChecker) {
     GlobalInitManagerImpl mgr = new GlobalInitManagerImpl();
     List<IApplicationInitialisor> inits = new ArrayList<IApplicationInitialisor>();
     inits.add(fileStoreRootDetector());
@@ -130,7 +134,7 @@ public class TestAppConfig extends BaseConfig {
     inits.add(sampleTemplateAppInitialiser());
     inits.add(devGrpSetup());
     inits.add(integrationsHandlerInitialisor());
-    inits.add(dBDataIntegrityChecker());
+    inits.add(dBDataIntegrityChecker);
     inits.add(systemConfigurationUpdater());
     inits.add(customForms());
     inits.add(sharedSnippetsFolderCreator());

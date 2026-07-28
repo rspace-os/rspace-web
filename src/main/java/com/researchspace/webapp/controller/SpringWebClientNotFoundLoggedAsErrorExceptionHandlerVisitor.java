@@ -2,10 +2,11 @@ package com.researchspace.webapp.controller;
 
 import static org.springframework.core.annotation.AnnotatedElementUtils.findMergedAnnotation;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -37,10 +38,15 @@ public class SpringWebClientNotFoundLoggedAsErrorExceptionHandlerVisitor
 
   private HttpStatus determineClientErrorException(Exception exception) {
     if (exception instanceof HttpClientErrorException) {
-      return ((HttpClientErrorException) exception).getStatusCode();
+      return toHttpStatus(((HttpClientErrorException) exception).getStatusCode());
     } else {
       return null;
     }
+  }
+
+  private HttpStatus toHttpStatus(HttpStatusCode statusCode) {
+    HttpStatus status = HttpStatus.resolve(statusCode.value());
+    return status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR;
   }
 
   private String makeMessage(Exception exception) {

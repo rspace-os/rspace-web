@@ -11,11 +11,11 @@ import com.researchspace.webapp.integrations.wopi.models.xml.XmlAction;
 import com.researchspace.webapp.integrations.wopi.models.xml.XmlApp;
 import com.researchspace.webapp.integrations.wopi.models.xml.XmlProofKey;
 import com.researchspace.webapp.integrations.wopi.models.xml.XmlWopiDiscovery;
+import jakarta.xml.bind.JAXBException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.InputStreamReader;
-import javax.xml.bind.JAXBException;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

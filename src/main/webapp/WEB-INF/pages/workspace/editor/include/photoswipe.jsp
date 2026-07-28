@@ -9,23 +9,23 @@
         <link rel="stylesheet"
             href="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css'/>" />
 
-        <script src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe.min.js'/>"></script>
-        <script src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe-ui-default.min.js'/>"></script>
-        <script src="<rst:assetUrl value='/scripts/pages/photoswipe.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe.min.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe-ui-default.min.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/pages/photoswipe.js'/>"></script>
 
-        <style>
-            .pswp {
-                z-index: 10000200 !important;
-                /* so it's on top of gallery dialog */
-            }
+    <style>
+        .pswp {
+            z-index: 10000200 !important;
+            /* so it's on top of gallery dialog */
+        }
 
-            .pswp__img {
-                background-color: white;
-            }
+        .pswp__img {
+            background-color: white;
+        }
 
-            .pswp__caption__center {
-                text-align: center;
-            }
+        .pswp__caption__center {
+            text-align: center;
+        }
 
             .publicNextArrowText,
             .publicPrevArrowText {

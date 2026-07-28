@@ -3,20 +3,20 @@ package com.researchspace.webapp.controller;
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.ProductType;
 import com.researchspace.properties.IPropertyHolder;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
  * Interceptor that handles Product and DeploymentProperty annotations. If called Controller (or
  * method) is not enabled in given deployment the 404 http response is returned.
  */
-public class ProductAndPropertyAnnotationInterceptor extends HandlerInterceptorAdapter {
+public class ProductAndPropertyAnnotationInterceptor implements HandlerInterceptor {
 
   private @Autowired IPropertyHolder properties;
 

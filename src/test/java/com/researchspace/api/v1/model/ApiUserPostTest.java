@@ -1,11 +1,11 @@
 package com.researchspace.api.v1.model;
 
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ApiUserPostTest extends JavaxValidatorTest {
+public class ApiUserPostTest extends JakartaValidatorTest {
 
   @Before
   public void setUp() throws Exception {}

@@ -1,9 +1,9 @@
 <%@ include file="/common/taglibs.jsp"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags"%>
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn"%>
+<%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
 <link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/messages.css'/>" />
 
 <%-- Reusable tag for incorporating a 'my requests' dialog into a page. --%>

@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.model;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import org.apache.commons.collections4.CollectionUtils;
 
 /** Class-level validator for input to /share POST */

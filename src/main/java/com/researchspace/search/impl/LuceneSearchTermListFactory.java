@@ -114,6 +114,9 @@ public class LuceneSearchTermListFactory {
                   FieldNames.INV_TAGS,
                   FieldNames.DESCRIPTION,
                   FieldNames.FIELD_DATA,
+                  FieldNames.EXTRA_FIELD_DATA,
+                  FieldNames.NOTES_FIELD_DATA,
+                  FieldNames.FILES_FIELD_DATA,
                   /* FieldNames.BARCODE - barcode matches handled by direct db search rather than lucene */
                   FieldNames.BARCODE_FIELD_DATA)
               .forEach(

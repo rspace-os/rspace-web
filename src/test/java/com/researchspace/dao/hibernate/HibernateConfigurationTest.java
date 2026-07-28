@@ -1,9 +1,9 @@
 package com.researchspace.dao.hibernate;
 
 import com.researchspace.dao.BaseDaoTestCase;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.metamodel.EntityType;
-import javax.persistence.metamodel.Metamodel;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.metamodel.EntityType;
+import jakarta.persistence.metamodel.Metamodel;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;

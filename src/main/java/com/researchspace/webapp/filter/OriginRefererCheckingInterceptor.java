@@ -2,19 +2,19 @@ package com.researchspace.webapp.filter;
 
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.permissions.SecurityLogger;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
  * Interceptor checking Origin and Referer headers against CSRF attacks (RSPAC-1176). Enabled by
  * setting deployment property 'csrf.filters.enabled' to 'true'.
  */
-public class OriginRefererCheckingInterceptor extends HandlerInterceptorAdapter {
+public class OriginRefererCheckingInterceptor implements HandlerInterceptor {
 
   protected static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 

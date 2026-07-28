@@ -2,6 +2,7 @@ package com.researchspace.dao.hibernate;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
+import com.researchspace.core.util.SortOrder;
 import com.researchspace.dao.CommunicationDao;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.PaginationCriteria;
@@ -11,11 +12,7 @@ import com.researchspace.model.dtos.MessageTypeFilter;
 import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.model.record.BaseRecord;
 import java.util.*;
-import org.hibernate.Criteria;
-import org.hibernate.FetchMode;
 import org.hibernate.Session;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
@@ -43,21 +40,21 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
 
     // 1st query - retrieve ids, correct ordered
     Session session = getSession();
-    Criteria criteria =
+    String orderBy = buildOrderBy(pgCrit, "mor");
+    String hql =
+        "select distinct mor.id from MessageOrRequest mor "
+            + "join mor.originator originator "
+            + "where mor.status not in :terminatedStates "
+            + "and mor.messageType <> :simpleMessage "
+            + "and originator.id = :originatorId"
+            + orderBy;
+    List<Long> ids =
         session
-            .createCriteria(MessageOrRequest.class, "mor")
-            .createAlias("mor.originator", "originator");
-    criteria.add(Restrictions.not(Restrictions.in("status", TERMINATED_STATES)));
-    criteria.add(Restrictions.not(Restrictions.in("messageType", MessageType.SIMPLE_MESSAGE)));
-    criteria.add(Restrictions.eq("originator.id", user.getId()));
-    criteria.setProjection(Projections.distinct(Projections.property("id")));
-    criteria.setFetchMode("record", FetchMode.SELECT);
-    criteria.setFetchMode("recipients", FetchMode.SELECT);
-    criteria.setFetchMode("originator", FetchMode.SELECT);
-    criteria.setFetchMode("previous", FetchMode.SELECT);
-    criteria.setFetchMode("next", FetchMode.SELECT);
-    applyOrderCriteria(pgCrit, criteria);
-    List<Long> ids = criteria.list();
+            .createQuery(hql, Long.class)
+            .setParameterList("terminatedStates", TERMINATED_STATES)
+            .setParameter("simpleMessage", MessageType.SIMPLE_MESSAGE)
+            .setParameter("originatorId", user.getId())
+            .list();
 
     return findPageOfMessageOrRequestForIds(ids, pgCrit);
   }
@@ -152,8 +149,8 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     Query<CommunicationTarget> query =
         getSession()
             .createQuery(
-                "from CommunicationTarget where recipient_id=:recipientId and"
-                    + " communication_id=:requestId");
+                "from CommunicationTarget where recipient.id=:recipientId and"
+                    + " communication.id=:requestId");
     query.setParameter("recipientId", userId);
     query.setParameter("requestId", requestId);
 
@@ -184,17 +181,25 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   public boolean findExistingNotificationFor(
       User originator, NotificationType type, BaseRecord record, Set<String> potentialTargets) {
     Session session = getSession();
-    Criteria query =
-        session
-            .createCriteria(Notification.class)
-            .createAlias("recipients", COMMUNICATION_TARGET_ALIAS);
-    query.add(Restrictions.eq("ct.status", CommunicationStatus.NEW));
+    StringBuilder hql =
+        new StringBuilder(
+            "select ct.id from Notification n join n.recipients ct "
+                + "where ct.status = :status "
+                + "and n.notificationType = :type "
+                + "and n.originator.id = :originatorId");
     if (record != null) {
-      query.add(Restrictions.eq("record.id", record.getId()));
+      hql.append(" and n.record.id = :recordId");
     }
-    query.add(Restrictions.eq("notificationType", type));
-    query.add(Restrictions.eq("originator.id", originator.getId()));
-    query.setMaxResults(1);
+    Query<Long> query =
+        session
+            .createQuery(hql.toString(), Long.class)
+            .setParameter("status", CommunicationStatus.NEW)
+            .setParameter("type", type)
+            .setParameter("originatorId", originator.getId())
+            .setMaxResults(1);
+    if (record != null) {
+      query.setParameter("recordId", record.getId());
+    }
     return !query.list().isEmpty();
   }
 
@@ -266,16 +271,21 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
       User user, PaginationCriteria<CommunicationTarget> pgCrit) {
 
     // 1st query - retrieve ids, correctly ordered
-    Criteria criteria = createMessageorRequestCriteria(getSession());
-    criteria
-        .add(
-            Restrictions.disjunction()
-                .add(Restrictions.eq("recipient.id", user.getId()))
-                .add(Restrictions.eq("originator.id", user.getId())))
-        .add(Restrictions.eq("communication.messageType", MessageType.SIMPLE_MESSAGE));
-    applyOrderCriteriaForOrderByCommTargetWhenAliased(pgCrit, criteria);
-    criteria.setProjection(Projections.distinct(Projections.property("id")));
-    List<Long> ids = criteria.list();
+    String orderBy = buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS);
+    String hql =
+        "select distinct mor.id from MessageOrRequest mor "
+            + "join mor.recipients ct "
+            + "join ct.recipient recipient "
+            + "join mor.originator originator "
+            + "where (recipient.id = :userId or originator.id = :userId) "
+            + "and mor.messageType = :messageType"
+            + orderBy;
+    List<Long> ids =
+        getSession()
+            .createQuery(hql, Long.class)
+            .setParameter("userId", user.getId())
+            .setParameter("messageType", MessageType.SIMPLE_MESSAGE)
+            .list();
 
     // no need to retrieve results if there are no results
     if (ids.isEmpty()) {
@@ -364,65 +374,65 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     }
   }
 
-  private Criteria createNotificationCriteria(Session session) {
-    return session
-        .createCriteria(Notification.class, "communication")
-        .createAlias("communication.recipients", COMMUNICATION_TARGET_ALIAS)
-        .createAlias("ct.recipient", "recipient")
-        .createAlias("communication.originator", "originator");
-  }
-
   @SuppressWarnings("unchecked")
   private List<Long> getNewNotificationDistinctCTIds(
       User user, PaginationCriteria<CommunicationTarget> pgCrit) {
 
-    Criteria criteria = createNotificationCriteria(getSession());
-    criteria.add(Restrictions.eq("ct.status", CommunicationStatus.NEW));
-    criteria.add(Restrictions.eq("recipient.id", user.getId()));
-    applyOrderCriteriaForOrderByCommTargetWhenAliased(pgCrit, criteria);
-    criteria.setProjection(Projections.id());
-
-    return criteria.list();
-  }
-
-  private Criteria createMessageorRequestCriteria(Session session) {
-    return session
-        .createCriteria(MessageOrRequest.class, "communication")
-        .createAlias("communication.recipients", COMMUNICATION_TARGET_ALIAS)
-        .createAlias("ct.recipient", "recipient")
-        .createAlias("communication.originator", "originator");
+    String orderBy = buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS);
+    String hql =
+        "select distinct n.id from Notification n "
+            + "join n.recipients ct "
+            + "join ct.recipient recipient "
+            + "join n.originator originator "
+            + "where ct.status = :status and recipient.id = :userId"
+            + orderBy;
+    return getSession()
+        .createQuery(hql, Long.class)
+        .setParameter("status", CommunicationStatus.NEW)
+        .setParameter("userId", user.getId())
+        .list();
   }
 
   @SuppressWarnings("unchecked")
   private List<Long> getActiveMessageOrRequestDistinctCTIds(
       User user, MessageTypeFilter filter, PaginationCriteria<CommunicationTarget> pgCrit) {
 
-    Criteria criteria = createMessageorRequestCriteria(getSession());
-    criteria.add(Restrictions.not(Restrictions.in("ct.status", TERMINATED_STATES)));
-    criteria.add(Restrictions.eq("recipient.id", user.getId()));
+    String orderBy = buildOrderBy(pgCrit, COMMUNICATION_TARGET_ALIAS);
+    StringBuilder hql =
+        new StringBuilder(
+            "select distinct mor.id from MessageOrRequest mor "
+                + "join mor.recipients ct "
+                + "join ct.recipient recipient "
+                + "join mor.originator originator "
+                + "where ct.status not in :terminatedStates "
+                + "and recipient.id = :userId");
     if (filter != null) {
-      criteria.add(Restrictions.in("communication.messageType", filter.getWantedTypes()));
+      hql.append(" and mor.messageType in :messageTypes");
     }
-    applyOrderCriteriaForOrderByCommTargetWhenAliased(pgCrit, criteria);
-    criteria.setProjection(Projections.id());
-
-    return criteria.list();
+    hql.append(orderBy);
+    Query<Long> query =
+        getSession()
+            .createQuery(hql.toString(), Long.class)
+            .setParameterList("terminatedStates", TERMINATED_STATES)
+            .setParameter("userId", user.getId());
+    if (filter != null) {
+      query.setParameterList("messageTypes", filter.getWantedTypes());
+    }
+    return query.list();
   }
 
-  private void applyOrderCriteria(PaginationCriteria<?> pgCrit, Criteria criteria) {
-    if (pgCrit != null) {
-      DatabasePaginationUtils.addOrderToHibernateCriteria(pgCrit, criteria);
+  private String buildOrderBy(PaginationCriteria<?> pgCrit, String defaultAlias) {
+    if (pgCrit == null
+        || pgCrit.getOrderBy() == null
+        || !pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
+      return "";
     }
-  }
-
-  private void applyOrderCriteriaForOrderByCommTargetWhenAliased(
-      PaginationCriteria<?> pgCrit, Criteria criteria) {
-    if (pgCrit != null && pgCrit.getOrderBy() != null) {
-      if (pgCrit.getOrderBy().indexOf(".") == -1) {
-        pgCrit.setOrderBy(COMMUNICATION_TARGET_ALIAS + "." + pgCrit.getOrderBy());
-      }
-      DatabasePaginationUtils.addOrderToHibernateCriteria(pgCrit, criteria);
+    String orderBy = pgCrit.getOrderBy();
+    if (defaultAlias != null && orderBy.indexOf(".") == -1) {
+      orderBy = defaultAlias + "." + orderBy;
     }
+    String direction = SortOrder.ASC.equals(pgCrit.getSortOrder()) ? "asc" : "desc";
+    return " order by " + orderBy + " " + direction;
   }
 
   private List<Long> getPageFromIdList(List<Long> ids, PaginationCriteria<?> pgCrit) {

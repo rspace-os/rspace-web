@@ -4,7 +4,7 @@
      the inner head and silently drops the outer head's content). Callers (notebookEditor.jsp,
      public_notebookView.jsp) are responsible for the surrounding <head>...</head>. --%>
     <title><spring:message code="notebook.title"/></title>
-    <link rel="canonical" href="${applicationScope['RS_DEPLOY_PROPS']['serverUrl']}${requestScope['javax.servlet.forward.servlet_path']}" />
+    <link rel="canonical" href="${applicationScope['RS_DEPLOY_PROPS']['serverUrl']}${requestScope['jakarta.servlet.forward.servlet_path']}" />
 
     <link href="<rst:assetUrl value='/scripts/bower_components/jquery-tagit/css/tagit.ui-zendesk.css'/>" rel="stylesheet" />
 

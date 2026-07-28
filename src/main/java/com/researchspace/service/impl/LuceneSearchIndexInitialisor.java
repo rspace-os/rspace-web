@@ -10,9 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Performs optional search indexing based at startup based on a property value */
 @Component("LuceneSearchIndexInitialisor")
+@Transactional
 public class LuceneSearchIndexInitialisor implements IApplicationInitialisor {
 
   private Logger log = LoggerFactory.getLogger(AbstractAppInitializor.class);

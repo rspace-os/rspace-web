@@ -12,46 +12,45 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
-import org.springframework.batch.core.configuration.annotation.DefaultBatchConfigurer;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
-import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
-import org.springframework.batch.core.launch.support.SimpleJobLauncher;
+import org.springframework.batch.core.launch.support.TaskExecutorJobLauncher;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @EnableBatchProcessing
 @Slf4j
-public class BatchConfig extends DefaultBatchConfigurer { // implements BeanFactoryAware {
-
-  @Autowired JobBuilderFactory jobBuilderFactory;
-  @Autowired StepBuilderFactory stepBuilderFactory;
+public class BatchConfig {
 
   @Autowired
   @Qualifier("archiveTaskExecutor")
   TaskExecutor taskExecutor;
 
   @Bean
-  public Job exportDataJob() {
-    return jobBuilderFactory
-        .get(ExportTasklet.EXPORT_JOB_NAME)
+  public Job exportDataJob(JobRepository jobRepository, Step step1) {
+    return new JobBuilder(ExportTasklet.EXPORT_JOB_NAME, jobRepository)
         .incrementer(new RunIdIncrementer())
-        .preventRestart() //
-        .flow(step1())
-        .end()
+        .preventRestart()
+        .start(step1)
         .build();
   }
 
   @Bean
-  public Step step1() {
-    return stepBuilderFactory.get("step1").tasklet(exportTasklet()).startLimit(1).build();
+  public Step step1(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+    return new StepBuilder("step1", jobRepository)
+        .tasklet(exportTasklet(), transactionManager)
+        .startLimit(1)
+        .build();
   }
 
   // @Scope(scopeName="simpleThreadScope", proxyMode=ScopedProxyMode.INTERFACES)
@@ -77,11 +76,13 @@ public class BatchConfig extends DefaultBatchConfigurer { // implements BeanFact
     return new ExportApiStateTracker();
   }
 
-  // runs ib bg thread to respond quickly
-  @Override
-  protected JobLauncher createJobLauncher() throws Exception {
-    SimpleJobLauncher jl = (SimpleJobLauncher) super.createJobLauncher();
-    jl.setTaskExecutor(taskExecutor);
-    return jl;
+  // runs in bg thread to respond quickly
+  @Bean
+  public JobLauncher jobLauncher(JobRepository jobRepository) throws Exception {
+    TaskExecutorJobLauncher jobLauncher = new TaskExecutorJobLauncher();
+    jobLauncher.setJobRepository(jobRepository);
+    jobLauncher.setTaskExecutor(taskExecutor);
+    jobLauncher.afterPropertiesSet();
+    return jobLauncher;
   }
 }

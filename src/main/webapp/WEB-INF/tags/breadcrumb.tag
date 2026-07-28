@@ -1,4 +1,4 @@
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ attribute name="breadcrumb" required="true" type="com.researchspace.model.record.Breadcrumb" %>
 <%@ attribute name="breadcrumbTagId" required="true" type="java.lang.String" %>
 

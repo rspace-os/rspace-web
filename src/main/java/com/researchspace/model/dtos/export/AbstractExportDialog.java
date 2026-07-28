@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.repository.RepoDepositConfig;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

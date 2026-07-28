@@ -100,6 +100,12 @@ public class SystemPropertyManagerImpl extends GenericManagerImpl<SystemProperty
   @CacheEvict(allEntries = true, value = INTEGRATION_INFO)
   public SystemPropertyValue save(SystemPropertyValue spv, User subject) {
     handlePropertyChanges(spv, subject);
+    // Re-fetch the SystemProperty to ensure it is managed within the current session.
+    // In Hibernate 6, cascade=ALL on a detached association during persist() throws
+    // DetachedObjectException.
+    if (spv.getProperty() != null && spv.getProperty().getId() != null) {
+      spv.setProperty(syspropdao.findPropertyByPropertyName(spv.getProperty().getName()));
+    }
     return super.save(spv);
   }
 

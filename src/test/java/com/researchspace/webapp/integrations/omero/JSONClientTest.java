@@ -20,9 +20,9 @@ import static org.junit.Assert.assertEquals;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
+import jakarta.json.JsonObject;
 import java.util.Collection;
 import java.util.List;
-import javax.json.JsonObject;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

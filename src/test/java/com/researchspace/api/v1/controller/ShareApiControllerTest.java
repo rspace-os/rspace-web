@@ -5,11 +5,11 @@ import static java.util.Collections.emptyList;
 import com.researchspace.api.v1.model.GroupSharePostItem;
 import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import java.util.Collections;
 import org.junit.Test;
 
-public class ShareApiControllerTest extends JavaxValidatorTest {
+public class ShareApiControllerTest extends JakartaValidatorTest {
 
   @Test
   public void testShareItemsValidation() {

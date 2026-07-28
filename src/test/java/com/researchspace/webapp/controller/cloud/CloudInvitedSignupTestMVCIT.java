@@ -34,11 +34,10 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.MVCTestBase;
 import com.researchspace.webapp.controller.SignupController;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import org.hibernate.criterion.Restrictions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -312,8 +311,10 @@ public class CloudInvitedSignupTestMVCIT extends MVCTestBase {
         (TokenBasedVerification)
             sessionFactory
                 .getCurrentSession()
-                .createCriteria(TokenBasedVerification.class)
-                .add(Restrictions.eq("email", randomEmail))
+                .createQuery(
+                    "from TokenBasedVerification t where t.email = :email",
+                    TokenBasedVerification.class)
+                .setParameter("email", randomEmail)
                 .uniqueResult();
     commitTransaction();
     return rc;

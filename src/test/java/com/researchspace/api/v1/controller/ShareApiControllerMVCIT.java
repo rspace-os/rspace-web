@@ -311,6 +311,9 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
   public void testUpdateSharePermissions() throws Exception {
     TestGroup group = createTestGroup(2);
     User user = group.getPi();
+    // Must be logged in so USER role grants FORM:READ:property_global=true for the BasicDocument
+    // form
+    logoutAndLoginAs(user);
     StructuredDocument toShare = createBasicDocumentInRootFolderWithText(user, "test");
     String apiKey = createNewApiKeyForUser(user);
 
@@ -330,7 +333,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
 
     // update permission
     mockMvc
-        .perform(createBuilderForPutWithJSONBody(apiKey, "/share/", user, update))
+        .perform(createBuilderForPutWithJSONBody(apiKey, "/share", user, update))
         .andExpect(status().isNoContent())
         .andReturn();
 
@@ -351,7 +354,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     // change permission back to READ
     update.setPermission("READ");
     mockMvc
-        .perform(createBuilderForPutWithJSONBody(apiKey, "/share/", user, update))
+        .perform(createBuilderForPutWithJSONBody(apiKey, "/share", user, update))
         .andExpect(status().isNoContent())
         .andReturn();
 

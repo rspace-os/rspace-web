@@ -11,8 +11,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -29,7 +29,6 @@ import com.researchspace.model.EcatImage;
 import com.researchspace.model.FieldAttachment;
 import com.researchspace.model.Group;
 import com.researchspace.model.IFieldLinkableElement;
-import com.researchspace.model.SignatureHash;
 import com.researchspace.model.SignatureHashInfo;
 import com.researchspace.model.SignatureHashType;
 import com.researchspace.model.SignatureInfo;
@@ -54,7 +53,6 @@ import com.researchspace.service.DocumentCopyManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestGroup;
 import java.io.File;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -64,7 +62,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.hibernate.criterion.Projections;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -100,7 +97,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload(
+                multipart(
                         STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/createFromWord/{parentId}",
                         target.getId())
                     .file(dummyConverter.getMultiFile()))
@@ -134,7 +131,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult result2 =
         mockMvc
             .perform(
-                fileUpload(
+                multipart(
                         STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/createFromWord/{parentId}",
                         target.getId())
                     .file(invalid))
@@ -395,7 +392,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult res3 =
         mockMvc
             .perform(
-                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedWitnessing/")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedWitnessing")
                     .param("option", Boolean.TRUE.toString())
                     .param("recordId", setup.structuredDocument.getId() + "")
                     .param("password", TESTPASSWD)
@@ -465,7 +462,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult res1 =
         this.mockMvc
             .perform(
-                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning/")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning")
                     .param("recordId", docToSignId + "")
                     .param("statement", "any")
                     .param("witnesses[]", new String[] {setup.user.getUsername()})
@@ -479,12 +476,10 @@ public class SDocControllerMVCIT extends MVCTestBase {
   private int getSigHashCount() throws Exception {
     return doInTransaction(
         () ->
-            ((Long)
-                    sessionFactory
-                        .getCurrentSession()
-                        .createCriteria(SignatureHash.class)
-                        .setProjection(Projections.rowCount())
-                        .uniqueResult())
+            sessionFactory
+                .getCurrentSession()
+                .createQuery("select count(s) from SignatureHash s", Long.class)
+                .getSingleResult()
                 .intValue());
   }
 
@@ -510,7 +505,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult result1 =
         this.mockMvc
             .perform(
-                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning/")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning")
                     .param("recordId", setup.structuredDocument.getId() + "")
                     .param("statement", "any")
                     .param("witnesses[]", new String[] {setup.user.getUsername()})
@@ -832,7 +827,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
   private int getFieldAutosaveLogRowCount() throws Exception {
     return doInTransaction(
         () -> {
-          return ((BigInteger)
+          return ((Number)
                   sessionFactory
                       .getCurrentSession()
                       .createNativeQuery("select count(*) from FieldAutosaveLog")
@@ -852,7 +847,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     MvcResult res1 =
         this.mockMvc
             .perform(
-                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning/")
+                post(STRUCTURED_DOCUMENT_EDITOR_URL + "/ajax/proceedSigning")
                     .param("recordId", docToSign.getId() + "")
                     .param("statement", "any")
                     .param("username", docOwner.getUsername())

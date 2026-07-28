@@ -3,10 +3,10 @@
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 <%@ taglib uri="http://www.springframework.org/tags/form" prefix="form" %>
 
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/sql" prefix="sql" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
+<%@ taglib uri="jakarta.tags.sql" prefix="sql" %>
 <%@ taglib uri="http://researchspace.com/tags/shiro" prefix="rs" %>
 <%@ taglib uri="http://researchspace.com/tags" prefix="rst" %>
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>

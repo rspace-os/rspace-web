@@ -20,10 +20,10 @@ import lombok.ToString;
 public class DatabaseUsageByUserGroupByResult {
 
   private String username;
-  private String usage;
+  private Number usage;
   private Long countLong;
 
-  public DatabaseUsageByUserGroupByResult(String username, String usage) {
+  public DatabaseUsageByUserGroupByResult(String username, Number usage) {
     super();
     this.username = username;
     this.usage = usage;
@@ -49,6 +49,6 @@ public class DatabaseUsageByUserGroupByResult {
    */
   public Long getUsage() {
     if (countLong != null) return countLong;
-    else return Long.parseLong(usage);
+    else return usage != null ? usage.longValue() : 0L;
   }
 }

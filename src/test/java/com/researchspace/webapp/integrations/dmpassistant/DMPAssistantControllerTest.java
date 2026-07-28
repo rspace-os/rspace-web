@@ -85,7 +85,7 @@ class DMPAssistantControllerTest {
     }
 
     @Override
-    protected void verifyStateParameter(javax.servlet.http.HttpServletRequest request) {
+    protected void verifyStateParameter(jakarta.servlet.http.HttpServletRequest request) {
       stateVerifier.run();
     }
   }

@@ -4,8 +4,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
 
 import com.researchspace.testutils.SpringTransactionalTest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
-import javax.servlet.http.HttpServletRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

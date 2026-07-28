@@ -1,7 +1,7 @@
 package com.researchspace.auth;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Sets user timezone in the session, if the request has correct attribute. Should degrade

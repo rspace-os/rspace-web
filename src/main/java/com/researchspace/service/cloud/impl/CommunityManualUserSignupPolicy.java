@@ -10,7 +10,7 @@ import com.researchspace.service.ISignupHandlerPolicy;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.cloud.CommunityUserManager;
 import com.researchspace.service.impl.AbstractUserSignupPolicy;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

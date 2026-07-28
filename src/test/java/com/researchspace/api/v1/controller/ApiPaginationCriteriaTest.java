@@ -1,11 +1,11 @@
 package com.researchspace.api.v1.controller;
 
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ApiPaginationCriteriaTest extends JavaxValidatorTest {
+public class ApiPaginationCriteriaTest extends JakartaValidatorTest {
 
   DocumentApiPaginationCriteria pgCrit;
 

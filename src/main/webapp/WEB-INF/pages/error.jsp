@@ -1,6 +1,6 @@
 <%@ page language="java" isErrorPage="true" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
 <%@ taglib uri="http://researchspace.com/tags" prefix="rst" %>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -28,7 +28,7 @@
                           please contact  ResearchSpace support. You might also try asking the resource owner to share the resource with you.
                         <p>Id - ${errorId}  at ${tstamp}</p>
                         <pre class="message"> ${exceptionMessage}</pre>
-                 <% } else if ((Exception)request.getAttribute("javax.servlet.error.exception") != null) { %>
+                <% } else if ((Exception)request.getAttribute("jakarta.servlet.error.exception") != null) { %>
                     <pre class="message">An exception occurred on the server. If it persists, please contact  ResearchSpace
                      support.</pre>
                  <% } %>

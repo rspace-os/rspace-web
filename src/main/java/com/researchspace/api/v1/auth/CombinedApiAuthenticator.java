@@ -6,7 +6,7 @@ import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.service.ApiAvailabilityHandler;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

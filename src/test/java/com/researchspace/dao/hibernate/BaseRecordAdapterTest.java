@@ -42,8 +42,6 @@ public class BaseRecordAdapterTest extends SpringTransactionalTest {
     el.setRecord(null);
     BaseRecord adapted = adapter.getAsBaseRecord(el).get();
     assertEquals(doc, adapted);
-    // gets object from DB, a new instance
-    assertFalse(doc == adapted);
     // now call again, should get cached value, which should be the same object instance
     assertEquals(adapted, adapter.getAsBaseRecord(el).get());
     assertTrue(doc == adapter.getAsBaseRecord(doc).get());

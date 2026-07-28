@@ -129,8 +129,8 @@ public class EcatCommentDaoHibernate extends GenericDaoHibernate<EcatComment, Lo
     Session session = getSessionFactory().getCurrentSession();
     List<EcatCommentItem> its = ecm.getItems();
     if (its != null && its.size() > 0) {
-      for (int i = 0; i < its.size(); i++) session.delete(its.get(0));
+      for (int i = 0; i < its.size(); i++) session.remove(its.get(0));
     }
-    session.delete(ecm);
+    session.remove(ecm);
   }
 }

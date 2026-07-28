@@ -743,6 +743,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
             new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"l: lapwing OR nohit"});
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
+    assertEquals(1, results.getTotalHits().intValue());
 
     config =
         createAdvSearchCfg(
@@ -754,11 +755,13 @@ public class SearchManagerTest extends SearchSpringTestBase {
     config = createAdvSearchCfg(new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"l: lapwi*"});
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
+    assertEquals(1, results.getTotalHits().intValue());
 
     config =
         createAdvSearchCfg(new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"l: la?wing"});
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
+    assertEquals(1, results.getTotalHits().intValue());
   }
 
   /**
@@ -1035,10 +1038,18 @@ public class SearchManagerTest extends SearchSpringTestBase {
     assertNotNull(results);
     assertEquals(0, results.getTotalHits().intValue());
 
-    // Advanced search by full text (fuzzy search).
+    // Advanced search by full text (fuzzy search): "bearde" is 1 edit from the indexed
+    // "bearded", within the maxEditDistance of 2 the query builder configures.
     config = createAdvSearchCfg(new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"bearde~"});
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
+    assertEquals(1, results.getTotalHits().intValue());
+
+    // Fuzzy search beyond the edit-distance limit: "bearxx" is 3 edits from "bearded".
+    config = createAdvSearchCfg(new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"bearxx~"});
+    results = searchMgr.searchWorkspaceRecords(config, user);
+    assertNotNull(results);
+    assertEquals(0, results.getTotalHits().intValue());
 
     // Advanced search by full text (native lucene query).
     config =
@@ -1046,6 +1057,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
             new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"l: bearded AND avocet"});
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
+    assertEquals(1, results.getTotalHits().intValue());
 
     // Advanced search by full text (native lucene query).
     config =
@@ -1053,6 +1065,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
             new String[] {FULL_TEXT_SEARCH_OPTION}, new String[] {"l: bearded NOT experiment"});
     results = searchMgr.searchWorkspaceRecords(config, user);
     assertNotNull(results);
+    assertEquals(1, results.getTotalHits().intValue());
 
     // Advanced search by full text.
     config = createAdvSearchCfg(new String[] {TAG_SEARCH_OPTION}, new String[] {"doctagtest"});

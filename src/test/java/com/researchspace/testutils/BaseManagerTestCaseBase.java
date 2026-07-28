@@ -176,8 +176,10 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.util.ThreadContext;
 import org.hibernate.LazyInitializationException;
 import org.hibernate.SessionFactory;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -303,10 +305,36 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   protected @Autowired StoichiometryManager stoichiometryMgr;
   protected @Autowired StoichiometryService stoichiometryService;
 
+  // Stored so we can re-apply before each test method (see resetSecurityManager below).
+  private SecurityManager securityManagerTestRef;
+
   @Autowired
   @Qualifier("securityManagerTest")
   public void setSecurityManager(SecurityManager mgr) {
+    this.securityManagerTestRef = mgr;
     SecurityUtils.setSecurityManager(mgr);
+  }
+
+  /**
+   * Re-applies this test context's security manager before each test method. When running the full
+   * MVCIT suite, multiple Spring contexts may be loaded (e.g. OAuthClientSSOControllerMVCIT
+   * uses @SSOTestContext which creates a separate context). Each context's GlobalInitManagerImpl
+   * fires and overwrites the static SecurityUtils.securityManager with a restricted manager scoped
+   * to that context. Without this reset, subsequent test classes that reuse an earlier context
+   * would see the wrong security manager and fail with "UsernamePasswordToken could not be
+   * authenticated".
+   */
+  @Before
+  public void resetSecurityManager() {
+    if (securityManagerTestRef != null) {
+      SecurityUtils.setSecurityManager(securityManagerTestRef);
+      // Clear any stale Subject bound to ThreadContext by another context's GlobalInitManagerImpl.
+      // A ThreadContext-bound Subject retains a reference to the security manager it was built
+      // with, so even after resetting SecurityUtils, login attempts on the stale Subject would
+      // go through the wrong (contaminating) manager and reject UsernamePasswordToken.
+      // We use unbindSubject() rather than remove() to avoid clearing unrelated thread-local state.
+      ThreadContext.unbindSubject();
+    }
   }
 
   /** Default constructor will set the ResourceBundle if needed. */
@@ -333,6 +361,11 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
 
     public MockPrincipal(String name) {
       this.name = name;
+    }
+
+    @Override
+    public String getName() {
+      return name;
     }
   }
 
@@ -1264,7 +1297,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   protected StructuredDocument createTemplateFromDocumentAndAddtoTemplateFolder(
       Long docId, User user) throws DocumentAlreadyEditedException {
 
-    StructuredDocument doc = (StructuredDocument) recordMgr.get(docId);
+    StructuredDocument doc = (StructuredDocument) recordMgr.getRecordWithFields(docId, user);
     List<Long> ids =
         doc.getFields().stream()
             .map(new ObjectToIdPropertyTransformer())
@@ -1613,6 +1646,10 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
       super();
       this.admin = admin;
       this.groups = groups;
+    }
+
+    public void setCommunity(Community community) {
+      this.community = community;
     }
   }
 
