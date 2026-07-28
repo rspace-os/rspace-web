@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -14,8 +14,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.DetailedRecordInformation;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
@@ -38,7 +38,7 @@ import org.springframework.test.web.servlet.MvcResult;
  */
 public class ElnInfoDialogContractMVCIT extends API_MVC_InventoryTestBase {
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }
@@ -53,15 +53,15 @@ public class ElnInfoDialogContractMVCIT extends API_MVC_InventoryTestBase {
         getFromJsonAjaxReturnObject(result, DetailedRecordInformation.class);
 
     // core metadata table fields the dialog renders for a document
-    assertNotNull("dialog needs the core record info", info);
+    assertNotNull(info, "dialog needs the core record info");
     assertEquals(doc.getId(), info.getId());
     assertEquals(doc.getName(), info.getName());
     assertEquals("Structured Document", info.getType());
     assertEquals(doc.getGlobalIdentifier(), info.getOid().toString());
     assertEquals(user.getUsername(), info.getOwnerUsername());
     assertEquals(user.getFullName(), info.getOwnerFullName());
-    assertNotNull("dialog renders the created date", info.getCreationDate());
-    assertNotNull("dialog renders the modified date", info.getModificationDate());
+    assertNotNull(info.getCreationDate(), "dialog renders the created date");
+    assertNotNull(info.getModificationDate(), "dialog renders the modified date");
   }
 
   @Test

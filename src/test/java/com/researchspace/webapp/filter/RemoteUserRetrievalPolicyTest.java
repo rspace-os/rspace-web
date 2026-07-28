@@ -1,11 +1,11 @@
 package com.researchspace.webapp.filter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.service.UserExistsException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 public class RemoteUserRetrievalPolicyTest {
@@ -14,7 +14,7 @@ public class RemoteUserRetrievalPolicyTest {
 
   private MockHttpServletRequest req;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     req = new MockHttpServletRequest();
   }

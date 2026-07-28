@@ -1,36 +1,31 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.extmessages.base.ExternalMessageSender;
 import com.researchspace.model.apps.App;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ExternalMessageSenderFactoryTest {
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock ExternalMessageSender sender;
   List<ExternalMessageSender> senders = new ArrayList<>();
   ExternalMessageSenderFactoryImpl factory;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     senders.add(sender);
     factory = new ExternalMessageSenderFactoryImpl();
     factory.setMessageSenders(senders);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testFindMessageSenderForApp() {

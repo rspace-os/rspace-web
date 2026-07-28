@@ -21,8 +21,8 @@ import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Manager-level coverage for the RSDEV-1066 uniqueness rule on ExtraField names across all
@@ -35,7 +35,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
 
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     sampleTemplateDao.resetDefaultTemplateOwner();

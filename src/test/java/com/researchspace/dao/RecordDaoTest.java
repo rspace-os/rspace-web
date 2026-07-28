@@ -1,8 +1,9 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.PaginationCriteria;
@@ -22,7 +23,7 @@ import com.researchspace.testutils.TestFactory;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
@@ -38,9 +39,9 @@ public class RecordDaoTest extends BaseDaoTestCase {
   @Autowired private UserDao userDao;
   @Autowired private FormDao formDao;
 
-  @Test(expected = ObjectRetrievalFailureException.class)
+  @Test
   public void testGetRecordInvalid() {
-    dao.get(-1000L);
+    assertThrows(ObjectRetrievalFailureException.class, () -> dao.get(-1000L));
   }
 
   public void testIsRecord() {

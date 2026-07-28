@@ -1,8 +1,8 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
@@ -29,8 +29,8 @@ import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class EmailBroadcastTest extends SpringTransactionalTest {
@@ -79,7 +79,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
   private CommunicationEmailContentGenerator contentGenerator;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     // we need to explicitly create this, as it is only created by Spring in 'prod' profile
     // and these tests run in dev profile.
@@ -200,8 +200,8 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     broadcast.init();
     broadcast.sendEmail(anyHtmlBody(), List.of("user@example.com"), null);
     assertTrue(
-        "unexpected content: " + appender.logContents,
-        appender.logContents.startsWith(expectedPrefix));
+        appender.logContents.startsWith(expectedPrefix),
+        "unexpected content: " + appender.logContents);
   }
 
   @Test

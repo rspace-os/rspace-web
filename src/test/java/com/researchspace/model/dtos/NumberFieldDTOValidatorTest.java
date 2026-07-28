@@ -1,13 +1,12 @@
 package com.researchspace.model.dtos;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.field.FieldType;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
@@ -20,7 +19,7 @@ public class NumberFieldDTOValidatorTest {
   private static final NumberFieldDTO TOO_LARGE_DP_NUMBER = createTooLargeDP();
   private NumberFieldDTOValidator validator;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     validator = new NumberFieldDTOValidator();
   }
@@ -70,9 +69,6 @@ public class NumberFieldDTOValidatorTest {
         new NumberFieldDTO("10", "0", "123333333333333", "5", FieldType.NUMBER, "anyname");
     return nfdto;
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testSupports() {

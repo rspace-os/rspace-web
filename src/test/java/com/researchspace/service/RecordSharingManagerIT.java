@@ -1,11 +1,11 @@
 package com.researchspace.service;
 
 import static com.researchspace.model.PaginationCriteria.createDefaultForClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.RecordGroupSharingDao;
@@ -32,9 +32,9 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
 import java.io.FileNotFoundException;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -45,12 +45,12 @@ public class RecordSharingManagerIT extends RealTransactionSpringTestBase {
 
   private @Autowired RecordGroupSharingDao groupShareDao;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -70,16 +70,16 @@ public class RecordSharingManagerIT extends RealTransactionSpringTestBase {
     // logout and login as u2. shouldn't see copy:
     logoutAndLoginAs(u2);
     assertTrue(
-        "u2 should be able to read 'originalDoc' as was shared with him",
-        permissionUtils.isPermitted(originalDoc, PermissionType.READ, u2));
+        permissionUtils.isPermitted(originalDoc, PermissionType.READ, u2),
+        "u2 should be able to read 'originalDoc' as was shared with him");
     assertFalse(
-        "u2 should  NOT be be able to read copy",
-        permissionUtils.isPermitted(copyDoc, PermissionType.READ, u2));
+        permissionUtils.isPermitted(copyDoc, PermissionType.READ, u2),
+        "u2 should  NOT be be able to read copy");
     logoutAndLoginAs(u1);
-    assertTrue("ACLs are missing from copy", copyDoc.getSharingACL().isACLPopulated());
+    assertTrue(copyDoc.getSharingACL().isACLPopulated(), "ACLs are missing from copy");
     assertTrue(
-        "Owner (u1) should be able to read the copy",
-        permissionUtils.isPermitted(copyDoc, PermissionType.READ, u1));
+        permissionUtils.isPermitted(copyDoc, PermissionType.READ, u1),
+        "Owner (u1) should be able to read the copy");
   }
 
   // RSPAC-930
@@ -171,14 +171,14 @@ public class RecordSharingManagerIT extends RealTransactionSpringTestBase {
     assertEquals(piHomFolder, toShare.getParent());
 
     // also assert that notebook and document are unshared after deletion:
-    assertTrue("Notebook is still shared", sharingMgr.getRecordSharingInfo(nb.getId()).isEmpty());
+    assertTrue(sharingMgr.getRecordSharingInfo(nb.getId()).isEmpty(), "Notebook is still shared");
     assertTrue(
-        "Document is still shared", sharingMgr.getRecordSharingInfo(toShare.getId()).isEmpty());
+        sharingMgr.getRecordSharingInfo(toShare.getId()).isEmpty(), "Document is still shared");
 
     // also check that shared folder root has no visible subfolders:
     ISearchResults<BaseRecord> results =
         recordMgr.listFolderRecords(groupSharedFolder.getId(), getDefaultRecordPageCriteria());
-    assertTrue("Items were not deleted", results.getHits() == 0);
+    assertTrue(results.getHits() == 0, "Items were not deleted");
   }
 
   @Test // IE PI can publish record shared by group member

@@ -21,6 +21,13 @@ public class DatabaseCleaner {
 
   /** Manually deletes records and folders from tables. */
   public static void cleanUp() {
+    if (jdbcTemplate == null) {
+      // Nothing was ever injected, so no context loaded in this fork and there is nothing to clean.
+      // Callers already skip this on a fast run; this covers the other way @AfterAll can be reached
+      // without a context, namely a context *load failure*, which Jupiter follows with @AfterAll
+      // where JUnit 4 skipped @AfterClass. Without this, that NPEs here and hides the Spring error.
+      return;
+    }
     // delete from Batch tables
     deleteFromBatchTables();
     // remove FK relationships so that items can be deleted from DB

@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.model.User;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -16,7 +16,7 @@ public class BarcodesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   User anyUser;
   String apiKey;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     anyUser = createInitAndLoginAnyUser();

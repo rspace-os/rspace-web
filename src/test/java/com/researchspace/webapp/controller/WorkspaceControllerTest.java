@@ -3,12 +3,13 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.session.UserSessionTracker.USERS_KEY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,16 +67,15 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.MethodName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -88,10 +88,9 @@ import org.springframework.web.servlet.ModelAndView;
 
 // there is a mixture of mocks and stubs so until we can refactor this to use just mocks
 // we need a guaranteed order
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@ExtendWith(MockitoExtension.class)
+@TestMethodOrder(MethodName.class)
 public class WorkspaceControllerTest extends SpringTransactionalTest {
-
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
 
   @Mock AuditManager mockAuditMgr;
   @Mock UserManager mockUserMgr;
@@ -125,7 +124,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   private Principal mockPrincipal = () -> "user1a";
   private Principal mockPrincipalNonPI = () -> "user2b";
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     anyUser = TestFactory.createAnyUser("any");
     anyUser.setId(666L);
@@ -133,7 +132,9 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     ReflectionTestUtils.setField(paginationSettingsPreferences, "userManager", mockUserMgr);
     UserPreference up =
         new UserPreference(Preference.DELETED_RECORDS_RESULTS_PER_PAGE, anyUser, "10");
-    when(mockUserMgr.getPreferenceForUser(any(User.class), any(Preference.class))).thenReturn(up);
+    lenient()
+        .when(mockUserMgr.getPreferenceForUser(any(User.class), any(Preference.class)))
+        .thenReturn(up);
     tss = new ExtendedModelMap();
     model = tss;
     workspaceController.setFormManager(formMgr);
@@ -145,9 +146,10 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     request = new MockHttpServletRequest();
     response = new MockHttpServletResponse();
     setupSystemPropertyForPublishAllowedAndSeoAllowed();
-    when(formMgr.findOldestFormByName(eq(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME)))
+    lenient()
+        .when(formMgr.findOldestFormByName(eq(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME)))
         .thenReturn(mockOntologyForm);
-    when(mockOntologyForm.getStableID()).thenReturn("mockOntologyFormStableID");
+    lenient().when(mockOntologyForm.getStableID()).thenReturn("mockOntologyFormStableID");
   }
 
   private void setupSystemPropertyForPublishAllowedAndSeoAllowed() {
@@ -162,7 +164,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     systemPropertyManager.save(existingPublicSeoValue, sysadmin1);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     workspaceController.setRecordManager(recordManager);
     RSpaceTestUtils.logout();
@@ -321,7 +323,9 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
 
   private void setUpCommonMocks() {
     Mockito.when(grpMgr.listGroupsForUser()).thenReturn(Collections.emptySet());
-    Mockito.when(formMgr.generateFormMenu(Mockito.any(User.class))).thenReturn(new FormMenu());
+    Mockito.lenient()
+        .when(formMgr.generateFormMenu(Mockito.any(User.class)))
+        .thenReturn(new FormMenu());
   }
 
   @Test
@@ -395,7 +399,8 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
       final Long anyId = 1L;
       final Long anyId2 = 2L;
       setUpCommonMocks();
-      when(mockDeleteManager.deleteRecord(eq(anyId), eq(anyId), Mockito.any(User.class)))
+      lenient()
+          .when(mockDeleteManager.deleteRecord(eq(anyId), eq(anyId), Mockito.any(User.class)))
           .thenReturn(new CompositeRecordOperationResult(null, null, null));
 
       final WorkspaceSettings srchInput = new WorkspaceSettings();
@@ -466,7 +471,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   public void viewDeletedDocuments() {
     workspaceController.setUserManager(mockUserMgr);
     when(mockUserMgr.getUserByUsername(any())).thenReturn(anyUser);
-    when(mockUserMgr.get(eq(666L))).thenReturn(anyUser);
+    lenient().when(mockUserMgr.get(eq(666L))).thenReturn(anyUser);
     when(mockUserMgr.getUserByUsername(any(), eq(true))).thenReturn(anyUser);
 
     final AuditedRecord ar = new AuditedRecord();
@@ -494,8 +499,8 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
               names[0] = getRandomName(i);
               workspaceController.fitNameToMaxSize(names, 0);
               assertTrue(
-                  "Failed for names string of length " + i,
-                  names[0].length() <= BaseRecord.DEFAULT_VARCHAR_LENGTH);
+                  names[0].length() <= BaseRecord.DEFAULT_VARCHAR_LENGTH,
+                  "Failed for names string of length " + i);
             });
   }
 

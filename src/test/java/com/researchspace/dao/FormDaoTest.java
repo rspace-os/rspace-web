@@ -1,10 +1,10 @@
 package com.researchspace.dao;
 
 import static com.researchspace.model.PaginationCriteria.createDefaultForClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
@@ -32,14 +32,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.shiro.authz.Permission;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.MethodName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodName.class)
 public class FormDaoTest extends BaseDaoTestCase {
 
   private @Autowired FormDao dao;
@@ -51,7 +51,7 @@ public class FormDaoTest extends BaseDaoTestCase {
   private User user;
   private ConstraintPermissionResolver parser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws InterruptedException {
     parser = new ConstraintPermissionResolver();
     user = createAndSaveUserIfNotExists("auser");
@@ -61,7 +61,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     recordFactory = new RecordFactory();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     RSpaceTestUtils.logout();
     super.tearDown();
@@ -90,10 +90,10 @@ public class FormDaoTest extends BaseDaoTestCase {
       Long aFormCreationDate = aForm.getCreationDate();
       assertNotNull(aFormCreationDate);
       assertTrue(
+          aFormCreationDate >= oldestCreationDate,
           String.format(
               "found an older one: %s/%d < %s/%d",
-              aForm.getName(), aFormCreationDate, oldestForm.getName(), oldestCreationDate),
-          aFormCreationDate >= oldestCreationDate);
+              aForm.getName(), aFormCreationDate, oldestForm.getName(), oldestCreationDate));
     }
   }
 

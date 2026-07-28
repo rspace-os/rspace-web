@@ -1,14 +1,14 @@
 package com.researchspace.webapp.integrations.clustermarket;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.properties.IPropertyHolder;
@@ -19,8 +19,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -52,7 +52,7 @@ public class ClustermarketOAuthServiceTest {
   @Mock private ClustermarketOAuthService.AccessToken accessTokenMock;
   @Mock private User mockUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     openMocks(this);
     ReflectionTestUtils.setField(clustermarketOAuthService, "restTemplate", restTemplateMock);
@@ -72,9 +72,9 @@ public class ClustermarketOAuthServiceTest {
   @Test
   public void shouldThrowNoTokenExceptionWhenNoExistingTest() throws Exception {
     when(principalMock.getName()).thenReturn("this name will have no token");
-    CoreTestUtils.assertExceptionThrown(
-        () -> clustermarketOAuthService.getExistingAccessTokenAndRefreshIfExpired(principalMock),
-        NoTokenException.class);
+    assertThrows(
+        NoTokenException.class,
+        () -> clustermarketOAuthService.getExistingAccessTokenAndRefreshIfExpired(principalMock));
   }
 
   @Test

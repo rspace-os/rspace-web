@@ -1,40 +1,33 @@
 package com.researchspace.slack;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.extmessages.base.ExternalMessageSender;
-import com.researchspace.extmessages.base.MessageDetails;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.testutils.TestFactory;
-import java.util.Collections;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SlackMessageSenderTest {
 
   private ExternalMessageSender slackSender;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     slackSender = new SlackMessageSender();
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testUnsupportedAppThrowsIAE() {
     App unsupported = new App("any", "label", false);
     assertFalse(slackSender.supportsApp(unsupported));
     User anyUser = TestFactory.createAnyUser("any");
-    AppConfigElementSet set = createAppConfigSet(unsupported, anyUser);
-    MessageDetails message =
-        new MessageDetails(anyUser, "Hello <br /> line 2", Collections.emptyList());
-    slackSender.sendMessage(message, set, anyUser);
+    // the unsupported app is rejected while building the config set, before any send
+    assertThrows(IllegalArgumentException.class, () -> createAppConfigSet(unsupported, anyUser));
   }
 
   private AppConfigElementSet createAppConfigSet(App unsupported, User anyUser) {

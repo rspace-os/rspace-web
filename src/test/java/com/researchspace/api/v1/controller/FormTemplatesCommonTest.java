@@ -3,15 +3,15 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.core.util.DateUtil.localDateToDateUTC;
 import static com.researchspace.model.dtos.AbstractFormFieldDTO.MAX_NAME_LENGTH;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.controller.FormTemplatesCommon.DateFieldPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.FormFieldPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.LinkTemplateProvider;
 import com.researchspace.api.v1.model.ApiForm;
-import com.researchspace.core.testutil.JakartaValidatorTest;
+import com.researchspace.core.testutilJU5.JakartaValidatorTestJU5;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.field.FieldForm;
@@ -28,18 +28,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.StaticMessageSource;
 
-public class FormTemplatesCommonTest extends JakartaValidatorTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
+@ExtendWith(MockitoExtension.class)
+public class FormTemplatesCommonTest extends JakartaValidatorTestJU5 {
   @Mock FormManager formMgr;
   @Mock IPropertyHolder properties;
   @Mock IPermissionUtils perms;

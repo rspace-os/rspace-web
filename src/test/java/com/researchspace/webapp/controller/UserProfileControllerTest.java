@@ -2,13 +2,14 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.TestFactory.createOAuthTokenForUI;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,19 +46,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 
+@ExtendWith(MockitoExtension.class)
 public class UserProfileControllerTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock LicenseService licenseService;
   @Mock UserManager usrMgr;
@@ -71,7 +70,7 @@ public class UserProfileControllerTest {
   User anyUser, sessionUser;
   MockHttpServletRequest mockRequest;
 
-  @Before
+  @BeforeEach
   public void before() {
     anyUser = TestFactory.createAnyUser("any");
     anyUser.setId(2L);
@@ -233,7 +232,8 @@ public class UserProfileControllerTest {
     when(usrMgr.getUser(2L + "")).thenReturn(anyUser);
     when(properties.isProfileHidingEnabled()).thenReturn(true);
     when(usrMgr.populateConnectedUserSet(sessionUser)).thenReturn(Collections.emptySet());
-    when(messages.getMessage(Mockito.eq("record.inaccessible"), Mockito.any(Long[].class)))
+    lenient()
+        .when(messages.getMessage(Mockito.eq("record.inaccessible"), Mockito.any(Long[].class)))
         .thenReturn("error");
     sessionUser.setConnectedUsers(Collections.emptySet());
     anyUser.setPrivateProfile(true);

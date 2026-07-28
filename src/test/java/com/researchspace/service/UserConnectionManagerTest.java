@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.TestFactory.createUserConnection;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -10,19 +10,18 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.service.impl.UserConnectionManagerImpl;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class UserConnectionManagerTest {
 
   public static final String PROVIDER_NAME = "provider";
   public static final String USERNAME = "username";
   public static final String PROVIDER_USER_ID = "providerUserId";
-  public @Rule MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock UserConnectionDao connectionDao;
   @InjectMocks UserConnectionManagerImpl userConnMgr;

@@ -4,7 +4,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 

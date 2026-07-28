@@ -1,9 +1,10 @@
 package com.axiope.webapp.taglib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 
@@ -15,16 +16,14 @@ import jakarta.servlet.jsp.PageContext;
 import jakarta.servlet.jsp.tagext.TagSupport;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class AssetUrlTagTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock private HttpServletRequest request;
   @Mock private PageContext pageContext;
@@ -36,7 +35,7 @@ public class AssetUrlTagTest {
   private final Map<String, Object> servletContextAttributes = new LinkedHashMap<>();
   private AssetUrlTag tag;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     tag = new AssetUrlTag();
     tag.setPageContext(pageContext);
@@ -153,7 +152,7 @@ public class AssetUrlTagTest {
 
     String first = output.toString();
     assertTrue(
-        "expected ?v=<uuid> but was: " + first, first.matches("/scripts/global\\.js\\?v=.+"));
+        first.matches("/scripts/global\\.js\\?v=.+"), "expected ?v=<uuid> but was: " + first);
 
     output.setLength(0);
     AssetUrlTag second = new AssetUrlTag();
@@ -163,9 +162,9 @@ public class AssetUrlTagTest {
     assertEquals(TagSupport.SKIP_BODY, second.doStartTag());
     String secondOutput = output.toString();
     assertEquals(
-        "second invocation within the same request reuses the same token",
         first.substring(first.indexOf("?v=")),
-        secondOutput.substring(secondOutput.indexOf("?v=")));
+        secondOutput.substring(secondOutput.indexOf("?v=")),
+        "second invocation within the same request reuses the same token");
   }
 
   @Test
@@ -241,13 +240,13 @@ public class AssetUrlTagTest {
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
 
     assertTrue(
-        "expected ?v=<uuid> but was: " + output,
-        output.toString().matches("/styles/theme\\.css\\?v=.+"));
+        output.toString().matches("/styles/theme\\.css\\?v=.+"),
+        "expected ?v=<uuid> but was: " + output);
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void blankValueIsRejected() throws JspException {
     tag.setValue("");
-    tag.doStartTag();
+    assertThrows(IllegalStateException.class, () -> tag.doStartTag());
   }
 }

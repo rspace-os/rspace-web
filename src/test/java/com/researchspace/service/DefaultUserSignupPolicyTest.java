@@ -1,25 +1,25 @@
 package com.researchspace.service;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.properties.PropertyHolder;
 import com.researchspace.service.impl.DefaultUserSignupPolicy;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class DefaultUserSignupPolicyTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock UserManager mgr;
 
   private IMutablePropertyHolder props;
   private DefaultUserSignupPolicy defaultImpl;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     defaultImpl = new DefaultUserSignupPolicy();
     props = new PropertyHolder();
@@ -27,9 +27,11 @@ public class DefaultUserSignupPolicyTest {
     defaultImpl.setUserManager(mgr);
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testSaveUserThrowsISEIfNotConfiguredForCloud() throws UserExistsException {
     props.setCloud("true");
-    defaultImpl.saveUser(TestFactory.createAnyUser("any"), null);
+    assertThrows(
+        IllegalStateException.class,
+        () -> defaultImpl.saveUser(TestFactory.createAnyUser("any"), null));
   }
 }

@@ -7,8 +7,8 @@ import static org.mockito.Mockito.when;
 import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -32,7 +32,7 @@ public abstract class SysadminApiControllerTestSupport extends SpringTransaction
   protected User sysadmin;
   protected MockHttpServletRequest request;
 
-  @Before
+  @BeforeEach
   public void setUpSysadminController() throws Exception {
     super.setUp();
     request = new MockHttpServletRequest();
@@ -43,7 +43,7 @@ public abstract class SysadminApiControllerTestSupport extends SpringTransaction
     ReflectionTestUtils.setField(sysadminApiController, "ipWhiteListChecker", mockIpChecker);
   }
 
-  @After
+  @AfterEach
   public void tearDownSysadminController() throws Exception {
     ReflectionTestUtils.setField(sysadminApiController, "ipWhiteListChecker", originalIpChecker);
     super.tearDown();

@@ -2,11 +2,11 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
 import static com.researchspace.testutils.TestRunnerController.isJDK8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -34,9 +34,9 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
@@ -61,7 +61,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
 
   Group grp;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     docToShare = null;
@@ -72,7 +72,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
     formController.setServletContext(mockServletCtxt);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -401,10 +401,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
   }
 
   private void assertPublishNotAuthorized(RSForm form, User u) throws Exception {
-    assertAuthorisationExceptionThrown(
-        () -> {
-          formMgr.publish(form.getId(), false, null, u);
-        });
+    assertAuthorisationExceptionThrown(() -> formMgr.publish(form.getId(), false, null, u));
   }
 
   private void assertPublishIsAuthorized(RSForm form, User u) {

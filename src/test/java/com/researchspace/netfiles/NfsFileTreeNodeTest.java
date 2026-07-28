@@ -1,9 +1,9 @@
 package com.researchspace.netfiles;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.netfiles.NfsFileStore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class NfsFileTreeNodeTest {
 

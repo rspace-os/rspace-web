@@ -2,26 +2,23 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.ActivityApiPaginationCriteria.DATE_ASC_API_PARAM;
 import static com.researchspace.api.v1.controller.ActivityApiPaginationCriteria.DATE_DESC_API_PARAM;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiSortEnum;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.util.MultiValueMap;
 
 public class ActivityApiPaginationCriteriaTest {
 
   ActivityApiPaginationCriteria eventPgCrit;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     eventPgCrit = new ActivityApiPaginationCriteria();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testGetDefault() {
@@ -37,10 +34,10 @@ public class ActivityApiPaginationCriteriaTest {
     assertEquals(ApiSortEnum.DATE_ASC, eventPgCrit.getSort());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testInvalidSortOrders() {
     eventPgCrit.setOrderBy("created desc");
-    eventPgCrit.getSort();
+    assertThrows(IllegalArgumentException.class, () -> eventPgCrit.getSort());
   }
 
   @Test

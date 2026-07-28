@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -15,18 +15,16 @@ import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 
+@ExtendWith(MockitoExtension.class)
 public class ChemistryImageUpdateInitialisorTest extends SpringTransactionalTest {
-
-  public @Rule MockitoRule mockito = MockitoJUnit.rule();
 
   @Autowired ChemistryService chemistryService;
 
@@ -40,7 +38,7 @@ public class ChemistryImageUpdateInitialisorTest extends SpringTransactionalTest
 
   ChemistryImageUpdateInitialisor chemIndexInitializor;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     chemIndexInitializor = new ChemistryImageUpdateInitialisor();
@@ -52,7 +50,7 @@ public class ChemistryImageUpdateInitialisorTest extends SpringTransactionalTest
     chemIndexInitializor.setCompositeFileStore(fileStore);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

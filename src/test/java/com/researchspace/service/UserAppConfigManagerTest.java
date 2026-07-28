@@ -1,8 +1,9 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
 import com.researchspace.model.apps.AppConfigElementSet;
@@ -11,9 +12,9 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 
@@ -35,7 +36,7 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
   @Autowired private UserAppConfigManager userAppCfgMgr;
   User u1, otherUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     u1 = createAndSaveRandomUser();
@@ -44,7 +45,7 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     logoutAndLoginAs(u1);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -79,13 +80,15 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     assertEquals(0, cfgs.get(0).getAppConfigElementSets().size());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void incorrectConfigELementCountThrowsIAE() {
     Map<String, String> props = new HashMap<>();
     // we're missing the 'label' property
     props.put(SLACK_CHANNEL_NAME, SLACK_CHANNEL1);
-    // setup
-    userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> // setup
+        userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1));
   }
 
   @Test
@@ -144,22 +147,26 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     return props;
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSaveAppConfigElementSetUnknownPropThrowsIAE() {
     Map<String, String> unknownProps = new HashMap<>();
     unknownProps.put("unknown", "any");
-    userAppCfgMgr.saveAppConfigElementSet(unknownProps, null, false, u1);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userAppCfgMgr.saveAppConfigElementSet(unknownProps, null, false, u1));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSaveAppConfigElementSetEmptySetThrowsIAE() {
     Map<String, String> emptyProps = new HashMap<>();
-    userAppCfgMgr.saveAppConfigElementSet(emptyProps, null, false, u1);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userAppCfgMgr.saveAppConfigElementSet(emptyProps, null, false, u1));
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testGetConfigByAppNameThrowsISEForUnknownApp() {
-    userAppCfgMgr.getByAppName("unknown", u1);
+    assertThrows(IllegalStateException.class, () -> userAppCfgMgr.getByAppName("unknown", u1));
   }
 
   @Test
@@ -173,6 +180,6 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
 
     User u2 = createAndSaveRandomUser();
     UserAppConfig uac3 = userAppCfgMgr.getByAppName("dataverse.app", u2);
-    assertFalse("Users should have their own configuration", uac3.getId().equals(uac.getId()));
+    assertFalse(uac3.getId().equals(uac.getId()), "Users should have their own configuration");
   }
 }

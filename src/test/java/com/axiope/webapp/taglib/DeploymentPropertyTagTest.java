@@ -1,14 +1,13 @@
 package com.axiope.webapp.taglib;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.properties.PropertyHolder;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.TagSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DeploymentPropertyTagTest {
   IMutablePropertyHolder propertySource;
@@ -22,14 +21,11 @@ public class DeploymentPropertyTagTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     tagTSS = new DeploymentPropertyTagTSS();
     tag = tagTSS;
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void nonBlankOnlyDoesNotCompareValue() throws JspException {

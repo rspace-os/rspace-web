@@ -18,8 +18,8 @@ import com.researchspace.model.inventory.field.InventoryTextField;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -32,7 +32,7 @@ public class InstrumentApiPostFullValidatorTest extends InventoryRecordValidatio
   @Qualifier("instrumentApiPostFullValidator")
   private InstrumentApiPostFullValidator instrumentPostFullValidator;
 
-  @Before
+  @BeforeEach
   public void setup() {
     validator = instrumentPostFullValidator;
   }

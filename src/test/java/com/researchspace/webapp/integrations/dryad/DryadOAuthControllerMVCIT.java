@@ -2,12 +2,10 @@ package com.researchspace.webapp.integrations.dryad;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.webapp.controller.MVCTestBase;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -18,7 +16,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-@RunWith(ConditionalTestRunner.class)
+@EnabledIfSystemProperty(named = "nightly", matches = ".*")
 public class DryadOAuthControllerMVCIT extends MVCTestBase {
 
   @Value("${dryad.client.id}")
@@ -32,13 +30,12 @@ public class DryadOAuthControllerMVCIT extends MVCTestBase {
 
   private RestTemplate restTemplate;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     restTemplate = new RestTemplate();
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void getToken() throws Exception {
     DryadOAuthController.DryadAccessToken clientCredentialToken = getDryadAccessToken();
     assertNotNull(clientCredentialToken);

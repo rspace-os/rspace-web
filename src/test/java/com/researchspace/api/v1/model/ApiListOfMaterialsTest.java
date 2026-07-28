@@ -8,7 +8,7 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
 import java.math.BigDecimal;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ApiListOfMaterialsTest {
 

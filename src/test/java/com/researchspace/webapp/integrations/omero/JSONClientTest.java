@@ -16,7 +16,7 @@ import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.sc
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.urlsJson;
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.versionJson;
 import static com.researchspace.webapp.integrations.omero.OmeroJsonTestMother.wellsForPlateJson;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 

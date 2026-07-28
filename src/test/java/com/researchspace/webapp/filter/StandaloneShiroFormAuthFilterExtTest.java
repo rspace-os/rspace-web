@@ -25,9 +25,9 @@ import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -51,7 +51,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
 
   @Autowired private List<LoginAuthorizer> loginauths;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     openMocks(this);
     filter = new StandaloneShiroFormAuthFilterExt();
@@ -73,7 +73,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     }
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

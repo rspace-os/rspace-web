@@ -12,12 +12,12 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBase {
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     inventoryIdentifierApiMgr.setDataCiteConnector(new DataCiteConnectorDummy());

@@ -6,13 +6,14 @@ import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMEN
 import static com.researchspace.model.preference.Preference.NOTIFICATION_DOCUMENT_SHARED_PREF;
 import static com.researchspace.session.UserSessionTracker.USERS_KEY;
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 
@@ -54,9 +55,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 import org.hibernate.query.Query;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,7 +79,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
   private static final int MIN_USERNAMELENGTH = 10;
   private MockHttpSession mockHttpSession;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     MockitoAnnotations.openMocks(this);
@@ -89,7 +90,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     controller.setAuditService(auditTrailService);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -290,11 +291,11 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
 
     Field field = sd.getFields().get(0);
     assertNull(field.getTempField());
-    assertEquals("field should be initially empty", "", field.getData());
+    assertEquals("", field.getData(), "field should be initially empty");
 
     // request edit
     EditStatus requestEdit = controller.requestEdit(sd.getId(), mockPrincipal);
-    assertEquals("user should be able to edit created document", EditStatus.EDIT_MODE, requestEdit);
+    assertEquals(EditStatus.EDIT_MODE, requestEdit, "user should be able to edit created document");
 
     // autosave
     controller.autosaveField(textToAutosave, field.getId(), mockPrincipal);
@@ -305,25 +306,25 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
 
     Field fieldAfterAutosave = sdAfterAutosave.getFields().get(0);
     assertEquals(
-        "non-temp field should still be empty after autosave", "", fieldAfterAutosave.getData());
+        "", fieldAfterAutosave.getData(), "non-temp field should still be empty after autosave");
 
     Field tempField = fieldAfterAutosave.getTempField();
-    assertNotNull("temp field should be present", tempField);
-    assertEquals("temp field should hold autosaved text", textToAutosave, tempField.getData());
+    assertNotNull(tempField, "temp field should be present");
+    assertEquals(textToAutosave, tempField.getData(), "temp field should hold autosaved text");
 
     // cancel
     controller.cancelAutosavedEdits(sd.getId(), mockPrincipal);
 
     StructuredDocument sdAfterCancel =
         recordMgr.getRecordWithFields(sd.getId(), piUser).asStrucDoc();
-    assertNull("temp record should be gone after canceling", sdAfterCancel.getTempRecord());
+    assertNull(sdAfterCancel.getTempRecord(), "temp record should be gone after canceling");
 
     Field fieldAfterCancel = sdAfterAutosave.getFields().get(0);
-    assertEquals("non-temp field should be empty after cancel", "", fieldAfterCancel.getData());
-    assertNotNull("temp field should be gone after canceling", fieldAfterCancel.getTempField());
+    assertEquals("", fieldAfterCancel.getData(), "non-temp field should be empty after cancel");
+    assertNotNull(fieldAfterCancel.getTempField(), "temp field should be gone after canceling");
     assertNull(
-        "the record should be unlocked after cancel",
-        recordEditorTracker.getEditingUserForRecord(sd.getId()));
+        recordEditorTracker.getEditingUserForRecord(sd.getId()),
+        "the record should be unlocked after cancel");
   }
 
   @Test
@@ -367,19 +368,22 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
         controller.deleteStructuredDocument(doc.getId(), mockPrincipal);
     assertNotNull(deleteOk.getData());
     assertTrue(
-        "expected " + parentId + " , but got: " + deleteOk.getData(),
-        deleteOk.getData().contains(parentId.toString()));
+        deleteOk.getData().contains(parentId.toString()),
+        "expected " + parentId + " , but got: " + deleteOk.getData());
   }
 
-  @Test(expected = RecordAccessDeniedException.class)
+  @Test
   public void testSharedRecordAccessThrowsExceptionIfNotAvailable() throws Exception {
     StructuredDocument sd = setUpLoginAsPIUserAndCreateADocument();
     User other = createAndSaveUser("pi");
     initUser(other);
     createGroupForUsersWithDefaultPi(piUser, other);
     logoutCurrUserAndLoginAs(other.getUsername(), TESTPASSWD);
-    controller.openDocument(
-        sd.getId(), "", false, false, null, modelTss, mockHttpSession, other::getUsername);
+    assertThrows(
+        RecordAccessDeniedException.class,
+        () ->
+            controller.openDocument(
+                sd.getId(), "", false, false, null, modelTss, mockHttpSession, other::getUsername));
   }
 
   @Test

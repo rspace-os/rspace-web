@@ -1,7 +1,7 @@
 package com.researchspace.integrations.omero.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.integrations.omero.client.OmeroClientImpl;
 import com.researchspace.integrations.omero.model.DataSetRSpaceView;
@@ -25,6 +25,7 @@ import org.springframework.test.util.ReflectionTestUtils;
  * Uses the real public Omero repository hosted by Dundee University. Compares actual json responses
  * to the canned responses collected on 1st June 2023
  */
+@EnabledIfSystemProperty(named = "nightly", matches = ".*")
 public class OmeroServiceNightlyTest {
   private OmeroClientImpl omeroClient = new OmeroClientImpl();
   private OmeroServiceImpl service = new OmeroServiceImpl(omeroClient);
@@ -39,7 +40,6 @@ public class OmeroServiceNightlyTest {
 
   @SneakyThrows
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "true")
   public void testListProjects() {
     List<? extends OmeroRSpaceView> projects =
         service.getProjectsAndScreens("public_,_public", "Projects");
@@ -81,7 +81,6 @@ public class OmeroServiceNightlyTest {
 
   @SneakyThrows
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "true")
   public void testListScreens() {
     List<? extends OmeroRSpaceView> screens =
         service.getProjectsAndScreens("public_,_public", "Screens");
@@ -105,7 +104,6 @@ public class OmeroServiceNightlyTest {
 
   @SneakyThrows
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "true")
   public void testListDatasetsForProject() {
     List<DataSetRSpaceView> datasets = service.getDataSets("public_,_public", 51L);
     DataSetRSpaceView aDataSet =
@@ -119,7 +117,6 @@ public class OmeroServiceNightlyTest {
 
   @SneakyThrows
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "true")
   public void testListPlatesForScreen() {
     List<PlateRSpaceView> plates = service.getPlates("public_,_public", 51L);
     PlateRSpaceView aPlate = (PlateRSpaceView) getTargetWithMatchingName(plates, "DTT p1");
@@ -134,7 +131,6 @@ public class OmeroServiceNightlyTest {
 
   @SneakyThrows
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "true")
   public void testGetPlateAcquisitions() {
 
     List<PlateAcquisitionRSpaceView> plateAcquisitions =
@@ -160,7 +156,6 @@ public class OmeroServiceNightlyTest {
 
   @SneakyThrows
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "true")
   public void testGetAnnotations() {
     List<String> annotations = service.getAnnotations("public_,_public", 102L, "screen");
     assertEquals(18, annotations.size());
@@ -193,7 +188,6 @@ public class OmeroServiceNightlyTest {
 
   @SneakyThrows
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "true")
   public void testListImagesForDataset() {
     List<ImageRSpaceView> images = service.getImages("public_,_public", 51L, false);
     ImageRSpaceView anImage =
@@ -219,7 +213,6 @@ public class OmeroServiceNightlyTest {
 
   @SneakyThrows
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "true")
   public void testGetImage() {
     ImageRSpaceView anImage = service.getImage("public_,_public", 1884838L, 51L, false);
     assertEquals("siControl_N20_Cep215_I_20110411_Mon-1503_0_SIR_PRJ.dv", anImage.getName());
@@ -249,7 +242,6 @@ public class OmeroServiceNightlyTest {
 
   @SneakyThrows
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "true")
   public void testGetWells() {
     List<WellRSpaceView> wells = service.getWells("public_,_public", 422L, 422L, false, 0);
     WellRSpaceView aWell =

@@ -1,8 +1,8 @@
 package com.researchspace.extmessages.msteams;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -15,8 +15,8 @@ import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.model.core.Person;
 import com.researchspace.properties.IPropertyHolder;
 import java.util.Collections;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -25,7 +25,7 @@ public class MsTeamsMessageSenderTest {
   private final ObjectMapper mapper = new ObjectMapper();
   MsTeamsMessageSender msteamsSender;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     msteamsSender = new MsTeamsMessageSender();
   }

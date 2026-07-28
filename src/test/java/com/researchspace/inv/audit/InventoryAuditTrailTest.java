@@ -16,19 +16,17 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class InventoryAuditTrailTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Captor ArgumentCaptor<GenericEvent> eventArgumentCaptor;
 

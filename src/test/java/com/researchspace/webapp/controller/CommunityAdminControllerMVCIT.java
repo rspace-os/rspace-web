@@ -1,9 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.researchspace.Constants;
@@ -15,8 +15,8 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import java.security.Principal;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.MvcResult;
@@ -30,7 +30,7 @@ public class CommunityAdminControllerMVCIT extends MVCTestBase {
   private Principal sysAdminPrincipal;
   private User syasadmin;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     Role role = roleMgr.getRole("ROLE_SYSADMIN");

@@ -1,6 +1,6 @@
 package com.axiope.webapp.taglib;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 
@@ -12,16 +12,14 @@ import jakarta.servlet.jsp.PageContext;
 import jakarta.servlet.jsp.tagext.TagSupport;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class CacheVersionTagTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock private HttpServletRequest request;
   @Mock private PageContext pageContext;
@@ -33,7 +31,7 @@ public class CacheVersionTagTest {
   private final Map<String, Object> servletContextAttributes = new LinkedHashMap<>();
   private CacheVersionTag tag;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     tag = new CacheVersionTag();
     tag.setPageContext(pageContext);
@@ -97,7 +95,7 @@ public class CacheVersionTagTest {
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
 
     String first = output.toString();
-    assertEquals("expected a UUID-like token: " + first, true, first.matches("[0-9a-f-]{8,}"));
+    assertEquals(true, first.matches("[0-9a-f-]{8,}"), "expected a UUID-like token: " + first);
   }
 
   @Test

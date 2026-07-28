@@ -1,9 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,23 +36,21 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Optional;
 import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+@ExtendWith(MockitoExtension.class)
 public class FileDownloadControllerTest {
 
   private static final int EXPECTED_FILE_SIZE = 100_000;
-
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
 
   @Mock RecordManager rcdMger;
   @Mock UserManager userMgr;
@@ -66,7 +64,7 @@ public class FileDownloadControllerTest {
   @Mock AuditTrailService auditService;
   @Mock BaseRecordManager baseRecordMgr;
 
-  @Rule public TemporaryFolder tempFolder = new TemporaryFolder();
+  @TempDir public File tempFolder;
 
   private User user;
   private FileStoreRoot root;
@@ -94,11 +92,11 @@ public class FileDownloadControllerTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("any");
     resp = new MockHttpServletResponse();
-    root = new FileStoreRoot(tempFolder.getRoot().toURI().toString());
+    root = new FileStoreRoot(tempFolder.toURI().toString());
 
     source = new StaticMessageSource();
     ctrller.setMessageSource(new MessageSourceUtils(source));
@@ -151,10 +149,10 @@ public class FileDownloadControllerTest {
     mediaFile.setFileProperty(fp);
     mockMediaFileLookup(mediaFile);
     final FileInputStream fis = new FileInputStream(toStream);
-    when(fileStore.retrieve(Mockito.notNull(FileProperty.class))).thenReturn(Optional.of(fis));
+    when(fileStore.retrieve(Mockito.notNull())).thenReturn(Optional.of(fis));
     mockGetUserFromSession();
     ctrller.getStreamFileNoName(ANYID, null, null, resp);
-    verify(fileStore).retrieve(Mockito.notNull(FileProperty.class));
+    verify(fileStore).retrieve(Mockito.notNull());
     verifyAuditServiceCalled();
   }
 
@@ -257,13 +255,12 @@ public class FileDownloadControllerTest {
     verify(fileStore, never()).findFile(Mockito.any(FileProperty.class));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testConversionExceptionThrowsAjaxError() throws Exception {
     final EcatMediaFile mediaFile = getAnyMediaFile();
     mediaFile.setOwner(user);
     ctrller.anyOutfile = File.createTempFile("any", ".pdf");
     mediaFile.setExtension("doc");
-
     File fileToConvert = setupFileToConvert("doc");
     FileProperty fp = setUpFileProperty(fileToConvert);
     mediaFile.setFileProperty(fp);
@@ -275,9 +272,9 @@ public class FileDownloadControllerTest {
             Mockito.eq("pdf"),
             Mockito.eq(ctrller.anyOutfile)))
         .thenThrow(new IllegalArgumentException());
-
-    AjaxReturnObject<String> rcOk = ctrller.convertFile(mediaFile.getId(), "pdf", null, resp);
-    assertNotNull(rcOk.getErrorMsg());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> ctrller.convertFile(mediaFile.getId(), "pdf", null, resp));
   }
 
   private void setupmocks() throws IOException {
@@ -310,7 +307,7 @@ public class FileDownloadControllerTest {
 
     AjaxReturnObject<String> rcOk = ctrller.convertFile(mediaFile.getId(), "pdf", null, resp);
     assertNull(rcOk.getErrorMsg());
-    assertTrue(rcOk.getData(), rcOk.getData().equals("1e50210a0202497fb79bc38b6ade6c34.pdf"));
+    assertTrue(rcOk.getData().equals("1e50210a0202497fb79bc38b6ade6c34.pdf"), rcOk.getData());
     verify(fileStore)
         .save(
             Mockito.any(FileProperty.class),
@@ -333,7 +330,7 @@ public class FileDownloadControllerTest {
     assertTrue(resp.getContentAsByteArray().length > EXPECTED_FILE_SIZE);
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void streamSignatureFileThrowsIAEIfNotExists() throws IOException {
     mockGetUserFromSession();
     File any = RSpaceTestUtils.getAnyPdf();
@@ -342,7 +339,9 @@ public class FileDownloadControllerTest {
     source.addMessage("record.inaccessible", Locale.getDefault(), "any");
     when(recordSigner.getSignedExport(SignatureId, user, filePropertyId))
         .thenReturn(nullOptional());
-    ctrller.streamFilePropertyDirect(SignatureId, filePropertyId, resp);
+    assertThrows(
+        IllegalStateException.class,
+        () -> ctrller.streamFilePropertyDirect(SignatureId, filePropertyId, resp));
     // file store retreive not called if there is no FileProperty
     verify(fileStore, never()).retrieve(Mockito.any(FileProperty.class));
     assertEquals(0, resp.getContentAsByteArray().length);
@@ -354,7 +353,7 @@ public class FileDownloadControllerTest {
   }
 
   private File setupFileToConvert(String ext) throws IOException {
-    File originalURI = new File(tempFolder.getRoot(), "file." + ext);
+    File originalURI = new File(tempFolder, "file." + ext);
     FileUtils.write(originalURI, "some data");
     return originalURI;
   }

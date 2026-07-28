@@ -1,13 +1,13 @@
 package com.researchspace.service;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTableWhere;
 
@@ -56,8 +56,6 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.UserDeletionPolicy.UserTypeRestriction;
 import com.researchspace.service.cloud.CloudNotificationManager;
 import com.researchspace.service.cloud.CommunityUserManager;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.service.impl.TemplateTransferService;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
@@ -71,17 +69,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
-@RunWith(ConditionalTestRunner.class)
 public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
   private @Autowired UserDeletionManager userDeletionMgr;
@@ -100,12 +97,12 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired InstrumentDao instrumentDao;
   private @Autowired MessageSource messageSource;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     RSpaceTestUtils.logout();
     super.tearDown();
@@ -194,7 +191,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly") // is slow to execute
+  @EnabledIfSystemProperty(named = "nightly", matches = ".*") // is slow to execute
   public void testRemoveInitialisedUser() throws Exception {
     // this user will create standard forms etc
     final User sysadmin = createAndSaveUser(getRandomAlphabeticString("toDelete"), "ROLE_SYSADMIN");
@@ -242,9 +239,9 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     // assert attachment file is now deleted from filestore
     int deletedResourcesCount = deleteResourcesResult.getEntity();
     assertEquals(
-        "unexpected number of deleted filestore resources after user removal",
         23,
-        deletedResourcesCount);
+        deletedResourcesCount,
+        "unexpected number of deleted filestore resources after user removal");
     assertFalse(attachmentOnFilestore.exists());
   }
 
@@ -839,13 +836,13 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private void assertStoichiometryInventoryLinkAndAuditDeleted(Long linkId) {
     String where = "id = " + linkId;
     assertEquals(
-        "StoichiometryInventoryLink row should have been deleted",
         0,
-        countRowsInTableWhere(jdbcTemplate, "StoichiometryInventoryLink", where));
+        countRowsInTableWhere(jdbcTemplate, "StoichiometryInventoryLink", where),
+        "StoichiometryInventoryLink row should have been deleted");
     assertEquals(
-        "StoichiometryInventoryLink_AUD rows should have been deleted",
         0,
-        countRowsInTableWhere(jdbcTemplate, "StoichiometryInventoryLink_AUD", where));
+        countRowsInTableWhere(jdbcTemplate, "StoichiometryInventoryLink_AUD", where),
+        "StoichiometryInventoryLink_AUD rows should have been deleted");
   }
 
   @Test

@@ -54,9 +54,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -68,7 +68,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
   private User testUser;
   private @Autowired SubSampleDao dao;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
 
@@ -136,7 +136,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals("mySample 2.06", allSubSamplesResult.getSubSamples().get(11).getName());
   }
 
-  @Ignore("fail on jenkins on permissions assertion, to be investigated (PRT-1056)")
+  @Disabled("fail on jenkins on permissions assertion, to be investigated (PRT-1056)")
   @Test
   public void groupOwnedSubSampleVisibilityInsideAndOutsideGroup() {
 

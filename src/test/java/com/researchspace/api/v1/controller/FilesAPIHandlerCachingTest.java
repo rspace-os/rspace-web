@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.controller;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertThat;
 
 import com.researchspace.api.v1.model.ApiFile;
 import com.researchspace.model.EcatImage;
@@ -11,10 +11,9 @@ import com.researchspace.testutils.DatabaseCleaner;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestRunnerController;
 import java.io.IOException;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.transaction.TestTransaction;
 
@@ -22,15 +21,12 @@ public class FilesAPIHandlerCachingTest extends SpringTransactionalTest {
 
   private @Autowired FilesAPIHandler handler;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
-  @AfterClass
+  @AfterAll
   public static void after() {
     if (!TestRunnerController.isFastRun()) DatabaseCleaner.cleanUp();
   }

@@ -2,47 +2,41 @@ package com.researchspace.extmessages.base;
 
 import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
 import static com.researchspace.testutils.SystemPropertyTestFactory.createAnyAppWithConfigElements;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.testutils.TestFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+@ExtendWith(MockitoExtension.class)
 public class ExternalMessageSenderTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock OperationFailedMessageGenerator authGen;
   @Mock RestTemplate template;
   @InjectMocks DummyExternalMessageSender msteamsSender;
   private User sender;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     sender = TestFactory.createAnyUser("sender");
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testSendMessageApp() throws RestClientException, URISyntaxException {
@@ -76,11 +70,11 @@ public class ExternalMessageSenderTest {
   public void testSendMessageAppThrowsIAEIfAppNotSupported() throws Exception {
     msteamsSender.supported = false;
     UserAppConfig cfg = createAnyAppWithConfigElements(sender, "message");
-    CoreTestUtils.assertExceptionThrown(
+    assertThrows(
+        IllegalArgumentException.class,
         () ->
             msteamsSender.sendMessage(
-                null, cfg.getAppConfigElementSets().iterator().next(), sender),
-        IllegalArgumentException.class);
+                null, cfg.getAppConfigElementSets().iterator().next(), sender));
     // never invoked
     assertMessageNotPosted();
   }

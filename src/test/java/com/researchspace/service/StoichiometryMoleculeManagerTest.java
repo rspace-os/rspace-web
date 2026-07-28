@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.RSpaceTestUtils.getChemImage;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.RSChemElement;
@@ -17,8 +17,8 @@ import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class StoichiometryMoleculeManagerTest extends SpringTransactionalTest {
@@ -29,7 +29,7 @@ public class StoichiometryMoleculeManagerTest extends SpringTransactionalTest {
 
   private User user;
 
-  @Before
+  @BeforeEach
   public void init() throws Exception {
     user = createInitAndLoginAnyUser();
   }

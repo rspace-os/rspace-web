@@ -1,11 +1,11 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -33,9 +33,9 @@ import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
@@ -48,7 +48,7 @@ public class ImageControllerMVCIT extends MVCTestBase {
 
   private User testUser, other;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     final int n = 10;
@@ -58,7 +58,7 @@ public class ImageControllerMVCIT extends MVCTestBase {
     logoutAndLoginAs(testUser);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
     RSpaceTestUtils.logout();
@@ -326,7 +326,7 @@ public class ImageControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     Map datajsonString = parseJSONObjectFromResponseStream(result3);
-    assertTrue("annotation string was empty", ((String) datajsonString.get("data")).length() > 0);
+    assertTrue(((String) datajsonString.get("data")).length() > 0, "annotation string was empty");
 
     // now lets login as another user, this should be forbidden
     logoutAndLoginAs(other);
@@ -374,13 +374,13 @@ public class ImageControllerMVCIT extends MVCTestBase {
   @Test
   public void testGetAlreadySetThumbnail() throws Exception {
     byte[] b = testThumbnail(false);
-    assertTrue("byte array was " + b.length, b.length > 0); // at least as long
+    assertTrue(b.length > 0, "byte array was " + b.length); // at least as long
   }
 
   @Test
   public void testGeneratedThumbnail() throws Exception {
     byte[] b = testThumbnail(true);
-    assertTrue("byte array was " + b.length, b.length > 0); // at least as long
+    assertTrue(b.length > 0, "byte array was " + b.length); // at least as long
   }
 
   @Test
@@ -391,7 +391,7 @@ public class ImageControllerMVCIT extends MVCTestBase {
     MvcResult res = doGetThumbnail(docFile, testUser);
     byte[] b = res.getResponse().getContentAsByteArray();
     assertEquals(HttpStatus.OK.value(), res.getResponse().getStatus());
-    assertTrue("byte array was " + b.length, b.length > 0); // at least as long
+    assertTrue(b.length > 0, "byte array was " + b.length); // at least as long
   }
 
   @Test
@@ -430,7 +430,7 @@ public class ImageControllerMVCIT extends MVCTestBase {
     }
     folderMgr.addChild(getRootFolderForUser(testUser).getId(), doc, testUser);
     MvcResult res = doGetThumbnail(doc, testUser);
-    assertNull("exception thrown :" + res.getResolvedException(), res.getResolvedException());
+    assertNull(res.getResolvedException(), "exception thrown :" + res.getResolvedException());
     byte[] b = res.getResponse().getContentAsByteArray();
     return b;
   }

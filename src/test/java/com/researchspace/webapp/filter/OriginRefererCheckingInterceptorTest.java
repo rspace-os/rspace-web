@@ -1,26 +1,24 @@
 package com.researchspace.webapp.filter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.properties.IPropertyHolder;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+@ExtendWith(MockitoExtension.class)
 public class OriginRefererCheckingInterceptorTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
 
   private OriginRefererCheckerImpl originRefererChecker;
 
@@ -35,11 +33,11 @@ public class OriginRefererCheckingInterceptorTest {
   private String testServerAlias2 = "https://rs-alias2";
   private String extraDomains = testServerAlias1 + ", " + testServerAlias2;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     originRefererChecker = new OriginRefererCheckerImpl();
     originRefererChecker.setProperties(propertyHolder);
-    Mockito.when(propertyHolder.getServerUrl()).thenReturn(testServerUrl);
+    Mockito.lenient().when(propertyHolder.getServerUrl()).thenReturn(testServerUrl);
     originRefererChecker.setAcceptedDomainsDeploymentProp(extraDomains);
   }
 

@@ -1,21 +1,14 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.views.RecordTypeFilter;
 import java.util.EnumSet;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class RecordTypeFilterTest {
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testRecordTypeFilterIncludeAll() {
@@ -44,9 +37,13 @@ public class RecordTypeFilterTest {
     assertEquals(EnumSet.allOf(RecordType.class).size() - 2, rtf.getWantedTypes().size());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testNoNullArgs() {
-    // exclude these 2
-    new RecordTypeFilter(null, false);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          // exclude these 2
+          new RecordTypeFilter(null, false);
+        });
   }
 }

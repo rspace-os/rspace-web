@@ -6,14 +6,14 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.SearchTestUtils.createSimpleNameSearchCfg;
 import static com.researchspace.testutils.matchers.TotalSearchResults.totalSearchResults;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -93,13 +93,13 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.jsoup.Jsoup;
 import org.jsoup.parser.Tag;
 import org.jsoup.select.Elements;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.MethodOrderer.MethodName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.mockito.Mock;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -118,7 +118,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.servlet.ModelAndView;
 
 @WebAppConfiguration
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodName.class)
 // 2 example import files for test testListFoldersWhenFirstSession_RSPAC1789
 @TestPropertySource(
     properties = {
@@ -148,7 +148,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
   private ObjectMapper mapper = new ObjectMapper();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     openMocks(this);
@@ -178,7 +178,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     }
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -272,8 +272,8 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     logoutAndLoginAs(extra);
     // initially no group folder and no access to record
     assertFalse(
-        "user not in group can see the doc",
-        permissionUtils.isPermitted(setup.structuredDocument, PermissionType.READ, extra));
+        permissionUtils.isPermitted(setup.structuredDocument, PermissionType.READ, extra),
+        "user not in group can see the doc");
     assertEquals(0, getRecordCountInLabGrpFolder(extra));
 
     // adding extra user to the group
@@ -414,7 +414,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
    * @throws Exception
    */
   @Test
-  @Ignore
+  @Disabled
   public void testBulkDeletionPerformance() throws Exception {
     final GroupSetUp setup = setUpDocumentGroupForPIUserAndShareRecord();
     System.out.println(piUser.getUsername());
@@ -996,7 +996,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertEquals(Long.valueOf(1), res.getTotalHits());
   }
 
-  @Ignore
+  @Disabled
   @Test
   public void testMVCAttachmentSearch() throws Exception {
     final int SleepTime = 50;
@@ -1121,15 +1121,15 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     newChildren.removeAll(orgChildren);
     commitTransaction();
 
-    assertEquals("no new child in root folder", 1, newChildren.size());
+    assertEquals(1, newChildren.size(), "no new child in root folder");
     BaseRecord newRecord = (BaseRecord) (newChildren.toArray())[0];
-    assertTrue("new record should be a folder", newRecord.isFolder());
-    assertFalse("new record shouldn't be a notebook", newRecord.isNotebook());
-    assertEquals("created folder has different name", testName, newRecord.getName());
+    assertTrue(newRecord.isFolder(), "new record should be a folder");
+    assertFalse(newRecord.isNotebook(), "new record shouldn't be a notebook");
+    assertEquals(testName, newRecord.getName(), "created folder has different name");
     assertEquals(
-        "new folder has a different id than in the response",
         Long.valueOf((Integer) getJsonPathValue(result, "$.data")),
-        newRecord.getId());
+        newRecord.getId(),
+        "new folder has a different id than in the response");
 
     RSpaceTestUtils.logout();
   }
@@ -1166,11 +1166,11 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
 
     // Check subfolders
     for (String expectedSubfolderName : EXPECTED_SUBFOLDER_NAMES) {
-      assertEquals("no new child in folder", 1, currentFolderChildren.size());
+      assertEquals(1, currentFolderChildren.size(), "no new child in folder");
       BaseRecord newRecord = (BaseRecord) (currentFolderChildren.toArray())[0];
-      assertTrue("new record should be a folder", newRecord.isFolder());
-      assertFalse("new record shouldn't be a notebook", newRecord.isNotebook());
-      assertEquals("created folder has different name", expectedSubfolderName, newRecord.getName());
+      assertTrue(newRecord.isFolder(), "new record should be a folder");
+      assertFalse(newRecord.isNotebook(), "new record shouldn't be a notebook");
+      assertEquals(expectedSubfolderName, newRecord.getName(), "created folder has different name");
 
       openTransaction();
       currentFolder = folderDao.get(newRecord.getId());
@@ -1179,9 +1179,9 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     }
 
     assertEquals(
-        "new folder has a different id than in the response",
         Long.valueOf((Integer) getJsonPathValue(result, "$.data")),
-        currentFolder.getId());
+        currentFolder.getId(),
+        "new folder has a different id than in the response");
 
     RSpaceTestUtils.logout();
   }
@@ -1212,11 +1212,11 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     newChildren.removeAll(orgChildren);
     commitTransaction();
 
-    assertEquals("no new child in root folder", 1, newChildren.size());
+    assertEquals(1, newChildren.size(), "no new child in root folder");
     BaseRecord newRecord = (BaseRecord) (newChildren.toArray())[0];
-    assertTrue("new record should be a folder", newRecord.isFolder());
-    assertTrue("new record should be a notebook", newRecord.isNotebook());
-    assertEquals("created notebook has different name", testName, newRecord.getName());
+    assertTrue(newRecord.isFolder(), "new record should be a folder");
+    assertTrue(newRecord.isNotebook(), "new record should be a notebook");
+    assertEquals(testName, newRecord.getName(), "created notebook has different name");
 
     RSpaceTestUtils.logout();
   }
@@ -1285,12 +1285,12 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     newRootChildren.removeAll(orgChildren);
     commitTransaction();
 
-    assertEquals("no new child in root folder", 1, newRootChildren.size());
-    assertEquals("no new child in shared folder", 1, newSharedChildren.size());
+    assertEquals(1, newRootChildren.size(), "no new child in root folder");
+    assertEquals(1, newSharedChildren.size(), "no new child in shared folder");
     BaseRecord newRecord = (BaseRecord) (newRootChildren.toArray())[0];
-    assertTrue("new record should be a folder", newRecord.isFolder());
-    assertTrue("new record should be a notebook", newRecord.isNotebook());
-    assertEquals("created notebook has different name", testName, newRecord.getName());
+    assertTrue(newRecord.isFolder(), "new record should be a folder");
+    assertTrue(newRecord.isNotebook(), "new record should be a notebook");
+    assertEquals(testName, newRecord.getName(), "created notebook has different name");
 
     RSpaceTestUtils.logout();
   }
@@ -1426,7 +1426,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     newChildren.removeAll(orgChildren);
     commitTransaction();
 
-    assertEquals("two new notebooks were expected ", 2, newChildren.size());
+    assertEquals(2, newChildren.size(), "two new notebooks were expected ");
     BaseRecord createdNotebook1 =
         newChildren.stream().filter(b -> b.getId().equals(defaultNotebookId)).findFirst().get();
     assertTrue(createdNotebook1.isNotebook());

@@ -1,8 +1,8 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.dao.FolderDao;
@@ -31,9 +31,9 @@ import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.Set;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase {
@@ -45,7 +45,7 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
 
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     // we have to init manually, as is only loaded in 'prod' profile and tests
     // run in 'dev' profile.
@@ -77,7 +77,7 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
     initializer.setUserFolderCreator(ufc);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -136,8 +136,8 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
 
           for (BaseRecord img : exampleImages) {
             assertTrue(
-                "user should have permission to modify imported image " + img.getName(),
-                img.getSharingACL().isPermitted(user, PermissionType.WRITE));
+                img.getSharingACL().isPermitted(user, PermissionType.WRITE),
+                "user should have permission to modify imported image " + img.getName());
           }
         });
   }

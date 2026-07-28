@@ -1,10 +1,10 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.util.JacksonUtil.toJson;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -30,8 +30,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.collections4.CollectionUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -45,7 +45,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
   User anyUser, otherUser;
   String apiKeyAnyUser, apiKeyPiUser;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     anyUser = createInitAndLoginAnyUser();
@@ -300,7 +300,7 @@ public class FormsApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     int actualLength = result.getResponse().getContentAsByteArray().length;
     // expected size of the icon, differs slightly between java 8 and 11
-    assertTrue("uexpected length: " + actualLength, actualLength > 1750 && actualLength < 1950);
+    assertTrue(actualLength > 1750 && actualLength < 1950, "uexpected length: " + actualLength);
   }
 
   @Test

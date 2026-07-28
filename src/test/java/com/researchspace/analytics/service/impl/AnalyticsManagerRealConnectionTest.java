@@ -1,6 +1,6 @@
 package com.researchspace.analytics.service.impl;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.admin.service.UserUsageInfo;
 import com.researchspace.analytics.service.AnalyticsManager;
@@ -13,16 +13,14 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordFactory;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
@@ -39,7 +37,7 @@ import org.springframework.test.context.TestPropertySource;
  * assertion this class is checking segmentIO log for errors.
  */
 @TestPropertySource(properties = {"analytics.enabled=true"})
-@RunWith(ConditionalTestRunner.class)
+@EnabledIfSystemProperty(named = "nightly", matches = ".*")
 public class AnalyticsManagerRealConnectionTest extends SpringTransactionalTest {
   private @Autowired AnalyticsManager analyticsManager;
 
@@ -48,7 +46,7 @@ public class AnalyticsManagerRealConnectionTest extends SpringTransactionalTest 
   private User testUser;
   private MockHttpServletRequest mockHttpRequest;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
 
@@ -65,7 +63,6 @@ public class AnalyticsManagerRealConnectionTest extends SpringTransactionalTest 
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void userCreatedEventForwardedToAnalytics() throws IOException {
     analyticsManager.userCreated(testUser);
     flushAnalyticsClientAndWait();
@@ -84,7 +81,6 @@ public class AnalyticsManagerRealConnectionTest extends SpringTransactionalTest 
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void invitationSentEventForwardedToAnalytics() throws IOException {
     User invitee = new User();
     invitee.setEmail("invited@email.com");
@@ -97,7 +93,6 @@ public class AnalyticsManagerRealConnectionTest extends SpringTransactionalTest 
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void signupEventForwardedToAnalytics() throws IOException {
     analyticsManager.userSignedUp(testUser, true, mockHttpRequest);
     flushAnalyticsClientAndWait();
@@ -106,7 +101,6 @@ public class AnalyticsManagerRealConnectionTest extends SpringTransactionalTest 
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void loginEventForwardedToAnalytics() throws IOException {
     analyticsManager.userLoggedIn(testUser, mockHttpRequest);
     flushAnalyticsClientAndWait();
@@ -115,7 +109,6 @@ public class AnalyticsManagerRealConnectionTest extends SpringTransactionalTest 
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void logoutEventForwardedToAnalytics() throws IOException {
     analyticsManager.userLoggedOut(testUser, mockHttpRequest);
     flushAnalyticsClientAndWait();
@@ -124,7 +117,6 @@ public class AnalyticsManagerRealConnectionTest extends SpringTransactionalTest 
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void recordCreatedEventForwardedToAnalytics() throws IOException {
     Record testDoc = recordFactory.createAnyRecord(testUser, "doc");
     Folder testFolder = recordFactory.createFolder("folder", testUser);
@@ -137,7 +129,6 @@ public class AnalyticsManagerRealConnectionTest extends SpringTransactionalTest 
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void diskUsageEventsUploadedToAnalytics() throws IOException {
     UserUsageInfo userUsageInfo1 = new UserUsageInfo(testUser);
     userUsageInfo1.setFileUsage(2048L);
@@ -152,6 +143,6 @@ public class AnalyticsManagerRealConnectionTest extends SpringTransactionalTest 
     /* if you are investigating the test and want more details in logger, then comment out
      * the lines in SegmentAnalyticsLogAdapter to see VERBOSE level messages  */
     assertEquals(
-        "no error should be printed into segmentIO logger", "", testStringAppender.logContents);
+        "", testStringAppender.logContents, "no error should be printed into segmentIO logger");
   }
 }

@@ -33,8 +33,8 @@ import java.util.Optional;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -55,7 +55,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   private MockHttpServletRequest req;
   private MockHttpServletResponse resp;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     WopiTestUtilities.setWopiDiscoveryFromExampleFile(

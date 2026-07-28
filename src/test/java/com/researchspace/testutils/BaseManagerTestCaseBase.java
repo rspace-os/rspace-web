@@ -2,7 +2,8 @@ package com.researchspace.testutils;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toSet;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.axiope.search.IFileIndexer;
 import com.researchspace.Constants;
@@ -179,18 +180,18 @@ import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.util.ThreadContext;
 import org.hibernate.LazyInitializationException;
 import org.hibernate.SessionFactory;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 /**
  * It is really important that this is the single point at which the application context is
@@ -207,11 +208,14 @@ import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
  * instance of each bean is created.
  */
 @DefaultTestContext
-public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContextTests {
+@WithSpringContext
+public abstract class BaseManagerTestCaseBase {
+
+  @Autowired protected ApplicationContext applicationContext;
 
   protected static final Logger log = LoggerFactory.getLogger(BaseManagerTestCaseBase.class);
 
-  @BeforeClass
+  @BeforeAll
   public static void BeforeClass() throws Exception {
     TestRunnerController.ignoreIfFastRun();
   }
@@ -324,7 +328,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * would see the wrong security manager and fail with "UsernamePasswordToken could not be
    * authenticated".
    */
-  @Before
+  @BeforeEach
   public void resetSecurityManager() {
     if (securityManagerTestRef != null) {
       SecurityUtils.setSecurityManager(securityManagerTestRef);
@@ -1134,7 +1138,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    */
   protected void assertExceptionThrown(Invokable invokable, Class<? extends Throwable> clazz)
       throws Exception {
-    CoreTestUtils.assertExceptionThrown(invokable, clazz);
+    assertThrows(clazz, invokable::invoke);
   }
 
   /**
