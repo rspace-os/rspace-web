@@ -16,7 +16,7 @@ public class LogLineContentProviderImpl implements LogLineContentProvider {
 
 	static final String cacheKeySpel = "getName()";
 
-	static final String cacheArg = "#logFile.";
+	static final String cacheArg = "#p1.";
 
 	static final String cacheUnless = "getName() matches '.*\\.txt$'";
 	
