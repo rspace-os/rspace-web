@@ -1,8 +1,10 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
@@ -17,8 +19,8 @@ import {
 /*
  * The chemistry integration check uses `@/common/axios`; every other network
  * call this dialog makes (calculate / get / update / delete stoichiometry, the
- * inventory OAuth token) goes through the global `fetch`, which
- * `vitest-fetch-mock` mocks for us. We stub the integration hook directly so we
+ * inventory OAuth token) goes through `fetch`, which MSW handles for us. We
+ * stub the integration hook directly so we
  * do not depend on the axios call resolving, mirroring the existing test in
  * this area.
  */
@@ -150,53 +152,48 @@ const hasStoichiometryRequest = (method: "POST" | "PUT" | "DELETE"): boolean =>
   );
 
 /**
- * Wire up the global `fetch` mock for every endpoint the dialog reaches. By
+ * Wire up MSW for every endpoint the dialog reaches. By
  * default the stoichiometry endpoint succeeds for GET/POST/PUT and reports
- * success for DELETE. Individual tests can override behaviour by inspecting or
- * replacing `fetchMock` after calling this helper.
+ * success for DELETE. Individual tests can override handlers after this helper.
  */
 function mockNetwork() {
-  fetchMock.mockResponse((request) => {
-    const url = new URL(request.url, "http://localhost");
-    const method = request.method.toUpperCase();
-
-    if (url.pathname === "/userform/ajax/inventoryOauthToken") {
-      return Promise.resolve(JSON.stringify({ data: "test-token" }));
-    }
-
-    if (url.pathname === "/api/v1/stoichiometry") {
-      if (method === "DELETE") {
-        return Promise.resolve(JSON.stringify({ success: true }));
-      }
-      return Promise.resolve(JSON.stringify(mockResponse));
-    }
-
-    return Promise.resolve(JSON.stringify({}));
-  });
+  const recordRequest = async (request: Request): Promise<void> => {
+    recordedRequests.push({
+      url: new URL(request.url),
+      method: request.method.toUpperCase(),
+      body: request.method === "GET" ? null : await request.clone().text(),
+    });
+  };
+  server.use(
+    http.get("/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: "test-token" })),
+    http.get("/api/v1/stoichiometry", async ({ request }) => {
+      await recordRequest(request);
+      return HttpResponse.json(mockResponse);
+    }),
+    http.post("/api/v1/stoichiometry", async ({ request }) => {
+      await recordRequest(request);
+      return HttpResponse.json(mockResponse);
+    }),
+    http.put("/api/v1/stoichiometry", async ({ request }) => {
+      await recordRequest(request);
+      return HttpResponse.json(mockResponse);
+    }),
+    http.delete("/api/v1/stoichiometry", async ({ request }) => {
+      await recordRequest(request);
+      return HttpResponse.json({ success: true });
+    }),
+  );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   recordedRequests = [];
-  fetchMock.resetMocks();
-  // Record every fetch the dialog makes so we can assert on POST/PUT/DELETE.
-  const originalFetch = fetchMock.bind(fetchMock);
-  vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
-    const rawUrl = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-    recordedRequests.push({
-      url: new URL(rawUrl, "http://localhost"),
-      method: (init?.method ?? "GET").toUpperCase(),
-      body: typeof init?.body === "string" ? init.body : null,
-    });
-    return originalFetch(input, init);
-  });
   mockNetwork();
   mockAxios.reset();
   mockAxios.onAny().reply(200, { data: {} });
 });
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   mockAxios.reset();
 });
 
@@ -273,18 +270,10 @@ describe("StoichiometryDialog", () => {
     const user = userEvent.setup();
     const createErrorMessage = "Unable to create stoichiometry table.";
 
-    fetchMock.mockResponse((request) => {
-      const url = new URL(request.url, "http://localhost");
-      const method = request.method.toUpperCase();
-
-      if (url.pathname === "/userform/ajax/inventoryOauthToken") {
-        return Promise.resolve(JSON.stringify({ data: "test-token" }));
-      }
-
-      if (url.pathname === "/api/v1/stoichiometry" && method === "POST") {
-        return Promise.resolve({
-          status: 500,
-          body: JSON.stringify({
+    server.use(
+      http.post("/api/v1/stoichiometry", () =>
+        HttpResponse.json(
+          {
             status: "error",
             httpCode: 500,
             internalCode: 500,
@@ -293,12 +282,11 @@ describe("StoichiometryDialog", () => {
             errors: [],
             iso8601Timestamp: "2026-04-07T00:00:00Z",
             data: null,
-          }),
-        });
-      }
-
-      return Promise.resolve(JSON.stringify({}));
-    });
+          },
+          { status: 500, statusText: "Internal Server Error" },
+        ),
+      ),
+    );
 
     render(<StoichiometryDialogWithCalculateButtonStory />);
 

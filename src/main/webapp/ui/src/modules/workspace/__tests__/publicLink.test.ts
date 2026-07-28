@@ -1,28 +1,24 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { HttpResponse, http } from "msw";
+import { describe, expect, it } from "vitest";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
+import { server } from "@/__tests__/mswServer";
 import { getPublicLink } from "@/modules/workspace/publicLink";
-
-beforeEach(() => {
-  fetchMock.resetMocks();
-  vi.clearAllMocks();
-});
 
 describe("getPublicLink", () => {
   it("requests the public link endpoint with the global id", async () => {
-    fetchMock.mockResponseOnce("");
+    const requests = captureRequests("get", "/public/publishedView/publiclink", () => new HttpResponse(null));
 
     await getPublicLink("SD123");
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/public/publishedView/publiclink?globalId=SD123",
-      expect.objectContaining({
-        method: "GET",
-        headers: { "X-Requested-With": "XMLHttpRequest" },
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    expect(new URL(requests[0].url).searchParams.get("globalId")).toBe("SD123");
+    expect(requests[0].headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
   it("returns the public link when the record is published", async () => {
-    fetchMock.mockResponseOnce("/public/publishedView/document/abc-123");
+    server.use(
+      http.get("/public/publishedView/publiclink", () => new HttpResponse("/public/publishedView/document/abc-123")),
+    );
 
     const result = await getPublicLink("SD123");
 
@@ -30,7 +26,7 @@ describe("getPublicLink", () => {
   });
 
   it("returns null when the endpoint returns an empty body", async () => {
-    fetchMock.mockResponseOnce("");
+    server.use(http.get("/public/publishedView/publiclink", () => new HttpResponse(null)));
 
     const result = await getPublicLink("SD123");
 
@@ -38,7 +34,12 @@ describe("getPublicLink", () => {
   });
 
   it("throws when the response is not OK", async () => {
-    fetchMock.mockResponseOnce("nope", { status: 500, statusText: "Server Error" });
+    server.use(
+      http.get(
+        "/public/publishedView/publiclink",
+        () => new HttpResponse("nope", { status: 500, statusText: "Server Error" }),
+      ),
+    );
 
     await expect(getPublicLink("SD123")).rejects.toThrow();
   });
