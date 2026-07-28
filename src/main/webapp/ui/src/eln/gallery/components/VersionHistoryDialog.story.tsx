@@ -1,14 +1,14 @@
 import { ThemeProvider } from "@mui/material/styles";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/rspace/gallery";
-import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
+import NavigateContext from "../../../stores/contexts/Navigate";
 import Result from "../../../util/result";
 import { Description, type GalleryFile } from "../useGalleryListing";
 import VersionHistoryDialog from "./VersionHistoryDialog";
 
 /**
- * A Gallery item at version 3. `isImage`/`extension` decide which previewer a
- * version row opens, so tests vary them to exercise each branch.
+ * A Gallery item at version 3. Pass `pinnedVersion` to model the item being
+ * viewed at a past version rather than live.
  */
 export function galleryFile(overrides: Partial<GalleryFile> = {}): GalleryFile {
   return {
@@ -63,19 +63,24 @@ export function VersionHistoryDialogStory({
   file = galleryFile(),
   open = true,
   onClose = () => {},
-  deploymentProperties = new Map<string, unknown>([["aspose.enabled", false]]),
+  navigate = () => {},
 }: {
   file?: GalleryFile;
   open?: boolean;
   onClose?: () => void;
-  deploymentProperties?: Map<string, unknown>;
+  navigate?: (url: string) => void;
 }) {
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-      {/* seeded so the hook reads the cache instead of making a network call */}
-      <DeploymentPropertyContext.Provider value={deploymentProperties}>
+      {/* the dialog navigates, so it needs a context; useLocation goes unused */}
+      <NavigateContext.Provider
+        value={{
+          useNavigate: () => navigate,
+          useLocation: () => ({ hash: "", pathname: "", search: "", state: {}, key: "" }),
+        }}
+      >
         <VersionHistoryDialog open={open} onClose={onClose} file={file} />
-      </DeploymentPropertyContext.Provider>
+      </NavigateContext.Provider>
     </ThemeProvider>
   );
 }

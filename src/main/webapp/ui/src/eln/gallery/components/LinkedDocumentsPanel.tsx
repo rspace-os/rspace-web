@@ -40,6 +40,13 @@ export function LinkedDocumentsPanel({ file }: { file: GalleryFile }): React.Rea
       <Typography variant="h4" component="h4">
         {t("linkedDocumentsPanel.heading")}
       </Typography>
+      {/* Nothing records the version a link was made against, so on a pinned
+          version view this list must not read as that version's links. */}
+      {typeof file.pinnedVersion === "number" && (
+        <Typography variant="caption" component="p">
+          {t("pinnedVersion.referencesAreItemLevel")}
+        </Typography>
+      )}
       <DataGrid
         columns={[
           DataGridColumn.newColumnWithFieldName<"name", Document>("name", {

@@ -663,7 +663,8 @@ public class GalleryController extends BaseController {
                       : fullNameByUsername.computeIfAbsent(
                           modifiedBy, userManager::getFullNameByUsername),
                   audited.getSize(),
-                  audited.getName())));
+                  audited.getName(),
+                  audited.getDescription())));
     }
     return new AjaxReturnObject<>(
         new GalleryVersionHistory(apiRevisions, apiRevisions.size()), null);

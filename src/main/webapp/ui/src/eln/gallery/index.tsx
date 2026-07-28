@@ -41,9 +41,12 @@ import { CallableSnippetPreview } from "./components/CallableSnippetPreview";
 import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import MainPanel from "./components/MainPanel";
 import OpenFolderProvider from "./components/OpenFolderProvider";
+import PinnedVersionNotice from "./components/PinnedVersionNotice";
 import PlaceholderLabel from "./components/PlaceholderLabel";
 import RouterNavigationProvider from "./components/RouterNavigationProvider";
 import Sidebar from "./components/Sidebar";
+import { fetchVersionHistory } from "./galleryVersionHistory";
+import { HistoricalGalleryFile } from "./historicalGalleryFile";
 import { type GalleryFile, idToString, useGalleryListing } from "./useGalleryListing";
 import { GallerySelection, useGallerySelection } from "./useGallerySelection";
 
@@ -65,6 +68,8 @@ const WholePage = ({
   setPath,
   autoSelect,
   title,
+  decorateFile,
+  notice,
 }: {
   listingOf:
     | {
@@ -77,6 +82,19 @@ const WholePage = ({
   setPath: (path: ReadonlyArray<GalleryFile>) => void;
   autoSelect?: ReadonlyArray<number>;
   title: ({ path, section }: { path: ReadonlyArray<GalleryFile>; section: GallerySection }) => string;
+
+  /**
+   * Applied to every file in the listing before anything sees it, so the grid
+   * tile, the selection, the InfoPanel and the Actions menu all act on one
+   * object. Must be referentially stable, as the listing is memoised on it.
+   */
+  decorateFile?: (file: GalleryFile) => GalleryFile;
+
+  /**
+   * Rendered above the listing, for page-level state that no individual file can
+   * convey.
+   */
+  notice?: React.ReactNode;
 }) => {
   const { t } = useTranslation("gallery");
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -86,12 +104,35 @@ const WholePage = ({
   const [sortOrder, setSortOrder] = useUiPreference<"DESC" | "ASC">(PREFERENCES.GALLERY_SORT_ORDER, {
     defaultValue: "DESC",
   });
-  const { galleryListing, folderId, path, refreshListing, selectedSection } = useGalleryListing({
+  const {
+    galleryListing: liveListing,
+    folderId,
+    path,
+    refreshListing,
+    selectedSection,
+  } = useGalleryListing({
     listingOf,
     searchTerm: appliedSearchTerm,
     orderBy,
     sortOrder,
   });
+
+  /*
+   * Decorating here, rather than at the point of selection, is what keeps the
+   * whole page consistent: everything downstream reads the listing.
+   */
+  const galleryListing = React.useMemo(() => {
+    if (!decorateFile) return liveListing;
+    if (liveListing.tag !== "success" || liveListing.value.tag === "empty") return liveListing;
+    return {
+      tag: "success" as const,
+      value: {
+        ...liveListing.value,
+        list: liveListing.value.list.map(decorateFile),
+      },
+    };
+  }, [liveListing, decorateFile]);
+
   const { isViewportSmall } = useViewportDimensions();
 
   const selection = useGallerySelection();
@@ -233,6 +274,7 @@ const WholePage = ({
                           minWidth: 0,
                         }}
                       >
+                        {notice}
                         <MainPanel
                           selectedSection={FetchingData.getSuccessValue(selectedSection).orElse(null)}
                           path={FetchingData.getSuccessValue(path).orElse(null)}
@@ -359,12 +401,36 @@ function GalleryFolder() {
     .orElse(null);
 }
 
+/**
+ * Where a file has been resolved to, once the URL has been read. A version in
+ * the URL that is already the live one resolves to a redirect rather than a
+ * pinned view: there is nothing historical to show, and a locked page would
+ * misrepresent an editable item.
+ */
+type FileResolution =
+  | { tag: "live"; folderId: number }
+  | {
+      tag: "pinned";
+      folderId: number;
+      version: number;
+      size: number;
+      modificationDate: Date | undefined;
+      name: string | null;
+      description: string | null;
+    }
+  | { tag: "redirectToLive" };
+
+/**
+ * This component is responsible for rendering the gallery when an item is
+ * specified by id in the URL, either live (`/gallery/item/42`) or pinned to a
+ * past version (`/gallery/item/42/2`).
+ */
 function GalleryFileInFolder() {
-  const { fileId: fileIdParam } = useParams();
+  const { fileId: fileIdParam, version: versionParam } = useParams();
   const { t } = useTranslation("gallery");
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
-  const [folderId, setFolderId] = React.useState<FetchingData.Fetched<number>>({
+  const [resolution, setResolution] = React.useState<FetchingData.Fetched<FileResolution>>({
     tag: "loading",
   });
   const [fileName, setFileName] = React.useState<string | null>(null);
@@ -378,42 +444,103 @@ function GalleryFileInFolder() {
           Authorization: `Bearer ${token}`,
         },
       });
-      setFolderId(
-        Parsers.objectPath(["parentFolderId"], data)
-          .flatMap(Parsers.isNumber)
-          .map((id) => ({ tag: "success" as const, value: id }))
-          .orElseGet(([e]) => ({ tag: "error", error: e.message })),
-      );
       setFileName(Parsers.objectPath(["name"], data).flatMap(Parsers.isString).orElse(null));
+      const folderId = Parsers.objectPath(["parentFolderId"], data).flatMap(Parsers.isNumber).elseThrow();
+
+      if (typeof versionParam === "undefined") {
+        setResolution({ tag: "success", value: { tag: "live", folderId } });
+        return;
+      }
+
+      /*
+       * From here on a bad version is reported rather than worked around.
+       * Falling back to the live item would show content other than the version
+       * the link named, which is a trust failure for anyone citing that link.
+       */
+      const requestedVersion = Parsers.parseInteger(versionParam)
+        .mapError(() => new Error(t("pinnedVersion.invalid", { version: versionParam })))
+        .elseThrow();
+      const liveVersion = Parsers.objectPath(["version"], data).flatMap(Parsers.isNumber).orElse(null);
+      if (requestedVersion === liveVersion) {
+        setResolution({ tag: "success", value: { tag: "redirectToLive" } });
+        return;
+      }
+
+      const versions = await fetchVersionHistory(String(fileIdParam), t("actionsMenu.versionHistory.loadFailed"));
+      const pinned = versions.find(({ version }) => version === requestedVersion);
+      if (!pinned) throw new Error(t("pinnedVersion.notFound", { version: requestedVersion }));
+
+      setResolution({
+        tag: "success",
+        value: {
+          tag: "pinned",
+          folderId,
+          version: pinned.version,
+          size: pinned.size ?? 0,
+          modificationDate: Parsers.isNotBottom(pinned.lastModified).flatMap(Parsers.parseDate).orElse(undefined),
+          name: pinned.name,
+          description: pinned.description,
+        },
+      });
     } catch (error) {
       console.error("Error fetching file details", error);
       if (error instanceof Error) {
-        setFolderId({ tag: "error", error: error.message });
+        setResolution({ tag: "error", error: error.message });
       }
     }
   }
 
   React.useEffect(() => {
     void fetchFileDetails();
-  }, []);
+  }, [fileIdParam, versionParam]);
 
-  return FetchingData.match<number, React.ReactNode>(folderId, {
+  const autoSelect = React.useMemo(
+    () =>
+      Parsers.isNotBottom(fileIdParam)
+        .flatMap(Parsers.parseInteger)
+        .map((fileId) => [fileId])
+        .orElse([]),
+    [fileIdParam],
+  );
+
+  /*
+   * Only the item named in the URL is pinned. The rest of the folder it happens
+   * to sit in is live, and stays editable.
+   */
+  const decorateFile = React.useMemo(() => {
+    if (resolution.tag !== "success" || resolution.value.tag !== "pinned") return undefined;
+    const { version, size, modificationDate, name, description } = resolution.value;
+    const [pinnedId] = autoSelect;
+    return (file: GalleryFile): GalleryFile =>
+      file.id === pinnedId
+        ? new HistoricalGalleryFile({ file, version, size, modificationDate, name, description })
+        : file;
+  }, [resolution, autoSelect]);
+
+  return FetchingData.match<FileResolution, React.ReactNode>(resolution, {
     loading: () => t("landingPage.loading"),
     error: (error) => t("landingPage.error", { error }),
-    success: (fId) => (
-      <WholePage
-        listingOf={{ tag: "folder", folderId: fId }}
-        setSelectedSection={({ mediaType }) => {
-          navigate(`/gallery/?mediaType=${mediaType}`);
-        }}
-        setPath={() => {}}
-        autoSelect={Parsers.isNotBottom(fileIdParam)
-          .flatMap(Parsers.parseInteger)
-          .map((fileId) => [fileId])
-          .orElse([])}
-        title={() => fileName ?? t("landingPage.loading")}
-      />
-    ),
+    success: (resolved) => {
+      if (resolved.tag === "redirectToLive") return <Navigate to={`/gallery/item/${fileIdParam}`} replace />;
+      return (
+        <WholePage
+          listingOf={{ tag: "folder", folderId: resolved.folderId }}
+          setSelectedSection={({ mediaType }) => {
+            navigate(`/gallery/?mediaType=${mediaType}`);
+          }}
+          setPath={() => {}}
+          autoSelect={autoSelect}
+          decorateFile={decorateFile}
+          notice={
+            resolved.tag === "pinned" ? (
+              <PinnedVersionNotice version={resolved.version} fileId={fileIdParam ?? null} />
+            ) : null
+          }
+          /* the pinned version's own name, which need not be the live one */
+          title={() => (resolved.tag === "pinned" ? resolved.name : null) ?? fileName ?? t("landingPage.loading")}
+        />
+      );
+    },
   });
 }
 
@@ -462,8 +589,9 @@ export function Gallery() {
                             </RouterNavigationProvider>
                           }
                         />
+                        {/* The optional trailing segment pins the item to a past version. */}
                         <Route
-                          path="gallery/item/:fileId"
+                          path="gallery/item/:fileId/:version?"
                           element={
                             <RouterNavigationProvider>
                               <GallerySelection>

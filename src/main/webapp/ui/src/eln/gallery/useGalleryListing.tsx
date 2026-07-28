@@ -148,6 +148,13 @@ export interface GalleryFile {
   readonly version?: number;
 
   /*
+   * Set only when this object is showing one past version rather than the live
+   * item, in which case it holds that version. UI that has to say which version
+   * is on screen, and that it is locked, keys off this.
+   */
+  readonly pinnedVersion?: number;
+
+  /*
    * A versioned global Id that refers to an original image file from which
    * this image file was created.
    */
@@ -232,6 +239,15 @@ export function chemistryFilePreview(file: GalleryFile): Result<string> {
 }
 
 /**
+ * The stock icon standing for all files of a type, used when no thumbnail of
+ * the content itself is available.
+ */
+export function iconForExtension(extension: string | null): UrlType {
+  if (extension === null) return "/images/icons/unknown.svg";
+  return fileIconMap.get(extension) ?? "/images/icons/unknown.svg";
+}
+
+/**
  * For some file types we generate thumbnails of the content. For others we
  * have thumbnails to represent all files of that type.
  */
@@ -265,10 +281,7 @@ function generateIconSrc(
       return Result.Error<string>([new Error("No pre-computed thumbnail")]);
     })
     .orElseTry(() => chemistryFilePreview(file))
-    .orElseGet(() => {
-      if (extension === null) return "/images/icons/unknown.svg";
-      return fileIconMap.get(extension) ?? "/images/icons/unknown.svg";
-    });
+    .orElseGet(() => iconForExtension(extension));
 }
 
 /**

@@ -11,70 +11,20 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import type React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import axios from "@/common/axios";
+import NavigateContext from "../../../stores/contexts/Navigate";
 import { getErrorMessage } from "../../../util/error";
 import { formatFileSize } from "../../../util/files";
 import { isoToLocale } from "../../../util/Util";
-import { groupByVersion } from "../../../util/versionHistory";
-import {
-  useAsposePreviewOfGalleryFile,
-  useImagePreviewOfGalleryFile,
-  usePdfPreviewOfGalleryFile,
-} from "../primaryActionHooks";
+import { fetchVersionHistory, type VersionRow } from "../galleryVersionHistory";
 import { type GalleryFile, idToString } from "../useGalleryListing";
-import { useAsposePreview } from "./CallableAsposePreview";
-import { useImagePreview } from "./CallableImagePreview";
-import { usePdfPreview } from "./CallablePdfPreview";
-
-/**
- * One audit revision of a Gallery item, as /gallery/ajax/versionHistory returns
- * it. Shaped like the inventory revisions response so that the two share the
- * version-grouping helper.
- */
-type ApiRevision = {
-  revisionId: number;
-  revisionType?: string | null;
-  record: {
-    version?: number | null;
-    lastModified?: string | null;
-    modifiedByFullName?: string | null;
-    size?: number | null;
-  };
-};
-
-/** The endpoint's AjaxReturnObject envelope. */
-type VersionHistoryResponse = {
-  data: { revisions: Array<ApiRevision>; revisionsCount: number } | null;
-  error?: { errorMessages?: Array<string> } | null;
-};
-
-type VersionRow = {
-  version: number;
-  revisionId: number;
-  lastModified: string | null;
-  modifiedByFullName: string | null;
-  size: number | null;
-};
 
 type State = { state: "loading" } | { state: "success"; versions: Array<VersionRow> } | { state: "fail"; error: Error };
 
-/** Shapes the shared version grouping into the rows this table renders. */
-function toVersionRows(revisions: Array<ApiRevision>): Array<VersionRow> {
-  return groupByVersion(revisions).map(({ version, revision }) => ({
-    version,
-    revisionId: revision.revisionId,
-    lastModified: revision.record.lastModified ?? null,
-    modifiedByFullName: revision.record.modifiedByFullName ?? null,
-    size: revision.record.size ?? null,
-  }));
-}
-
 /**
- * Lists a Gallery item's versions, newest first. Each row opens that version:
- * previewed in-app where the file type has a previewer, downloaded otherwise.
+ * Lists a Gallery item's versions, newest first. Each row opens that version's
+ * pinned view, so what a user lands on is also a URL they can copy and share.
  *
  * The history is read-only. Making an old version current is not offered here;
  * "Upload new version" is the forward-only equivalent.
@@ -90,13 +40,8 @@ export default function VersionHistoryDialog({
 }): React.ReactNode {
   const { t } = useTranslation(["gallery", "common"]);
   const [state, setState] = useState<State>({ state: "loading" });
-
-  const canPreviewAsImage = useImagePreviewOfGalleryFile();
-  const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
-  const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
-  const { openImagePreview } = useImagePreview();
-  const { openPdfPreview } = usePdfPreview();
-  const { openAsposePreviewFromDetails } = useAsposePreview();
+  const { useNavigate } = React.useContext(NavigateContext);
+  const navigate = useNavigate();
 
   /*
    * Depended on as a string rather than calling t() inside the effect, so a new
@@ -111,17 +56,9 @@ export default function VersionHistoryDialog({
     setState({ state: "loading" });
     void (async () => {
       try {
-        const id = idToString(file.id).elseThrow();
-        const { data } = await axios.get<VersionHistoryResponse>(`/gallery/ajax/versionHistory/${id}`);
+        const versions = await fetchVersionHistory(idToString(file.id).elseThrow(), loadFailedMessage);
         if (cancelled) return;
-        if (!data.data) {
-          // a 200 carrying an error envelope must not read as "no history yet"
-          throw new Error(data.error?.errorMessages?.[0] ?? loadFailedMessage);
-        }
-        setState({
-          state: "success",
-          versions: toVersionRows(data.data.revisions),
-        });
+        setState({ state: "success", versions });
       } catch (e) {
         if (cancelled) return;
         setState({
@@ -136,42 +73,26 @@ export default function VersionHistoryDialog({
   }, [open, file, loadFailedMessage]);
 
   /*
-   * Historical bytes only come from /Streamfile: the API's file endpoint has no
-   * version parameter.
+   * The live version has no version segment: it is the ordinary, editable item
+   * view, and linking straight to it saves a redirect.
    */
-  const versionUrl = (version: number) => `/Streamfile/${idToString(file.id).elseThrow()}?version=${version}`;
-
-  /*
-   * Which previewer to use depends on the file's type, which does not change
-   * between versions, so the live file decides it. Only the bytes differ, and
-   * those are addressed per version. Collabora and Office Online are excluded
-   * deliberately: they edit the live file and cannot open a historical version,
-   * so those types fall through to a download.
-   */
-  const openVersion = (row: VersionRow) => {
-    const url = versionUrl(row.version);
-    if (canPreviewAsImage(file).isOk) {
-      openImagePreview(url, { caption: [file.name] });
-      return;
-    }
-    if (canPreviewAsPdf(file).isOk) {
-      openPdfPreview(url);
-      return;
-    }
-    if (canPreviewWithAspose(file).isOk && file.extension) {
-      // Aspose conversion keys on the audit revision, not the user-facing version
-      void openAsposePreviewFromDetails({
-        documentId: Number(idToString(file.id).elseThrow()),
-        fileExtension: file.extension,
-        revisionId: row.revisionId,
-      });
-      return;
-    }
-    window.open(url);
+  const versionUrl = (version: number, isLive: boolean) => {
+    const id = idToString(file.id).elseThrow();
+    return isLive ? `/gallery/item/${id}` : `/gallery/item/${id}/${version}`;
   };
 
   const versionLabel = (version: number | "none") =>
     t("actionsMenu.versionHistory.columns.version", { version: String(version) });
+
+  /*
+   * On a pinned view `file.version` is the version being shown rather than the
+   * live one, so the newest row stands in for "current" there. Marking the shown
+   * version "current" would be a plain lie about an item that has newer content.
+   */
+  const liveVersion =
+    state.state === "success" && typeof file.pinnedVersion === "number"
+      ? (state.versions[0]?.version ?? null)
+      : (file.version ?? null);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -187,6 +108,7 @@ export default function VersionHistoryDialog({
               <TableHead>
                 <TableRow>
                   <TableCell>{versionLabel("none")}</TableCell>
+                  <TableCell>{t("actionsMenu.versionHistory.columns.name")}</TableCell>
                   <TableCell>{t("actionsMenu.versionHistory.columns.modified")}</TableCell>
                   <TableCell>{t("actionsMenu.versionHistory.columns.by")}</TableCell>
                   <TableCell>{t("actionsMenu.versionHistory.columns.size")}</TableCell>
@@ -197,16 +119,20 @@ export default function VersionHistoryDialog({
                   <TableRow key={row.version} data-test-id={`VersionHistory-row-${row.version}`}>
                     <TableCell>
                       <Link
-                        href={versionUrl(row.version)}
+                        href={versionUrl(row.version, row.version === liveVersion)}
                         onClick={(e: React.MouseEvent) => {
                           e.preventDefault();
-                          openVersion(row);
+                          navigate(versionUrl(row.version, row.version === liveVersion));
+                          onClose();
                         }}
                       >
                         {versionLabel(row.version)}
                       </Link>
-                      {row.version === file.version && t("actionsMenu.versionHistory.current")}
+                      {row.version === file.pinnedVersion && t("actionsMenu.versionHistory.viewing")}
+                      {row.version === liveVersion && t("actionsMenu.versionHistory.current")}
                     </TableCell>
+                    {/* per-version: a new version can be a differently named file */}
+                    <TableCell>{row.name ?? "—"}</TableCell>
                     <TableCell>{row.lastModified ? isoToLocale(row.lastModified) : "—"}</TableCell>
                     <TableCell>{row.modifiedByFullName ?? "—"}</TableCell>
                     <TableCell>{row.size === null ? "—" : formatFileSize(row.size)}</TableCell>

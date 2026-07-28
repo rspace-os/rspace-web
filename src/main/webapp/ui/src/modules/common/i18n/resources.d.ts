@@ -1786,6 +1786,7 @@ export default interface Resources {
         "columns": {
           "by": "By",
           "modified": "Modified",
+          "name": "Name",
           "size": "Size",
           "version": "Version{version, select, none {} other { {version}}}"
         },
@@ -1794,7 +1795,8 @@ export default interface Resources {
         "menuItem": "Version history",
         "none": "No version history is available for this item yet.",
         "tableLabel": "Version history",
-        "title": "Version history: {name}"
+        "title": "Version history: {name}",
+        "viewing": " (viewing)"
       },
       "view": "View"
     },
@@ -2057,6 +2059,13 @@ export default interface Resources {
     },
     "pageTitle": "RSpace Gallery",
     "pageTitleWithContext": "{pageContext} | RSpace Gallery",
+    "pinnedVersion": {
+      "invalid": "\"{version}\" is not a valid version number.",
+      "notFound": "This item has no version {version}.",
+      "notice": "Displaying version {version} of this item - this is locked for editing.",
+      "referencesAreItemLevel": "These references are to the item as a whole. RSpace does not record which version each was made against.",
+      "viewLatest": "View the latest version"
+    },
     "referencingInventoryItems": {
       "loadFailed": "Error loading related inventory items."
     },

@@ -79,6 +79,11 @@ resolved during design. This file is a glossary only — no implementation detai
   new file content). **Several revisions can share one version**, because not
   every recorded change bumps the counter. Revision and version are therefore not
   interchangeable, and code that treats them as such is wrong.
+  A version owns its own content and the metadata describing that content: its
+  **filename** (a new version may be a differently named file), its description,
+  its size and its modification date. All of those are properties of a version,
+  never of the item. Only the item's identity (its id and Global ID) and the
+  references made to it are shared across versions.
 - **Version history** — the canonical name, in the UI and in code, for the list
   of a record's versions, newest first. Where several revisions share a version,
   the history shows that version once, representing its final state. Named this
@@ -94,6 +99,18 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Filestore item** — a Gallery item that lives on an external store (S3, iRODS,
   Samba) and is only referenced by RSpace. Has no version history at all: RSpace
   never recorded its changes and cannot.
+- **Pinned version view** — a record displayed as it was at one past version,
+  reached by a shareable link and never editable. The version history lists
+  versions; a pinned version view shows one. Every record type has one (the ELN
+  calls its own the audit view), and each states plainly which version is on
+  screen and that it is locked.
+  _Avoid_: revision view, historical view, audit view (outside the ELN's own)
+- **Item-level reference** — a link or attachment from an ELN document or an
+  Inventory item to a Gallery item. References name the item, never one of its
+  versions: nothing records the version a reference was made against. So the
+  references shown beside a pinned version view are the item's, not that
+  version's, and must be worded so no one reads them as the latter.
+  _Avoid_: backlink to a version, version reference
 
 ## Internationalization (i18n)
 

@@ -24,7 +24,18 @@ public record GalleryVersionHistory(List<Revision> revisions, int revisionsCount
        * identifier in Java, so the component itself is named differently */
       @JsonProperty("record") Item item) {}
 
-  /** The state of the Gallery item at one revision. */
+  /**
+   * The state of the Gallery item at one revision.
+   *
+   * <p>{@code name} and {@code description} are per-revision, not per-item: uploading a new version
+   * can replace the file with a differently named one, and either can be edited at any time. Only
+   * the item's identity is shared across versions.
+   */
   public record Item(
-      Long version, String lastModified, String modifiedByFullName, long size, String name) {}
+      Long version,
+      String lastModified,
+      String modifiedByFullName,
+      long size,
+      String name,
+      String description) {}
 }

@@ -47,11 +47,18 @@ public class GalleryVersionHistoryTest {
   }
 
   private EcatMediaFile mediaAtVersion(long version, long size, String modifiedBy, Date modified) {
+    return mediaAtVersion(version, size, modifiedBy, modified, "assay.wav", "a recording");
+  }
+
+  private EcatMediaFile mediaAtVersion(
+      long version, long size, String modifiedBy, Date modified, String name, String description) {
     EcatAudio media = TestFactory.createEcatAudio(MEDIA_ID, user);
     media.setVersion(version);
     media.setSize(size);
     media.setModifiedBy(modifiedBy);
     media.setModificationDate(modified);
+    media.setName(name);
+    media.setDescription(description);
     return media;
   }
 
@@ -90,6 +97,48 @@ public class GalleryVersionHistoryTest {
 
     assertEquals(918L, history.revisions().get(0).item().size());
     assertEquals(2048L, history.revisions().get(1).item().size());
+  }
+
+  @Test
+  public void reportsTheNameAndDescriptionEachVersionCarried() {
+    /*
+     * Both are per-revision, not per-item: a new version can be a differently named file, and
+     * either can be edited at any time. Reporting the live values would put today's name and
+     * caption beside an older version's content.
+     */
+    when(baseRecordManager.retrieveMediaFile(user, MEDIA_ID))
+        .thenReturn(mediaAtVersion(2L, 200L, "alice", new Date(), "final.wav", "the final take"));
+    when(auditManager.getRevisionsForEntity(EcatMediaFile.class, MEDIA_ID))
+        .thenReturn(
+            List.of(
+                new AuditedEntity<>(
+                    mediaAtVersion(1L, 100L, "alice", new Date(), "first-draft.wav", "a rough cut"),
+                    10L),
+                new AuditedEntity<>(
+                    mediaAtVersion(2L, 200L, "alice", new Date(), "final.wav", "the final take"),
+                    20L)));
+
+    GalleryVersionHistory history = controller.getVersionHistory(MEDIA_ID).getData();
+
+    assertEquals("first-draft.wav", history.revisions().get(0).item().name());
+    assertEquals("a rough cut", history.revisions().get(0).item().description());
+    assertEquals("final.wav", history.revisions().get(1).item().name());
+    assertEquals("the final take", history.revisions().get(1).item().description());
+  }
+
+  @Test
+  public void aVersionWithNoDescriptionReportsNoneRatherThanTheLiveOne() {
+    when(baseRecordManager.retrieveMediaFile(user, MEDIA_ID))
+        .thenReturn(mediaAtVersion(2L, 200L, "alice", new Date(), "final.wav", "the final take"));
+    when(auditManager.getRevisionsForEntity(EcatMediaFile.class, MEDIA_ID))
+        .thenReturn(
+            List.of(
+                new AuditedEntity<>(
+                    mediaAtVersion(1L, 100L, "alice", new Date(), "first-draft.wav", null), 10L)));
+
+    GalleryVersionHistory history = controller.getVersionHistory(MEDIA_ID).getData();
+
+    assertNull(history.revisions().get(0).item().description());
   }
 
   @Test
