@@ -14,14 +14,12 @@ import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -32,7 +30,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 
 @WebAppConfiguration
-@RunWith(ConditionalTestRunner.class)
 public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   private @Autowired SystemSettingsApiController settingsController;
@@ -48,7 +45,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
 
   private BindingResult mockBindingResult = mock(BindingResult.class);
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     enableDataCiteRealConnectionSettings(true);
@@ -67,7 +64,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
         new MockHttpServletRequest(), igsnSettings, mockBindingResult, getSysAdminUser());
   }
 
-  @After
+  @AfterEach
   public void disableDataCiteConnection() throws BindException {
     ApiInventorySystemSettings.IdentifierSettings igsnSettings =
         new ApiInventorySystemSettings.IdentifierSettings();
@@ -88,7 +85,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
   public void realConnectionRegisterUpdateDeleteDataciteIdentifier() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
@@ -114,7 +111,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
   public void realConnection_BulkCreate_Find_Assign_Delete_Identifier() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
@@ -170,7 +167,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
   public void realConnectionRegisterPublishRetractDataciteIdentifier() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);

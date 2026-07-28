@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.auth.ShiroRealm;
@@ -17,8 +17,8 @@ import java.io.IOException;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.SimplePrincipalCollection;
 import org.apache.shiro.subject.Subject;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
@@ -31,7 +31,7 @@ public class LogoutControllerTest extends SpringTransactionalTest {
 
   private HttpServletRequest request;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     request = new MockHttpServletRequest();
     MockServletContext mockServletCtxt = new MockServletContext();

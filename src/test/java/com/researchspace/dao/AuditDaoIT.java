@@ -1,7 +1,7 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.EcatDocumentFile;
@@ -22,9 +22,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -54,7 +54,7 @@ public class AuditDaoIT extends RealTransactionSpringTestBase {
   private RSForm form;
   private List<BaseRecord> recorded = new ArrayList<BaseRecord>();
 
-  @Before
+  @BeforeEach
   public void setUp() {
 
     user = createInitAndLoginAnyUser();
@@ -62,7 +62,7 @@ public class AuditDaoIT extends RealTransactionSpringTestBase {
     recorded.clear();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

@@ -3,6 +3,7 @@ package com.researchspace.api.v1.auth;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -13,17 +14,15 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 
+@ExtendWith(MockitoExtension.class)
 public class CombinedApiAuthenticatorTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock ApiKeyAuthenticator apiKeyAuthenticator;
   @Mock OAuthTokenAuthenticator oAuthAuthenticator;
   @Mock AnalyticsManager analyticsManager;
@@ -37,7 +36,7 @@ public class CombinedApiAuthenticatorTest {
     mockRequest = new MockHttpServletRequest();
     setMockRequestAuthorizationHeader();
     User user = TestFactory.createAnyUser("testOauthUser");
-    when(apiAvailabilityHandler.isApiAvailableForUser(null)).thenReturn(true);
+    lenient().when(apiAvailabilityHandler.isApiAvailableForUser(null)).thenReturn(true);
     when(oAuthAuthenticator.authenticate(mockRequest)).thenReturn(user);
 
     /* run authenticator code with request using internal UI token */

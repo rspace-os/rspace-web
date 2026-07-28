@@ -4,10 +4,11 @@ import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrow
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.SystemPropertyTestFactory.createAnyAppWithConfigElements;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -67,15 +68,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -87,6 +87,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
+@ExtendWith(MockitoExtension.class)
 public class ExportControllerTest {
 
   private static final String WORD = "WORD";
@@ -110,8 +111,7 @@ public class ExportControllerTest {
         new Object[] {messages.getMessage("common:actions.export"), detail});
   }
 
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
-  @Rule public TemporaryFolder folder = new TemporaryFolder();
+  @TempDir public File folder;
 
   @Mock private UserManager mockUserMgr;
   @Mock private ImportStrategy importStrategyMock;
@@ -140,7 +140,7 @@ public class ExportControllerTest {
   private RedirectAttributes redirectAttributesMap;
   private byte[] any_bytes;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     session = new MockHttpSession();
     request = new MockHttpServletRequest();
@@ -150,7 +150,7 @@ public class ExportControllerTest {
 
     user = TestFactory.createAnyUser("user1a");
 
-    when(diskSpaceChecker.canStartArchiveProcess()).thenReturn(true);
+    lenient().when(diskSpaceChecker.canStartArchiveProcess()).thenReturn(true);
   }
 
   private static ExportSelection createExportSelection(Long[] ids, String[] names, String[] types) {
@@ -311,9 +311,9 @@ public class ExportControllerTest {
     setUpImportSuccessFile();
     // first test a successful import has no error messages and redirects to correct page
     assertEquals(
-        "Success redirect not sent",
         "redirect:/import/archiveImportReport",
-        exportController.importArchive(oKfile, session, redirectAttributesMap, principal));
+        exportController.importArchive(oKfile, session, redirectAttributesMap, principal),
+        "Success redirect not sent");
     verify(ontologyDocManager).updateImportedOntologiesWithCorrectForm("user1a");
   }
 
@@ -322,9 +322,9 @@ public class ExportControllerTest {
     setUpImportSuccessFile();
     // first test a successful import has no error messages and redirects to correct page
     assertEquals(
-        "Success redirect not sent",
         "redirect:/import/archiveImportReport",
-        exportController.importArchive(oKfile, session, redirectAttributesMap, principal));
+        exportController.importArchive(oKfile, session, redirectAttributesMap, principal),
+        "Success redirect not sent");
     assertFalse(
         redirectAttributesMap
             .getFlashAttributes()
@@ -567,7 +567,7 @@ public class ExportControllerTest {
     for (String validPath : toList("/abc.zip", "/a/b/c.zip", "/" + Max_PATH)) {
       path.setServerFilePath(validPath);
       violations = validator.validate(path);
-      assertTrue("Path " + validPath + " should be valid", violations.size() == 0);
+      assertTrue(violations.size() == 0, "Path " + validPath + " should be valid");
     }
   }
 
@@ -680,16 +680,16 @@ public class ExportControllerTest {
       String random = SecureStringUtils.getURLSafeSecureRandomString(10);
       String zip = random + ".zip";
       Matcher m = ExportImport.EXPORTED_ARCHIVE_NAME_PATTERN.matcher(zip);
-      assertTrue(zip + " doesn't match", m.matches());
+      assertTrue(m.matches(), zip + " doesn't match");
       zip = random + ".eln";
       Matcher m2 = ExportImport.EXPORTED_ARCHIVE_NAME_PATTERN.matcher(zip);
-      assertTrue(zip + " doesn't match", m2.matches());
+      assertTrue(m2.matches(), zip + " doesn't match");
       zip = random + ".csv";
       Matcher m3 = ExportImport.EXPORTED_ARCHIVE_NAME_PATTERN.matcher(zip);
-      assertTrue(zip + " doesn't match", m3.matches());
+      assertTrue(m3.matches(), zip + " doesn't match");
       String pdf = "export_" + random + ".pdf";
       Matcher m4 = ExportController.VALID_PDF_FILE_CHARS.matcher(pdf);
-      assertTrue(pdf + " doesn't match", m4.matches());
+      assertTrue(m4.matches(), pdf + " doesn't match");
     }
   }
 }

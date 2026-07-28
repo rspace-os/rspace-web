@@ -1,12 +1,12 @@
 package com.researchspace.model.dtos;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Community;
 import java.util.Arrays;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
@@ -14,7 +14,7 @@ public class CommunityValidatorTest {
 
   private CommunityValidator validator;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     validator = new CommunityValidator();
   }

@@ -1,6 +1,6 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.researchspace.Constants;
 import com.researchspace.core.util.ISearchResults;
@@ -30,8 +30,8 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 
@@ -40,15 +40,18 @@ public class UserDaoTest extends BaseDaoTestCase {
   private @Autowired RoleDao rdao;
   private @Autowired GroupDao grpdao;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @Test(expected = DataAccessException.class)
+  @Test
   public void testGetUserInvalid() throws Exception {
-    // should throw DataAccessException
-    userDao.get(1000L);
+    assertThrows(
+        DataAccessException.class,
+        () ->
+            // should throw DataAccessException
+            userDao.get(1000L));
   }
 
   @Test
@@ -88,7 +91,7 @@ public class UserDaoTest extends BaseDaoTestCase {
     log.debug("password: " + password);
   }
 
-  @Test(expected = DataAccessException.class)
+  @Test
   public void testUpdateUser() throws Exception {
     User user = userDao.get(-1L);
     userDao.saveUser(user);
@@ -96,8 +99,9 @@ public class UserDaoTest extends BaseDaoTestCase {
     user = userDao.get(-1L);
     // verify that violation occurs when adding new user with same username
     user.setId(null);
-    // should throw data exception
-    userDao.saveUser(user);
+    // saving a second user with the same username should violate the unique constraint
+    final User duplicate = user;
+    assertThrows(DataAccessException.class, () -> userDao.saveUser(duplicate));
   }
 
   @Test
@@ -119,7 +123,7 @@ public class UserDaoTest extends BaseDaoTestCase {
     flush();
 
     user = userDao.get(-1L);
-    assertEquals("more than 2 roles", INITIAL_ROLE_COUNT + 1, user.getRoles().size());
+    assertEquals(INITIAL_ROLE_COUNT + 1, user.getRoles().size(), "more than 2 roles");
 
     user.getRoles().remove(role);
     userDao.saveUser(user);
@@ -129,24 +133,20 @@ public class UserDaoTest extends BaseDaoTestCase {
     assertEquals(INITIAL_ROLE_COUNT, user.getRoles().size());
   }
 
-  @Test(expected = DataAccessException.class)
+  @Test
   public void testAddAndRemoveUser() throws Exception {
-
     flush();
     User user = TestFactory.createAnyUser("testuser");
     Role role = rdao.getRoleByName(Constants.USER_ROLE);
     assertNotNull(role.getId());
     user.addRole(role);
-
     user = userDao.saveUser(user);
     assertNotNull(user.getId());
     user = userDao.get(user.getId());
-
     userDao.remove(user.getId());
     flush();
-
-    // should throw DataAccessException
-    userDao.get(user.getId());
+    final Long removedId = user.getId();
+    assertThrows(DataAccessException.class, () -> userDao.get(removedId));
   }
 
   @Test

@@ -1,15 +1,15 @@
 package com.researchspace.export.pdf;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestRunnerController;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class SvgToPngConverterTest {
 
@@ -19,7 +19,7 @@ public class SvgToPngConverterTest {
 
   public static final int SIMPLEST_SVG_CONVERTED_LENGTH = 1495;
 
-  @BeforeClass
+  @BeforeAll
   public static void BeforeClass() throws Exception {
     TestRunnerController.ignoreIfFastRun();
   }
@@ -30,8 +30,8 @@ public class SvgToPngConverterTest {
     OutputStream ostream = new FileOutputStream(tempFile);
     new SvgToPngConverter().convert(SIMPLEST_SVG, ostream);
     assertTrue(
-        "unexpected .png file size after conversion from .svg",
-        SIMPLEST_SVG_CONVERTED_LENGTH <= tempFile.length());
+        SIMPLEST_SVG_CONVERTED_LENGTH <= tempFile.length(),
+        "unexpected .png file size after conversion from .svg");
   }
 
   @Test
@@ -41,7 +41,7 @@ public class SvgToPngConverterTest {
 
     OutputStream ostream = new FileOutputStream(tempFile);
     new SvgToPngConverter().convert(svg, ostream);
-    assertTrue("unexpected .png file size after conversion from .svg", 475 <= tempFile.length());
+    assertTrue(475 <= tempFile.length(), "unexpected .png file size after conversion from .svg");
   }
 
   @Test
@@ -51,7 +51,7 @@ public class SvgToPngConverterTest {
 
     OutputStream ostream = new FileOutputStream(tempFile);
     new SvgToPngConverter().convert(svg, ostream);
-    assertTrue("unexpected .png file size after conversion from .svg", 7883 <= tempFile.length());
+    assertTrue(7883 <= tempFile.length(), "unexpected .png file size after conversion from .svg");
   }
 
   @Test
@@ -62,6 +62,6 @@ public class SvgToPngConverterTest {
     assertFalse(html.contains(expectedImg));
 
     html = new SvgToPngConverter().replaceSvgObjectWithImg(html);
-    assertTrue("expected img tag, but was: " + html, html.contains(expectedImg));
+    assertTrue(html.contains(expectedImg), "expected img tag, but was: " + html);
   }
 }

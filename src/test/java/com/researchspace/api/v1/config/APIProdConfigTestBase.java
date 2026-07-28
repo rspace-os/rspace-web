@@ -2,18 +2,19 @@ package com.researchspace.api.v1.config;
 
 import com.researchspace.api.v1.throttling.APIRequestThrottler;
 import com.researchspace.testutils.TestRunnerController;
-import org.junit.BeforeClass;
+import com.researchspace.testutils.WithSpringContext;
+import org.junit.jupiter.api.BeforeAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 @ContextConfiguration(classes = ProdAPIConfig.class)
-public abstract class APIProdConfigTestBase extends AbstractJUnit4SpringContextTests {
+@WithSpringContext
+public abstract class APIProdConfigTestBase {
 
   @Autowired APIRequestThrottler userThrottler;
   @Autowired APIRequestThrottler globalThrottler;
 
-  @BeforeClass
+  @BeforeAll
   public static void BeforeClass() throws Exception {
     TestRunnerController.ignoreIfFastRun();
   }

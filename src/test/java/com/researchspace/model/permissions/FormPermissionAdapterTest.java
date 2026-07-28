@@ -3,21 +3,21 @@ package com.researchspace.model.permissions;
 import static com.researchspace.model.permissions.AbstractEntityPermissionAdapter.FORM_PROP_NAME;
 import static com.researchspace.model.permissions.FormPermissionAdapter.GLOBAL_PROPERTY_NAME;
 import static com.researchspace.model.permissions.FormPermissionAdapter.GROUP_PROPERTY_NAME;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class FormPermissionAdapterTest {
   private static final String TEMPLATE_NAME = "t1";
   FormPermissionAdapter adapter;
   RSForm anyForm;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     anyForm = TestFactory.createAnyForm(TEMPLATE_NAME);
     adapter = new FormPermissionAdapter(anyForm);
@@ -25,7 +25,7 @@ public class FormPermissionAdapterTest {
     adapter.setDomain(PermissionDomain.FORM);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test

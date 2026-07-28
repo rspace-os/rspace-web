@@ -2,9 +2,9 @@ package com.researchspace.service;
 
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
 import static java.util.stream.Collectors.toSet;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchiveResult;
@@ -34,11 +34,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -48,8 +47,8 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
   private @Autowired ExportImport exportMgr;
   private @Autowired RecordDeletionManager recordDeletionManager;
   private @Autowired AuditManager auditManager;
-  public @Rule TemporaryFolder tempExportFolder = new TemporaryFolder();
-  public @Rule TemporaryFolder tempImportFolder = new TemporaryFolder();
+  @TempDir public File tempExportFolder;
+  @TempDir public File tempImportFolder;
 
   @Autowired
   @Qualifier("standardPostExportCompletionImpl")
@@ -57,12 +56,12 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
 
   private @Autowired @Qualifier("importUsersAndRecords") ImportStrategy importStrategy;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -282,7 +281,7 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
     Folder subFolder = setUpFolderTree(u1);
     assertDistinctSharedRecordCountForU1(2, testGroup);
     // export top-level folder
-    ArchiveExportConfig cfg = createDefaultArchiveConfig(u1, tempExportFolder.getRoot());
+    ArchiveExportConfig cfg = createDefaultArchiveConfig(u1, tempExportFolder);
     ExportSelection exportSelection =
         ExportSelection.createRecordsExportSelection(
             new Long[] {subFolder.getId()}, new String[] {"FOLDER"});
@@ -292,7 +291,7 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
     File zipFile = result.get().getExportFile();
     // update user
     u1 = userMgr.getUserByUsername(u1.getUsername());
-    ArchivalImportConfig iconfig = createDefaultArchiveImportConfig(u1, tempImportFolder.getRoot());
+    ArchivalImportConfig iconfig = createDefaultArchiveImportConfig(u1, tempImportFolder);
     ImportArchiveReport report =
         exportMgr.importArchive(
             fileToMultipartfile(zipFile.getName(), zipFile),

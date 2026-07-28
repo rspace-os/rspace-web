@@ -1,10 +1,10 @@
 package com.researchspace.webapp.controller;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -28,21 +28,19 @@ import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.Set;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.ui.ExtendedModelMap;
 
+@ExtendWith(MockitoExtension.class)
 public class GroupControllerTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock UserManager userMgr;
   @Mock GroupManager grpMgr;
   @Mock IPermissionUtils permissionUtils;
@@ -61,7 +59,7 @@ public class GroupControllerTest {
   Group group = TestFactory.createAnyGroup(userPI, new User[] {userA});
   MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     grpController.setMessageSource(messages);
 
@@ -71,7 +69,7 @@ public class GroupControllerTest {
     userB.setConnectedGroups(new HashSet<>());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -92,7 +90,7 @@ public class GroupControllerTest {
               messages.getMessage("label.name"), Organisation.MAX_INDEXABLE_UTF_LENGTH
             }),
         response.getError().getAllErrorMessagesAsStringsSeparatedBy(""));
-    Mockito.verifyZeroInteractions(publisher);
+    Mockito.verifyNoInteractions(publisher);
     verify(grpMgr, never()).saveGroup(group, false, userPI);
 
     response =

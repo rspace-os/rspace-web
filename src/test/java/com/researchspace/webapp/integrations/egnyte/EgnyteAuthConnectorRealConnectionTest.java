@@ -5,16 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Map;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-@RunWith(ConditionalTestRunner.class)
+@EnabledIfSystemProperty(named = "nightly", matches = ".*")
 public class EgnyteAuthConnectorRealConnectionTest extends SpringTransactionalTest {
 
   @Autowired private EgnyteAuthConnector connector;
@@ -27,7 +25,6 @@ public class EgnyteAuthConnectorRealConnectionTest extends SpringTransactionalTe
   private String testPassword;
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testAccessTokenQuery() throws Exception {
 
     // non-existing user credentials
@@ -46,7 +43,6 @@ public class EgnyteAuthConnectorRealConnectionTest extends SpringTransactionalTe
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testTokenVerificationQuery() throws Exception {
 
     // invalid token - no entity connected

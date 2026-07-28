@@ -2,9 +2,9 @@ package com.researchspace.webapp.integrations.fieldmark;
 
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
-import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,12 +19,10 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.UserConnectionManager;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MvcResult;
@@ -33,7 +31,7 @@ import org.springframework.test.web.servlet.MvcResult;
  * Runs only on nightly builds (-Dnightly) against the real Fieldmark service; requires the
  * FIELDMARK_TOKEN environment variable to hold a valid bearer token.
  */
-@RunWith(ConditionalTestRunner.class)
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
 
   private static final FieldmarkApiImportRequest IMPORT_REQUEST =
@@ -45,11 +43,11 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
   private @Autowired UserConnectionManager userConnectionManager;
   private @Autowired ApiAvailabilityHandler apiHandler;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     assumeTrue(
-        "Skipping: set the FIELDMARK_TOKEN environment variable to run this",
-        LONG_LIVED_TOKEN != null);
+        LONG_LIVED_TOKEN != null,
+        "Skipping: set the FIELDMARK_TOKEN environment variable to run this");
     super.setUp();
     user = createInitAndLoginAnyUser();
     apiKey = createNewApiKeyForUser(user);
@@ -66,7 +64,6 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void testGetNotebookList() throws Exception {
     MvcResult result =
         mockMvc
@@ -93,7 +90,6 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void testImportNotebook() throws Exception {
     MvcResult result =
         mockMvc
@@ -121,7 +117,6 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void testGetIgsnCandidateFields() throws Exception {
     MvcResult result =
         mockMvc

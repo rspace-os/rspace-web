@@ -17,8 +17,8 @@ import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import java.time.Instant;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -31,7 +31,7 @@ public class InventoryExportApiControllerMVCIT extends API_MVC_InventoryTestBase
   private static final int EXPECTED_CONTENT_DISPOSITION_LENGTH =
       "attachment; filename=\"RSpace-2022-06-08-15-39-CSV-INVENTORY-pKGDzoo2GGXTkg.csv\"".length();
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
     anyUser = createInitAndLoginAnyUser();

@@ -16,15 +16,15 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBase {
 
   @Autowired private DigitalObjectIdentifierDao doiDao;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     inventoryIdentifierApiMgr.setDataCiteConnector(new DataCiteConnectorDummy());

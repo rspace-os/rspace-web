@@ -3,8 +3,8 @@ package com.researchspace.service.impl;
 import static com.researchspace.model.apps.App.APP_DATAVERSE;
 import static com.researchspace.model.apps.App.APP_ZENODO;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,18 +29,16 @@ import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.apache.velocity.app.VelocityEngine;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.scheduling.annotation.AsyncResult;
 
+@ExtendWith(MockitoExtension.class)
 public class AsyncDepositorImplTest {
-
-  public @Rule MockitoRule mockito = MockitoJUnit.rule();
   @Mock CommunicationManager comm;
   private @Mock RaIDServiceClientAdapter mockRaidServiceClientAdapter;
 
@@ -59,7 +57,7 @@ public class AsyncDepositorImplTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     underTest = new AsyncDepositorImplTSS();
     engine =

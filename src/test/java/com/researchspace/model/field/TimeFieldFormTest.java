@@ -4,13 +4,13 @@ import com.researchspace.core.testutil.ModelTestUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TimeFieldFormTest {
   TimeFieldForm tft;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     tft = new TimeFieldForm();
     tft.setColumnIndex(3);

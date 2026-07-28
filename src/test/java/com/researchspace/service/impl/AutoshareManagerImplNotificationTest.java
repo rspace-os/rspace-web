@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.RecordGroupSharing;
@@ -8,17 +8,17 @@ import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import java.lang.reflect.Field;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class AutoshareManagerImplNotificationTest {
 
   private AutoshareManagerImpl manager;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     manager = new AutoshareManagerImpl();
     Field messagesField = AutoshareManagerImpl.class.getDeclaredField("messages");

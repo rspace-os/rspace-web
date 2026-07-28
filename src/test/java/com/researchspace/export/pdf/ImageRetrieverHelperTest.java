@@ -1,8 +1,9 @@
 package com.researchspace.export.pdf;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,19 +37,17 @@ import java.io.IOException;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.velocity.app.VelocityEngine;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.ResourceLoader;
 
+@ExtendWith(MockitoExtension.class)
 public class ImageRetrieverHelperTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock private ResourceLoader resource;
   @Mock RSChemElementManager chemMgr;
   @Mock EcatImageAnnotationManager imageMgr;
@@ -74,7 +73,7 @@ public class ImageRetrieverHelperTest {
 
   @InjectMocks private ImageRetrieverHelperTSS imgRetrieverTSS;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     textupdater = new RichTextUpdater();
     exporter = TestFactory.createAnyUser("any");
@@ -193,14 +192,17 @@ public class ImageRetrieverHelperTest {
     setPermissionsToReturn(annotation, false);
     assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(annotationLink, config));
     // throwing auth exception handled as well.
-    when(mediaMgr.getImage(rawimg.getId(), config.getExporter(), true))
+    lenient()
+        .when(mediaMgr.getImage(rawimg.getId(), config.getExporter(), true))
         .thenThrow(AuthorizationException.class);
     assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(annotationLink, config));
   }
 
   void setPermissionsToReturn(IFieldLinkableElement element, boolean allow) {
-    when(permissions.isPermittedViaMediaLinksToRecords(
-            element, PermissionType.READ, config.getExporter()))
+    lenient()
+        .when(
+            permissions.isPermittedViaMediaLinksToRecords(
+                element, PermissionType.READ, config.getExporter()))
         .thenReturn(allow);
   }
 

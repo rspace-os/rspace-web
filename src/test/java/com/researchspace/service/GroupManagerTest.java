@@ -4,12 +4,12 @@ import static com.researchspace.Constants.PI_ROLE;
 import static com.researchspace.Constants.SYSADMIN_ROLE;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.service.UserFolderCreator.SHARED_SNIPPETS_FOLDER_PREFIX;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.openMocks;
@@ -48,10 +48,10 @@ import com.researchspace.testutils.TestGroup;
 import java.util.Arrays;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -63,14 +63,14 @@ public class GroupManagerTest extends SpringTransactionalTest {
   @Mock private UserContentUpdater userContentUpdaterMock;
   @Autowired private UserContentUpdater userContentUpdaterBean;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     openMocks(this);
     ReflectionTestUtils.setField(grpMgr, "userContentUpdater", userContentUpdaterMock);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     ReflectionTestUtils.setField(grpMgr, "userContentUpdater", userContentUpdaterBean);
   }

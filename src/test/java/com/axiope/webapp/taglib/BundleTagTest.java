@@ -1,9 +1,9 @@
 package com.axiope.webapp.taglib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
@@ -25,17 +25,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class BundleTagTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock private HttpServletRequest request;
   @Mock private PageContext pageContext;
@@ -62,7 +60,7 @@ public class BundleTagTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     originalReactDevModeProperty = System.getProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
     System.clearProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
@@ -129,7 +127,7 @@ public class BundleTagTest {
         .write(anyString());
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     if (originalReactDevModeProperty == null) {
       System.clearProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);

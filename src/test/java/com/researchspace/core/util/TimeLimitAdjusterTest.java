@@ -1,15 +1,15 @@
 package com.researchspace.core.util;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import lombok.Data;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TimeLimitAdjusterTest {
   @Data
@@ -28,7 +28,7 @@ public class TimeLimitAdjusterTest {
   Instant minusFourYears = null;
   Instant minusTwoYears = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     timeLimitadjuster = new DateRangeRestrictor();
     now = Instant.now();
@@ -37,7 +37,7 @@ public class TimeLimitAdjusterTest {
     minusTwoYears = now.minus(730, ChronoUnit.DAYS);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -118,18 +118,26 @@ public class TimeLimitAdjusterTest {
     assertTrue(adjusted.minus(okrange).isZero());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testDateRangeThrowsIAEIfToBeforeFrom() {
-    TestAdjustable cfg = new TestAdjustable();
-    Date fourYearsAgo = new Date(minusFourYears.toEpochMilli());
-    cfg.setDateFrom(nowDate);
-    cfg.setDateTo(fourYearsAgo);
-    timeLimitadjuster.restrictDateRange(cfg, approx6MonthDuration);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          TestAdjustable cfg = new TestAdjustable();
+          Date fourYearsAgo = new Date(minusFourYears.toEpochMilli());
+          cfg.setDateFrom(nowDate);
+          cfg.setDateTo(fourYearsAgo);
+          timeLimitadjuster.restrictDateRange(cfg, approx6MonthDuration);
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testDateRangeThrowsIAEIfDurationis0() {
-    TestAdjustable cfg = new TestAdjustable();
-    timeLimitadjuster.restrictDateRange(cfg, Duration.ofMillis(0));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          TestAdjustable cfg = new TestAdjustable();
+          timeLimitadjuster.restrictDateRange(cfg, Duration.ofMillis(0));
+        });
   }
 }

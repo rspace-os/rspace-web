@@ -1,16 +1,16 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
@@ -27,7 +27,7 @@ public class BaseRecordManagerTest extends SpringTransactionalTest {
 
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
@@ -50,9 +50,9 @@ public class BaseRecordManagerTest extends SpringTransactionalTest {
         (StructuredDocument) recordManager.get(basicDocument.getId());
     assertNotNull(retrievedDocument);
     assertEquals(
-        "BaseRecord property should be updated",
         TEST_NEW_DESCRIPTION,
-        retrievedDocument.getDescription());
+        retrievedDocument.getDescription(),
+        "BaseRecord property should be updated");
   }
 
   @Test
@@ -63,7 +63,7 @@ public class BaseRecordManagerTest extends SpringTransactionalTest {
 
     BaseRecord retrievedRecord = baseRecordManager.get(createdDocument.getId(), user);
     assertNotNull(retrievedRecord);
-    assertEquals("base record get should return created record", createdDocument, retrievedRecord);
+    assertEquals(createdDocument, retrievedRecord, "base record get should return created record");
 
     BaseRecord retrievedFolder = baseRecordManager.get(user.getRootFolder().getId(), user);
     assertNotNull(retrievedFolder);

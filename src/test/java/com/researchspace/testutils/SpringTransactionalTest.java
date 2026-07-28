@@ -1,7 +1,7 @@
 package com.researchspace.testutils;
 
 import static com.researchspace.Constants.USER_ROLE;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.Constants;
 import com.researchspace.dao.CommunicationDao;
@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.shiro.util.ThreadContext;
 import org.hibernate.search.mapper.orm.Search;
-import org.junit.After;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener;
@@ -46,8 +46,8 @@ import org.springframework.test.context.transaction.TransactionalTestExecutionLi
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Defines transactional behaviour for Spring transactional tests. Subclasses should remember to add
- * their own @After method which invokes super.tearDown() to ensure correct tidy up after each test.
+ * Defines transactional behaviour for Spring transactional tests. Subclasses overriding {@link
+ * #tearDown()} should invoke {@code super.tearDown()} to ensure correct tidy up after each test.
  */
 @TestExecutionListeners(
     value = {
@@ -70,7 +70,7 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   protected @Autowired InternalFileStore fileStore;
   protected @Autowired UserConnectionManager connMgr;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     contentInitializer.setCustomInitActive(true); // restore defaults
   }

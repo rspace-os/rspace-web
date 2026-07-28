@@ -1,8 +1,8 @@
 package com.axiope.userimport;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.model.dto.UserRegistrationInfo;
 import com.researchspace.properties.IMutablePropertyHolder;
@@ -11,8 +11,8 @@ import com.researchspace.service.MessageSourceUtils;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
 public class UserLineParserFromCSVTest {
@@ -26,7 +26,7 @@ public class UserLineParserFromCSVTest {
       "Fred, Blogs, fbloggs@gmail.com, Univeristy of Qwerty, ROLE_USER, user1, testPass";
   private String USER_LINE_VALID_SSO = "Fred, Blogs, fbloggs@gmail.com, ROLE_USER, user1";
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     lineParser = new UserLineParserFromCSV();
     lineParser.setUnamecreationStrategy(new UserNameFromFirstLastNameStrategy());

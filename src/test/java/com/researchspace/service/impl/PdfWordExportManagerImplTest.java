@@ -1,8 +1,8 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.export.pdf.ExportFormat;
@@ -19,28 +19,26 @@ import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@ExtendWith(MockitoExtension.class)
 public class PdfWordExportManagerImplTest {
 
   User anyUser, otherUser;
   RecordFactory recordFactory;
   ExportToFileConfig config;
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock IPermissionUtils permissions;
   @InjectMocks PdfWordExportManagerImpl pdfExporter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     ReflectionTestUtils.setField(
         pdfExporter, "messageSource", new MessageSourceUtils(new JsonMessageSource()));
@@ -53,7 +51,7 @@ public class PdfWordExportManagerImplTest {
     pdfExporter.setExportUtils(new ExportUtils());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -123,8 +121,8 @@ public class PdfWordExportManagerImplTest {
   private void assertExportName(String expected) throws IOException {
     ExportOperationDetails details = pdfExporter.createExportOperationDetails(config);
     assertTrue(
-        "name is " + details.getConcatenatedExportFile().getName(),
-        details.getConcatenatedExportFile().getName().matches(expected + "[\\w-]{8,12}\\.pdf"));
+        details.getConcatenatedExportFile().getName().matches(expected + "[\\w-]{8,12}\\.pdf"),
+        "name is " + details.getConcatenatedExportFile().getName());
   }
 
   private void assertIdExtractorReturned(Folder folder) {

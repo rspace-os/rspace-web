@@ -3,8 +3,8 @@ package com.researchspace.model.dtos;
 import static com.researchspace.model.Group.GROUP_UNIQUE_NAME_SUFFIX_LENGTH;
 import static com.researchspace.model.Organisation.MAX_INDEXABLE_UTF_LENGTH;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.GroupDao;
 import com.researchspace.model.Group;
@@ -15,8 +15,8 @@ import com.researchspace.testutils.TestFactory;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -33,7 +33,7 @@ public class GroupValidatorTest extends SpringTransactionalTest {
 
   private User owner;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     owner = TestFactory.createAnyUser("owner");
   }

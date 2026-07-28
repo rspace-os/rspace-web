@@ -2,8 +2,8 @@ package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.SamplesApiControllerMVCIT.NUM_FIELDS_IN_COMPLEX_SAMPLE;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
-import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -53,8 +53,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -74,7 +74,7 @@ public class SamplesApiControllerTest extends SpringTransactionalTest {
   private static final String PIC1_THUMBNAIL_CONTENT_HASH =
       "5ea6a96ab0150456ef34ca30e086c991696f8f59f18439a9e8cd5e565189f13b";
 
-  @Before
+  @BeforeEach
   public void setUp() {
     openMocks(this);
     sampleTemplateDao.resetDefaultTemplateOwner();

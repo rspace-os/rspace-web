@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -25,8 +25,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class NfsExportManagerTest extends SpringTransactionalTest {
@@ -41,7 +41,7 @@ public class NfsExportManagerTest extends SpringTransactionalTest {
   private NfsFileSystem testFileSystem;
   private NfsFileStore testFileStore;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
 
     user = createAndSaveRandomUser();

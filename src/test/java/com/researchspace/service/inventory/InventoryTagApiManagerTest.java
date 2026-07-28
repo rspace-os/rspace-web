@@ -5,14 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class InventoryTagApiManagerTest extends SpringTransactionalTest {
 
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));

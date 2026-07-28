@@ -17,8 +17,8 @@ import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
@@ -31,7 +31,7 @@ public class InstrumentsApiControllerTest extends SpringTransactionalTest {
   private final BindingResult mockBindingResult = mock(BindingResult.class);
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     testUser = createInitAndLoginAnyUser();
     assertTrue(testUser.isContentInitialized());

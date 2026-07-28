@@ -1,12 +1,12 @@
 package com.researchspace.service;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static com.researchspace.core.util.TransformerUtils.toSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.comms.CommunicationTargetFinderPolicy;
@@ -46,9 +46,9 @@ import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.UnexpectedRollbackException;
 
@@ -59,12 +59,12 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
 
   private static final int NAME_LENGTH = 10;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -85,9 +85,9 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
         reqCreateMgr.createRequest(config, piUser.getUsername(), createUserSet(other), null, null);
 
     // rspac-2264, unauthorised user can't cancel
-    assertExceptionThrown(
-        () -> communicationMgr.cancelRequest(other.getUsername(), mor.getId(), false),
-        AuthorizationException.class);
+    assertThrows(
+        AuthorizationException.class,
+        () -> communicationMgr.cancelRequest(other.getUsername(), mor.getId(), false));
     communicationMgr.cancelRequest(piUser.getUsername(), mor.getId(), false);
     // assert is notified that request was cancelled
     assertEquals(1, getNewNotificationCountForUser(other));
@@ -365,11 +365,13 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     // other now replies to User; this creates a new message
     reqUpdateMgr.replyToMessage(other.getUsername(), comm.getId(), "A reply form other");
     // rspac2264:
-    assertExceptionThrown(
+    assertThrows(
+        AuthorizationException.class,
         () ->
             reqUpdateMgr.replyToMessage(
-                maliciousMike.getUsername(), comm.getId(), "Reply from malicious Mike not allowed"),
-        AuthorizationException.class);
+                maliciousMike.getUsername(),
+                comm.getId(),
+                "Reply from malicious Mike not allowed"));
 
     Thread.sleep(1000);
 
@@ -420,14 +422,14 @@ public class CommunicationManagerIT extends RealTransactionSpringTestBase {
     // other dismisses the message
     try {
       openTransaction();
-      assertExceptionThrown(
+      assertThrows(
+          AuthorizationException.class,
           () ->
               reqUpdateMgr.updateStatus(
                   maliciousMike.getUsername(),
                   CommunicationStatus.COMPLETED,
                   comm.getId(),
-                  "updated"),
-          AuthorizationException.class);
+                  "updated"));
       commitTransaction();
     } catch (UnexpectedRollbackException e) {
       // expected

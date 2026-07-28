@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.protocolsio;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -18,18 +19,15 @@ import com.researchspace.service.SharingHandler;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.AjaxReturnObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ProtocolsIOControllerTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   private @Mock ProtocolsIOToDocumentConverter converter;
   private @Mock UserManager userMgr;
   private @Mock FolderManager folderMgr;
@@ -45,37 +43,36 @@ public class ProtocolsIOControllerTest {
   private Protocol protocol = getAProtocol();
   private StructuredDocument anyDoc = getADocument();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     importsFolder.setId(3L);
     sharedFolder.setId(1L);
     sharedNotebook.setId(4L);
     workspaceRootFolder.setId(5L);
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(subject);
-    when(converter.generateFromProtocol(protocol, subject, sharedFolder.getId())).thenReturn(null);
-    when(converter.generateFromProtocol(protocol, subject, workspaceRootFolder.getId()))
-        .thenReturn(null);
-    when(converter.generateFromProtocol(protocol, subject, importsFolder.getId()))
+    lenient()
+        .when(converter.generateFromProtocol(protocol, subject, importsFolder.getId()))
         .thenReturn(anyDoc);
-    when(converter.generateFromProtocol(protocol, subject, sharedNotebook.getId()))
+    lenient()
+        .when(converter.generateFromProtocol(protocol, subject, sharedNotebook.getId()))
         .thenReturn(anyDoc);
     when(folderMgr.getImportsFolder(subject)).thenReturn(importsFolder);
-    when(folderMgr.getFolder(sharedFolder.getId(), subject)).thenReturn(sharedFolder);
-    when(folderMgr.getFolder(importsFolder.getId(), subject)).thenReturn(importsFolder);
-    when(folderMgr.getFolder(sharedNotebook.getId(), subject)).thenReturn(sharedNotebook);
-    when(folderMgr.getFolder(workspaceRootFolder.getId(), subject)).thenReturn(workspaceRootFolder);
+    lenient().when(folderMgr.getFolder(sharedFolder.getId(), subject)).thenReturn(sharedFolder);
+    lenient().when(folderMgr.getFolder(sharedNotebook.getId(), subject)).thenReturn(sharedNotebook);
+    lenient()
+        .when(folderMgr.getFolder(workspaceRootFolder.getId(), subject))
+        .thenReturn(workspaceRootFolder);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void importExternalDataOK() {
     when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
             subject, workspaceRootFolder))
         .thenReturn(false);
-    when(recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
-            subject, importsFolder))
+    lenient()
+        .when(
+            recordManager.isSharedFolderOrSharedNotebookWithoutCreatePermission(
+                subject, importsFolder))
         .thenReturn(false);
     AjaxReturnObject<ProtocolsIOController.PIOResponse> rc =
         ctrller.importExternalData(

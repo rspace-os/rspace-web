@@ -2,27 +2,25 @@ package com.researchspace.core.util;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Date;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ResponseUtilsTest {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock HttpServletResponse resp;
   ResponseUtil util;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     util = new ResponseUtil();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test

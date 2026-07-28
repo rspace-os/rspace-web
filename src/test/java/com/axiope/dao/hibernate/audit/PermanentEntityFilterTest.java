@@ -1,7 +1,7 @@
 package com.axiope.dao.hibernate.audit;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.field.DateFieldForm;
@@ -15,22 +15,18 @@ import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TemporaryCopyLinkedToOriginalCopyPolicy;
 import com.researchspace.testutils.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class PermanentEntityFilterTest {
 
   ObjectAuditFilter filter = new PermanentEntityFilter();
   private User u;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     u = TestFactory.createAnyUser("user");
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testUnattachedFieldFilteredOut() {

@@ -36,8 +36,8 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -55,7 +55,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
 
   private BindingResult mockBindingResult = mock(BindingResult.class);
 
-  @Before
+  @BeforeEach
   public void setUp() {
     openMocks(this);
     ReflectionTestUtils.setField(containerMgr, "documentTagManager", documentTagManagerMock);

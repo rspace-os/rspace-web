@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.RemoteUserAttribute;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 public class OpenIdRemoteUserPolicyTest {
@@ -16,7 +16,7 @@ public class OpenIdRemoteUserPolicyTest {
   OpenIdRemoteUserPolicy openIdPolicy;
   MockHttpServletRequest req;
 
-  @Before
+  @BeforeEach
   public void before() {
     openIdPolicy = new OpenIdRemoteUserPolicy();
     req = new MockHttpServletRequest();

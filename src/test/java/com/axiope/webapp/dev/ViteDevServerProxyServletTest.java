@@ -1,9 +1,9 @@
 package com.axiope.webapp.dev;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -26,16 +26,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class ViteDevServerProxyServletTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule().silent();
 
   @Mock private HttpClient client;
   @Mock private HttpServletRequest request;
@@ -46,7 +47,7 @@ public class ViteDevServerProxyServletTest {
   private final AtomicReference<String> responseContentType = new AtomicReference<>();
   private ViteDevServerProxyServlet servlet;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     servlet = new ViteDevServerProxyServlet("http://127.0.0.1:5173", client);
 

@@ -24,8 +24,8 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +46,7 @@ public class InventoryItemCsvImporterTest extends SpringTransactionalTest {
 
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     MockitoAnnotations.openMocks(this);
     user = createAndSaveRandomUser();

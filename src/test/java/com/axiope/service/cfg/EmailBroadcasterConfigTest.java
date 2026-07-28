@@ -1,9 +1,9 @@
 package com.axiope.service.cfg;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.service.impl.EmailBroadcastImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Verifies the configured send rate is exposed by {@link EmailBroadcastImpl#getMaxSendingRate()}.

@@ -1,9 +1,9 @@
 package com.researchspace.api.v1.throttling;
 
 import static com.researchspace.api.v1.throttling.ApiRequestThrottlerImpl.DEFAULT_MIN_INTERVAL_MILLIS;
-import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
 import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.TimeSource;
 import com.researchspace.core.util.throttling.AllowanceTrackerSourceImpl;
@@ -13,26 +13,17 @@ import com.researchspace.core.util.throttling.TooManyRequestsException;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ApiRequestThrottlerTest {
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   ApiRequestThrottlerImpl throttler;
   @Mock TimeSource timesource;
   private String anyId = "any";
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testRequestReceivedEvery2SecondsMaintainsAllowance() {
@@ -47,11 +38,7 @@ public class ApiRequestThrottlerTest {
             sequentialTimes[0], ArrayUtils.subarray(sequentialTimes, 1, numTimeSourceRequests));
     // 10 every rolling 15 seconds allowed, we are doing 10 every 20 seconds so OK
     throttler = setUpThrottler();
-    IntStream.range(0, numCalls)
-        .forEach(
-            i -> {
-              assertTrue(throttler.proceed(anyId));
-            });
+    IntStream.range(0, numCalls).forEach(i -> assertTrue(throttler.proceed(anyId)));
   }
 
   ApiRequestThrottlerImpl setUpThrottler() {
@@ -81,12 +68,8 @@ public class ApiRequestThrottlerTest {
     throttler =
         new ApiRequestThrottlerImpl(
             timesource, set, new AllowanceTrackerSourceImpl(timesource, set));
-    IntStream.range(0, numCalls)
-        .forEach(
-            i -> {
-              assertTrue(throttler.proceed(anyId));
-            });
-    assertExceptionThrown(() -> throttler.proceed(anyId), TooManyRequestsException.class);
+    IntStream.range(0, numCalls).forEach(i -> assertTrue(throttler.proceed(anyId)));
+    assertThrows(TooManyRequestsException.class, () -> throttler.proceed(anyId));
   }
 
   private ThrottleDefinitionSet createThrottleDefinitionSet() {
@@ -108,11 +91,7 @@ public class ApiRequestThrottlerTest {
         .thenReturn(sequentialTimes[0], ArrayUtils.subarray(sequentialTimes, 1, maxIn15s));
     throttler = setUpThrottler();
     throttler.setMinIntervalMillis(0);
-    IntStream.range(0, maxIn15s)
-        .forEach(
-            i -> {
-              assertTrue(throttler.proceed(anyId));
-            });
+    IntStream.range(0, maxIn15s).forEach(i -> assertTrue(throttler.proceed(anyId)));
   }
 
   @Test
@@ -128,7 +107,7 @@ public class ApiRequestThrottlerTest {
     // first call always OK
     throttler.proceed(anyId);
     // 1 more invocation will throw exception
-    assertExceptionThrown(() -> throttler.proceed(anyId), TooManyRequestsException.class);
+    assertThrows(TooManyRequestsException.class, () -> throttler.proceed(anyId));
   }
 
   @Test
@@ -146,12 +125,9 @@ public class ApiRequestThrottlerTest {
             sequentialTimes[0], ArrayUtils.subarray(sequentialTimes, 1, numTimeSourceRequests));
     throttler = setUpThrottler();
     IntStream.range(0, expectedSuccessFullInvocations)
-        .forEach(
-            i -> {
-              assertTrue(throttler.proceed(anyId));
-            });
+        .forEach(i -> assertTrue(throttler.proceed(anyId)));
     // 1 more invocation will throw exception
-    assertExceptionThrown(() -> throttler.proceed(anyId), TooManyRequestsException.class);
+    assertThrows(TooManyRequestsException.class, () -> throttler.proceed(anyId));
 
     // but other user works fine
     Mockito.clearInvocations(timesource);
@@ -161,10 +137,7 @@ public class ApiRequestThrottlerTest {
         .thenReturn(
             sequentialTimes[0], ArrayUtils.subarray(sequentialTimes, 1, numTimeSourceRequests));
     IntStream.range(0, expectedSuccessFullInvocations)
-        .forEach(
-            i -> {
-              assertTrue(throttler.proceed(otherUser));
-            });
+        .forEach(i -> assertTrue(throttler.proceed(otherUser)));
   }
 
   // this tests shows the throttler does not wait until the time window has expired.
@@ -183,10 +156,7 @@ public class ApiRequestThrottlerTest {
     throttler = setUpThrottler();
     throttler.setMinIntervalMillis(1); // just so as not to have to worry about this
     IntStream.range(0, expectedSuccessFullInvocations)
-        .forEach(
-            i -> {
-              assertTrue(throttler.proceed(anyId));
-            });
+        .forEach(i -> assertTrue(throttler.proceed(anyId)));
   }
 
   private DateTime[] setupSequentialDateTimeCalls(int numCalls, int intervalMillis) {

@@ -1,28 +1,27 @@
 package com.researchspace.ldap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.ldap.impl.UserLdapRepoImpl;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.properties.PropertyHolder;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.DefaultTestContext;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.researchspace.testutils.WithSpringContext;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 /**
  * Tests autowired UserLdapRepo, which currently connects to test ldap server on
  * kudu.researchspace.com (as configured in deployment.properties and set by BaseConfig)
  */
-@RunWith(ConditionalTestRunner.class)
 @DefaultTestContext
-public class UserLdapRepoRealConnectionTest extends AbstractJUnit4SpringContextTests {
+@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@WithSpringContext
+public class UserLdapRepoRealConnectionTest {
 
   // binary value of this sid is saved in openldap on kudu, in userPKCS12 attribute
   private static final String LDAPUSER1_TEST_SID = "S-1-5-32-546";
@@ -32,7 +31,6 @@ public class UserLdapRepoRealConnectionTest extends AbstractJUnit4SpringContextT
   @Autowired private IPropertyHolder iProperties;
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testRetrieveTestUserFromLdap() {
 
     User ldapUser1 = userLdapRepo.findUserByUsername("ldapUser1");
@@ -50,7 +48,6 @@ public class UserLdapRepoRealConnectionTest extends AbstractJUnit4SpringContextT
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void testAuthenticateUser() {
     boolean isLdapAuthEnabled = iProperties.isLdapAuthenticationEnabled();
     ((PropertyHolder) iProperties).setLdapAuthenticationEnabled("true");

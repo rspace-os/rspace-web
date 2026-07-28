@@ -1,9 +1,10 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.client.BioPortalOntologiesClient;
@@ -12,15 +13,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.stereotype.Service;
 
+@ExtendWith(MockitoExtension.class)
 @Slf4j
 @Service
 public class BioPortalOntologiesServiceTest {
@@ -31,14 +31,8 @@ public class BioPortalOntologiesServiceTest {
           + " Classification|NCBITAXON|~!~Ctenotus"
           + " hanloni|http://purl.obolibrary.org/obo/VTO_0018361||VTO|http://purl.obolibrary.org/obo/VTO_0018361|Ctenotus"
           + " hanloni||Vertebrate Taxonomy Ontology|VTO|";
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock private BioPortalOntologiesClient bioOntologiesClientMock;
   @InjectMocks private BioPortalOntologiesService testee;
-
-  @Before
-  public void setUp() {
-    when(bioOntologiesClientMock.getBioOntologyData(any(String.class))).thenReturn("");
-  }
 
   @Test
   public void shouldSwallowExceptions() {
@@ -55,7 +49,9 @@ public class BioPortalOntologiesServiceTest {
 
   @Test
   public void shouldReturnEmptyListWhenFilterTermLessThanTwoChars() {
-    when(bioOntologiesClientMock.getBioOntologyData(any(String.class))).thenReturn(realBioData);
+    lenient()
+        .when(bioOntologiesClientMock.getBioOntologyData(any(String.class)))
+        .thenReturn(realBioData);
     assertEquals(0, testee.getBioOntologyDataForQuery("aa").size());
   }
 
@@ -67,19 +63,19 @@ public class BioPortalOntologiesServiceTest {
     List<String> data = testee.getBioOntologyDataForQuery("cen");
     assertEquals(2, data.size());
     assertTrue(
-        "unexpected: " + Arrays.toString(data.toArray()),
         data.contains(
             "Ctenotus"
                 + " hanloni__RSP_EXTONT_URL_DELIM__http://purl.bioontology.org/ontology/NCBITAXON/480744__RSP_EXTONT_NAME_DELIM__NCBITAXON__RSP_EXTONT_VERSION_DELIM__https://bioportal.bioontology.org/ontologies/NCBITAXON"
                 + "  on: "
-                + getTodayDateFormatted()));
+                + getTodayDateFormatted()),
+        "unexpected: " + Arrays.toString(data.toArray()));
     assertTrue(
-        "unexpected: " + Arrays.toString(data.toArray()),
         data.contains(
             "Ctenotus"
                 + " hanloni__RSP_EXTONT_URL_DELIM__http://purl.obolibrary.org/obo/VTO_0018361__RSP_EXTONT_NAME_DELIM__VTO__RSP_EXTONT_VERSION_DELIM__https://bioportal.bioontology.org/ontologies/VTO"
                 + "  on: "
-                + getTodayDateFormatted()));
+                + getTodayDateFormatted()),
+        "unexpected: " + Arrays.toString(data.toArray()));
   }
 
   private String getTodayDateFormatted() {

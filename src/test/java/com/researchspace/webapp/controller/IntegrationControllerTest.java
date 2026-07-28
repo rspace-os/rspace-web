@@ -1,8 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -16,18 +17,16 @@ import com.researchspace.testutils.BaseManagerTestCaseBase.MockPrincipal;
 import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class IntegrationControllerTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @InjectMocks IntegrationController integrationCtrller;
   MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
   @Mock IntegrationsHandler handler;
@@ -37,7 +36,7 @@ public class IntegrationControllerTest {
 
   private final int INTEGRATIONS_AMOUNT = 29;
 
-  @Before
+  @BeforeEach
   public void setup() {
     integrationCtrller.setMessageSource(messages);
     subject = TestFactory.createAnyUser("any");
@@ -78,7 +77,8 @@ public class IntegrationControllerTest {
 
   @Test
   public void testGetAllIntegrationsInfo() {
-    when(handler.getIntegration(Mockito.eq(subject), Mockito.anyString()))
+    lenient()
+        .when(handler.getIntegration(Mockito.eq(subject), Mockito.anyString()))
         .thenReturn(new IntegrationInfo());
     AjaxReturnObject<Map<String, IntegrationInfo>> infos =
         integrationCtrller.getAllIntegrationsInfo(principal);

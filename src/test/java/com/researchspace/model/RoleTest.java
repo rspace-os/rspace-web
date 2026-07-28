@@ -1,22 +1,23 @@
 package com.researchspace.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RoleTest {
   Role role = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {}
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {}
 
   @Test
@@ -44,9 +45,13 @@ public class RoleTest {
     assertTrue(Role.isRoleStringIdentifiable("ROLE_GROUP_OWNER"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testRoleStringThrowsIAEIfUnknownRoleName() {
-    new Role("unknownrole");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          new Role("unknownrole");
+        });
   }
 
   @Test

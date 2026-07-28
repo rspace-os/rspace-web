@@ -1,8 +1,8 @@
 package com.researchspace.webapp.integrations.wopi;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
@@ -14,26 +14,24 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.shiro.session.mgt.SimpleSession;
 import org.apache.shiro.subject.Subject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.HandlerMapping;
 
+@ExtendWith(MockitoExtension.class)
 public class WopiAuthorisationInterceptorTest extends SpringTransactionalTest {
 
   @Autowired private WopiAuthorisationInterceptor authInterceptor;
 
   @Autowired private WopiAccessTokenHandler accessTokenHandler;
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
 
   @Mock private Subject subject;
 
@@ -42,15 +40,15 @@ public class WopiAuthorisationInterceptorTest extends SpringTransactionalTest {
   private MockHttpServletResponse resp;
   private ShiroTestUtils shiroTestUtils;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     testUser = doCreateAndInitUser(getRandomAlphabeticString("wopi"));
     shiroTestUtils = new ShiroTestUtils();
     shiroTestUtils.setSubject(subject);
-    Mockito.when(subject.getSession()).thenReturn(new SimpleSession());
+    Mockito.lenient().when(subject.getSession()).thenReturn(new SimpleSession());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     shiroTestUtils.clearSubject();
   }

@@ -17,19 +17,19 @@ import com.researchspace.webapp.controller.SignupController;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.mockito.Matchers;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 
+@ExtendWith(MockitoExtension.class)
 public class CloudNotificationManagerTest extends SpringTransactionalTest {
 
   @Autowired private CloudNotificationManager cloudNotificationMgr;
@@ -41,15 +41,14 @@ public class CloudNotificationManagerTest extends SpringTransactionalTest {
   private User inviterPI;
   private Group inviterGroup;
   private User invitee;
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock Logger log;
 
-  @After
+  @AfterEach
   public void teardown() throws Exception {
     getBeanOfClass(ConfigurableLogger.class).setLoggerDefault();
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
 
     analyticsMgrMock = mock(AnalyticsManager.class);
@@ -135,16 +134,16 @@ public class CloudNotificationManagerTest extends SpringTransactionalTest {
   private void verifyNoJoinAnalytics() {
     verify(analyticsMgrMock, never())
         .joinGroupInvitationSent(
-            Matchers.any(User.class),
-            Matchers.any(User.class),
-            Matchers.any(HttpServletRequest.class));
+            ArgumentMatchers.any(User.class),
+            ArgumentMatchers.any(User.class),
+            ArgumentMatchers.any(HttpServletRequest.class));
   }
 
   private void verifyNoShareAnalytics() {
     verify(analyticsMgrMock, never())
         .shareDocInvitationSent(
-            Matchers.any(User.class),
-            Matchers.any(User.class),
-            Matchers.any(HttpServletRequest.class));
+            ArgumentMatchers.any(User.class),
+            ArgumentMatchers.any(User.class),
+            ArgumentMatchers.any(HttpServletRequest.class));
   }
 }

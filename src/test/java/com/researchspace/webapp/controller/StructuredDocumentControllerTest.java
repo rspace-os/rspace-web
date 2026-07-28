@@ -1,21 +1,22 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
 import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -69,14 +70,12 @@ import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.OngoingStubbing;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
@@ -86,9 +85,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.web.multipart.MultipartFile;
 
+@ExtendWith(MockitoExtension.class)
 public class StructuredDocumentControllerTest {
-
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
 
   @Mock private UserManager userMgr;
   @Mock private RecordManager recordMgr;
@@ -114,7 +112,7 @@ public class StructuredDocumentControllerTest {
   private MockServletContext context;
   private MockHttpSession session;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     session = new MockHttpSession();
     strucDocCtrller = new StructuredDocumentController();
@@ -141,9 +139,6 @@ public class StructuredDocumentControllerTest {
     user = TestFactory.createAnyUser("user");
     mockPrincipal = new MockPrincipal(user.getUsername());
   }
-
-  @After
-  public void tearDown() {}
 
   @Test
   public void testRenameErrorWithAnEmptyName() {
@@ -292,7 +287,9 @@ public class StructuredDocumentControllerTest {
 
     // invalid tags rejected
     tagText = "<img src='' onerror='alert(3);'>";
-    when(documentTagManager.saveTag(recordId, tagText, user)).thenReturn(anySuccessResult());
+    lenient()
+        .when(documentTagManager.saveTag(recordId, tagText, user))
+        .thenReturn(anySuccessResult());
 
     when(validator.validateAndGetErrorList(
             Mockito.any(RSpaceTag.class), Mockito.any(TagValidator.class)))
@@ -303,13 +300,13 @@ public class StructuredDocumentControllerTest {
     assertNull(rc.getData());
   }
 
-  @Test()
+  @Test
   public void testGetTooLongTagRejected() {
     CoreTestUtils.assertIllegalArgumentException(
         () -> strucDocCtrller.getTags(randomAlphanumeric(StructuredDocument.MAX_TAG_LENGTH + 1)));
   }
 
-  @Test()
+  @Test
   public void testGetTags() {
     strucDocCtrller.getTags(randomAlphanumeric(StructuredDocument.MAX_TAG_LENGTH));
     Mockito.verify(documentTagManager)
@@ -337,7 +334,7 @@ public class StructuredDocumentControllerTest {
     assertTrue(aro.getData());
   }
 
-  @Test(expected = AuthorizationException.class)
+  @Test
   public void editDescriptionThrowsAuthExceptionIfNotWritePermission() {
     generalExpectations();
     final Folder toEdit = TestFactory.createAFolder("any", user);
@@ -345,11 +342,12 @@ public class StructuredDocumentControllerTest {
     when(baseRecordMgr.get(1L, user)).thenReturn(toEdit);
     verify(baseRecordMgr, never()).save(toEdit, user);
     when(permissionUtils.isPermitted(toEdit, PermissionType.WRITE, user)).thenReturn(false);
-
-    strucDocCtrller.setDocumentDescription(1L, "desc23", mockPrincipal);
+    assertThrows(
+        AuthorizationException.class,
+        () -> strucDocCtrller.setDocumentDescription(1L, "desc23", mockPrincipal));
   }
 
-  @Test(expected = ObjectRetrievalFailureException.class)
+  @Test
   public void editDescriptionThrowsISEIfNotExists() {
     generalExpectations();
     final Folder toEdit = TestFactory.createAFolder("any", user);
@@ -357,9 +355,9 @@ public class StructuredDocumentControllerTest {
     when(baseRecordMgr.get(1L, user)).thenThrow(new ObjectRetrievalFailureException("", null));
     verify(baseRecordMgr, never()).save(toEdit, user);
     verify(permissionUtils, never()).isPermitted(toEdit, PermissionType.WRITE, user);
-    when(permissionUtils.isPermitted(toEdit, PermissionType.WRITE, user)).thenReturn(false);
-
-    strucDocCtrller.setDocumentDescription(1L, "desc23", mockPrincipal);
+    assertThrows(
+        ObjectRetrievalFailureException.class,
+        () -> strucDocCtrller.setDocumentDescription(1L, "desc23", mockPrincipal));
   }
 
   @Test
@@ -390,7 +388,7 @@ public class StructuredDocumentControllerTest {
   }
 
   private void generalExpectations() {
-    when(userMgr.getUserByUsername(eq(user.getUsername()))).thenReturn(user);
+    lenient().when(userMgr.getUserByUsername(eq(user.getUsername()))).thenReturn(user);
   }
 
   @Test
@@ -449,8 +447,8 @@ public class StructuredDocumentControllerTest {
     getAuthenticatedUser();
 
     aro = strucDocCtrller.addComment(2L + "", 1L + "", "comment");
-    assertTrue("Data reposnse not true", aro.getData());
-    assertNull("error message not null", aro.getErrorMsg());
+    assertTrue(aro.getData(), "Data reposnse not true");
+    assertNull(aro.getErrorMsg(), "error message not null");
   }
 
   private void getAuthenticatedUser() {
@@ -466,9 +464,9 @@ public class StructuredDocumentControllerTest {
     generalExpectations();
     when(recordMgr.getParentFolderOfRecordOwner(3L, user)).thenReturn(null);
 
-    assertExceptionThrown(
-        () -> strucDocCtrller.deleteStructuredDocument(3L, mockPrincipal),
-        IllegalStateException.class);
+    assertThrows(
+        IllegalStateException.class,
+        () -> strucDocCtrller.deleteStructuredDocument(3L, mockPrincipal));
   }
 
   @Test
@@ -488,8 +486,8 @@ public class StructuredDocumentControllerTest {
     when(recordMgr.get(3L)).thenReturn(sd);
 
     assertTrue(
-        "Did not have 1 comment ",
-        strucDocCtrller.getComments(2L, null, mockPrincipal).size() == 1);
+        strucDocCtrller.getComments(2L, null, mockPrincipal).size() == 1,
+        "Did not have 1 comment ");
 
     items.get(0).setEcatComment(createdComment); // reset this
     // now try if permission denied....throws AuthException

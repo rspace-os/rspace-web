@@ -1,15 +1,16 @@
 package com.researchspace.export.pdf;
 
 import static com.researchspace.testutils.RSpaceTestUtils.setupVelocityWithTextFieldTemplates;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atMost;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
@@ -32,16 +33,15 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@ExtendWith(MockitoExtension.class)
 public class MSWordProcessorTest {
 
   public static final String STOICHIOMETRY_HTML =
@@ -51,7 +51,6 @@ public class MSWordProcessorTest {
           + " class='external-workflow-table'><tbody><tr><td>Galaxy data</td></tr></tbody></table>"
           + "</div></body></html>";
   MSWordProcessor mswordExporter;
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @Mock DocumentConversionService converter;
   @Mock ImageRetrieverHelper imageRetriever;
   @Mock IRSpaceDoc rspaceDoc;
@@ -65,9 +64,8 @@ public class MSWordProcessorTest {
   private ExportProcessorInput input;
   private ConversionResult success;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
-    initMocks(this);
     cfg = getConfig();
     outfile = File.createTempFile("any", ".doc");
     success = new ConversionResult(outfile, "ms/word");
@@ -86,12 +84,10 @@ public class MSWordProcessorTest {
     rtupdater = new RichTextUpdater();
     rtupdater.setVelocity(setupVelocityWithTextFieldTemplates());
     htmlProcessed = Jsoup.parse(STOICHIOMETRY_HTML).html();
-    when(stoichiometryHtmlGenerator.addStoichiometryLinks(eq(htmlProcessed), eq(exporter)))
+    lenient()
+        .when(stoichiometryHtmlGenerator.addStoichiometryLinks(eq(htmlProcessed), eq(exporter)))
         .thenReturn(htmlProcessed);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testSupportsFormat() {
@@ -99,10 +95,12 @@ public class MSWordProcessorTest {
     assertFalse(mswordExporter.supportsFormat(ExportFormat.PDF));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testMakeExportThrowsIAEIfExportFormatisPdf() throws IOException {
     cfg.setExportFormat("PDF");
-    mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> mswordExporter.makeExport(outfile, input, rspaceDoc, cfg));
     verify(imageRetriever, Mockito.never())
         .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
     verify(converter, never()).convert(any(Convertible.class), eq("doc"), eq(outfile));

@@ -19,7 +19,7 @@ import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.validation.BindException;
 
 public class BasketApiManagerTest extends SpringTransactionalTest {

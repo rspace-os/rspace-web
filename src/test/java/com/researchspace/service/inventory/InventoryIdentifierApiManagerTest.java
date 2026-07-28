@@ -32,8 +32,8 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummyError;
 import java.util.List;
 import javax.naming.InvalidNameException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
@@ -44,7 +44,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
 
   private DataCiteConnectorDummy dataCiteConnectorDummy;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     dataCiteConnectorDummy = new DataCiteConnectorDummy();
@@ -245,10 +245,12 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(result.get(2), user);
   }
 
-  @Test(expected = DataCiteConnectionException.class)
+  @Test
   public void testRegisterBulkIdentifiersThrowsError() {
     inventoryIdentifierApiMgr.setDataCiteConnector(new DataCiteConnectorDummyError());
-    inventoryIdentifierApiMgr.registerBulkIdentifiers(3, user);
+    assertThrows(
+        DataCiteConnectionException.class,
+        () -> inventoryIdentifierApiMgr.registerBulkIdentifiers(3, user));
   }
 
   @Test
