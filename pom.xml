@@ -1673,12 +1673,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <!-- Pinned to an immutable commit rather than the moving branch SNAPSHOT: the SNAPSHOT let a
-           stale core-model (entities still on bare @GeneratedValue(TABLE), allocating from the shared
-           "default" id segment) be built into the WAR, so ids collided at runtime. This commit includes
-           the per-entity @TableGenerator work for every TABLE-strategy entity. Re-float to the branch
-           SNAPSHOT once the migration branches merge. -->
-      <version>49d9086c6b93432730bb940144c9f0bd31fcb933</version>
+      <version>3.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
