@@ -8,6 +8,8 @@
  * requires global.js
  */
 
+"use strict";
+
 /*
  * arguments
  * - idsToPublishGetter - a function to get all the ids to publish
@@ -115,32 +117,20 @@ function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector =
         }
     });
 
-    function createTextArea(text) {
-        textArea = document.createElement('textArea');
+    // Legacy execCommand copy, for browsers that reject navigator.clipboard.writeText.
+    // The textarea is local so no state is shared between invocations.
+    const copyWithSelection = (text) => {
+        const textArea = document.createElement('textarea');
         textArea.value = text;
         document.body.appendChild(textArea);
-    }
-    function selectText() {
-        var range,
-            selection;
-
-            range = document.createRange();
-            range.selectNodeContents(textArea);
-            selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
-            textArea.setSelectionRange(0, 999999);
-    }
-
-    function copyToClipboard() {
-        const successful = document.execCommand('copy');
+        const range = document.createRange();
+        range.selectNodeContents(textArea);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        textArea.setSelectionRange(0, 999999);
+        document.execCommand('copy');
         document.body.removeChild(textArea);
-        console.log(successful);
-    }
-    const fallbackCopyTextToClipboard2 = (text) => {
-        createTextArea(text);
-        selectText();
-        copyToClipboard();
     }
     const  fallbackCopyTextToClipboard = (text) => {
         if($('#copy_to_clipboard').length > 0){
@@ -148,8 +138,8 @@ function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector =
         }
         const btn = document.createElement("button");
         btn.setAttribute("id", 'copy_to_clipboard');
-        btn.textContent = 'copy lastest links';
-        btn.onclick = ()=>fallbackCopyTextToClipboard2(text);
+        btn.textContent = 'copy latest links';
+        btn.onclick = ()=>copyWithSelection(text);
         // // Avoid scrolling to bottom
         btn.style.top = "0";
         btn.style.left = "10%";

@@ -129,6 +129,9 @@ public class NotebookEditorController extends BaseController {
     }
 
     model.addAttribute("user", user);
+    // notebookEditor.jsp gates the Share action on this being non-empty in non-cloud
+    // deployments, so the React share dialog is unreachable without it
+    model.addAttribute("groups", groupManager.listGroupsForUser());
 
     FormMenu formMenu = formManager.generateFormMenu(user);
     model.addAttribute("formsForCreateMenuPagination", formMenu.getFormsForCreateMenuPagination());

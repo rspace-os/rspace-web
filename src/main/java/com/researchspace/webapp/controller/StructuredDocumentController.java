@@ -574,6 +574,9 @@ public class StructuredDocumentController extends BaseController {
       model.addAttribute("settingsKey", settingsKey);
     }
     model.addAttribute("extMessaging", getExternalMessagingIntegrationInfos(user));
+    // structuredDocument.jsp gates the Share action on this being non-empty in non-cloud
+    // deployments, so the React share dialog is unreachable without it
+    model.addAttribute("groups", groupManager.listGroupsForUser());
     model.addAttribute(
         "clientUISettingsPref", getUserPreferenceValue(user, Preference.UI_CLIENT_SETTINGS));
     auditService.notify(new GenericEvent(user, structuredDocument, AuditAction.READ));
