@@ -205,6 +205,13 @@ export interface GalleryFile {
   readonly canBeLoggedOutOf: Result<null>;
 
   /*
+   * Whether this file's version history can be listed. Only files whose bytes
+   * RSpace itself stores are audited, so files held on an external filestore
+   * have no history to show.
+   */
+  readonly canViewVersionHistory: Result<null>;
+
+  /*
    * A unique identifier across all possible trees that this file may be
    * rendered in.
    */
@@ -491,6 +498,13 @@ export class LocalGalleryFile implements GalleryFile {
     return Result.Ok(null);
   }
 
+  get canViewVersionHistory(): Result<null> {
+    // deliberately not requiring an extension, unlike canUploadNewVersion: an
+    // extensionless file that has been versioned still has a history to show
+    if (this.isFolder) return Result.Error([new Error("Folders do not have a version history.")]);
+    return Result.Ok(null);
+  }
+
   get canBeLoggedOutOf(): Result<null> {
     return Result.Error([new Error("Cannot log out of local files and folders.")]);
   }
@@ -641,6 +655,10 @@ export class Filestore implements GalleryFile {
 
   get canUploadNewVersion(): Result<null> {
     return Result.Error([new Error("Filestores cannot be updated by uploading new versions.")]);
+  }
+
+  get canViewVersionHistory(): Result<null> {
+    return Result.Error([new Error("Filestores do not have a version history.")]);
   }
 
   get canBeLoggedOutOf(): Result<null> {
@@ -869,6 +887,11 @@ export class RemoteFile implements GalleryFile {
 
   get canUploadNewVersion(): Result<null> {
     return Result.Error([new Error("Contents of filestores cannot be updated by uploading new versions.")]);
+  }
+
+  get canViewVersionHistory(): Result<null> {
+    // RSpace only references these bytes, it never recorded their changes
+    return Result.Error([new Error("Files stored in filestores do not have a version history.")]);
   }
 
   get canBeLoggedOutOf(): Result<null> {

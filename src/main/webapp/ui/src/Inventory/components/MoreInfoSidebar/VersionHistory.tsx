@@ -23,6 +23,7 @@ import NavigateContext from "../../../stores/contexts/Navigate";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { getErrorMessage } from "../../../util/error";
 import { isoToLocale } from "../../../util/Util";
+import { groupByVersion } from "../../../util/versionHistory";
 
 type RevisionsListResponse = {
   revisions: Array<{
@@ -49,27 +50,13 @@ type State =
   | { state: "success"; versions: Array<VersionRow> }
   | { state: "fail"; error: Error };
 
-/**
- * Groups the raw revisions list by user-facing version, keeping the newest
- * revision of each version (non-version-bumping edits create several
- * revisions sharing a version; the version's final state is the relevant
- * one). Revisions are sorted by ascending revisionId first so "last write
- * wins" holds regardless of the order the endpoint returns them in. Returns
- * the versions newest first.
- */
-function groupByVersion(response: RevisionsListResponse): Array<VersionRow> {
-  const byVersion = new Map<number, VersionRow>();
-  const oldestFirst = response.revisions.toSorted((a, b) => a.revisionId - b.revisionId);
-  for (const revision of oldestFirst) {
-    const version = revision.record.version;
-    if (version === null || typeof version === "undefined") continue;
-    byVersion.set(version, {
-      version,
-      lastModified: revision.record.lastModified ?? null,
-      modifiedByFullName: revision.record.modifiedByFullName ?? null,
-    });
-  }
-  return [...byVersion.values()].sort((a, b) => b.version - a.version);
+/** Shapes the shared version grouping into the rows this table renders. */
+function toVersionRows(response: RevisionsListResponse): Array<VersionRow> {
+  return groupByVersion(response.revisions).map(({ version, revision }) => ({
+    version,
+    lastModified: revision.record.lastModified ?? null,
+    modifiedByFullName: revision.record.modifiedByFullName ?? null,
+  }));
 }
 
 function DialogContents({
@@ -158,7 +145,7 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
       void (async () => {
         try {
           const { data } = await ApiService.get<RevisionsListResponse>(`${record.recordType}s/${record.id}/revisions`);
-          if (!cancelled) setState({ state: "success", versions: groupByVersion(data) });
+          if (!cancelled) setState({ state: "success", versions: toVersionRows(data) });
         } catch (e) {
           if (!cancelled)
             setState({

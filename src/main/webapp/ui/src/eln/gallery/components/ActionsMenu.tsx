@@ -6,6 +6,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
+import HistoryIcon from "@mui/icons-material/History";
 import LogoutIcon from "@mui/icons-material/Logout";
 import OpenWithIcon from "@mui/icons-material/OpenWith";
 import ShareIcon from "@mui/icons-material/Share";
@@ -79,6 +80,7 @@ import MoveToS3, { type S3TransferSource } from "./MoveToS3";
 import MoveWithinFilestoreDialog from "./MoveWithinFilestoreDialog";
 import { useFolderOpen } from "./OpenFolderProvider";
 import S3Logo from "./S3Logo.svg";
+import VersionHistoryDialog from "./VersionHistoryDialog";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -322,6 +324,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
   const [s3Open, setS3Open] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
   const [shareOpen, setShareOpen] = React.useState(false);
+  const [versionHistoryOpen, setVersionHistoryOpen] = React.useState(false);
   const [imageEditorBlob, setImageEditorBlob] = React.useState<null | Blob>(null);
   const openAllowed = computed(() => {
     return selection
@@ -443,6 +446,12 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
       .asSet()
       .only.toResult(() => new Error("Only one item may be renamed at once."))
       .flatMap((file) => file.canRename);
+  });
+  const versionHistoryAllowed = computed((): Result<null> => {
+    return selection
+      .asSet()
+      .only.toResult(() => new Error("Only one item's version history may be viewed at once."))
+      .flatMap((file) => file.canViewVersionHistory);
   });
   const moveToIrodsAllowed = computed((): Result<null> => {
     return Result.all(...selection.asSet().map((f) => f.canMoveToIrods)).map(() => null);
@@ -808,6 +817,34 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
               setActionsMenuAnchorEl(null);
             }}
           />
+          <AccentMenuItem
+            title={t("actionsMenu.versionHistory.menuItem")}
+            subheader={versionHistoryAllowed
+              .get()
+              .map(() => "")
+              .orElseGet(([e]) => e.message)}
+            avatar={<HistoryIcon />}
+            onClick={() => {
+              setVersionHistoryOpen(true);
+            }}
+            compact
+            disabled={versionHistoryAllowed.get().isError}
+            aria-haspopup="dialog"
+          />
+          {selection
+            .asSet()
+            .only.map((file) => (
+              <VersionHistoryDialog
+                key={`versionHistory-${idToString(file.id).orElse(file.name)}`}
+                open={versionHistoryOpen}
+                onClose={() => {
+                  setVersionHistoryOpen(false);
+                  setActionsMenuAnchorEl(null);
+                }}
+                file={file}
+              />
+            ))
+            .orElse(null)}
           <AccentMenuItem
             title={t("common:actions.download")}
             subheader={downloadAllowed

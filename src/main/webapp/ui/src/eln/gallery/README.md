@@ -98,3 +98,35 @@ extracted to a more global location. This is logic is in [primaryActionHooks.ts]
 
 - **`CallableImagePreview.tsx`** - Image preview in a modal dialog
 - **`CallablePdfPreview.tsx`** - PDF preview in a modal dialog
+
+## Version History
+
+The Actions menu's "Version history" opens
+[VersionHistoryDialog.tsx](./components/VersionHistoryDialog.tsx), which lists a
+Gallery item's versions newest first. The list comes from
+`GET /gallery/ajax/versionHistory/{mediaFileId}`, which requires an authenticated
+session and read permission on the item.
+
+Three things about it are easy to get wrong:
+
+- **An audit revision is not a version.** Several revisions can share one
+  version, because not every recorded change bumps the counter. The dialog shows
+  one row per version, using the newest revision of each. That collapsing rule
+  is shared with the Inventory version history via
+  [groupByVersion](../../util/versionHistory.ts) rather than reimplemented, and
+  each row keeps its revision id because some endpoints key on it.
+- **Only locally stored items have a history.** Files held on an external
+  filestore are only referenced by RSpace, so `canViewVersionHistory` refuses
+  them, as it does folders.
+- **Which previewer to use is decided by the live file, not the version.** The
+  file's type does not change between versions, so only the bytes differ, and
+  those come from `/Streamfile/{id}?version=N` (the API's file endpoint takes no
+  version). Aspose is the exception: its conversion endpoint keys on the audit
+  revision instead. Collabora and Office Online are deliberately not offered,
+  because they edit the live file and cannot open a historical version, so those
+  file types fall through to a download.
+
+The history is read-only; "Upload new version" is the forward-only equivalent of
+restoring. See
+[ADR 0003](../../../../../../DevDocs/adr/0003-gallery-version-history-endpoint.md)
+for why this has its own endpoint rather than extending the ELN document one.

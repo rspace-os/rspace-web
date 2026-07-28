@@ -8,8 +8,10 @@ import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.model.*;
+import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dtos.GalleryFilterCriteria;
+import com.researchspace.model.dtos.GalleryVersionHistory;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
@@ -32,9 +34,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -616,6 +620,57 @@ public class GalleryController extends BaseController {
   public AjaxReturnObject<List<RecordInformation>> getDocumentsLinkedToAttachment(
       @PathVariable("mediaId") Long mediaId) {
     return new AjaxReturnObject<>(mediaManager.getIdsOfLinkedDocuments(mediaId), null);
+  }
+
+  /**
+   * Lists every audit revision of a Gallery item, for the version-history dialog.
+   *
+   * <p>Requires an authenticated session, so this is not available on the {@code
+   * /public/publicView/gallery} mapping this controller also answers on. Read permission is
+   * enforced by {@code baseRecordManager.retrieveMediaFile}, which throws for an unreadable item.
+   *
+   * @param mediaFileId the id of a Gallery item
+   * @return every revision of the item; callers group these by version for display
+   * @throws AuthorizationException if the item is not readable by the current user
+   */
+  @GetMapping("/ajax/versionHistory/{mediaFileId}")
+  @ResponseBody
+  public AjaxReturnObject<GalleryVersionHistory> getVersionHistory(
+      @PathVariable("mediaFileId") Long mediaFileId) {
+
+    User user = userManager.getAuthenticatedUserInSession();
+    // throws AuthorizationException unless the item exists and is readable by this user
+    EcatMediaFile mediaFile = baseRecordManager.retrieveMediaFile(user, mediaFileId);
+
+    List<AuditedEntity<EcatMediaFile>> revisions =
+        auditManager.getRevisionsForEntity(EcatMediaFile.class, mediaFile.getId());
+
+    // a Gallery item edited many times by the same user resolves that user's full name once
+    Map<String, String> fullNameByUsername = new HashMap<>();
+    List<GalleryVersionHistory.Revision> apiRevisions = new ArrayList<>();
+    for (AuditedEntity<EcatMediaFile> revision : revisions) {
+      EcatMediaFile audited = revision.getEntity();
+      String modifiedBy = audited.getModifiedBy();
+      apiRevisions.add(
+          new GalleryVersionHistory.Revision(
+              revision.getRevision().longValue(),
+              revision.getRevisionTypeString(),
+              new GalleryVersionHistory.Item(
+                  audited.getVersion(),
+                  toIsoInstant(audited.getModificationDateAsDate()),
+                  modifiedBy == null
+                      ? null
+                      : fullNameByUsername.computeIfAbsent(
+                          modifiedBy, userManager::getFullNameByUsername),
+                  audited.getSize(),
+                  audited.getName())));
+    }
+    return new AjaxReturnObject<>(
+        new GalleryVersionHistory(apiRevisions, apiRevisions.size()), null);
+  }
+
+  private String toIsoInstant(Date date) {
+    return date == null ? null : DateTimeFormatter.ISO_INSTANT.format(date.toInstant());
   }
 
   /**

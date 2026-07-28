@@ -69,6 +69,32 @@ resolved during design. This file is a glossary only — no implementation detai
   onwards and may require signing in to that provider, so it is never presented
   as the identifier's public address.
 
+## Record version history
+
+- **Revision** — a single audit row: one recorded change to a record, identified
+  by a monotonic audit id. An internal concept. Never shown to users as a number
+  and never used in user-facing labels.
+- **Version** — the user-facing counter on a record, incremented when a user
+  makes a change the product considers significant (for a Gallery item, uploading
+  new file content). **Several revisions can share one version**, because not
+  every recorded change bumps the counter. Revision and version are therefore not
+  interchangeable, and code that treats them as such is wrong.
+- **Version history** — the canonical name, in the UI and in code, for the list
+  of a record's versions, newest first. Where several revisions share a version,
+  the history shows that version once, representing its final state. Named this
+  way everywhere even though the ELN workspace's equivalent legacy button is
+  labelled "Revisions".
+  _Avoid_: revision history, revisions (as a user-facing label)
+- **Gallery item** — the user-facing name for a file a user keeps in the Gallery.
+  The same thing the API and older code variously call a media file or a gallery
+  file.
+  _Avoid_: attachment, media record (when addressing users)
+- **Local Gallery item** — a Gallery item whose bytes RSpace itself stores. The
+  only kind that has a version history, because only these are audited.
+- **Filestore item** — a Gallery item that lives on an external store (S3, iRODS,
+  Samba) and is only referenced by RSpace. Has no version history at all: RSpace
+  never recorded its changes and cannot.
+
 ## Internationalization (i18n)
 
 - **Canonical translation catalog** — i18next JSON. The runtime and

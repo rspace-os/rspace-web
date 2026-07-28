@@ -1782,6 +1782,20 @@ export default interface Resources {
       "renamePrompt": "Please give a new name for {name}.",
       "saveAsNewImage": "Save as new image",
       "uploadNewVersion": "Upload New Version",
+      "versionHistory": {
+        "columns": {
+          "by": "By",
+          "modified": "Modified",
+          "size": "Size",
+          "version": "Version{version, select, none {} other { {version}}}"
+        },
+        "current": " (current)",
+        "loadFailed": "Could not load version history.",
+        "menuItem": "Version history",
+        "none": "No version history is available for this item yet.",
+        "tableLabel": "Version history",
+        "title": "Version history: {name}"
+      },
       "view": "View"
     },
     "addFilestoreDialog": {
