@@ -1,6 +1,10 @@
 import { HttpResponse, http } from "msw";
 
-export type AnimalsRequest = { l: number; o: number };
+export type AnimalsRequest = {
+  collection: "animals" | "pups";
+  l: number;
+  o: number;
+};
 
 /**
  * A single fake PyRAT animal. Only the fields the results table reads need to
@@ -39,6 +43,22 @@ export function pyratHandlers({
   requests: Array<AnimalsRequest>;
   totalCount?: number;
 }) {
+  const paginatedAnimals = (collection: AnimalsRequest["collection"]) =>
+    http.get(`/apps/pyrat/${collection}`, ({ request }) => {
+      const params = new URL(request.url).searchParams;
+      const l = Number(params.get("l") ?? "10");
+      const o = Number(params.get("o") ?? "0");
+      requests.push({ collection, l, o });
+
+      const rows = [];
+      for (let i = o; i < Math.min(o + l, totalCount); i++) {
+        rows.push(makeAnimal(i));
+      }
+      return HttpResponse.json(rows, {
+        headers: { "X-Total-Count": String(totalCount) },
+      });
+    });
+
   return [
     http.get("/integration/integrationInfo", () =>
       HttpResponse.json({
@@ -54,20 +74,8 @@ export function pyratHandlers({
     ),
     http.get("/apps/pyrat/version", () => HttpResponse.json({ api_version: 3 })),
     http.get("/apps/pyrat/locations", () => HttpResponse.json([])),
-    http.get("/apps/pyrat/animals", ({ request }) => {
-      const params = new URL(request.url).searchParams;
-      const l = Number(params.get("l") ?? "10");
-      const o = Number(params.get("o") ?? "0");
-      requests.push({ l, o });
-
-      const rows = [];
-      for (let i = o; i < Math.min(o + l, totalCount); i++) {
-        rows.push(makeAnimal(i));
-      }
-      return HttpResponse.json(rows, {
-        headers: { "X-Total-Count": String(totalCount) },
-      });
-    }),
+    paginatedAnimals("animals"),
+    paginatedAnimals("pups"),
     // Not exercised by the pagination tests, but present so filter interactions
     // never fall through to a 404.
     http.get("/apps/pyrat/licenses", () => HttpResponse.json([])),

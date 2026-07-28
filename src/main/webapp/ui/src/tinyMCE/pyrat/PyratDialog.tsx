@@ -400,12 +400,12 @@ export function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias:
     }&${params.join("")}&s=${orderBy}:${order}`;
   }, [filterCounter, order, orderBy, page, rowsPerPage, tableHeaderCells]);
 
-  // makeQueryString encodes every query input (filters, sort, page, page size),
-  // so refetch whenever it changes. Returning a plain string means identical
-  // queries don't refetch.
+  // makeQueryString encodes the query parameters, while filterCounter is the
+  // explicit apply trigger. Keep both dependencies because animal_type selects
+  // the animals/pups collection rather than appearing in the query string.
   useEffect(() => {
     fetchAnimals();
-  }, [makeQueryString]);
+  }, [filterCounter, makeQueryString]);
 
   VISIBLE_HEADER_CELLS = useMemo(
     () => tableHeaderCells.filter((cell) => visibleColumnIds.includes(cell.id)),

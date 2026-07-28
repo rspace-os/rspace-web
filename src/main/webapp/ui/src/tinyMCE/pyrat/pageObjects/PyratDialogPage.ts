@@ -27,6 +27,18 @@ export class PyratDialogPage {
     return page.getByRole("button", { name: /go to next page/i });
   }
 
+  get showFilterOptionsButton(): Locator {
+    return page.getByRole("button", { name: "Show filtering options" });
+  }
+
+  get animalTypeSelect(): Locator {
+    return page.getByRole("combobox", { name: "Animal Type" });
+  }
+
+  get applyFilterButton(): Locator {
+    return page.getByRole("button", { name: "Filter", exact: true });
+  }
+
   /**
    * The sortable column header. Clicking the label text bubbles to the
    * enclosing TableSortLabel's onClick, which triggers the sort. We target the
@@ -48,5 +60,12 @@ export class PyratDialogPage {
 
   async sortByColumn(label: string): Promise<void> {
     await this.columnHeaderLabel(label).click();
+  }
+
+  async filterByAnimalType(animalType: "Animal" | "Pup"): Promise<void> {
+    await this.showFilterOptionsButton.click();
+    await this.animalTypeSelect.click();
+    await page.getByRole("option", { name: animalType, exact: true }).click();
+    await this.applyFilterButton.click();
   }
 }

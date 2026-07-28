@@ -180,10 +180,13 @@ export default function Filter({
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     [key: string]: any;
   }) {
+    const labelId = `${name}-label`;
+
     return (
       <FormControl fullWidth>
-        <InputLabel>{config.label}</InputLabel>
+        <InputLabel id={labelId}>{config.label}</InputLabel>
         <Select
+          labelId={labelId}
           value={config.value}
           onChange={(event) =>
             setFilterSpecial({

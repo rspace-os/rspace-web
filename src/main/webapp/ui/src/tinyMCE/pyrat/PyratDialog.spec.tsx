@@ -11,6 +11,24 @@ const pageObj = new PyratDialogPage();
 let requests: Array<AnimalsRequest>;
 let cleanup404: () => void;
 
+async function expectRequestCountToSettleAt(expected: number): Promise<void> {
+  let observedCount = requests.length;
+  let stableSince = Date.now();
+
+  await expect
+    .poll(
+      () => {
+        if (requests.length !== observedCount) {
+          observedCount = requests.length;
+          stableSince = Date.now();
+        }
+        return Date.now() - stableSince >= 200 ? observedCount : undefined;
+      },
+      { interval: 25, timeout: 1000 },
+    )
+    .toBe(expected);
+}
+
 beforeEach(() => {
   requests = [];
   worker.use(...pyratHandlers({ requests }));
@@ -35,7 +53,7 @@ describe("PyratDialog pagination", () => {
     render(<PyratDialogStory />);
 
     await expect.poll(() => pageObj.dataRowCount()).toBe(10);
-    expect(requests.at(-1)).toEqual({ l: 10, o: 0 });
+    expect(requests.at(-1)).toEqual({ collection: "animals", l: 10, o: 0 });
   });
 
   test("changing the page size refetches with the new size and shows that many rows", async () => {
@@ -46,8 +64,8 @@ describe("PyratDialog pagination", () => {
     await pageObj.selectRowsPerPage(25);
 
     await expect.poll(() => pageObj.dataRowCount()).toBe(25);
-    expect(requests.length).toBe(before + 1);
-    expect(requests.at(-1)).toEqual({ l: 25, o: 0 });
+    await expectRequestCountToSettleAt(before + 1);
+    expect(requests.at(-1)).toEqual({ collection: "animals", l: 25, o: 0 });
   });
 
   test("changing the page requests the matching offset", async () => {
@@ -58,7 +76,7 @@ describe("PyratDialog pagination", () => {
     await pageObj.goToNextPage();
 
     await expect.poll(() => requests.length).toBe(before + 1);
-    expect(requests.at(-1)).toEqual({ l: 10, o: 10 });
+    expect(requests.at(-1)).toEqual({ collection: "animals", l: 10, o: 10 });
   });
 
   test("changing the page size while on a later page resets to the first page in a single request", async () => {
@@ -73,8 +91,8 @@ describe("PyratDialog pagination", () => {
 
     await expect.poll(() => pageObj.dataRowCount()).toBe(25);
     // Exactly one request, at offset 0: no stale-offset fetch, no double fetch.
-    expect(requests.length).toBe(before + 1);
-    expect(requests.at(-1)).toEqual({ l: 25, o: 0 });
+    await expectRequestCountToSettleAt(before + 1);
+    expect(requests.at(-1)).toEqual({ collection: "animals", l: 25, o: 0 });
   });
 
   test("changing the sort while on a later page resets to the first page in a single request", async () => {
@@ -89,9 +107,18 @@ describe("PyratDialog pagination", () => {
 
     await pageObj.sortByColumn("Sex");
 
-    // A double-fire would push the count to before + 2, so this poll only
-    // settles when the fix produced a single request.
-    await expect.poll(() => requests.length).toBe(before + 1);
+    await expectRequestCountToSettleAt(before + 1);
     expect(requests.at(-1)?.o).toBe(0);
+  });
+
+  test("changing the animal type refetches from the matching collection", async () => {
+    render(<PyratDialogStory />);
+    await expect.poll(() => pageObj.dataRowCount()).toBe(10);
+    const before = requests.length;
+
+    await pageObj.filterByAnimalType("Pup");
+
+    await expectRequestCountToSettleAt(before + 1);
+    expect(requests.at(-1)).toEqual({ collection: "pups", l: 10, o: 0 });
   });
 });
