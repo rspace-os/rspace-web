@@ -149,18 +149,18 @@
         <artifactId>unit-api</artifactId>
         <version>2.2</version>
       </dependency>
-      <!-- Commit pins for the repository clients (transitive via their adapters): these
-           builds include the Content-Length fix for servers that reject chunked requests;
-           a branch SNAPSHOT could resolve to a stale cached build in CI -->
+      <!-- Managed here so the adapters' transitive client versions converge on the
+           releases that include the Content-Length fix for servers that reject
+           chunked requests -->
       <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>zenodo-java-client</artifactId>
-        <version>2df5727dae</version>
+        <version>1.0.0</version>
       </dependency>
       <dependency>
         <groupId>com.github.rspace-os</groupId>
         <artifactId>dryad-java-client</artifactId>
-        <version>4c895b13b7</version>
+        <version>1.0.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -764,9 +764,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-test-util</artifactId>
-      <!-- jitpack's already-built snapshot of the branch head, pinned because the
-           moving -SNAPSHOT metadata currently 401s for this artifact on jitpack -->
-      <version>rsdev-444-upgrade-to-spring-6-9138f8b079-1</version>
+      <version>3.0.0</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -782,7 +780,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>snapgene-java-client</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -793,7 +791,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-audit</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>
@@ -1449,7 +1447,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-license-server-entities</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>1.0.1</version>
       <exclusions>
         <exclusion>
           <groupId>javax.validation</groupId>
@@ -1582,12 +1580,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-repository-spi</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dataverse-adapter</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>4.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1605,7 +1603,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-external-auth</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.1</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1664,7 +1662,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-util</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.shiro</groupId>
@@ -1680,7 +1678,7 @@
            "default" id segment) be built into the WAR, so ids collided at runtime. This commit includes
            the per-entity @TableGenerator work for every TABLE-strategy entity. Re-float to the branch
            SNAPSHOT once the migration branches merge. -->
-      <version>8d02295b88c10484b28fc39631e1d35e4bb82298</version>
+      <version>49d9086c6b93432730bb940144c9f0bd31fcb933</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1751,7 +1749,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-document-conversion-spi</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1762,7 +1760,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-figshare-adapter</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1777,7 +1775,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-dryad-adapter</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1788,7 +1786,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-zenodo-adapter</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>1.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1804,7 +1802,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-digital-commons-data-adapter</artifactId>
-      <version>f22ef0849f</version>
+      <version>1.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1847,17 +1845,17 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>protocols-java-client</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>fieldmark-java-client</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>4.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>galaxy-java-client</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.jetbrains</groupId>
@@ -1872,12 +1870,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>argos-java-client</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>1.0.1</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>dmptool-java-client</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>1.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -1888,7 +1886,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>raid-java-client</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>4.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1919,14 +1917,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>datacite-java-client</artifactId>
-      <!-- Commit pin: includes the Content-Length fix for servers that reject chunked
-           requests; a branch SNAPSHOT could resolve to a stale cached build in CI -->
-      <version>6eb80cc21e</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-egnyte</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1941,7 +1937,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-rest-api-utils</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
@@ -2054,7 +2050,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-evernote-parser</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -2106,7 +2102,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-snapgene-adapter</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
