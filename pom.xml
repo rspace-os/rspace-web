@@ -46,7 +46,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-util</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <version>2.0.0</version>
     </dependency>
 
     <dependency>
