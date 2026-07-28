@@ -1,7 +1,10 @@
+import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
+import MenuItem from "@mui/material/MenuItem";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { BrowserRouter } from "react-router";
 import createAccentedTheme from "@/accentedTheme";
 import Alerts from "@/components/Alerts/Alerts";
@@ -13,40 +16,60 @@ import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { dummyId, Filestore, type GalleryFile, type Id } from "../useGalleryListing";
 import Sidebar from "./Sidebar";
+import SidebarCreateMenu from "./SidebarCreateMenu";
+
+function GalleryTheme({ children }: { children: React.ReactNode }): React.ReactNode {
+  return (
+    <StyledEngineProvider injectFirst>
+      <CssBaseline />
+      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>{children}</ThemeProvider>
+    </StyledEngineProvider>
+  );
+}
 
 function SidebarStory({ folderId, path }: { folderId: Id; path: ReadonlyArray<GalleryFile> | null }): React.ReactNode {
   return (
     <React.StrictMode>
       <ErrorBoundary>
         <BrowserRouter>
-          <StyledEngineProvider injectFirst>
-            <CssBaseline />
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <Analytics>
-                <UiPreferences>
-                  <DisableDragAndDropByDefault>
-                    <Alerts>
-                      <LandmarksProvider>
-                        <Sidebar
-                          selectedSection="Images"
-                          setSelectedSection={() => {}}
-                          drawerOpen={true}
-                          setDrawerOpen={() => {}}
-                          folderId={{ tag: "success", value: folderId }}
-                          path={path}
-                          refreshListing={() => Promise.resolve()}
-                          id="1"
-                        />
-                      </LandmarksProvider>
-                    </Alerts>
-                  </DisableDragAndDropByDefault>
-                </UiPreferences>
-              </Analytics>
-            </ThemeProvider>
-          </StyledEngineProvider>
+          <GalleryTheme>
+            <Analytics>
+              <UiPreferences>
+                <DisableDragAndDropByDefault>
+                  <Alerts>
+                    <LandmarksProvider>
+                      <Sidebar
+                        selectedSection="Images"
+                        setSelectedSection={() => {}}
+                        drawerOpen={true}
+                        setDrawerOpen={() => {}}
+                        folderId={{ tag: "success", value: folderId }}
+                        path={path}
+                        refreshListing={() => Promise.resolve()}
+                        id="1"
+                      />
+                    </LandmarksProvider>
+                  </Alerts>
+                </DisableDragAndDropByDefault>
+              </UiPreferences>
+            </Analytics>
+          </GalleryTheme>
         </BrowserRouter>
       </ErrorBoundary>
     </React.StrictMode>
+  );
+}
+
+export function CreateMenuStory(): React.ReactNode {
+  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
+  const { t } = useTranslation(["common", "apps"]);
+  return (
+    <GalleryTheme>
+      <Button onClick={(event) => setAnchorEl(event.currentTarget)}>{t("common:actions.create")}</Button>
+      <SidebarCreateMenu anchorEl={anchorEl} onClose={() => setAnchorEl(null)}>
+        <MenuItem>{t("apps:dmpIntegrations.dmptool")}</MenuItem>
+      </SidebarCreateMenu>
+    </GalleryTheme>
   );
 }
 
