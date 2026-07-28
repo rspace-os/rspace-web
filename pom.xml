@@ -149,6 +149,19 @@
         <artifactId>unit-api</artifactId>
         <version>2.2</version>
       </dependency>
+      <!-- Commit pins for the repository clients (transitive via their adapters): these
+           builds include the Content-Length fix for servers that reject chunked requests;
+           a branch SNAPSHOT could resolve to a stale cached build in CI -->
+      <dependency>
+        <groupId>com.github.rspace-os</groupId>
+        <artifactId>zenodo-java-client</artifactId>
+        <version>2df5727dae</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.rspace-os</groupId>
+        <artifactId>dryad-java-client</artifactId>
+        <version>4c895b13b7</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -1906,7 +1919,9 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>datacite-java-client</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <!-- Commit pin: includes the Content-Length fix for servers that reject chunked
+           requests; a branch SNAPSHOT could resolve to a stale cached build in CI -->
+      <version>6eb80cc21e</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
