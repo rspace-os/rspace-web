@@ -1,7 +1,7 @@
 package com.researchspace.model.preference;
 
 import static java.lang.String.format;
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * Basic typing for preferences/system settings

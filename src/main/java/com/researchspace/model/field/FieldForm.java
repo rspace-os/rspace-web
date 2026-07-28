@@ -3,30 +3,32 @@ package com.researchspace.model.field;
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.persistence.Cacheable;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Transient;
-import javax.validation.constraints.Size;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Transient;
+import jakarta.validation.constraints.Size;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.FilterDef;
 import org.hibernate.envers.Audited;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.core.UniquelyIdentifiable;
@@ -120,6 +122,7 @@ public abstract class FieldForm implements Comparable<FieldForm>, IFieldForm, Va
 		this.temporary = temporary;
 	}
 
+	@JsonIgnore
 	@OneToOne(fetch = FetchType.LAZY, targetEntity = FieldForm.class, cascade = CascadeType.ALL, optional = true)
 	public IFieldForm getTempFieldForm() {
 		return tempFieldForm;
@@ -135,9 +138,13 @@ public abstract class FieldForm implements Comparable<FieldForm>, IFieldForm, Va
 
 	/**
 	 * Getter for the {@link RSForm} to which this {@link FieldForm} belongs.
-	 * 
+	 * <p>
+	 * Never serialised to JSON: the back-reference would recurse into the form's
+	 * own fieldForms, and no JSON consumer wants the owning form graph.
+	 *
 	 * @return
 	 */
+	@JsonIgnore
 	@ManyToOne()
 	@JoinColumn(nullable = false)
 	public AbstractForm getForm() {
@@ -193,7 +200,9 @@ public abstract class FieldForm implements Comparable<FieldForm>, IFieldForm, Va
 	}
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "field_form_gen")
+	@TableGenerator(name = "field_form_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
 	public Long getId() {
 		return id;
 	}

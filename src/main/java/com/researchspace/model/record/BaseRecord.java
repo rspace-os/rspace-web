@@ -38,35 +38,37 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.LazyInitializationException;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
 import org.hibernate.envers.RelationTargetAuditMode;
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Analyzer;
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.IndexedEmbedded;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
+import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
 
 /**
  * Base class of Record/Folder types. Holds provenance information and parent
@@ -244,14 +246,29 @@ public abstract class BaseRecord
     @AuditTrailIdentifier
     @Transient
     // include in 'FullText' search
-    @Field(name = "fields.fieldData",
-            // this is to index in lower-case to match the search analyzer, may
-            // need to look into using
-            // different analyzer ( we don't really want to tokenize here)
-            analyze = Analyze.YES, store = Store.NO)
     public String getGlobalIdentifier() {
         return getOid().toString();
     }
+
+     @Transient
+ @FullTextField(analyzer = "structureAnalyzer", name = "fields_fieldData")
+ @IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "editInfo")))
+ public String getSearchableContent() {
+     // Combine globalIdentifier and description for full-text search
+     String oid = getGlobalIdentifier();
+     String desc = getDescription();
+     StringBuilder sb = new StringBuilder();
+     if (oid != null) {
+         sb.append(oid);
+     }
+     if (desc != null) {
+         if (sb.length() > 0) {
+             sb.append(" ");
+         }
+         sb.append(desc);
+     }
+     return sb.toString();
+ }
 
     @Transient
     protected abstract GlobalIdPrefix getGlobalIdPrefix();
@@ -444,8 +461,14 @@ public abstract class BaseRecord
      * @return a possibly empty but non-null Set of RecordToFolder
      */
     @NotAudited
+    // CascadeType.PERSIST is required under Hibernate 6: Hibernate 5's saveOrUpdate() cascaded via
+    // the Hibernate-specific SAVE_UPDATE type, persisting new RecordToFolder entries reachable via
+    // this collection even without an explicit PERSIST cascade. Hibernate 6 is strict JPA and
+    // requires PERSIST to be declared. Without it, code paths that add a new RecordToFolder only to
+    // record.parents (via skipAddingToChildren=true) and then call save(record) would silently drop
+    // the relationship (DocumentCopyManagerImpl, RecordSharingManagerImpl).
     @OneToMany(mappedBy = "record", fetch = FetchType.EAGER, cascade = {CascadeType.REFRESH, CascadeType.REMOVE,
-            CascadeType.MERGE})
+            CascadeType.MERGE, CascadeType.PERSIST})
     public Set<RecordToFolder> getParents() {
         return parents;
     }
@@ -705,8 +728,9 @@ public abstract class BaseRecord
     }
 
     @Transient
-    @Field(analyzer = @Analyzer(definition = "structureAnalyzer"), name = "name", analyze = Analyze.YES, store = Store.NO)
+    @FullTextField(analyzer = "structureAnalyzer", name = "name")
     @AuditTrailProperty(name = "name")
+    @IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "editInfo")))
     public String getName() {
         return getEditInfo().getName();
     }
@@ -764,6 +788,7 @@ public abstract class BaseRecord
     @JoinColumn(nullable = false, name = "owner_id")
     @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @IndexedEmbedded
+    @IndexingDependency(reindexOnUpdate = ReindexOnUpdate.SHALLOW)
     public User getOwner() {
         return owner;
     }
@@ -773,7 +798,6 @@ public abstract class BaseRecord
     }
 
     @Transient
-    @Field(analyzer = @Analyzer(definition = "structureAnalyzer"), name = "fields.fieldData", analyze = Analyze.YES, store = Store.NO)
     public String getDescription() {
         return getEditInfo().getDescription();
     }
@@ -805,7 +829,8 @@ public abstract class BaseRecord
      * Convenience method who works with time stamps
      */
     @Transient
-    @Field(analyzer = @Analyzer(definition = "structureAnalyzer"), name = "creationDate", analyze = Analyze.NO, store = Store.NO)
+    @GenericField(name = "creationDate")
+    @IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "editInfo")))
     public Date getCreationDateAsDate() {
         return getEditInfo().getCreationDate();
     }
@@ -847,7 +872,8 @@ public abstract class BaseRecord
      * Convenience method who works with time stamps
      */
     @Transient
-    @Field(analyzer = @Analyzer(definition = "structureAnalyzer"), name = "modifiedDate", analyze = Analyze.NO, store = Store.NO)
+    @GenericField(name = "modifiedDate")
+    @IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "editInfo")))
     public Date getModificationDateAsDate() {
         return getEditInfo().getModificationDate();
     }
@@ -1390,6 +1416,15 @@ public abstract class BaseRecord
 
     @Override
     public int compareTo(BaseRecord o){
+        // Null-safe against transient (unsaved) records whose id has not yet been assigned:
+        // comparing by id directly would NPE. Two transient records fall back to name ordering.
+        // Note this ordering is not consistent with equals, so do not rely on it for set identity.
+        if (this.id == null && o.getId() == null) {
+            return this.getName() == null ? 0 : this.getName().compareTo(
+                    o.getName() == null ? "" : o.getName());
+        }
+        if (this.id == null) return -1;
+        if (o.getId() == null) return 1;
         return this.id.compareTo(o.getId());
     }
 }

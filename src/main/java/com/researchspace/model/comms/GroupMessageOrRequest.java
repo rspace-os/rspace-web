@@ -2,8 +2,8 @@ package com.researchspace.model.comms;
 
 import java.io.Serializable;
 
-import javax.persistence.Entity;
-import javax.persistence.OneToOne;
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToOne;
 
 import com.researchspace.model.Group;
 import lombok.AccessLevel;

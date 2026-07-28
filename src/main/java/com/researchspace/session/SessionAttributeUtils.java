@@ -1,6 +1,6 @@
 package com.researchspace.session;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.joda.time.DateTimeZone;
 

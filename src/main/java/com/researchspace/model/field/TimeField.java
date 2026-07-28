@@ -2,9 +2,9 @@ package com.researchspace.model.field;
 
 import java.text.ParseException;
 
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.Transient;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;

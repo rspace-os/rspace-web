@@ -1,6 +1,6 @@
 package com.researchspace.model.field;
 
-import javax.persistence.Transient;
+import jakarta.persistence.Transient;
 
 public class NumberBehaviour {
 	

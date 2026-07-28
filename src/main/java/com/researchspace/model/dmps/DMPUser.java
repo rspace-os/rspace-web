@@ -3,14 +3,15 @@ package com.researchspace.model.dmps;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import java.time.Instant;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.TableGenerator;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -23,7 +24,9 @@ import lombok.NoArgsConstructor;
 public class DMPUser {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.TABLE)
+    @GeneratedValue(strategy = GenerationType.TABLE, generator = "dmp_user_gen")
+    @TableGenerator(name = "dmp_user_gen", table = "hibernate_sequences",
+        pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
     private Long id;
 
     void setId(Long id) {

@@ -2,8 +2,9 @@ package com.researchspace.model.inventory.field;
 
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.hibernate.envers.Audited;

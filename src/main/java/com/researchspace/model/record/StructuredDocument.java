@@ -6,38 +6,35 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Lob;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
-import javax.persistence.Transient;
-import javax.validation.constraints.Size;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Transient;
+import jakarta.validation.constraints.Size;
 
 import lombok.Setter;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.lucene.analysis.charfilter.HTMLStripCharFilterFactory;
 import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
 import org.apache.lucene.analysis.core.StopFilterFactory;
 import org.apache.lucene.analysis.standard.StandardTokenizerFactory;
 import org.apache.shiro.crypto.hash.Hash;
 import org.hibernate.envers.Audited;
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Analyzer;
-import org.hibernate.search.annotations.AnalyzerDef;
-import org.hibernate.search.annotations.CharFilterDef;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.IndexedEmbedded;
-import org.hibernate.search.annotations.Store;
-import org.hibernate.search.annotations.TokenFilterDef;
-import org.hibernate.search.annotations.TokenizerDef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.model.Group;
@@ -56,14 +53,6 @@ import com.researchspace.model.field.FieldType;
 @Entity
 @Audited
 @Indexed
-/*
- * ignores HTML tags and parses into words. This definition is not used unless
- * together with an @Analyzer annotation which refers to the definition
- */
-@AnalyzerDef(name = "structureAnalyzer", tokenizer = @TokenizerDef(factory = StandardTokenizerFactory.class), filters = {
-		@TokenFilterDef(factory = LowerCaseFilterFactory.class),
-		@TokenFilterDef(factory = StopFilterFactory.class) }, charFilters = {
-				@CharFilterDef(factory = HTMLStripCharFilterFactory.class) })
 public class StructuredDocument extends Record implements TaggableElnRecord {
 
 	/** Default name when creating new Structured Document */
@@ -347,15 +336,17 @@ public class StructuredDocument extends Record implements TaggableElnRecord {
 	}
 
 	@Transient
-	@org.hibernate.search.annotations.Field(analyzer = @Analyzer(definition = "structureAnalyzer"), name = "formName", analyze = Analyze.YES, store = Store.NO)
+	@FullTextField(analyzer = "structureAnalyzer", name = "formName")
+	@IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "form")))
 	public String getFormName() {
-		return form.getEditInfo().getName();
+		return form != null && form.getEditInfo() != null ? form.getEditInfo().getName() : null;
 	}
 
 	@Transient
-	@org.hibernate.search.annotations.Field(analyzer = @Analyzer(definition = "structureAnalyzer"), name = "formStableId", analyze = Analyze.YES, store = Store.NO)
+	@FullTextField(analyzer = "structureAnalyzer", name = "formStableId")
+	@IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "form")))
 	public String getFormStableId() {
-		return form.getStableID();
+		return form != null ? form.getStableID() : null;
 	}
 
 
@@ -363,7 +354,8 @@ public class StructuredDocument extends Record implements TaggableElnRecord {
      * This indexes on the name of the template which this record was created from
      * */
     @Transient
-    @org.hibernate.search.annotations.Field(analyzer = @Analyzer(definition = "structureAnalyzer"), name = "templateName", analyze = Analyze.YES, store = Store.NO)
+    @FullTextField(analyzer = "structureAnalyzer", name = "templateName")
+    @IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "template")))
     public String getTemplateName() {
 	    return getTemplate() == null ? null : getTemplate().getEditInfo().getName();
     }
@@ -373,7 +365,8 @@ public class StructuredDocument extends Record implements TaggableElnRecord {
      * This indexes on the OID of the template which this record was created from
      * */
     @Transient
-    @org.hibernate.search.annotations.Field(analyzer = @Analyzer(definition = "structureAnalyzer"), name = "templateOid", analyze = Analyze.YES, store = Store.NO)
+    @FullTextField(analyzer = "structureAnalyzer", name = "templateOid")
+    @IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "template")))
     public String getTemplateOid() {
         return getTemplate() == null ? null : getTemplate().getOid().toString();
     }
@@ -545,7 +538,7 @@ public class StructuredDocument extends Record implements TaggableElnRecord {
 
 	@Column(length = MAX_TAG_LENGTH)
 	@Size(max = MAX_TAG_LENGTH)
-	@org.hibernate.search.annotations.Field
+	@FullTextField
 	public String getDocTag() {
 		return docTag;
 	}

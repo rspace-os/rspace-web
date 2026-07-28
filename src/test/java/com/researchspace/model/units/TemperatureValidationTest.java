@@ -2,13 +2,12 @@ package com.researchspace.model.units;
 
 import java.math.BigDecimal;
 
+import com.researchspace.core.testutilJU5.JakartaValidatorTestJU5;
 import org.junit.jupiter.api.Test;
-
-import com.researchspace.core.testutilJU5.JavaxValidatorTestJU5;
 
 import lombok.Value;
 
-class TemperatureValidationTest extends JavaxValidatorTestJU5 {
+class TemperatureValidationTest extends JakartaValidatorTestJU5 {
 	
 	@Value
 	static class Measurable {

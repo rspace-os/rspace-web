@@ -1,16 +1,16 @@
 package com.researchspace.model;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.persistence.Transient;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Transient;
 
 import org.apache.commons.io.FilenameUtils;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
-import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.RecordInformation;
@@ -66,7 +66,7 @@ public class EcatDocumentFile extends EcatMediaFile {
 	 * Replacement for storing doc thumbnails - these will be stored in the filestore
 	 * @return
 	 */
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
 	@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
 	public FileProperty getDocThumbnailFP() {
 		return docThumbnailFP;

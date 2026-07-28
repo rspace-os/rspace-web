@@ -4,14 +4,14 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import org.junit.Test;
 
-import com.researchspace.core.testutil.JavaxValidatorTest;
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
 
-public class SignatureTest extends JavaxValidatorTest {
+public class SignatureTest extends JakartaValidatorTest {
 
 	@Test
 	public void testSetUp() {

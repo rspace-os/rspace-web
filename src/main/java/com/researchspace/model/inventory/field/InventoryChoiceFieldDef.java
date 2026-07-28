@@ -4,16 +4,17 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Transient;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Transient;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.hibernate.validator.constraints.NotBlank;
+import org.apache.commons.lang3.StringUtils;
+import jakarta.validation.constraints.NotBlank;
 
 import com.researchspace.model.field.ErrorList;
 
@@ -37,7 +38,9 @@ public class InventoryChoiceFieldDef extends InventoryFieldDef implements Serial
 	private String choiceOptions;
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "inventory_choice_field_def_gen")
+	@TableGenerator(name = "inventory_choice_field_def_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
 	public Long getId() {
 		return id;
 	}

@@ -7,24 +7,28 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.io.Serializable;
 import java.util.Date;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
+
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
-import org.hibernate.envers.RelationTargetAuditMode;
-import org.hibernate.search.annotations.Field;
 
 /**
  * Basic model used to represent all files added as inventory attachments
@@ -41,7 +45,7 @@ public class InventoryFile extends InventoryRecordConnectedEntity implements Ser
 	private Long id;
 	
 	// indexing filename together with field data
-	@Field(name = "fieldData") 
+	@FullTextField(name = "fieldData")
 	private String fileName;
 	private Date creationDate;
 	private String createdBy;
@@ -85,7 +89,9 @@ public class InventoryFile extends InventoryRecordConnectedEntity implements Ser
 	}
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "inventory_file_gen")
+	@TableGenerator(name = "inventory_file_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
 	public Long getId() {
 		return id;
 	}
@@ -105,7 +111,7 @@ public class InventoryFile extends InventoryRecordConnectedEntity implements Ser
 		return creationDate == null ? null : new Date(creationDate.getTime());
 	}
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
 	@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
 	public FileProperty getFileProperty() {
 		return fileProperty;

@@ -1,6 +1,6 @@
 package com.researchspace.model.system;
 
-import static org.apache.commons.lang.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
 import com.researchspace.model.PropertyDescriptor;
 import com.researchspace.model.apps.App;

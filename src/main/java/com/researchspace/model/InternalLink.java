@@ -2,11 +2,12 @@ package com.researchspace.model;
 
 import java.io.Serializable;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.TableGenerator;
 
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Record;
@@ -29,7 +30,9 @@ public class InternalLink implements Serializable {
 	private static final long serialVersionUID = 1234321L;
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "internal_link_gen")
+	@TableGenerator(name = "internal_link_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
 	@Setter(AccessLevel.PACKAGE)
 	private Long id;
 

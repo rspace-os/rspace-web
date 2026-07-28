@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.researchspace.core.util.RSCollectionUtils;
 import com.researchspace.model.core.RecordType;

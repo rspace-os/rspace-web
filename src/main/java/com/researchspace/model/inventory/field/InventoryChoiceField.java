@@ -1,16 +1,19 @@
 package com.researchspace.model.inventory.field;
 
-import com.researchspace.model.field.ErrorList;
-import com.researchspace.model.field.FieldType;
 import java.util.List;
-import javax.persistence.CascadeType;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.Transient;
-import lombok.Setter;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
+
+import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.field.FieldType;
+
+import lombok.Setter;
 
 @Entity
 @Audited
@@ -36,7 +39,7 @@ public class InventoryChoiceField extends InventoryEntityField {
 		return choiceDef.isMultipleChoice();
 	}
 
-	@ManyToOne(cascade = {CascadeType.MERGE})
+	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
 	@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
 	public InventoryChoiceFieldDef getChoiceDef() {
 		return choiceDef;

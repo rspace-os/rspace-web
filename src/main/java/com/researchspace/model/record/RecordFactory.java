@@ -1,7 +1,21 @@
 package com.researchspace.model.record;
 
-import static org.apache.commons.lang.StringUtils.abbreviate;
-import static org.apache.commons.lang.StringUtils.trim;
+import static org.apache.commons.lang3.StringUtils.abbreviate;
+import static org.apache.commons.lang3.StringUtils.trim;
+
+import com.researchspace.model.inventory.Basket;
+import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.field.InventoryTimeField;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.function.Supplier;
+
+import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.StringUtils;
 
 import com.researchspace.model.DefaultGroupNamingStrategy;
 import com.researchspace.model.FileProperty;
@@ -21,10 +35,8 @@ import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.field.TimeFieldForm;
-import com.researchspace.model.inventory.Basket;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
-import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryFile;
@@ -48,19 +60,9 @@ import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
 import com.researchspace.model.inventory.field.InventoryReferenceField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryTextField;
-import com.researchspace.model.inventory.field.InventoryTimeField;
 import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.function.Supplier;
-import org.apache.commons.lang.Validate;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Factory class for creation of domain objects

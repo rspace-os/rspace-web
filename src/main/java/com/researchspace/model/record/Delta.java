@@ -5,10 +5,10 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import javax.persistence.Embeddable;
-import javax.persistence.Transient;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Transient;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Encapsulates information regarding if an change has been made warranting an

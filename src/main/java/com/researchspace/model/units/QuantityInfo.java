@@ -4,9 +4,9 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.Transient;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Transient;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

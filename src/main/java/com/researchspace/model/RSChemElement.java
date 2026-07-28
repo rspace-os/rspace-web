@@ -3,19 +3,21 @@ package com.researchspace.model;
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Lob;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.envers.Audited;
@@ -56,7 +58,9 @@ public class RSChemElement implements Serializable, IFieldLinkableElement {
 	/** */
 	private static final long serialVersionUID = -8764723602823933240L;
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "rs_chem_element_gen")
+	@TableGenerator(name = "rs_chem_element_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
 	private Long id;
 
 	private Long parentId;
@@ -128,7 +132,7 @@ public class RSChemElement implements Serializable, IFieldLinkableElement {
 	/**
 	 * File containing preview of the chemical 
 	 */
-	@ManyToOne
+	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
 	@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
 	private FileProperty imageFileProperty;
 

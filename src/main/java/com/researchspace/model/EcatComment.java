@@ -5,33 +5,28 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.analysis.core.KeywordTokenizerFactory;
-import org.apache.lucene.analysis.pattern.PatternReplaceFilterFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Analyzer;
-import org.hibernate.search.annotations.AnalyzerDef;
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.IndexedEmbedded;
-import org.hibernate.search.annotations.Store;
-import org.hibernate.search.annotations.TokenFilterDef;
-import org.hibernate.search.annotations.TokenizerDef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.researchspace.model.audittrail.AuditTrailData;
@@ -46,11 +41,6 @@ import com.researchspace.model.record.Record;
 @Entity
 @Audited
 @Indexed
-@AnalyzerDef(name = "axiopeanalyzer", tokenizer = @TokenizerDef(factory = KeywordTokenizerFactory.class), filters = {
-		@TokenFilterDef(factory = PatternReplaceFilterFactory.class, params = {
-				@org.hibernate.search.annotations.Parameter(name = "pattern", value = "([^a-zA-Z0-9])"),
-				@org.hibernate.search.annotations.Parameter(name = "replacement", value = ""),
-				@org.hibernate.search.annotations.Parameter(name = "replace", value = "all") }) })
 @Table(name = "ecat_comm")
 @AuditTrailData
 public class EcatComment implements Serializable, IFieldLinkableElement {
@@ -62,17 +52,16 @@ public class EcatComment implements Serializable, IFieldLinkableElement {
 	private Long fieldId;
 	private int sequence;
 
-	@Field(analyze = Analyze.YES, store = Store.NO)
-	@Analyzer(definition = "axiopeanalyzer")
+	@FullTextField(analyzer = "axiopeanalyzer")
 	private String comName;
 
-	@Field(analyze = Analyze.YES, store = Store.NO)
+	@FullTextField
 	private String comDesc;
 
-	@Field(analyze = Analyze.YES, store = Store.NO)
+	@FullTextField
 	private String lastUpdater;
 
-	@Field(analyze = Analyze.YES, store = Store.NO)
+	@FullTextField
 	private String author;
 
 	private Record record;
@@ -80,7 +69,6 @@ public class EcatComment implements Serializable, IFieldLinkableElement {
 	private Date createDate;
 	private Date updateDate;
 
-	@IndexedEmbedded
 	private List<EcatCommentItem> items;
 
 	/**
@@ -168,7 +156,7 @@ public class EcatComment implements Serializable, IFieldLinkableElement {
 
 	@Id
 	@Column(name = "com_id")
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	public Long getComId() {
 		return comId;
 	}
@@ -272,6 +260,8 @@ public class EcatComment implements Serializable, IFieldLinkableElement {
 	@JoinColumn(name = "com_id")
 	@XmlElementWrapper
 	@XmlElement(name = "commentItem")
+	@IndexedEmbedded
+	@IndexingDependency(reindexOnUpdate = ReindexOnUpdate.SHALLOW)
 	public List<EcatCommentItem> getItems() {
 		return items;
 	}

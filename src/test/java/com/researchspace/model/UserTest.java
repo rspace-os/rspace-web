@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.shiro.authz.Permission;
-import org.hibernate.collection.internal.PersistentSet;
-import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,7 +41,6 @@ public class UserTest {
 	private Group gp2;
 
 
-	@Mock SharedSessionContractImplementor session;
 	@BeforeEach
 	public void setUp() throws Exception {
 		u1 = new User("u1");
@@ -52,14 +49,6 @@ public class UserTest {
 		gp1 = new Group("g1");
 		gp2 = new Group("g2");
 	}
-    class PersistentSetTSS extends PersistentSet {
-
-		public PersistentSetTSS (SharedSessionContractImplementor session, Set<?> hashSet) {
-			super(session, hashSet);
-			setInitialized();
-		}
-    	
-    }
 	@AfterEach
 	public void tearDown() throws Exception {
 	}
@@ -338,11 +327,11 @@ public class UserTest {
 	
 	@Test
 	public void hasrole() {
-		PersistentSetTSS set = new PersistentSetTSS(session, new HashSet<>());
+		Set<Role> roles = new HashSet<>();
 		Role pirole = Role.PI_ROLE;
 		pirole.setDescription("PI role desc");
-		set.add(pirole);
-		u1.setRoles(set);
+		roles.add(pirole);
+		u1.setRoles(roles);
 		assertTrue(u1.isPI());
 	}
 	@Test

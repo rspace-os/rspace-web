@@ -25,7 +25,7 @@ public class UserBasicInfo implements Serializable {
 	private String role;
 	private String affiliation;
 
-	UserBasicInfo(Long id, String username, String firstName, String lastName, String email, String role,
+	public UserBasicInfo(Long id, String username, String firstName, String lastName, String email, String role,
 			String affiliation) {
 		this.id = id;
 		this.username = username;

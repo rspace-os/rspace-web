@@ -1,7 +1,7 @@
 package com.researchspace.model.record;
 
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.AuditTrailData;
@@ -18,28 +18,31 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.OrderBy;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Transient;
 
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.apache.shiro.SecurityUtils;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Filter;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
@@ -62,6 +65,7 @@ import com.researchspace.model.permissions.PermissionType;
  */
 @Entity
 @Audited
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @Table(name="RSForm", indexes = { @Index(columnList = "systemForm", name = "isSystem"),
 		@Index(columnList = "stableID", name = "stableid") 
@@ -94,7 +98,9 @@ public abstract class AbstractForm implements Serializable, UniquelyIdentifiable
 	private List<FieldForm> fieldForms = new ArrayList<>();
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "abstract_form_gen")
+	@TableGenerator(name = "abstract_form_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
 	public Long getId() {
 		return id;
 	}

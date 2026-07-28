@@ -3,20 +3,21 @@ package com.researchspace.model.inventory;
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.TableGenerator;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
-import org.hibernate.search.annotations.Field;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 
 import com.researchspace.model.User;
 
@@ -37,8 +38,6 @@ public class SubSampleNote implements Serializable {
 	private Long creationDateMillis;
 	private User createdBy;
 
-	// indexing notes together with field data
-	@Field(name = "fieldData")
 	private String content;
 	
 	private SubSample subSample;
@@ -51,7 +50,9 @@ public class SubSampleNote implements Serializable {
 	}
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "sub_sample_note_gen")
+	@TableGenerator(name = "sub_sample_note_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
 	public Long getId() {
 		return id;
 	}
@@ -85,10 +86,13 @@ public class SubSampleNote implements Serializable {
 		this.creationDateMillis = millis;
 	}
 	/**
-	 * Content length for subsample note
-	 * @return
+	 * Content length for subsample note.
+	 * @FullTextField is on the getter (not the field) because this entity uses property access
+	 * (@Id on getter). In Hibernate Search 7, field-level annotations are ignored for property-access
+	 * entities.
 	 */
 	@Column(length = 2000)
+	@FullTextField(name = "fieldData")
 	public String getContent() {
 		return content;
 	}

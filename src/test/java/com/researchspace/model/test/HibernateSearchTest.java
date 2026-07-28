@@ -21,15 +21,13 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.RecordSharingACL;
 import com.researchspace.model.record.TestFactory;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.hibernate.query.Query;
-import org.hibernate.search.FullTextQuery;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
-import org.hibernate.search.query.dsl.QueryBuilder;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -84,82 +82,80 @@ class HibernateSearchTest extends HibernateTest {
 			transaction.begin();
 
 			// build lucene index and query
-			FullTextSession fullTextSession = Search.getFullTextSession(sf.getCurrentSession());
-			fullTextSession.createIndexer().startAndWait();
-			QueryBuilder qb = fullTextSession.getSearchFactory().buildQueryBuilder().forEntity(Sample.class).get();
+			SearchSession searchSession = Search.session(sf.getCurrentSession());
+			searchSession.massIndexer().startAndWait();
 
 			// try various searches
 			
 			// search that doesn't match any sample
-			org.apache.lucene.search.Query lucenceQuery = qb.keyword().onFields("name", "name").matching("asdf")
-					.createQuery();
-			Query<Sample> query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class);
-			List<Sample> samples = query.getResultList();
+			List<Sample> samples = searchSession.search(Sample.class)
+					.where(f -> f.match().fields("name", "name").matching("asdf"))
+					.fetchHits(20);
 
 			assertNotNull(samples);
 			assertEquals(0, samples.size());
 
 			// find by name
-			lucenceQuery = qb.keyword().onFields("name", "tags", "description").matching("one").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class);
-			samples = query.getResultList();
+			samples = searchSession.search(Sample.class)
+					.where(f -> f.match().fields("name", "tags", "description").matching("one"))
+					.fetchHits(20);
 			assertNotNull(samples);
 			assertEquals(1, samples.size());
 			assertEquals("uniquename one", samples.get(0).getName());
 
 			// by tag
-			lucenceQuery = qb.keyword().onFields("name", "tags", "description").matching("tag4").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class);
-			samples = query.getResultList();
+			samples = searchSession.search(Sample.class)
+					.where(f -> f.match().fields("name", "tags", "description").matching("tag4"))
+					.fetchHits(20);
 			assertNotNull(samples);
 			assertEquals(1, samples.size());
 			assertEquals("uniquename two", samples.get(0).getName());
 
 			// by description
-			lucenceQuery = qb.keyword().onFields("name", "tags", "description").matching("description3").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class);
-			samples = query.getResultList();
+			samples = searchSession.search(Sample.class)
+					.where(f -> f.match().fields("name", "tags", "description").matching("description3"))
+					.fetchHits(20);
 			assertNotNull(samples);
 			assertEquals(1, samples.size());
 			assertEquals("uniquename three", samples.get(0).getName());
 			
 			// by field content
-			lucenceQuery = qb.keyword().onFields("fields.fieldData").matching(testFieldData).createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class);
-			samples = query.getResultList();
+			samples = searchSession.search(Sample.class)
+					.where(f -> f.match().field("fields.fieldData").matching(testFieldData))
+					.fetchHits(20);
 			assertNotNull(samples);
 			assertEquals(1, samples.size());
 			assertEquals("uniquename three", samples.get(0).getName());
 			
 			// by extra field content
-			lucenceQuery = qb.keyword().onFields("fields.fieldData").matching(testExtraFieldData).createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class);
-			samples = query.getResultList();
+			samples = searchSession.search(Sample.class)
+					.where(f -> f.match().field("extraFields.fieldData").matching(testExtraFieldData))
+					.fetchHits(20);
 			assertNotNull(samples);
 			assertEquals(1, samples.size());
 			assertEquals("uniquename two", samples.get(0).getName());
 
 			// by attachment name
-			lucenceQuery = qb.keyword().onFields("fields.fieldData").matching(testAttachmentName).createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class);
-			samples = query.getResultList();
+			samples = searchSession.search(Sample.class)
+					.where(f -> f.match().field("files.fieldData").matching(testAttachmentName))
+					.fetchHits(20);
 			assertNotNull(samples);
 			assertEquals(1, samples.size());
 			assertEquals("uniquename two", samples.get(0).getName());
 			assertEquals(1, samples.get(0).getAttachedFiles().size());
 
 			// by barcode
-			lucenceQuery = qb.keyword().onFields("barcodes.barcodeData").matching("Barcode123").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class);
-			samples = query.getResultList();
+			samples = searchSession.search(Sample.class)
+					.where(f -> f.match().field("barcodes.barcodeData").matching("Barcode123"))
+					.fetchHits(20);
 			assertNotNull(samples);
 			assertEquals(1, samples.size());
 			assertEquals("uniquename three", samples.get(0).getName());
 			
 			// by shared with
-			lucenceQuery = qb.keyword().onFields("sharedWith").matching("group1").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class);
-			samples = query.getResultList();
+			samples = searchSession.search(Sample.class)
+					.where(f -> f.match().field("sharedWith").matching("group1"))
+					.fetchHits(20);
 			assertNotNull(samples);
 			assertEquals(1, samples.size());
 			assertEquals("uniquename three", samples.get(0).getName());
@@ -211,19 +207,18 @@ class HibernateSearchTest extends HibernateTest {
 			transaction = session.getTransaction();
 			transaction.begin();
 
-			// build lucene index and query
-			FullTextSession fullTextSession = Search.getFullTextSession(sf.getCurrentSession());
-			fullTextSession.createIndexer().startAndWait();
-			QueryBuilder qb = fullTextSession.getSearchFactory().buildQueryBuilder().forEntity(Sample.class).get();
-
-			org.apache.lucene.search.Query lucenceQuery = qb.keyword().onFields("name").matching("polysearch")
-					.createQuery();
+			// build lucene index
+			SearchSession searchSession = Search.session(sf.getCurrentSession());
+			searchSession.massIndexer().startAndWait();
 
 			// query targeting SampleEntity finds both the sample and the template
-			Query<SampleEntity> entityQuery = fullTextSession.createFullTextQuery(lucenceQuery, SampleEntity.class);
-			List<SampleEntity> sampleEntities = entityQuery.getResultList();
+			List<SampleEntity> sampleEntities = searchSession.search(SampleEntity.class)
+					.where(f -> f.match().field("name").matching("polysearch"))
+					.fetchHits(20);
 			assertNotNull(sampleEntities);
 			assertEquals(2, sampleEntities.size());
+			// fetchHits() returns an immutable list, so copy before sorting in place
+			sampleEntities = new ArrayList<>(sampleEntities);
 			Collections.sort(sampleEntities, (se1, se2) -> se1.getName().compareTo(se2.getName()));
 			assertEquals("polysearch sample", sampleEntities.get(0).getName());
 			assertInstanceOf(Sample.class, sampleEntities.get(0));
@@ -231,15 +226,17 @@ class HibernateSearchTest extends HibernateTest {
 			assertInstanceOf(SampleTemplate.class, sampleEntities.get(1));
 
 			// the same query targeting Sample finds only the sample
-			Query<Sample> sampleQuery = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class);
-			List<Sample> samples = sampleQuery.getResultList();
+			List<Sample> samples = searchSession.search(Sample.class)
+					.where(f -> f.match().field("name").matching("polysearch"))
+					.fetchHits(20);
 			assertNotNull(samples);
 			assertEquals(1, samples.size());
 			assertEquals("polysearch sample", samples.get(0).getName());
 
 			// and targeting SampleTemplate finds only the template
-			Query<SampleTemplate> templateQuery = fullTextSession.createFullTextQuery(lucenceQuery, SampleTemplate.class);
-			List<SampleTemplate> templates = templateQuery.getResultList();
+			List<SampleTemplate> templates = searchSession.search(SampleTemplate.class)
+					.where(f -> f.match().field("name").matching("polysearch"))
+					.fetchHits(20);
 			assertNotNull(templates);
 			assertEquals(1, templates.size());
 			assertEquals("polysearch template", templates.get(0).getName());
@@ -288,66 +285,70 @@ class HibernateSearchTest extends HibernateTest {
 			transaction.begin();
 
 			// build lucene index and query
-			FullTextSession fullTextSession = Search.getFullTextSession(sf.getCurrentSession());
-			fullTextSession.createIndexer().startAndWait();
-			QueryBuilder qb = fullTextSession.getSearchFactory().buildQueryBuilder().forEntity(SubSample.class).get();
+			SearchSession searchSession = Search.session(sf.getCurrentSession());
+			searchSession.massIndexer().startAndWait();
 
 			// try various searches
 			
 			// search that doesn't match any sample
-			org.apache.lucene.search.Query lucenceQuery = qb.keyword().onFields("name", "name").matching("asdf")
-					.createQuery();
-			Query<SubSample> query = fullTextSession.createFullTextQuery(lucenceQuery, SubSample.class);
-			List<SubSample> subSamples = query.getResultList();
+			List<SubSample> subSamples = searchSession.search(SubSample.class)
+					.where(f -> f.match().fields("name", "name").matching("asdf"))
+					.fetchHits(20);
 			assertNotNull(subSamples);
 			assertEquals(0, subSamples.size());
 
 			// find by name
-			lucenceQuery = qb.keyword().onFields("name", "tags", "description").matching("subSample").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, SubSample.class);
-			subSamples = query.getResultList();
+			subSamples = searchSession.search(SubSample.class)
+					.where(f -> f.match().fields("name", "tags", "description").matching("subSample"))
+					.fetchHits(20);
 			assertNotNull(subSamples);
 			assertEquals(3, subSamples.size());
+			// fetchHits() returns relevance-ordered hits, so sort by name before positional asserts
+			subSamples = new ArrayList<>(subSamples);
+			Collections.sort(subSamples, (ss1, ss2) -> ss1.getName().compareTo(ss2.getName()));
 			assertEquals("test subSample #1", subSamples.get(0).getName());
 
 			// by tag
-			lucenceQuery = qb.keyword().onFields("name", "tags", "description").matching("tag1").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, SubSample.class);
-			subSamples = query.getResultList();
+			subSamples = searchSession.search(SubSample.class)
+					.where(f -> f.match().fields("name", "tags", "description").matching("tag1"))
+					.fetchHits(20);
 			assertNotNull(subSamples);
 			assertEquals(1, subSamples.size());
 			assertEquals("test subSample #1", subSamples.get(0).getName());
 
 			// by note content
-			lucenceQuery = qb.keyword().onFields("fields.fieldData").matching(noteContent).createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, SubSample.class);
-			subSamples = query.getResultList();
+			subSamples = searchSession.search(SubSample.class)
+					.where(f -> f.match().field("notes.fieldData").matching(noteContent))
+					.fetchHits(20);
 			assertNotNull(subSamples);
 			assertEquals(1, subSamples.size());
 			assertEquals("test subSample #2", subSamples.get(0).getName());
-			
+
 			// by extra field content
-			lucenceQuery = qb.keyword().onFields("fields.fieldData").matching(testExtraFieldData).createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, SubSample.class);
-			subSamples = query.getResultList();
+			subSamples = searchSession.search(SubSample.class)
+					.where(f -> f.match().field("extraFields.fieldData").matching(testExtraFieldData))
+					.fetchHits(20);
 			assertNotNull(subSamples);
 			assertEquals(1, subSamples.size());
 			assertEquals("test subSample #3", subSamples.get(0).getName());
 
 			// by barcode
-			lucenceQuery = qb.keyword().onFields("barcodes.barcodeData").matching("B1234").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, SubSample.class);
-			subSamples = query.getResultList();
+			subSamples = searchSession.search(SubSample.class)
+					.where(f -> f.match().field("barcodes.barcodeData").matching("B1234"))
+					.fetchHits(20);
 			assertNotNull(subSamples);
 			assertEquals(1, subSamples.size());
 			assertEquals("test subSample #3", subSamples.get(0).getName());			
 			
 			// by parent sample id 
-			lucenceQuery = qb.keyword().onFields("parentSampleId").matching(sample.getId()).createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, SubSample.class);
-			subSamples = query.getResultList();
+			final Long sampleId = sample.getId();
+			subSamples = searchSession.search(SubSample.class)
+					.where(f -> f.match().field("parentSampleId").matching(sampleId))
+					.fetchHits(20);
 			assertNotNull(subSamples);
 			assertEquals(3, subSamples.size());
+			subSamples = new ArrayList<>(subSamples);
+			Collections.sort(subSamples, (ss1, ss2) -> ss1.getName().compareTo(ss2.getName()));
 			assertEquals("test subSample #1", subSamples.get(0).getName());
 
 			transaction.commit();
@@ -391,59 +392,62 @@ class HibernateSearchTest extends HibernateTest {
 			transaction.begin();
 
 			// build lucene index and query
-			FullTextSession fullTextSession = Search.getFullTextSession(sf.getCurrentSession());
-			fullTextSession.createIndexer().startAndWait();
-			QueryBuilder qb = fullTextSession.getSearchFactory().buildQueryBuilder().forEntity(Container.class).get();
+			SearchSession searchSession = Search.session(sf.getCurrentSession());
+			searchSession.massIndexer().startAndWait();
 
 			// try various searches
 			
 			// search that doesn't match any container
-			org.apache.lucene.search.Query lucenceQuery = qb.keyword().onFields("name", "name").matching("asdf")
-					.createQuery();
-			Query<Container> query = fullTextSession.createFullTextQuery(lucenceQuery, Container.class);
-			List<Container> containers = query.getResultList();
+			List<Container> containers = searchSession.search(Container.class)
+					.where(f -> f.match().fields("name", "name").matching("asdf"))
+					.fetchHits(20);
 			assertNotNull(containers);
 			assertEquals(0, containers.size());
 
 			// find by name
-			lucenceQuery = qb.keyword().onFields("name", "tags", "description").matching("subcontainer").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Container.class);
-			containers = query.getResultList();
+			containers = searchSession.search(Container.class)
+					.where(f -> f.match().fields("name", "tags", "description").matching("subcontainer"))
+					.fetchHits(20);
 			assertNotNull(containers);
 			assertEquals(2, containers.size());
+			containers = new ArrayList<>(containers);
+			Collections.sort(containers, (c1, c2) -> c1.getName().compareTo(c2.getName()));
 			assertEquals("test subcontainer #1", containers.get(0).getName());
 			assertEquals("test subcontainer #2", containers.get(1).getName());
 
 			// by tag
-			lucenceQuery = qb.keyword().onFields("name", "tags", "description").matching("tag2").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Container.class);
-			containers = query.getResultList();
+			containers = searchSession.search(Container.class)
+					.where(f -> f.match().fields("name", "tags", "description").matching("tag2"))
+					.fetchHits(20);
 			assertNotNull(containers);
 			assertEquals(1, containers.size());
 			assertEquals("test subcontainer #2", containers.get(0).getName());
 
 			// by extra field content
-			lucenceQuery = qb.keyword().onFields("fields.fieldData").matching("myData").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Container.class);
-			containers = query.getResultList();
+			containers = searchSession.search(Container.class)
+					.where(f -> f.match().field("extraFields.fieldData").matching("myData"))
+					.fetchHits(20);
 			assertNotNull(containers);
 			assertEquals(1, containers.size());
 			assertEquals("test container", containers.get(0).getName());
 
 			// by barcode
-			lucenceQuery = qb.keyword().onFields("barcodes.barcodeData").matching("B456").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Container.class);
-			containers = query.getResultList();
+			containers = searchSession.search(Container.class)
+					.where(f -> f.match().field("barcodes.barcodeData").matching("B456"))
+					.fetchHits(20);
 			assertNotNull(containers);
 			assertEquals(1, containers.size());
 			assertEquals("test subcontainer #2", containers.get(0).getName());	
 			
 			// by parent id 
-			lucenceQuery = qb.keyword().onFields("parentId").matching(topContainer.getId()).createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Container.class);
-			containers = query.getResultList();
+			final Long topContainerId = topContainer.getId();
+			containers = searchSession.search(Container.class)
+					.where(f -> f.match().field("parentId").matching(topContainerId))
+					.fetchHits(20);
 			assertNotNull(containers);
 			assertEquals(2, containers.size());
+			containers = new ArrayList<>(containers);
+			Collections.sort(containers, (c1, c2) -> c1.getName().compareTo(c2.getName()));
 			assertEquals("test subcontainer #1", containers.get(0).getName());
 			assertEquals("test subcontainer #2", containers.get(1).getName());
 
@@ -500,41 +504,42 @@ class HibernateSearchTest extends HibernateTest {
 			transaction.begin();
 
 			// build lucene index and query
-			FullTextSession fullTextSession = Search.getFullTextSession(sf.getCurrentSession());
-			fullTextSession.createIndexer().startAndWait();
-			QueryBuilder qb = fullTextSession.getSearchFactory().buildQueryBuilder().forEntity(Sample.class).get();
+			SearchSession searchSession = Search.session(sf.getCurrentSession());
+			searchSession.massIndexer().startAndWait();
 
 			// try various searches
 			// search that doesn't match any sample
-			org.apache.lucene.search.Query lucenceQuery = qb.keyword().onFields("name", "name").matching("asdf")
-					.createQuery();
-			FullTextQuery query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class, SubSample.class, Container.class);
-			List<InventoryRecord> foundInvRecords = query.getResultList();
+			List<InventoryRecord> foundInvRecords = searchSession.search(InventoryRecord.class)
+					.where(f -> f.match().fields("name", "name").matching("asdf"))
+					.fetchHits(20);
 			assertNotNull(foundInvRecords);
 			assertEquals(0, foundInvRecords.size());
 
 			// search by tag, should match a sample and a first subsample 
-			lucenceQuery = qb.keyword().onFields("tags").matching("tag11").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class, SubSample.class, Container.class);
-			foundInvRecords = query.getResultList();
+			foundInvRecords = searchSession.search(InventoryRecord.class)
+					.where(f -> f.match().field("tags").matching("tag11"))
+					.fetchHits(20);
 			assertNotNull(foundInvRecords);
 			assertEquals(3, foundInvRecords.size());
+			// fetchHits() returns an immutable list, so copy before sorting in place
+			foundInvRecords = new ArrayList<>(foundInvRecords);
 			Collections.sort(foundInvRecords, (ir1, ir2) -> ir1.getName().compareTo(ir2.getName()));
 			assertEquals("test sample", foundInvRecords.get(0).getName());
 			assertEquals("test subSample #1", foundInvRecords.get(1).getName());
 			assertEquals("test subcontainer #1", foundInvRecords.get(2).getName());
 
-			// search by barcode, should match a subsample and a container 
-			lucenceQuery = qb.keyword().onFields("barcodes.barcodeData").matching("B11").createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class, SubSample.class, Container.class);
-			foundInvRecords = query.getResultList();
+			// search by barcode, should match a subsample and a container.
+			// barcodeData is a @KeywordField (exact match, case-sensitive), so query the stored case.
+			foundInvRecords = searchSession.search(InventoryRecord.class)
+					.where(f -> f.match().field("barcodes.barcodeData").matching("b11"))
+					.fetchHits(20);
 			assertNotNull(foundInvRecords);
 			assertEquals(2, foundInvRecords.size());
 			
 			// search by owner, should match everything
-			lucenceQuery = qb.keyword().onFields("owner.username").matching(testUser.getUsername()).createQuery();
-			query = fullTextSession.createFullTextQuery(lucenceQuery, Sample.class, SubSample.class, Container.class);
-			foundInvRecords = query.getResultList();
+			foundInvRecords = searchSession.search(InventoryRecord.class)
+					.where(f -> f.match().field("owner.username").matching(testUser.getUsername()))
+					.fetchHits(20);
 			assertNotNull(foundInvRecords);
 			assertEquals(8, foundInvRecords.size());
 

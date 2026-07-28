@@ -5,6 +5,7 @@ import static com.researchspace.model.system.SystemPropertyTestFactory.createASy
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,7 @@ public class SystemPropertyValueTest {
 
 	@Test
 	public void systemPropertyValueNoNulProperty() {
-		assertIllegalArgumentException(()->new SystemPropertyValue(null));
+		assertThrows(NullPointerException.class, ()->new SystemPropertyValue(null));
 	}
 	
 	@Test

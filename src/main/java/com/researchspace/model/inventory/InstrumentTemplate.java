@@ -2,15 +2,15 @@ package com.researchspace.model.inventory;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.Transient;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
-import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 /**
  * Represents RSpace Inventory Instrument Template

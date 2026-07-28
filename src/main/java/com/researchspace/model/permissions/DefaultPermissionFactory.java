@@ -3,7 +3,7 @@ package com.researchspace.model.permissions;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
 
 import com.researchspace.model.Community;

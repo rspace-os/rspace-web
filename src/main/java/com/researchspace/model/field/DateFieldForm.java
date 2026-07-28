@@ -3,13 +3,13 @@ package com.researchspace.model.field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.Transient;
-import org.apache.commons.lang.StringUtils;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
-import org.hibernate.validator.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
 @DiscriminatorValue(FieldType.DATE_TYPE)

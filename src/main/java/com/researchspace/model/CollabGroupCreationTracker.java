@@ -1,11 +1,12 @@
 package com.researchspace.model;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToOne;
-import javax.persistence.Transient;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Transient;
 
 import com.researchspace.model.comms.MessageOrRequest;
 
@@ -58,7 +59,9 @@ public class CollabGroupCreationTracker {
 	}
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "collab_group_creation_tracker_gen")
+	@TableGenerator(name = "collab_group_creation_tracker_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
 	public Long getId() {
 		return id;
 	}

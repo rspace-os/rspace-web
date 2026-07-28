@@ -3,20 +3,22 @@ package com.researchspace.model.inventory;
 
 import java.io.Serializable;
 import java.util.Date;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
-import org.hibernate.search.annotations.Field;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 
 /**
  * Basic model used to represent all barcodes added to inventory items
@@ -35,13 +37,13 @@ public class Barcode extends InventoryRecordConnectedEntity implements Serializa
 	private Long id;
 	
 	// indexing barcode content separately 
-	@Field(name = "barcodeData")
+	@KeywordField(name = "barcodeData")
 	private String barcodeData;
 
 	private String format;
 
 	// indexing barcode description together with field data
-	@Field(name = "fieldData") 
+	@FullTextField(name = "fieldData") 
 	private String description;
 
 	private Date creationDate;
@@ -55,7 +57,9 @@ public class Barcode extends InventoryRecordConnectedEntity implements Serializa
 	}
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "barcode_gen")
+	@TableGenerator(name = "barcode_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
 	public Long getId() {
 		return id;
 	}

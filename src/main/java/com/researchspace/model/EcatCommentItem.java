@@ -8,26 +8,24 @@ package com.researchspace.model;
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlType;
 
 import org.hibernate.envers.Audited;
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Analyzer;
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
 
 import com.researchspace.core.util.DateUtil;
 import com.researchspace.model.core.GlobalIdPrefix;
@@ -40,7 +38,6 @@ import com.researchspace.session.SessionTimeZoneUtils;
 @Audited
 @Table(name = "ecat_comm_item")
 @Indexed
-@Analyzer(definition = "structureAnalyzer")
 @XmlType
 @XmlAccessorType(XmlAccessType.NONE)
 public class EcatCommentItem implements Serializable, IFieldLinkableElement {
@@ -49,11 +46,11 @@ public class EcatCommentItem implements Serializable, IFieldLinkableElement {
 
 	private Long itemId;
 	private Long comId;
-	@Field(analyze = Analyze.YES, store = Store.NO)
+	@FullTextField(analyzer = "structureAnalyzer")
 	private String itemName;
-	@Field(analyze = Analyze.YES, name = "fields.fieldData", store = Store.NO)
+	@FullTextField(analyzer = "structureAnalyzer", name = "fields_fieldData")
 	private String itemContent;
-	@Field(analyze = Analyze.NO, name = "owner.username")
+	@KeywordField(name = "owner_username")
 	private String lastUpdater;
 	private Date createDate;
 	private Date updateDate;
@@ -96,7 +93,7 @@ public class EcatCommentItem implements Serializable, IFieldLinkableElement {
 
 	@Id
 	@Column(name = "item_id")
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	public Long getItemId() {
 		return itemId;
 	}

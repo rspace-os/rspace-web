@@ -1,6 +1,6 @@
 package com.researchspace.model.record;
 
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 
 /**
  * Policy for initializing lazy-loaded properties of Recrds/Documents within a Hibernate session.

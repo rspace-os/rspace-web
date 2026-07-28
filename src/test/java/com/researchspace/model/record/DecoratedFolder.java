@@ -4,9 +4,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import javax.persistence.Transient;
+import jakarta.persistence.Transient;
 
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.RecordType;

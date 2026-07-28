@@ -2,7 +2,7 @@ package com.researchspace.model.views;
 
 import java.util.Date;
 
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 
 import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.model.core.Person;

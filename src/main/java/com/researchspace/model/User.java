@@ -31,39 +31,39 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlID;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlID;
+import jakarta.xml.bind.annotation.XmlType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.shiro.authz.Permission;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Analyzer;
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+import org.hibernate.search.engine.backend.types.Projectable;
+import org.hibernate.search.engine.backend.types.Sortable;
 
 /**
  * This class represents the basic "user" object.
@@ -73,7 +73,6 @@ import org.hibernate.search.annotations.Store;
  */
 @Entity
 @Table(name = "User")
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @XmlType
 @AuditTrailData(auditDomain = AuditDomain.USER)
 @NoArgsConstructor
@@ -481,7 +480,7 @@ public class User extends AbstractUserOrGroupImpl
 	@AuditTrailProperty(name = "username")
 	@XmlElement(required = true)
 	@XmlID
-	@Field(analyzer = @Analyzer(definition = "structureAnalyzer"), analyze = Analyze.NO, store = Store.NO)
+	@KeywordField(normalizer = "structureAnalyzer", projectable = Projectable.NO, sortable = Sortable.NO)
 	public String getUsername() {
 		return username;
 	}
@@ -561,7 +560,7 @@ public class User extends AbstractUserOrGroupImpl
 	/**
 	 * Generates a publicly consumable user data lacking any sensitive security
 	 * info
-	 * 
+	 *
 	 * @return
 	 */
 	public UserPublicInfo toPublicInfo() {

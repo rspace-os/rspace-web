@@ -1,10 +1,10 @@
 package com.researchspace.model.inventory;
 
 import java.time.Instant;
-import javax.persistence.CascadeType;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.OneToOne;
-import javax.persistence.Transient;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Transient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +12,10 @@ import org.hibernate.annotations.NotFound;
 import org.hibernate.annotations.NotFoundAction;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
-import org.hibernate.search.annotations.Field;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
 @MappedSuperclass
 @Getter
@@ -60,7 +63,8 @@ public abstract class MovableInventoryRecord extends InventoryRecord {
 	 * @return id of parent container, or null if record is not stored anywhere
 	 */
 	@Transient
-	@Field
+	@GenericField
+	@IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "parentLocation")))
 	public Long getParentId() {
 		if (getParentContainer() != null) {
 			return getParentContainer().getId();

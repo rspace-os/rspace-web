@@ -12,31 +12,33 @@ import com.researchspace.model.inventory.SampleEntity;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Transient;
-import javax.validation.ConstraintViolationException;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Transient;
+import jakarta.validation.ConstraintViolationException;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.hibernate.envers.Audited;
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Analyzer;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
 /**
  * Inventory Entity field is used to hold field data for Samples.
@@ -142,7 +144,9 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
   }
 
   @Id
-  @GeneratedValue(strategy = GenerationType.TABLE)
+  @GeneratedValue(strategy = GenerationType.TABLE, generator = "inventory_entity_field_gen")
+  @TableGenerator(name = "inventory_entity_field_gen", table = "hibernate_sequences",
+      pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
   public Long getId() {
     return id;
   }
@@ -169,8 +173,8 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
   }
 
   @Transient
-  @org.hibernate.search.annotations.Field(analyzer = @Analyzer(definition = "structureAnalyzer"),
-      analyze = Analyze.YES, name = "fieldData", store = Store.NO)
+  @FullTextField(analyzer = "structureAnalyzer", name = "fieldData")
+  @IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "data")))
   public String getFieldData() {
     return getData();
   }

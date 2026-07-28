@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 
 import com.researchspace.Constants;
 import com.researchspace.model.User;

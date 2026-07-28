@@ -7,23 +7,24 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.Lob;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.OrderBy;
-import javax.persistence.Transient;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Transient;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.Filter;
 import org.hibernate.envers.Audited;
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Analyzer;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.researchspace.model.EcatMediaFile;
@@ -164,9 +165,7 @@ public abstract class Field extends AbstractField implements Serializable,  Uniq
 	 * @return The data in this field as a String.
 	 */
 	@Transient
-	@Lob
-	@org.hibernate.search.annotations.Field(analyzer = @Analyzer(definition = "structureAnalyzer"),
-	    analyze = Analyze.YES, name = "fieldData", store = Store.NO)
+	@FullTextField(analyzer = "structureAnalyzer", name = "fieldData")
 	public String getFieldData() {
 		return getData();
 	}

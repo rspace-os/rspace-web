@@ -1,11 +1,15 @@
 package com.researchspace.model.field;
 
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.Lob;
-import javax.persistence.Transient;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Lob;
+import jakarta.persistence.Transient;
 
 import org.hibernate.envers.Audited;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
 @Entity
 @DiscriminatorValue("text")
@@ -32,6 +36,14 @@ public class TextField extends Field {
 	@Override
 	public String getData() {
 		return getRtfData();
+	}
+
+	@Override
+	@Transient
+	@FullTextField(analyzer = "structureAnalyzer", name = "fieldData")
+	@IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "rtfData")))
+	public String getFieldData() {
+		return super.getFieldData();
 	}
 
 	@Override

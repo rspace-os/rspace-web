@@ -5,8 +5,8 @@ import org.apache.commons.lang3.Validate;
 
 import java.util.Optional;
 
-import static org.apache.commons.lang.StringUtils.isBlank;
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * For service operations that return a {@link Boolean} indicating

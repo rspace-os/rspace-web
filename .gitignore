@@ -3,6 +3,12 @@
 *.iml
 hibtest/
 
+# Eclipse IDE
+.classpath
+.factorypath
+.project
+.settings/
+
 # Nix specifics
 shell.nix
 .envrc

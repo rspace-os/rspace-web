@@ -2,7 +2,7 @@ package com.researchspace.model;
 
 import java.io.Serializable;
 
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 
 import com.researchspace.core.util.version.SimpleVersion;
 

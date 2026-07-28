@@ -35,15 +35,19 @@ public class HibernateUtils {
 		Configuration configuration = new Configuration();
 		// Hibernate settings equivalent to hibernate.cfg.xml's properties
 		Properties settings = new Properties();
-		settings.put(Environment.DRIVER, "com.mysql.jdbc.Driver");
+		settings.put(Environment.DRIVER, "com.mysql.cj.jdbc.Driver");
 		settings.put(Environment.URL, "jdbc:mysql://localhost:3306/" + dbName + "?useSSL=false");
 		settings.put(Environment.USER, "rspacedbuser");
 		settings.put(Environment.PASS, "rspacedbpwd");
-		settings.put("hibernate.search.default.directory_provider","filesystem");
-		settings.put("hibernate.search.default.indexBase", dbName);
-		settings.put("hibernate.search.default.exclusive_index_use","true");
+		settings.put("hibernate.search.backend.type", "lucene");
+		settings.put("hibernate.search.backend.directory.type", "local-filesystem");
+		settings.put("hibernate.search.backend.directory.root", dbName);
+		// Hibernate Search 7 bootstraps strictly: every analyzer/normalizer referenced by an indexed entity
+		// must be defined or the SessionFactory build fails.
+		settings.put("hibernate.search.backend.analysis.configurer",
+				TestLuceneAnalysisConfigurer.class.getName());
 
-		settings.put(Environment.DIALECT, "org.hibernate.dialect.MySQL5InnoDBDialect");
+		settings.put(Environment.DIALECT, "org.hibernate.dialect.MySQLDialect");
 		settings.put(Environment.SHOW_SQL, "true");
 		settings.put(Environment.CURRENT_SESSION_CONTEXT_CLASS, "thread");
 		settings.put(Environment.HBM2DDL_AUTO, "create-drop");

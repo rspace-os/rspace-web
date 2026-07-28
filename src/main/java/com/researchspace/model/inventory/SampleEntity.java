@@ -22,34 +22,36 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
 
 /**
  * Represents RSpace Inventory SampleEntity (that is Sample or SampleTemplate)
@@ -88,7 +90,7 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
   @IndexedEmbedded
   private List<InventoryEntityField> fields = new ArrayList<>();
 
-  @IndexedEmbedded(prefix = "fields.")
+  @IndexedEmbedded(name = "extraFields")
   private List<ExtraField> extraFields = new ArrayList<>();
 
   @IndexedEmbedded
@@ -96,7 +98,7 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
 
   private List<DigitalObjectIdentifier> identifiers = new ArrayList<>();
 
-  @IndexedEmbedded(prefix = "fields.")
+  @IndexedEmbedded(name = "files")
   private List<InventoryFile> files = new ArrayList<>();
 
   private SampleSource sampleSource = LAB_CREATED;
@@ -232,6 +234,7 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
   @JoinColumn(nullable = false)
   @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   @IndexedEmbedded
+  @IndexingDependency(reindexOnUpdate = ReindexOnUpdate.SHALLOW)
   public User getOwner() {
     return owner;
   }

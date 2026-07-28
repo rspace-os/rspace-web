@@ -1,7 +1,7 @@
 package com.researchspace.model.units;
 
-import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

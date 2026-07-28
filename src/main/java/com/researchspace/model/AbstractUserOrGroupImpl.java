@@ -3,23 +3,26 @@ package com.researchspace.model;
 import java.util.Date;
 import java.util.Set;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
-import javax.persistence.Version;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
+import jakarta.persistence.Version;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 
 import org.apache.shiro.authz.Permission;
 import org.apache.shiro.authz.permission.PermissionResolver;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
@@ -29,12 +32,14 @@ import com.researchspace.model.core.UniquelyIdentifiable;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.ConstraintPermissionResolver;
 
+
 /**
  * Contains common behaviour for both Users and Groups
  */
 
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 /**
  * By default we must explicitly include XML elements
  */
@@ -104,8 +109,10 @@ public abstract class AbstractUserOrGroupImpl implements UserOrGroup, UniquelyId
 	 * @return
 	 */
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
-	// or get an exception if using auto
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "uog_gen")
+	@TableGenerator(name = "uog_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val",
+			pkColumnValue = "AbstractUserOrGroupImpl", allocationSize = 1)
 	public Long getId() {
 		return id;
 	}

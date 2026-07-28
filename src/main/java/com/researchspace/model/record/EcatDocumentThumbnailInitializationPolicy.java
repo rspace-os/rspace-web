@@ -1,6 +1,6 @@
 package com.researchspace.model.record;
 
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 
 import com.researchspace.model.EcatDocumentFile;
 /**

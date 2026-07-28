@@ -1,6 +1,6 @@
 package com.researchspace.model.preference;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class EnumPreferenceValidator implements PreferenceValidator {
 

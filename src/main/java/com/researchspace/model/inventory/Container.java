@@ -19,33 +19,35 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Transient;
-import javax.validation.ConstraintViolationException;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Transient;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
 import org.hibernate.envers.RelationTargetAuditMode;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
+import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
 
 /**
  * Represents RSpace Inventory Container.
@@ -70,18 +72,18 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   private User owner;
 
-  @IndexedEmbedded(prefix = "fields.")
-  private List<ExtraField> extraFields = new ArrayList<>();
+	@IndexedEmbedded(name = "extraFields")
+	private List<ExtraField> extraFields = new ArrayList<>();
 
   @IndexedEmbedded
   private List<Barcode> barcodes = new ArrayList<>();
 
   private List<DigitalObjectIdentifier> identifiers = new ArrayList<>();
 
-  @IndexedEmbedded(prefix = "fields.")
-  private List<InventoryFile> files = new ArrayList<>();
+	@IndexedEmbedded(name = "files")
+	private List<InventoryFile> files = new ArrayList<>();
 
-  private FileProperty locationsImageFileProperty;
+	private FileProperty locationsImageFileProperty;
 
   private List<ContainerLocation> locations = new ArrayList<>();
   private int locationsCount;
@@ -199,20 +201,21 @@ public class Container extends MovableInventoryRecord implements Serializable {
     return gridLayoutColumnsLabelType;
   }
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false, length = 20)
-  @NotNull
-  public GridLayoutAxisLabelEnum getGridLayoutRowsLabelType() {
-    return gridLayoutRowsLabelType;
-  }
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 20)
+	@NotNull
+	public GridLayoutAxisLabelEnum getGridLayoutRowsLabelType() {
+		return gridLayoutRowsLabelType;
+	}
 
-  @ManyToOne
-  @JoinColumn(nullable = false)
-  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-  @IndexedEmbedded
-  public User getOwner() {
-    return owner;
-  }
+	@ManyToOne
+	@JoinColumn(nullable = false)
+	@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+	@IndexedEmbedded
+	@IndexingDependency(reindexOnUpdate = ReindexOnUpdate.SHALLOW)
+	public User getOwner() {
+		return owner;
+	}
 
   /**
    * @return the list of extra fields of this Container, including deleted fields.
@@ -264,16 +267,16 @@ public class Container extends MovableInventoryRecord implements Serializable {
     return files;
   }
 
-  protected void setFiles(List<InventoryFile> files) {
-    this.files = files;
-    refreshActiveAttachedFiles();
-  }
+	protected void setFiles(List<InventoryFile> files) {
+		this.files = files;
+		refreshActiveAttachedFiles();
+	}
 
-  @ManyToOne
-  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-  public FileProperty getLocationsImageFileProperty() {
-    return locationsImageFileProperty;
-  }
+	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+	@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+	public FileProperty getLocationsImageFileProperty() {
+		return locationsImageFileProperty;
+	}
 
   @NotAudited
   @OneToMany(cascade = CascadeType.ALL, mappedBy = "container", orphanRemoval = true)

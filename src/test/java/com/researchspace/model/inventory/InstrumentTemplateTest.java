@@ -12,7 +12,7 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryTextField;
 import com.researchspace.model.record.TestFactory;
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

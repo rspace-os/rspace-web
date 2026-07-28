@@ -1,25 +1,25 @@
 package com.researchspace.model.oauth;
 
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import java.io.Serializable;
 import java.time.Instant;
 
 import java.util.Date;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.Transient;
-import javax.validation.constraints.Size;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Transient;
+import jakarta.validation.constraints.Size;
 
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.Type;
 
 import com.researchspace.model.User;
 
@@ -41,7 +41,9 @@ public class OAuthToken implements Serializable, AuthenticationToken {
 	private static final int TOKEN_LENGTH = 64; // SHA-256 hash in hex
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "o_auth_token_gen")
+	@TableGenerator(name = "o_auth_token_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
 	@Setter(AccessLevel.PRIVATE)
 	private Long id;
 
@@ -57,7 +59,6 @@ public class OAuthToken implements Serializable, AuthenticationToken {
 	private Date created;
 
 	@Column(nullable = false)
-	@Type(type = "org.hibernate.type.InstantType")
 	private Instant expiryTime;
 
 	/**

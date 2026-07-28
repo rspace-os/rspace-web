@@ -10,8 +10,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import javax.persistence.Embeddable;
-import javax.persistence.Transient;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Transient;
 import org.apache.shiro.authz.Permission;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -336,11 +336,11 @@ public class ConstraintBasedPermission implements Serializable, Permission, Comp
    */
 	@Transient
 	public IEntityPermission getAsEntityPermission() {
-		EntityPermission ep = new EntityPermission();
-		ep.setDomain(getDomain());
+		EntityPermission ep = new EntityPermission(getDomain(), null);
 		if (!getActions().isEmpty()) {
 			ep.setAction(getActions().iterator().next());
 		}
+		ep.setId(getIdConstraint() != null && !getIdConstraint().getId().isEmpty() ? getIdConstraint().getId().iterator().next() : null);
 		for (PropertyConstraint pc : getPropertyConstraints().values()) {
 			ep.addPropertyConstraint(pc);
 		}
@@ -350,9 +350,6 @@ public class ConstraintBasedPermission implements Serializable, Permission, Comp
 			ep.setGroupConstraints(grpConstraints);
 		}
 
-		if (getIdConstraint() != null && !getIdConstraint().getId().isEmpty()) {
-			ep.setId(getIdConstraint().getId().iterator().next());
-		}
 		return ep;
 
 	}

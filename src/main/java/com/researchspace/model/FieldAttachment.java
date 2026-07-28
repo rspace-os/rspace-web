@@ -2,11 +2,12 @@ package com.researchspace.model;
 
 import java.io.Serializable;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.TableGenerator;
 
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.FilterDef;
@@ -35,7 +36,9 @@ import lombok.Setter;
 public class FieldAttachment implements Serializable {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "field_attachment_gen")
+	@TableGenerator(name = "field_attachment_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
 	@Setter(AccessLevel.PACKAGE)
 	private Long id;
 

@@ -13,22 +13,24 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
-import javax.persistence.Transient;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Transient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
 
 /**
  * Represents RSpace Inventory InstrumentEntity (that is Instrument or InstrumentTemplate)
@@ -51,7 +53,7 @@ public abstract class InstrumentEntity extends MovableInventoryRecord implements
   @IndexedEmbedded
   private List<InventoryEntityField> fields = new ArrayList<>();
 
-  @IndexedEmbedded(prefix = "fields.")
+  @IndexedEmbedded(name = "extraFields")
   private List<ExtraField> extraFields = new ArrayList<>();
 
   @IndexedEmbedded
@@ -59,7 +61,7 @@ public abstract class InstrumentEntity extends MovableInventoryRecord implements
 
   private List<DigitalObjectIdentifier> identifiers = new ArrayList<>();
 
-  @IndexedEmbedded(prefix = "fields.")
+  @IndexedEmbedded(name = "files")
   private List<InventoryFile> files = new ArrayList<>();
 
   private List<InventoryEntityField> activeFields;
@@ -146,6 +148,7 @@ public abstract class InstrumentEntity extends MovableInventoryRecord implements
   @JoinColumn(nullable = false)
   @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   @IndexedEmbedded
+  @IndexingDependency(reindexOnUpdate = ReindexOnUpdate.SHALLOW)
   public User getOwner() {
     return owner;
   }

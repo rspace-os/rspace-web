@@ -1,18 +1,21 @@
 package com.researchspace.model.inventory;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Transient;
+import jakarta.validation.ConstraintViolationException;
+
+import org.hibernate.envers.Audited;
+
 import com.researchspace.model.core.GlobalIdentifier;
-import javax.persistence.CascadeType;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.ManyToOne;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Transient;
-import javax.validation.ConstraintViolationException;
+
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
 
 /**
  * Abstract class inherited by entities connected to Inventory Records

@@ -1,6 +1,6 @@
 package com.researchspace.model;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import com.researchspace.model.record.DOCUMENT_CATEGORIES;
 import com.researchspace.model.record.ImportOverride;
@@ -8,7 +8,7 @@ import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.RecordInformation;
 import lombok.*;
 import org.hibernate.envers.Audited;
-import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 import java.io.Serializable;
 

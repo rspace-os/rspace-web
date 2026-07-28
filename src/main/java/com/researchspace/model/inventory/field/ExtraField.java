@@ -3,19 +3,22 @@ package com.researchspace.model.inventory.field;
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.Transient;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Transient;
 
 import org.hibernate.envers.Audited;
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Analyzer;
-import org.hibernate.search.annotations.Store;
+import org.hibernate.search.engine.backend.types.Projectable;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
 import com.researchspace.model.audittrail.AuditTrailProperty;
 import com.researchspace.model.core.GlobalIdPrefix;
@@ -53,7 +56,9 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
 	}
 	
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "extra_field_gen")
+	@TableGenerator(name = "extra_field_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
 	public Long getId() {
 		return id;
 	}
@@ -74,8 +79,8 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
 	}
 
 	@Transient
-	@org.hibernate.search.annotations.Field(analyzer = @Analyzer(definition = "structureAnalyzer"),
-			analyze = Analyze.YES, name = "fieldData", store = Store.NO)
+	@FullTextField(analyzer = "structureAnalyzer", name = "fieldData", projectable = Projectable.NO)
+	@IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "editInfo")))
 	public String getData() {
 		return getEditInfo().getDescription();
 	}

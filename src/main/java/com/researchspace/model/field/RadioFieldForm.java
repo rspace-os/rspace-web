@@ -3,15 +3,15 @@ package com.researchspace.model.field;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.Transient;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.envers.Audited;
-import org.hibernate.validator.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
 @DiscriminatorValue(FieldType.RADIO_TYPE)

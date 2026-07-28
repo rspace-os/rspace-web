@@ -1,5 +1,20 @@
 package com.researchspace.model.inventory;
 
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.TableGenerator;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
@@ -17,23 +32,20 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.persistence.Embedded;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Lob;
-import javax.persistence.ManyToOne;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
-import org.hibernate.search.annotations.Field;
+import org.hibernate.search.engine.backend.types.Projectable;
+import org.hibernate.search.engine.backend.types.Sortable;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
 @MappedSuperclass
 @Getter
@@ -84,8 +96,9 @@ public abstract class InventoryRecord {
 		return getSharingACL().getAclElements().stream().map(ACLElement::getUserOrGrpUniqueName).collect(Collectors.toList()); 
 	}
 
-	@Field(name = "sharedWith")
+	@KeywordField(name = "sharedWith")
 	@Transient
+	@IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "sharingACL")))
 	public String getSharedWithUniqueNamesString() {
 		if (getSharingACL() == null) {
 			return null;
@@ -136,7 +149,12 @@ public abstract class InventoryRecord {
 	}
 	
 	@Id
-	@GeneratedValue(strategy = GenerationType.TABLE)
+	@GeneratedValue(strategy = GenerationType.TABLE, generator = "inventory_record_gen")
+	@TableGenerator(name = "inventory_record_gen", table = "hibernate_sequences",
+			pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
+	// id_sort is a tie-breaker for search queries (score DESC, id_sort ASC) so results with equal
+	// relevance scores are ordered deterministically. The sort clause itself lives in rspace-web.
+	@GenericField(name = "id_sort", sortable = Sortable.YES, projectable = Projectable.NO)
 	public Long getId() {
 		return id;
 	}
@@ -148,7 +166,8 @@ public abstract class InventoryRecord {
 
 	@Transient
 	@AuditTrailProperty(name = "name")
-	@Field
+	@FullTextField
+	@IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "editInfo")))
 	public String getName() {
 		return getEditInfo().getName();
 	}
@@ -179,7 +198,7 @@ public abstract class InventoryRecord {
 		setDeletedDate(isDeleted ? new Date() : null);
 	}
 
-	@Field
+	@FullTextField
 	public String getTags() {
 		return tags;
 	}
@@ -190,7 +209,8 @@ public abstract class InventoryRecord {
 	}
 	
 	@Transient
-	@Field
+	@FullTextField
+	@IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "editInfo")))
 	public String getDescription() {
 		return getEditInfo().getDescription();
 	}
@@ -277,7 +297,7 @@ public abstract class InventoryRecord {
 	public boolean isContainer() {
 		return InventoryRecordType.CONTAINER.equals(getType());
 	}
-	
+
 	@Transient
 	public boolean isInstrument() {
 		return InventoryRecordType.INSTRUMENT.equals(getType());
@@ -463,13 +483,13 @@ public abstract class InventoryRecord {
 		return getId() != null ? getOid().toString() : null;
 	}
 	
-	@ManyToOne
+	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
 	@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
 	public FileProperty getImageFileProperty() {
 		return imageFileProperty;
 	}
 
-	@ManyToOne
+	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
 	@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
 	public FileProperty getThumbnailFileProperty() {
 		return thumbnailFileProperty;
@@ -539,7 +559,7 @@ public abstract class InventoryRecord {
 			destination.doAddAttachedFile(invFile.shallowCopy());
 		}
 	}
-	
+
 	String defaultNameCopy(InventoryRecord original) {
 			return original.getName() + "_COPY";
 	}

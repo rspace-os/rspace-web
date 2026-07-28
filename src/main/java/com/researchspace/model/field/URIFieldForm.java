@@ -3,9 +3,9 @@ package com.researchspace.model.field;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.Transient;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 
 import org.hibernate.envers.Audited;
 

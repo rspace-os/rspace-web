@@ -1,6 +1,6 @@
 package com.researchspace.model.netfiles;
 
-import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import org.apache.commons.io.FilenameUtils;
 

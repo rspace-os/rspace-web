@@ -6,14 +6,14 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.Transient;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
-import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 /**
  * Represents RSpace Inventory Sample Template

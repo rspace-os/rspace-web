@@ -187,7 +187,7 @@ public class RecordFactoryTest {
 		assertEquals(otherUser.getUsername(), sample.getModifiedBy());
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected = NullPointerException.class)
 	public void testCreateSampleFromTemplateRejectsNullTemplate() {
 		factoryAPI.createSample("fail", user, null);
 	}

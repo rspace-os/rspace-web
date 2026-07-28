@@ -2,18 +2,18 @@ package com.researchspace.model;
 
 import java.io.Serializable;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Transient;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
 
 import org.apache.commons.lang3.Validate;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
 import org.hibernate.envers.RelationTargetAuditMode;
-import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.record.DOCUMENT_CATEGORIES;
@@ -170,9 +170,12 @@ public class EcatImage extends EcatMediaFile implements Serializable {
 	}
 
 	/**
-	 * @return image that was used as a source for creating current image, or null 
+	 * @return image that was used as a source for creating current image, or null
 	 */
-	@ManyToOne
+	// Lazy is load-bearing: Hibernate 6 join-fetches eager to-one associations in one SQL, and
+	// this self-reference re-inlines the whole record graph per level, exceeding MariaDB's
+	// 61-table join limit (error 1116) on a plain load.
+	@ManyToOne(fetch = FetchType.LAZY)
 	@NotAudited
 	public EcatImage getOriginalImage() {
 		return originalImage;

@@ -22,21 +22,21 @@ import com.researchspace.model.permissions.DefaultPermissionFactory;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Lob;
-import javax.persistence.OneToMany;
-import javax.persistence.Transient;
-import javax.validation.constraints.Size;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Lob;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Transient;
+import jakarta.validation.constraints.Size;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 @Entity
 @XmlRootElement
@@ -138,7 +138,7 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
 
 	@Column(length = MAX_TAG_LENGTH)
 	@Size(max = MAX_TAG_LENGTH)
-	@Field
+	@FullTextField
 	public String getDocTag() {
 		return docTag;
 	}

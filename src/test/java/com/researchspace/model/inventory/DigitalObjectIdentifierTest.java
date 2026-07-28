@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import org.junit.jupiter.api.Test;
 
 public class DigitalObjectIdentifierTest {

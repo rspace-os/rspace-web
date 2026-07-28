@@ -2,8 +2,8 @@ package com.researchspace.model.comms;
 
 import java.io.Serializable;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
 
 import com.researchspace.model.User;
 

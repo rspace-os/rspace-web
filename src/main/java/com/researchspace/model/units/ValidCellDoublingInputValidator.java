@@ -1,7 +1,7 @@
 package com.researchspace.model.units;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 public class ValidCellDoublingInputValidator
 		implements ConstraintValidator<ValidCellDoublingInput, CellDoublingTimeInput> {

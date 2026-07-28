@@ -21,7 +21,7 @@ import javax.measure.quantity.Mass;
 import javax.measure.quantity.Temperature;
 import javax.measure.quantity.Volume;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import tech.units.indriya.AbstractUnit;

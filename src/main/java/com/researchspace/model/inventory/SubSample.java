@@ -17,28 +17,32 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Transient;
-import javax.validation.ConstraintViolationException;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Transient;
+import jakarta.validation.ConstraintViolationException;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.hibernate.envers.Audited;
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
+import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
 
 /**
  * Represents RSInventory SubSample.
@@ -54,7 +58,7 @@ public class SubSample extends MovableInventoryRecord implements Serializable, Q
 
 	private static final long serialVersionUID = 1867269597891360704L;
 
-	@IndexedEmbedded(prefix = "fields.")
+	@IndexedEmbedded(name = "extraFields")
 	private List<ExtraField> extraFields = new ArrayList<>();
 
 	@IndexedEmbedded
@@ -62,10 +66,10 @@ public class SubSample extends MovableInventoryRecord implements Serializable, Q
 
 	private List<DigitalObjectIdentifier> identifiers = new ArrayList<>();
 
-	@IndexedEmbedded(prefix = "fields.")
+	@IndexedEmbedded(name = "files")
 	private List<InventoryFile> files = new ArrayList<>();
-	
-	@IndexedEmbedded(prefix = "fields.")
+
+	@IndexedEmbedded(name = "notes")
 	private List<SubSampleNote> notes = new ArrayList<>();
 
 	private SampleEntity sample;
@@ -85,6 +89,7 @@ public class SubSample extends MovableInventoryRecord implements Serializable, Q
 	
 	@Transient
 	@IndexedEmbedded
+	@IndexingDependency(reindexOnUpdate = ReindexOnUpdate.SHALLOW, derivedFrom = @ObjectPath(@PropertyValue(propertyName = "sample")))
 	@Override
 	public User getOwner() {
 		if (getSample() == null) {
@@ -248,7 +253,8 @@ public class SubSample extends MovableInventoryRecord implements Serializable, Q
 	}
 
 	@Transient
-	@Field
+	@GenericField
+	@IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "sample")))
 	public Long getParentSampleId() {
 		if (getSample() != null) {
 			return getSample().getId();

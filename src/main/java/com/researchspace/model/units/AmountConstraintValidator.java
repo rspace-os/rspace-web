@@ -1,7 +1,7 @@
 package com.researchspace.model.units;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  * Amount constraint validator for Quantifiable objects annotated with @ValidAmount

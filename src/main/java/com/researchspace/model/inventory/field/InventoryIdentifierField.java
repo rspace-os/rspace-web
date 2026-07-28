@@ -5,8 +5,8 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
 import java.util.regex.Pattern;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 

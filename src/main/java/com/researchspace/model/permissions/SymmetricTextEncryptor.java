@@ -5,16 +5,16 @@ import java.security.Key;
 
 import javax.crypto.spec.SecretKeySpec;
 
-import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.shiro.codec.Base64;
-import org.apache.shiro.codec.CodecSupport;
-import org.apache.shiro.crypto.AesCipherService;
-import org.apache.shiro.crypto.OperationMode;
-import org.apache.shiro.crypto.PaddingScheme;
+import org.apache.shiro.lang.codec.Base64;
+import org.apache.shiro.lang.codec.CodecSupport;
+import org.apache.shiro.crypto.cipher.AesCipherService;
+import org.apache.shiro.crypto.cipher.OperationMode;
+import org.apache.shiro.crypto.cipher.PaddingScheme;
 import org.apache.shiro.crypto.hash.Sha384Hash;
 import org.apache.shiro.crypto.hash.SimpleHash;
-import org.apache.shiro.util.ByteSource;
+import org.apache.shiro.crypto.cipher.ByteSourceBroker;
 
 /**
  * Convenience class to encrypt  small pieces of text using a symmetric key, which can be
@@ -102,8 +102,9 @@ public class SymmetricTextEncryptor implements TextEncryptor, Serializable {
 	 */
 	@Override
 	public String decrypt(String encryptedText) {
-		ByteSource decrypted = service.decrypt(Base64.decode(CodecSupport.toBytes(encryptedText)), keyBytes);
-		return CodecSupport.toString(decrypted.getBytes());
+		ByteSourceBroker decrypted =
+				service.decrypt(Base64.decode(CodecSupport.toBytes(encryptedText)), keyBytes);
+		return CodecSupport.toString(decrypted.getClonedBytes());
 	}
 
 }

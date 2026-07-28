@@ -1,6 +1,6 @@
 package com.researchspace.model.inventory;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Utility class for naming series of samples and subsamples.

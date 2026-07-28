@@ -4,7 +4,7 @@ import com.researchspace.model.TaggableElnRecord;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.persistence.Transient;
+import jakarta.persistence.Transient;
 
 import com.researchspace.model.AbstractUserOrGroupImpl;
 import com.researchspace.model.EcatDocumentFile;
