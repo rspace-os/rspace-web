@@ -502,12 +502,19 @@ const Sidebar = ({
             setNewMenuAnchorEl(null);
           }}
           sx={{
+            /*
+             * In production builds (-DgenerateReactDist) a re-render during this
+             * Menu's exit can cancel react-transition-group's onExited
+             * (mui/material-ui#32286), leaving the Modal mounted with its
+             * invisible backdrop still intercepting every click -- the page
+             * freezes until reload. Since we cannot make onExited fire reliably,
+             * make the closed menu click-through instead. pointer-events is
+             * inherited and MUI sets it on neither backdrop nor paper, so this
+             * root rule covers both; the open menu (anchorEl set) is unaffected.
+             */
+            ...(newMenuAnchorEl ? {} : { pointerEvents: "none" }),
             [`& .${paperClasses.root}`]: {
-              ...(newMenuAnchorEl
-                ? {
-                    transform: "translate(-4px, 4px) !important",
-                  }
-                : {}),
+              ...(newMenuAnchorEl ? { transform: "translate(-4px, 4px) !important" } : {}),
             },
           }}
           slotProps={{
