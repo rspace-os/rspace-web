@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { HttpResponse } from "msw";
+import { describe, expect, test } from "vitest";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import type { RestApiError } from "@/modules/common/api/schema";
 import { getGroupById } from "../queries";
 import type { GroupInfo } from "../schema";
@@ -48,17 +50,15 @@ const mockRestApiError: RestApiError = {
   data: null,
 };
 
-beforeEach(() => {
-  // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
-  fetchMock.resetMocks();
-  vi.clearAllMocks();
-});
+function mockGroupResponse(response: () => Response): Request[] {
+  return captureRequests("get", `${API_BASE_URL}/groups/:id`, response);
+}
 
 describe("getGroupById", () => {
   const token = "test-token-123";
 
   test("should fetch group info successfully with raid", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockGroupInfo));
+    const requests = mockGroupResponse(() => HttpResponse.json(mockGroupInfo));
 
     const result = await getGroupById("32768", { token });
 
@@ -68,18 +68,12 @@ describe("getGroupById", () => {
     expect(result?.raid).not.toBeNull();
     expect(result?.raid?.raidIdentifier).toBe("raid-123");
 
-    // Verify the fetch was called with correct URL
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${API_BASE_URL}/groups/32768`,
-      expect.objectContaining({
-        method: "GET",
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    expect(new URL(requests[0].url).pathname).toBe(`${API_BASE_URL}/groups/32768`);
   });
 
   test("should fetch group info successfully without raid", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockGroupInfoWithoutRaid));
+    mockGroupResponse(() => HttpResponse.json(mockGroupInfoWithoutRaid));
 
     const result = await getGroupById("32768", { token });
 
@@ -89,45 +83,32 @@ describe("getGroupById", () => {
   });
 
   test("should include authorization header in request", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockGroupInfo));
+    const requests = mockGroupResponse(() => HttpResponse.json(mockGroupInfo));
 
     await getGroupById("32768", { token });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${API_BASE_URL}/groups/32768`,
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: `Bearer ${token}`,
-        }) as Record<string, string>,
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].headers.get("Authorization")).toBe(`Bearer ${token}`);
   });
 
   test("should include X-Requested-With header", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockGroupInfo));
+    const requests = mockGroupResponse(() => HttpResponse.json(mockGroupInfo));
 
     await getGroupById("32768", { token });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${API_BASE_URL}/groups/32768`,
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "X-Requested-With": "XMLHttpRequest",
-        }) as Record<string, string>,
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
   test("should return null when group not found (404)", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockRestApiError), {
-      status: 404,
-      statusText: "Not Found",
-    });
+    const requests = mockGroupResponse(() =>
+      HttpResponse.json(mockRestApiError, { status: 404, statusText: "Not Found" }),
+    );
 
     const result = await getGroupById("99999", { token });
 
     expect(result).toBeNull();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(requests).toHaveLength(1);
   });
 
   test("should throw error when server returns 400", async () => {
@@ -142,10 +123,7 @@ describe("getGroupById", () => {
       data: null,
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(badRequestError), {
-      status: 400,
-      statusText: "Bad Request",
-    });
+    mockGroupResponse(() => HttpResponse.json(badRequestError, { status: 400, statusText: "Bad Request" }));
 
     await expect(getGroupById("32768", { token })).rejects.toThrow("Bad request");
   });
@@ -162,10 +140,9 @@ describe("getGroupById", () => {
       data: null,
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(serviceUnavailableError), {
-      status: 503,
-      statusText: "Service Unavailable",
-    });
+    mockGroupResponse(() =>
+      HttpResponse.json(serviceUnavailableError, { status: 503, statusText: "Service Unavailable" }),
+    );
 
     await expect(getGroupById("32768", { token })).rejects.toThrow("Service unavailable");
   });
@@ -182,27 +159,23 @@ describe("getGroupById", () => {
       data: null,
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(serverError), {
-      status: 500,
-      statusText: "Internal Server Error",
-    });
+    mockGroupResponse(() => HttpResponse.json(serverError, { status: 500, statusText: "Internal Server Error" }));
 
     await expect(getGroupById("32768", { token })).rejects.toThrow("Internal server error occurred");
   });
 
   test("should throw generic error when response is not ok and error parsing fails", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({ invalidFormat: "not a valid error" }), {
-      status: 500,
-      statusText: "Internal Server Error",
-    });
+    mockGroupResponse(() =>
+      HttpResponse.json({ invalidFormat: "not a valid error" }, { status: 500, statusText: "Internal Server Error" }),
+    );
 
     await expect(getGroupById("32768", { token })).rejects.toThrow("Failed to fetch group: Internal Server Error");
   });
 
   test("should throw error when response data does not match schema", async () => {
     // Mock a response with incomplete/invalid data
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
+    mockGroupResponse(() =>
+      HttpResponse.json({
         id: 32768,
         name: "Incomplete Group",
         // Missing required fields like globalId, type, etc.
@@ -213,29 +186,33 @@ describe("getGroupById", () => {
   });
 
   test("should handle network errors", async () => {
-    fetchMock.mockRejectOnce(new Error("Network request failed"));
+    const requests = mockGroupResponse(() => HttpResponse.error());
 
-    await expect(getGroupById("32768", { token })).rejects.toThrow("Network request failed");
+    await expect(getGroupById("32768", { token })).rejects.toThrow();
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(requests).toHaveLength(1);
   });
 
   test("should handle malformed JSON response", async () => {
-    fetchMock.mockResponseOnce("Not valid JSON", {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    mockGroupResponse(
+      () =>
+        new HttpResponse("Not valid JSON", {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+    );
 
     await expect(getGroupById("32768", { token })).rejects.toThrow();
   });
 
   test("should fetch different group IDs correctly", async () => {
     const groupId = "12345";
-    fetchMock.mockResponseOnce(JSON.stringify({ ...mockGroupInfo, id: 12345, globalId: "GR12345" }));
+    const requests = mockGroupResponse(() => HttpResponse.json({ ...mockGroupInfo, id: 12345, globalId: "GR12345" }));
 
     await getGroupById(groupId, { token });
 
-    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/groups/${groupId}`, expect.any(Object));
+    expect(requests).toHaveLength(1);
+    expect(new URL(requests[0].url).pathname).toBe(`${API_BASE_URL}/groups/${groupId}`);
   });
 
   test("should handle empty string in error message", async () => {
@@ -250,10 +227,7 @@ describe("getGroupById", () => {
       data: null,
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(errorWithEmptyMessage), {
-      status: 400,
-      statusText: "Bad Request",
-    });
+    mockGroupResponse(() => HttpResponse.json(errorWithEmptyMessage, { status: 400, statusText: "Bad Request" }));
 
     await expect(getGroupById("32768", { token })).rejects.toThrow();
   });

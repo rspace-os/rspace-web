@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { HttpResponse, http } from "msw";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { server } from "@/__tests__/mswServer";
 import { uploadNewGalleryVersion } from "@/modules/workspace/galleryUpload";
 
-beforeEach(() => {
-  fetchMock.resetMocks();
-  vi.clearAllMocks();
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 function makeFile(): File {
@@ -11,34 +12,45 @@ function makeFile(): File {
 }
 
 describe("uploadNewGalleryVersion", () => {
+  // request.formData() can't be used here: undici's multipart parser fails
+  // to decode a jsdom-constructed File part in this test environment, so the
+  // request body is asserted as raw multipart bytes instead.
   it("posts multipart form data with the file and selectedMediaId to the upload endpoint", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
-        data: { id: 55, oid: { idString: "GL55" }, name: "replacement.png", type: "Image" },
-        error: null,
-        success: true,
+    const setSpy = vi.spyOn(FormData.prototype, "set");
+    let multipartBody = "";
+    let contentType: string | null = null;
+    server.use(
+      http.post("/gallery/ajax/uploadFile", async ({ request }) => {
+        multipartBody = await request.text();
+        contentType = request.headers.get("Content-Type");
+        return HttpResponse.json({
+          data: { id: 55, oid: { idString: "GL55" }, name: "replacement.png", type: "Image" },
+          error: null,
+          success: true,
+        });
       }),
     );
 
     await uploadNewGalleryVersion({ mediaId: 55, file: makeFile() });
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("/gallery/ajax/uploadFile");
-    expect(init).toMatchObject({ method: "POST" });
-    const body = (init as RequestInit).body as FormData;
-    expect(body).toBeInstanceOf(FormData);
-    expect(body.get("selectedMediaId")).toBe("55");
-    expect(body.get("xfile")).toBeInstanceOf(File);
+    expect(String(contentType).startsWith("multipart/form-data; boundary=")).toBe(true);
+    expect(multipartBody).toContain('name="xfile"; filename=');
+    expect(multipartBody).toContain('name="selectedMediaId"\r\n\r\n55');
+    expect(setSpy).toHaveBeenCalledWith("selectedMediaId", "55");
+    const file = setSpy.mock.calls.find(([name]) => name === "xfile")?.[1];
+    expect(file).toBeInstanceOf(File);
+    expect((file as File).name).toBe("replacement.png");
   });
 
   it("returns the updated record information on success", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
-        data: { id: 55, oid: { idString: "GL55" }, name: "replacement.png", type: "Image", version: 3 },
-        error: null,
-        success: true,
-      }),
+    server.use(
+      http.post("/gallery/ajax/uploadFile", () =>
+        HttpResponse.json({
+          data: { id: 55, oid: { idString: "GL55" }, name: "replacement.png", type: "Image", version: 3 },
+          error: null,
+          success: true,
+        }),
+      ),
     );
 
     const result = await uploadNewGalleryVersion({ mediaId: 55, file: makeFile() });
@@ -48,13 +60,17 @@ describe("uploadNewGalleryVersion", () => {
   });
 
   it("throws the endpoint error message when the upload fails", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
-        data: null,
-        error: { errorMessages: ["File too large"] },
-        success: false,
-      }),
-      { status: 400, statusText: "Bad Request" },
+    server.use(
+      http.post("/gallery/ajax/uploadFile", () =>
+        HttpResponse.json(
+          {
+            data: null,
+            error: { errorMessages: ["File too large"] },
+            success: false,
+          },
+          { status: 400, statusText: "Bad Request" },
+        ),
+      ),
     );
 
     await expect(uploadNewGalleryVersion({ mediaId: 55, file: makeFile() })).rejects.toThrow("File too large");

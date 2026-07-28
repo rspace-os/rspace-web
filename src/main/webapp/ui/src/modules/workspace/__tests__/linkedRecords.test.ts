@@ -1,39 +1,37 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { HttpResponse, http } from "msw";
+import { describe, expect, it } from "vitest";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
+import { server } from "@/__tests__/mswServer";
 import { getLinkedByRecords, getLinkedDocuments } from "@/modules/workspace/linkedRecords";
-
-beforeEach(() => {
-  fetchMock.resetMocks();
-  vi.clearAllMocks();
-});
 
 describe("getLinkedByRecords", () => {
   it("requests the linked-by endpoint with the numeric target record id", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({ data: [], error: null, success: true }));
+    const requests = captureRequests("get", "/workspace/getLinkedByRecords", () =>
+      HttpResponse.json({ data: [], error: null, success: true }),
+    );
 
     await getLinkedByRecords(123);
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/workspace/getLinkedByRecords?targetRecordId=123",
-      expect.objectContaining({
-        method: "GET",
-        headers: { "X-Requested-With": "XMLHttpRequest" },
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    expect(new URL(requests[0].url).searchParams.get("targetRecordId")).toBe("123");
+    expect(requests[0].headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
   it("splits readable rows from private rows and aggregates private docs by owner", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
-        data: [
-          { id: 11, oid: { idString: "SD11" }, name: "Doc one", ownerFullName: "Ada Lovelace" },
-          { id: 12, oid: { idString: "SD12" }, name: "Doc two", ownerFullName: "Grace Hopper" },
-          { ownerFullName: "Grace Hopper", ownerUsername: "grace" },
-          { ownerFullName: "Grace Hopper", ownerUsername: "grace" },
-          { ownerFullName: "Ada Lovelace", ownerUsername: "ada" },
-        ],
-        error: null,
-        success: true,
-      }),
+    server.use(
+      http.get("/workspace/getLinkedByRecords", () =>
+        HttpResponse.json({
+          data: [
+            { id: 11, oid: { idString: "SD11" }, name: "Doc one", ownerFullName: "Ada Lovelace" },
+            { id: 12, oid: { idString: "SD12" }, name: "Doc two", ownerFullName: "Grace Hopper" },
+            { ownerFullName: "Grace Hopper", ownerUsername: "grace" },
+            { ownerFullName: "Grace Hopper", ownerUsername: "grace" },
+            { ownerFullName: "Ada Lovelace", ownerUsername: "ada" },
+          ],
+          error: null,
+          success: true,
+        }),
+      ),
     );
 
     const result = await getLinkedByRecords(123);
@@ -49,13 +47,17 @@ describe("getLinkedByRecords", () => {
   });
 
   it("throws the endpoint error message for non-OK responses", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
-        data: null,
-        error: { errorMessages: ["Record not found"] },
-        success: false,
-      }),
-      { status: 404, statusText: "Not Found" },
+    server.use(
+      http.get("/workspace/getLinkedByRecords", () =>
+        HttpResponse.json(
+          {
+            data: null,
+            error: { errorMessages: ["Record not found"] },
+            success: false,
+          },
+          { status: 404, statusText: "Not Found" },
+        ),
+      ),
     );
 
     await expect(getLinkedByRecords(99)).rejects.toThrow("Record not found");
@@ -64,26 +66,26 @@ describe("getLinkedByRecords", () => {
 
 describe("getLinkedDocuments", () => {
   it("requests the gallery linked-documents endpoint with the media id", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({ data: [], error: null, success: true }));
+    const requests = captureRequests("get", "/gallery/ajax/getLinkedDocuments/:id", () =>
+      HttpResponse.json({ data: [], error: null, success: true }),
+    );
 
     await getLinkedDocuments(55);
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/gallery/ajax/getLinkedDocuments/55",
-      expect.objectContaining({
-        method: "GET",
-        headers: { "X-Requested-With": "XMLHttpRequest" },
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    expect(new URL(requests[0].url).pathname).toBe("/gallery/ajax/getLinkedDocuments/55");
+    expect(requests[0].headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
   it("returns readable linked documents as global-id rows", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
-        data: [{ id: 7, oid: { idString: "SD7" }, name: "Linked doc", ownerFullName: "Ada Lovelace" }],
-        error: null,
-        success: true,
-      }),
+    server.use(
+      http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
+        HttpResponse.json({
+          data: [{ id: 7, oid: { idString: "SD7" }, name: "Linked doc", ownerFullName: "Ada Lovelace" }],
+          error: null,
+          success: true,
+        }),
+      ),
     );
 
     const result = await getLinkedDocuments(55);

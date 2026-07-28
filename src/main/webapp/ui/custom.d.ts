@@ -1,7 +1,5 @@
 /// <reference types="@sa11y/vitest" />
 
-import "vitest-fetch-mock";
-
 /*
  * All SVG files should be treated by TypeScript as strings,
  * as the frontend build treats them as paths.
