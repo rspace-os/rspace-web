@@ -81,6 +81,11 @@ jobs:
           rm -rf $RS_FILE_BASE
           mkdir -p $RS_FILE_BASE
 
+      - name: Seed dev deployment.properties
+        run: |
+          cp -n src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
+
       - name: Run unit + Spring tests with coverage
         # The jacoco `report` goal is bound to `verify`, which `mvn test` never
         # reaches, so invoke it explicitly to emit target/site/jacoco/jacoco.xml.
@@ -182,6 +187,11 @@ jobs:
         run: |
           rm -rf $RS_FILE_BASE
           mkdir -p $RS_FILE_BASE
+
+      - name: Seed dev deployment.properties
+        run: |
+          cp -n src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
 
       - name: Run integration tests with coverage
         run: |

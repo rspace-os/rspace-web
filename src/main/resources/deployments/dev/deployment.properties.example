@@ -1,8 +1,16 @@
+# Template for the local dev property file. Copy it before your first build:
+#
+#   cp src/main/resources/deployments/dev/deployment.properties.example \
+#      src/main/resources/deployments/dev/deployment.properties
+#
+# The copy is git-ignored, so put your credentials there rather than here. Anything with a sensible
+# production value belongs in ../defaultDeployment.properties; this file holds only dev overrides
+# and the credential slots for opt-in real-connection tests.
+
 rs.customer.name=University of RSpace (Localhost)
 rs.customer.name.short=RSpace Local
 
 rs.usergroup.initfile=deployments/dev/initUsers.csv
-cache.com.researchspace.model.UserGroup=123
 email.enabled=false
 license.server.active=false
 
@@ -73,9 +81,6 @@ clustermarket.client.id=
 clustermarket.secret=
 clustermarket.api.url=https://api.clustermarket.dev/v1/
 clustermarket.web.url=https://app.clustermarket.dev/
-
-# Jove deployment props
-jove.api.access.enabled=true
 
 # omero
 #omero.api.url=https://demo.openmicroscopy.org/
