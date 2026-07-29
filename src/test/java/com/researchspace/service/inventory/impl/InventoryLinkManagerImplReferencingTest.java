@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -76,21 +77,20 @@ class InventoryLinkManagerImplReferencingTest {
   }
 
   private InventoryRecord parent(String globalIdString, String name, boolean deleted) {
-    InventoryRecord rec = mock(InventoryRecord.class, org.mockito.Mockito.RETURNS_DEEP_STUBS);
-    org.mockito.Mockito.when(rec.isDeleted()).thenReturn(deleted);
+    InventoryRecord rec = mock(InventoryRecord.class, RETURNS_DEEP_STUBS);
+    when(rec.isDeleted()).thenReturn(deleted);
     return rec;
   }
 
   private void stubSourceIdentity(InventoryRecord record, String globalId, String name) {
-    org.mockito.Mockito.when(record.getOid())
-        .thenReturn(new com.researchspace.model.core.GlobalIdentifier(globalId));
-    org.mockito.Mockito.when(record.getName()).thenReturn(name);
+    when(record.getOid()).thenReturn(new com.researchspace.model.core.GlobalIdentifier(globalId));
+    when(record.getName()).thenReturn(name);
   }
 
   private ExtraLinkField extraFieldRow(InventoryRecord rec, InventoryLink link) {
     ExtraLinkField field = mock(ExtraLinkField.class);
-    org.mockito.Mockito.when(field.getInventoryRecord()).thenReturn(rec);
-    org.mockito.Mockito.when(field.getLink()).thenReturn(link);
+    when(field.getInventoryRecord()).thenReturn(rec);
+    when(field.getLink()).thenReturn(link);
     return field;
   }
 
@@ -163,8 +163,8 @@ class InventoryLinkManagerImplReferencingTest {
     stubSourceIdentity(sample, "SA20", "templated sample");
     InventoryLink link = linkWith("IsPartOf", null, null);
     InventoryLinkField structured = mock(InventoryLinkField.class);
-    org.mockito.Mockito.when(structured.getInventoryRecord()).thenReturn(sample);
-    org.mockito.Mockito.when(structured.getLink()).thenReturn(link);
+    when(structured.getInventoryRecord()).thenReturn(sample);
+    when(structured.getLink()).thenReturn(link);
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SD, 123L))
         .thenReturn(java.util.Collections.emptyList());
     when(linkDao.findReferencingStructuredLinkFields(GlobalIdPrefix.SD, 123L))

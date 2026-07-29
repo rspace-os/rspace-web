@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -259,9 +261,7 @@ public class BundleTagTest {
     assertEquals(TagSupport.SKIP_BODY, realTag.doStartTag());
     assertTrue(output.toString().contains("type=\"module\" src=\"/ui/dist/appBar-abc123.js\""));
     verify(servletContext)
-        .setAttribute(
-            org.mockito.ArgumentMatchers.eq(BundleTag.MANIFEST_CACHE_ATTR),
-            org.mockito.ArgumentMatchers.any(BundleTag.ChunkManifest.class));
+        .setAttribute(eq(BundleTag.MANIFEST_CACHE_ATTR), any(BundleTag.ChunkManifest.class));
   }
 
   @Test
