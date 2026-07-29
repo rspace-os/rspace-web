@@ -13,7 +13,7 @@ afterEach(cleanup);
  * froze the page: a re-render landing while the menu was mid-exit cancelled
  * react-transition-group's `onExited` (mui/material-ui#32286), so the menu's
  * Modal never unmounted and its invisible (opacity-0) backdrop kept intercepting
- * every click. The fix (Sidebar.tsx) makes the closed menu click-through.
+ * every click. The fix (SidebarCreateMenu.tsx) makes the closed menu click-through.
  *
  * The freeze only manifests under a production React build (`-DgenerateReactDist`,
  * not `-DreactDevMode`, which StrictMode-masks it) and the underlying race is too
