@@ -15,6 +15,7 @@ import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.GalleryVersionHistory;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.Date;
@@ -35,6 +36,7 @@ public class GalleryVersionHistoryTest {
   private final AuditManager auditManager = Mockito.mock(AuditManager.class);
   private final BaseRecordManager baseRecordManager = Mockito.mock(BaseRecordManager.class);
   private final UserManager userManager = Mockito.mock(UserManager.class);
+  private final MessageSourceUtils messages = Mockito.mock(MessageSourceUtils.class);
   private final GalleryController controller = new GalleryController();
   private final User user = TestFactory.createAnyUser("versionHistoryUser");
 
@@ -44,6 +46,7 @@ public class GalleryVersionHistoryTest {
     controller.setBaseRecordMgr(baseRecordManager);
     // BaseController exposes auditManager as a protected field, and this test shares its package
     controller.auditManager = auditManager;
+    controller.setMessageSource(messages);
     when(userManager.getAuthenticatedUserInSession()).thenReturn(user);
   }
 
@@ -220,10 +223,37 @@ public class GalleryVersionHistoryTest {
      * logged-in user. That silently reduces this test to a no-op.
      */
     Mockito.doReturn(anonymous).when(userManager).getAuthenticatedUserInSession();
+    // the refusal reaches the UI through the error view, so its wording comes from the bundle
+    when(messages.getMessage("error.authorization.versionHistory.loginRequired"))
+        .thenReturn("resolved from the bundle");
 
-    assertThrows(AuthorizationException.class, () -> controller.getVersionHistory(MEDIA_ID));
+    AuthorizationException refused =
+        assertThrows(AuthorizationException.class, () -> controller.getVersionHistory(MEDIA_ID));
 
+    assertEquals("resolved from the bundle", refused.getMessage());
     Mockito.verifyNoInteractions(baseRecordManager);
     Mockito.verifyNoInteractions(auditManager);
+  }
+
+  @Test
+  public void resolvesAnUnknownEditorsNameOnlyOnce() {
+    /*
+     * getFullNameByUsername returns null for a user who no longer exists, and computeIfAbsent does
+     * not store a null, so the memo silently stopped memoising exactly the case it was added for.
+     */
+    when(baseRecordManager.retrieveMediaFile(user, MEDIA_ID))
+        .thenReturn(mediaAtVersion(2L, 100L, "departed", new Date()));
+    when(auditManager.getRevisionsForEntity(EcatMediaFile.class, MEDIA_ID))
+        .thenReturn(
+            List.of(
+                new AuditedEntity<>(mediaAtVersion(1L, 100L, "departed", new Date()), 10L),
+                new AuditedEntity<>(mediaAtVersion(2L, 100L, "departed", new Date()), 20L)));
+    when(userManager.getFullNameByUsername("departed")).thenReturn(null);
+
+    GalleryVersionHistory history = controller.getVersionHistory(MEDIA_ID).getData();
+
+    assertNull(history.revisions().get(0).item().modifiedByFullName());
+    assertNull(history.revisions().get(1).item().modifiedByFullName());
+    verify(userManager, Mockito.times(1)).getFullNameByUsername("departed");
   }
 }

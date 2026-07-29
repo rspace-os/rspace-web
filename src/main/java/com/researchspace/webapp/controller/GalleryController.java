@@ -645,8 +645,8 @@ public class GalleryController extends BaseController {
 
     User user = userManager.getAuthenticatedUserInSession();
     if (user == null || user.isAnonymousGuestAccount()) {
-      throw new AuthorizationException(
-          "A Gallery item's version history is only available to logged-in users.");
+      // reaches the user through the error view, so the wording lives in the bundle
+      throw new AuthorizationException(getText("error.authorization.versionHistory.loginRequired"));
     }
     // throws AuthorizationException unless the item exists and is readable by this user
     EcatMediaFile mediaFile = baseRecordManager.retrieveMediaFile(user, mediaFileId);
@@ -654,7 +654,12 @@ public class GalleryController extends BaseController {
     List<AuditedEntity<EcatMediaFile>> revisions =
         auditManager.getRevisionsForEntity(EcatMediaFile.class, mediaFile.getId());
 
-    // a Gallery item edited many times by the same user resolves that user's full name once
+    /*
+     * A Gallery item edited many times by the same user resolves that user's full name once.
+     * computeIfAbsent is deliberately not used: getFullNameByUsername returns null for a user who
+     * no longer exists, and computeIfAbsent does not store a null, so the memo would keep asking
+     * for exactly the username it was added to resolve once.
+     */
     Map<String, String> fullNameByUsername = new HashMap<>();
     List<GalleryVersionHistory.Revision> apiRevisions = new ArrayList<>();
     for (AuditedEntity<EcatMediaFile> revision : revisions) {
@@ -667,16 +672,21 @@ public class GalleryController extends BaseController {
               new GalleryVersionHistory.Item(
                   audited.getVersion(),
                   toIsoInstant(audited.getModificationDateAsDate()),
-                  modifiedBy == null
-                      ? null
-                      : fullNameByUsername.computeIfAbsent(
-                          modifiedBy, userManager::getFullNameByUsername),
+                  modifiedBy == null ? null : fullNameOf(modifiedBy, fullNameByUsername),
                   audited.getSize(),
                   audited.getName(),
                   audited.getDescription())));
     }
     return new AjaxReturnObject<>(
         new GalleryVersionHistory(apiRevisions, apiRevisions.size()), null);
+  }
+
+  /** Resolves a username's full name at most once per request, caching a null result too. */
+  private String fullNameOf(String username, Map<String, String> memo) {
+    if (!memo.containsKey(username)) {
+      memo.put(username, userManager.getFullNameByUsername(username));
+    }
+    return memo.get(username);
   }
 
   private String toIsoInstant(Date date) {
