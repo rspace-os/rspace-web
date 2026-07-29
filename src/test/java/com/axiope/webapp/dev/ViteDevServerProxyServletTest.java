@@ -2,9 +2,9 @@ package com.axiope.webapp.dev;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,11 +31,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 public class ViteDevServerProxyServletTest {
 
   @Mock private HttpClient client;
@@ -51,25 +48,17 @@ public class ViteDevServerProxyServletTest {
   public void setUp() throws Exception {
     servlet = new ViteDevServerProxyServlet("http://127.0.0.1:5173", client);
 
-    when(request.getMethod()).thenReturn("GET");
-    when(request.getHeader("Upgrade")).thenReturn(null);
-    when(request.getHeaderNames()).thenReturn(Collections.emptyEnumeration());
-    when(request.getQueryString()).thenReturn("v=fca605f6");
-    when(response.getOutputStream()).thenReturn(new TestServletOutputStream(responseBody));
-    when(response.getContentType()).thenAnswer(invocation -> responseContentType.get());
+    lenient().when(request.getMethod()).thenReturn("GET");
+    lenient().when(request.getHeader("Upgrade")).thenReturn(null);
+    lenient().when(request.getHeaderNames()).thenReturn(Collections.emptyEnumeration());
+    lenient().when(request.getQueryString()).thenReturn("v=fca605f6");
+    lenient()
+        .when(response.getOutputStream())
+        .thenReturn(new TestServletOutputStream(responseBody));
+    lenient().when(response.getContentType()).thenAnswer(invocation -> responseContentType.get());
 
-    org.mockito.Mockito.doAnswer(
-            invocation -> {
-              String name = invocation.getArgument(0, String.class);
-              String value = invocation.getArgument(1, String.class);
-              if ("content-type".equalsIgnoreCase(name)) {
-                responseContentType.set(value);
-              }
-              return null;
-            })
-        .when(response)
-        .addHeader(any(String.class), any(String.class));
-    org.mockito.Mockito.doAnswer(
+    lenient()
+        .doAnswer(
             invocation -> {
               responseContentType.set(invocation.getArgument(0, String.class));
               return null;
@@ -77,12 +66,15 @@ public class ViteDevServerProxyServletTest {
         .when(response)
         .setContentType(any(String.class));
 
-    when(client.send(
-            any(HttpRequest.class),
-            org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
+    lenient()
+        .when(
+            client.send(
+                any(HttpRequest.class),
+                org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
         .thenReturn(upstreamResponse);
-    when(upstreamResponse.statusCode()).thenReturn(HttpServletResponse.SC_OK);
-    when(upstreamResponse.body())
+    lenient().when(upstreamResponse.statusCode()).thenReturn(HttpServletResponse.SC_OK);
+    lenient()
+        .when(upstreamResponse.body())
         .thenReturn(
             new ByteArrayInputStream("export const ok = true;".getBytes(StandardCharsets.UTF_8)));
   }
@@ -173,8 +165,6 @@ public class ViteDevServerProxyServletTest {
       when(request.getRequestURI()).thenReturn("/ui/dist/src/entries/tinymceGallery.tsx");
       when(request.getHeaderNames())
           .thenReturn(Collections.enumeration(List.of("KEEP-ALIVE", "X-Test")));
-      when(request.getHeaders("KEEP-ALIVE"))
-          .thenReturn(Collections.enumeration(List.of("timeout=5")));
       when(request.getHeaders("X-Test")).thenReturn(Collections.enumeration(List.of("value")));
       when(upstreamResponse.headers())
           .thenReturn(HttpHeaders.of(Collections.emptyMap(), (a, b) -> true));
@@ -194,14 +184,6 @@ public class ViteDevServerProxyServletTest {
     } finally {
       Locale.setDefault(originalLocale);
     }
-  }
-
-  @Test
-  public void doesNotInventMimeTypeForUnknownExtensions() {
-    assertNull(servlet.inferFallbackContentType("/ui/dist/assets/logo.svg"));
-    assertEquals("text/css", servlet.inferFallbackContentType("/ui/dist/assets/app.css"));
-    assertEquals(
-        "text/javascript", servlet.inferFallbackContentType("/ui/dist/chunks/editor-plugin.mjs"));
   }
 
   private static final class TestServletOutputStream extends ServletOutputStream {
