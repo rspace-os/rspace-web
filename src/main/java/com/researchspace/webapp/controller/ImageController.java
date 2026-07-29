@@ -153,6 +153,7 @@ public class ImageController extends BaseController {
     }
 
     final HttpHeaders headers = new HttpHeaders();
+    ResponseHeaders.preventContentSniffing(headers);
     headers.setContentType(MediaType.IMAGE_PNG);
     // we couldn't make a thumbnail, use default icon
     if (byteSupplier == null) {
@@ -270,6 +271,7 @@ public class ImageController extends BaseController {
 
   private ResponseEntity<byte[]> returnBytesAsResponseEntity(byte[] data) {
     final HttpHeaders headers = new HttpHeaders();
+    ResponseHeaders.preventContentSniffing(headers);
     headers.setContentType(MediaType.IMAGE_PNG);
     return new ResponseEntity<>(data, headers, HttpStatus.OK);
   }
@@ -282,6 +284,7 @@ public class ImageController extends BaseController {
     String imgExtension = ecatImage.getExtension();
     byte[] data = null;
     final HttpHeaders headers = new HttpHeaders();
+    ResponseHeaders.preventContentSniffing(headers);
     if (ImageUtils.isTiff(imgExtension) && convertTiff && returnFullImage) {
       Optional<byte[]> tiffFileBytes = getTiffFileBytes(ecatImage);
       if (tiffFileBytes.isPresent()) {
@@ -364,6 +367,7 @@ public class ImageController extends BaseController {
     long id = Long.parseLong(idComposed.split("-")[1]);
 
     final HttpHeaders headers = new HttpHeaders();
+    ResponseHeaders.preventContentSniffing(headers);
     headers.setContentType(MediaType.IMAGE_PNG);
 
     EcatImage ecatImage = recordManager.getEcatImage(id, true);

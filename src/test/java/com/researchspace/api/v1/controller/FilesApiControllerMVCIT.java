@@ -92,6 +92,8 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
                     API_VERSION.ONE, apiKey, "/files/{id}/file", anyUser, galleryImage.getId()))
             .andReturn();
     assertNull(result.getResolvedException());
+    // the declared content type must be honoured rather than guessed from the bytes
+    assertEquals("nosniff", result.getResponse().getHeader("X-Content-Type-Options"));
 
     byte[] responseBytes = result.getResponse().getContentAsByteArray();
     assertNotNull(responseBytes);

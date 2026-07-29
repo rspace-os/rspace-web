@@ -318,6 +318,7 @@ public class NfsController extends BaseController {
       response.setContentLength((int) file.length());
       response.setHeader(
           "Content-Disposition", String.format("attachment; filename=\"%s\"", file.getName()));
+      ResponseHeaders.preventContentSniffing(response);
 
       OutputStream outStream = response.getOutputStream();
       byte[] buffer = new byte[DOWNLOAD_BUFFER_SIZE];

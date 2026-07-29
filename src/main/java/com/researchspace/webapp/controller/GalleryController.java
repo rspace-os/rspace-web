@@ -359,6 +359,7 @@ public class GalleryController extends BaseController {
 
     try (InputStream is = getWorkingOrOriginalImgInputStream(ecatImage)) {
       final HttpHeaders headers = new HttpHeaders();
+      ResponseHeaders.preventContentSniffing(headers);
       setHttpContentTypeHeader(ecatImage, headers);
       setCacheTimeInBrowser(ResponseUtil.YEAR, ecatImage.getModificationDateAsDate(), headers);
       log.info("Loading viewer picture " + id);
@@ -552,6 +553,7 @@ public class GalleryController extends BaseController {
 
   private ResponseEntity<byte[]> getResponseEntityWithImageBytes(Date creationDate, byte[] data) {
     final HttpHeaders headers = new HttpHeaders();
+    ResponseHeaders.preventContentSniffing(headers);
     headers.setContentType(MediaType.IMAGE_JPEG);
     setCacheTimeInBrowser(ResponseUtil.YEAR, creationDate, headers);
     return new ResponseEntity<>(data, headers, HttpStatus.OK);

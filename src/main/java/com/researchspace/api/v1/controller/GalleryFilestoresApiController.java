@@ -27,6 +27,7 @@ import com.researchspace.service.FilestoreWriteManager;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.webapp.controller.DeploymentProperty;
+import com.researchspace.webapp.controller.ResponseHeaders;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -153,6 +154,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     response.setContentLength((int) downloadedFile.length());
     response.setHeader(
         "Content-Disposition", "attachment; filename=\"" + downloadedFile.getName() + "\"");
+    ResponseHeaders.preventContentSniffing(response);
     try (InputStream is = new FileInputStream(downloadedFile);
         ServletOutputStream out = response.getOutputStream()) {
       IOUtils.copy(is, out);

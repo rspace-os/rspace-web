@@ -19,6 +19,7 @@ import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
+import com.researchspace.webapp.controller.ResponseHeaders;
 import jakarta.ws.rs.NotFoundException;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -124,6 +125,7 @@ public class BaseApiInventoryController extends BaseApiController {
       mt = MediaType.IMAGE_PNG;
     }
     headers.setContentType(mt);
+    ResponseHeaders.preventContentSniffing(headers);
     headers.setCacheControl("max-age=" + ResponseUtil.YEAR);
     if (fileProp.getUpdateDate() != null) {
       headers.setLastModified(fileProp.getUpdateDate().getTime());

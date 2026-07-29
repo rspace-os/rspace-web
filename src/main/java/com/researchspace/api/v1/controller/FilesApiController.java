@@ -23,6 +23,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RSChemElementManager;
+import com.researchspace.webapp.controller.ResponseHeaders;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -119,6 +120,7 @@ public class FilesApiController extends BaseApiController implements FilesApi {
     response.setContentType(mediaFile.getContentType());
     response.setHeader(
         "Content-Disposition", "attachment; filename=\"" + mediaFile.getFileName() + "\"");
+    ResponseHeaders.preventContentSniffing(response);
     Optional<FileInputStream> fis = fileStore.retrieve(fileProp);
     if (fis.isPresent()) {
       try (InputStream is = fis.get();
