@@ -142,9 +142,10 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     setupSystemPropertyForPublishAllowedAndSeoAllowed();
   }
 
-  @SuppressWarnings("unchecked")
   private void clearUsersCustomFormsAddedToMenu() {
-    ((Map<Long, Boolean>)
+    // Map<?, ?> rather than Map<Long, Boolean>: clear() takes no type parameter, so the wildcard
+    // cast is one the compiler can check, leaving no unchecked warning to suppress.
+    ((Map<?, ?>)
             ReflectionTestUtils.getField(
                 WorkspaceController.class, "USERS_CUSTOM_FORMS_ADDED_TO_MENU"))
         .clear();
@@ -321,6 +322,13 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
 
   private void setUpCommonMocks() {
     Mockito.when(grpMgr.listGroupsForUser()).thenReturn(Collections.emptySet());
+    stubDeletedRecordsPreference();
+  }
+
+  private void stubDeletedRecordsPreference() {
+    UserPreference up =
+        new UserPreference(Preference.DELETED_RECORDS_RESULTS_PER_PAGE, anyUser, "10");
+    when(mockUserMgr.getPreferenceForUser(any(User.class), any(Preference.class))).thenReturn(up);
   }
 
   private void setUpRootFolderMocks() {
@@ -356,8 +364,10 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     workspaceController.listRootFolder(
         "", model, mockPrincipal, request, session, response, new WorkspaceSettings());
     assertTrue((Boolean) model.getAttribute("publish_allowed"));
-    ISearchResults<Record> res = (ISearchResults<Record>) model.asMap().get("searchResults");
-    Long recordId = res.getResults().get(0).getId();
+    // Wildcard plus an explicit element cast: both are checkable, so neither needs suppressing.
+    // Erasure put the same checkcast on Record at the getId() call before, so this is equivalent.
+    ISearchResults<?> res = (ISearchResults<?>) model.asMap().get("searchResults");
+    Long recordId = ((Record) res.getResults().get(0)).getId();
     tss.clear();
     if (recordId == null) {
       recordId = 1L;
@@ -467,9 +477,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   @Test
   public void viewDeletedDocuments() {
     workspaceController.setUserManager(mockUserMgr);
-    UserPreference up =
-        new UserPreference(Preference.DELETED_RECORDS_RESULTS_PER_PAGE, anyUser, "10");
-    when(mockUserMgr.getPreferenceForUser(any(User.class), any(Preference.class))).thenReturn(up);
+    stubDeletedRecordsPreference();
     when(mockUserMgr.getUserByUsername(any())).thenReturn(anyUser);
     when(mockUserMgr.getUserByUsername(any(), eq(true))).thenReturn(anyUser);
 
