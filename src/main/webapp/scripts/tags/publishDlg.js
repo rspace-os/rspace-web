@@ -53,7 +53,7 @@ function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector =
                 const isCloud = $(this).data("isCloud");
                 const publishOnInternet = $('input[id="make_public_confirmation"]').val()?.toLowerCase() === 'confirm';
                 const publishLink = $('input[id="make_public_link_confirmation"]').val()?.toLowerCase() === 'confirm';
-                // ponytail: the button is disabled until "confirm" is typed, so this is only a backstop
+                // The button is disabled until "confirm" is typed, so this is only a backstop
                 if (!publishOnInternet && !publishLink) {
                     return;
                 }
