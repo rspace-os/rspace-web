@@ -6,13 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.testutils.RSpaceTestUtils;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import javax.imageio.ImageIO;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class MediaFileContentValidatorTest {
@@ -42,6 +46,39 @@ class MediaFileContentValidatorTest {
   }
 
   @ParameterizedTest
+  @CsvSource({
+    "Picture1.png, image.jpg",
+    "IS1.jpg, image.png",
+    "commentIcon.gif, image.png",
+    "Picture1.tiff, image.jpg"
+  })
+  void rejectsImageContentUnderADifferentImageExtension(String fixture, String claimedName)
+      throws IOException {
+    byte[] realImage = RSpaceTestUtils.getResourceAsByteArray(fixture);
+    assertThrows(
+        ApiRuntimeException.class,
+        () ->
+            MediaFileContentValidator.verifyContentMatchesExtension(
+                new ByteArrayInputStream(realImage), claimedName));
+  }
+
+  /** jpg/jpeg and tif/tiff name the same format, so those spellings must be interchangeable. */
+  @ParameterizedTest
+  @CsvSource({
+    "IS1.jpg, photo.jpeg",
+    "IS1.jpg, photo.JPG",
+    "Picture1.tiff, scan.tif",
+    "Picture2.tif, scan.tiff"
+  })
+  void acceptsEquivalentExtensionSpellings(String fixture, String claimedName) throws IOException {
+    byte[] realImage = RSpaceTestUtils.getResourceAsByteArray(fixture);
+    InputStream validated =
+        MediaFileContentValidator.verifyContentMatchesExtension(
+            new ByteArrayInputStream(realImage), claimedName);
+    assertArrayEquals(realImage, IOUtils.toByteArray(validated));
+  }
+
+  @ParameterizedTest
   @ValueSource(strings = {"IS1.jpg", "Picture1.png", "Picture1.tiff", "commentIcon.gif"})
   void acceptsRealImagesAndPreservesStreamContent(String fileName) throws IOException {
     byte[] expected = RSpaceTestUtils.getResourceAsByteArray(fileName);
@@ -50,6 +87,17 @@ class MediaFileContentValidatorTest {
         MediaFileContentValidator.verifyContentMatchesExtension(
             RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder(fileName), fileName);
     assertArrayEquals(expected, IOUtils.toByteArray(validated));
+  }
+
+  /** bmp is an accepted image extension with no fixture in the test resources. */
+  @Test
+  void acceptsBmp() throws IOException {
+    ByteArrayOutputStream bmp = new ByteArrayOutputStream();
+    ImageIO.write(new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB), "bmp", bmp);
+    InputStream validated =
+        MediaFileContentValidator.verifyContentMatchesExtension(
+            new ByteArrayInputStream(bmp.toByteArray()), "shape.bmp");
+    assertArrayEquals(bmp.toByteArray(), IOUtils.toByteArray(validated));
   }
 
   @ParameterizedTest
