@@ -20,6 +20,7 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
@@ -185,6 +186,27 @@ public class FilesApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result3 = getFile(anyUser, apiKey, apiFile2.getId());
     ApiFile apiFile3 = getFromJsonResponseBody(result3, ApiFile.class);
     assertEquals(EXPECTED_CAPTION, apiFile3.getCaption());
+  }
+
+  @Test
+  public void uploadRejectsNonImageContentWithImageExtension() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    MockMultipartFile fakeJpg =
+        new MockMultipartFile(
+            "file",
+            "image.jpg",
+            "image/jpeg",
+            "<% out.println(\"jsp-probe\" + System.getProperty(\"os.name\")); %>"
+                .getBytes(StandardCharsets.UTF_8));
+    MvcResult result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/files"))
+                    .file(fakeJpg)
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertEquals(HttpStatus.UNPROCESSABLE_ENTITY.value(), result.getResponse().getStatus());
   }
 
   private MockMultipartFile picture1() throws IOException {

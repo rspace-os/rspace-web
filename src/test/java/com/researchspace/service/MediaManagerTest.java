@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatDocumentFile;
@@ -27,6 +28,7 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -304,6 +306,26 @@ public class MediaManagerTest extends SpringTransactionalTest {
         mediaMgr.updateMediaFile(doc.getId(), docxInputStream, "NEW_NAME.DOCX", user, null);
     assertEquals(doc.getId(), updatedAgainDoc.getId());
     assertEquals(3, updatedAgainDoc.getVersion());
+  }
+
+  @Test
+  public void uploadRejectsNonImageContentWithImageExtension() throws Exception {
+    User user = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(user);
+
+    byte[] jspContent = "<% out.println(\"jsp-probe\"); %>".getBytes(StandardCharsets.UTF_8);
+    assertExceptionThrown(
+        () -> mediaMgr.saveNewImage("image.jpg", new ByteArrayInputStream(jspContent), user, null),
+        ApiRuntimeException.class);
+
+    // updating an existing image with non-image content is also rejected
+    InputStream pictureIS = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    EcatImage image = mediaMgr.saveNewImage("Picture1.png", pictureIS, user, null);
+    assertExceptionThrown(
+        () ->
+            mediaMgr.updateMediaFile(
+                image.getId(), new ByteArrayInputStream(jspContent), "Picture1.png", user, null),
+        ApiRuntimeException.class);
   }
 
   @Test

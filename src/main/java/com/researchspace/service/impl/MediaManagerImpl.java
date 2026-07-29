@@ -357,6 +357,8 @@ public class MediaManagerImpl implements MediaManager {
     if (mediaFileId != null) {
       return updateMediaFile(mediaFileId, inputStream, originalFileName, user, null);
     }
+    inputStream =
+        MediaFileContentValidator.verifyContentMatchesExtension(inputStream, originalFileName);
 
     log.info("Saving new media file {} into {} ", originalFileName, mediaFolderType);
     // if target folder is wrong type, we'll just put in top level folder, like we do if it;s not
@@ -484,6 +486,8 @@ public class MediaManagerImpl implements MediaManager {
       throw new IllegalArgumentException(
           "Cannot update ." + oldExtension + " file with ." + newExtension);
     }
+    inputStream =
+        MediaFileContentValidator.verifyContentMatchesExtension(inputStream, updatedFileName);
 
     log.debug("Updating existing media file {}", mediaFileId);
     String fileType = extractFileTypeFromPath(updatedFileName);
