@@ -35,7 +35,7 @@ import type {
   IdentifierDescription,
   IdentifierField,
   IdentifierSubject,
-  IGSNPublishingState,
+  PublishingState,
 } from "../definitions/Identifier";
 import GeoLocationModel from "./GeoLocationModel";
 
@@ -151,12 +151,13 @@ export default class IdentifierModel implements Identifier {
   creatorAffiliationIdentifier: string | null;
   title: string; // item.name
   publicUrl: URL | null;
+  providerUrl: URL | null;
   publisher: string;
   publicationYear: string;
   resourceType: string;
   resourceTypeGeneral: string;
   url: URL | null;
-  state: IGSNPublishingState = "draft";
+  state: PublishingState = "draft";
   subjects: Array<IdentifierSubject> | null = [];
   descriptions: Array<IdentifierDescription> | null = [];
   alternateIdentifiers: Array<AlternateIdentifier> | null = [];
@@ -181,6 +182,7 @@ export default class IdentifierModel implements Identifier {
       creatorAffiliationIdentifier: observable,
       title: observable,
       publicUrl: observable,
+      providerUrl: observable,
       publisher: observable,
       publicationYear: observable,
       resourceType: observable,
@@ -230,6 +232,7 @@ export default class IdentifierModel implements Identifier {
     this.creatorAffiliationIdentifier = attrs.creatorAffiliationIdentifier;
     this.title = attrs.title;
     this.publicUrl = attrs.publicUrl;
+    this.providerUrl = attrs.providerUrl;
     this.publisher = attrs.publisher;
     this.publicationYear = `${attrs.publicationYear}`;
     this.resourceType = attrs.resourceType;
@@ -392,7 +395,7 @@ export default class IdentifierModel implements Identifier {
     this.resourceType = type;
   }
 
-  updateState(value: IGSNPublishingState) {
+  updateState(value: PublishingState) {
     this.state = value;
   }
 
@@ -451,7 +454,7 @@ export default class IdentifierModel implements Identifier {
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
         const response = await ApiServiceBase.post<{
-          state: IGSNPublishingState;
+          state: PublishingState;
           url: string;
           publicUrl: string;
           creatorAffiliation: string | null;
@@ -523,7 +526,7 @@ export default class IdentifierModel implements Identifier {
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
         const response = await ApiServiceBase.post<{
-          state: IGSNPublishingState;
+          state: PublishingState;
         }>(`/identifiers/${this.id}/retract`, {});
         this.updateState(response.data.state);
         addAlert(
@@ -578,7 +581,7 @@ export default class IdentifierModel implements Identifier {
       // retract
       try {
         const response = await ApiServiceBase.post<{
-          state: IGSNPublishingState;
+          state: PublishingState;
         }>(`/identifiers/${id}/retract`, {});
         this.updateState(response.data.state);
       } catch (error) {
@@ -597,7 +600,7 @@ export default class IdentifierModel implements Identifier {
       // publish
       try {
         const response = await ApiServiceBase.post<{
-          state: IGSNPublishingState;
+          state: PublishingState;
           url: string;
           publicUrl: string;
           creatorAffiliation: string | null;
@@ -654,6 +657,7 @@ export default class IdentifierModel implements Identifier {
       creatorAffiliationIdentifier: this.creatorAffiliationIdentifier,
       title: this.title,
       publicUrl: this.publicUrl,
+      providerUrl: this.providerUrl,
       publisher: this.publisher,
       publicationYear: this.publicationYear,
       resourceType: this.resourceType,

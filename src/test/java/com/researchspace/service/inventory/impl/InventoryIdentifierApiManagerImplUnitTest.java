@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -98,8 +99,19 @@ class InventoryIdentifierApiManagerImplUnitTest {
     assertEquals("Instrument", result.getResourceType());
   }
 
+  /**
+   * The connector's message names the operation for the logs and may carry internal detail; only
+   * its reason is safe to show a user. The manager must interpolate the reason, so the localized
+   * sentence does not end up with an English developer prefix inside it duplicating what it already
+   * says.
+   *
+   * <p>Constructed the way the connector really does, with a distinct message and reason. An
+   * earlier version of this test used a reason-less construction and asserted the doubled output as
+   * correct, which meant reverting the connector left every test green while users got the old
+   * message back.
+   */
   @Test
-  void publishB2instSurfacesConnectorFailureReason() throws Exception {
+  void publishB2instInterpolatesOnlyTheProviderReasonNotTheDeveloperMessage() throws Exception {
     InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
     B2instConnector b2instConnector = mock(B2instConnector.class);
     MessageSourceUtils messages = mock(MessageSourceUtils.class);
@@ -108,10 +120,12 @@ class InventoryIdentifierApiManagerImplUnitTest {
 
     DigitalObjectIdentifier doi = mock(DigitalObjectIdentifier.class);
     when(doi.getIdentifier()).thenReturn("k2j9p-7yh21");
+    String reason = "instrument_type: Missing data for required field.";
     B2instConnectionException original =
         new B2instConnectionException(
-            "Error submitting B2INST record k2j9p-7yh21 for community review: "
-                + "instrument_type: Missing data for required field.");
+            "Error submitting B2INST record k2j9p-7yh21 for community review: " + reason,
+            reason,
+            null);
     when(b2instConnector.publishDoi("k2j9p-7yh21")).thenThrow(original);
     when(messages.getMessage(
             eq("errors.inventory.identifier.b2inst.publish.failed"), any(Object[].class)))
@@ -130,10 +144,12 @@ class InventoryIdentifierApiManagerImplUnitTest {
     Throwable thrown = wrapped.getCause();
     assertTrue(thrown instanceof B2instConnectionException);
     assertEquals(
-        "Could not publish the instrument PID in B2INST. Error submitting B2INST record"
-            + " k2j9p-7yh21 for community review: instrument_type: Missing data for required"
+        "Could not publish the instrument PID in B2INST. instrument_type: Missing data for required"
             + " field.",
         thrown.getMessage());
+    assertFalse(
+        thrown.getMessage().contains("Error submitting B2INST record"),
+        "the connector's developer prefix must not appear inside the localized sentence");
     assertSame(original, thrown.getCause());
   }
 

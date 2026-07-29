@@ -49,6 +49,7 @@ import org.apache.commons.lang3.StringUtils;
       "dates",
       "rsPublicId",
       "publicUrl",
+      "providerUrl",
       "customFieldsOnPublicPage",
       "_links"
     })
@@ -157,14 +158,48 @@ public class ApiInventoryDOI extends LinkableApiObject {
   @JsonProperty("resourceTypeGeneral")
   private String resourceTypeGeneral;
 
-  @JsonProperty("url")
+  /**
+   * The identifier's target address: what a resolved DOI points at, and the {@code url} RSpace
+   * sends to DataCite.
+   *
+   * <p>The third server-owned URL on this class, for the same reason as {@link #publicUrl} and
+   * {@link #providerUrl}. It is rendered into an {@code <externalLink>} in the identifier state
+   * messages, so a client-supplied value would put an attacker-chosen href behind benign link text,
+   * and it is also the outbound DataCite target. Every server-side write is a Java setter — from
+   * the stored property, from a DataCite response, and at publish — so {@link
+   * JsonProperty.Access#READ_ONLY} costs nothing.
+   */
+  @JsonProperty(value = "url", access = JsonProperty.Access.READ_ONLY)
   private String url;
 
   @JsonProperty("rsPublicId")
   private String rsPublicId;
 
-  @JsonProperty("publicUrl")
+  /**
+   * The citable, publicly resolvable address of the identifier, set when it is published.
+   *
+   * <p>Server-owned for the same reason as {@link #providerUrl}, and more importantly so: this one
+   * is rendered on the unauthenticated public identifier page, so a client-supplied value would
+   * reach readers who never signed in. It is only ever written from the DOI at publish time, so
+   * {@link JsonProperty.Access#READ_ONLY} costs nothing; a client that still sends it is ignored
+   * rather than rejected, and the stored value stands.
+   */
+  @JsonProperty(value = "publicUrl", access = JsonProperty.Access.READ_ONLY)
   private String publicUrl;
+
+  /**
+   * The record's page on the issuing provider, for example the B2INST deposit page. Unlike {@link
+   * #publicUrl} this exists from registration onwards, and viewing it may require signing in to
+   * that provider, so it is not a citable public URL.
+   *
+   * <p>Server-owned: it only ever legitimately comes from the B2INST draft response, so it is
+   * {@link JsonProperty.Access#READ_ONLY} to stop a client supplying its own. Without that, any
+   * user who can edit the instrument could PUT an arbitrary URL here and every viewer of the record
+   * would see a link whose visible text is the harmless identifier value. The Java setter is
+   * unaffected, so the registration path still writes it.
+   */
+  @JsonProperty(value = "providerUrl", access = JsonProperty.Access.READ_ONLY)
+  private String providerUrl;
 
   @JsonProperty("customFieldsOnPublicPage")
   private Boolean customFieldsOnPublicPage;
@@ -210,6 +245,7 @@ public class ApiInventoryDOI extends LinkableApiObject {
     setUrl(identifier.getOtherData(IdentifierOtherProperty.LOCAL_URL));
     setRsPublicId(identifier.getPublicLink());
     setPublicUrl(identifier.getOtherData(IdentifierOtherProperty.PUBLIC_URL));
+    setProviderUrl(identifier.getOtherData(IdentifierOtherProperty.PROVIDER_URL));
     setCustomFieldsOnPublicPage(identifier.isCustomFieldsOnPublicPage());
 
     setSubjects(
@@ -390,6 +426,13 @@ public class ApiInventoryDOI extends LinkableApiObject {
     if (getPublicUrl() != null) {
       if (!getPublicUrl().equals(dbIdentifier.getOtherData(IdentifierOtherProperty.PUBLIC_URL))) {
         dbIdentifier.addOtherData(IdentifierOtherProperty.PUBLIC_URL, getPublicUrl());
+        contentChanged = true;
+      }
+    }
+    if (getProviderUrl() != null) {
+      if (!getProviderUrl()
+          .equals(dbIdentifier.getOtherData(IdentifierOtherProperty.PROVIDER_URL))) {
+        dbIdentifier.addOtherData(IdentifierOtherProperty.PROVIDER_URL, getProviderUrl());
         contentChanged = true;
       }
     }

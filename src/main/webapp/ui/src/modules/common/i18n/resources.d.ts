@@ -2921,6 +2921,7 @@ export default interface Resources {
           "igsnDocLink": "See IGSN Documentation for details",
           "pidinstDocLink": "See PIDINST Documentation for details",
           "preview": "Preview",
+          "publishAwaitingReview": "This instrument PID has been submitted to the B2INST community and is awaiting curator review.",
           "rorError": "Could not get RoR data.",
           "show": "Show",
           "stateInfo": {
@@ -2928,8 +2929,21 @@ export default interface Resources {
             "draftPidinst": "This PIDINST is a Draft. Metadata can be specified, but no information is publicly available.",
             "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
             "findablePidinst": "This PIDINST is Findable. The PIDINST is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
+            "pidinstAccepted": "The community accepted this submission. The instrument PID is registered and publicly resolvable.",
+            "pidinstCancelled": "The submission was cancelled before review. The instrument PID remains a draft.",
+            "pidinstDeclined": "The community declined this submission. The instrument PID remains a draft.",
+            "pidinstExpired": "The submission expired before it was reviewed. The instrument PID remains a draft.",
+            "pidinstSubmitted": "Submitted to the B2INST community for review. A curator decides whether the instrument PID is published.",
             "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API.",
             "registeredPidinst": "This PIDINST is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API."
+          },
+          "stateLabels": {
+            "accepted": "Accepted",
+            "cancelled": "Cancelled",
+            "created": "Created",
+            "declined": "Declined",
+            "expired": "Expired",
+            "submitted": "Submitted"
           },
           "toggleId": {
             "hide": "Hide identifier's details",
@@ -2940,6 +2954,7 @@ export default interface Resources {
             "deleteDraft": "Delete Draft",
             "missingData": "Some missing data",
             "notPublished": "Not published yet",
+            "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",
             "previewPage": "Preview Landing Page",
             "retract": "Retract"
           }
@@ -3328,7 +3343,7 @@ export default interface Resources {
       },
       "delete": {
         "body": "The IGSN ID will be deleted, and this item will no longer have an IGSN ID associated with it. Do you want to proceed?",
-        "bodyPidinst": "The PIDINST ID will be deleted, and this item will no longer have a PIDINST associated with it. Do you want to proceed?",
+        "bodyPidinst": "The PIDINST ID will be deleted, and this item will no longer have a PIDINST ID associated with it. Do you want to proceed?",
         "title": "You are about to delete this Identifier"
       },
       "publish": {
