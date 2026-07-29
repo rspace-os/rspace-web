@@ -23,7 +23,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.audittrail.AuditTrailService;
-import com.researchspace.model.dtos.FormMenu;
 import com.researchspace.model.dtos.WorkspaceSettings;
 import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.preference.Preference;
@@ -33,7 +32,6 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.system.SystemPropertyValue;
-import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.AuditManager;
@@ -63,6 +61,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -129,9 +128,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     anyUser.setId(666L);
     ReflectionTestUtils.setField(postLoginHandler, "userContentUpdater", userContentUpdaterMock);
     ReflectionTestUtils.setField(paginationSettingsPreferences, "userManager", mockUserMgr);
-    UserPreference up =
-        new UserPreference(Preference.DELETED_RECORDS_RESULTS_PER_PAGE, anyUser, "10");
-    when(mockUserMgr.getPreferenceForUser(any(User.class), any(Preference.class))).thenReturn(up);
+    clearUsersCustomFormsAddedToMenu();
     tss = new ExtendedModelMap();
     model = tss;
     workspaceController.setFormManager(formMgr);
@@ -143,9 +140,14 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     request = new MockHttpServletRequest();
     response = new MockHttpServletResponse();
     setupSystemPropertyForPublishAllowedAndSeoAllowed();
-    when(formMgr.findOldestFormByName(eq(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME)))
-        .thenReturn(mockOntologyForm);
-    when(mockOntologyForm.getStableID()).thenReturn("mockOntologyFormStableID");
+  }
+
+  @SuppressWarnings("unchecked")
+  private void clearUsersCustomFormsAddedToMenu() {
+    ((Map<Long, Boolean>)
+            ReflectionTestUtils.getField(
+                WorkspaceController.class, "USERS_CUSTOM_FORMS_ADDED_TO_MENU"))
+        .clear();
   }
 
   private void setupSystemPropertyForPublishAllowedAndSeoAllowed() {
@@ -208,7 +210,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   @Test
   public void testHandleRequestModel() throws Exception {
     workspaceController.setRecordManager(recordManagerStub);
-    setUpCommonMocks();
+    setUpRootFolderMocks();
 
     workspaceController.listRootFolder(
         "", model, mockPrincipal, request, session, response, new WorkspaceSettings());
@@ -221,7 +223,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   public void shouldAddPublishAllowedAndSeoAllowedBooleanBasedOnSystemProperty()
       throws IOException {
     workspaceController.setRecordManager(recordManagerStub);
-    setUpCommonMocks();
+    setUpRootFolderMocks();
     workspaceController.listRootFolder(
         "", model, mockPrincipal, request, session, response, new WorkspaceSettings());
     assertTrue((Boolean) model.getAttribute("publish_allowed"));
@@ -244,7 +246,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
 
     workspaceController.setRecordManager(recordManagerStub);
     setUpGroupWithPiNonPIAllowPublishAndSeo(false, false);
-    setUpCommonMocks();
+    setUpRootFolderMocks();
     workspaceController.listRootFolder(
         "", model, mockPrincipal, request, session, response, new WorkspaceSettings());
     assertTrue((Boolean) model.getAttribute("publish_own_documents"));
@@ -259,7 +261,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
           throws Exception {
     workspaceController.setRecordManager(recordManagerStub);
     setUpGroupWithPiNonPIAllowPublishAndSeo(false, false);
-    setUpCommonMocks();
+    setUpRootFolderMocks();
     workspaceController.listRootFolder(
         "", model, mockPrincipalNonPI, request, session, response, new WorkspaceSettings());
     assertFalse((Boolean) model.getAttribute("publish_own_documents"));
@@ -292,7 +294,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
       g.setPublicationAllowed(true);
       groupManager.saveGroup(g, nonPI);
     }
-    setUpCommonMocks();
+    setUpRootFolderMocks();
     workspaceController.listRootFolder(
         "", model, mockPrincipalNonPI, request, session, response, new WorkspaceSettings());
     assertTrue((Boolean) model.getAttribute("publish_own_documents"));
@@ -308,7 +310,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     workspaceController.setRecordManager(recordManagerStub);
     setUpGroupWithPiNonPIAllowPublishAndSeo(true, true);
     setUpGroupWithPiNonPIAllowPublishAndSeo(false, false);
-    setUpCommonMocks();
+    setUpRootFolderMocks();
     workspaceController.listRootFolder(
         "", model, mockPrincipalNonPI, request, session, response, new WorkspaceSettings());
     assertFalse((Boolean) model.getAttribute("publish_own_documents"));
@@ -319,7 +321,13 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
 
   private void setUpCommonMocks() {
     Mockito.when(grpMgr.listGroupsForUser()).thenReturn(Collections.emptySet());
-    Mockito.when(formMgr.generateFormMenu(Mockito.any(User.class))).thenReturn(new FormMenu());
+  }
+
+  private void setUpRootFolderMocks() {
+    setUpCommonMocks();
+    when(formMgr.findOldestFormByName(eq(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME)))
+        .thenReturn(mockOntologyForm);
+    when(mockOntologyForm.getStableID()).thenReturn("mockOntologyFormStableID");
   }
 
   @Test
@@ -344,7 +352,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   }
 
   private Long getAValidRecordId() throws Exception {
-    setUpCommonMocks();
+    setUpRootFolderMocks();
     workspaceController.listRootFolder(
         "", model, mockPrincipal, request, session, response, new WorkspaceSettings());
     assertTrue((Boolean) model.getAttribute("publish_allowed"));
@@ -390,10 +398,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
       sc.setAttribute(USERS_KEY, tracker);
       workspaceController.setServletContext(sc);
       final Long anyId = 1L;
-      final Long anyId2 = 2L;
       setUpCommonMocks();
-      when(mockDeleteManager.deleteRecord(eq(anyId), eq(anyId), Mockito.any(User.class)))
-          .thenReturn(new CompositeRecordOperationResult(null, null, null));
 
       final WorkspaceSettings srchInput = new WorkspaceSettings();
       srchInput.setParentFolderId(anyId);
@@ -462,8 +467,10 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   @Test
   public void viewDeletedDocuments() {
     workspaceController.setUserManager(mockUserMgr);
+    UserPreference up =
+        new UserPreference(Preference.DELETED_RECORDS_RESULTS_PER_PAGE, anyUser, "10");
+    when(mockUserMgr.getPreferenceForUser(any(User.class), any(Preference.class))).thenReturn(up);
     when(mockUserMgr.getUserByUsername(any())).thenReturn(anyUser);
-    when(mockUserMgr.get(eq(666L))).thenReturn(anyUser);
     when(mockUserMgr.getUserByUsername(any(), eq(true))).thenReturn(anyUser);
 
     final AuditedRecord ar = new AuditedRecord();
