@@ -19,8 +19,9 @@ export function PyratDialogStory(): React.ReactNode {
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <ErrorBoundary>
           <Alerts>
-            {/** biome-ignore lint/a11y/useButtonType: story-only trigger */}
-            <button onClick={() => setOpen(true)}>{"Open"}</button>
+            <button type="button" onClick={() => setOpen(true)}>
+              {"Open"}
+            </button>
             <PyratDialog
               open={open}
               onClose={() => {

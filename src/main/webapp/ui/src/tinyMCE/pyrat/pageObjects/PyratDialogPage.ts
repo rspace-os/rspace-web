@@ -20,11 +20,11 @@ export class PyratDialogPage {
   }
 
   get rowsPerPageSelect(): Locator {
-    return page.getByRole("combobox", { name: /rows per page/i });
+    return page.getByRole("combobox", { name: "Rows per page:" });
   }
 
   get nextPageButton(): Locator {
-    return page.getByRole("button", { name: /go to next page/i });
+    return page.getByRole("button", { name: "Go to next page" });
   }
 
   get showFilterOptionsButton(): Locator {

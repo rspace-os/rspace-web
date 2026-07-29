@@ -180,7 +180,7 @@ export default function Filter({
     // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     [key: string]: any;
   }) {
-    const labelId = `${name}-label`;
+    const labelId = React.useId();
 
     return (
       <FormControl fullWidth>
