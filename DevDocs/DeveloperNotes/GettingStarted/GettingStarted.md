@@ -83,6 +83,22 @@ Current location of the codebase is https://github.com/rspace-os/rspace-web
 
 We recommend using a Git client to download and update the source code.
 
+#### Create your local deployment.properties
+
+`src/main/resources/deployments/dev/deployment.properties` holds your local settings and
+credentials, so it is gitignored. Spring will not start without it, so copy the checked-in
+template once after cloning:
+
+```bash
+cp src/main/resources/deployments/dev/deployment.properties.example \
+   src/main/resources/deployments/dev/deployment.properties
+```
+
+The Docker dev stack (`./docker/dev/rspace-dev up`) and CI do this for you. Defaults for every
+property that has a sensible production value live in
+`src/main/resources/deployments/defaultDeployment.properties`; only put dev-specific overrides and
+your own credentials in the copy.
+
 #### Sanity check
 
 As the 1st goal, you should be able to compile the java side of the code. 

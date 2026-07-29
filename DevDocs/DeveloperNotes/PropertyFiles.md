@@ -39,6 +39,22 @@ Property files can be loaded from the classpath, or from external files.
 To provide a uniform developer experience, property files  are located on the classpath in various subfolders of 
 `src/main/resources/deployments`
 
+`deployments/dev/deployment.properties` is **not** checked in — it holds local credentials. Copy it
+from the checked-in template before your first build; Spring fails to start if it is missing:
+
+```bash
+cp src/main/resources/deployments/dev/deployment.properties.example \
+   src/main/resources/deployments/dev/deployment.properties
+```
+
+`./docker/dev/rspace-dev`, the GitHub Actions workflows and the Jenkinsfile all run this copy
+automatically. Keep the `.example` template limited to dev-specific overrides and credential slots:
+anything with a sensible production value belongs in `defaultDeployment.properties`.
+
+If you already had a `deployment.properties` from before it was untracked, back it up before
+pulling: git deletes the file if you never edited it, and refuses to switch if you did. Restore
+your backup over the fresh copy afterwards.
+
 At build time, the placeholder `${propertyFileDirPlaceholder}/deployment.properties` in
 `applicationContext-resources.xml` is resolved by Maven
 using values defined in pom.xml. Typically, this will resolve ${propertyFileDirPlaceholder} to `classpath:deployments/dev`
@@ -66,6 +82,10 @@ may be variable between different deployment builds, and might need to
 be edited after installation (i.e., post-build)
 then add it to defaultDeployment.properties. Otherwise, add it to
 another property file. E.g., rs.properties.
+
+If the property also needs a different value locally, add the override to
+`deployments/dev/deployment.properties.example` (and to your own untracked copy) so other
+developers pick it up.
 
 For each deployment/subfolder, override if need be, if it is clear what
 value should be used by different deployments.

@@ -102,6 +102,11 @@ jobs:
           rm -rf $RS_FILE_BASE
           mkdir -p $RS_FILE_BASE
 
+      - name: Seed dev deployment.properties
+        run: |
+          cp -n src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
+
       - name: Run fast tests
         run: |
           # ponytail: forkCount=2 is conservative; raise it / isolate RS_FILE_BASE per fork (${surefire.forkNumber}) if file-collision flakiness appears
@@ -616,6 +621,11 @@ jobs:
           rm -rf $RS_FILE_BASE
           mkdir -p $RS_FILE_BASE
 
+      - name: Seed dev deployment.properties
+        run: |
+          cp -n src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
+
       - name: Run Spring tests
         run: |
           ./mvnw clean test -Denvironment=drop-recreate-db \
@@ -703,6 +713,11 @@ jobs:
           rm -rf $RS_FILE_BASE
           mkdir -p $RS_FILE_BASE
 
+      - name: Seed dev deployment.properties
+        run: |
+          cp -n src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
+
       - name: Run integration tests
         run: |
           ./mvnw clean integration-test -DskipUnitTests=true -Denvironment=drop-recreate-db \
@@ -773,6 +788,11 @@ jobs:
         run: |
           rm -rf $RS_FILE_BASE
           mkdir -p $RS_FILE_BASE
+
+      - name: Seed dev deployment.properties
+        run: |
+          cp -n src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
 
       - name: Build project
         run: |
