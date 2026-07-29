@@ -99,7 +99,6 @@ public class PublicStructuredDocumentController extends BaseController {
     if (rgs.isDisplayContactDetails()) {
       model.addAttribute("contactDetails", sharedBy.getEmail());
     }
-    PublicDocumentsUtilities.addGroupAttributes(model, user, groupManager.listGroupsForUser());
     auditService.notify(new GenericEvent(user, structuredDocument, AuditAction.READ));
 
     String view = STRUCTURED_DOCUMENT_EDITOR_VIEW_NAME;

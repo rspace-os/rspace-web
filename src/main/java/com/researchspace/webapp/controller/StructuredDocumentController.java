@@ -17,7 +17,6 @@ import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
 import com.researchspace.model.EditStatus;
-import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Signature;
 import com.researchspace.model.SignatureInfo;
@@ -575,7 +574,9 @@ public class StructuredDocumentController extends BaseController {
       model.addAttribute("settingsKey", settingsKey);
     }
     model.addAttribute("extMessaging", getExternalMessagingIntegrationInfos(user));
-    addGroupAttributes(model, user);
+    // structuredDocument.jsp gates the Share action on this being non-empty in non-cloud
+    // deployments, so the React share dialog is unreachable without it
+    model.addAttribute("groups", groupManager.listGroupsForUser());
     model.addAttribute(
         "clientUISettingsPref", getUserPreferenceValue(user, Preference.UI_CLIENT_SETTINGS));
     auditService.notify(new GenericEvent(user, structuredDocument, AuditAction.READ));
@@ -645,13 +646,6 @@ public class StructuredDocumentController extends BaseController {
     }
     Folder rootRecord = folderManager.getRootFolderForUser(user);
     createBreadcrumb(model, document, rootRecord, parent);
-  }
-
-  private void addGroupAttributes(Model model, User usr) {
-    Set<Group> groups = groupManager.listGroupsForUser();
-    model.addAttribute("groups", groups);
-    List<User> users = Group.getUniqueUsersInGroups(groups, User.LAST_NAME_COMPARATOR, usr);
-    model.addAttribute("uniqueUsers", users);
   }
 
   private void prepareDocumentForView(Model model, StructuredDocument doc) {

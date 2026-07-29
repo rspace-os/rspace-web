@@ -62,7 +62,7 @@
         </c:choose>
         var entryCount = ${entryCount};
     </script>
-    <script src="<rst:assetUrl value='/scripts/tags/shareDlg.js'/>"></script>
+    <script src="<rst:assetUrl value='/scripts/tags/publishDlg.js'/>"></script>
     <rst:bundle bundle="tinymceGalleryUtils" />
     <script	src="<rst:assetUrl value='/scripts/pages/coreEditor.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/notebookEditor.js'/>"></script>

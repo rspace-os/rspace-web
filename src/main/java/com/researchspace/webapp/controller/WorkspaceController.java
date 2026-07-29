@@ -1087,7 +1087,7 @@ public class WorkspaceController extends BaseController {
       model.addAttribute("labgroupsFolderId", labGroupFolderId);
     }
 
-    addGroupAttributes(model, subject);
+    addGroupAttributes(model);
     // If not aut o-wired can't add this in constructor
     permDTObuilder.setFolderMger(folderManager);
     permDTObuilder.setRecMgr(recordManager);
@@ -1156,11 +1156,8 @@ public class WorkspaceController extends BaseController {
   }
 
   /** Only needed for full page reload */
-  private void addGroupAttributes(Model model, User usr) {
-    Set<Group> groups = groupManager.listGroupsForUser();
-    model.addAttribute("groups", groups);
-    List<User> users = Group.getUniqueUsersInGroups(groups, User.LAST_NAME_COMPARATOR, usr);
-    model.addAttribute("uniqueUsers", users);
+  private void addGroupAttributes(Model model) {
+    model.addAttribute("groups", groupManager.listGroupsForUser());
   }
 
   @ResponseBody

@@ -3,7 +3,7 @@
 <%@ taglib prefix="axt" tagdir="/WEB-INF/tags" %>
 <%@ taglib uri="http://researchspace.com/tags" prefix="rst" %>
 <%@ taglib prefix="shiro" uri="http://shiro.apache.org/tags" %>
-<script src="<rst:assetUrl value='/scripts/tags/shareDlg.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tags/publishDlg.js'/>"></script>
 <%--
 This is a reusable menu bar for CRUD type operations on resources.
 It defines operations for move, copy, delete, revision and rename.
@@ -134,6 +134,5 @@ d) A function 'idsToNames' gets ids and names of records based on a clicked chec
 
 <axt:export/>
 
-<axt:shareDlg shareDlgGroups="${groups}" shareDlgUsers="${uniqueUsers}"/>
 <axt:publishDlg/>
 <axt:useTemplate />
