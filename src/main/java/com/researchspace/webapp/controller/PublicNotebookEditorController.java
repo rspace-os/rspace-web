@@ -91,7 +91,6 @@ public class PublicNotebookEditorController extends BaseController {
     }
     model.addAttribute("publishOnInternet", rgs.isPublishOnInternet());
     model.addAttribute("user", user);
-    PublicDocumentsUtilities.addGroupAttributes(model, user, groupManager.listGroupsForUser());
 
     model.addAttribute("canSeeNotebook", true);
     model.addAttribute("canEdit", false);

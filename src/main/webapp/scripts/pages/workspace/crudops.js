@@ -124,7 +124,7 @@ function setUpShareDialog() {
     });
   };
 
-  createShareDialog("Publish", idsToShareGetter, onshare, '#publish-dialog');
+  createPublishDialog(idsToShareGetter, onshare, '#publish-dialog');
 }
 
 function setUpExportDialogs() {
@@ -233,6 +233,19 @@ function checkLoad() {
   } else {
     setTimeout(checkLoad(), 1000);
   }
+}
+
+function onlyNormalDocsOnTypesList(types) {
+  var onlyNormalDocs = true;
+  if (types) {
+    $.each(types, function(i, type) {
+      if (type !== 'NORMAL') {
+        onlyNormalDocs = false;
+        return false;
+      }
+    });
+  }
+  return onlyNormalDocs;
 }
 
 function createMoveDialog(onmove, moveparams) {

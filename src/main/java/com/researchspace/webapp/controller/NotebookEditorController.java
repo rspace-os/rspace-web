@@ -5,7 +5,6 @@ import static com.researchspace.service.impl.DocumentTagManagerImpl.allGroupsAll
 import static com.researchspace.service.impl.DocumentTagManagerImpl.anyGroupEnforcesOntologies;
 
 import com.researchspace.model.EditStatus;
-import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
@@ -25,8 +24,6 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.UserSessionTracker;
 import java.net.URISyntaxException;
 import java.security.Principal;
-import java.util.List;
-import java.util.Set;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
@@ -132,7 +129,9 @@ public class NotebookEditorController extends BaseController {
     }
 
     model.addAttribute("user", user);
-    addGroupAttributes(model, user);
+    // notebookEditor.jsp gates the Share action on this being non-empty in non-cloud
+    // deployments, so the React share dialog is unreachable without it
+    model.addAttribute("groups", groupManager.listGroupsForUser());
 
     FormMenu formMenu = formManager.generateFormMenu(user);
     model.addAttribute("formsForCreateMenuPagination", formMenu.getFormsForCreateMenuPagination());
@@ -166,13 +165,6 @@ public class NotebookEditorController extends BaseController {
     model.addAttribute("allow_bioOntologies", allGroupsAllowBioOntologies(user));
 
     return new ModelAndView("notebookEditor/notebookEditor", model.asMap());
-  }
-
-  private void addGroupAttributes(Model model, User usr) {
-    Set<Group> groups = groupManager.listGroupsForUser();
-    model.addAttribute("groups", groups);
-    List<User> users = Group.getUniqueUsersInGroups(groups, User.LAST_NAME_COMPARATOR, usr);
-    model.addAttribute("uniqueUsers", users);
   }
 
   @ResponseBody

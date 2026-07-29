@@ -1,21 +1,14 @@
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
 <%@ attribute name="folderChooserId" required="true" type="java.lang.String" %>
 
 <script src="<rst:assetUrl value='/scripts/tags/folderChooser.js'/>"></script>
 
 <div id="folderChooser${folderChooserId}" style="display: none;">
-    <c:if test="${folderChooserId != '-shareIntoFolder'}">
-        Optionally,
-    </c:if>
+    Optionally,
     <a href="#" class="nobutton" id="folderChooserLnk${folderChooserId}">
         choose a folder or notebook
     </a>
     <span id="folderChooserDesc${folderChooserId}"></span>
-
-    <c:if test="${folderChooserId == '-shareIntoFolder'}">
-        <h4>Select a folder to share into</h4>
-    </c:if>
 
     <div>
         <div id="folderChooserInfo${folderChooserId}" style="display: none">

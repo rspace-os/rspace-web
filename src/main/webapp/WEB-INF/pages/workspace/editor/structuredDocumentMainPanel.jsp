@@ -34,7 +34,7 @@
 <script src="<rst:assetUrl value='/scripts/jqueryFileTree/jqueryFileTree.js'/>"></script>
 <script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
 <script src="<rst:assetUrl value='/scripts/pages/workspace/clientUISettings.js'/>"></script>
-<script src="<rst:assetUrl value='/scripts/tags/shareDlg.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/tags/publishDlg.js'/>"></script>
 <script src="<rst:assetUrl value='/scripts/pages/coreEditor.js'/>"></script>
 <script src="<rst:assetUrl value='/scripts/pages/workspace/editor/documentView.js'/>"></script>
     <axt:toolbar hideSearch="true">
