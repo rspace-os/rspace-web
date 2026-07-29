@@ -110,9 +110,10 @@ public class StoichiometryInventoryLinkManagerImplTest {
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
 
-    IllegalArgumentException ex =
-        assertThrows(IllegalArgumentException.class, () -> manager.createLink(10L, req, user));
-    assertEquals("Stoichiometry molecule already has an inventory link", ex.getMessage());
+    assertEquals(
+        "Stoichiometry molecule already has an inventory link",
+        assertThrows(IllegalArgumentException.class, () -> manager.createLink(10L, req, user))
+            .getMessage());
   }
 
   @Test
@@ -127,12 +128,11 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(invPerms.assertUserCanEditInventoryRecord(any(GlobalIdentifier.class), eq(user)))
         .thenReturn(invSampleTemplate);
 
-    IllegalArgumentException ex =
-        assertThrows(IllegalArgumentException.class, () -> manager.createLink(10L, req, user));
     assertEquals(
         "IT200 is a sample template. Only Containers, Samples and Subsamples are valid for"
             + " linking.",
-        ex.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> manager.createLink(10L, req, user))
+            .getMessage());
   }
 
   @Test

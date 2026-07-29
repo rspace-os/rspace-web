@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -132,9 +131,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     ReflectionTestUtils.setField(paginationSettingsPreferences, "userManager", mockUserMgr);
     UserPreference up =
         new UserPreference(Preference.DELETED_RECORDS_RESULTS_PER_PAGE, anyUser, "10");
-    lenient()
-        .when(mockUserMgr.getPreferenceForUser(any(User.class), any(Preference.class)))
-        .thenReturn(up);
+    when(mockUserMgr.getPreferenceForUser(any(User.class), any(Preference.class))).thenReturn(up);
     tss = new ExtendedModelMap();
     model = tss;
     workspaceController.setFormManager(formMgr);
@@ -146,10 +143,9 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     request = new MockHttpServletRequest();
     response = new MockHttpServletResponse();
     setupSystemPropertyForPublishAllowedAndSeoAllowed();
-    lenient()
-        .when(formMgr.findOldestFormByName(eq(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME)))
+    when(formMgr.findOldestFormByName(eq(CustomFormAppInitialiser.ONTOLOGY_FORM_NAME)))
         .thenReturn(mockOntologyForm);
-    lenient().when(mockOntologyForm.getStableID()).thenReturn("mockOntologyFormStableID");
+    when(mockOntologyForm.getStableID()).thenReturn("mockOntologyFormStableID");
   }
 
   private void setupSystemPropertyForPublishAllowedAndSeoAllowed() {
@@ -323,9 +319,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
 
   private void setUpCommonMocks() {
     Mockito.when(grpMgr.listGroupsForUser()).thenReturn(Collections.emptySet());
-    Mockito.lenient()
-        .when(formMgr.generateFormMenu(Mockito.any(User.class)))
-        .thenReturn(new FormMenu());
+    Mockito.when(formMgr.generateFormMenu(Mockito.any(User.class))).thenReturn(new FormMenu());
   }
 
   @Test
@@ -398,8 +392,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
       final Long anyId = 1L;
       final Long anyId2 = 2L;
       setUpCommonMocks();
-      lenient()
-          .when(mockDeleteManager.deleteRecord(eq(anyId), eq(anyId), Mockito.any(User.class)))
+      when(mockDeleteManager.deleteRecord(eq(anyId), eq(anyId), Mockito.any(User.class)))
           .thenReturn(new CompositeRecordOperationResult(null, null, null));
 
       final WorkspaceSettings srchInput = new WorkspaceSettings();
@@ -470,7 +463,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   public void viewDeletedDocuments() {
     workspaceController.setUserManager(mockUserMgr);
     when(mockUserMgr.getUserByUsername(any())).thenReturn(anyUser);
-    lenient().when(mockUserMgr.get(eq(666L))).thenReturn(anyUser);
+    when(mockUserMgr.get(eq(666L))).thenReturn(anyUser);
     when(mockUserMgr.getUserByUsername(any(), eq(true))).thenReturn(anyUser);
 
     final AuditedRecord ar = new AuditedRecord();

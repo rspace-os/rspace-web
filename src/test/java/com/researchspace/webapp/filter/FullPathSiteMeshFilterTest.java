@@ -4,7 +4,6 @@ import static com.researchspace.webapp.filter.FullPathSiteMeshFilter.FORWARD_REQ
 import static com.researchspace.webapp.filter.FullPathSiteMeshFilter.FORWARD_SERVLET_PATH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -18,7 +17,7 @@ class FullPathSiteMeshFilterTest {
     when(req.getContextPath()).thenReturn(contextPath);
     when(req.getAttribute(FORWARD_REQUEST_URI)).thenReturn(forwardRequestUri);
     // What the container reports for a servlet path-mapped forward: only the mapping prefix.
-    lenient().when(req.getAttribute(FORWARD_SERVLET_PATH)).thenReturn("/workspace");
+    when(req.getAttribute(FORWARD_SERVLET_PATH)).thenReturn("/workspace");
     return req;
   }
 

@@ -29,7 +29,6 @@ public class MySQLVersionPreconditionTest {
 
   @Test
   public void invalidOperatorCausesError() throws DatabaseException {
-    setUpDBVersion(new SemanticVersion(5, 6, null, null));
     precondition.setVersion("5.7");
     assertThrows(IllegalArgumentException.class, () -> precondition.setOperator("notanoperator"));
   }
@@ -96,8 +95,8 @@ public class MySQLVersionPreconditionTest {
   }
 
   private void setUpDBVersion(SemanticVersion version) throws DatabaseException {
-    Mockito.lenient().when(db.getConnection()).thenReturn(conn);
-    Mockito.lenient().when(conn.getDatabaseMajorVersion()).thenReturn(version.getMajor());
-    Mockito.lenient().when(conn.getDatabaseMinorVersion()).thenReturn(version.getMinor());
+    Mockito.when(db.getConnection()).thenReturn(conn);
+    Mockito.when(conn.getDatabaseMajorVersion()).thenReturn(version.getMajor());
+    Mockito.when(conn.getDatabaseMinorVersion()).thenReturn(version.getMinor());
   }
 }

@@ -48,7 +48,6 @@ public class FilesApiControllerTest {
     fileController.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
     validDocFile = TestFactory.createEcatDocument(1L, subject);
     strucDoc = TestFactory.createAnySD();
-    mockBaseUrl();
   }
 
   private void mockBaseUrl() {
@@ -82,6 +81,7 @@ public class FilesApiControllerTest {
 
   @Test
   public void updateFileSuccess() throws Exception {
+    mockBaseUrl();
     MockMultipartFile mockFile = createAnyMultipartFile();
     when(recordMgr.getSafeNull(1L)).thenReturn(Optional.of(validDocFile));
     when(permissions.isPermitted(validDocFile, PermissionType.WRITE, subject)).thenReturn(true);

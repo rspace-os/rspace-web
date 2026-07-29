@@ -12,7 +12,7 @@ public class ZipCopyTest {
 
   private static final Path SRC_MAIN_RESOURCES_START_UP_DATA_C4_ZIP =
       Path.of("src/main/resources/StartUpData/chemical-data-sheet.zip");
-  private static final String START_UP_DATA_C4_ZCIP = "/StartUpData/chemical-data-sheet.zip";
+  private static final String START_UP_DATA_C4_ZIP = "/StartUpData/chemical-data-sheet.zip";
 
   // Guards against Maven resource filtering corrupting the binary fixture.
   @Test
@@ -26,6 +26,6 @@ public class ZipCopyTest {
   }
 
   private InputStream fromClasspath() {
-    return getClass().getResourceAsStream(START_UP_DATA_C4_ZCIP);
+    return getClass().getResourceAsStream(START_UP_DATA_C4_ZIP);
   }
 }

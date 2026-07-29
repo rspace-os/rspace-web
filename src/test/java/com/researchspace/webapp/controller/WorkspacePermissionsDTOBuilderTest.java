@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
@@ -68,7 +67,6 @@ public class WorkspacePermissionsDTOBuilderTest {
     user = TestFactory.createAnyUser("any");
     parentFolder = TestFactory.createAFolder("folder", user);
     recordFac = new RecordFactory();
-    lenient().when(permissionUtils.isPermitted(any(), any(), any())).thenReturn(true);
   }
 
   @Test
@@ -84,8 +82,6 @@ public class WorkspacePermissionsDTOBuilderTest {
 
     parentFolder.addChild(media, user);
     Mockito.when(results.getResults()).thenReturn(records);
-    Mockito.lenient().when(recMger.canMove(media, parentFolder, user)).thenReturn(true);
-
     // folder owned by user enables crud operations on contents
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
@@ -148,9 +144,6 @@ public class WorkspacePermissionsDTOBuilderTest {
     final List<BaseRecord> records = toList(snip);
     parentFolder.addChild(snip, user);
     when(results.getResults()).thenReturn(records);
-    lenient()
-        .when(recMger.canMove(Mockito.eq(snip), Mockito.eq(parentFolder), any(User.class)))
-        .thenReturn(true);
     ActionPermissionsDTO result =
         dtoBuilder.addCreateAndOptionsMenuPermissions(
             parentFolder, user, model, results.getResults(), parentFolderId, false);
@@ -242,6 +235,7 @@ public class WorkspacePermissionsDTOBuilderTest {
   // RSPAC-940
   @Test
   public void notebookOwnerCanCopySharedNotebookEntry() throws IllegalAddChildOperation {
+    when(permissionUtils.isPermitted(any(), any(), any())).thenReturn(true);
 
     User pi = TestFactory.createAnyUserWithRole("pi", Constants.PI_ROLE);
     parentFolder = TestFactory.createAFolder("folder", pi);
@@ -293,6 +287,7 @@ public class WorkspacePermissionsDTOBuilderTest {
 
   @Test
   public void testAddCreateAndOptionsMenuPermissions() throws IllegalAddChildOperation {
+    when(permissionUtils.isPermitted(any(), any(), any())).thenReturn(true);
 
     final StructuredDocument sdoc = TestFactory.createAnySD();
     sdoc.setId(DOC_ID);

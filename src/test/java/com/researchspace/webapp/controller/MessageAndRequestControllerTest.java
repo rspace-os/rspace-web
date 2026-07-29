@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
@@ -90,8 +89,6 @@ public class MessageAndRequestControllerTest {
             admin, PaginationCriteria.createDefaultForClass(User.class).setGetAllResults()))
         .thenReturn(results);
     when(results.getResults()).thenReturn(Collections.EMPTY_LIST);
-    lenient().when(usrMgr.getUserByUsername("target")).thenReturn(recipient);
-
     Set<String> users =
         ctrller.getUsernamesFromInput(
             admin, cfg, result, comTargetPolicy, TransformerUtils.toSet(recipient));

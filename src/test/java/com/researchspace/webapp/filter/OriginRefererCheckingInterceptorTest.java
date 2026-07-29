@@ -37,7 +37,6 @@ public class OriginRefererCheckingInterceptorTest {
   public void setUp() throws Exception {
     originRefererChecker = new OriginRefererCheckerImpl();
     originRefererChecker.setProperties(propertyHolder);
-    Mockito.lenient().when(propertyHolder.getServerUrl()).thenReturn(testServerUrl);
     originRefererChecker.setAcceptedDomainsDeploymentProp(extraDomains);
   }
 
@@ -55,6 +54,7 @@ public class OriginRefererCheckingInterceptorTest {
 
   @Test
   public void testValidOriginsAndHeaders() throws IOException {
+    Mockito.when(propertyHolder.getServerUrl()).thenReturn(testServerUrl);
 
     req = new MockHttpServletRequest();
     req.addHeader("origin", testValidHeaderUrl);
@@ -85,6 +85,7 @@ public class OriginRefererCheckingInterceptorTest {
 
   @Test
   public void testInvalidHeaders() throws IOException {
+    Mockito.when(propertyHolder.getServerUrl()).thenReturn(testServerUrl);
     req = new MockHttpServletRequest();
     req.addHeader("origin", "siteA");
     Optional<String> errOptional = originRefererChecker.checkOriginReferer(req, resp);
@@ -113,6 +114,7 @@ public class OriginRefererCheckingInterceptorTest {
 
   @Test
   public void testSetupValidDomains() {
+    Mockito.when(propertyHolder.getServerUrl()).thenReturn(testServerUrl);
     List<String> defaultDomains = originRefererChecker.listAcceptedDomains();
     assertEquals(5, defaultDomains.size());
     assertEquals(testServerUrl, defaultDomains.get(0));
