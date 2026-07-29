@@ -87,7 +87,7 @@ const SUPPORTED_PYRAT_API_VERSION = 3;
 type PyratServer = { alias: string; url: string };
 type HeaderCell = { id: string; numeric: boolean; label: string; sortable?: boolean };
 
-export function PyratListing({
+function PyratListing({
   serverAlias,
   setSelectedAnimals,
   setVisibleHeaderCells,
@@ -641,16 +641,26 @@ function createTinyMceTable(
 
   const linkRow = document.createElement("tr");
   const linkCell = document.createElement("th");
-  linkCell.appendChild(document.createTextNode("Imported from "));
   const anchor = document.createElement("a");
   anchor.href = link;
   anchor.appendChild(document.createTextNode(`${server.alias} (${link})`));
   anchor.setAttribute("rel", "noreferrer");
+  const timestamp = new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {
+    dateStyle: "medium",
+    timeStyle: "medium",
+  }).format(new Date());
+  // The sentence is one translated string so word order can vary by language,
+  // but the server name must be a link, so it is spliced in at a placeholder.
+  const serverToken = "__SERVER__";
+  const sentenceParts = i18n
+    .t("workspace:tinymce.pyrat.importedFrom", {
+      server: serverToken,
+      timestamp,
+    })
+    .split(serverToken);
+  linkCell.appendChild(document.createTextNode(sentenceParts[0] ?? ""));
   linkCell.appendChild(anchor);
-  linkCell.appendChild(document.createTextNode(" on "));
-  linkCell.appendChild(document.createTextNode(new Date().toDateString()));
-  linkCell.appendChild(document.createTextNode(" "));
-  linkCell.appendChild(document.createTextNode(new Date().toLocaleTimeString()));
+  linkCell.appendChild(document.createTextNode(sentenceParts[1] ?? ""));
   linkCell.setAttribute("colspan", String(visibleHeaderCells.length));
   linkCell.style.fontWeight = "400";
   linkRow.appendChild(linkCell);
