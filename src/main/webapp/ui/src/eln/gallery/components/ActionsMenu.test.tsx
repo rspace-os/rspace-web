@@ -219,6 +219,15 @@ describe("ActionsMenu", () => {
       expectMenuItemDisabled(await screen.findByRole("menuitem", { name: /common:actions\.download/i }));
     });
 
+    test("When the selected file is a snippet, view version history should be disabled", async () => {
+      const user = userEvent.setup();
+      renderStory(<ActionsMenuWithSnippet />);
+      await openMenu(user);
+      expectMenuItemDisabled(
+        await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.versionHistory\.menuItem/i }),
+      );
+    });
+
     test("Share should always be visible and enabled when only snippets are selected", async () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippet />);

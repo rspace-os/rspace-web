@@ -524,6 +524,13 @@ export class LocalGalleryFile implements GalleryFile {
     // deliberately not requiring an extension, unlike canUploadNewVersion: an
     // extensionless file that has been versioned still has a history to show
     if (this.isFolder) return Result.Error([new Error("Folders do not have a version history.")]);
+    /*
+     * A snippet is a Record rather than an EcatMediaFile, so no path gives it a
+     * new version and the endpoint, which audits EcatMediaFile, cannot report on
+     * it. The extension check in canUploadNewVersion happens to exclude snippets
+     * because they carry no extension; this has to say so explicitly.
+     */
+    if (this.isSnippet) return Result.Error([new Error("Snippets do not have a version history.")]);
     return Result.Ok(null);
   }
 

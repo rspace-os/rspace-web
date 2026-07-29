@@ -125,9 +125,11 @@ Four things about it are easy to get wrong:
   is shared with the Inventory version history via
   [groupByVersion](../../util/versionHistory.ts) rather than reimplemented, and
   each row keeps its revision id because some endpoints key on it.
-- **Only locally stored items have a history.** Files held on an external
+- **Only locally stored media files have a history.** Files held on an external
   filestore are only referenced by RSpace, so `canViewVersionHistory` refuses
-  them, as it does folders.
+  them, as it does folders. It also refuses snippets: a snippet is a `Record`
+  rather than an `EcatMediaFile`, so nothing versions it and the endpoint, which
+  audits `EcatMediaFile`, cannot report on one.
 - **A row navigates rather than previews.** Each row opens that version's pinned
   view (below), so what the user lands on is also a URL they can copy. The live
   version links to `/gallery/item/{id}` with no version segment, saving a

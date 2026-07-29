@@ -45,7 +45,7 @@ const mockSnippetFile: GalleryFile = {
   canUploadNewVersion: Result.Ok(null),
   canBeLoggedOutOf: Result.Error([new Error("Not applicable")]),
   canBeEdited: Result.Error([new Error("Not applicable")]),
-  canViewVersionHistory: Result.Ok(null),
+  canViewVersionHistory: Result.Error([new Error("Snippets do not have a version history.")]),
   deconstructor: () => {},
   treeViewItemId: "tree-item-123",
 };

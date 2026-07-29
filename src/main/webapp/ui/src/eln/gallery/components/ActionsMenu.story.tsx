@@ -153,7 +153,7 @@ const snippetFile: GalleryFile = {
   canUploadNewVersion: Result.Ok(null),
   canBeLoggedOutOf: Result.Ok(null),
   canBeEdited: Result.Ok(null),
-  canViewVersionHistory: Result.Ok(null),
+  canViewVersionHistory: Result.Error([new Error("Snippets do not have a version history.")]),
   treeViewItemId: "GF3",
   key: "GF3",
   metadata: {},
