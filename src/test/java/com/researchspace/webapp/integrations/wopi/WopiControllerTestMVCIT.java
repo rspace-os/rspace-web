@@ -13,14 +13,12 @@ import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.service.impl.ShiroTestUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
-import org.apache.shiro.session.mgt.SimpleSession;
 import org.apache.shiro.subject.Subject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
@@ -54,7 +52,6 @@ public class WopiControllerTestMVCIT extends MVCTestBase {
     setUpUserWithInitialisedContent(testUser);
     shiroTestUtils = new ShiroTestUtils();
     shiroTestUtils.setSubject(subject);
-    Mockito.when(subject.getSession()).thenReturn(new SimpleSession());
 
     // proof keys only validated in a specific test
     proofKeyInterceptor.setProofKeyValidationEnabled("false");
