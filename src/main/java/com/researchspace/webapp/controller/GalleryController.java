@@ -36,6 +36,7 @@ import java.io.InputStream;
 import java.security.Principal;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -651,8 +652,15 @@ public class GalleryController extends BaseController {
     // throws AuthorizationException unless the item exists and is readable by this user
     EcatMediaFile mediaFile = baseRecordManager.retrieveMediaFile(user, mediaFileId);
 
+    /*
+     * Sorted here rather than in the query: the Envers query behind getRevisionsForEntity adds no
+     * addOrder, so its order is incidental, but this response documents "newest revision id last"
+     * and callers group on that. Sorting locally keeps that contract without changing a DAO method
+     * other endpoints share.
+     */
     List<AuditedEntity<EcatMediaFile>> revisions =
-        auditManager.getRevisionsForEntity(EcatMediaFile.class, mediaFile.getId());
+        new ArrayList<>(auditManager.getRevisionsForEntity(EcatMediaFile.class, mediaFile.getId()));
+    revisions.sort(Comparator.comparing(revision -> revision.getRevision().longValue()));
 
     /*
      * A Gallery item edited many times by the same user resolves that user's full name once.

@@ -236,6 +236,29 @@ public class GalleryVersionHistoryTest {
   }
 
   @Test
+  public void ordersRevisionsOldestFirstWhateverOrderTheAuditQueryReturns() {
+    /*
+     * The DTO documents "newest revision id last" and callers rely on it, but the Envers query
+     * behind getRevisionsForEntity adds no addOrder, so the order it returns is not guaranteed.
+     * Fed newest-first, the response must still come back oldest-first.
+     */
+    when(baseRecordManager.retrieveMediaFile(user, MEDIA_ID))
+        .thenReturn(mediaAtVersion(3L, 300L, "alice", new Date()));
+    when(auditManager.getRevisionsForEntity(EcatMediaFile.class, MEDIA_ID))
+        .thenReturn(
+            List.of(
+                new AuditedEntity<>(mediaAtVersion(3L, 300L, "alice", new Date()), 30L),
+                new AuditedEntity<>(mediaAtVersion(1L, 100L, "alice", new Date()), 10L),
+                new AuditedEntity<>(mediaAtVersion(2L, 200L, "alice", new Date()), 20L)));
+
+    GalleryVersionHistory history = controller.getVersionHistory(MEDIA_ID).getData();
+
+    assertEquals(10L, history.revisions().get(0).revisionId());
+    assertEquals(20L, history.revisions().get(1).revisionId());
+    assertEquals(30L, history.revisions().get(2).revisionId());
+  }
+
+  @Test
   public void resolvesAnUnknownEditorsNameOnlyOnce() {
     /*
      * getFullNameByUsername returns null for a user who no longer exists, and computeIfAbsent does
