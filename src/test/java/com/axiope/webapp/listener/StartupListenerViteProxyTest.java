@@ -1,6 +1,7 @@
 package com.axiope.webapp.listener;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,8 +36,7 @@ public class StartupListenerViteProxyTest {
     environment = new MockEnvironment();
     environment.setProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY, "true");
     when(applicationContext.getEnvironment()).thenReturn(environment);
-    when(servletContext.addServlet(
-            eq("viteDevServerProxy"), org.mockito.ArgumentMatchers.any(Servlet.class)))
+    when(servletContext.addServlet(eq("viteDevServerProxy"), any(Servlet.class)))
         .thenReturn(registration);
     listener = new StartupListener();
   }
