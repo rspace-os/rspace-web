@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import DSWAccentMenuItem, { type DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import AccentMenuItem from "../../../components/AccentMenuItem";
-import { Drawer, Menu } from "../../../components/DialogBoundary";
+import { Drawer } from "../../../components/DialogBoundary";
 import DrawerTab from "../../../components/DrawerTab";
 import EventBoundary from "../../../components/EventBoundary";
 import { useLandmark } from "../../../components/LandmarksContext";
@@ -44,6 +44,7 @@ import { type GallerySection, gallerySectionIcon } from "../common";
 import { useGalleryActions } from "../useGalleryActions";
 import { asWritableS3Filestore, type GalleryFile, type Id, RemoteFile } from "../useGalleryListing";
 import AddFilestoreDialog from "./AddFilestoreDialog";
+import SidebarCreateMenu from "./SidebarCreateMenu";
 
 const UploadMenuItem = ({
   folderId,
@@ -494,33 +495,11 @@ const Sidebar = ({
         >
           {drawerOpen && <div>{t("common:actions.create")}</div>}
         </Button>
-        <Menu
-          open={Boolean(newMenuAnchorEl)}
+        <SidebarCreateMenu
           anchorEl={newMenuAnchorEl}
           onClose={() => {
             if (viewport.isViewportSmall) setDrawerOpen(false);
             setNewMenuAnchorEl(null);
-          }}
-          sx={{
-            /*
-             * In production builds (-DgenerateReactDist) a re-render during this
-             * Menu's exit can cancel react-transition-group's onExited
-             * (mui/material-ui#32286), leaving the Modal mounted with its
-             * invisible backdrop still intercepting every click -- the page
-             * freezes until reload. Since we cannot make onExited fire reliably,
-             * make the closed menu click-through instead. pointer-events is
-             * inherited and MUI sets it on neither backdrop nor paper, so this
-             * root rule covers both; the open menu (anchorEl set) is unaffected.
-             */
-            ...(newMenuAnchorEl ? {} : { pointerEvents: "none" }),
-            [`& .${paperClasses.root}`]: {
-              ...(newMenuAnchorEl ? { transform: "translate(-4px, 4px) !important" } : {}),
-            },
-          }}
-          slotProps={{
-            list: {
-              disablePadding: true,
-            },
           }}
         >
           <UploadMenuItem
@@ -566,7 +545,7 @@ const Sidebar = ({
               }
             }}
           />
-        </Menu>
+        </SidebarCreateMenu>
       </Box>
       <Divider />
       <Box
