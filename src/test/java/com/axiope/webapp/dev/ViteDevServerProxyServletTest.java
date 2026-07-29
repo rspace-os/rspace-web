@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -115,8 +116,7 @@ public class ViteDevServerProxyServletTest {
     when(upstreamResponse.headers())
         .thenReturn(HttpHeaders.of(Collections.emptyMap(), (a, b) -> true));
     when(client.send(
-            any(HttpRequest.class),
-            org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
+            any(HttpRequest.class), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
         .thenAnswer(
             invocation -> {
               upstreamUri.set(invocation.getArgument(0, HttpRequest.class).uri());
@@ -163,7 +163,7 @@ public class ViteDevServerProxyServletTest {
           .thenReturn(HttpHeaders.of(Collections.emptyMap(), (a, b) -> true));
       when(client.send(
               any(HttpRequest.class),
-              org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
+              ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
           .thenAnswer(
               invocation -> {
                 proxiedRequest.set(invocation.getArgument(0, HttpRequest.class));
@@ -204,8 +204,7 @@ public class ViteDevServerProxyServletTest {
 
   private void stubSuccessfulUpstreamRequest() throws Exception {
     when(client.send(
-            any(HttpRequest.class),
-            org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
+            any(HttpRequest.class), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
         .thenReturn(upstreamResponse);
   }
 }
