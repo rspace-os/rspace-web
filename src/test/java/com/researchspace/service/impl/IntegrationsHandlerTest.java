@@ -34,7 +34,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -99,9 +98,6 @@ public class IntegrationsHandlerTest {
   @BeforeEach
   public void setup() {
     subject = TestFactory.createAnyUser("any");
-    lenient()
-        .when(communityMgr.listCommunitiesForUser(eq(subject.getId())))
-        .thenReturn(new ArrayList<>());
     handler.setUserConnectionManager(userConnectionManager);
   }
 
@@ -484,15 +480,6 @@ public class IntegrationsHandlerTest {
     existingConnection.setExpireTime(0l);
     existingConnection.setAccessToken(origDswToken);
 
-    lenient().when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
-    // lenient: updateUserConnectionForMultipleOptionApp looks this up with a null alias, so the
-    // aliased stubbing below is not matched
-    lenient()
-        .when(
-            userConnectionManager.findByUserNameProviderName(
-                subject.getUsername(), DSW_APP_NAME, origDswAlias))
-        .thenReturn(Optional.of(existingConnection));
-
     // The potentially updated options that are being passed in
     // from the UI.  Note that the API Key is set as the default
     // masked value that is returned to the UI.
@@ -543,7 +530,6 @@ public class IntegrationsHandlerTest {
     when(userConnectionManager.findByUserNameProviderName(
             subject.getUsername(), DSW_APP_NAME, origDswAlias))
         .thenReturn(Optional.of(existingConnection));
-
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, updatedDswAlias);
     dswOptions.put(DSW_URL, origDswUrl);
@@ -579,20 +565,7 @@ public class IntegrationsHandlerTest {
                 new PropertyDescriptor(DSW_APIKEY, SettingsType.STRING, null)),
             origDswToken));
 
-    UserConnection existingConnection = new UserConnection();
-    existingConnection.setDisplayName("DSW Display Name");
-    existingConnection.setRank(1);
-    existingConnection.setId(
-        new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
-    existingConnection.setExpireTime(0l);
-    existingConnection.setAccessToken(origDswToken);
-
     when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
-    lenient()
-        .when(
-            userConnectionManager.findByUserNameProviderName(
-                subject.getUsername(), DSW_APP_NAME, origDswAlias))
-        .thenReturn(Optional.of(existingConnection));
 
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, origDswAlias);

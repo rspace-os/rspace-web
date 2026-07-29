@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.EditStatus;
@@ -79,7 +78,7 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
 
   @BeforeEach
   public void setUp() throws Exception {
-    lenient().when(anonymousUser.getUniqueName()).thenReturn(RecordGroupSharing.ANONYMOUS_USER);
+    when(anonymousUser.getUniqueName()).thenReturn(RecordGroupSharing.ANONYMOUS_USER);
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("nbTestUser"));
     logoutAndLoginAs(user);
 

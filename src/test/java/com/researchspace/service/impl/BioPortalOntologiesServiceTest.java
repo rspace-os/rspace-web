@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.client.BioPortalOntologiesClient;
@@ -49,9 +48,6 @@ public class BioPortalOntologiesServiceTest {
 
   @Test
   public void shouldReturnEmptyListWhenFilterTermLessThanTwoChars() {
-    lenient()
-        .when(bioOntologiesClientMock.getBioOntologyData(any(String.class)))
-        .thenReturn(realBioData);
     assertEquals(0, testee.getBioOntologyDataForQuery("aa").size());
   }
 

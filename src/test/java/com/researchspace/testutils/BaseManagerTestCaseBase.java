@@ -216,7 +216,7 @@ public abstract class BaseManagerTestCaseBase {
   protected static final Logger log = LoggerFactory.getLogger(BaseManagerTestCaseBase.class);
 
   @BeforeAll
-  public static void BeforeClass() throws Exception {
+  public static void skipFastRuns() throws Exception {
     TestRunnerController.ignoreIfFastRun();
   }
 

@@ -3,18 +3,14 @@ package com.axiope.webapp.taglib;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.JspWriter;
 import jakarta.servlet.jsp.PageContext;
 import jakarta.servlet.jsp.tagext.TagSupport;
-import java.util.LinkedHashMap;
+import java.io.StringWriter;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,49 +18,26 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockJspWriter;
 
 @ExtendWith(MockitoExtension.class)
 public class ViteClientTagTest {
 
-  @Mock private HttpServletRequest request;
   @Mock private PageContext pageContext;
-  @Mock private ServletContext servletContext;
-  @Mock private JspWriter writer;
 
-  private final StringBuilder output = new StringBuilder();
-  private final Map<String, Object> requestAttributes = new LinkedHashMap<>();
+  private final StringWriter output = new StringWriter();
+  private MockHttpServletRequest request;
+  private JspWriter writer;
   private String originalReactDevModeProperty;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  public void setUp() {
     originalReactDevModeProperty = System.getProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
     System.clearProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY);
-    output.setLength(0);
-    requestAttributes.clear();
-
-    lenient().when(pageContext.getRequest()).thenReturn(request);
-    lenient().when(pageContext.getOut()).thenReturn(writer);
-    lenient().when(pageContext.getServletContext()).thenReturn(servletContext);
-    lenient()
-        .when(request.getAttribute(anyString()))
-        .thenAnswer(invocation -> requestAttributes.get(invocation.getArgument(0, String.class)));
-    lenient()
-        .doAnswer(
-            invocation -> {
-              requestAttributes.put(
-                  invocation.getArgument(0, String.class), invocation.getArgument(1));
-              return null;
-            })
-        .when(request)
-        .setAttribute(anyString(), org.mockito.ArgumentMatchers.any());
-    lenient()
-        .doAnswer(
-            invocation -> {
-              output.append(invocation.getArgument(0, String.class));
-              return null;
-            })
-        .when(writer)
-        .write(anyString());
+    output.getBuffer().setLength(0);
+    request = new MockHttpServletRequest();
+    writer = new MockJspWriter(output);
   }
 
   @AfterEach
@@ -77,8 +50,14 @@ public class ViteClientTagTest {
     }
   }
 
+  private void stubPageContext() {
+    when(pageContext.getRequest()).thenReturn(request);
+    when(pageContext.getOut()).thenReturn(writer);
+  }
+
   @Test
   public void emitsViteClientInHmrMode() throws JspException {
+    stubPageContext();
     ViteClientTag tag =
         new ViteClientTag() {
           @Override
@@ -117,8 +96,9 @@ public class ViteClientTagTest {
 
   @Test
   public void deduplicatesAgainstSubsequentBundleTagInSameRequest() throws JspException {
+    stubPageContext();
     Set<String> sharedDedupe = new LinkedHashSet<>();
-    requestAttributes.put(BundleTag.RENDERED_ASSETS_ATTR, sharedDedupe);
+    request.setAttribute(BundleTag.RENDERED_ASSETS_ATTR, sharedDedupe);
 
     ViteClientTag clientTag =
         new ViteClientTag() {
@@ -142,6 +122,7 @@ public class ViteClientTagTest {
 
   @Test
   public void doesNotEmitTwiceWhenRenderedRepeatedly() throws JspException {
+    stubPageContext();
     ViteClientTag tag =
         new ViteClientTag() {
           @Override
@@ -152,8 +133,8 @@ public class ViteClientTagTest {
     tag.setPageContext(pageContext);
 
     tag.doStartTag();
-    int lengthAfterFirst = output.length();
+    int lengthAfterFirst = output.getBuffer().length();
     tag.doStartTag();
-    assertEquals(lengthAfterFirst, output.length());
+    assertEquals(lengthAfterFirst, output.getBuffer().length());
   }
 }

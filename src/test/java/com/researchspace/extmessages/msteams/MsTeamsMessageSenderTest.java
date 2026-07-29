@@ -3,7 +3,6 @@ package com.researchspace.extmessages.msteams;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -69,7 +68,7 @@ public class MsTeamsMessageSenderTest {
     Person owner = mock(Person.class);
     when(owner.getFullName()).thenReturn("Bob Smith");
     IRSpaceDoc doc = mock(IRSpaceDoc.class);
-    lenient().when(doc.getName()).thenReturn("My experiment");
+    when(doc.getName()).thenReturn("My experiment");
     when(doc.getGlobalIdentifier()).thenReturn("SD4005");
     when(doc.getOwner()).thenReturn(owner);
 

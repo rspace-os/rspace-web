@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,17 +48,14 @@ public class ViteDevServerProxyServletTest {
   public void setUp() throws Exception {
     servlet = new ViteDevServerProxyServlet("http://127.0.0.1:5173", client);
 
-    lenient().when(request.getMethod()).thenReturn("GET");
-    lenient().when(request.getHeader("Upgrade")).thenReturn(null);
-    lenient().when(request.getHeaderNames()).thenReturn(Collections.emptyEnumeration());
-    lenient().when(request.getQueryString()).thenReturn("v=fca605f6");
-    lenient()
-        .when(response.getOutputStream())
-        .thenReturn(new TestServletOutputStream(responseBody));
-    lenient().when(response.getContentType()).thenAnswer(invocation -> responseContentType.get());
+    when(request.getMethod()).thenReturn("GET");
+    when(request.getHeader("Upgrade")).thenReturn(null);
+    when(request.getHeaderNames()).thenReturn(Collections.emptyEnumeration());
+    when(request.getQueryString()).thenReturn("v=fca605f6");
+    when(response.getOutputStream()).thenReturn(new TestServletOutputStream(responseBody));
+    when(response.getContentType()).thenAnswer(invocation -> responseContentType.get());
 
-    lenient()
-        .doAnswer(
+    doAnswer(
             invocation -> {
               responseContentType.set(invocation.getArgument(0, String.class));
               return null;
@@ -66,15 +63,8 @@ public class ViteDevServerProxyServletTest {
         .when(response)
         .setContentType(any(String.class));
 
-    lenient()
-        .when(
-            client.send(
-                any(HttpRequest.class),
-                org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
-        .thenReturn(upstreamResponse);
-    lenient().when(upstreamResponse.statusCode()).thenReturn(HttpServletResponse.SC_OK);
-    lenient()
-        .when(upstreamResponse.body())
+    when(upstreamResponse.statusCode()).thenReturn(HttpServletResponse.SC_OK);
+    when(upstreamResponse.body())
         .thenReturn(
             new ByteArrayInputStream("export const ok = true;".getBytes(StandardCharsets.UTF_8)));
   }
@@ -82,6 +72,7 @@ public class ViteDevServerProxyServletTest {
   @Test
   public void fallsBackToJavaScriptMimeTypeForJsModuleWhenUpstreamOmitsContentType()
       throws Exception {
+    stubSuccessfulUpstreamRequest();
     when(request.getRequestURI())
         .thenReturn(
             "/ui/dist/node_modules/.vite/deps/@fortawesome_free-solid-svg-icons_faThList.js");
@@ -98,6 +89,7 @@ public class ViteDevServerProxyServletTest {
 
   @Test
   public void overridesTextPlainContentTypeForJsModuleResponses() throws Exception {
+    stubSuccessfulUpstreamRequest();
     when(request.getRequestURI())
         .thenReturn("/ui/dist/node_modules/.vite/deps/@mui_icons-material_CheckCircleOutline.js");
     when(upstreamResponse.headers())
@@ -142,6 +134,7 @@ public class ViteDevServerProxyServletTest {
 
   @Test
   public void preservesUpstreamContentTypeWhenPresent() throws Exception {
+    stubSuccessfulUpstreamRequest();
     when(request.getRequestURI()).thenReturn("/ui/dist/src/entries/tinymceGallery.tsx");
     when(upstreamResponse.headers())
         .thenReturn(
@@ -207,5 +200,12 @@ public class ViteDevServerProxyServletTest {
     public void write(int b) {
       target.write(b);
     }
+  }
+
+  private void stubSuccessfulUpstreamRequest() throws Exception {
+    when(client.send(
+            any(HttpRequest.class),
+            org.mockito.ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
+        .thenReturn(upstreamResponse);
   }
 }

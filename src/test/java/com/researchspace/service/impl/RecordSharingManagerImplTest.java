@@ -3,7 +3,7 @@ package com.researchspace.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.core.util.ISearchResults;
@@ -78,22 +78,22 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     rgs = new RecordGroupSharing();
     rgs.setSharee(u);
     rgs.setShared(record);
+  }
 
+  private void stubPermissionUpdate() {
     ConstraintBasedPermission cbp =
         perFactory.createIdPermission(PermissionDomain.RECORD, PermissionType.READ, record.getId());
-
-    lenient().when(groupshareRecordDao.get(anyLong())).thenReturn(rgs);
-    lenient().when(permissnUtils.findBy(any(), any(), any(), any())).thenReturn(cbp);
-    lenient().when(permissnUtils.createFromString("WRITE")).thenReturn(PermissionType.WRITE);
-    lenient().when(permissnUtils.createFromString("READ")).thenReturn(PermissionType.READ);
-    lenient().when(baseRecordManager.get(docId01, u)).thenReturn(record);
-    lenient()
-        .when(groupshareRecordDao.getRecordGroupSharingsForRecordIds(List.of(docId01)))
-        .thenReturn(List.of(rgs));
+    when(groupshareRecordDao.get(anyLong())).thenReturn(rgs);
+    when(permissnUtils.findBy(any(), any(), any(), any())).thenReturn(cbp);
+    when(permissnUtils.createFromString(anyString()))
+        .thenAnswer(
+            invocation ->
+                PermissionType.valueOf(invocation.getArgument(0, String.class).toUpperCase()));
   }
 
   @Test
   public void testUserSingleSharedDocChangeFromReadToWrite() {
+    stubPermissionUpdate();
     u.addPermission("RECORD:READ:id=" + docId01);
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
@@ -113,6 +113,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
 
   @Test
   public void testUserSingleSharedDocChangeFromReadToRead() {
+    stubPermissionUpdate();
     u.addPermission("RECORD:READ:id=" + docId01);
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
@@ -132,6 +133,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
 
   @Test
   public void testUserSingleSharedDocChangeFromEditToRead() {
+    stubPermissionUpdate();
     u.addPermission("RECORD:WRITE:id=" + docId01);
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
@@ -151,6 +153,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
 
   @Test
   public void testUserSingleSharedDocChangeFromEditToEdit() {
+    stubPermissionUpdate();
     u.addPermission("RECORD:WRITE:id=" + docId01);
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
@@ -170,6 +173,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
 
   @Test
   public void testUserTwoSharedDocsChangeOneFromReadToWrite() {
+    stubPermissionUpdate();
     u.addPermission("RECORD:READ:id=" + docId01);
     u.addPermission("RECORD:READ:id=" + docId02);
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
@@ -202,6 +206,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
 
   @Test
   public void testUserTwoSharedDocsChangeOneFromWriteToRead() {
+    stubPermissionUpdate();
     u.addPermission("RECORD:WRITE:id=" + docId01);
     u.addPermission("RECORD:READ:id=" + docId02);
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
@@ -244,6 +249,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
   // then the permissions would not update correctly.
   @Test
   public void testUserTwoSharedDocsChangeOneFromReadToWriteTwoIDsInOnePerm() {
+    stubPermissionUpdate();
     u.addPermission("RECORD:READ:id=" + docId02 + "," + docId01);
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
@@ -275,6 +281,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
 
   @Test
   public void testUserTwoSharedDocsChangeOneFromReadToReadTwoIDsInOnePerm() {
+    stubPermissionUpdate();
     u.addPermission("RECORD:READ:id=" + docId02 + "," + docId01);
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
@@ -313,6 +320,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
 
   @Test
   public void testUserTwoSharedDocsChangeOneFromWriteToReadTwoIDsInOnePerm() {
+    stubPermissionUpdate();
     u.addPermission("RECORD:WRITE:id=" + docId02 + "," + docId01);
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "READ", "unused");
 
@@ -344,6 +352,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
 
   @Test
   public void testUserTwoSharedDocsChangeOneFromWriteToWriteTwoIDsInOnePerm() {
+    stubPermissionUpdate();
     u.addPermission("RECORD:WRITE:id=" + docId02 + "," + docId01);
     ErrorList el = recordSharingManager.updatePermissionForRecord(1L, "WRITE", "unused");
 
@@ -385,6 +394,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
   // we can correctly clear up the permissions
   @Test
   public void testUserThreeSharedDocsChangeOneFromReadToWrite() {
+    stubPermissionUpdate();
     u.addPermission("RECORD:WRITE:id=" + docId01);
     u.addPermission("RECORD:WRITE:id=" + docId01);
     u.addPermission("RECORD:WRITE:id=" + docId01);
@@ -443,6 +453,9 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
 
   @Test
   public void testRetrieveSharesForListOfRecordIds() {
+    when(baseRecordManager.get(docId01, u)).thenReturn(record);
+    when(groupshareRecordDao.getRecordGroupSharingsForRecordIds(List.of(docId01)))
+        .thenReturn(List.of(rgs));
     ISearchResults<RecordGroupSharing> shares =
         recordSharingManager.listSharesForRecordsAndUser(
             List.of(docId01), new PaginationCriteria<>(), u);

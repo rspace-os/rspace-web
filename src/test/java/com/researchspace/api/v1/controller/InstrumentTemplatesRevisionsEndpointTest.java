@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -40,9 +39,7 @@ public class InstrumentTemplatesRevisionsEndpointTest {
     ReflectionTestUtils.setField(controller, "instrumentApiMgr", instrumentMgr);
     ReflectionTestUtils.setField(controller, "inventoryAuditMgr", auditMgr);
     ReflectionTestUtils.setField(controller, "messages", messages);
-    lenient()
-        .when(messages.getResourceNotFoundMessage(anyString(), anyLong()))
-        .thenReturn("not found");
+    when(messages.getResourceNotFoundMessage(anyString(), anyLong())).thenReturn("not found");
   }
 
   @Test

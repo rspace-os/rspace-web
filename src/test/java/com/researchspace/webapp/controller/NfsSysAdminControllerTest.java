@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,21 +48,22 @@ public class NfsSysAdminControllerTest {
     sysadmin = TestFactory.createAnyUserWithRole("any", Constants.SYSADMIN_ROLE);
     otherUser = TestFactory.createAnyUserWithRole("any", Constants.ADMIN_ROLE);
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(sysadmin);
-    // resolve any i18n key to a string containing the first arg so existing
-    // assertions on exception message content keep working
-    lenient()
-        .when(msgSource.getMessage(anyString(), any(Object[].class)))
+    nfs = new NfsFileSystem();
+    nfs.setId(12L);
+  }
+
+  private void resolveMessagesToFirstArgument() {
+    when(msgSource.getMessage(anyString(), any(Object[].class)))
         .thenAnswer(
             inv -> {
               Object[] args = inv.getArgument(1);
               return args == null || args.length == 0 ? "" : String.valueOf(args[0]);
             });
-    nfs = new NfsFileSystem();
-    nfs.setId(12L);
   }
 
   @Test
   public void testGetFileSystemsViewOnlyForSysadmin() throws Exception {
+    resolveMessagesToFirstArgument();
     assertNotNull(nfsSystemCtrller.getFileSystemsView(new ExtendedModelMap()));
     assertAuthExceptionThrown(
         () -> {
@@ -80,6 +80,7 @@ public class NfsSysAdminControllerTest {
 
   @Test
   public void getFileSystemsListFailsForNonSysadmin() throws Exception {
+    resolveMessagesToFirstArgument();
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
     assertThrows(AuthorizationException.class, () -> nfsSystemCtrller.getFileSystemsList());
     verify(netFilesMgr, never()).getFileSystems();
@@ -112,15 +113,16 @@ public class NfsSysAdminControllerTest {
 
   @Test
   public void saveFileSystem_usernameInBothLists_rejectedAndNotSaved() {
+    resolveMessagesToFirstArgument();
     nfs.setReadAllowlist("alice,carol");
     nfs.setWriteAllowlist("alice,bob");
 
-    IllegalArgumentException ex =
+    String message =
         Assertions.assertThrows(
-            IllegalArgumentException.class, () -> nfsSystemCtrller.saveFileSystem(nfs));
+                IllegalArgumentException.class, () -> nfsSystemCtrller.saveFileSystem(nfs))
+            .getMessage();
     Assertions.assertTrue(
-        ex.getMessage().contains("alice"),
-        "expected error to name the duplicated user, got: " + ex.getMessage());
+        message.contains("alice"), "expected error to name the duplicated user, got: " + message);
     verify(netFilesMgr, never()).saveNfsFileSystem(nfs);
   }
 

@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -86,21 +85,28 @@ public class HTMLStringGeneratorTest {
     VelocityEngine vel =
         VelocityTestUtils.setupVelocity("src/main/resources/velocityTemplates/textFieldElements");
     rtu.setVelocity(vel);
-    // empty nfs elements by default
-    lenient()
-        .when(
-            fieldParser.findFieldElementsInContentForCssClass(
-                Mockito.any(FieldContents.class), Mockito.anyString(), Mockito.anyString()))
+  }
+
+  private void stubEmptyNfsElements() {
+    when(fieldParser.findFieldElementsInContentForCssClass(
+            Mockito.any(FieldContents.class), Mockito.anyString(), Mockito.anyString()))
         .thenReturn(new FieldContents());
-    lenient()
-        .when(
-            resolver.getExternalIdForUser(
-                Mockito.any(User.class), Mockito.any(IdentifierScheme.class)))
+  }
+
+  private void stubNoExternalId() {
+    when(resolver.getExternalIdForUser(
+            Mockito.any(User.class), Mockito.any(IdentifierScheme.class)))
         .thenReturn(Optional.empty());
+  }
+
+  private void stubDefaults() {
+    stubEmptyNfsElements();
+    stubNoExternalId();
   }
 
   @Test
   public void testGetNfsElements() {
+    stubNoExternalId();
     // given a document with an NfsLink
     final long fileStoreId = 21L;
     final String relativeFilePath = "/file.txt";
@@ -138,6 +144,7 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void testGetComments() {
+    stubDefaults();
     String commentStr = rtu.generateURLStringForCommentLink("1");
     StructuredDocument anyDoc = createAnySDWithText(commentStr);
     anyDoc.setId(1L);
@@ -167,6 +174,7 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void testMakeLinksAbsolute() {
+    stubDefaults();
     EcatDocumentFile doc = TestFactory.createEcatDocument(2L, createAnyUser("any"));
     String attachmentHTML = rtu.generateURLString(doc);
     StructuredDocument anydoc = TestFactory.createAnySDWithText(attachmentHTML);
@@ -205,6 +213,7 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void testIncludeMetaInformation() {
+    stubEmptyNfsElements();
     when(resolver.getExternalIdForUser(
             Mockito.any(User.class), Mockito.any(IdentifierScheme.class)))
         .thenReturn(Optional.of(new ExternalId(IdentifierScheme.ORCID, OrcidId)));
@@ -226,6 +235,7 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void testIncludeListOfMaterials() {
+    stubDefaults();
     User anyUser = createAnyUser("any");
 
     // create a doc with list of materials
@@ -249,6 +259,7 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void testIncludeInstrumentInListOfMaterials() {
+    stubDefaults();
     // a document whose list of materials references an instrument (RSDEV-1032) must render the
     // instrument's name, identifier and a link to the RSpace entity in PDF/Word exports
     StructuredDocument anyDoc = createAnySDWithText("any");
@@ -272,6 +283,7 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void testScaleImages() {
+    stubDefaults();
     String html = "<img width ='1000' height = '1000'/>";
     StructuredDocument anydoc = TestFactory.createAnySDWithText(html);
     anydoc.setId(1L);
@@ -291,6 +303,7 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void testEmbedIframeFragment() {
+    stubDefaults();
     String html = "iframe: <iframe src='https://dummy.source/a?b=c&d=e'/>";
     StructuredDocument anydoc = TestFactory.createAnySDWithText(html);
     anydoc.setId(1L);
@@ -310,6 +323,7 @@ public class HTMLStringGeneratorTest {
   /** Tests that XSS doesn't work in the document's name & field names on export / preview */
   @Test
   public void testHtmlEscaping() {
+    stubDefaults();
     RSForm form = new RSForm("form", "desc", createAnyUser("user"));
     TextFieldForm fieldForm = new TextFieldForm();
     fieldForm.setName("<img src='' onerror='alert(1);'>");
@@ -350,6 +364,7 @@ public class HTMLStringGeneratorTest {
 
   @Test
   public void choiceFieldsPrintCorrectly() {
+    stubDefaults();
     ChoiceFieldForm choiceFieldForm = new ChoiceFieldForm();
     choiceFieldForm.setName("A choice name");
     choiceFieldForm.setChoiceOptions("fieldChoices=a&fieldChoices=b&fieldChoices=c");

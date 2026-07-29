@@ -1,7 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -22,7 +21,7 @@ class InventoryBulkOperationHandlerGuardTest {
       returnsUndeletable =
           (rec, user) -> {
             ApiSample undeletable = mock(ApiSample.class);
-            lenient().when(undeletable.getCanBeDeleted()).thenReturn(false);
+            when(undeletable.getCanBeDeleted()).thenReturn(false);
             return undeletable;
           };
 
