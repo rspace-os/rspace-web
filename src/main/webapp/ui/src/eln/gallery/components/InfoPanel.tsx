@@ -36,7 +36,7 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
 import { useSnippetPreview } from "./CallableSnippetPreview";
 import { useFolderOpen } from "./OpenFolderProvider";
-import PinnedVersionNotice from "./PinnedVersionNotice";
+import PinnedVersionNotice, { ItemLevelReferencesNotice } from "./PinnedVersionNotice";
 import { ReferencingInventoryItemsPanel } from "./ReferencingInventoryItemsPanel";
 
 /**
@@ -693,6 +693,8 @@ const InfoPanelContent = observer(
             }}
           />
         </Box>
+        {/* Above both reference lists, so it is clearly about the pair of them. */}
+        {typeof file.pinnedVersion === "number" && <ItemLevelReferencesNotice />}
         {file.linkedDocuments}
         {/* Inventory items can only link to gallery media files (GL...); folders (GF),
             snippets (ST) etc. 404 and would show a spurious error. See PRT-1091. */}

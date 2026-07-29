@@ -336,6 +336,8 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
     selection
       .asSet()
       .only.toResult(() => new Error("Too many items selected."))
+      // refused outright before asking which editor applies, e.g. for a past version
+      .flatMapDiscarding((file) => file.canBeEdited)
       .flatMap<
         | {
             key: "image";

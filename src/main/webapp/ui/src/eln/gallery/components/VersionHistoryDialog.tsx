@@ -81,8 +81,8 @@ export default function VersionHistoryDialog({
     return isLive ? `/gallery/item/${id}` : `/gallery/item/${id}/${version}`;
   };
 
-  const versionLabel = (version: number | "none") =>
-    t("actionsMenu.versionHistory.columns.version", { version: String(version) });
+  /* Rows are labelled "v1", "v2"; the column header stays spelled out. */
+  const versionLabel = (version: number) => t("actionsMenu.versionHistory.versionShort", { version });
 
   /*
    * On a pinned view `file.version` is the version being shown rather than the
@@ -95,7 +95,8 @@ export default function VersionHistoryDialog({
       : (file.version ?? null);
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    /* md rather than sm: four columns of filenames, dates and names need the room */
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>{t("actionsMenu.versionHistory.title", { name: file.name })}</DialogTitle>
       <DialogContent>
         {state.state === "loading" && <Skeleton variant="rectangular" width="100%" height={118} />}
@@ -107,7 +108,7 @@ export default function VersionHistoryDialog({
             <Table size="small" aria-label={t("actionsMenu.versionHistory.tableLabel")}>
               <TableHead>
                 <TableRow>
-                  <TableCell>{versionLabel("none")}</TableCell>
+                  <TableCell>{t("actionsMenu.versionHistory.columns.version")}</TableCell>
                   <TableCell>{t("actionsMenu.versionHistory.columns.name")}</TableCell>
                   <TableCell>{t("actionsMenu.versionHistory.columns.modified")}</TableCell>
                   <TableCell>{t("actionsMenu.versionHistory.columns.by")}</TableCell>

@@ -41,7 +41,6 @@ import { CallableSnippetPreview } from "./components/CallableSnippetPreview";
 import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
 import MainPanel from "./components/MainPanel";
 import OpenFolderProvider from "./components/OpenFolderProvider";
-import PinnedVersionNotice from "./components/PinnedVersionNotice";
 import PlaceholderLabel from "./components/PlaceholderLabel";
 import RouterNavigationProvider from "./components/RouterNavigationProvider";
 import Sidebar from "./components/Sidebar";
@@ -69,7 +68,6 @@ const WholePage = ({
   autoSelect,
   title,
   decorateFile,
-  notice,
 }: {
   listingOf:
     | {
@@ -89,12 +87,6 @@ const WholePage = ({
    * object. Must be referentially stable, as the listing is memoised on it.
    */
   decorateFile?: (file: GalleryFile) => GalleryFile;
-
-  /**
-   * Rendered above the listing, for page-level state that no individual file can
-   * convey.
-   */
-  notice?: React.ReactNode;
 }) => {
   const { t } = useTranslation("gallery");
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
@@ -274,7 +266,6 @@ const WholePage = ({
                           minWidth: 0,
                         }}
                       >
-                        {notice}
                         <MainPanel
                           selectedSection={FetchingData.getSuccessValue(selectedSection).orElse(null)}
                           path={FetchingData.getSuccessValue(path).orElse(null)}
@@ -531,11 +522,6 @@ function GalleryFileInFolder() {
           setPath={() => {}}
           autoSelect={autoSelect}
           decorateFile={decorateFile}
-          notice={
-            resolved.tag === "pinned" ? (
-              <PinnedVersionNotice version={resolved.version} fileId={fileIdParam ?? null} />
-            ) : null
-          }
           /* the pinned version's own name, which need not be the live one */
           title={() => (resolved.tag === "pinned" ? resolved.name : null) ?? fileName ?? t("landingPage.loading")}
         />

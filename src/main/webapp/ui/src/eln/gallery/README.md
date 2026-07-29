@@ -171,24 +171,32 @@ Seven things about it are easy to get wrong:
   name field is gated on `canRename`; the description field has no predicate, so
   it is read-only whenever the object has no `setDescription`, which is the same
   test `changeDescription` makes before saving. A past version has no setter.
-- **The refusals come from the existing predicates.** The decorator returns
-  `Result.Error` from every `can*` except `canViewVersionHistory`, so the Actions
-  menu disables Edit, Rename, Delete, Move, Duplicate, Export and Upload-new-version
-  without a single new conditional. Download survives because `downloadAllowed`
-  checks `isFolder`/`isSnippet` directly, and `downloadHref` resolves to
-  `/Streamfile/{id}?version=N`.
+- **The refusals come from the predicates.** The decorator returns `Result.Error`
+  from every `can*` except `canViewVersionHistory`, so the Actions menu disables
+  Rename, Delete, Move, Duplicate, Export and Upload-new-version without a single
+  new conditional. Download survives because `downloadAllowed` checks
+  `isFolder`/`isSnippet` directly, and `downloadHref` resolves to
+  `/Streamfile/{id}?version=N`. Edit needed `canBeEdited` adding to the interface:
+  it was decided solely by which editor applies to the file's type, so a past
+  version stayed editable, and Collabora and Office Online would have edited the
+  live bytes while the image editor derived a new file from a version being viewed.
 - **`globalId` stays unversioned.** The InfoPanel renders `GL42v2` for display,
   but the object keeps `GL42`, because the ELN linked-documents and Inventory
   referencing lookups read it and neither records the version a reference was made
-  against. Those lists are the item's, not the version's, and are captioned to say
-  so.
-- **The notice carries the way out.** Beside the "locked for editing" message is a
-  link to `/gallery/item/{id}`, in both the banner and the InfoPanel, so the link
-  is reachable wherever the message is read. It has a real `href` and handles its
-  own click, so it can be copied or opened in a new tab without a full page load.
-  Following it does not leave a stale selection behind: `Selection.append` keys on
-  the item id, which the decorator delegates, so the live object replaces the
-  pinned one.
+  against. Those lists are the item's, not the version's, and a single notice above
+  both of them says so, at body size rather than as small print, because it
+  corrects what the lists otherwise imply. It sits above the pair rather than
+  inside each so it plainly covers both.
+- **Two places say the state, each with one job.** The item's own tile badge
+  carries the version and marks it historical with the same clock icon a
+  version-pinned Inventory link uses, shown even for version 1, which a live item
+  never badges. The icon is decorative; the badge's own label carries the meaning
+  for screen readers. The InfoPanel says which version is on screen, that it is
+  locked, and links back to the live item. There is deliberately no page-level
+  banner. The link has a real `href` and handles its own click, so it can be copied
+  or opened in a new tab without a full page load. Following it does not leave a
+  stale selection behind: `Selection.append` keys on the item id, which the
+  decorator delegates, so the live object replaces the pinned one.
 - **A bad version is reported, never worked around.** A non-numeric version, or
   one the item does not have, renders an error. A version equal to the live one
   redirects to `/gallery/item/{id}`, because a locked page would misrepresent an

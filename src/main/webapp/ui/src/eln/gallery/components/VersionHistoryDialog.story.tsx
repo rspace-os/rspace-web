@@ -51,6 +51,7 @@ export function galleryFile(overrides: Partial<GalleryFile> = {}): GalleryFile {
     canBeMoved: Result.Ok(null),
     canUploadNewVersion: Result.Ok(null),
     canBeLoggedOutOf: Result.Ok(null),
+    canBeEdited: Result.Ok(null),
     canViewVersionHistory: Result.Ok(null),
     treeViewItemId: "GL42",
     key: "GL42",

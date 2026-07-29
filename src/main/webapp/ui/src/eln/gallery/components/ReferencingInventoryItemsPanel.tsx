@@ -26,7 +26,7 @@ type ReferencingItemRow = ReferencingInventoryItem & { rowId: string };
  */
 export function ReferencingInventoryItemsPanel({ file }: { file: GalleryFile }): React.ReactNode {
   const apiRef = useGridApiRef();
-  const { t } = useTranslation(["inventory", "gallery"]);
+  const { t } = useTranslation("inventory");
   const referencing = useReferencingInventoryItems(typeof file.globalId === "string" ? file.globalId : null);
   const { trackEvent } = React.useContext(AnalyticsContext);
 
@@ -44,13 +44,6 @@ export function ReferencingInventoryItemsPanel({ file }: { file: GalleryFile }):
       <Typography variant="h4" component="h4">
         {t("fields.link.relatedInventoryItems.title")}
       </Typography>
-      {/* Nothing records the version a reference was made against, so on a
-          pinned version view this list must not read as that version's. */}
-      {typeof file.pinnedVersion === "number" && (
-        <Typography variant="caption" component="p">
-          {t("gallery:pinnedVersion.referencesAreItemLevel")}
-        </Typography>
-      )}
       <DataGrid
         columns={[
           DataGridColumn.newColumnWithFieldName<"name", ReferencingItemRow>("name", {

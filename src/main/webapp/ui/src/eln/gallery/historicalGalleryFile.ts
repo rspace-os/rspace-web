@@ -271,6 +271,10 @@ export class HistoricalGalleryFile implements GalleryFile {
     return locked();
   }
 
+  get canBeEdited(): Result<null> {
+    return locked();
+  }
+
   get canBeLoggedOutOf(): Result<null> {
     return locked();
   }

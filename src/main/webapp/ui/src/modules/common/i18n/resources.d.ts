@@ -1788,14 +1788,15 @@ export default interface Resources {
           "modified": "Modified",
           "name": "Name",
           "size": "Size",
-          "version": "Version{version, select, none {} other { {version}}}"
+          "version": "Version"
         },
         "current": " (current)",
         "loadFailed": "Could not load version history.",
-        "menuItem": "Version history",
+        "menuItem": "View Version History",
         "none": "No version history is available for this item yet.",
         "tableLabel": "Version history",
         "title": "Version history: {name}",
+        "versionShort": "v{version}",
         "viewing": " (viewing)"
       },
       "view": "View"
@@ -1952,6 +1953,7 @@ export default interface Resources {
       "gridView": "Grid",
       "gridViewDesc": "Browse by thumbnail previews.",
       "gridViewLabel": "grid view of files",
+      "historicalVersionLabel": "version {version}, an old version",
       "infoPanelLabel": "info panel",
       "linkCopied": "Link copied to clipboard successfully.",
       "linkCopyFailed": "Failed to copy link to clipboard. Please try again.",
@@ -2063,7 +2065,7 @@ export default interface Resources {
       "invalid": "\"{version}\" is not a valid version number.",
       "notFound": "This item has no version {version}.",
       "notice": "Displaying version {version} of this item - this is locked for editing.",
-      "referencesAreItemLevel": "These references are to the item as a whole. RSpace does not record which version each was made against.",
+      "referencesAreItemLevel": "The linked documents and related inventory items below reference this item as a whole, not the version shown. RSpace does not record which version each reference was made against.",
       "viewLatest": "View the latest version"
     },
     "referencingInventoryItems": {

@@ -467,18 +467,20 @@ describe("Gallery", () => {
       });
     }
 
-    test("says which version is shown, and that it is locked", async () => {
+    test("the info panel says which version is shown, and that it is locked", async () => {
       mockLiveItem();
       mockVersionHistory();
+      mockListingWithItem();
 
       render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
 
-      expect(await screen.findByText("gallery:pinnedVersion.notice")).toBeVisible();
+      // rendered once per InfoPanel layout, desktop and mobile drawer alike
+      expect(await screen.findAllByText("gallery:pinnedVersion.notice")).not.toHaveLength(0);
     });
 
     /**
-     * The notice, and so its link, appears both in the banner and in the
-     * InfoPanel, hence every one of them is checked rather than a single match.
+     * The InfoPanel's way back to the live item, rendered once per InfoPanel
+     * layout, desktop and mobile drawer alike.
      */
     async function findWayBackLinks() {
       return await screen.findAllByRole("link", {
@@ -486,7 +488,7 @@ describe("Gallery", () => {
       });
     }
 
-    test("offers a way back to the live item beside the notice", async () => {
+    test("offers a way back to the live item", async () => {
       mockLiveItem();
       mockVersionHistory();
       mockListingWithItem();
@@ -494,8 +496,9 @@ describe("Gallery", () => {
       render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
 
       const links = await findWayBackLinks();
-      // real hrefs, so they can be copied or opened in a new tab
+      expect(links).not.toHaveLength(0);
       for (const link of links) {
+        // a real href, so it can be copied or opened in a new tab
         expect(link).toHaveAttribute("href", `/gallery/item/${PINNED_ITEM_ID}`);
       }
     });
@@ -517,8 +520,8 @@ describe("Gallery", () => {
       /*
        * The selection keys on the item id, which the decorator delegates, so the
        * live object replaces the pinned one rather than joining it. Matched
-       * loosely because the tile's version badge, shown from version 2 onwards,
-       * contributes its own label to the accessible name.
+       * loosely because the tile's version badge contributes its own label to the
+       * accessible name.
        */
       expect(await screen.findByRole("gridcell", { name: /assay\.png/ })).toBeInTheDocument();
       for (const field of await screen.findAllByDisplayValue("A draft assay")) {
@@ -526,18 +529,34 @@ describe("Gallery", () => {
       }
     });
 
-    test("shows the notice outside the info panel, which is closed on a small viewport", async () => {
+    test("the item itself is badged with the version, marked as old", async () => {
+      /*
+       * Version 1 gets no badge on a live item, but a version being viewed
+       * historically always needs one, however low its number.
+       */
       mockLiveItem();
       mockVersionHistory();
+      mockListingWithItem();
 
       render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
 
-      /*
-       * The banner sits above the listing rather than inside the InfoPanel
-       * drawer, so it is not inside the complementary landmark the panel uses.
-       */
-      const notice = await screen.findByText("gallery:pinnedVersion.notice");
-      expect(notice.closest('[role="complementary"]')).toBeNull();
+      const tile = await screen.findByRole("gridcell", { name: /first-draft\.png/ });
+      const badge = within(tile).getByLabelText("gallery:mainPanel.historicalVersionLabel");
+      expect(badge).toHaveTextContent("v1");
+      // the same clock as a version-pinned Inventory link, in place of any "(old)" text
+      expect(within(badge).getByTestId("HistoryIcon")).toBeInTheDocument();
+    });
+
+    test("a live item's badge carries no clock", async () => {
+      mockLiveItem();
+      mockListingWithItem();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}`} />);
+
+      const tile = await screen.findByRole("gridcell", { name: /assay\.png/ });
+      const badge = within(tile).getByLabelText("gallery:mainPanel.versionLabel");
+      expect(badge).toHaveTextContent("v3");
+      expect(within(badge).queryByTestId("HistoryIcon")).not.toBeInTheDocument();
     });
 
     test("refuses to edit the pinned item, while still allowing a download", async () => {
@@ -565,6 +584,12 @@ describe("Gallery", () => {
         "true",
       );
       expect(screen.getByRole("menuitem", { name: /common:actions.export/ })).toHaveAttribute("aria-disabled", "true");
+      /*
+       * Edit is decided by which editor applies, not by a predicate, so it needed
+       * its own refusal: Collabora and Office Online would edit the live bytes,
+       * and the image editor would derive a new file from a version being viewed.
+       */
+      expect(screen.getByRole("menuitem", { name: /common:actions.edit/ })).toHaveAttribute("aria-disabled", "true");
       expect(screen.getByRole("menuitem", { name: /common:actions.download/ })).not.toHaveAttribute("aria-disabled");
     });
 
@@ -581,10 +606,11 @@ describe("Gallery", () => {
 
       render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
 
-      const tile = await screen.findByRole("gridcell", { name: "first-draft.png" });
+      // loose match: the version badge contributes its label to the tile's name
+      const tile = await screen.findByRole("gridcell", { name: /first-draft\.png/ });
       // the tile's image is decorative, so it is queried by tag rather than role
       expect(tile.querySelector("img")).toHaveAttribute("src", `/Streamfile/${PINNED_ITEM_ID}?version=1`);
-      expect(screen.queryByRole("gridcell", { name: "assay.png" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("gridcell", { name: /assay\.png/ })).not.toBeInTheDocument();
     });
 
     test("shows the pinned version's description, not the live item's", async () => {
@@ -620,6 +646,31 @@ describe("Gallery", () => {
       for (const field of await screen.findAllByDisplayValue("A draft assay")) {
         expect(field).not.toHaveAttribute("readonly");
       }
+    });
+
+    test("one notice above both reference lists says they are the item's, not the version's", async () => {
+      mockLiveItem();
+      mockVersionHistory();
+      mockListingWithItem();
+      mockAxios.onGet(/\/gallery\/ajax\/getLinkedDocuments\//).reply(200, {
+        data: [],
+        error: null,
+        success: true,
+      });
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+      /*
+       * One notice covering both lists, rather than a caption inside each. The
+       * InfoPanel renders per layout, so the first of each is compared: within a
+       * layout the notice comes before the Linked Documents heading, which is what
+       * makes it read as covering that list and the inventory one below it.
+       */
+      const notices = await screen.findAllByText("gallery:pinnedVersion.referencesAreItemLevel");
+      expect(notices).not.toHaveLength(0);
+      const heading = screen.getAllByText("gallery:linkedDocumentsPanel.heading")[0];
+      // eslint-disable-next-line no-bitwise -- the DOM order API is a bitmask
+      expect(notices[0].compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
     test("a version the item does not have is reported, not quietly replaced with the live one", async () => {

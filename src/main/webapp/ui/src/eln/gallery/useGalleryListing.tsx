@@ -212,6 +212,15 @@ export interface GalleryFile {
   readonly canBeLoggedOutOf: Result<null>;
 
   /*
+   * Whether this object may be edited at all. Which editor applies is decided
+   * separately, from the file's type and the available integrations; this only
+   * says whether editing is permissible in the first place. A past version is
+   * not: Collabora and Office Online would edit the live bytes, and the image
+   * editor would derive a new file from content the user is only viewing.
+   */
+  readonly canBeEdited: Result<null>;
+
+  /*
    * Whether this file's version history can be listed. Only files whose bytes
    * RSpace itself stores are audited, so files held on an external filestore
    * have no history to show.
@@ -522,6 +531,10 @@ export class LocalGalleryFile implements GalleryFile {
     return Result.Error([new Error("Cannot log out of local files and folders.")]);
   }
 
+  get canBeEdited(): Result<null> {
+    return Result.Ok(null);
+  }
+
   get treeViewItemId(): string {
     return `LOCAL_${idToString(this.id).elseThrow()}`;
   }
@@ -676,6 +689,10 @@ export class Filestore implements GalleryFile {
 
   get canBeLoggedOutOf(): Result<null> {
     return Result.Ok(null);
+  }
+
+  get canBeEdited(): Result<null> {
+    return Result.Error([new Error("Cannot edit a filestore.")]);
   }
 
   get treeViewItemId(): string {
@@ -909,6 +926,11 @@ export class RemoteFile implements GalleryFile {
 
   get canBeLoggedOutOf(): Result<null> {
     return Result.Error([new Error("Cannot log out of files stored in filestores.")]);
+  }
+
+  /* Left to the editor-specific checks, as for a local file. */
+  get canBeEdited(): Result<null> {
+    return Result.Ok(null);
   }
 
   get treeViewItemId(): string {
