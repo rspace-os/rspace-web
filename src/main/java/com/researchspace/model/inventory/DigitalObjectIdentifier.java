@@ -67,8 +67,17 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity impl
 
 	private boolean customFieldsOnPublicPage;
 	
-	public enum IdentifierOtherProperty { 
-		CREATOR_NAME, CREATOR_TYPE, CREATOR_AFFILIATION, CREATOR_AFFILIATION_IDENTIFIER, PUBLISHER, PUBLICATION_YEAR, RESOURCE_TYPE, RESOURCE_TYPE_GENERAL, LOCAL_URL, PUBLIC_URL
+	/**
+	 * Values stored as a JSON map in {@code otherDataJsonString}, keyed by the enum name, so adding
+	 * a property needs no schema change.
+	 *
+	 * <p>The three URL properties are distinct: {@code LOCAL_URL} is this RSpace's public landing
+	 * page for the identifier, {@code PUBLIC_URL} is the citable publicly resolvable URL that only
+	 * exists once the identifier is published, and {@code PROVIDER_URL} is the record's page on the
+	 * issuing provider, which may require signing in to that provider.</p>
+	 */
+	public enum IdentifierOtherProperty {
+		CREATOR_NAME, CREATOR_TYPE, CREATOR_AFFILIATION, CREATOR_AFFILIATION_IDENTIFIER, PUBLISHER, PUBLICATION_YEAR, RESOURCE_TYPE, RESOURCE_TYPE_GENERAL, LOCAL_URL, PUBLIC_URL, PROVIDER_URL
 	}
 
 	public enum IdentifierOtherListProperty {

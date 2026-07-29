@@ -62,6 +62,14 @@ public class B2instInstrumentMetadata {
   @JsonProperty("MeasuredVariable")
   private List<String> measuredVariable;
 
+  /**
+   * Commissioning/decommissioning dates of the instrument. Note that each entry mixes conventions:
+   * the inner date key is PascalCase {@code Date} but its type key is lowerCamelCase {@code
+   * dateType}, per the B2INST wire format. See {@link B2instDate}.
+   */
+  @JsonProperty("Date")
+  private List<B2instDate> date;
+
   /** URL of the instrument's landing page. */
   @JsonProperty("LandingPage")
   private String landingPage;

@@ -2,6 +2,9 @@
 
 Summary of important or breaking changes.
 
+## 3.1.0 2026-07-29
+ - Adapting B2inst object for the community workflow
+
 ## 3.0.0 2026-07-28
 - Spring 6 / Hibernate 6 / Jakarta namespace migration
 - Switch to rspace-parent 3.0.0
