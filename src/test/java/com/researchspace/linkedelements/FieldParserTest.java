@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
 
 import com.researchspace.model.IFieldLinkableElement;
 import java.io.File;
@@ -47,9 +46,6 @@ public class FieldParserTest {
 
   @Test
   public void testGetElementsfromEmptyField() {
-    lenient()
-        .when(converterFactory.getConverterForClass(Mockito.anyString()))
-        .thenReturn(converter);
     FieldContents fieldContents = fieldParser.findFieldElementsInContent("");
     assertNotNull(fieldContents);
     assertNoElements(fieldContents);
@@ -58,9 +54,6 @@ public class FieldParserTest {
 
   @Test
   public void testGetElementsfromFieldWithNoElements() {
-    lenient()
-        .when(converterFactory.getConverterForClass(Mockito.anyString()))
-        .thenReturn(converter);
     FieldContents fieldContents =
         fieldParser.findFieldElementsInContent("Text field with out elements");
 

@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -131,8 +130,6 @@ public class ExportControllerTest {
     exportController.setResponseUtil(new ResponseUtil());
 
     user = TestFactory.createAnyUser("user1a");
-
-    lenient().when(diskSpaceChecker.canStartArchiveProcess()).thenReturn(true);
   }
 
   private void setupMessageSources() {
@@ -637,6 +634,7 @@ public class ExportControllerTest {
 
   @Test
   public void depositArchiveHappyCase() throws Exception {
+    when(diskSpaceChecker.canStartArchiveProcess()).thenReturn(true);
     Long[] ids = ids(5);
     String[] types = types(5);
     String[] names = names(5);

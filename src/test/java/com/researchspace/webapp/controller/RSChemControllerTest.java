@@ -3,7 +3,6 @@ package com.researchspace.webapp.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,7 +14,6 @@ import com.researchspace.model.dtos.chemistry.ChemConversionInputDto;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequestDTO;
 import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.field.ErrorList;
-import com.researchspace.model.record.Folder;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.RSChemElementManager;
@@ -71,11 +69,9 @@ public class RSChemControllerTest {
 
   @Test
   public void testSearchChemElement() {
-    final Folder rootFolder = TestFactory.createAFolder("root", user);
     final ChemicalSearchResults hits = new ChemicalSearchResults();
     String smile = "CCC(C1)";
     when(userMgr.getAuthenticatedUserInSession()).thenReturn(user);
-    lenient().when(folderManager.getRootFolderForUser(user)).thenReturn(rootFolder);
     when(chemicalService.searchChemicals(smile, "SUBSTRUCTURE", 0, 10, user)).thenReturn(hits);
 
     ChemSearchResultsPage resultsPage =

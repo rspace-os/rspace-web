@@ -3,7 +3,6 @@ package com.researchspace.api.v1.auth;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -36,7 +35,6 @@ public class CombinedApiAuthenticatorTest {
     mockRequest = new MockHttpServletRequest();
     setMockRequestAuthorizationHeader();
     User user = TestFactory.createAnyUser("testOauthUser");
-    lenient().when(apiAvailabilityHandler.isApiAvailableForUser(null)).thenReturn(true);
     when(oAuthAuthenticator.authenticate(mockRequest)).thenReturn(user);
 
     /* run authenticator code with request using internal UI token */

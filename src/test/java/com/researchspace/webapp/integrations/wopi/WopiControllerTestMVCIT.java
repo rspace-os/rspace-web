@@ -54,7 +54,7 @@ public class WopiControllerTestMVCIT extends MVCTestBase {
     setUpUserWithInitialisedContent(testUser);
     shiroTestUtils = new ShiroTestUtils();
     shiroTestUtils.setSubject(subject);
-    Mockito.lenient().when(subject.getSession()).thenReturn(new SimpleSession());
+    Mockito.when(subject.getSession()).thenReturn(new SimpleSession());
 
     // proof keys only validated in a specific test
     proofKeyInterceptor.setProofKeyValidationEnabled("false");

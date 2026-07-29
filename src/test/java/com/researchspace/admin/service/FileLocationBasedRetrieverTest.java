@@ -2,7 +2,6 @@ package com.researchspace.admin.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -21,7 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class FileLocationBasedRetrieverTest {
   @Mock IPropertyHolder properties;
-  @Mock IPropertyHolder okProperties;
 
   FileLocationBasedLogRetriever logretriever;
   final File testLogPath = RSpaceTestUtils.getResource("sampleLogs/RSLogs.txt.1");
@@ -30,11 +28,12 @@ public class FileLocationBasedRetrieverTest {
   public void setUp() {
     logretriever = new FileLocationBasedLogRetriever();
     logretriever.setProperties(properties);
-    okProperties =
-        lenient()
-            .when(mock(IPropertyHolder.class).getErrorLogFile())
-            .thenReturn(testLogPath.getAbsolutePath())
-            .getMock();
+  }
+
+  private IPropertyHolder okProperties() {
+    return when(mock(IPropertyHolder.class).getErrorLogFile())
+        .thenReturn(testLogPath.getAbsolutePath())
+        .getMock();
   }
 
   @Test
@@ -51,7 +50,7 @@ public class FileLocationBasedRetrieverTest {
 
   @Test
   public void testInvalidLineNumberHandled() throws IOException {
-    logretriever.setProperties(okProperties);
+    logretriever.setProperties(okProperties());
     List<String> lines = logretriever.retrieveLastNLogLines(-1); // meaningless number
     assertEquals(FileLocationBasedLogRetriever.DEFAULT_NUM_LINES, lines.size());
 
@@ -62,7 +61,7 @@ public class FileLocationBasedRetrieverTest {
 
   @Test
   public void testRetrieveLastNLogLines() throws IOException {
-    logretriever.setProperties(okProperties);
+    logretriever.setProperties(okProperties());
     List<String> lines = logretriever.retrieveLastNLogLines(500);
     assertEquals(431, lines.size());
   }

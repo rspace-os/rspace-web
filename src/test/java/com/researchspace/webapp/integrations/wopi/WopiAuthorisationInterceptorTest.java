@@ -45,7 +45,7 @@ public class WopiAuthorisationInterceptorTest extends SpringTransactionalTest {
     testUser = doCreateAndInitUser(getRandomAlphabeticString("wopi"));
     shiroTestUtils = new ShiroTestUtils();
     shiroTestUtils.setSubject(subject);
-    Mockito.lenient().when(subject.getSession()).thenReturn(new SimpleSession());
+    Mockito.when(subject.getSession()).thenReturn(new SimpleSession());
   }
 
   @AfterEach

@@ -1,7 +1,6 @@
 package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -71,9 +70,9 @@ public class ImageProcessorImplTest {
   @Test
   public void rotateOKSmallFileWitoutWorkingImage() throws IOException {
     setupImage();
+    when(rcdMgr.save(img, anyUser)).thenReturn(img);
     //		when(mediaFac.updateThumbnailImage(Mockito.eq(img), Mockito.any(BufferedImage.class)))
     //		  .thenReturn(img);
-    when(rcdMgr.save(img, anyUser)).thenReturn(img);
     imgHandler.rotate(img, (byte) 1, anyUser);
     verify(rcdMgr).save(img, anyUser);
     assertEquals(anyBR.getWidth(), img.getWidth());
@@ -119,7 +118,6 @@ public class ImageProcessorImplTest {
     //		  .thenReturn(img);
     //		when(mediaFac.updateWorkingImage(Mockito.eq(img), Mockito.any(BufferedImage.class)))
     //		  .thenReturn(img);
-    lenient().when(rcdMgr.save(img, anyUser)).thenReturn(img);
     imgHandler.rotate(img, (byte) 1, anyUser);
 
     verify(rcdMgr, never()).save(img, anyUser);

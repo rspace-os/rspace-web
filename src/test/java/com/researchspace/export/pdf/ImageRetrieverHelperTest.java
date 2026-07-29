@@ -3,7 +3,6 @@ package com.researchspace.export.pdf;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -108,7 +107,6 @@ public class ImageRetrieverHelperTest {
   @Test
   public void testIncludeChemImageResource() throws IOException {
     RSChemElement chemElement = setUpChemElement();
-    setPermissionsToReturn(chemElement, true);
     when(chemMgr.get(2L, config.getExporter())).thenReturn(chemElement);
     String chemLink = textupdater.generateURLStringForRSChemElementLink(2L, 1L, 50, 50);
     assertNotNull(imgRetriever.getImageBytesFromImgSrc(chemLink, config));
@@ -170,7 +168,6 @@ public class ImageRetrieverHelperTest {
     // pdf config ignores annotations, so we want original image or working image...
     // here is working mage
     EcatImage rawimg = TestFactory.createEcatImage(5L);
-    setPermissionsToReturn(rawimg, true);
     annotation.setImageId(rawimg.getId());
     rawimg.setWorkingImage(new ImageBlob(getAnyPngImage()));
     config.setAnnotations(false);
@@ -191,18 +188,12 @@ public class ImageRetrieverHelperTest {
     // nothing returned if permissions return false
     setPermissionsToReturn(annotation, false);
     assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(annotationLink, config));
-    // throwing auth exception handled as well.
-    lenient()
-        .when(mediaMgr.getImage(rawimg.getId(), config.getExporter(), true))
-        .thenThrow(AuthorizationException.class);
     assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(annotationLink, config));
   }
 
   void setPermissionsToReturn(IFieldLinkableElement element, boolean allow) {
-    lenient()
-        .when(
-            permissions.isPermittedViaMediaLinksToRecords(
-                element, PermissionType.READ, config.getExporter()))
+    when(permissions.isPermittedViaMediaLinksToRecords(
+            element, PermissionType.READ, config.getExporter()))
         .thenReturn(allow);
   }
 

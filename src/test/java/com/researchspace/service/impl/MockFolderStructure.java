@@ -1,7 +1,6 @@
 package com.researchspace.service.impl;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -12,7 +11,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
 import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.record.Folder;
-import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.IContentInitialiserUtils;
@@ -32,7 +30,6 @@ public class MockFolderStructure {
   UserDao userDao = Mockito.mock(UserDao.class);
   RecordDao recordDao = Mockito.mock(RecordDao.class);
   @Mock private FolderManager folderManagerMock;
-  @Mock private Folder folderMock;
 
   public UserFolderSetup create(User subject) {
     return create(subject, null, null);
@@ -41,13 +38,8 @@ public class MockFolderStructure {
   public UserFolderSetup create(
       User subject, FolderManager extfolderManagerMock, Folder extfolderMock) {
     openMocks(this);
-    boolean extFolderManagerMockExists = false;
     if (extfolderManagerMock != null) {
       folderManagerMock = extfolderManagerMock;
-      extFolderManagerMockExists = true;
-    }
-    if (extfolderMock != null) {
-      folderMock = extfolderMock;
     }
     // use concrete classes to set up permissions and folders correctly
     RecordFactory rfac = new RecordFactory();
@@ -59,11 +51,6 @@ public class MockFolderStructure {
     // saves
     setupMockDaos();
     Folder root = utils.setupRootFolder(subject);
-    if (!extFolderManagerMockExists) {
-      lenient()
-          .when(folderManagerMock.getFolder(any(Long.class), any(User.class)))
-          .thenReturn(folderMock);
-    }
     DefaultUserFolderCreator folderCreator =
         new DefaultUserFolderCreator(rfac, permFac, folderDao, utils, folderManagerMock);
 
@@ -72,12 +59,6 @@ public class MockFolderStructure {
 
   private void setupMockDaos() {
     when(folderDao.save(any(Folder.class)))
-        .thenAnswer(
-            invocation -> {
-              return invocation.getArgument(0);
-            });
-    lenient()
-        .when(recordDao.save(any(Record.class)))
         .thenAnswer(
             invocation -> {
               return invocation.getArgument(0);

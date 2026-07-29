@@ -17,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -378,9 +377,6 @@ public class FolderApiControllerTest {
     subFolder.setId(3L);
     root.addChild(subFolder, subject);
     ISearchResults<BaseRecord> mockResults = createEmptySearchResults();
-    lenient()
-        .when(folderNavigationService.findParentForUser(subject, subFolder))
-        .thenReturn(Optional.of(root));
     when(recordMgr.listFolderRecords(
             eq(subFolder.getId()), any(PaginationCriteria.class), any(RecordTypeFilter.class)))
         .thenReturn(mockResults);
@@ -408,9 +404,6 @@ public class FolderApiControllerTest {
     folderSetup.getMediaImgExamples().addChild(imgFile, subject);
     ISearchResults<BaseRecord> mockResults = createMediaResults(imgFile);
     // set up mocks
-    lenient()
-        .when(folderNavigationService.findParentForUser(subject, folderSetup.getMediaImgExamples()))
-        .thenReturn(Optional.of(folderSetup.getMediaImgExamples().getParent()));
     when(recordMgr.listFolderRecords(
             eq(folderSetup.getMediaImgExamples().getId()),
             any(PaginationCriteria.class),

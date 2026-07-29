@@ -91,14 +91,11 @@ public class ExportApiSpringBatchHandlerTest {
           JobRestartException,
           JobInstanceAlreadyCompleteException,
           JobParametersInvalidException {
-    Mockito.lenient()
-        .when(launcher.run(Mockito.eq(job), Mockito.any(JobParameters.class)))
-        .thenReturn(exe);
+    Mockito.when(launcher.run(Mockito.eq(job), Mockito.any(JobParameters.class))).thenReturn(exe);
   }
 
   private void mockCreateRecordList() {
-    Mockito.lenient()
-        .when(
+    Mockito.when(
             planner.createExportRecordList(
                 Mockito.any(IArchiveExportConfig.class), Mockito.any(ExportSelection.class)))
         .thenReturn(new ExportRecordList());
@@ -145,7 +142,6 @@ public class ExportApiSpringBatchHandlerTest {
     mockgetGroup();
     when(grpPermUtils.userCanExportGroup(pi, group)).thenReturn(true);
     exportHandler.export(cfg, pi);
-    mockCreateRecordList();
     verifyJobLaunched();
   }
 
@@ -191,7 +187,6 @@ public class ExportApiSpringBatchHandlerTest {
   public void nonSpecifiedGroupByUserNotAuthOK_7b() throws Exception {
     ExportApiConfig cfg = groupToHtml(group);
     cfg.setId(null);
-    mockLaunchJob();
     assertThrows(AuthorizationException.class, () -> exportHandler.export(cfg, user));
     verifyJobNotLaunched();
   }
@@ -254,7 +249,6 @@ public class ExportApiSpringBatchHandlerTest {
     Mockito.when(recMgr.getAllFrom(cfg.getSelections()))
         .thenReturn(TransformerUtils.toList(view, view2));
     exportHandler.export(cfg, pi);
-    mockCreateRecordList();
     verifyJobLaunched();
   }
 

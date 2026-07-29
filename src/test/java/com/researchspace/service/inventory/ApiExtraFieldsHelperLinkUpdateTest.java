@@ -138,11 +138,8 @@ class ApiExtraFieldsHelperLinkUpdateTest {
     // the controller-layer validator can be bypassed by omitting "type", so
     // the service-layer apply must enforce no-self-links itself
     ExtraLinkField selfField = org.mockito.Mockito.mock(ExtraLinkField.class);
-    org.mockito.Mockito.lenient().when(selfField.getId()).thenReturn(5L);
-    org.mockito.Mockito.lenient().when(selfField.getLink()).thenReturn(dbLink);
-    org.mockito.Mockito.lenient()
-        .when(selfField.getConnectedRecordGlobalIdentifier())
-        .thenReturn("SA9");
+    org.mockito.Mockito.when(selfField.getId()).thenReturn(5L);
+    org.mockito.Mockito.when(selfField.getConnectedRecordGlobalIdentifier()).thenReturn("SA9");
     ApiExtraField apiField = incomingLinkField(5L, "SA9", null);
 
     org.junit.jupiter.api.Assertions.assertThrows(

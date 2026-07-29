@@ -5,7 +5,6 @@ import static org.apache.commons.io.FileUtils.readFileToString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -159,7 +158,6 @@ public class ProtocolsIOConverterTest {
             Mockito.any(DefaultRecordContext.class),
             Mockito.eq(false)))
         .thenReturn(doc);
-    lenient().when(recordMgr.save(doc, any)).thenReturn(doc);
   }
 
   @Test
