@@ -1,10 +1,9 @@
-package com.researchspace.service.impl;
+package com.researchspace.service;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -29,7 +28,7 @@ class MediaFileContentValidatorTest {
   @ValueSource(strings = {"image.jpg", "image.jpeg", "image.png", "image.gif", "IMAGE.JPG"})
   void rejectsNonImageContentWithImageExtension(String fileName) {
     assertThrows(
-        ApiRuntimeException.class,
+        MediaContentMismatchException.class,
         () ->
             MediaFileContentValidator.verifyContentMatchesExtension(
                 new ByteArrayInputStream(JSP_CONTENT), fileName));
@@ -39,7 +38,7 @@ class MediaFileContentValidatorTest {
   void rejectsUnrecognisableContentWithImageExtension() {
     byte[] noMagicBytes = new byte[] {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
     assertThrows(
-        ApiRuntimeException.class,
+        MediaContentMismatchException.class,
         () ->
             MediaFileContentValidator.verifyContentMatchesExtension(
                 new ByteArrayInputStream(noMagicBytes), "image.jpg"));
@@ -56,7 +55,7 @@ class MediaFileContentValidatorTest {
       throws IOException {
     byte[] realImage = RSpaceTestUtils.getResourceAsByteArray(fixture);
     assertThrows(
-        ApiRuntimeException.class,
+        MediaContentMismatchException.class,
         () ->
             MediaFileContentValidator.verifyContentMatchesExtension(
                 new ByteArrayInputStream(realImage), claimedName));

@@ -24,6 +24,7 @@ import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.model.views.RecordTypeFilter;
 import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.DocumentAlreadyEditedException;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordDeletionManager;
@@ -336,6 +337,8 @@ public class GalleryController extends BaseController {
     } catch (IllegalStateException e) {
       ErrorList errorList = ErrorList.of("Save action failed [" + e.getMessage() + "]");
       return new AjaxReturnObject<>(null, errorList);
+    } catch (MediaContentMismatchException e) {
+      return new AjaxReturnObject<>(null, ErrorList.of(getText(e.getErrorCode(), e.getArgs())));
     }
   }
 

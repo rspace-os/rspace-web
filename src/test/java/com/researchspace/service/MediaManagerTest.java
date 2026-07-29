@@ -7,7 +7,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatDocumentFile;
@@ -316,7 +315,7 @@ public class MediaManagerTest extends SpringTransactionalTest {
     byte[] jspContent = "<% out.println(\"jsp-probe\"); %>".getBytes(StandardCharsets.UTF_8);
     assertExceptionThrown(
         () -> mediaMgr.saveNewImage("image.jpg", new ByteArrayInputStream(jspContent), user, null),
-        ApiRuntimeException.class);
+        MediaContentMismatchException.class);
 
     // updating an existing image with non-image content is also rejected
     InputStream pictureIS = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
@@ -325,7 +324,7 @@ public class MediaManagerTest extends SpringTransactionalTest {
         () ->
             mediaMgr.updateMediaFile(
                 image.getId(), new ByteArrayInputStream(jspContent), "Picture1.png", user, null),
-        ApiRuntimeException.class);
+        MediaContentMismatchException.class);
   }
 
   @Test

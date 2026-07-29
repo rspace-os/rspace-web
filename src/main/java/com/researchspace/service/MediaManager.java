@@ -183,6 +183,10 @@ public interface MediaManager {
    * @param user
    * @return subclass of EcatMediaFile (decided on file extension)
    * @throws IOException
+   * @throws MediaContentMismatchException if the content is not the type the file extension claims;
+   *     callers that need to carry on with other files should check the content with {@link
+   *     MediaFileContentValidator} first, since a rejection here marks the surrounding transaction
+   *     for rollback
    */
   EcatMediaFile saveMediaFile(
       InputStream inputStream,
@@ -205,6 +209,7 @@ public interface MediaManager {
    * @param lockId (optional) if current operation owns edit lock on the file, it can pass it
    * @return
    * @throws IOException
+   * @throws MediaContentMismatchException if the content is not the type the file extension claims
    */
   EcatMediaFile updateMediaFile(
       Long mediaFileId, InputStream inputStream, String updatedFileName, User user, String lockId)

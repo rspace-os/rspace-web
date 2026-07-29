@@ -52,6 +52,7 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.ImageProcessor;
+import com.researchspace.service.MediaFileContentValidator;
 import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.OperationFailedMessageGenerator;

@@ -1,6 +1,5 @@
-package com.researchspace.service.impl;
+package com.researchspace.service;
 
-import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.core.util.MediaUtils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -35,8 +34,8 @@ public final class MediaFileContentValidator {
    *
    * @return the stream to continue reading the content from; the input may have been wrapped to
    *     make it rewindable, so callers must use the returned stream and not the original
-   * @throws ApiRuntimeException if the extension claims an image but the content is a different
-   *     type
+   * @throws MediaContentMismatchException if the extension claims an image but the content is a
+   *     different type
    */
   public static InputStream verifyContentMatchesExtension(InputStream inputStream, String fileName)
       throws IOException {
@@ -49,7 +48,7 @@ public final class MediaFileContentValidator {
     MediaType detected = MIME_TYPES.detect(markable, new Metadata());
     MediaType expected = typeImpliedByExtension(extension);
     if (!expected.equals(detected)) {
-      throw new ApiRuntimeException(
+      throw new MediaContentMismatchException(
           "errors.upload.imageContentMismatch", fileName, expected.toString(), detected.toString());
     }
     return markable;

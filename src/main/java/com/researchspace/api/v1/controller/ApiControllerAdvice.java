@@ -11,6 +11,7 @@ import com.researchspace.apiutils.RestControllerAdvice;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
@@ -118,6 +119,22 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleApiRuntimeException(
       final ApiRuntimeException ex, final WebRequest request) {
     log.error("api runtime error: " + ex.getErrorCode() + ": " + StringUtils.join(ex.getArgs()));
+    String resolvedMessage = messages.getMessage(ex.getErrorCode(), ex.getArgs());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
+            resolvedMessage,
+            ex.getErrorCode(),
+            resolvedMessage);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  // 422 with errorCode
+  @ExceptionHandler({MediaContentMismatchException.class})
+  public ResponseEntity<Object> handleMediaContentMismatch(
+      final MediaContentMismatchException ex, final WebRequest request) {
+    log.warn("rejected upload: {}", StringUtils.join(ex.getArgs(), ", "));
     String resolvedMessage = messages.getMessage(ex.getErrorCode(), ex.getArgs());
     final ApiError apiError =
         new ApiError(

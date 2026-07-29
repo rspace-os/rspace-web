@@ -55,6 +55,8 @@ import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.ExternalWorkFlowDataManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.MediaContentMismatchException;
+import com.researchspace.service.MediaFileContentValidator;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordContext;
@@ -65,6 +67,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Date;
@@ -197,6 +200,23 @@ abstract class AbstractImporterStrategyImpl {
             oldIdToNewFolder.get(oldFolderId) != null
                 ? oldIdToNewFolder.get(oldFolderId).getName()
                 : "null, using top-level gallery folder");
+        InputStream contentToImport;
+        try {
+          // checked before saveMediaFile so a rejection cannot mark the import transaction
+          // rollback-only, letting the remaining items still be imported
+          contentToImport =
+              MediaFileContentValidator.verifyContentMatchesExtension(fis, galleryMetaFileName);
+        } catch (MediaContentMismatchException e) {
+          log.warn(
+              "Rejected Gallery item {} during import: {} - continuing with import",
+              galleryMetaFileName,
+              e.getMessage());
+          report
+              .getInfoList()
+              .addErrorMsg("Importing Gallery item " + galleryMetaFileName + " was rejected");
+          continue;
+        }
+
         try {
           String displayName =
               StringUtils.isBlank(galleryMeta.getName())
@@ -204,7 +224,7 @@ abstract class AbstractImporterStrategyImpl {
                   : galleryMeta.getName();
           EcatMediaFile media =
               mediaManager.saveMediaFile(
-                  fis,
+                  contentToImport,
                   null,
                   displayName,
                   galleryMetaFileName,
