@@ -45,9 +45,17 @@ on the Gallery controller.
 * `GL` version-pinning in `VersionLockDialog` stays unimplemented. It is now a
   smaller job than before, since a Gallery version list exists to call, but it
   did not come for free as it would have under the rejected option.
-* The endpoint requires an authenticated user and an explicit READ permission
-  check. `GalleryController` is mapped at both `/gallery` and
-  `/public/publicView/gallery`, so a new method is reachable anonymously by
-  default; version history is not offered in public view. Note that the
-  neighbouring `/ajax/getLinkedDocuments/{mediaId}` performs no permission check
-  at all, and is not a pattern to copy.
+* The endpoint performs an explicit READ permission check, and additionally
+  refuses the anonymous guest account outright. `GalleryController` is mapped at
+  both `/gallery` and `/public/publicView/gallery`, and Shiro treats `/public/**`
+  as `anon`, so every method on this class is reachable without logging in.
+  Not offering version history in the public *view* does not make the *endpoint*
+  unreachable there, and the READ check alone does not close it: viewing a
+  published document logs a real session in as the anonymous guest, and that
+  account genuinely holds READ on media linked from the published document. The
+  check would therefore have passed, disclosing every past filename and
+  description plus the full name of every user who edited the item. Hence the
+  explicit `isAnonymousGuestAccount` refusal, covered by
+  `GalleryVersionHistoryTest.theAnonymousGuestAccountIsRefusedBeforeTheItemIsEvenFetched`.
+  Note that the neighbouring `/ajax/getLinkedDocuments/{mediaId}` performs no
+  permission check at all, and is not a pattern to copy.

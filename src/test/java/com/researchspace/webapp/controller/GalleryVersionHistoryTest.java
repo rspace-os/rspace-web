@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.model.EcatAudio;
 import com.researchspace.model.EcatMediaFile;
+import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.dtos.GalleryVersionHistory;
@@ -197,6 +198,32 @@ public class GalleryVersionHistoryTest {
 
     assertThrows(AuthorizationException.class, () -> controller.getVersionHistory(MEDIA_ID));
 
+    Mockito.verifyNoInteractions(auditManager);
+  }
+
+  /*
+   * The class is mapped to /public/publicView/gallery as well as /gallery, and /public/** is anon
+   * in Shiro, so this endpoint is routable without logging in. Viewing a published document logs a
+   * real session in as the anonymous guest, and that account genuinely holds READ on media linked
+   * from the published document, so the permission check inside retrieveMediaFile passes. Without
+   * an explicit refusal, a public link would disclose every past filename and description plus the
+   * full name of every user who edited the item.
+   */
+  @Test
+  public void theAnonymousGuestAccountIsRefusedBeforeTheItemIsEvenFetched() {
+    User anonymous = TestFactory.createAnyUser(RecordGroupSharing.ANONYMOUS_USER);
+    // the refusal keys off this, so a fixture that is not recognised as the guest proves nothing
+    assertTrue(anonymous.isAnonymousGuestAccount(), "fixture must look like the anonymous guest");
+    /*
+     * doReturn, not when(...): setUp has already stubbed this method, and re-stubbing it with
+     * when(...) invokes it, which consumes the earlier answer so the next real call still sees the
+     * logged-in user. That silently reduces this test to a no-op.
+     */
+    Mockito.doReturn(anonymous).when(userManager).getAuthenticatedUserInSession();
+
+    assertThrows(AuthorizationException.class, () -> controller.getVersionHistory(MEDIA_ID));
+
+    Mockito.verifyNoInteractions(baseRecordManager);
     Mockito.verifyNoInteractions(auditManager);
   }
 }

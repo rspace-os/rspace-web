@@ -39,6 +39,7 @@ import { CallablePdfPreview } from "./components/CallablePdfPreview";
 import { CallableSnapGenePreview } from "./components/CallableSnapGenePreview";
 import { CallableSnippetPreview } from "./components/CallableSnippetPreview";
 import { FilestoreLoginProvider } from "./components/FilestoreLoginDialog";
+import { galleryItemHref } from "./components/GalleryItemLink";
 import MainPanel from "./components/MainPanel";
 import OpenFolderProvider from "./components/OpenFolderProvider";
 import PlaceholderLabel from "./components/PlaceholderLabel";
@@ -84,7 +85,9 @@ const WholePage = ({
   /**
    * Applied to every file in the listing before anything sees it, so the grid
    * tile, the selection, the InfoPanel and the Actions menu all act on one
-   * object. Must be referentially stable, as the listing is memoised on it.
+   * object. Must be referentially stable: the decorated listing is memoised on
+   * it, so an unstable one would hand a fresh object to the selection on every
+   * render.
    */
   decorateFile?: (file: GalleryFile) => GalleryFile;
 }) => {
@@ -112,18 +115,24 @@ const WholePage = ({
   /*
    * Decorating here, rather than at the point of selection, is what keeps the
    * whole page consistent: everything downstream reads the listing.
+   *
+   * The memo is keyed on the listing's own array, not on the Fetched wrapper:
+   * useGalleryListing rebuilds that wrapper every render, so keying on it would
+   * decorate afresh every render. The decorated objects are what the selection
+   * and the InfoPanel hold onto, so churning their identity restarts effects
+   * keyed on them, including the version-history fetch. Only the decoration is
+   * worth memoising; rebuilding the wrapper around it is free.
    */
-  const galleryListing = React.useMemo(() => {
-    if (!decorateFile) return liveListing;
-    if (liveListing.tag !== "success" || liveListing.value.tag === "empty") return liveListing;
-    return {
-      tag: "success" as const,
-      value: {
-        ...liveListing.value,
-        list: liveListing.value.list.map(decorateFile),
-      },
-    };
-  }, [liveListing, decorateFile]);
+  const liveList = liveListing.tag === "success" && liveListing.value.tag !== "empty" ? liveListing.value.list : null;
+  const decoratedList = React.useMemo(
+    () => (decorateFile && liveList ? liveList.map(decorateFile) : null),
+    [liveList, decorateFile],
+  );
+
+  const galleryListing =
+    decoratedList && liveListing.tag === "success" && liveListing.value.tag !== "empty"
+      ? { tag: "success" as const, value: { ...liveListing.value, list: decoratedList } }
+      : liveListing;
 
   const { isViewportSmall } = useViewportDimensions();
 
@@ -427,7 +436,15 @@ function GalleryFileInFolder() {
   const [fileName, setFileName] = React.useState<string | null>(null);
   const { getToken } = useOauthToken();
 
-  async function fetchFileDetails() {
+  /**
+   * Resolves the URL's file, and version if it has one, into what to render.
+   *
+   * Resolving a pinned view costs two sequential requests where the live view costs one, so a
+   * superseded resolution has to drop its answer: otherwise a slow pinned one lands after the live
+   * one and leaves a read-only page, labelled with an older version, sitting at the live URL. Only
+   * the two awaits below precede a write, so guarding those is enough.
+   */
+  async function fetchFileDetails(hasBeenSuperseded: () => boolean) {
     try {
       const token = await getToken();
       const { data } = await axios.get<unknown>(`/api/v1/files/${fileIdParam}`, {
@@ -435,6 +452,7 @@ function GalleryFileInFolder() {
           Authorization: `Bearer ${token}`,
         },
       });
+      if (hasBeenSuperseded()) return;
       setFileName(Parsers.objectPath(["name"], data).flatMap(Parsers.isString).orElse(null));
       const folderId = Parsers.objectPath(["parentFolderId"], data).flatMap(Parsers.isNumber).elseThrow();
 
@@ -460,6 +478,7 @@ function GalleryFileInFolder() {
       const versions = await fetchVersionHistory(String(fileIdParam), t("actionsMenu.versionHistory.loadFailed"));
       const pinned = versions.find(({ version }) => version === requestedVersion);
       if (!pinned) throw new Error(t("pinnedVersion.notFound", { version: requestedVersion }));
+      if (hasBeenSuperseded()) return;
 
       setResolution({
         tag: "success",
@@ -475,14 +494,20 @@ function GalleryFileInFolder() {
       });
     } catch (error) {
       console.error("Error fetching file details", error);
-      if (error instanceof Error) {
+      if (error instanceof Error && !hasBeenSuperseded()) {
         setResolution({ tag: "error", error: error.message });
       }
     }
   }
 
   React.useEffect(() => {
-    void fetchFileDetails();
+    let superseded = false;
+    /* the previous URL's answer must not describe the new one, even briefly */
+    setResolution({ tag: "loading" });
+    void fetchFileDetails(() => superseded);
+    return () => {
+      superseded = true;
+    };
   }, [fileIdParam, versionParam]);
 
   const autoSelect = React.useMemo(
@@ -512,7 +537,7 @@ function GalleryFileInFolder() {
     loading: () => t("landingPage.loading"),
     error: (error) => t("landingPage.error", { error }),
     success: (resolved) => {
-      if (resolved.tag === "redirectToLive") return <Navigate to={`/gallery/item/${fileIdParam}`} replace />;
+      if (resolved.tag === "redirectToLive") return <Navigate to={galleryItemHref(String(fileIdParam))} replace />;
       return (
         <WholePage
           listingOf={{ tag: "folder", folderId: resolved.folderId }}

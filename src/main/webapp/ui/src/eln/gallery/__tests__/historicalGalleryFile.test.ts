@@ -69,8 +69,8 @@ describe("HistoricalGalleryFile", () => {
   test("gives one reason for every refusal, so the menu reads consistently", () => {
     const file = pinned();
 
-    expect(file.canDelete.orElseGet(([e]) => e.message)).toBe("A past version cannot be edited.");
-    expect(file.canRename.orElseGet(([e]) => e.message)).toBe("A past version cannot be edited.");
+    expect(file.canDelete.orElseGet(([e]) => e.message)).toBe("This is a past version, so it is read-only.");
+    expect(file.canRename.orElseGet(([e]) => e.message)).toBe("This is a past version, so it is read-only.");
   });
 
   test("keeps the global id unversioned, so backlink lookups are unaffected", () => {

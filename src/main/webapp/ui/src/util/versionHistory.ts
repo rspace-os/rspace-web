@@ -8,7 +8,7 @@
  */
 
 /** The minimum an audit revision must carry to be grouped by version. */
-export interface AuditRevision {
+interface AuditRevision {
   revisionId: number;
   record: { version?: number | null };
 }

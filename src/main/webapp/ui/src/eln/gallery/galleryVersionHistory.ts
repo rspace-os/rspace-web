@@ -8,7 +8,6 @@ import { groupByVersion } from "../../util/versionHistory";
  */
 type ApiRevision = {
   revisionId: number;
-  revisionType?: string | null;
   record: {
     version?: number | null;
     lastModified?: string | null;
@@ -21,7 +20,7 @@ type ApiRevision = {
 
 /** The endpoint's AjaxReturnObject envelope. */
 type VersionHistoryResponse = {
-  data: { revisions: Array<ApiRevision>; revisionsCount: number } | null;
+  data: { revisions: Array<ApiRevision> } | null;
   error?: { errorMessages?: Array<string> } | null;
 };
 
@@ -39,7 +38,6 @@ type VersionHistoryResponse = {
  */
 export type VersionRow = {
   version: number;
-  revisionId: number;
   lastModified: string | null;
   modifiedByFullName: string | null;
   size: number | null;
@@ -63,7 +61,6 @@ export async function fetchVersionHistory(fileId: string, loadFailedMessage: str
   }
   return groupByVersion(data.data.revisions).map(({ version, revision }) => ({
     version,
-    revisionId: revision.revisionId,
     lastModified: revision.record.lastModified ?? null,
     modifiedByFullName: revision.record.modifiedByFullName ?? null,
     size: revision.record.size ?? null,

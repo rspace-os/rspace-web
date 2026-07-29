@@ -111,10 +111,13 @@ extracted to a more global location. This is logic is in [primaryActionHooks.ts]
 The Actions menu's "Version history" opens
 [VersionHistoryDialog.tsx](./components/VersionHistoryDialog.tsx), which lists a
 Gallery item's versions newest first. The list comes from
-`GET /gallery/ajax/versionHistory/{mediaFileId}`, which requires an authenticated
-session and read permission on the item.
+`GET /gallery/ajax/versionHistory/{mediaFileId}`, which needs read permission on
+the item and a logged-in user who is not the anonymous guest. The guest is
+refused explicitly rather than left to the permission check, because that check
+would pass for it; see
+[ADR 0003](../../../../../../DevDocs/adr/0003-gallery-version-history-endpoint.md).
 
-Three things about it are easy to get wrong:
+Four things about it are easy to get wrong:
 
 - **An audit revision is not a version.** Several revisions can share one
   version, because not every recorded change bumps the counter. The dialog shows
@@ -156,12 +159,19 @@ Seven things about it are easy to get wrong:
   `GalleryVersionHistory.Item`; both live on the audited `EditInfo` embeddable, so
   Envers records them per revision the same way it records the version counter.
   A version with no recorded description shows an empty one, never the live one.
-  In particular no thumbnail endpoint is version-aware:
-  `/gallery/getThumbnail` takes a cache-buster, not a version, and the document
-  and chemistry thumbnails are keyed on the live record. An image therefore
+  In particular neither the thumbnail nor the preview endpoints are
+  version-aware: `/gallery/getThumbnail` takes a cache-buster, not a version, the
+  document and chemistry thumbnails are keyed on the live record, Aspose converts
+  the live record, and `/molbiol/dna/png` takes a bare id. An image therefore
   thumbnails from `/Streamfile/{id}?version=N`, and anything else falls back to
   its stock type icon, because showing no content beats showing the wrong
-  content.
+  content. `previewCanAddressTheVersion`
+  ([primaryActionHooks.ts](./primaryActionHooks.ts)) applies the same rule to the
+  Aspose, SnapGene and chemistry previews, so a pinned view offers no preview
+  rather than the live one. Images and PDFs are exempt: both read the
+  version-aware `downloadHref`. Aspose could in principle be made correct rather
+  than refused, since it already accepts a `revisionId` and the endpoint already
+  returns one per revision; `VersionRow` would need to start carrying it.
 - **The decoration goes in the listing, not the selection.** Everything
   downstream (grid tile, selection, InfoPanel, Actions menu) reads the listing, so
   decorating there is what keeps them consistent. `WholePage` takes a
@@ -180,6 +190,13 @@ Seven things about it are easy to get wrong:
   it was decided solely by which editor applies to the file's type, so a past
   version stayed editable, and Collabora and Office Online would have edited the
   live bytes while the image editor derived a new file from a version being viewed.
+  Gating the Actions menu on it is not enough. The primary action is the other
+  route to an editor, reached by double-clicking a tile, by the InfoPanel's action
+  button, and from the tree and carousel views, so `canBeEdited` is enforced inside
+  `useCollaboraEdit` and `useOfficeOnlineEdit` themselves
+  ([primaryActionHooks.ts](./primaryActionHooks.ts)) rather than in each menu that
+  remembers to ask. Both editors address the document by its unversioned
+  `globalId`, which is precisely why a refusal they do not see is worthless.
 - **`globalId` stays unversioned.** The InfoPanel renders `GL42v2` for display,
   but the object keeps `GL42`, because the ELN linked-documents and Inventory
   referencing lookups read it and neither records the version a reference was made

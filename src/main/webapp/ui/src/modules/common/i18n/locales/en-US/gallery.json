@@ -96,14 +96,14 @@
         "size": "Size",
         "version": "Version"
       },
-      "current": " (current)",
       "loadFailed": "Could not load version history.",
       "menuItem": "View Version History",
       "none": "No version history is available for this item yet.",
       "tableLabel": "Version history",
       "title": "Version history: {name}",
+      "versionCurrent": "v{version} (current)",
       "versionShort": "v{version}",
-      "viewing": " (viewing)"
+      "versionViewing": "v{version} (viewing)"
     },
     "view": "View"
   },

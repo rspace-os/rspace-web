@@ -1,33 +1,7 @@
 import Alert from "@mui/material/Alert";
-import Link from "@mui/material/Link";
-import React from "react";
+import type React from "react";
 import { useTranslation } from "react-i18next";
-import NavigateContext from "../../../stores/contexts/Navigate";
-
-/* No version segment: the live view is the ordinary, editable item view. */
-const liveHrefFor = (fileId: string | null) => (fileId === null ? null : `/gallery/item/${fileId}`);
-
-/**
- * A link to the live item, handled in-app.
- *
- * It keeps a real `href` so it can be copied or opened in a new tab, and calls
- * preventDefault so an ordinary click does not reload the page.
- */
-function LiveVersionLink({ href, children }: { href: string; children: React.ReactNode }): React.ReactNode {
-  const { useNavigate } = React.useContext(NavigateContext);
-  const navigate = useNavigate();
-  return (
-    <Link
-      href={href}
-      onClick={(e: React.MouseEvent) => {
-        e.preventDefault();
-        navigate(href);
-      }}
-    >
-      {children}
-    </Link>
-  );
-}
+import { GalleryItemLink, galleryItemHref } from "./GalleryItemLink";
 
 /**
  * Warns that the reference lists below it are the item's, not the displayed
@@ -72,12 +46,12 @@ export default function PinnedVersionNotice({
   fileId: string | null;
 }): React.ReactNode {
   const { t } = useTranslation("gallery");
-  const href = liveHrefFor(fileId);
-
   return (
-    <Alert severity="info" sx={{ borderRadius: 0 }}>
+    <Alert severity="info">
       {t("pinnedVersion.notice", { version })}{" "}
-      {href !== null && <LiveVersionLink href={href}>{t("pinnedVersion.viewLatest")}</LiveVersionLink>}
+      {fileId !== null && (
+        <GalleryItemLink href={galleryItemHref(fileId)}>{t("pinnedVersion.viewLatest")}</GalleryItemLink>
+      )}
     </Alert>
   );
 }

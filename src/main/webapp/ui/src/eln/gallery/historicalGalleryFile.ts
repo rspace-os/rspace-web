@@ -6,9 +6,11 @@ import { Description, type GalleryFile, type Id, iconForExtension, idToString } 
 
 /*
  * One reason shared by every refused action. It reaches the user as the
- * subheader of the disabled Actions menu item, so it is worded for them.
+ * subheader of the disabled Actions menu item, so it is worded for them, and
+ * worded for any action rather than for editing: the same reason has to read
+ * correctly against Open and Log out as against Rename and Delete.
  */
-const LOCKED = "A past version cannot be edited.";
+const LOCKED = "This is a past version, so it is read-only.";
 
 function locked<T>(): Result<T> {
   return Result.Error([new Error(LOCKED)]);

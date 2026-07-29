@@ -35,8 +35,8 @@ const respondWith = (revisions: Array<unknown>) => {
  * interpolation. Every version label therefore renders identically, and a row
  * has to be identified by its test id rather than by the version it shows.
  */
-const CURRENT = "gallery:actionsMenu.versionHistory.current";
-const VIEWING = "gallery:actionsMenu.versionHistory.viewing";
+const CURRENT = "gallery:actionsMenu.versionHistory.versionCurrent";
+const VIEWING = "gallery:actionsMenu.versionHistory.versionViewing";
 
 const bodyRows = () => screen.getAllByRole("row").slice(1);
 

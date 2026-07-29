@@ -625,13 +625,18 @@ public class GalleryController extends BaseController {
   /**
    * Lists every audit revision of a Gallery item, for the version-history dialog.
    *
-   * <p>Requires an authenticated session, so this is not available on the {@code
-   * /public/publicView/gallery} mapping this controller also answers on. Read permission is
-   * enforced by {@code baseRecordManager.retrieveMediaFile}, which throws for an unreadable item.
+   * <p>This is deliberately restricted to logged-in users. The class-level mapping also answers on
+   * {@code /public/publicView/gallery}, which Shiro treats as {@code anon}, and viewing a published
+   * document logs a real session in as the anonymous guest. That account genuinely holds read
+   * permission on media linked from the published document, so the permission check below would
+   * pass for it. An edit history is not part of what publishing a document shares: it would
+   * disclose every past filename and description, plus the full name of every user who edited the
+   * item. So the guest is refused outright rather than left to the permission check.
    *
    * @param mediaFileId the id of a Gallery item
    * @return every revision of the item; callers group these by version for display
-   * @throws AuthorizationException if the item is not readable by the current user
+   * @throws AuthorizationException if there is no logged-in user, if the caller is the anonymous
+   *     guest, or if the item is not readable by the current user
    */
   @GetMapping("/ajax/versionHistory/{mediaFileId}")
   @ResponseBody
@@ -639,6 +644,10 @@ public class GalleryController extends BaseController {
       @PathVariable("mediaFileId") Long mediaFileId) {
 
     User user = userManager.getAuthenticatedUserInSession();
+    if (user == null || user.isAnonymousGuestAccount()) {
+      throw new AuthorizationException(
+          "A Gallery item's version history is only available to logged-in users.");
+    }
     // throws AuthorizationException unless the item exists and is readable by this user
     EcatMediaFile mediaFile = baseRecordManager.retrieveMediaFile(user, mediaFileId);
 
