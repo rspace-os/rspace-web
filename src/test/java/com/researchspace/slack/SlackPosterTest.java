@@ -19,8 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-// @Disabled rather than gated on -Dnightly like the other real-connection tests: this one needs a
-// secret webhook URL that no environment supplies, so a nightly gate would never fire either.
 @Disabled("requires correct real secret webhook")
 public class SlackPosterTest extends SpringTransactionalTest {
 
