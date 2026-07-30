@@ -3,6 +3,7 @@ package com.researchspace.service;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
@@ -11,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.imageio.ImageIO;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
@@ -82,10 +84,29 @@ class MediaFileContentValidatorTest {
   void acceptsRealImagesAndPreservesStreamContent(String fileName) throws IOException {
     byte[] expected = RSpaceTestUtils.getResourceAsByteArray(fileName);
     // a non-markable stream, so validation must wrap and rewind it
-    InputStream validated =
+    try (InputStream validated =
         MediaFileContentValidator.verifyContentMatchesExtension(
-            RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder(fileName), fileName);
-    assertArrayEquals(expected, IOUtils.toByteArray(validated));
+            RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder(fileName), fileName)) {
+      assertArrayEquals(expected, IOUtils.toByteArray(validated));
+    }
+  }
+
+  /** A rejected upload is never read, so the validator hands back a closed stream. */
+  @Test
+  void closesTheStreamOfARejectedUpload() {
+    AtomicBoolean closed = new AtomicBoolean();
+    InputStream tracked =
+        new ByteArrayInputStream(JSP_CONTENT) {
+          @Override
+          public void close() throws IOException {
+            closed.set(true);
+            super.close();
+          }
+        };
+    assertThrows(
+        MediaContentMismatchException.class,
+        () -> MediaFileContentValidator.verifyContentMatchesExtension(tracked, "image.jpg"));
+    assertTrue(closed.get());
   }
 
   /** bmp is an accepted image extension with no fixture in the test resources. */

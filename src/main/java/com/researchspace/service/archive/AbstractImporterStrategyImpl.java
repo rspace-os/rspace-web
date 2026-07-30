@@ -58,6 +58,7 @@ import com.researchspace.service.FormManager;
 import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaFileContentValidator;
 import com.researchspace.service.MediaManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
@@ -100,6 +101,7 @@ abstract class AbstractImporterStrategyImpl {
   @Autowired FormManager formManager;
   @Autowired FieldManager fieldManager;
   @Autowired MediaManager mediaManager;
+  @Autowired MessageSourceUtils messages;
   @Autowired RSChemElementManager rsChemElementManager;
   @Autowired @Lazy StoichiometryService stoichiometryService;
   @Autowired InternalLinkDao internalLinkDao;
@@ -211,9 +213,7 @@ abstract class AbstractImporterStrategyImpl {
               "Rejected Gallery item {} during import: {} - continuing with import",
               galleryMetaFileName,
               e.getMessage());
-          report
-              .getInfoList()
-              .addErrorMsg("Importing Gallery item " + galleryMetaFileName + " was rejected");
+          report.getInfoList().addErrorMsg(messages.getMessage(e.getErrorCode(), e.getArgs()));
           continue;
         }
 

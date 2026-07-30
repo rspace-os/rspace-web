@@ -62,6 +62,7 @@ public class ThumbnailController extends BaseController {
 
     byte[] data = null;
     final HttpHeaders headers = new HttpHeaders();
+    ResponseHeaders.preventContentSniffing(headers);
 
     if (SourceType.CHEM.equals(query.getSourceType())) {
       AuditedEntity<RSChemElement> auditedRSChemElement = null;

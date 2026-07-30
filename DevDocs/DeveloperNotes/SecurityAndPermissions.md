@@ -143,3 +143,23 @@ There are some JSP tags in the Shiro: and rs: namespaces that can be
 used to display/hide UI elements based on role or permissions.
 Permissions checking in code should also be done so as to prevent URL
 guessing attacks.
+
+## Uploaded file content
+
+A file's name and declared content type come from the client, so neither is
+evidence of what the bytes actually are. `MediaFileContentValidator` checks the
+content of uploads whose extension claims an image against the type that
+extension implies, and `MediaManagerImpl` calls it on both the new-upload and
+the new-version path, which every upload passes through. Callers that need to
+continue past a rejected file, such as the archive importer, must run the check
+themselves before calling the media manager, because a rejection thrown from
+inside a transactional manager marks the surrounding transaction for rollback.
+
+Detection reads the leading bytes only, so a valid image with content appended
+after it still passes. Treat stored files as untrusted bytes regardless.
+
+Endpoints that serve stored file content should send
+`X-Content-Type-Options: nosniff` via `ResponseHeaders.preventContentSniffing`,
+so a browser honours the declared type rather than guessing one from the bytes.
+This matters most where bytes are returned inline, without a
+`Content-Disposition` header.

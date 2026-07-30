@@ -183,10 +183,11 @@ public interface MediaManager {
    * @param user
    * @return subclass of EcatMediaFile (decided on file extension)
    * @throws IOException
-   * @throws MediaContentMismatchException if the content is not the type the file extension claims;
-   *     callers that need to carry on with other files should check the content with {@link
+   * @throws MediaContentMismatchException if the content is not the type the file extension claims.
+   *     The input stream is closed before this is thrown, as it is on a normal return. Callers that
+   *     need to carry on with other files should check the content with {@link
    *     MediaFileContentValidator} first, since a rejection here marks the surrounding transaction
-   *     for rollback
+   *     for rollback.
    */
   EcatMediaFile saveMediaFile(
       InputStream inputStream,
