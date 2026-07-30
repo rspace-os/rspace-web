@@ -97,8 +97,8 @@ export default function VersionHistoryDialog({
   };
 
   return (
-    /* md rather than sm: four columns of filenames, dates and names need the room */
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+    /* lg rather than md: five columns of filenames, dates and names need the room */
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
       <DialogTitle>{t("actionsMenu.versionHistory.title", { name: file.name })}</DialogTitle>
       <DialogContent>
         {state.state === "loading" && <Skeleton variant="rectangular" width="100%" height={118} />}
@@ -109,7 +109,13 @@ export default function VersionHistoryDialog({
           ) : (
             <Table size="small" aria-label={t("actionsMenu.versionHistory.tableLabel")}>
               <TableHead>
-                <TableRow>
+                {/*
+                 * Headers stay on one line: a long filename in the Name column would otherwise
+                 * squeeze the neighbouring columns until two-word headers such as "Modification
+                 * Date" broke across lines. The data cells still wrap, so only the header row is
+                 * held rigid.
+                 */}
+                <TableRow sx={{ "& th": { whiteSpace: "nowrap" } }}>
                   <TableCell>{t("actionsMenu.versionHistory.columns.version")}</TableCell>
                   <TableCell>{t("actionsMenu.versionHistory.columns.name")}</TableCell>
                   <TableCell>{t("actionsMenu.versionHistory.columns.modified")}</TableCell>

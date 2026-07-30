@@ -90,8 +90,8 @@
     "uploadNewVersion": "Upload New Version",
     "versionHistory": {
       "columns": {
-        "by": "By",
-        "modified": "Modified",
+        "by": "Modified By",
+        "modified": "Modification Date",
         "name": "Name",
         "size": "Size",
         "version": "Version"
