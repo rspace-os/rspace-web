@@ -25,16 +25,9 @@ type VersionHistoryResponse = {
 };
 
 /**
- * One user-facing version of a Gallery item.
- *
- * `name` and `description` are per-version, not per-item: uploading a new version
- * can replace the file with one of a different name, and either can be edited at
- * any time. So the live item's name and description say nothing about what an
- * earlier version carried.
- *
- * A null `description` means the audited revision had none, which is why it is
- * kept distinct from the empty string only in so far as both display as no
- * description.
+ * One user-facing version of a Gallery item. Every field describes the version,
+ * not the item: see CONTEXT.md, "Version". A null `description` means the
+ * audited revision carried none.
  */
 export type VersionRow = {
   version: number;
@@ -46,12 +39,9 @@ export type VersionRow = {
 };
 
 /**
- * A Gallery item's versions, newest first.
- *
- * Both the version-history dialog and the pinned version view read this: the
- * dialog to list the versions, the view to learn the size and date of the one it
- * is pinned to. `loadFailedMessage` is passed in so the wording stays with the
- * caller that has a `t`.
+ * A Gallery item's versions, newest first. Read by the version-history dialog
+ * and by the pinned version view. `loadFailedMessage` is passed in so the
+ * wording stays with the caller that has a `t`.
  */
 export async function fetchVersionHistory(fileId: string, loadFailedMessage: string): Promise<Array<VersionRow>> {
   const { data } = await axios.get<VersionHistoryResponse>(`/gallery/ajax/versionHistory/${fileId}`);

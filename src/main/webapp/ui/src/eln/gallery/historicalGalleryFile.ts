@@ -20,27 +20,14 @@ function locked<T>(): Result<T> {
  * A Gallery item as it was at one past version, shown by the pinned version
  * view at `/gallery/item/<id>/<version>`.
  *
- * This decorates the live file rather than overlaying a "read-only" flag on it,
- * so the object never reports a version it is not showing: `version`, `name`,
- * `extension`, `description`, `size`, `modificationDate`, `thumbnailUrl` and
- * `downloadHref` all describe version N, and every mutating predicate refuses.
- * Nothing downstream has to remember to check a flag, because the predicate
- * mechanism the Actions menu already consults says no on its own.
+ * A decorator rather than a read-only flag on the live file, so the object
+ * cannot report a version it is not showing and nothing downstream has to
+ * remember to check a flag. See CONTEXT.md, "Version", for which fields belong
+ * to a version rather than to the item.
  *
- * A new version can replace the file with one of a different name, and the name
- * and description can be edited at any time, so treating any of those as
- * properties of the item rather than of the version shows the wrong metadata
- * beside the right bytes.
- *
- * Two things are deliberately delegated rather than overridden:
- *
- *   - `globalId` stays unversioned (`GL42`, not `GL42v2`). The ELN
- *     linked-documents and inventory referencing lookups read it, and neither
- *     records the version a reference was made against, so a versioned id would
- *     only be discarded. The versioned form is rendered in the InfoPanel for
- *     display and nowhere else. See ADR 0004.
- *   - `canViewVersionHistory`, so the view is not a dead end: the history is how
- *     a user gets from one pinned version to another, or back to the live item.
+ * Two members are delegated on purpose: `globalId`, which stays unversioned
+ * because the reference lookups that read it do not record versions (ADR 0004),
+ * and `canViewVersionHistory`, so the view is not a dead end.
  */
 export class HistoricalGalleryFile implements GalleryFile {
   private readonly file: GalleryFile;
@@ -231,53 +218,21 @@ export class HistoricalGalleryFile implements GalleryFile {
     return this.file.canViewVersionHistory;
   }
 
-  get canOpen(): Result<null> {
-    return locked();
-  }
-
-  get canDuplicate(): Result<null> {
-    return locked();
-  }
-
-  get canDelete(): Result<null> {
-    return locked();
-  }
-
-  get canRename(): Result<null> {
-    return locked();
-  }
-
-  get canMoveToIrods(): Result<null> {
-    return locked();
-  }
-
-  get canMoveToS3(): Result<null> {
-    return locked();
-  }
-
   /*
-   * Export is refused rather than delegated because it is not version-aware: it
-   * would export the live bytes while the panel says version N. Share needs no
-   * handling here, being offered for snippets only, which are not media files
-   * and so have no version to pin in the first place.
+   * Constant refusals, so values rather than getters. Export is refused rather
+   * than delegated because it is not version-aware: it would export the live
+   * bytes while the panel says version N. Share needs no handling here, being
+   * offered for snippets only, which have no version to pin.
    */
-  get canBeExported(): Result<null> {
-    return locked();
-  }
-
-  get canBeMoved(): Result<null> {
-    return locked();
-  }
-
-  get canUploadNewVersion(): Result<null> {
-    return locked();
-  }
-
-  get canBeEdited(): Result<null> {
-    return locked();
-  }
-
-  get canBeLoggedOutOf(): Result<null> {
-    return locked();
-  }
+  readonly canOpen = locked<null>();
+  readonly canDuplicate = locked<null>();
+  readonly canDelete = locked<null>();
+  readonly canRename = locked<null>();
+  readonly canMoveToIrods = locked<null>();
+  readonly canMoveToS3 = locked<null>();
+  readonly canBeExported = locked<null>();
+  readonly canBeMoved = locked<null>();
+  readonly canUploadNewVersion = locked<null>();
+  readonly canBeEdited = locked<null>();
+  readonly canBeLoggedOutOf = locked<null>();
 }

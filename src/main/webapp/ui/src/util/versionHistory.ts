@@ -17,15 +17,10 @@ interface AuditRevision {
  * Collapses a record's audit revisions to one entry per user-facing version,
  * keeping the newest revision of each, and returns them newest version first.
  *
- * The newest revision of a version wins because that version's final state is
- * the one worth showing. Revisions are sorted by ascending revisionId first, so
- * "last write wins" holds regardless of the order they arrive in. Revisions
- * carrying no version are skipped: there is nothing to label them with.
- *
- * The whole winning revision is returned alongside its version, rather than a
- * fixed row shape, because callers need different fields from it: a date and a
- * user's name to display, and the revisionId itself to address that revision in
- * URLs that key on it.
+ * Sorted by ascending revisionId first, so "last write wins" holds whatever
+ * order they arrive in. A revision carrying no version has nothing to label it
+ * with and is skipped. The whole winning revision is returned rather than a
+ * fixed row shape, because callers need different fields from it.
  */
 export function groupByVersion<T extends AuditRevision>(
   revisions: ReadonlyArray<T>,
