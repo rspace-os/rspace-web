@@ -19,9 +19,6 @@ public class ZipCopyTest {
   // https://stackoverflow.com/questions/50594360/gzipinputstream-works-with-fileinputstream-but-not-inputstream/50610474#50610474
   @Test
   public void classPathAndFileReadsAreTheSameBytes() throws IOException {
-    // readAllBytes rather than a fixed-size buffer: a buffer larger than the zip zero-pads both
-    // sides equally and a buffer smaller than it compares only a prefix, so either way a
-    // difference in the tail passes unnoticed once the file outgrows the number.
     try (InputStream fromClasspath = fromClasspath()) {
       assertArrayEquals(
           fromClasspath.readAllBytes(),

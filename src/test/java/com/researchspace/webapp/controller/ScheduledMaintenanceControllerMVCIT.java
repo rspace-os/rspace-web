@@ -78,10 +78,9 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
 
   private void initDates() {
     if (dateNextHour == null) {
-      // The trailing -00:00 in the pattern is a literal, and the server parses these strings as
-      // UTC. Formatting must therefore happen in UTC too, otherwise local wall-clock time is
-      // labelled as UTC and every relative date is shifted by the machine's offset: in a
-      // negative-offset zone the "future" maintenance dates below land in the past.
+      // The -00:00 in the pattern is a literal and the server parses these as UTC, so format in
+      // UTC too or local wall-clock time gets labelled UTC and every date below shifts by the
+      // machine's offset.
       dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.000-00:00");
       dateFormat.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
 
@@ -189,11 +188,8 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
   @Test
   public void testActiveMaintenanceCreateRetrieveFinishNow() throws Exception {
     String testMessage = "test maintenance message";
-    // The start date is posted as an absolute instant but the server renders it back in the user's
-    // timezone (SessionTimeZoneUtils, which falls back to the JVM default when the session carries
-    // no preference, as it does here), so the expected strings have to be derived rather than
-    // hard-coded or the test only passes under UTC. Everything below comes from this one instant:
-    // a second literal for the posted form of it would silently drift out of sync with it.
+    // Rendered back in the session's timezone, which falls back to the JVM default here, so the
+    // expected strings are derived from this one instant rather than hard-coded under UTC.
     Instant start = Instant.parse("2015-01-01T00:00:01Z");
     String oldDateString = dateFormat.format(Date.from(start));
     DateTimeFormatter clientFormat =
