@@ -219,6 +219,28 @@ describe("ActionsMenu", () => {
       expectMenuItemDisabled(await screen.findByRole("menuitem", { name: /common:actions\.download/i }));
     });
 
+    /* the dialog is a React child of the Menu, which closes on Tab and so used to unmount it */
+    test("Tab inside the version history dialog moves focus rather than closing it", async () => {
+      const user = userEvent.setup();
+      renderStory(<ActionsMenuWithNonFolder />);
+      await openMenu(user);
+      await user.click(await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.versionHistory\.menuItem/i }));
+      const dialog = await screen.findByRole("dialog");
+      await user.tab();
+      expect(dialog).toBeInTheDocument();
+    });
+
+    /* the Tab fix stops propagation, so this pins that dismissal still works */
+    test("Escape still closes the version history dialog", async () => {
+      const user = userEvent.setup();
+      renderStory(<ActionsMenuWithNonFolder />);
+      await openMenu(user);
+      await user.click(await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.versionHistory\.menuItem/i }));
+      await screen.findByRole("dialog");
+      await user.keyboard("{Escape}");
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    });
+
     test("When the selected file is a snippet, view version history should be disabled", async () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippet />);

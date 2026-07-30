@@ -97,8 +97,8 @@ export default function VersionHistoryDialog({
   };
 
   return (
-    /* lg rather than md: five columns of filenames, dates and names need the room */
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
+    /* lg: five columns need the room. onKeyDown: the parent Menu closes on Tab, see QuirksOfMaterialUi.md */
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" onKeyDown={(e) => e.stopPropagation()}>
       <DialogTitle>{t("actionsMenu.versionHistory.title", { name: file.name })}</DialogTitle>
       <DialogContent>
         {state.state === "loading" && <Skeleton variant="rectangular" width="100%" height={118} />}
