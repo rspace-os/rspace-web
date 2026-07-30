@@ -47,11 +47,12 @@ Gallery's `/globalId` behaviour is relied on as a download URL.
   would in fact still work, because those lookups build a `GlobalIdentifier` and
   use only `getDbId()`, but that is the version being silently discarded rather
   than handled, and nothing should depend on it.
-* `supportsVersionPin("GL…")` stays `false`, so an Inventory Link field still
-  cannot pin a Gallery item to a version, and `VersionLockDialog.fetchVersions`
-  keeps returning `[]` for `GL` targets. Both remain open, and both are now
-  smaller jobs than before, since a Gallery version list and a pinned view exist
-  to build on.
+* Inventory Link fields pin Gallery items as of RSDEV-1188:
+  `supportsVersionPin("GL…")` is now `true` and `VersionLockDialog` lists versions
+  from the Gallery endpoint. A pinned `GL` link's Open action goes to
+  `/gallery/item/<id>/<version>`, the view this ADR added, not to
+  `/globalId/GL<id>v<n>` — which is exactly the split described above: the card
+  shows `GL42v2` while the link opens the view.
 * References shown beside a pinned version are the **item's**, not the version's.
   No schema records the version a link or attachment was made against
   (`inventoryFileDao.findByMediaFileId` takes an id alone), so a version-filtered

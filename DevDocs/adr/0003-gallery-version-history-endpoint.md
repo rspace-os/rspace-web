@@ -42,9 +42,10 @@ on the Gallery controller.
   plus `size`, so the shared `groupByVersion` helper consumes all of them
   unchanged. A future consolidation should start from that helper, not from the
   endpoints.
-* `GL` version-pinning in `VersionLockDialog` stays unimplemented. It is now a
-  smaller job than before, since a Gallery version list exists to call, but it
-  did not come for free as it would have under the rejected option.
+* `GL` version-pinning in `VersionLockDialog` did not come for free, as it would
+  have under the rejected option: RSDEV-1188 implemented it as a second fetch
+  branch calling this endpoint. Both branches feed the same `groupByVersion`
+  helper, so the extra endpoint cost one call site, not a second grouping rule.
 * The endpoint performs an explicit READ permission check, and additionally
   refuses the anonymous guest account outright. `GalleryController` is mapped at
   both `/gallery` and `/public/publicView/gallery`, and Shiro treats `/public/**`

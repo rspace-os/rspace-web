@@ -135,6 +135,38 @@ const elnDuplicateFinalVersionResponse = {
   config: {},
 } as AxiosResponse;
 
+// The gallery endpoint (/gallery/ajax/versionHistory/{id}) returns the inventory revisions shape
+// inside an AjaxReturnObject envelope. Revisions 30 and 31 are both version 1, so the picker must
+// collapse them the same way the inventory path does.
+const galleryRevisionsResponse = {
+  data: {
+    data: {
+      revisions: [
+        {
+          revisionId: 30,
+          revisionType: "MOD",
+          record: { version: 1, lastModified: "2026-03-01T10:00:00Z", name: "photo.png" },
+        },
+        {
+          revisionId: 31,
+          revisionType: "MOD",
+          record: { version: 1, lastModified: "2026-03-02T10:00:00Z", name: "photo.png" },
+        },
+        {
+          revisionId: 40,
+          revisionType: "MOD",
+          record: { version: 2, lastModified: "2026-03-10T10:00:00Z", name: "photo-v2.png" },
+        },
+      ],
+      revisionsCount: 3,
+    },
+  },
+  status: 200,
+  statusText: "OK",
+  headers: {},
+  config: {},
+} as AxiosResponse;
+
 function renderDialog(props: Partial<React.ComponentProps<typeof VersionLockDialog>> = {}) {
   return render(
     <ThemeProvider theme={materialTheme}>
@@ -267,7 +299,7 @@ describe("VersionLockDialog", () => {
   });
 });
 
-describe("VersionLockDialog (SD/ELN document target)", () => {
+describe("VersionLockDialog (ELN targets: SD documents, GL gallery files)", () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
@@ -326,6 +358,37 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
 
     expect(screen.getByText("inventory:fields.link.versionLock.cannotResolve")).toBeInTheDocument();
     expect(vi.mocked(axiosGet)).not.toHaveBeenCalled();
+  });
+
+  it("fetches GL revisions from the gallery endpoint, collapsing revisions of one version", async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
+    const axiosGet = axios.get;
+    vi.mocked(axiosGet).mockResolvedValue(galleryRevisionsResponse);
+    renderDialog({ globalId: "GL77" });
+
+    await waitFor(() => {
+      expect(getVersionRadio("2")).toBeInTheDocument();
+    });
+    expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "1")).toHaveLength(1);
+    expect(vi.mocked(axiosGet)).toHaveBeenCalledWith("/gallery/ajax/versionHistory/77");
+  });
+
+  it("pins a GL target to the gallery item's version number", async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
+    const axiosGet = axios.get;
+    vi.mocked(axiosGet).mockResolvedValue(galleryRevisionsResponse);
+    const onConfirm = vi.fn();
+    const user = userEvent.setup();
+    renderDialog({ globalId: "GL77", onConfirm });
+
+    await waitFor(() => {
+      expect(getVersionRadio("2")).toBeInTheDocument();
+    });
+    await user.click(getVersionRadio("2"));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.versionLock.lockToSelectedVersion" }));
+
+    // version 2 maps to audit revision 40; the pin must be the version number (2)
+    expect(onConfirm).toHaveBeenCalledWith(2);
   });
 
   it("degrades to the latest-only view when the SD revisions fetch fails", async () => {

@@ -12,6 +12,7 @@ import VersionLockPicker, {
   type VersionLockSelection,
   type VersionRecord,
 } from "../../../../components/VersionLockPicker/VersionLockPicker";
+import { groupByVersion } from "../../../../util/versionHistory";
 
 export interface VersionLockDialogProps {
   open: boolean;
@@ -48,9 +49,12 @@ function parseGlobalId(globalId: string): ParsedTarget | null {
   };
 }
 
-/** Targets whose revision history this dialog can resolve: inventory items and SD documents. */
+/**
+ * Targets whose revision history this dialog can resolve: inventory items, SD documents and GL
+ * gallery files.
+ */
 function isSupportedTarget(parsed: ParsedTarget): boolean {
-  return parsed.inventoryPathSegment !== null || parsed.prefix === "SD";
+  return parsed.inventoryPathSegment !== null || parsed.prefix === "SD" || parsed.prefix === "GL";
 }
 
 interface ApiRevisionEntry {
@@ -67,6 +71,24 @@ interface ApiRevisionEntry {
 interface ApiRevisionList {
   revisions: ApiRevisionEntry[];
   revisionsCount: number;
+}
+
+/** The gallery endpoint's AjaxReturnObject envelope around the same revision shape. */
+interface AjaxRevisionList {
+  data: ApiRevisionList | null;
+}
+
+/**
+ * Collapses audit rows to one picker row per user-facing version (several revisions can share one
+ * version), pinning the version and carrying its newest revision. Shared by the inventory and
+ * gallery branches, whose responses have the same shape.
+ */
+function toVersionRecords(revisions: ApiRevisionEntry[]): VersionRecord[] {
+  return groupByVersion(revisions).map(({ version, revision }) => ({
+    version,
+    revisionId: revision.revisionId,
+    modificationDate: revision.record.lastModified ?? "",
+  }));
 }
 
 // ELN revisions endpoint shape (/workspace/revisionHistory/ajax/{id}/versions). Each entry
@@ -126,22 +148,15 @@ export default function VersionLockDialog(props: VersionLockDialogProps): React.
         }
         return [...byVersion.values()].sort((a, b) => b.version - a.version);
       }
+      if (parsed.prefix === "GL") {
+        // Gallery revisions come from the ELN gallery endpoint (RSDEV-1250), which wraps the same
+        // revision shape as the inventory API in an AjaxReturnObject.
+        const { data } = await axios.get<AjaxRevisionList>(`/gallery/ajax/versionHistory/${parsed.id}`);
+        return toVersionRecords(data.data?.revisions ?? []);
+      }
       if (parsed.inventoryPathSegment) {
         const { data } = await ApiService.get<ApiRevisionList>(`${parsed.inventoryPathSegment}/${parsed.id}/revisions`);
-        // Audit rows carry the user-facing record.version; non-version-bumping edits create
-        // several revisions sharing one version. Collapse to one row per version, keeping the
-        // newest revision of each, and pin the user-facing version (mirrors VersionHistory).
-        const byVersion = new Map<number, VersionRecord>();
-        for (const entry of data.revisions.toSorted((a, b) => a.revisionId - b.revisionId)) {
-          const version = entry.record.version;
-          if (version == null) continue;
-          byVersion.set(version, {
-            version,
-            revisionId: entry.revisionId,
-            modificationDate: entry.record.lastModified ?? "",
-          });
-        }
-        return [...byVersion.values()].sort((a, b) => b.version - a.version);
+        return toVersionRecords(data.revisions);
       }
       return [];
     } catch {
