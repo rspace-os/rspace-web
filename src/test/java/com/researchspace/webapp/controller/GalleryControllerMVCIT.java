@@ -4,6 +4,7 @@ import static com.researchspace.core.util.MediaUtils.CHEMISTRY_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static com.researchspace.testutils.RSpaceTestUtils.getAnyPdf;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -766,18 +767,20 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     withDescription.setDescription("the second description");
     baseRecordMgr.save(withDescription, owner);
 
-    MvcResult result =
-        mockMvc
-            .perform(getVersionHistory(image.getId()).principal(owner::getUsername))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.revisions[0].record.name").value("Picture1.png"))
-            .andExpect(jsonPath("$.data.revisions[0].record.description").doesNotExist())
-            .andReturn();
-
-    // the rename and the description edit are later revisions of the same version
-    String json = result.getResponse().getContentAsString();
-    assertTrue("a renamed revision should be recorded", json.contains("second-name.png"));
-    assertTrue("an edited description should be recorded", json.contains("the second description"));
+    mockMvc
+        .perform(getVersionHistory(image.getId()).principal(owner::getUsername))
+        .andExpect(status().isOk())
+        /*
+         * The oldest revision must still carry the original values. Were EditInfo not audited, every
+         * revision would report the live name and description and these two would fail, which is
+         * what makes this test worth having.
+         */
+        .andExpect(jsonPath("$.data.revisions[0].record.name").value("Picture1.png"))
+        .andExpect(jsonPath("$.data.revisions[0].record.description").doesNotExist())
+        // and the rename and description edit are recorded as later revisions of the same version
+        .andExpect(jsonPath("$.data.revisions[*].record.name", hasItem("second-name.png")))
+        .andExpect(
+            jsonPath("$.data.revisions[*].record.description", hasItem("the second description")));
   }
 
   @Test
