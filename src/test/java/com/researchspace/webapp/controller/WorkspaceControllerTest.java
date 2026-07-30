@@ -143,8 +143,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   }
 
   private void clearUsersCustomFormsAddedToMenu() {
-    // Map<?, ?> rather than Map<Long, Boolean>: clear() takes no type parameter, so the wildcard
-    // cast is one the compiler can check, leaving no unchecked warning to suppress.
+    // Map<?, ?> keeps the cast checkable; clear() needs no type parameter.
     ((Map<?, ?>)
             ReflectionTestUtils.getField(
                 WorkspaceController.class, "USERS_CUSTOM_FORMS_ADDED_TO_MENU"))
@@ -364,8 +363,6 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
     workspaceController.listRootFolder(
         "", model, mockPrincipal, request, session, response, new WorkspaceSettings());
     assertTrue((Boolean) model.getAttribute("publish_allowed"));
-    // Wildcard plus an explicit element cast: both are checkable, so neither needs suppressing.
-    // Erasure put the same checkcast on Record at the getId() call before, so this is equivalent.
     ISearchResults<?> res = (ISearchResults<?>) model.asMap().get("searchResults");
     Long recordId = ((Record) res.getResults().get(0)).getId();
     tss.clear();

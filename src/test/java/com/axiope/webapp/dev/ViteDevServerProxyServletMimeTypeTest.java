@@ -5,10 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
-/**
- * inferFallbackContentType is a pure function of the request path, so it lives here rather than
- * alongside the proxying tests, where it would inherit an unrelated HTTP-exchange fixture.
- */
+/** Separate from the proxying tests: inferFallbackContentType needs no mocks. */
 public class ViteDevServerProxyServletMimeTypeTest {
 
   private final ViteDevServerProxyServlet servlet =
