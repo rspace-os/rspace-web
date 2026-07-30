@@ -15,7 +15,7 @@ public interface RemoteUserRetrievalPolicy {
    */
   String SSO_DUMMY_PASSWORD = "user1234";
 
-  public enum RemoteUserAttribute {
+  enum RemoteUserAttribute {
     FIRST_NAME,
     LAST_NAME,
     EMAIL,

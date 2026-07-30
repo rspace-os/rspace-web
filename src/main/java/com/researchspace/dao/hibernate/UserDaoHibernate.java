@@ -220,7 +220,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     if (pgCrit.getSearchCriteria() != null) {
       UserSearchCriteria searchCriteria = (UserSearchCriteria) pgCrit.getSearchCriteria();
       subQuery = applySearchRestrictionsToHQL(searchCriteria, dateParams);
-      countQuery = countQuery + subQuery;
+      countQuery += subQuery;
     }
 
     var countQ = session.createQuery(countQuery, Long.class).setParameter("id", communityId);

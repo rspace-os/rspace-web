@@ -21,7 +21,7 @@ public interface RSpaceRequestManager {
    * @throws IllegalStateException if message type is other than SimpleMessage
    * @throws AuthorizationException if responder is not in recipient list
    */
-  public MessageOrRequest replyToMessage(String responderUserName, Long originalMsgId, String msg);
+  MessageOrRequest replyToMessage(String responderUserName, Long originalMsgId, String msg);
 
   /**
    * Updates the status of a RequestOrMessage.
@@ -32,6 +32,6 @@ public interface RSpaceRequestManager {
    * @return the updated MessageOrRequest
    * @throws AuthorizationException if user is not in recipient list
    */
-  public MessageOrRequest updateStatus(
+  MessageOrRequest updateStatus(
       String user, CommunicationStatus newStatus, Long requestID, String optionalMessage);
 }

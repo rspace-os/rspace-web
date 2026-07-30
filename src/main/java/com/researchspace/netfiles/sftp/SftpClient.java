@@ -380,7 +380,7 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
 
   private String getResourceNameFromLsPath(String lsPath) {
     if (lsPath.contains("/")) {
-      return lsPath.substring(lsPath.lastIndexOf("/"));
+      return lsPath.substring(lsPath.lastIndexOf('/'));
     }
     return lsPath;
   }

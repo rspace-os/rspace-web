@@ -696,7 +696,7 @@ public class MediaManagerImpl implements MediaManager {
     BufferedImage bufferedImage = getImageFromBytes(decodedBytes);
 
     EcatImageAnnotation ecatImageAnnotation = null;
-    if (!sketchId.equals("")) {
+    if (!sketchId.isEmpty()) {
       ecatImageAnnotation = ecatImageAnnotationManager.get(Long.parseLong(sketchId), subject);
     }
 

@@ -782,7 +782,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     }
     String fData = field.getFieldData();
     String imgLink = richTextUpdater.generateRawImageElement(img, field.getId() + "");
-    fData = fData + imgLink;
+    fData += imgLink;
     setDataAndSave(field, user, fData);
     return img;
   }
@@ -799,7 +799,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   protected String appendContentToField(Field field, String htmlContent, User user)
       throws IOException {
     String fData = field.getFieldData();
-    fData = fData + htmlContent;
+    fData += htmlContent;
     setDataAndSave(field, user, fData);
     return fData;
   }

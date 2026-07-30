@@ -119,7 +119,7 @@ public class AuditTrailSearchResultCsvGenerator {
     rc = exportedList.size() + " item(s) exported: ";
     // join with ';' as is going to CSV
     String ids = exportedList.stream().map(m -> m.get("id").toString()).collect(joining(";"));
-    rc = rc + StringUtils.abbreviate(ids, 100);
+    rc += StringUtils.abbreviate(ids, 100);
     return rc;
   }
 

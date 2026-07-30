@@ -71,7 +71,7 @@ class RelativeLinkProcessor {
 
   private RelativeLinks createRelativeLinksForTiff(String originalFileToLinkTo) {
     String pngCopyToLinkTo = FilenameUtils.removeExtension(originalFileToLinkTo);
-    pngCopyToLinkTo = pngCopyToLinkTo + ".png";
+    pngCopyToLinkTo += ".png";
     return new RelativeLinks(pngCopyToLinkTo, originalFileToLinkTo);
   }
 

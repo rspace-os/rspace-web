@@ -14,7 +14,7 @@ import org.apache.shiro.authz.AuthorizationException;
 /** Performs the delete operations on the object model and persists to the database. */
 public interface RecordDeletionManager {
 
-  public static final int MIN_PATH_LENGTH_TOSHARED_ROOT_FOLDER = 2;
+  int MIN_PATH_LENGTH_TOSHARED_ROOT_FOLDER = 2;
 
   /**
    * Performs the delete operations on the object model and persists to the database. This operation

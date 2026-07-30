@@ -608,7 +608,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
               null));
     }
     if ((fnm.indexOf("zip") <= 0) && (fnm.indexOf(".csv") <= 0) && (fnm.indexOf(".eln") <= 0)) {
-      fnm = fnm + ".zip"; // sometimes zip out.
+      fnm += ".zip"; // sometimes zip out.
     }
     File folder = new File(properties.getExportFolderLocation());
     File file = new File(folder, fnm);

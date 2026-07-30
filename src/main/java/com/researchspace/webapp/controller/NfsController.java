@@ -137,7 +137,7 @@ public class NfsController extends BaseController {
       @RequestBody NfsLoginData nfsLoginData, HttpServletRequest request, Principal p) {
     String targetDirectory = nfsLoginData.getNfsuserdir();
     if (targetDirectory != null) {
-      if (targetDirectory.indexOf("/") != -1 || targetDirectory.indexOf("\\") != -1)
+      if (targetDirectory.indexOf('/') != -1 || targetDirectory.indexOf("\\") != -1)
         return getText(NO_FILE_PATHS_IN_DIR_NAME);
     }
     User user = getPrincipalUser(p);

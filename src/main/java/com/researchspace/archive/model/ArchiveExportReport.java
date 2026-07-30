@@ -16,5 +16,5 @@ public interface ArchiveExportReport {
    *
    * @param msg
    */
-  public void addMessage(String msg);
+  void addMessage(String msg);
 }

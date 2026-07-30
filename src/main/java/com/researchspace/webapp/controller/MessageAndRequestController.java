@@ -442,7 +442,7 @@ public class MessageAndRequestController extends BaseController implements Appli
     }
     try {
       for (String uname : userNamesArr) {
-        if (uname.trim().length() == 0) {
+        if (uname.trim().isEmpty()) {
           continue;
         }
         User toAdd = userManager.getUserByUsername(uname.trim());

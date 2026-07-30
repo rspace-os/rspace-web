@@ -29,6 +29,6 @@ public interface ImageProcessor {
    * @param image
    * @throws IOException
    */
-  public void transformImageBlobToFileProperty(String originalFileName, User user, EcatImage image)
+  void transformImageBlobToFileProperty(String originalFileName, User user, EcatImage image)
       throws IOException;
 }

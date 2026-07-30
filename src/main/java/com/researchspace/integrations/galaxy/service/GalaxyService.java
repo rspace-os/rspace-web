@@ -260,7 +260,7 @@ public class GalaxyService {
       List<WorkflowInvocationResponse> allInvocations = new ArrayList<>();
       for (String alias : keyByAlias.keySet()) {
         String baseUrl = getGalaxyUrlFrom(aliasServerPairs, alias);
-        if (baseUrl.equals("")) {
+        if (baseUrl.isEmpty()) {
           // an alias exists in the DB that does not match the values in the property file  for
           // 'galaxy.server.config'
           throw new RuntimeException(

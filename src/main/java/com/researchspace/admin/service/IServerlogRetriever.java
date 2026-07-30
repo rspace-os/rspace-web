@@ -18,7 +18,7 @@ public interface IServerlogRetriever {
   List<String> retrieveLastNLogLines(int numLines) throws IOException;
 
   /** Null object for use in testing/deve environment. */
-  public static final IServerlogRetriever NULL_LOG_RETRIEVER =
+  IServerlogRetriever NULL_LOG_RETRIEVER =
       new IServerlogRetriever() {
 
         @Override

@@ -13,7 +13,7 @@ public class NfsUserPasswordAuthentication implements NfsAuthentication {
 
   @Override
   public String validateCredentials(String nfsusername, String nfspassword, User user) {
-    if (nfsusername == null || nfsusername.trim().length() == 0) {
+    if (nfsusername == null || nfsusername.trim().isEmpty()) {
       return "net.filestores.validation.no.username";
     }
     if (StringUtils.isEmpty(nfspassword)) {

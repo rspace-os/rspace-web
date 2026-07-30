@@ -146,7 +146,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     assertEquals(chemStr, chemdata);
 
     // and we'll save it back. this time chem Id won't be null.
-    chemdata = chemdata + "NEWDATA";
+    chemdata += "NEWDATA";
     result =
         mockMvc
             .perform(postUpdateNewChem(fld, chemdata, chemimg, savedChemElement.getId()))

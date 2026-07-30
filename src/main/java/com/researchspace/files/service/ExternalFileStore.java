@@ -17,7 +17,7 @@ public interface ExternalFileStore {
    * @return An ExtFileOperationStatus, with, if successful, and identifier of the newly created
    *     external file resource.
    */
-  public ExtFileOperationStatus<ExternalFileId> save(
+  ExtFileOperationStatus<ExternalFileId> save(
       FileProperty fileProperty,
       File sourceFile,
       FileDuplicateStrategy behaviourOnDuplicate,
@@ -28,7 +28,7 @@ public interface ExternalFileStore {
    *
    * @return
    */
-  public String getFileStoreRoot();
+  String getFileStoreRoot();
 
   /**
    * Boolean test as to whether the file with path defined in the FileProperty exists on remote File

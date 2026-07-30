@@ -44,7 +44,7 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
    * for visitorHandleAjaxExceptionReturnValue. To return an customised ModelAndView for non ajax
    * requests, an implementation of this interface should return a non null ModelAndView.
    */
-  public static interface ExceptionHandlerVisitor {
+  public interface ExceptionHandlerVisitor {
 
     boolean visitorHasHandledGeneralRSpaceExceptionLogging(
         HttpServletRequest request,

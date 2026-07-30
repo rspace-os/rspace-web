@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public interface ActivityApi {
 
   @GetMapping
-  public ApiActivitySearchResult search(
+  ApiActivitySearchResult search(
       @Valid ActivityApiPaginationCriteria pgCrit,
       @Valid ApiActivitySrchConfig srchConfig,
       BindingResult errors,

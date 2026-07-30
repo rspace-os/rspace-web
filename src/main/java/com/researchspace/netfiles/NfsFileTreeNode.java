@@ -67,7 +67,7 @@ public class NfsFileTreeNode {
     String folderId = userFolder.getId().toString();
     int pos = fullPath.indexOf(folderPath);
     if (pos >= 0) {
-      pos = pos + folderPath.length();
+      pos += folderPath.length();
       if (pos >= fullPath.length()) {
         logicPath = fullPath;
       } else {

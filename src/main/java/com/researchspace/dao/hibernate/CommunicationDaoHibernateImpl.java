@@ -428,7 +428,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
       return "";
     }
     String orderBy = pgCrit.getOrderBy();
-    if (defaultAlias != null && orderBy.indexOf(".") == -1) {
+    if (defaultAlias != null && orderBy.indexOf('.') == -1) {
       orderBy = defaultAlias + "." + orderBy;
     }
     String direction = SortOrder.ASC.equals(pgCrit.getSortOrder()) ? "asc" : "desc";

@@ -6,7 +6,7 @@ import java.io.File;
 
 public interface IArchiveParser {
 
-  public IArchiveModel parse(File folder, ImportArchiveReport report);
+  IArchiveModel parse(File folder, ImportArchiveReport report);
 
   /**
    * Validates the contents of an archive
@@ -16,6 +16,5 @@ public interface IArchiveParser {
    * @param iconfig the configuration of the import.
    * @return
    */
-  public IArchiveModel loadArchive(
-      File zipFile, ImportArchiveReport report, ArchivalImportConfig iconfig);
+  IArchiveModel loadArchive(File zipFile, ImportArchiveReport report, ArchivalImportConfig iconfig);
 }

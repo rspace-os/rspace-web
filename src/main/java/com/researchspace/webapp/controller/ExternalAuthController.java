@@ -149,8 +149,8 @@ public class ExternalAuthController extends BaseController {
   }
 
   String generateUsernameFromEmail(String email) {
-    String prefix = email.substring(0, email.indexOf("@"));
-    prefix = prefix + RandomStringUtils.randomAlphabetic(5);
+    String prefix = email.substring(0, email.indexOf('@'));
+    prefix += RandomStringUtils.randomAlphabetic(5);
     return prefix.replaceAll(User.DISALLOWED_USERNAME_CHARS_REGEXP, "-");
   }
 }

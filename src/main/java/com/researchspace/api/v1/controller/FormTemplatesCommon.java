@@ -68,7 +68,7 @@ public class FormTemplatesCommon {
   }
 
   /** Common methods needed to create links */
-  public static interface ApiFormTemplateLinkSource extends IdentifiableObject {
+  public interface ApiFormTemplateLinkSource extends IdentifiableObject {
 
     Long getIconId();
 

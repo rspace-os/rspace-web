@@ -94,7 +94,7 @@ public class JoinPropertyStringFromCollection extends TagSupport {
     int endIndex = min(propertyList.size(), maxSize);
     String rc = join(propertyList.toArray(), ", ", 0, endIndex);
     if (propertyList.size() > maxSize) {
-      rc = rc + "...";
+      rc += "...";
     }
     return StringEscapeUtils.escapeHtml4(rc);
   }

@@ -19,9 +19,9 @@ public interface IContentInitialiserUtils {
    */
   Folder setupRootFolder(User user);
 
-  public Folder addChild(Folder existingFolder, BaseRecord newTransientChild, User owner);
+  Folder addChild(Folder existingFolder, BaseRecord newTransientChild, User owner);
 
-  public void delayForUniqueCreationTime();
+  void delayForUniqueCreationTime();
 
   Folder addChild(
       Folder f, BaseRecord newTransientChild, User owner, ACLPropagationPolicy aclpolicy)

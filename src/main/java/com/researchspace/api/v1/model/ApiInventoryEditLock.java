@@ -12,7 +12,7 @@ import lombok.Setter;
 @JsonPropertyOrder({"globalId", "lockOwner"})
 public class ApiInventoryEditLock {
 
-  public static enum ApiInventoryEditLockStatus {
+  public enum ApiInventoryEditLockStatus {
     LOCKED_OK,
     WAS_ALREADY_LOCKED,
     CANNOT_LOCK

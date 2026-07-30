@@ -19,7 +19,7 @@ public interface FormUsageDao extends GenericDao<FormUsage, Long> {
    * @return A possibly empty but non-<code>null</code> <code>List</code> of Form stable
    *     identifiers.
    */
-  public List<String> getMostPopularForms(int numDocuments, int limit, RSForm toExclude, User u);
+  List<String> getMostPopularForms(int numDocuments, int limit, RSForm toExclude, User u);
 
   /**
    * Gets the most recently used {@link RSForm} for a given user.

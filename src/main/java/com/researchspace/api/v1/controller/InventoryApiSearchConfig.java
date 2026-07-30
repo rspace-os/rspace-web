@@ -63,7 +63,7 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
   public static String modifyTagSearch(String query) {
     if (!org.springframework.util.StringUtils.hasText(query)
         || query.indexOf("tags:") == -1
-        || (query.indexOf("/") == -1 && query.indexOf(",") == -1)) {
+        || (query.indexOf('/') == -1 && query.indexOf(',') == -1)) {
       return query;
     } else {
       if (query.indexOf(" AND ") == -1
