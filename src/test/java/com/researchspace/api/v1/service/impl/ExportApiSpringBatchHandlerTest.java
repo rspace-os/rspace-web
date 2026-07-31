@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.service.impl;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
 import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -32,15 +32,13 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.IntStream;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameters;
@@ -52,9 +50,8 @@ import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteExcep
 import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.batch.test.MetaDataInstanceFactory;
 
+@ExtendWith(MockitoExtension.class)
 public class ExportApiSpringBatchHandlerTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
 
   private @Mock JobLauncher launcher;
   private @Mock Job job;
@@ -76,7 +73,7 @@ public class ExportApiSpringBatchHandlerTest {
 
   @InjectMocks ExportApiSpringBatchHandlerImpl exportHandler;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     pi = TestFactory.createAnyUserWithRole("pi", Constants.PI_ROLE);
     pi.setId(1L);
@@ -89,19 +86,19 @@ public class ExportApiSpringBatchHandlerTest {
     exportHandler.setIdStore(store);
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
   private void mockLaunchJob()
       throws JobExecutionAlreadyRunningException,
           JobRestartException,
           JobInstanceAlreadyCompleteException,
           JobParametersInvalidException {
-    Mockito.when(launcher.run(Mockito.eq(job), Mockito.any(JobParameters.class))).thenReturn(exe);
+    Mockito.lenient()
+        .when(launcher.run(Mockito.eq(job), Mockito.any(JobParameters.class)))
+        .thenReturn(exe);
   }
 
   private void mockCreateRecordList() {
-    Mockito.when(
+    Mockito.lenient()
+        .when(
             planner.createExportRecordList(
                 Mockito.any(IArchiveExportConfig.class), Mockito.any(ExportSelection.class)))
         .thenReturn(new ExportRecordList());
@@ -122,14 +119,14 @@ public class ExportApiSpringBatchHandlerTest {
     verifyJobLaunched();
   }
 
-  @Test()
+  @Test
   public void otherUserToHtmlNotAuthorised_2() throws Exception {
     ExportApiConfig cfg = otherUserToHtml(user);
     when(userMgr.get(user.getId())).thenReturn(user);
     doThrow(new AuthorizationException())
         .when(exportManager)
         .assertExporterCanExportUsersWork(user, pi);
-    assertExceptionThrown(() -> exportHandler.export(cfg, pi), AuthorizationException.class);
+    assertThrows(AuthorizationException.class, () -> exportHandler.export(cfg, pi));
     verifyJobNotLaunched();
   }
 
@@ -152,12 +149,12 @@ public class ExportApiSpringBatchHandlerTest {
     verifyJobLaunched();
   }
 
-  @Test()
+  @Test
   public void groupExportFailsIfNotPi_5b() throws Exception {
     ExportApiConfig cfg = groupToHtml(group);
     mockgetGroup();
     when(grpPermUtils.userCanExportGroup(user, group)).thenReturn(false);
-    assertExceptionThrown(() -> exportHandler.export(cfg, user), AuthorizationException.class);
+    assertThrows(AuthorizationException.class, () -> exportHandler.export(cfg, user));
     verifyJobNotLaunched();
   }
 
@@ -166,7 +163,7 @@ public class ExportApiSpringBatchHandlerTest {
     ExportApiConfig cfg = groupToHtml(group);
     mockgetGroup();
     when(grpPermUtils.userCanExportGroup(pi, group)).thenReturn(false);
-    assertExceptionThrown(() -> exportHandler.export(cfg, pi), AuthorizationException.class);
+    assertThrows(AuthorizationException.class, () -> exportHandler.export(cfg, pi));
     verifyJobNotLaunched();
   }
 
@@ -195,7 +192,7 @@ public class ExportApiSpringBatchHandlerTest {
     ExportApiConfig cfg = groupToHtml(group);
     cfg.setId(null);
     mockLaunchJob();
-    assertExceptionThrown(() -> exportHandler.export(cfg, user), AuthorizationException.class);
+    assertThrows(AuthorizationException.class, () -> exportHandler.export(cfg, user));
     verifyJobNotLaunched();
   }
 
@@ -205,8 +202,7 @@ public class ExportApiSpringBatchHandlerTest {
     ExportApiConfig cfg = groupToHtml(group);
     mockgetGroup();
     when(grpPermUtils.userCanExportGroup(otherPiNotInGrp, group)).thenReturn(false);
-    assertExceptionThrown(
-        () -> exportHandler.export(cfg, otherPiNotInGrp), AuthorizationException.class);
+    assertThrows(AuthorizationException.class, () -> exportHandler.export(cfg, otherPiNotInGrp));
     verifyJobNotLaunched();
   }
 
@@ -217,8 +213,8 @@ public class ExportApiSpringBatchHandlerTest {
     exe = MetaDataInstanceFactory.createJobExecution("exportJob", 1L, 2L, params);
     Mockito.when(jobExplorer.findRunningJobExecutions(ExportTasklet.EXPORT_JOB_NAME))
         .thenReturn(TransformerUtils.toSet(exe));
-    assertExceptionThrown(
-        () -> exportHandler.export(otherUserToHtml(user), user), TooManyRequestsException.class);
+    assertThrows(
+        TooManyRequestsException.class, () -> exportHandler.export(otherUserToHtml(user), user));
   }
 
   private void mockgetGroup() {

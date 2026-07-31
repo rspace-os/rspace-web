@@ -1,8 +1,8 @@
 package com.researchspace.dao.hibernate;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.model.Signature;
 import com.researchspace.model.User;
@@ -11,21 +11,17 @@ import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SignatureDaoImplTest {
 
   User user = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     user = TestFactory.createAnyUser("any");
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testFilterWitnessesRSPAC_1397() {

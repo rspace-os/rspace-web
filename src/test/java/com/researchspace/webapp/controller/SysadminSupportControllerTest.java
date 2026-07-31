@@ -1,9 +1,9 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.testutils.RSpaceTestUtils.assertAuthExceptionThrown;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.admin.service.SysAdminManager;
 import com.researchspace.licenseserver.model.License;
@@ -18,18 +18,16 @@ import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.EmailContentGenerator;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class SysadminSupportControllerTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock LicenseService licenseService;
   @Mock UserManager usrMgr;
@@ -42,7 +40,7 @@ public class SysadminSupportControllerTest {
   @InjectMocks SysAdminSupportController controller;
   User sysadmin;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     sysadmin = TestFactory.createAnyUser("sysadmin");
     sysadmin.addRole(Role.SYSTEM_ROLE);

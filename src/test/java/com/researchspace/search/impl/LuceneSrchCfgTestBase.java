@@ -5,7 +5,7 @@ import com.axiope.search.WorkspaceSearchConfig;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class LuceneSrchCfgTestBase extends SpringTransactionalTest {
@@ -16,7 +16,7 @@ public class LuceneSrchCfgTestBase extends SpringTransactionalTest {
   LuceneSrchCfg luceneCfg = null;
   User user = null;
 
-  @Before
+  @BeforeEach
   public void baseSetUp() {
     mutableCfg = new WorkspaceSearchConfig(user);
     luceneCfg = new LuceneSrchCfg(mutableCfg, termListFactory);

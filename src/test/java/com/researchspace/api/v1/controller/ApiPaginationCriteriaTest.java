@@ -1,21 +1,17 @@
 package com.researchspace.api.v1.controller;
 
-import com.researchspace.core.testutil.JakartaValidatorTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import com.researchspace.core.testutilJU5.JakartaValidatorTestJU5;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class ApiPaginationCriteriaTest extends JakartaValidatorTest {
+public class ApiPaginationCriteriaTest extends JakartaValidatorTestJU5 {
 
   DocumentApiPaginationCriteria pgCrit;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     pgCrit = new DocumentApiPaginationCriteria();
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testOrderByValidation() {

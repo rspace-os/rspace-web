@@ -1,16 +1,16 @@
 package com.researchspace.service.cloud;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 // RA Feb 19
@@ -21,12 +21,12 @@ public class CloudGroupManagerTest extends SpringTransactionalTest {
 
   private @Autowired IGroupPermissionUtils grpPermUtils;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void after() throws Exception {
     super.setUp();
     propertyHolder.setCloud("false"); // revert to default setting
@@ -38,11 +38,11 @@ public class CloudGroupManagerTest extends SpringTransactionalTest {
     User subject = tg.u1();
     logoutAndLoginAs(subject);
     // non community fail
-    CoreTestUtils.assertExceptionThrown(
+    assertThrows(
+        AuthorizationException.class,
         () ->
             grpPermUtils.assertLeaveGroupPermissions(
-                tg.getPi().getUsername(), subject, tg.getGroup()),
-        AuthorizationException.class);
+                tg.getPi().getUsername(), subject, tg.getGroup()));
     // now succeeds
     propertyHolder.setCloud("true");
     assertEquals(
@@ -50,10 +50,10 @@ public class CloudGroupManagerTest extends SpringTransactionalTest {
         grpPermUtils.assertLeaveGroupPermissions(subject.getUsername(), subject, tg.getGroup()));
 
     // sole  pi not able to remove himself
-    CoreTestUtils.assertExceptionThrown(
+    assertThrows(
+        AuthorizationException.class,
         () ->
             grpPermUtils.assertLeaveGroupPermissions(
-                tg.getPi().getUsername(), subject, tg.getGroup()),
-        AuthorizationException.class);
+                tg.getPi().getUsername(), subject, tg.getGroup()));
   }
 }

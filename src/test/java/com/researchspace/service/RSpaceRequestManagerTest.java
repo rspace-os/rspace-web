@@ -12,9 +12,9 @@ import com.researchspace.model.comms.MessageType;
 import com.researchspace.service.impl.RSpaceRequestManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RSpaceRequestManagerTest extends SpringTransactionalTest {
 
@@ -24,7 +24,7 @@ public class RSpaceRequestManagerTest extends SpringTransactionalTest {
 
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     user = TestFactory.createAnyUser("any");
@@ -34,7 +34,7 @@ public class RSpaceRequestManagerTest extends SpringTransactionalTest {
     requestMgr.setCommDao(mockCommDao);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

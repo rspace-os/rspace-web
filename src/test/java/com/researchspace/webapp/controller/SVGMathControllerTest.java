@@ -1,7 +1,8 @@
 package com.researchspace.webapp.controller;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.RSMath;
@@ -12,18 +13,15 @@ import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.util.Locale;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.StaticMessageSource;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class SVGMathControllerTest {
   private static final long ANY_MATH_ELEMENT_ID = 2L;
 
@@ -38,54 +36,62 @@ public class SVGMathControllerTest {
 
   private static final String VALID_LATEX = "x^2";
 
-  public MockitoRule mockito = MockitoJUnit.rule();
-
   @Mock MediaManager mediaMgr;
   @Mock UserManager userManager;
   @InjectMocks SVGMathController svg;
   private StaticMessageSource mockMessageSource;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mockMessageSource = new StaticMessageSource();
     svg.setMessageSource(new MessageSourceUtils(mockMessageSource));
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSaveSvg2Validate() {
     mockMessageSource.addMessage(ERRORS_REQUIRED, Locale.getDefault(), "need svg");
-    svg.saveSvg("", ANY_FIELD_ID, VALID_LATEX, ANY_MATH_ELEMENT_ID);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> svg.saveSvg("", ANY_FIELD_ID, VALID_LATEX, ANY_MATH_ELEMENT_ID));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSaveSvg2ValidateNeedSVG() {
     mockMessageSource.addMessage(ERRORS_REQUIRED, Locale.getDefault(), "need latex");
-    svg.saveSvg(VALID_SVG, ANY_FIELD_ID, "", ANY_MATH_ELEMENT_ID);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> svg.saveSvg(VALID_SVG, ANY_FIELD_ID, "", ANY_MATH_ELEMENT_ID));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSaveSvg2ValidatLatexTooLong() {
     mockMessageSource.addMessage("errors.maxlength", Locale.getDefault(), "need latex");
-    svg.saveSvg(
-        VALID_SVG,
-        ANY_FIELD_ID,
-        randomAlphabetic(RSMath.LATEX_COLUMN_SIZE + 1),
-        ANY_MATH_ELEMENT_ID);
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            svg.saveSvg(
+                VALID_SVG,
+                ANY_FIELD_ID,
+                randomAlphabetic(RSMath.LATEX_COLUMN_SIZE + 1),
+                ANY_MATH_ELEMENT_ID));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSaveSvg2ValidateSVG() {
     mockMessageSource.addMessage("errors.invalidxml", Locale.getDefault(), "need latex");
-    svg.saveSvg("not xml", ANY_FIELD_ID, VALID_LATEX, ANY_MATH_ELEMENT_ID);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> svg.saveSvg("not xml", ANY_FIELD_ID, VALID_LATEX, ANY_MATH_ELEMENT_ID));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testSaveSvg2ValidateSVGNamespace() {
     mockMessageSource.addMessage("errors.invalidxml.ns", Locale.getDefault(), "need latex");
-    svg.saveSvg(VALIDXML_BUT_WRONG_NAMESPACE, ANY_FIELD_ID, VALID_LATEX, ANY_MATH_ELEMENT_ID);
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            svg.saveSvg(
+                VALIDXML_BUT_WRONG_NAMESPACE, ANY_FIELD_ID, VALID_LATEX, ANY_MATH_ELEMENT_ID));
   }
 
   @Test

@@ -21,9 +21,9 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -51,7 +51,7 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
   private final BindingResult mockBindingResult = mock(BindingResult.class);
   private Object realB2instConnector;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     realB2instConnector = ReflectionTestUtils.getField(identifierApiManager, "b2instConnector");
     ReflectionTestUtils.setField(identifierApiManager, "b2instConnector", b2instDummy);
@@ -59,7 +59,7 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
     setB2instEnabled("true");
   }
 
-  @After
+  @AfterEach
   public void teardown() throws Exception {
     setB2instEnabled("false");
     // identifierApiManager is a singleton in a Spring context cached across test classes, so the

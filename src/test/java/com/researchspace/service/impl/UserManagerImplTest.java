@@ -5,15 +5,15 @@ import static com.researchspace.core.util.TransformerUtils.toSet;
 import static com.researchspace.model.Role.SYSTEM_ROLE;
 import static com.researchspace.testutils.TestFactory.createACommunity;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.RoleDao;
 import com.researchspace.dao.UserDao;
@@ -24,22 +24,16 @@ import com.researchspace.service.UserExistsException;
 import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class UserManagerImplTest extends BaseManagerMockTestCase {
-
-  @Rule public MockitoRule rule = MockitoJUnit.rule();
 
   private @InjectMocks UserManagerImpl userManager;
   private @InjectMocks RoleManagerImpl roleManager;
@@ -47,9 +41,6 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   private @Mock RoleDao roleDao;
   private @Mock CommunityDao communityDao;
   private @Mock AnalyticsManager analyticsManager;
-
-  @Before
-  public void setUp() throws Exception {}
 
   @Test
   public void testGetUser() throws Exception {
@@ -116,8 +107,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     when(userDao.saveUser(user)).thenThrow(ex);
 
     // run test
-    CoreTestUtils.assertExceptionThrown(
-        () -> userManager.saveNewUser(user), UserExistsException.class);
+    assertThrows(UserExistsException.class, () -> userManager.saveNewUser(user));
 
     verify(analyticsManager, never()).userCreated(Mockito.any(User.class));
   }
@@ -139,11 +129,13 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     verify(analyticsManager, never()).userCreated(Mockito.any(User.class));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void isUserInAdminsCommunityThrowsIAEIfNotAdmin() {
     User nonAdmin = createAnyUser("any");
     User any = createAnyUser("any");
-    userManager.isUserInAdminsCommunity(nonAdmin, any.getUsername());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userManager.isUserInAdminsCommunity(nonAdmin, any.getUsername()));
   }
 
   @Test

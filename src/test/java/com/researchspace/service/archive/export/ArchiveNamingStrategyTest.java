@@ -2,8 +2,8 @@ package com.researchspace.service.archive.export;
 
 import static com.researchspace.testutils.TestFactory.createAnyGroup;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.archive.ExportRecordList;
@@ -18,30 +18,20 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestFactory;
 import java.util.regex.Matcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ArchiveNamingStrategyTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock UserDao userDao;
 
   @Mock GroupDao grpDao;
   @Mock RecordDao recordDao;
   @InjectMocks private ArchiveNamingStrategy archiveNamingStrategy;
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testGenerateArchiveNameSelection() {
@@ -50,7 +40,7 @@ public class ArchiveNamingStrategyTest {
     String name = archiveNamingStrategy.generateArchiveName(cfg, context);
     Matcher m = ArchiveNamingStrategy.NAME_PATTERN.matcher(name);
     assertTrue(m.matches());
-    assertTrue(name, name.contains(ExportScope.SELECTION.name()));
+    assertTrue(name.contains(ExportScope.SELECTION.name()), name);
     assertTrue(name.contains("xml"));
   }
 
@@ -76,9 +66,9 @@ public class ArchiveNamingStrategyTest {
     String name = archiveNamingStrategy.generateArchiveName(cfg, context);
     Matcher m = ArchiveNamingStrategy.NAME_PATTERN.matcher(name);
     assertTrue(m.matches());
-    assertFalse(name, name.contains(ExportScope.SELECTION.name()));
-    assertTrue(name, name.contains("xml"));
-    assertTrue(name, name.contains(docNameExpectedFileName));
+    assertFalse(name.contains(ExportScope.SELECTION.name()), name);
+    assertTrue(name.contains("xml"), name);
+    assertTrue(name.contains(docNameExpectedFileName), name);
     assertFalse(name.contains(docName));
   }
 
@@ -106,7 +96,7 @@ public class ArchiveNamingStrategyTest {
     Matcher m = ArchiveNamingStrategy.NAME_PATTERN.matcher(name);
     assertTrue(m.matches());
     assertTrue(name.contains(ArchiveExportConfig.HTML));
-    assertTrue(name, name.contains(any.getUsername()));
+    assertTrue(name.contains(any.getUsername()), name);
   }
 
   @Test
@@ -123,7 +113,7 @@ public class ArchiveNamingStrategyTest {
     Matcher m = ArchiveNamingStrategy.NAME_PATTERN.matcher(name);
     assertTrue(m.matches());
     assertTrue(name.contains(ArchiveExportConfig.HTML));
-    assertTrue(name, name.contains(anyGroup.getDisplayName()));
+    assertTrue(name.contains(anyGroup.getDisplayName()), name);
   }
 
   private Group createAGroup() {

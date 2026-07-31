@@ -39,9 +39,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,7 +90,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
   private CreateCloudGroup projectGroupCreationWithoutRaid;
   private Long newProjectGroupId;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     MockitoAnnotations.openMocks(this);
@@ -113,7 +113,7 @@ public class RaIDControllerMCVIT extends MVCTestBase {
     projectGroupCreationWithoutRaid.setPiEmail(piUser.getEmail());
   }
 
-  @After
+  @AfterEach
   public void teardown() throws Exception {
     grpMgr.removeGroup(newProjectGroupId, piUser);
   }

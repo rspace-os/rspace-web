@@ -1,12 +1,11 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -36,14 +35,14 @@ import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class StoichiometryInventoryLinkManagerImplTest {
 
   @Mock private StoichiometryInventoryLinkDao linkDao;
@@ -60,7 +59,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
   private SubSample invSubSample;
   private StructuredDocument owningRecord;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     user = new User();
     user.setUsername("u1");
@@ -169,9 +168,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
-    doNothing()
-        .when(invPerms)
-        .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 
@@ -198,9 +194,6 @@ public class StoichiometryInventoryLinkManagerImplTest {
     when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
     when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
     when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
-    doNothing()
-        .when(invPerms)
-        .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
 
     StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(321L), user);
 

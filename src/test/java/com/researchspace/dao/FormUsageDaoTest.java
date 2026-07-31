@@ -1,15 +1,15 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.model.User;
 import com.researchspace.model.record.FormState;
 import com.researchspace.model.record.FormUsage;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class FormUsageDaoTest extends BaseDaoTestCase {
@@ -20,7 +20,7 @@ public class FormUsageDaoTest extends BaseDaoTestCase {
   private RSForm[] forms = null;
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     user = createAndSaveUserIfNotExists("formUsageUsr");
     setUpDBWith4Forms();

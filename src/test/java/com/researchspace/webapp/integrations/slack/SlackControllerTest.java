@@ -2,7 +2,7 @@ package com.researchspace.webapp.integrations.slack;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -16,8 +16,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.*;
 import org.joda.time.DateTimeZone;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.support.StaticMessageSource;
 
 public class SlackControllerTest {
@@ -27,7 +27,7 @@ public class SlackControllerTest {
   private UserAppConfigManager userAppCfgMgr = mock(UserAppConfigManager.class);
   StaticMessageSource messageSource = new StaticMessageSource();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     messageSource.addMessage(
         "apps.slack.saveconversation.genericDefault", Locale.getDefault(), "genericDefault");

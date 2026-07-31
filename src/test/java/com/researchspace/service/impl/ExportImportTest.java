@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,23 +14,20 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+@ExtendWith(MockitoExtension.class)
 public class ExportImportTest {
 
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
-
-  @Rule public TemporaryFolder folder = new TemporaryFolder();
+  @TempDir public File folder;
 
   @Mock private IPropertyHolder properties;
 
@@ -38,7 +36,7 @@ public class ExportImportTest {
   private MockHttpServletResponse response;
   private StaticMessageSource mockMessageSource;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     response = new MockHttpServletResponse();
     exportImpl.setResponseUtil(new ResponseUtil());
@@ -53,35 +51,37 @@ public class ExportImportTest {
     exportImpl.setMessageSource(mockMessageSource);
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void validateFileNameToDownLoadBadArchive() throws IOException {
-    exportImpl.streamArchiveDownload("../../badfile.test", response);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> exportImpl.streamArchiveDownload("../../badfile.test", response));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void validateFileNameCannotBeEmpty() throws IOException {
-    exportImpl.streamArchiveDownload("", response);
+    assertThrows(
+        IllegalArgumentException.class, () -> exportImpl.streamArchiveDownload("", response));
   }
 
-  @Test(expected = ArchivalFileNotExistException.class)
+  @Test
   public void downloadNonexistentFile() throws IOException {
-    File file = folder.newFile("file");
+    File file = newFile(folder, "file");
     FileUtils.write(file, "some data", StandardCharsets.UTF_8);
-    when(properties.getExportFolderLocation()).thenReturn(folder.getRoot().getAbsolutePath());
-    exportImpl.streamArchiveDownload("file", response);
+    when(properties.getExportFolderLocation()).thenReturn(folder.getAbsolutePath());
+    assertThrows(
+        ArchivalFileNotExistException.class,
+        () -> exportImpl.streamArchiveDownload("file", response));
   }
 
   @Test
   public void streamArchiveDownloadHappyCase() throws IOException {
-    File file = folder.newFile("file.zip"); // must be zip
+    File file = newFile(folder, "file.zip"); // must be zip
     final String EXPECTED_RESPONSE = "some data";
 
     FileUtils.write(file, "some data", StandardCharsets.UTF_8);
 
-    when(properties.getExportFolderLocation()).thenReturn(folder.getRoot().getAbsolutePath());
+    when(properties.getExportFolderLocation()).thenReturn(folder.getAbsolutePath());
 
     exportImpl.streamArchiveDownload("file", response);
     assertEquals(EXPECTED_RESPONSE, response.getContentAsString());
@@ -90,5 +90,11 @@ public class ExportImportTest {
     assertEquals(EXPECTED_RESPONSE + EXPECTED_RESPONSE, response.getContentAsString());
     // once for each case - with or without zip suffix
     verify(properties, times(2)).getExportFolderLocation();
+  }
+
+  private static File newFile(File parent, String child) throws IOException {
+    File result = new File(parent, child);
+    result.createNewFile();
+    return result;
   }
 }

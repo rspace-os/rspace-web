@@ -25,14 +25,16 @@ import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIA
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_URL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -71,19 +73,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class IntegrationsHandlerTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
 
   @Mock private UserManager userMgr;
   @Mock private SystemPropertyManager sysPropMgr;
@@ -97,11 +96,12 @@ public class IntegrationsHandlerTest {
 
   private User subject;
 
-  @Before
+  @BeforeEach
   public void setup() {
-    MockitoAnnotations.openMocks(this);
     subject = TestFactory.createAnyUser("any");
-    when(communityMgr.listCommunitiesForUser(eq(subject.getId()))).thenReturn(new ArrayList<>());
+    lenient()
+        .when(communityMgr.listCommunitiesForUser(eq(subject.getId())))
+        .thenReturn(new ArrayList<>());
     handler.setUserConnectionManager(userConnectionManager);
   }
 
@@ -140,9 +140,9 @@ public class IntegrationsHandlerTest {
     assertFalse(handler.isValidIntegration("xyz")); // invalid preference handled gracefully
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void getForPropertyThrowsIAEIfUnknownProperty() {
-    handler.getIntegration(subject, "unknown");
+    assertThrows(IllegalArgumentException.class, () -> handler.getIntegration(subject, "unknown"));
   }
 
   private SystemPropertyValue createSystemPropertyForName(String prefName) {
@@ -153,7 +153,7 @@ public class IntegrationsHandlerTest {
     return rc;
   }
 
-  @Test()
+  @Test
   public void getForPropertyHappyCase() {
     String propName = "DROPBOX";
     SystemPropertyName systemPropertyName = DROPBOX_AVAILABLE;
@@ -300,14 +300,14 @@ public class IntegrationsHandlerTest {
     assertTrue(updateInfo.isEnabled());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testUpdateUnknownIntegrationName() {
     IntegrationInfo infor = new IntegrationInfo();
     infor.setAvailable(true);
     infor.setEnabled(false);
     infor.setName("UNKNOWN");
-
-    handler.updateIntegrationInfo(subject, infor);
+    assertThrows(
+        IllegalArgumentException.class, () -> handler.updateIntegrationInfo(subject, infor));
     Mockito.verify(userMgr, never())
         .setPreference(Preference.DROPBOX, infor.isEnabled() + "", subject.getUsername());
   }
@@ -484,9 +484,13 @@ public class IntegrationsHandlerTest {
     existingConnection.setExpireTime(0l);
     existingConnection.setAccessToken(origDswToken);
 
-    when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
-    when(userConnectionManager.findByUserNameProviderName(
-            subject.getUsername(), DSW_APP_NAME, origDswAlias))
+    lenient().when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
+    // lenient: updateUserConnectionForMultipleOptionApp looks this up with a null alias, so the
+    // aliased stubbing below is not matched
+    lenient()
+        .when(
+            userConnectionManager.findByUserNameProviderName(
+                subject.getUsername(), DSW_APP_NAME, origDswAlias))
         .thenReturn(Optional.of(existingConnection));
 
     // The potentially updated options that are being passed in
@@ -584,8 +588,10 @@ public class IntegrationsHandlerTest {
     existingConnection.setAccessToken(origDswToken);
 
     when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
-    when(userConnectionManager.findByUserNameProviderName(
-            subject.getUsername(), DSW_APP_NAME, origDswAlias))
+    lenient()
+        .when(
+            userConnectionManager.findByUserNameProviderName(
+                subject.getUsername(), DSW_APP_NAME, origDswAlias))
         .thenReturn(Optional.of(existingConnection));
 
     Map<String, String> dswOptions = new HashMap<>();

@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -10,15 +10,15 @@ import com.researchspace.service.impl.DiskSpaceCheckerImpl;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
 import java.nio.file.Files;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class DiskSpaceCheckerTest {
 
   private DiskSpaceCheckerImpl diskSpaceChecker;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     diskSpaceChecker = new DiskSpaceCheckerImpl();
   }

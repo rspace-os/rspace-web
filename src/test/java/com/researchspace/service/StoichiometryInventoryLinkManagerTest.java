@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
@@ -23,7 +23,7 @@ import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTest {

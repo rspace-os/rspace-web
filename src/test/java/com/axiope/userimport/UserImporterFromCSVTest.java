@@ -1,8 +1,8 @@
 package com.axiope.userimport;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.dto.CommunityPublicInfo;
 import com.researchspace.model.dto.UserRegistrationInfo;
@@ -18,7 +18,7 @@ import java.io.InputStream;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
 public class UserImporterFromCSVTest {
@@ -71,11 +71,11 @@ public class UserImporterFromCSVTest {
     String[] TO_TEST = new String[] {OK1, OK2, OK3, OK4};
     for (String roleTest : TO_TEST) {
       UserImportResult result = parseCSVLines(roleTest);
-      assertFalse(roleTest + " failed ", result.hasErrors());
+      assertFalse(result.hasErrors(), roleTest + " failed ");
     }
     String INVALID_ROLE = "Fred, Blogs, fbloggs@gmail.com, ROLE_XXX,,";
     UserImportResult result = parseCSVLines(INVALID_ROLE);
-    assertTrue(INVALID_ROLE + " failed ", result.hasErrors());
+    assertTrue(result.hasErrors(), INVALID_ROLE + " failed ");
 
     String INVALID_ROLE2 = "Fred, Blogs, fbloggs@gmail.com,S,,";
     UserImportResult users8 = parseCSVLines(INVALID_ROLE2);

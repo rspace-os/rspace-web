@@ -2,12 +2,12 @@ package com.researchspace.dao;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.matchers.TotalSearchResults.totalSearchResults;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.core.testutil.CoreTestUtils;
@@ -23,9 +23,8 @@ import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class RecordSharingDaoTest extends BaseDaoTestCase {
@@ -36,14 +35,11 @@ public class RecordSharingDaoTest extends BaseDaoTestCase {
 
   private User user;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     String randomName = CoreTestUtils.getRandomName(10);
     user = createAndSaveUserIfNotExists(randomName, Constants.PI_ROLE);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testIsRecordAlreadySharedInGroup() {

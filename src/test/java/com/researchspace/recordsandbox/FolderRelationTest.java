@@ -1,10 +1,11 @@
 package com.researchspace.recordsandbox;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
@@ -12,16 +13,15 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSPath;
 import com.researchspace.testutils.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class FolderRelationTest {
 
   static User owner, user2, u3, u4, ROOT;
   static Folder p1, p2, p3, p4, ROOT_NODE, a, b, c, d, cP;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     owner = TestFactory.createAnyUser("user1");
     u3 = TestFactory.createAnyUser("u3");
@@ -29,9 +29,6 @@ public class FolderRelationTest {
     ROOT = TestFactory.createAnyUser("ROOT");
     user2 = TestFactory.createAnyUser("user2");
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testAddRemoveChild() throws IllegalAddChildOperation {
@@ -52,32 +49,30 @@ public class FolderRelationTest {
     assertFalse(parent.removeChild(TestFactory.createAFolder("3", owner)));
   }
 
-  @Test(expected = IllegalAddChildOperation.class)
-  public void testAddRemoveChildNoSelfEdges() throws IllegalAddChildOperation {
+  @Test
+  public void testAddRemoveChildNoSelfEdges() {
     Folder parent = TestFactory.createAFolder("1", owner);
-    parent.addChild(parent, owner);
+    assertThrows(IllegalAddChildOperation.class, () -> parent.addChild(parent, owner));
   }
 
-  @Test(expected = IllegalAddChildOperation.class)
+  @Test
   public void testCannotCreateSimpleCycles() {
     Folder parent = TestFactory.createAFolder("1", owner);
     Folder child = TestFactory.createAFolder("2", owner);
     Folder grandchild = TestFactory.createAFolder("3", owner);
-
     parent.addChild(child, owner);
     child.addChild(grandchild, owner);
-    grandchild.addChild(parent, owner);
+    assertThrows(IllegalAddChildOperation.class, () -> grandchild.addChild(parent, owner));
   }
 
-  @Test(expected = IllegalAddChildOperation.class)
-  public void testCannotCreateCyclesWithMultipleParents() throws IllegalAddChildOperation {
-
+  @Test
+  public void testCannotCreateCyclesWithMultipleParents() {
     Folder parent = TestFactory.createAFolder("1", owner);
     Folder parent2 = TestFactory.createAFolder("2", owner);
     Folder child = TestFactory.createAFolder("3", owner);
     parent.addChild(child, owner);
     parent2.addChild(child, owner);
-    child.addChild(parent2, owner);
+    assertThrows(IllegalAddChildOperation.class, () -> child.addChild(parent2, owner));
   }
 
   @Test

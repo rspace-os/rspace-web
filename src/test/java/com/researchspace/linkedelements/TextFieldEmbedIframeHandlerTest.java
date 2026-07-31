@@ -1,10 +1,9 @@
 package com.researchspace.linkedelements;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.researchspace.testutils.SpringTransactionalTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class TextFieldEmbedIframeHandlerTest extends SpringTransactionalTest {

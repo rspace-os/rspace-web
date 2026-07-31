@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.CommunicationDao;
@@ -20,17 +20,15 @@ import com.researchspace.service.IMessageAndNotificationTracker;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.testutils.TestFactory;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class MessageOrRequestCreatorManagerImplTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
   private @Mock CommunicationDao commDao;
   private @Mock IPermissionUtils permUtils;
   private @Mock GroupDao grpDao;
@@ -46,7 +44,7 @@ public class MessageOrRequestCreatorManagerImplTest {
   Group group;
   User pi, anyUser, notInGroup, toInvite;
 
-  @Before
+  @BeforeEach
   public void before() {
     anyUser = TestFactory.createAnyUser("any");
     notInGroup = TestFactory.createAnyUser("notInGroup");
@@ -66,8 +64,7 @@ public class MessageOrRequestCreatorManagerImplTest {
 
     // non-community not allowed
     when(properties.isCloud()).thenReturn(false);
-    assertExceptionThrown(
-        () -> requestCreator.checkPerms(cmd, anyUser), AuthorizationException.class);
+    assertThrows(AuthorizationException.class, () -> requestCreator.checkPerms(cmd, anyUser));
   }
 
   @Test
@@ -76,15 +73,12 @@ public class MessageOrRequestCreatorManagerImplTest {
     setUpMocks(cmd, notInGroup);
     when(properties.isCloud()).thenReturn(true);
     // never permitted
-    assertExceptionThrown(
-        () -> requestCreator.checkPerms(cmd, notInGroup), AuthorizationException.class);
+    assertThrows(AuthorizationException.class, () -> requestCreator.checkPerms(cmd, notInGroup));
     when(properties.isCloud()).thenReturn(false);
-    assertExceptionThrown(
-        () -> requestCreator.checkPerms(cmd, notInGroup), AuthorizationException.class);
+    assertThrows(AuthorizationException.class, () -> requestCreator.checkPerms(cmd, notInGroup));
   }
 
   private void setUpMocks(MsgOrReqstCreationCfg cmd, User subject) {
-    when(userDao.getUserByUsername(subject.getUsername())).thenReturn(subject);
     when(grpDao.get(1L)).thenReturn(group);
     when(permUtils.isPermitted(cmd.getMessageType(), PermissionType.READ, subject))
         .thenReturn(true);

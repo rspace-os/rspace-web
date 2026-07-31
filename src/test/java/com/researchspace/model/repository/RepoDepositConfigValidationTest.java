@@ -1,18 +1,14 @@
 package com.researchspace.model.repository;
 
 import com.researchspace.core.testutil.CoreTestUtils;
-import com.researchspace.core.testutil.JakartaValidatorTest;
+import com.researchspace.core.testutilJU5.JakartaValidatorTestJU5;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class RepoDepositConfigValidationTest extends JakartaValidatorTest {
-
-  @After
-  public void tearDown() throws Exception {}
+public class RepoDepositConfigValidationTest extends JakartaValidatorTestJU5 {
 
   @Test
   public void testPropertyValidation() {

@@ -1,7 +1,7 @@
 package com.researchspace.linkedelements;
 
 import static com.researchspace.core.util.FieldParserConstants.VIDEO_CLASSNAME;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.dao.EcatVideoDao;
 import com.researchspace.model.EcatVideo;
@@ -11,24 +11,22 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
 import org.jsoup.nodes.Element;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class VideoConverterTest extends AbstractParserTest {
-
-  @Rule public MockitoRule mockery = MockitoJUnit.rule();
 
   private @Mock EcatVideoDao ecaVideoDao;
 
   @InjectMocks private VideoConverter videoConverter;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
   }

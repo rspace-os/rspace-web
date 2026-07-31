@@ -1,16 +1,16 @@
 package com.axiope.search;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Collections;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SrchConfigTest {
 
   SearchConfig srchCfg;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     srchCfg = new WorkspaceSearchConfig();
   }

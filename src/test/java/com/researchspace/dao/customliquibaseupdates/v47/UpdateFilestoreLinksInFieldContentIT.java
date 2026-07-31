@@ -1,9 +1,9 @@
 package com.researchspace.dao.customliquibaseupdates.v47;
 
 import static com.researchspace.dao.customliquibaseupdates.v47.UpdateFilestoreLinksInFieldContent.OLD_LINK_MATCHER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.customliquibaseupdates.AbstractDBHelpers;
 import com.researchspace.model.User;
@@ -16,8 +16,8 @@ import java.io.IOException;
 import java.util.List;
 import liquibase.exception.CustomChangeException;
 import liquibase.exception.SetupException;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class UpdateFilestoreLinksInFieldContentIT extends AbstractDBHelpers {
@@ -27,7 +27,7 @@ public class UpdateFilestoreLinksInFieldContentIT extends AbstractDBHelpers {
   private UpdateFilestoreLinksInFieldContent updater;
   private User user;
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -91,12 +91,12 @@ public class UpdateFilestoreLinksInFieldContentIT extends AbstractDBHelpers {
   }
 
   private void assertOldStyleLink(String fieldContent) {
-    assertTrue(fieldContent, fieldContent.contains("<a class=\"nfs_file\""));
-    assertFalse(fieldContent, fieldContent.contains("<a class=\"nfs_file mceNonEditable\""));
+    assertTrue(fieldContent.contains("<a class=\"nfs_file\""), fieldContent);
+    assertFalse(fieldContent.contains("<a class=\"nfs_file mceNonEditable\""), fieldContent);
   }
 
   private void assertNewStyleLink(String fieldContent) {
-    assertFalse(fieldContent, fieldContent.contains("<a class=\"nfs_file\""));
-    assertTrue(fieldContent, fieldContent.contains("<a class=\"nfs_file mceNonEditable\""));
+    assertFalse(fieldContent.contains("<a class=\"nfs_file\""), fieldContent);
+    assertTrue(fieldContent.contains("<a class=\"nfs_file mceNonEditable\""), fieldContent);
   }
 }

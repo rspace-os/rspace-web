@@ -1,17 +1,9 @@
 package com.researchspace.api.v1.model;
 
-import com.researchspace.core.testutil.JakartaValidatorTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import com.researchspace.core.testutilJU5.JakartaValidatorTestJU5;
+import org.junit.jupiter.api.Test;
 
-public class ApiUserPostTest extends JakartaValidatorTest {
-
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
+public class ApiUserPostTest extends JakartaValidatorTestJU5 {
 
   @Test
   public void testValidation() {

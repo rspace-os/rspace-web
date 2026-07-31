@@ -1,44 +1,33 @@
 package com.researchspace.slack;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.session.SessionTimeZoneUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-@Ignore("requires correct real secret webhook")
-@RunWith(ConditionalTestRunner.class)
+// @Disabled rather than gated on -Dnightly like the other real-connection tests: this one needs a
+// secret webhook URL that no environment supplies, so a nightly gate would never fire either.
+@Disabled("requires correct real secret webhook")
 public class SlackPosterTest extends SpringTransactionalTest {
 
   @Value("${slack.realConnectionTest.webhookUrl}")
   private String slackTestWebhookUrl;
 
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
-  public void tearDown() throws Exception {}
-
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
   public void basicTest() throws URISyntaxException {
     RestTemplate template = new RestTemplate();
     String converted = ("Hello");
@@ -55,7 +44,6 @@ public class SlackPosterTest extends SpringTransactionalTest {
   // https://hooks.slack.com/services/<webhook_url>
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
   public void testSlackTemplate() throws URISyntaxException, JsonProcessingException {
     RestTemplate template = new RestTemplate();
     final ObjectMapper mapper = new ObjectMapper();

@@ -11,8 +11,8 @@ import com.researchspace.webapp.controller.RecordAccessDeniedException;
 import com.researchspace.webapp.integrations.slack.SlackServiceImpl.MessageHistory;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +24,7 @@ public class SlackServiceTest {
 
   private RestTemplate restTemplate = mock(RestTemplate.class);
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     slackService.setRestTemplate(restTemplate);
   }

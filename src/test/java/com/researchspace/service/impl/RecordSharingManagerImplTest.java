@@ -1,8 +1,9 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.core.util.ISearchResults;
@@ -32,16 +33,15 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.shiro.authz.Permission;
 import org.apache.shiro.subject.Subject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest {
 
   private PermissionFactory perFactory = new DefaultPermissionFactory();
@@ -66,7 +66,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
   private User u;
   private BaseRecord record;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     u = new User();
     u.setId(1701L);
@@ -82,17 +82,15 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     ConstraintBasedPermission cbp =
         perFactory.createIdPermission(PermissionDomain.RECORD, PermissionType.READ, record.getId());
 
-    when(groupshareRecordDao.get(anyLong())).thenReturn(rgs);
-    when(permissnUtils.findBy(any(), any(), any(), any())).thenReturn(cbp);
-    when(permissnUtils.createFromString("WRITE")).thenReturn(PermissionType.WRITE);
-    when(permissnUtils.createFromString("READ")).thenReturn(PermissionType.READ);
-    when(baseRecordManager.get(docId01, u)).thenReturn(record);
-    when(groupshareRecordDao.getRecordGroupSharingsForRecordIds(List.of(docId01)))
+    lenient().when(groupshareRecordDao.get(anyLong())).thenReturn(rgs);
+    lenient().when(permissnUtils.findBy(any(), any(), any(), any())).thenReturn(cbp);
+    lenient().when(permissnUtils.createFromString("WRITE")).thenReturn(PermissionType.WRITE);
+    lenient().when(permissnUtils.createFromString("READ")).thenReturn(PermissionType.READ);
+    lenient().when(baseRecordManager.get(docId01, u)).thenReturn(record);
+    lenient()
+        .when(groupshareRecordDao.getRecordGroupSharingsForRecordIds(List.of(docId01)))
         .thenReturn(List.of(rgs));
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testUserSingleSharedDocChangeFromReadToWrite() {

@@ -1,13 +1,13 @@
 package com.researchspace.api.v1.model;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import com.researchspace.core.testutil.JakartaValidatorTest;
+import com.researchspace.core.testutilJU5.JakartaValidatorTestJU5;
 import java.util.Collections;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class SharePostValidatorTest extends JakartaValidatorTest {
+public class SharePostValidatorTest extends JakartaValidatorTestJU5 {
 
   @Test
   public void sharePostValidation() {

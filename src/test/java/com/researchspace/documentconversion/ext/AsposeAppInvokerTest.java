@@ -1,9 +1,10 @@
 package com.researchspace.documentconversion.ext;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.version.SemanticVersion;
 import com.researchspace.documentconversion.spi.ConversionResult;
@@ -11,7 +12,7 @@ import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.documentconversion.spi.ConvertibleFile;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class AsposeAppInvokerTest {
 
@@ -62,25 +63,25 @@ public class AsposeAppInvokerTest {
     assertNull(cr.getConverted());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void convertRequiresAsposeAppSet() {
     AppInvokerTSS invoker = setupAppInvoker();
     invoker.setAsposeApp("");
-    runConversion(invoker);
+    assertThrows(IllegalArgumentException.class, () -> runConversion(invoker));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void convertRequiresAsposeLicenseSet() {
     AppInvokerTSS invoker = setupAppInvoker();
     invoker.setAsposeLicensePath("");
-    runConversion(invoker);
+    assertThrows(IllegalArgumentException.class, () -> runConversion(invoker));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void convertRequiresAsposeLogFileSet() {
     AppInvokerTSS invoker = setupAppInvoker();
     invoker.setAsposeLogfile("");
-    runConversion(invoker);
+    assertThrows(IllegalArgumentException.class, () -> runConversion(invoker));
   }
 
   @Test

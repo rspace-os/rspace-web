@@ -1,9 +1,10 @@
 package com.researchspace.service.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.EditStatus;
 import com.researchspace.model.User;
@@ -18,9 +19,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpSession;
 
 public class RecordEditorTrackerTest {
@@ -38,7 +38,7 @@ public class RecordEditorTrackerTest {
   private boolean failedDueToUserRemoved = false;
   private boolean tooManyViewers = false;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     // test fixture = 3 records and 3 users, each record created by a
     // different user.
@@ -64,9 +64,6 @@ public class RecordEditorTrackerTest {
     activeusers.addUser(u3.getUsername(), new MockHttpSession());
     // u3 is not an active user
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void isSomeoneElseEditing() {
@@ -216,12 +213,13 @@ public class RecordEditorTrackerTest {
     }
   }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void testGetViewersForRecord() {
     Set<String> viewers = tracker.getViewersForRecord(r1.getId());
     assertNotNull(viewers); // should not return null
     assertTrue(viewers.isEmpty());
-    viewers.add("new user"); // fails! cannnot modify this directly
+    // the returned set is unmodifiable
+    assertThrows(UnsupportedOperationException.class, () -> viewers.add("new user"));
   }
 
   @Test

@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
@@ -16,8 +16,8 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /** Specific test for asserting the behaviour or notebook sharing/ unsharing */
@@ -30,7 +30,7 @@ public class NotebookSharingTest extends SpringTransactionalTest {
   @Autowired private RecordManager recordManager;
   @Autowired private WorkspacePermissionsDTOBuilder permBuilder;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     permBuilder.setRecMgr(recordManager);

@@ -40,8 +40,8 @@ import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -60,7 +60,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
   private ApplicationEventPublisher mockPublisher;
   private User testUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("instApi"));

@@ -1,23 +1,20 @@
 package com.researchspace.webapp.integrations.wopi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.wopi.WopiDiscoveryServiceHandler.WopiAction;
 import com.researchspace.webapp.integrations.wopi.WopiDiscoveryServiceHandler.WopiApp;
 import jakarta.xml.bind.JAXBException;
 import java.io.IOException;
 import java.util.Map;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
-@RunWith(ConditionalTestRunner.class)
 // Need to be sure office online integration is enabled
 @TestPropertySource(
     properties = {
@@ -61,7 +58,7 @@ public class WopiDiscoveryServiceHandlerTest extends SpringTransactionalTest {
    * If this test suddenly fails, it means that Microsoft have updated their discovery XML with some
    * sort of changes that break our WOPI integration :(
    */
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
   @Test
   public void checkActualDiscoveryXmlProcessing() throws InterruptedException {
     discoveryProcessor.updateData();

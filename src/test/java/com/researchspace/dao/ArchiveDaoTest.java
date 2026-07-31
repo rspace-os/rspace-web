@@ -1,24 +1,20 @@
 package com.researchspace.dao;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.model.ArchivalCheckSum;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ArchiveDaoTest extends SpringTransactionalTest {
 
   @Autowired private ArchiveDao dao;
 
-  @Before
-  public void setUp() throws Exception {}
-
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }

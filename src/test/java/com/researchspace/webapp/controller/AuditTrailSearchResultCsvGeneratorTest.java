@@ -3,11 +3,11 @@ package com.researchspace.webapp.controller;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.TestFactory.createAnyRecord;
 import static com.researchspace.webapp.controller.AuditTrailSearchResultCsvGenerator.MAX_RESULTS_EXCEEDED;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -24,7 +24,7 @@ import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.time.Instant;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 
 public class AuditTrailSearchResultCsvGeneratorTest {

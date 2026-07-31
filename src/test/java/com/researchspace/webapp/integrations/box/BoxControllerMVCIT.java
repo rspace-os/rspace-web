@@ -1,10 +1,10 @@
 package com.researchspace.webapp.integrations.box;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -27,10 +27,10 @@ import com.researchspace.webapp.controller.MVCTestBase;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.io.OutputStream;
 import java.util.Map;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +54,7 @@ public class BoxControllerMVCIT extends MVCTestBase {
   private String mockBoxFolderId = "2345";
   private String mockBoxUnknownId = "1111";
 
-  @Before
+  @BeforeEach
   public void setUp() {
 
     mockBoxConnector = mock(BoxConnector.class);
@@ -66,13 +66,13 @@ public class BoxControllerMVCIT extends MVCTestBase {
     mockConnection = mock(BoxAPIConnection.class);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
 
   @Test
-  @Ignore // ignore for open-source, as requires valid box client id to run
+  @Disabled // ignore for open-source, as requires valid box client id to run
   public void testAuthorizationFlow() throws Exception {
 
     when(mockBoxConnector.createBoxAPIConnection(anyString(), anyString(), anyString()))

@@ -1,15 +1,15 @@
 package com.axiope.webapp.taglib;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.permissions.FormPermissionAdapter;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.testutils.TestFactory;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.TagSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class FormPermissionTagTest {
   FormPermissionTagTSS tag;
@@ -22,18 +22,18 @@ public class FormPermissionTagTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     tag = new FormPermissionTagTSS();
   }
 
-  @After
-  public void tearDown() throws Exception {}
-
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testDoStartTag() throws JspException {
-    // throws ISE if attributes are not set
-    tag.doStartTag();
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            // throws ISE if attributes are not set
+            tag.doStartTag());
   }
 
   @Test

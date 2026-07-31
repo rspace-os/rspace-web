@@ -1,7 +1,7 @@
 package com.researchspace.service.archive.export;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.service.archive.ArchiveExportServiceManager;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.spring.VelocityEngineUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 

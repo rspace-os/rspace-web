@@ -2,9 +2,9 @@ package com.researchspace.webapp.controller;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -17,18 +17,16 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.JournalEntry;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.MethodName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -39,8 +37,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 @WebAppConfiguration
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@RunWith(ConditionalTestRunner.class)
+@TestMethodOrder(MethodName.class)
 public class JournalControllerMVCIT extends MVCTestBase {
 
   @Autowired private WebApplicationContext wac;
@@ -48,13 +45,13 @@ public class JournalControllerMVCIT extends MVCTestBase {
   private MockMvc mockMvc;
   @Autowired private MvcTestUtils mvcUtils;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
     super.setUp();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     RSpaceTestUtils.logout();
   }
@@ -186,7 +183,7 @@ public class JournalControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @RunIfSystemPropertyDefined(value = "nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
   public void testNavigating150EntriesNotebook() throws Exception {
     User u = createAndSaveUser(getRandomAlphabeticString("u"));
     initUsers(u);
@@ -210,8 +207,8 @@ public class JournalControllerMVCIT extends MVCTestBase {
     assertNull(result.getResolvedException());
     // initial entry retrieval may be a bit longer, as classes/tables are being loaded first time
     assertTrue(
-        "opening notebook should take under 4 seconds, but was: " + notebookOpeningTime.toString(),
-        notebookOpeningTime.getSeconds() < 4);
+        notebookOpeningTime.getSeconds() < 4,
+        "opening notebook should take under 4 seconds, but was: " + notebookOpeningTime.toString());
 
     // switch to next entry
     Instant nextEntryStart = Instant.now();
@@ -227,7 +224,7 @@ public class JournalControllerMVCIT extends MVCTestBase {
     assertNull(result2.getResolvedException());
     // subsequent entry retrieval should be faster
     assertTrue(
-        "switching entry should take under 2 second, but was: " + entrySwitchTime.toString(),
-        entrySwitchTime.getSeconds() < 2);
+        entrySwitchTime.getSeconds() < 2,
+        "switching entry should take under 2 second, but was: " + entrySwitchTime.toString());
   }
 }

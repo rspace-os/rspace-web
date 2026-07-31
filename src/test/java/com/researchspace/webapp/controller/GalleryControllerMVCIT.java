@@ -4,11 +4,11 @@ import static com.researchspace.core.util.MediaUtils.CHEMISTRY_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static com.researchspace.testutils.RSpaceTestUtils.getAnyPdf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -37,18 +37,18 @@ import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 import javax.imageio.ImageIO;
 import org.apache.http.entity.ContentType;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
@@ -67,20 +67,20 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   private @Autowired GalleryController galleryController;
   private @Autowired RecordManager recordManager;
   private @Autowired RSChemElementManager rsChemElementManager;
-  public @Rule TemporaryFolder tempIndexFolder = new TemporaryFolder();
+  @TempDir public File tempIndexFolder;
   @Autowired FileIndexSearcher searcher;
 
   private User owner;
   private PaginationCriteria<BaseRecord> pgcrit = null;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     owner = createInitAndLoginAnyUser();
     pgcrit = PaginationCriteria.createDefaultForClass(BaseRecord.class);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -313,10 +313,10 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
   private void initialiseIndexFolder() throws IOException, Exception {
     fileIndexer = new FileIndexer();
-    fileIndexer.setIndexFolderDirectly(tempIndexFolder.getRoot());
+    fileIndexer.setIndexFolderDirectly(tempIndexFolder);
     fileIndexer.init(true);
     getTargetObject(searcher.getFileSearchStrategy(), LuceneSearchStrategy.class)
-        .setIndexFolderDirectly(tempIndexFolder.getRoot());
+        .setIndexFolderDirectly(tempIndexFolder);
   }
 
   private Long assertAudioFileAdded(AjaxReturnObject<GalleryData> res3) {
@@ -389,7 +389,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @Ignore(
+  @Disabled(
       "Requires chemistry service to run. See"
           + " https://documentation.researchspace.com/article/1jbygguzoa")
   public void testChemistryFileUploadNewVersion() throws Exception {
@@ -666,7 +666,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   // Chemistry File Specific Tests
   // 1. Generic test, check file goes in correct "Chemistry" folder
   // 2. Check RsChemElement is generated with a chemId
-  @Ignore(
+  @Disabled(
       "Requires chemistry service to run. See"
           + " https://documentation.researchspace.com/article/1jbygguzoa")
   @Test

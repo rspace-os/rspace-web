@@ -1,12 +1,12 @@
 package com.researchspace.webapp.integrations.dsw;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -29,8 +29,6 @@ import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.ConditionalTestRunner;
-import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.dsw.exception.DSWProjectRetrievalException;
@@ -40,15 +38,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 
-@RunWith(ConditionalTestRunner.class)
 public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
 
   private static String TEST_PROJECT_NAME = "RSpace Nightly Test Project";
@@ -77,7 +74,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   @Value("${dsw.realConnectionTest.apikey}")
   private String apiKey;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     userManager = Mockito.mock(UserManager.class);
     userAppConfigMgr = Mockito.mock(UserAppConfigManager.class);
@@ -125,7 +122,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
   public void testCurrentUserDetails() {
     try {
       ResponseEntity usersResponse = dswController.currentUsers(DSW_SERVER_ALIAS);
@@ -138,7 +135,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
   public void testPlans() {
     try {
       AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS);
@@ -155,7 +152,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
   public void testImportPlan() {
     try {
       AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS);
@@ -188,7 +185,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
   public void testImportPlanIncorrectUuid() {
     try {
       String invalidUuid = "Not-a-valid-uuid";
@@ -205,7 +202,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @RunIfSystemPropertyDefined("nightly")
+  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
   public void testImportPlanNullFileWhenSaving() {
     try {
       when(mediaManager.saveNewDMPWithDescription(anyString(), any(), any(), any(), anyString()))
@@ -258,9 +255,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
     Exception e =
         assertThrows(
             DSWProjectRetrievalException.class,
-            () -> {
-              dswController.getConfigForServer(u, TEST_ALIAS);
-            });
+            () -> dswController.getConfigForServer(u, TEST_ALIAS));
     assertTrue(e.getMessage().contains("No instance found"));
     assertTrue(e.getMessage().contains(TEST_ALIAS));
   }

@@ -1,9 +1,9 @@
 package com.researchspace.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
@@ -25,12 +25,10 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.stat.Statistics;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * Exercises the production Hibernate second-level cache stack: {@code JCacheRegionFactory} backed
@@ -45,7 +43,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * key, hibernate-jcache silently falls back to an empty default CacheManager and every region
  * becomes an untuned create-warn default, ignoring all of {@code ehcache.xml}.
  */
-@RunWith(SpringJUnit4ClassRunner.class)
 public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
 
   private static final String EHCACHE3_PROVIDER = "org.ehcache.jsr107.EhcacheCachingProvider";
@@ -56,7 +53,7 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
 
   private SessionFactory l2SessionFactory;
 
-  @Before
+  @BeforeEach
   public void setUpL2SessionFactory() throws Exception {
     super.setUp();
     StandardServiceRegistryBuilder registryBuilder =
@@ -85,7 +82,7 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
             .buildSessionFactory();
   }
 
-  @After
+  @AfterEach
   public void tearDownL2SessionFactory() throws Exception {
     if (l2SessionFactory != null) {
       // closes the JCache CacheManager the region factory resolved (releaseFromUse)
@@ -105,14 +102,14 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
 
       inL2Transaction(session -> session.get(IconEntity.class, id));
       assertEquals(
-          "first read in a fresh session must miss", 1, stats.getSecondLevelCacheMissCount());
-      assertEquals("first read must populate the region", 1, stats.getSecondLevelCachePutCount());
+          1, stats.getSecondLevelCacheMissCount(), "first read in a fresh session must miss");
+      assertEquals(1, stats.getSecondLevelCachePutCount(), "first read must populate the region");
 
       inL2Transaction(session -> session.get(IconEntity.class, id));
       assertEquals(
-          "second read in a fresh session must be served from L2",
           1,
-          stats.getSecondLevelCacheHitCount());
+          stats.getSecondLevelCacheHitCount(),
+          "second read in a fresh session must be served from L2");
     } finally {
       deleteIconEntity(id);
     }
@@ -132,7 +129,7 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
       URI uri = getClass().getClassLoader().getResource("ehcache.xml").toURI();
       CacheManager cacheManager = provider.getCacheManager(uri, provider.getDefaultClassLoader());
       Cache<Object, Object> iconRegion = cacheManager.getCache(ICON_REGION);
-      assertNotNull(ICON_REGION + " region missing from the ehcache.xml CacheManager", iconRegion);
+      assertNotNull(iconRegion, ICON_REGION + " region missing from the ehcache.xml CacheManager");
 
       SizedResourcePool heap =
           iconRegion
@@ -141,12 +138,12 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
               .getResourcePools()
               .getPoolForResource(ResourceType.Core.HEAP);
       assertEquals(
-          "region must carry the ehcache.xml sizing, not a create-warn default",
           1000,
-          heap.getSize());
+          heap.getSize(),
+          "region must carry the ehcache.xml sizing, not a create-warn default");
 
       boolean hasEntry = iconRegion.iterator().hasNext();
-      assertTrue("Hibernate's L2 put must land in the ehcache.xml-configured region", hasEntry);
+      assertTrue(hasEntry, "Hibernate's L2 put must land in the ehcache.xml-configured region");
     } finally {
       deleteIconEntity(id);
     }

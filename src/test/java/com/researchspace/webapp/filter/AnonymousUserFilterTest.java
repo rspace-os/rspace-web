@@ -1,6 +1,6 @@
 package com.researchspace.webapp.filter;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -21,9 +21,9 @@ import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.subject.support.SubjectThreadState;
 import org.apache.shiro.util.ThreadState;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -43,7 +43,7 @@ public class AnonymousUserFilterTest {
   @Mock private User nonAnonymousUser;
   @Captor private ArgumentCaptor<String> redirectUrlCaptor;
 
-  @Before
+  @BeforeEach
   public void setUp() {
 
     openMocks(this);
@@ -59,7 +59,7 @@ public class AnonymousUserFilterTest {
     when(nonAnonymousUser.getUsername()).thenReturn("auser");
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     subjectThreadState.clear();
   }

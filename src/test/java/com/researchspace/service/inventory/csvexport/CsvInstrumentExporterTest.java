@@ -1,7 +1,7 @@
 package com.researchspace.service.inventory.csvexport;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.model.User;
@@ -13,7 +13,7 @@ import com.researchspace.testutils.TestFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -79,10 +79,10 @@ public class CsvInstrumentExporterTest extends SpringTransactionalTest {
         instrumentExporter
             .getCsvCommentFragmentForInstruments(ExportScope.USER, CsvExportMode.COMPACT, user)
             .toString();
-    assertTrue(csvComment, csvComment.startsWith("# " + instrumentExporter.CSV_COMMENT_HEADER));
-    assertTrue(csvComment, csvComment.contains("# Exported content: INSTRUMENTS"));
-    assertTrue(csvComment, csvComment.contains("# Export scope: USER"));
-    assertTrue(csvComment, csvComment.contains("# Export mode: COMPACT"));
-    assertTrue(csvComment, csvComment.contains("# Export mode: COMPACT"));
+    assertTrue(csvComment.startsWith("# " + instrumentExporter.CSV_COMMENT_HEADER), csvComment);
+    assertTrue(csvComment.contains("# Exported content: INSTRUMENTS"), csvComment);
+    assertTrue(csvComment.contains("# Export scope: USER"), csvComment);
+    assertTrue(csvComment.contains("# Export mode: COMPACT"), csvComment);
+    assertTrue(csvComment.contains("# Export mode: COMPACT"), csvComment);
   }
 }

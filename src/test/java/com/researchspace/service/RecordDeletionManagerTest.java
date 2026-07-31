@@ -1,9 +1,10 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.RSpaceTestUtils.logoutCurrUserAndLoginAs;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
@@ -24,9 +25,9 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 
@@ -36,7 +37,7 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
   private @Autowired DMPManager dmpMgr;
   private @Autowired GalleryController galleryController;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
 
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
@@ -44,7 +45,7 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
     assertTrue(user.isContentInitialized());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
   }
@@ -98,7 +99,7 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
     assertTrue(deleted.getParents().iterator().next().isRecordInFolderDeleted());
   }
 
-  @Test(expected = AuthorizationException.class)
+  @Test
   public void testSimpleDeleteFolderPermissions() throws Exception {
     // delete a single record from personal folder
     StructuredDocument sdoc = createBasicDocumentInRootFolderWithText(user, "any");
@@ -106,15 +107,13 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
     // other user cannot deleted
     User other = createAndSaveUserIfNotExists("other");
     logoutCurrUserAndLoginAs(other.getUsername(), TESTPASSWD);
-    try {
-      recordDeletionMgr.deleteRecord(root.getId(), sdoc.getId(), other);
-    } catch (AuthorizationException ae) {
-      // assert is not deleted
-      sdoc = (StructuredDocument) recordDao.get(sdoc.getId());
-      assertFalse(sdoc.isDeleted());
-      assertFalse(sdoc.getParents().iterator().next().isRecordInFolderDeleted());
-      throw ae;
-    }
+    assertThrows(
+        AuthorizationException.class,
+        () -> recordDeletionMgr.deleteRecord(root.getId(), sdoc.getId(), other));
+    // and the record is left undeleted
+    StructuredDocument reloaded = (StructuredDocument) recordDao.get(sdoc.getId());
+    assertFalse(reloaded.isDeleted());
+    assertFalse(reloaded.getParents().iterator().next().isRecordInFolderDeleted());
   }
 
   @Test

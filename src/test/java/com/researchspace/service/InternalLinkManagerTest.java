@@ -1,10 +1,10 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.dao.FieldDao;
 import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.model.User;
@@ -18,17 +18,15 @@ import com.researchspace.model.record.Snippet;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.impl.InternalLinkManagerImpl;
 import com.researchspace.testutils.TestFactory;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class InternalLinkManagerTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock FieldDao fieldDao;
   @Mock BaseRecordManager baseRcdMgr;
   @Mock IPermissionUtils permUtils;
@@ -46,9 +44,9 @@ public class InternalLinkManagerTest {
     Snippet inValidTarget = TestFactory.createAnySnippet(user);
     inValidTarget.setId(3L);
     when(baseRcdMgr.get(inValidTarget.getId(), user)).thenReturn(inValidTarget);
-    CoreTestUtils.assertExceptionThrown(
-        () -> internalLinkMgr.createInternalLink(field.getId(), inValidTarget.getId(), user),
-        IllegalArgumentException.class);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> internalLinkMgr.createInternalLink(field.getId(), inValidTarget.getId(), user));
 
     // verify 3 types of linkable doc are accepted
     Folder folder = TestFactory.createAFolder("any", user);

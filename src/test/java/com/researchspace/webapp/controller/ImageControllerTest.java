@@ -5,7 +5,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.JakartaValidatorTest;
+import com.researchspace.core.testutilJU5.JakartaValidatorTestJU5;
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
 import com.researchspace.files.service.FileStore;
@@ -21,20 +21,18 @@ import com.researchspace.testutils.TestFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.http.ResponseEntity;
 
-public class ImageControllerTest extends JakartaValidatorTest {
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
+@ExtendWith(MockitoExtension.class)
+public class ImageControllerTest extends JakartaValidatorTestJU5 {
 
   @Mock UserManager usrMgr;
   @Mock RecordManager recordMgr;
@@ -45,16 +43,13 @@ public class ImageControllerTest extends JakartaValidatorTest {
   @InjectMocks private ImageController imgController;
   User anyUser;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     anyUser = TestFactory.createAnyUser("any");
     StaticMessageSource msg = new StaticMessageSource();
     msg.addMessage("record.inaccessible", Locale.getDefault(), "auth");
     imgController.setMessageSource(new MessageSourceUtils(msg));
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void generateThumbnailNotCalledAfterMaxRetriesExceeeded() throws IOException {

@@ -11,7 +11,6 @@ import com.researchspace.api.v1.model.ApiInventoryFile;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.model.User;
-import com.researchspace.service.impl.ConditionalTestRunner;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -19,10 +18,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import javax.imageio.ImageIO;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -31,7 +29,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
-@RunWith(ConditionalTestRunner.class)
 @TestPropertySource(
     properties = {
       "chemistry.service.url=http://your-chem-service:8090",
@@ -39,7 +36,7 @@ import org.springframework.test.web.servlet.MvcResult;
     })
 public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     super.setUp();
   }
@@ -97,7 +94,7 @@ public class InventoryFilesApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertEquals(0, apiContainer.getAttachments().size());
   }
 
-  @Ignore(
+  @Disabled(
       "Requires chemistry service to run. See"
           + " https://documentation.researchspace.com/article/1jbygguzoa")
   @Test

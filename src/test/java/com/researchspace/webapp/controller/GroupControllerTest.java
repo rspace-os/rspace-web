@@ -1,10 +1,10 @@
 package com.researchspace.webapp.controller;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -27,22 +27,19 @@ import java.security.Principal;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.ui.ExtendedModelMap;
 
+@ExtendWith(MockitoExtension.class)
 public class GroupControllerTest {
-
-  public @Rule MockitoRule rule = MockitoJUnit.rule();
   @Mock UserManager userMgr;
   @Mock GroupManager grpMgr;
   @Mock IPermissionUtils permissionUtils;
@@ -61,7 +58,7 @@ public class GroupControllerTest {
   Group group = TestFactory.createAnyGroup(userPI, new User[] {userA});
   StaticMessageSource messages = new StaticMessageSource();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     messages.addMessage("errors.maxlength", Locale.getDefault(), "toobig");
     grpController.setMessageSource(new MessageSourceUtils(messages));
@@ -71,9 +68,6 @@ public class GroupControllerTest {
     userA.setConnectedGroups(cononectedGroups);
     userB.setConnectedGroups(new HashSet<>());
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void renameGroup() {
@@ -87,7 +81,7 @@ public class GroupControllerTest {
             new ExtendedModelMap(), 1L, randomAlphabetic(BaseRecord.DEFAULT_VARCHAR_LENGTH + 1));
     assertNotNull(response.getError());
     assertEquals("toobig", response.getError().getAllErrorMessagesAsStringsSeparatedBy(""));
-    Mockito.verifyZeroInteractions(publisher);
+    Mockito.verifyNoInteractions(publisher);
     verify(grpMgr, never()).saveGroup(group, false, userPI);
 
     response =

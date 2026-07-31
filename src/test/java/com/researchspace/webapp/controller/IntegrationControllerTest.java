@@ -1,9 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -17,19 +17,17 @@ import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
 import java.util.Locale;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.support.StaticMessageSource;
 
+@ExtendWith(MockitoExtension.class)
 public class IntegrationControllerTest {
-
-  @Rule public MockitoRule mockito = MockitoJUnit.rule();
   @InjectMocks IntegrationController integrationCtrller;
   StaticMessageSource msgSource;
   @Mock IntegrationsHandler handler;
@@ -39,7 +37,7 @@ public class IntegrationControllerTest {
 
   private final int INTEGRATIONS_AMOUNT = 29;
 
-  @Before
+  @BeforeEach
   public void setup() {
     msgSource = new StaticMessageSource();
     integrationCtrller.setMessageSource(new MessageSourceUtils(msgSource));
@@ -80,6 +78,9 @@ public class IntegrationControllerTest {
 
   @Test
   public void testGetAllIntegrationsInfo() {
+    // without this the controller resolves a null user, so the handler stubbing below never
+    // matches and every integration comes back null while the assertion still passes
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(subject);
     when(handler.getIntegration(Mockito.eq(subject), Mockito.anyString()))
         .thenReturn(new IntegrationInfo());
     AjaxReturnObject<Map<String, IntegrationInfo>> infos =
