@@ -7,7 +7,10 @@ import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mo
 import materialTheme from "../../../../theme";
 import DefaultValueField from "../DefaultValueField";
 
-vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
+// the default-link editor resolves its target summary through InvApiService
+vi.mock("../../../../common/InvApiService", () => ({
+  default: { get: vi.fn(() => new Promise(() => {})) },
+}));
 
 describe("DefaultValueField", () => {
   describe("link fields' allowed relationship types", () => {
@@ -57,6 +60,54 @@ describe("DefaultValueField", () => {
 
       await user.click(unchosen);
       expect(field.allowedRelationTypes).toEqual(["IsCitedBy", "Cites"]);
+    });
+  });
+
+  describe("link fields' default link", () => {
+    it("offers a default link editor whose relation options are constrained to the whitelist", async () => {
+      const user = userEvent.setup();
+      const field = makeMockField({
+        type: "link",
+        allowedRelationTypes: ["IsCitedBy"],
+      });
+
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <DefaultValueField field={field} editing />
+        </ThemeProvider>,
+      );
+
+      await user.click(screen.getByRole("combobox", { name: "Relationship type" }));
+      expect(await screen.findByRole("option", { name: "IsCitedBy" })).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: "Cites" })).not.toBeInTheDocument();
+    });
+
+    it("shows the committed default link for an existing template field", () => {
+      const field = makeMockField({
+        type: "link",
+        allowedRelationTypes: ["IsCitedBy"],
+        link: { relationType: "IsCitedBy", targetGlobalId: "SA2", versionPin: null },
+      });
+
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <DefaultValueField field={field} editing />
+        </ThemeProvider>,
+      );
+
+      expect(screen.getByText("SA2")).toBeInTheDocument();
+    });
+
+    it("renders no default link editor for a non-link field", () => {
+      const field = makeMockField({ type: "string", content: "hello" });
+
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <DefaultValueField field={field} editing />
+        </ThemeProvider>,
+      );
+
+      expect(screen.queryByRole("combobox", { name: "Relationship type" })).not.toBeInTheDocument();
     });
   });
 });
