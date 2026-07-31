@@ -3200,7 +3200,9 @@ export default interface Resources {
           "pinVersion": "Pin version",
           "pinVersionFor": "Pin version for {globalId}",
           "pinnedVersion": "Pinned to v{version}",
-          "targetGlobalId": "Target Global ID"
+          "target": "Target",
+          "targetGlobalId": "Target Global ID",
+          "version": "Version"
         },
         "elnFolderBrowser": {
           "failedToLoadContents": "Failed to load contents",
