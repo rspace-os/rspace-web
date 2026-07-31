@@ -5165,7 +5165,7 @@ export default interface Resources {
         },
         "fromPyrat": "From PyRAT",
         "helpTitle": "PyRAT help",
-        "importedFrom": "Imported from {server} on {timestamp}",
+        "importedFrom": "Imported from <serverLink>{server}</serverLink> on {timestamp}",
         "linkTooltip": "Link to PyRAT",
         "selectedCount": "Selected: {count}",
         "tableLabel": "animal search results"

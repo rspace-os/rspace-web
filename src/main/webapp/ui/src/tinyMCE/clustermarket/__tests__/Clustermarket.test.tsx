@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
@@ -142,5 +142,53 @@ describe("Renders page with booking data", () => {
     expect(screen.queryAllByText("CURRENT_2")).toHaveLength(0);
     expect(screen.queryByText("COMPLETED_3")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();
+  });
+
+  test("adds noreferrer to links in inserted tables", async () => {
+    const originalTinymce = Object.getOwnPropertyDescriptor(window, "tinymce");
+    const handlers = new Map<string, () => void>();
+    const editor = {
+      execCommand: vi.fn(),
+      off: vi.fn((event: string) => handlers.delete(event)),
+      on: vi.fn((event: string, handler: () => void) => handlers.set(event, handler)),
+      windowManager: { close: vi.fn() },
+    };
+    Object.defineProperty(window, "tinymce", {
+      configurable: true,
+      value: { activeEditor: editor },
+    });
+
+    try {
+      getWrapper({ clustermarket_web_url: "https://calira.example/" });
+      const bookingId = await findFirstByText("CURRENT_2");
+      await waitFor(() => expect(editor.on).toHaveBeenCalled());
+      const listenerRegistrationsBeforeSelection = editor.on.mock.calls.length;
+      const bookingRow = bookingId.closest("tr");
+      expect(bookingRow).not.toBeNull();
+      if (!bookingRow) throw new Error("Booking row is missing");
+
+      fireEvent.click(bookingRow);
+
+      await waitFor(() => expect(editor.on.mock.calls.length).toBeGreaterThan(listenerRegistrationsBeforeSelection));
+      handlers.get("clustermarket-insert")?.();
+
+      expect(editor.execCommand).toHaveBeenCalledOnce();
+      const insertedHtml = editor.execCommand.mock.calls[0]?.[2] as string;
+      const container = document.createElement("div");
+      container.innerHTML = insertedHtml;
+      const links = Array.from(container.querySelectorAll("a"));
+
+      expect(links).toHaveLength(2);
+      links.forEach((link) => {
+        expect(link).toHaveAttribute("target", "_blank");
+        expect(link).toHaveAttribute("rel", "noreferrer");
+      });
+    } finally {
+      if (originalTinymce) {
+        Object.defineProperty(window, "tinymce", originalTinymce);
+      } else {
+        Reflect.deleteProperty(window, "tinymce");
+      }
+    }
   });
 });

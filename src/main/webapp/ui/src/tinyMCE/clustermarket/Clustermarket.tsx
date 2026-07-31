@@ -394,12 +394,14 @@ function createTinyMceTable(
           const link = document.createElement("a");
           link.href = `${clustermarketWebUrl}accounts/${booking.labID}/my_bookings/${booking[headerCell.id]}`;
           link.target = "_blank";
+          link.rel = "noreferrer";
           link.text = booking[headerCell.id];
           cell.appendChild(link);
         } else if (headerCell.id === "equipmentName") {
           const link = document.createElement("a");
           link.href = `${clustermarketWebUrl}accounts/${booking.labID}/equipment/${booking.equipmentID}`;
           link.target = "_blank";
+          link.rel = "noreferrer";
           link.text = booking[headerCell.id];
           cell.appendChild(link);
         } else if (textContent) cell.textContent = textContent;

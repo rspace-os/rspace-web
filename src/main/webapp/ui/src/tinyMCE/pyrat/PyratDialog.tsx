@@ -12,13 +12,14 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import React, { useEffect, useMemo, useState } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import AppBar from "@/components/AppBar";
 import useLocalStorage from "@/hooks/browser/useLocalStorage";
 import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
-import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { getHeader } from "@/util/axios";
 import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
@@ -641,26 +642,24 @@ function createTinyMceTable(
 
   const linkRow = document.createElement("tr");
   const linkCell = document.createElement("th");
-  const anchor = document.createElement("a");
-  anchor.href = link;
-  anchor.appendChild(document.createTextNode(`${server.alias} (${link})`));
-  anchor.setAttribute("rel", "noreferrer");
   const timestamp = new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {
     dateStyle: "medium",
     timeStyle: "medium",
   }).format(new Date());
-  // The sentence is one translated string so word order can vary by language,
-  // but the server name must be a link, so it is spliced in at a placeholder.
-  const serverToken = "__SERVER__";
-  const sentenceParts = i18n
-    .t("workspace:tinymce.pyrat.importedFrom", {
-      server: serverToken,
-      timestamp,
-    })
-    .split(serverToken);
-  linkCell.appendChild(document.createTextNode(sentenceParts[0] ?? ""));
-  linkCell.appendChild(anchor);
-  linkCell.appendChild(document.createTextNode(sentenceParts[1] ?? ""));
+  linkCell.innerHTML = renderToStaticMarkup(
+    <TransRichText
+      i18n={i18n}
+      i18nKey="workspace:tinymce.pyrat.importedFrom"
+      values={{ server: `${server.alias} (${link})`, timestamp }}
+      components={{
+        serverLink: (
+          <a href={link} rel="noreferrer">
+            {server.alias}
+          </a>
+        ),
+      }}
+    />,
+  );
   linkCell.setAttribute("colspan", String(visibleHeaderCells.length));
   linkCell.style.fontWeight = "400";
   linkRow.appendChild(linkCell);

@@ -122,3 +122,26 @@ describe("PyratDialog pagination", () => {
     expect(requests.at(-1)).toEqual({ collection: "pups", l: 10, o: 0 });
   });
 });
+
+describe("PyratDialog insertion", () => {
+  test("renders the translated provenance sentence with a safe server link", async () => {
+    let insertedHtml: string | undefined;
+    render(<PyratDialogStory onInsert={(html) => (insertedHtml = html)} />);
+    await expect.poll(() => pageObj.dataRowCount()).toBe(10);
+
+    await pageObj.selectAnimal("A0000");
+    await expect.element(pageObj.insertButton).toBeEnabled();
+    await pageObj.insertSelectedAnimals();
+    await expect.poll(() => insertedHtml).toBeTypeOf("string");
+
+    const container = document.createElement("div");
+    container.innerHTML = insertedHtml ?? "";
+    const provenanceCell = container.querySelector("th");
+    const serverLink = provenanceCell?.querySelector("a");
+
+    expect(provenanceCell?.textContent).toMatch(/^Imported from fakepyrat \(https:\/\/demo\.pyrat\.example\) on .+$/);
+    expect(serverLink?.textContent).toBe("fakepyrat (https://demo.pyrat.example)");
+    expect(serverLink?.getAttribute("href")).toBe("https://demo.pyrat.example");
+    expect(serverLink?.getAttribute("rel")).toBe("noreferrer");
+  });
+});
