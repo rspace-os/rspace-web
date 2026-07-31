@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { waitForTableSwap } from "./WorkspaceTable";
 
 export type SearchField =
   | "All"
@@ -50,12 +51,14 @@ export class WorkspaceSearchBar {
   }
 
   async search(term: string): Promise<void> {
+    const staleTable = await this.page.$("#file_table");
     await this.searchInput.fill(term);
     await Promise.all([
       this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
       this.submitButton.click(),
     ]);
     await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
+    await waitForTableSwap(this.page, staleTable);
   }
 
   async searchByOwner(query: string): Promise<void> {
@@ -150,11 +153,13 @@ export class WorkspaceSearchBar {
   }
 
   async submitAdvanced(): Promise<void> {
+    const staleTable = await this.page.$("#file_table");
     await Promise.all([
       this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
       this.page.getByRole("button", { name: "Search", exact: true }).last().click(),
     ]);
     await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
+    await waitForTableSwap(this.page, staleTable);
   }
 
   async resetAdvanced(): Promise<void> {

@@ -1,6 +1,11 @@
-import type { Locator, Page } from "@playwright/test";
+import type { ElementHandle, Locator, Page } from "@playwright/test";
 import { WorkspaceRecordInfoDialog } from "./WorkspaceRecordInfoDialog";
 import { WorkspaceSelectionBar } from "./WorkspaceSelectionBar";
+
+export async function waitForTableSwap(page: Page, staleTable: ElementHandle | null): Promise<void> {
+  if (!staleTable) return;
+  await page.waitForFunction((oldEl) => document.querySelector("#file_table") !== oldEl, staleTable);
+}
 
 export class WorkspaceTable {
   readonly root: Locator;
@@ -56,6 +61,7 @@ export class WorkspaceTable {
   }
 
   async sortBy(column: "Name" | "Created" | "Modified"): Promise<void> {
+    const staleTable = await this.page.$("#file_table");
     await Promise.all([
       this.page.waitForResponse((res) => {
         const path = new URL(res.url()).pathname;
@@ -63,6 +69,8 @@ export class WorkspaceTable {
       }),
       this.root.getByRole("columnheader", { name: column }).getByRole("link", { name: column }).click(),
     ]);
+    await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
+    await waitForTableSwap(this.page, staleTable);
   }
 
   get dataRows(): Locator {

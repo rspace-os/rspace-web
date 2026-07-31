@@ -20,7 +20,7 @@ test.describe(`Workspace sorting, pagination, and state`, () => {
 
     await test.step("Then the default items-per-page (10) shows at most 10 rows", async () => {
       await expect(pageWorkspace.pagination.itemsPerPageSelect).toHaveValue("10");
-      expect(await pageWorkspace.table.rowCount()).toBeLessThanOrEqual(10);
+      await expect.poll(() => pageWorkspace.table.rowCount()).toBeLessThanOrEqual(10);
     });
 
     await test.step("When I change items-per-page to 30", async () => {
@@ -28,7 +28,7 @@ test.describe(`Workspace sorting, pagination, and state`, () => {
     });
 
     await test.step("Then all 12 rows are shown on a single page", async () => {
-      expect(await pageWorkspace.table.rowCount()).toBe(12);
+      await expect(pageWorkspace.table.dataRows).toHaveCount(12);
     });
   });
 
@@ -48,7 +48,7 @@ test.describe(`Workspace sorting, pagination, and state`, () => {
     });
 
     await test.step("Then the search shows exactly those 3 documents", async () => {
-      expect(await pageWorkspace.table.rowCount()).toBe(3);
+      await expect(pageWorkspace.table.dataRows).toHaveCount(3);
     });
 
     await test.step("When I sort by Name", async () => {
@@ -57,7 +57,7 @@ test.describe(`Workspace sorting, pagination, and state`, () => {
 
     await test.step("Then the search filter is still active and still shows exactly those 3 documents", async () => {
       expect(await pageWorkspace.searchBar.isSearchActive()).toBe(true);
-      expect(await pageWorkspace.table.rowCount()).toBe(3);
+      await expect(pageWorkspace.table.dataRows).toHaveCount(3);
       for (const name of names) {
         await expect(pageWorkspace.table.row(name)).toBeVisible();
       }
@@ -66,7 +66,7 @@ test.describe(`Workspace sorting, pagination, and state`, () => {
     await test.step("When I sort by Name again", async () => {
       await pageWorkspace.table.sortBy("Name");
       expect(await pageWorkspace.searchBar.isSearchActive()).toBe(true);
-      expect(await pageWorkspace.table.rowCount()).toBe(3);
+      await expect(pageWorkspace.table.dataRows).toHaveCount(3);
     });
   });
 });
