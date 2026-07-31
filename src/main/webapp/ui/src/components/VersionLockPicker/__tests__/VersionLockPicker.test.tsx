@@ -76,6 +76,30 @@ describe("VersionLockPicker", () => {
     expect(checkedRadios).toHaveLength(1);
   });
 
+  it("says the history could not be loaded when fetchVersions rejects", async () => {
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <VersionLockPicker
+          recordId={42}
+          currentSelection={LATEST_SELECTION}
+          fetchVersions={() => Promise.reject(new Error("versions endpoint down"))}
+          onChange={vi.fn()}
+        />
+      </ThemeProvider>,
+    );
+
+    // an empty table would read as "this record has only ever had one version", which is a
+    // different statement from "the history could not be fetched"
+    expect(await screen.findByText("common:versionLockPicker.loadFailed")).toBeInTheDocument();
+  });
+
+  it("does not claim a load failure once versions arrive", async () => {
+    renderComponent({ currentSelection: LATEST_SELECTION, onChange: vi.fn() });
+
+    await screen.findAllByText("common:versionLockPicker.versionValue");
+    expect(screen.queryByText("common:versionLockPicker.loadFailed")).not.toBeInTheDocument();
+  });
+
   it("degrades to the latest-only view when fetchVersions rejects", async () => {
     // the fetchVersions contract does not promise to never reject; a failing
     // versions endpoint must leave the picker in a known state (no version

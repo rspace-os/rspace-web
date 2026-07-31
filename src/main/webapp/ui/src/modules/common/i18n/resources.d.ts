@@ -1686,6 +1686,7 @@ export default interface Resources {
       },
       "label": "Version Lock Picker",
       "latest": "Latest",
+      "loadFailed": "The version history could not be loaded. Only the latest version can be chosen.",
       "versionValue": "Version {version}"
     },
     "warningBar": {
@@ -1784,8 +1785,8 @@ export default interface Resources {
       "uploadNewVersion": "Upload New Version",
       "versionHistory": {
         "columns": {
-          "by": "By",
-          "modified": "Modified",
+          "by": "Modified By",
+          "modified": "Modification Date",
           "name": "Name",
           "size": "Size",
           "version": "Version"
