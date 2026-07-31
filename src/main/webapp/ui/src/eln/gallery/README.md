@@ -84,7 +84,14 @@ users as each users has their open separate Gallery.
 /gallery/{section}                    # Section root
 /gallery/{section}/folder/{path}      # Folder navigation
 /gallery/{section}/file/{id}          # Select file in its folder
+/gallery/item/{id}                    # Select item in its folder
+/gallery/item/{id}/{version}          # Same, pinned to a past version (read-only)
 ```
+
+Every route also needs a matching rule in
+[urlrewrite.xml](../../../WEB-INF/urlrewrite.xml), which forwards it to the SPA
+shell before Spring MVC sees it. The rules are anchored regexes, so a new URL
+shape will 404 until one is added for it.
 
 ## Dynamic Primary Action
 
@@ -98,3 +105,124 @@ extracted to a more global location. This is logic is in [primaryActionHooks.ts]
 
 - **`CallableImagePreview.tsx`** - Image preview in a modal dialog
 - **`CallablePdfPreview.tsx`** - PDF preview in a modal dialog
+
+## Version History
+
+The Actions menu's "Version history" opens
+[VersionHistoryDialog.tsx](./components/VersionHistoryDialog.tsx), which lists a
+Gallery item's versions newest first. The list comes from
+`GET /gallery/ajax/versionHistory/{mediaFileId}`, which needs read permission on
+the item and a logged-in user who is not the anonymous guest. The guest is
+refused explicitly rather than left to the permission check, because that check
+would pass for it; see
+[ADR 0003](../../../../../../DevDocs/adr/0003-gallery-version-history-endpoint.md).
+
+Four things about it are easy to get wrong:
+
+- **An audit revision is not a version.** Several revisions can share one
+  version, because not every recorded change bumps the counter. The dialog shows
+  one row per version, using the newest revision of each. That collapsing rule
+  is shared with the Inventory version history via
+  [groupByVersion](../../util/versionHistory.ts) rather than reimplemented, and
+  each row keeps its revision id because some endpoints key on it.
+- **Only locally stored media files have a history.** Files held on an external
+  filestore are only referenced by RSpace, so `canViewVersionHistory` refuses
+  them, as it does folders. It also refuses snippets: a snippet is a `Record`
+  rather than an `EcatMediaFile`, so nothing versions it and the endpoint, which
+  audits `EcatMediaFile`, cannot report on one.
+- **A row navigates rather than previews.** Each row opens that version's pinned
+  view (below), so what the user lands on is also a URL they can copy. The live
+  version links to `/gallery/item/{id}` with no version segment, saving a
+  redirect.
+- **A filename belongs to a version, not to the item.** Uploading a new version
+  can replace the file with one of a different name, so the Name column shows
+  each version's own name and the live item's name says nothing about what an
+  earlier version was called.
+
+The history is read-only; "Upload new version" is the forward-only equivalent of
+restoring. See
+[ADR 0003](../../../../../../DevDocs/adr/0003-gallery-version-history-endpoint.md)
+for why this has its own endpoint rather than extending the ELN document one.
+
+## Pinned version view
+
+`/gallery/item/{id}/{version}` shows one past version of an item, read-only, with
+the item selected. The version is resolved in `GalleryFileInFolder`
+([index.tsx](./index.tsx)) from the same version-history endpoint the dialog uses,
+then applied by wrapping the live file in
+[HistoricalGalleryFile](./historicalGalleryFile.ts).
+
+Seven things about it are easy to get wrong:
+
+- **Almost nothing is safe to delegate to the live file.** `name`, `extension`,
+  `description`, `size`, `modificationDate`, `thumbnailUrl` and `downloadHref` all
+  differ per version, and delegating any of them puts the live item's data beside
+  an older version's bytes. The name and description come from the audit row, via
+  `GalleryVersionHistory.Item`; both live on the audited `EditInfo` embeddable, so
+  Envers records them per revision the same way it records the version counter.
+  A version with no recorded description shows an empty one, never the live one.
+  In particular neither the thumbnail nor the preview endpoints are
+  version-aware: `/gallery/getThumbnail` takes a cache-buster, not a version, the
+  document and chemistry thumbnails are keyed on the live record, Aspose converts
+  the live record, and `/molbiol/dna/png` takes a bare id. An image therefore
+  thumbnails from `/Streamfile/{id}?version=N`, and anything else falls back to
+  its stock type icon, because showing no content beats showing the wrong
+  content. `previewCanAddressTheVersion`
+  ([primaryActionHooks.ts](./primaryActionHooks.ts)) applies the same rule to the
+  Aspose, SnapGene and chemistry previews, so a pinned view offers no preview
+  rather than the live one. Images and PDFs are exempt: both read the
+  version-aware `downloadHref`. Aspose could in principle be made correct rather
+  than refused, since it already accepts a `revisionId` and the endpoint already
+  returns one per revision; `VersionRow` would need to start carrying it.
+- **The decoration goes in the listing, not the selection.** Everything
+  downstream (grid tile, selection, InfoPanel, Actions menu) reads the listing, so
+  decorating there is what keeps them consistent. `WholePage` takes a
+  `decorateFile` prop for this, and it must be referentially stable because the
+  listing is memoised on it.
+- **The two inline editors are gated separately from the menu.** The InfoPanel's
+  name field is gated on `canRename`; the description field has no predicate, so
+  it is read-only whenever the object has no `setDescription`, which is the same
+  test `changeDescription` makes before saving. A past version has no setter.
+- **The refusals come from the predicates.** The decorator returns `Result.Error`
+  from every `can*` except `canViewVersionHistory`, so the Actions menu disables
+  Rename, Delete, Move, Duplicate, Export and Upload-new-version without a single
+  new conditional. Download survives because `downloadAllowed` checks
+  `isFolder`/`isSnippet` directly, and `downloadHref` resolves to
+  `/Streamfile/{id}?version=N`. Edit needed `canBeEdited` adding to the interface:
+  it was decided solely by which editor applies to the file's type, so a past
+  version stayed editable, and Collabora and Office Online would have edited the
+  live bytes while the image editor derived a new file from a version being viewed.
+  Gating the Actions menu on it is not enough. The primary action is the other
+  route to an editor, reached by double-clicking a tile, by the InfoPanel's action
+  button, and from the tree and carousel views, so `canBeEdited` is enforced inside
+  `useCollaboraEdit` and `useOfficeOnlineEdit` themselves
+  ([primaryActionHooks.ts](./primaryActionHooks.ts)) rather than in each menu that
+  remembers to ask. Both editors address the document by its unversioned
+  `globalId`, which is precisely why a refusal they do not see is worthless.
+- **`globalId` stays unversioned.** The InfoPanel renders `GL42v2` for display,
+  but the object keeps `GL42`, because the ELN linked-documents and Inventory
+  referencing lookups read it and neither records the version a reference was made
+  against. Those lists are the item's, not the version's, and a single notice above
+  both of them says so, at body size rather than as small print, because it
+  corrects what the lists otherwise imply. It sits above the pair rather than
+  inside each so it plainly covers both.
+- **Two places say the state, each with one job.** The item's own tile badge
+  carries the version and marks it historical with the same clock icon a
+  version-pinned Inventory link uses, shown even for version 1, which a live item
+  never badges. The icon is decorative; the badge's own label carries the meaning
+  for screen readers. The InfoPanel says which version is on screen, that it is
+  locked, and links back to the live item. There is deliberately no page-level
+  banner. The link has a real `href` and handles its own click, so it can be copied
+  or opened in a new tab without a full page load. Following it does not leave a
+  stale selection behind: `Selection.append` keys on the item id, which the
+  decorator delegates, so the live object replaces the pinned one.
+- **A bad version is reported, never worked around.** A non-numeric version, or
+  one the item does not have, renders an error. A version equal to the live one
+  redirects to `/gallery/item/{id}`, because a locked page would misrepresent an
+  editable item.
+
+`/gallery/item/{id}/{version}` needs its own `urlrewrite.xml` rule; the existing
+one is anchored to a single numeric segment, so without it a pasted link never
+reaches the SPA shell. See
+[ADR 0004](../../../../../../DevDocs/adr/0004-gallery-pinned-version-links.md) for
+why this is a route rather than a versioned Global ID.

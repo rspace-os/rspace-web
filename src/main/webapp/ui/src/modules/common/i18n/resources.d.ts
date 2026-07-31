@@ -1782,6 +1782,23 @@ export default interface Resources {
       "renamePrompt": "Please give a new name for {name}.",
       "saveAsNewImage": "Save as new image",
       "uploadNewVersion": "Upload New Version",
+      "versionHistory": {
+        "columns": {
+          "by": "By",
+          "modified": "Modified",
+          "name": "Name",
+          "size": "Size",
+          "version": "Version"
+        },
+        "loadFailed": "Could not load version history.",
+        "menuItem": "View Version History",
+        "none": "No version history is available for this item yet.",
+        "tableLabel": "Version history",
+        "title": "Version history: {name}",
+        "versionCurrent": "v{version} (current)",
+        "versionShort": "v{version}",
+        "versionViewing": "v{version} (viewing)"
+      },
       "view": "View"
     },
     "addFilestoreDialog": {
@@ -1936,6 +1953,7 @@ export default interface Resources {
       "gridView": "Grid",
       "gridViewDesc": "Browse by thumbnail previews.",
       "gridViewLabel": "grid view of files",
+      "historicalVersionLabel": "version {version}, an old version",
       "infoPanelLabel": "info panel",
       "linkCopied": "Link copied to clipboard successfully.",
       "linkCopyFailed": "Failed to copy link to clipboard. Please try again.",
@@ -2043,6 +2061,13 @@ export default interface Resources {
     },
     "pageTitle": "RSpace Gallery",
     "pageTitleWithContext": "{pageContext} | RSpace Gallery",
+    "pinnedVersion": {
+      "invalid": "\"{version}\" is not a valid version number.",
+      "notFound": "This item has no version {version}.",
+      "notice": "Displaying version {version} of this item - this is locked for editing.",
+      "referencesAreItemLevel": "The linked documents and related inventory items below reference this item as a whole, not the version shown. RSpace does not record which version each reference was made against.",
+      "viewLatest": "View the latest version"
+    },
     "referencingInventoryItems": {
       "loadFailed": "Error loading related inventory items."
     },

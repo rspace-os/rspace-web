@@ -148,6 +148,13 @@ export interface GalleryFile {
   readonly version?: number;
 
   /*
+   * Set only when this object is showing one past version rather than the live
+   * item, in which case it holds that version. UI that has to say which version
+   * is on screen, and that it is locked, keys off this.
+   */
+  readonly pinnedVersion?: number;
+
+  /*
    * A versioned global Id that refers to an original image file from which
    * this image file was created.
    */
@@ -205,6 +212,22 @@ export interface GalleryFile {
   readonly canBeLoggedOutOf: Result<null>;
 
   /*
+   * Whether this object may be edited at all. Which editor applies is decided
+   * separately, from the file's type and the available integrations; this only
+   * says whether editing is permissible in the first place. A past version is
+   * not: Collabora and Office Online would edit the live bytes, and the image
+   * editor would derive a new file from content the user is only viewing.
+   */
+  readonly canBeEdited: Result<null>;
+
+  /*
+   * Whether this file's version history can be listed. Only files whose bytes
+   * RSpace itself stores are audited, so files held on an external filestore
+   * have no history to show.
+   */
+  readonly canViewVersionHistory: Result<null>;
+
+  /*
    * A unique identifier across all possible trees that this file may be
    * rendered in.
    */
@@ -222,6 +245,15 @@ export function chemistryFilePreview(file: GalleryFile): Result<string> {
   if (file.type === "Chemistry")
     return idToString(file.id).map((id) => `/gallery/getChemThumbnail/${id}/${Math.floor(time / 1000)}`);
   return Result.Error([new Error("Not a chemistry file")]);
+}
+
+/**
+ * The stock icon standing for all files of a type, used when no thumbnail of
+ * the content itself is available.
+ */
+export function iconForExtension(extension: string | null): UrlType {
+  if (extension === null) return "/images/icons/unknown.svg";
+  return fileIconMap.get(extension) ?? "/images/icons/unknown.svg";
 }
 
 /**
@@ -258,10 +290,7 @@ function generateIconSrc(
       return Result.Error<string>([new Error("No pre-computed thumbnail")]);
     })
     .orElseTry(() => chemistryFilePreview(file))
-    .orElseGet(() => {
-      if (extension === null) return "/images/icons/unknown.svg";
-      return fileIconMap.get(extension) ?? "/images/icons/unknown.svg";
-    });
+    .orElseGet(() => iconForExtension(extension));
 }
 
 /**
@@ -491,8 +520,26 @@ export class LocalGalleryFile implements GalleryFile {
     return Result.Ok(null);
   }
 
+  get canViewVersionHistory(): Result<null> {
+    // deliberately not requiring an extension, unlike canUploadNewVersion: an
+    // extensionless file that has been versioned still has a history to show
+    if (this.isFolder) return Result.Error([new Error("Folders do not have a version history.")]);
+    /*
+     * A snippet is a Record rather than an EcatMediaFile, so no path gives it a
+     * new version and the endpoint, which audits EcatMediaFile, cannot report on
+     * it. The extension check in canUploadNewVersion happens to exclude snippets
+     * because they carry no extension; this has to say so explicitly.
+     */
+    if (this.isSnippet) return Result.Error([new Error("Snippets do not have a version history.")]);
+    return Result.Ok(null);
+  }
+
   get canBeLoggedOutOf(): Result<null> {
     return Result.Error([new Error("Cannot log out of local files and folders.")]);
+  }
+
+  get canBeEdited(): Result<null> {
+    return Result.Ok(null);
   }
 
   get treeViewItemId(): string {
@@ -643,8 +690,16 @@ export class Filestore implements GalleryFile {
     return Result.Error([new Error("Filestores cannot be updated by uploading new versions.")]);
   }
 
+  get canViewVersionHistory(): Result<null> {
+    return Result.Error([new Error("Filestores do not have a version history.")]);
+  }
+
   get canBeLoggedOutOf(): Result<null> {
     return Result.Ok(null);
+  }
+
+  get canBeEdited(): Result<null> {
+    return Result.Error([new Error("Cannot edit a filestore.")]);
   }
 
   get treeViewItemId(): string {
@@ -871,8 +926,18 @@ export class RemoteFile implements GalleryFile {
     return Result.Error([new Error("Contents of filestores cannot be updated by uploading new versions.")]);
   }
 
+  get canViewVersionHistory(): Result<null> {
+    // RSpace only references these bytes, it never recorded their changes
+    return Result.Error([new Error("Files stored in filestores do not have a version history.")]);
+  }
+
   get canBeLoggedOutOf(): Result<null> {
     return Result.Error([new Error("Cannot log out of files stored in filestores.")]);
+  }
+
+  /* Left to the editor-specific checks, as for a local file. */
+  get canBeEdited(): Result<null> {
+    return Result.Ok(null);
   }
 
   get treeViewItemId(): string {

@@ -9,6 +9,17 @@ import { chemistryFilePreview, type GalleryFile } from "./useGalleryListing";
 import useOfficeOnline from "./useOfficeOnline";
 
 const dnaFileExtensions = ["fa", "gb", "gbk", "fasta", "fa", "dna", "seq", "sbd", "embl", "ab1"];
+
+/**
+ * Aspose, `/molbiol/dna/png` and the chemistry preview URL are all keyed on the live record, so a
+ * pinned file gets no preview rather than the wrong one, as its thumbnail already does. Images and
+ * PDFs are exempt: they resolve through the version-aware `downloadHref`.
+ */
+function previewCanAddressTheVersion(file: GalleryFile): Result<null> {
+  if (typeof file.pinnedVersion !== "number") return Result.Ok(null);
+  return Result.Error([new Error("A past version of this file cannot be previewed.")]);
+}
+
 /**
  * Hook that provides a function that can be used to check if a file can be
  * previewed as a DNA sequence in SnapGene. If it can, then a function that
@@ -19,7 +30,8 @@ export function useSnapGenePreviewOfGalleryFile(): (file: GalleryFile) => Result
   return (file) => {
     if (!file.extension) return Result.Error([new Error("File extension is missing")]);
     if (!dnaFileExtensions.includes(file.extension)) return Result.Error([new Error("The file is not a DNA file")]);
-    return FetchingData.getSuccessValue(snapGeneEnabled)
+    return previewCanAddressTheVersion(file)
+      .flatMap(() => FetchingData.getSuccessValue(snapGeneEnabled))
       .flatMap(Parsers.isString)
       .flatMap((str) =>
         str === "ALLOWED"
@@ -37,7 +49,8 @@ export function useSnapGenePreviewOfGalleryFile(): (file: GalleryFile) => Result
 export function useImagePreviewOfGalleryFile(): (file: GalleryFile) => Result<() => Promise<URL>> {
   return (file) => {
     if (file.isImage && file.downloadHref) return Result.Ok(file.downloadHref);
-    return chemistryFilePreview(file)
+    return previewCanAddressTheVersion(file)
+      .flatMap(() => chemistryFilePreview(file))
       .map((url) => () => Promise.resolve(url))
       .mapError(() => new Error("The file is not an image"));
   };
@@ -52,10 +65,16 @@ export function useCollaboraEdit(): (file: GalleryFile) => Result<string> {
   const collaboraEnabled = useDeploymentProperty("collabora.wopi.enabled");
   const { supportedExts: supportedCollaboraExts } = useCollabora();
   return (file) => {
+    /*
+     * canBeEdited is enforced here, not just in the Actions menu: this opens the live document,
+     * addressed by an unversioned globalId, and usePrimaryAction is the other route to an editor
+     * (tile double-click, the InfoPanel button, the tree and the carousel).
+     */
     return FetchingData.getSuccessValue(collaboraEnabled)
       .flatMap(Parsers.isBoolean)
       .flatMap(Parsers.isTrue)
       .mapError(() => new Error("Collabora is not enabled"))
+      .flatMap(() => file.canBeEdited)
       .flatMap(() => Parsers.isNotNull(file.extension))
       .flatMap((extension) =>
         supportedCollaboraExts.has(extension)
@@ -79,10 +98,12 @@ export function useOfficeOnlineEdit(): (file: GalleryFile) => Result<string> {
   const officeOnlineEnabled = useDeploymentProperty("msoffice.wopi.enabled");
   const { supportedExts: supportedOfficeOnlineExts } = useOfficeOnline();
   return (file) => {
+    // as for Collabora above: this opens the live document, so a past version must be refused
     return FetchingData.getSuccessValue(officeOnlineEnabled)
       .flatMap(Parsers.isBoolean)
       .flatMap(Parsers.isTrue)
       .mapError(() => new Error("Office Online is not enabled"))
+      .flatMap(() => file.canBeEdited)
       .flatMap(() => Parsers.isNotNull(file.extension))
       .flatMap((extension) =>
         supportedOfficeOnlineExts.has(extension)
@@ -120,6 +141,7 @@ export function useAsposePreviewOfGalleryFile(): (file: GalleryFile) => Result<n
       .flatMap(Parsers.isBoolean)
       .flatMap(Parsers.isTrue)
       .mapError(() => new Error("Aspose is not enabled"))
+      .flatMap(() => previewCanAddressTheVersion(file))
       .flatMap(() => supportedAsposeFile(file));
   };
 }
