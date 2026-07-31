@@ -231,6 +231,20 @@ describe("ElnRecordInfoDialog", () => {
     expect(openLink).toHaveAttribute("href", "/gallery/item/9");
   });
 
+  it("opens a pinned gallery target at its read-only version view, while the body stays live", async () => {
+    // Open keeps the pin because /gallery/item/<id>/<version> serves it, but the body cannot:
+    // getRecordInformation has no notion of a past gallery revision, so it is fetched unpinned.
+    const requests = mockRecordInfo(() =>
+      HttpResponse.json(recordInfoResponse({ oid: { idString: "GL9" }, type: "Image" })),
+    );
+
+    renderDialog({ globalId: "GL9", versionPin: 2 });
+
+    const openLink = await screen.findByRole("link", { name: "common:actions.open" });
+    expect(openLink).toHaveAttribute("href", "/gallery/item/9/2");
+    expect(new URL(requests[0].url).searchParams.has("version")).toBe(false);
+  });
+
   it("hides the Open button when the ELN target has been deleted", async () => {
     // a deleted ELN record only routes to an error page, so the dialog drops
     // Open; deleted Inventory targets (still viewable in the trash) keep theirs,

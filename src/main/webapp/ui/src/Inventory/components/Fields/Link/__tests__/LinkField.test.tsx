@@ -313,14 +313,13 @@ describe("LinkField", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("hides the version-pin clock for gallery (GL) targets even when editable", () => {
+  it("shows the version-pin clock for gallery (GL) targets when editable", () => {
+    // Gallery items gained a revision history in RSDEV-1250, so they can be pinned (RSDEV-1188)
     renderField({
       editable: true,
       link: { ...baseLink, targetGlobalId: "GL9" },
     });
-    expect(
-      screen.queryByRole("button", { name: "inventory:fields.link.linkField.pinVersionLabel" }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "inventory:fields.link.linkField.pinVersionLabel" })).toBeInTheDocument();
   });
 
   it("shows the version-pin clock for document (SD) targets when editable", () => {

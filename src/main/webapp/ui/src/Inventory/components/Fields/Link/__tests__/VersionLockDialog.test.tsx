@@ -1,139 +1,162 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { AxiosResponse } from "axios";
+import { HttpResponse } from "msw";
 import type React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import axios from "@/common/axios";
-import InvApiService from "../../../../../common/InvApiService";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import materialTheme from "../../../../../theme";
 
-vi.mock("../../../../../common/InvApiService", () => ({
-  default: {
-    get: vi.fn(),
-  },
-}));
-
-vi.mock("@/common/axios", () => ({
-  default: {
-    get: vi.fn(),
-  },
+// Every request in this file is mocked at the network layer with MSW, including the inventory
+// ones: the real InvApiService is used so its URL is asserted rather than assumed. It gates each
+// call on the auth store having finished synchronising, which never happens in a unit test
+// (`isSynchronizing` starts true and only flips after authenticating), so the store is stubbed.
+// This is not a network mock; the request it then makes is served by MSW below.
+vi.mock("@/stores/stores/getRootStore", () => ({
+  default: () => ({ authStore: { isSynchronizing: false } }),
 }));
 
 import VersionLockDialog from "../VersionLockDialog";
+
+// Request paths the dialog fetches from, one per target kind. The inventory path carries a
+// trailing slash because ApiServiceBase.get builds `${resource}/${slug}` with an empty slug.
+const INVENTORY_REVISIONS_PATH = "/api/inventory/v1/:recordType/:id/revisions/";
+const ELN_REVISIONS_PATH = "/workspace/revisionHistory/ajax/:id/versions";
+const GALLERY_REVISIONS_PATH = "/gallery/ajax/versionHistory/:id";
 
 // The inventory /revisions endpoint returns Envers audit rows. Each carries the audit
 // `revisionId` AND the user-facing `record.version`. Non-version-bumping edits create several
 // revisions sharing one version (here revisions 10 and 11 are both version 1), so the picker
 // must collapse to one row per user-facing version and pin the version, not the revisionId.
-const revisionsResponse = {
-  data: {
-    revisions: [
-      {
-        revisionId: 10,
-        revisionType: "MOD",
-        record: {
-          id: 42,
-          globalId: "SA42",
-          name: "Sample foo",
-          version: 1,
-          lastModified: "2026-01-15T10:00:00Z",
-        },
+const revisionsBody = {
+  revisions: [
+    {
+      revisionId: 10,
+      revisionType: "MOD",
+      record: {
+        id: 42,
+        globalId: "SA42",
+        name: "Sample foo",
+        version: 1,
+        lastModified: "2026-01-15T10:00:00Z",
       },
-      {
-        revisionId: 11,
-        revisionType: "MOD",
-        record: {
-          id: 42,
-          globalId: "SA42",
-          name: "Sample foo edited",
-          version: 1,
-          lastModified: "2026-01-20T10:00:00Z",
-        },
+    },
+    {
+      revisionId: 11,
+      revisionType: "MOD",
+      record: {
+        id: 42,
+        globalId: "SA42",
+        name: "Sample foo edited",
+        version: 1,
+        lastModified: "2026-01-20T10:00:00Z",
       },
-      {
-        revisionId: 22,
-        revisionType: "MOD",
-        record: {
-          id: 42,
-          globalId: "SA42",
-          name: "Sample foo v2",
-          version: 2,
-          lastModified: "2026-02-15T10:00:00Z",
-        },
+    },
+    {
+      revisionId: 22,
+      revisionType: "MOD",
+      record: {
+        id: 42,
+        globalId: "SA42",
+        name: "Sample foo v2",
+        version: 2,
+        lastModified: "2026-02-15T10:00:00Z",
       },
-    ],
-    revisionsCount: 3,
-  },
-  status: 200,
-  statusText: "OK",
-  headers: {},
-  config: {},
-} as AxiosResponse;
+    },
+  ],
+  revisionsCount: 3,
+};
 
 // The ELN revisions endpoint (/workspace/revisionHistory/ajax/{id}/versions) returns
 // { data: RevisionRecord[] }, where each record has a document `version` number and a
 // separate audit `revision` id (mirrors tinyMCE/InternalLink.tsx).
-const elnRevisionsResponse = {
-  data: {
-    data: [
-      {
-        version: 1,
-        revision: 101,
-        name: "My document",
-        oid: { idString: "SD55" },
-        ownerId: 1,
-        ownerFullName: "Owner One",
-        modificationDate: "2026-01-10T10:00:00Z",
-      },
-      {
-        version: 2,
-        revision: 202,
-        name: "My document",
-        oid: { idString: "SD55" },
-        ownerId: 1,
-        ownerFullName: "Owner One",
-        modificationDate: "2026-02-10T10:00:00Z",
-      },
-    ],
-  },
-  status: 200,
-  statusText: "OK",
-  headers: {},
-  config: {},
-} as AxiosResponse;
+const elnRevisionsBody = {
+  data: [
+    {
+      version: 1,
+      revision: 101,
+      name: "My document",
+      oid: { idString: "SD55" },
+      ownerId: 1,
+      ownerFullName: "Owner One",
+      modificationDate: "2026-01-10T10:00:00Z",
+    },
+    {
+      version: 2,
+      revision: 202,
+      name: "My document",
+      oid: { idString: "SD55" },
+      ownerId: 1,
+      ownerFullName: "Owner One",
+      modificationDate: "2026-02-10T10:00:00Z",
+    },
+  ],
+};
 
 // A soft-deleted SD document's history includes the final content revision AND the
 // soft-delete MOD revision, which share the same document version number (a delete does
 // not bump the version). The endpoint returns both rows, so the picker must collapse them
 // to one row per version (like the inventory path) rather than listing the final version twice.
-const elnDuplicateFinalVersionResponse = {
+const elnDuplicateFinalVersionBody = {
+  data: [
+    {
+      version: 1,
+      revision: 101,
+      modificationDate: "2026-01-10T10:00:00Z",
+    },
+    {
+      version: 2,
+      revision: 202,
+      modificationDate: "2026-02-10T10:00:00Z",
+    },
+    {
+      // the soft-delete MOD: a later audit revision still at version 2
+      version: 2,
+      revision: 303,
+      modificationDate: "2026-02-11T10:00:00Z",
+    },
+  ],
+};
+
+// The gallery endpoint (/gallery/ajax/versionHistory/{id}) returns the inventory revisions shape
+// inside an AjaxReturnObject envelope. Revisions 30 and 31 are both version 1, so the picker must
+// collapse them the same way the inventory path does.
+const galleryRevisionsBody = {
   data: {
-    data: [
+    revisions: [
       {
-        version: 1,
-        revision: 101,
-        modificationDate: "2026-01-10T10:00:00Z",
+        revisionId: 30,
+        revisionType: "MOD",
+        record: { version: 1, lastModified: "2026-03-01T10:00:00Z", name: "photo.png" },
       },
       {
-        version: 2,
-        revision: 202,
-        modificationDate: "2026-02-10T10:00:00Z",
+        revisionId: 31,
+        revisionType: "MOD",
+        record: { version: 1, lastModified: "2026-03-02T10:00:00Z", name: "photo.png" },
       },
       {
-        // the soft-delete MOD: a later audit revision still at version 2
-        version: 2,
-        revision: 303,
-        modificationDate: "2026-02-11T10:00:00Z",
+        revisionId: 40,
+        revisionType: "MOD",
+        record: { version: 2, lastModified: "2026-03-10T10:00:00Z", name: "photo-v2.png" },
       },
     ],
+    revisionsCount: 3,
   },
-  status: 200,
-  statusText: "OK",
-  headers: {},
-  config: {},
-} as AxiosResponse;
+};
+
+/** Serves the inventory revisions body, and records the requests, so callers can assert the URL. */
+function mockInventoryRevisions(response: () => Response = () => HttpResponse.json(revisionsBody)): Request[] {
+  return captureRequests("get", INVENTORY_REVISIONS_PATH, response);
+}
+
+function mockElnRevisions(response: () => Response = () => HttpResponse.json(elnRevisionsBody)): Request[] {
+  return captureRequests("get", ELN_REVISIONS_PATH, response);
+}
+
+function mockGalleryRevisions(response: () => Response = () => HttpResponse.json(galleryRevisionsBody)): Request[] {
+  return captureRequests("get", GALLERY_REVISIONS_PATH, response);
+}
 
 function renderDialog(props: Partial<React.ComponentProps<typeof VersionLockDialog>> = {}) {
   return render(
@@ -161,14 +184,13 @@ function getVersionRadio(value: string): HTMLInputElement {
 describe("VersionLockDialog", () => {
   afterEach(() => {
     cleanup();
-    vi.clearAllMocks();
   });
 
   it("shows one row per user-facing version, collapsing multiple revisions of the same version", async () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
-    const apiGet = InvApiService.get;
-    vi.mocked(apiGet).mockResolvedValue(revisionsResponse);
+    const requests = mockInventoryRevisions();
+
     renderDialog();
+
     await waitFor(() => {
       expect(getVersionRadio("1")).toBeInTheDocument();
       expect(getVersionRadio("2")).toBeInTheDocument();
@@ -177,24 +199,22 @@ describe("VersionLockDialog", () => {
     expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "10")).toHaveLength(0);
     expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "11")).toHaveLength(0);
     expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "22")).toHaveLength(0);
-    expect(vi.mocked(apiGet)).toHaveBeenCalledWith("samples/42/revisions");
+    expect(new URL(requests[0].url).pathname).toBe("/api/inventory/v1/samples/42/revisions/");
   });
 
   it("fetches instrument revisions for an instrument link target", async () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
-    const apiGet = InvApiService.get;
-    vi.mocked(apiGet).mockResolvedValue(revisionsResponse);
+    const requests = mockInventoryRevisions();
+
     renderDialog({ globalId: "IN42" });
+
     await waitFor(() => {
       expect(getVersionRadio("1")).toBeInTheDocument();
     });
-    expect(vi.mocked(apiGet)).toHaveBeenCalledWith("instruments/42/revisions");
+    expect(new URL(requests[0].url).pathname).toBe("/api/inventory/v1/instruments/42/revisions/");
   });
 
   it("calls onConfirm with the chosen user-facing version, not the audit revisionId", async () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
-    const apiGet = InvApiService.get;
-    vi.mocked(apiGet).mockResolvedValue(revisionsResponse);
+    mockInventoryRevisions();
     const onConfirm = vi.fn();
     const user = userEvent.setup();
     renderDialog({ onConfirm });
@@ -209,9 +229,7 @@ describe("VersionLockDialog", () => {
   });
 
   it("re-syncs the selection when reopened after an abandoned edit", async () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
-    const apiGet = InvApiService.get;
-    vi.mocked(apiGet).mockResolvedValue(revisionsResponse);
+    mockInventoryRevisions();
     const user = userEvent.setup();
     const stableProps = {
       globalId: "SA42",
@@ -252,9 +270,7 @@ describe("VersionLockDialog", () => {
   });
 
   it("calls onConfirm with null when the user selects 'latest' after a pin was in place", async () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
-    const apiGet = InvApiService.get;
-    vi.mocked(apiGet).mockResolvedValue(revisionsResponse);
+    mockInventoryRevisions();
     const onConfirm = vi.fn();
     const user = userEvent.setup();
     renderDialog({ onConfirm, currentVersionPin: 1 });
@@ -267,29 +283,25 @@ describe("VersionLockDialog", () => {
   });
 });
 
-describe("VersionLockDialog (SD/ELN document target)", () => {
+describe("VersionLockDialog (ELN targets: SD documents, GL gallery files)", () => {
   afterEach(() => {
     cleanup();
-    vi.clearAllMocks();
   });
 
   it("fetches SD revisions from the ELN endpoint and shows a row per version", async () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
-    const axiosGet = axios.get;
-    vi.mocked(axiosGet).mockResolvedValue(elnRevisionsResponse);
+    const requests = mockElnRevisions();
+
     renderDialog({ globalId: "SD55" });
 
     await waitFor(() => {
       expect(getVersionRadio("1")).toBeInTheDocument();
       expect(getVersionRadio("2")).toBeInTheDocument();
     });
-    expect(vi.mocked(axiosGet)).toHaveBeenCalledWith("/workspace/revisionHistory/ajax/55/versions");
+    expect(new URL(requests[0].url).pathname).toBe("/workspace/revisionHistory/ajax/55/versions");
   });
 
   it("pins to the document version number, not the audit revision id", async () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
-    const axiosGet = axios.get;
-    vi.mocked(axiosGet).mockResolvedValue(elnRevisionsResponse);
+    mockElnRevisions();
     const onConfirm = vi.fn();
     const user = userEvent.setup();
     renderDialog({ globalId: "SD55", onConfirm });
@@ -305,9 +317,8 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
   });
 
   it("collapses duplicate entries of the same version (a deleted doc's final version listed twice) to one row", async () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
-    const axiosGet = axios.get;
-    vi.mocked(axiosGet).mockResolvedValue(elnDuplicateFinalVersionResponse);
+    mockElnRevisions(() => HttpResponse.json(elnDuplicateFinalVersionBody));
+
     renderDialog({ globalId: "SD55" });
 
     // wait for the version rows to load (version 1 is unique)
@@ -320,24 +331,119 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
   });
 
   it("still shows the cannot-resolve fallback for unsupported ELN types (NB)", () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
-    const axiosGet = axios.get;
+    const elnRequests = mockElnRevisions();
+    const galleryRequests = mockGalleryRevisions();
+
     renderDialog({ globalId: "NB9" });
 
     expect(screen.getByText("inventory:fields.link.versionLock.cannotResolve")).toBeInTheDocument();
-    expect(vi.mocked(axiosGet)).not.toHaveBeenCalled();
+    expect(elnRequests).toHaveLength(0);
+    expect(galleryRequests).toHaveLength(0);
   });
 
-  it("degrades to the latest-only view when the SD revisions fetch fails", async () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
-    const axiosGet = axios.get;
-    vi.mocked(axiosGet).mockRejectedValue(new Error("network down"));
+  it("fetches GL revisions from the gallery endpoint, collapsing revisions of one version", async () => {
+    const requests = mockGalleryRevisions();
+
+    renderDialog({ globalId: "GL77" });
+
+    await waitFor(() => {
+      expect(getVersionRadio("2")).toBeInTheDocument();
+    });
+    expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "1")).toHaveLength(1);
+    expect(new URL(requests[0].url).pathname).toBe("/gallery/ajax/versionHistory/77");
+  });
+
+  it("pins a GL target to the gallery item's version number", async () => {
+    mockGalleryRevisions();
+    const onConfirm = vi.fn();
+    const user = userEvent.setup();
+    renderDialog({ globalId: "GL77", onConfirm });
+
+    await waitFor(() => {
+      expect(getVersionRadio("2")).toBeInTheDocument();
+    });
+    await user.click(getVersionRadio("2"));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.versionLock.lockToSelectedVersion" }));
+
+    // version 2 maps to audit revision 40; the pin must be the version number (2)
+    expect(onConfirm).toHaveBeenCalledWith(2);
+  });
+
+  it("reports the failure, and keeps the latest-only view, when the SD revisions fetch fails", async () => {
+    mockElnRevisions(() => HttpResponse.error());
+
     renderDialog({ globalId: "SD55" });
 
     // SD is a supported target, so this is NOT the cannot-resolve fallback...
     expect(screen.queryByText("inventory:fields.link.versionLock.cannotResolve")).not.toBeInTheDocument();
-    // ...the picker still renders with the Latest option and no version rows.
+    // ...the picker still renders with the Latest option and no version rows...
     expect(await screen.findByText("common:versionLockPicker.latest")).toBeInTheDocument();
+    expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "1")).toHaveLength(0);
+    // ...but says so, rather than presenting an empty history as the truth.
+    expect(screen.getByText("common:versionLockPicker.loadFailed")).toBeInTheDocument();
+  });
+
+  it("skips SD revisions that carry no version, rather than offering an unlabelled row", async () => {
+    // there is nothing to pin to on a revision with no version number, and nothing to label its
+    // row with either, so it must not be offered (the shared grouping helper's rule)
+    mockElnRevisions(() =>
+      HttpResponse.json({
+        data: [
+          { version: 1, revision: 101, modificationDate: "2026-01-10T10:00:00Z" },
+          { version: null, revision: 150, modificationDate: "2026-01-11T10:00:00Z" },
+          { version: 2, revision: 202, modificationDate: "2026-02-10T10:00:00Z" },
+        ],
+      }),
+    );
+
+    renderDialog({ globalId: "SD55" });
+
+    await waitFor(() => {
+      expect(getVersionRadio("2")).toBeInTheDocument();
+    });
+    // Latest, version 1 and version 2. The versionless revision must not add a fourth.
+    expect(screen.getAllByRole("radio")).toHaveLength(3);
+  });
+
+  it("reports a failure, not an empty history, when the SD endpoint returns an error envelope", async () => {
+    // /workspace/revisionHistory/ajax/{id}/versions is an AjaxReturnObject, so it reports failure
+    // as a 200 with data: null. Reading the list off that response is how a failure silently
+    // becomes "this document has one version".
+    mockElnRevisions(() => HttpResponse.json({ data: null, error: { errorMessages: ["Record not found"] } }));
+
+    renderDialog({ globalId: "SD55" });
+
+    expect(await screen.findByText("common:versionLockPicker.loadFailed")).toBeInTheDocument();
+    expect(screen.getAllByRole("radio")).toHaveLength(1);
+  });
+
+  it("reports a failure when the inventory revisions response carries no revisions list", async () => {
+    mockInventoryRevisions(() => HttpResponse.json({ revisionsCount: 0 }));
+
+    renderDialog({ globalId: "SA42" });
+
+    expect(await screen.findByText("common:versionLockPicker.loadFailed")).toBeInTheDocument();
+    expect(screen.getAllByRole("radio")).toHaveLength(1);
+  });
+
+  it("reports a failure when the gallery envelope holds no revisions list", async () => {
+    mockGalleryRevisions(() => HttpResponse.json({ data: { revisionsCount: 0 } }));
+
+    renderDialog({ globalId: "GL77" });
+
+    expect(await screen.findByText("common:versionLockPicker.loadFailed")).toBeInTheDocument();
+    expect(screen.getAllByRole("radio")).toHaveLength(1);
+  });
+
+  it("reports a failure, not an empty history, when the gallery endpoint returns an error envelope", async () => {
+    // AjaxReturnObject signals failure with a 200 carrying {data: null, error}. Treating that as
+    // "no versions" would tell the user this item cannot be pinned, when the list merely failed
+    // to load.
+    mockGalleryRevisions(() => HttpResponse.json({ data: null, error: { errorMessages: ["No such media file"] } }));
+
+    renderDialog({ globalId: "GL77" });
+
+    expect(await screen.findByText("common:versionLockPicker.loadFailed")).toBeInTheDocument();
     expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "1")).toHaveLength(0);
   });
 });
