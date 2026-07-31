@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -11,10 +12,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.api.v1.model.ApiSampleTemplate;
+import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
@@ -56,6 +63,9 @@ class SampleApiManagerImplLinkFieldTest {
     manager = new SampleApiManagerImpl();
     // the manager is field-autowired in production; wire the mock in directly
     ReflectionTestUtils.setField(manager, "inventoryLinkManager", inventoryLinkManager);
+    // the real factory is stateless, so the template-create path is exercised end to end
+    ReflectionTestUtils.setField(
+        manager, "apiFieldToModelFieldFactory", new ApiFieldToModelFieldFactory());
     user = TestFactory.createAnyUser("any");
     dbLink = new InventoryLink();
     dbLink.setRelationType("References");
@@ -268,6 +278,116 @@ class SampleApiManagerImplLinkFieldTest {
     List<InventoryEntityField> sampleFields = List.of(textField, orphanLinkField);
     assertFalse(InventoryApiManagerImpl.syncLinkFieldWhitelistsFromTemplate(sampleFields));
     assertEquals("References", orphanLinkField.getAllowedRelationTypes());
+  }
+
+  @Test
+  void aNewTemplateLinkFieldIsCreatedWithItsDefaultLink() {
+    // RSDEV-1246: a template's Link field may carry a default link, stored in the same link_id an
+    // item's link uses so that shallowCopy() stamps it onto items with no extra copy code. The
+    // stateless factory only sets the whitelist, so the manager must apply the default through
+    // InventoryLinkManager (which validates the target and captures the Envers revision).
+    ApiSampleTemplatePost apiTemplate = new ApiSampleTemplatePost();
+    ApiInventoryEntityField apiField = apiLinkField("SA2", "References", null);
+    apiField.setType(ApiFieldType.LINK);
+    apiField.setName("default related sample");
+    apiTemplate.setFields(List.of(apiField));
+    InventoryLink created = new InventoryLink();
+    when(inventoryLinkManager.createLink(apiField.getLink(), user)).thenReturn(created);
+
+    SampleTemplate dbTemplate = new SampleTemplate();
+    manager.createFields(apiTemplate, dbTemplate, user);
+
+    InventoryLinkField added = (InventoryLinkField) dbTemplate.getActiveFields().get(0);
+    assertSame(created, added.getLink());
+  }
+
+  @Test
+  void aLinkFieldAddedToAnExistingTemplateIsCreatedWithItsDefaultLink() {
+    // the second create path: a new-field-request on an existing template must stamp the default
+    // too, otherwise a default set when the field is added is silently dropped
+    ApiSampleTemplate apiTemplate = new ApiSampleTemplate();
+    ApiInventoryEntityField apiField = apiLinkField("SA2", "References", null);
+    apiField.setType(ApiFieldType.LINK);
+    apiField.setName("default related sample");
+    apiField.setNewFieldRequest(true);
+    apiTemplate.setFields(List.of(apiField));
+    InventoryLink created = new InventoryLink();
+    when(inventoryLinkManager.createLink(apiField.getLink(), user)).thenReturn(created);
+
+    SampleTemplate dbTemplate = new SampleTemplate();
+    assertTrue(
+        manager.createDeleteRequestedFieldsInDbSampleTemplate(apiTemplate, dbTemplate, user));
+
+    InventoryLinkField added = (InventoryLinkField) dbTemplate.getActiveFields().get(0);
+    assertSame(created, added.getLink());
+  }
+
+  @Test
+  void editingATemplatesDefaultLinkUpdatesItsRowInPlace() {
+    // updateDbSample used to skip the link write path for templates, so a template's default was
+    // read back on GET but never written on PUT. Templates now go through the same path as items.
+    ApiSampleTemplate apiTemplate = new ApiSampleTemplate();
+    ApiInventoryEntityField apiField = apiLinkField("SA3", "References", null);
+    apiField.setId(7L);
+    apiTemplate.setFields(List.of(apiField));
+    when(inventoryLinkManager.updateLink(dbLink, apiField.getLink(), user)).thenReturn(dbLink);
+
+    SampleTemplate dbTemplate = new SampleTemplate();
+    dbTemplate.setId(1L);
+    dbField.setId(7L);
+    dbTemplate.addSampleField(dbField);
+
+    assertTrue(manager.applyLinkFieldValuesOnUpdate(apiTemplate, dbTemplate, user));
+    verify(inventoryLinkManager).updateLink(dbLink, apiField.getLink(), user);
+  }
+
+  @Test
+  void aTemplateCannotDefaultToItself() {
+    ApiSampleTemplate apiTemplate = new ApiSampleTemplate();
+    ApiInventoryEntityField apiField = apiLinkField("IT1", "References", null);
+    apiField.setId(7L);
+    apiTemplate.setFields(List.of(apiField));
+
+    SampleTemplate dbTemplate = new SampleTemplate();
+    dbTemplate.setId(1L);
+    dbField.setId(7L);
+    dbTemplate.addSampleField(dbField);
+
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> manager.applyLinkFieldValuesOnUpdate(apiTemplate, dbTemplate, user));
+    assertEquals("errors.inventory.field.link.selfLinkForbidden", ex.getErrorCode());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void narrowingTheWhitelistPastTheFieldsOwnDefaultIsRejected() {
+    // an unchanged default is a no-op on the per-link path, so a whitelist-only edit would
+    // otherwise leave the template holding a default its own field forbids
+    dbField.setAllowedRelationTypes("IsPartOf");
+
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> InventoryApiManagerImpl.assertDefaultLinksMatchWhitelists(List.of(dbField)));
+    assertEquals("errors.inventory.field.link.defaultRelationTypeNotPermitted", ex.getErrorCode());
+  }
+
+  @Test
+  void aDefaultLinkStillInsideTheWhitelistIsAccepted() {
+    dbField.setAllowedRelationTypes("References|IsPartOf");
+
+    InventoryApiManagerImpl.assertDefaultLinksMatchWhitelists(List.of(dbField));
+  }
+
+  @Test
+  void aLinkFieldWithNoDefaultIsUnaffectedByAnyWhitelist() {
+    dbField.setLink(null);
+    dbField.setAllowedRelationTypes("IsPartOf");
+
+    InventoryApiManagerImpl.assertDefaultLinksMatchWhitelists(
+        List.of(dbField, new InventoryTextField("notes")));
   }
 
   @Test
