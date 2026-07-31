@@ -202,19 +202,34 @@ class SampleApiManagerImplLinkFieldTest {
   }
 
   @Test
-  void aPayloadThatNeverMentionsTheLinkLeavesItAlone() {
-    // A partial update must not destroy the link. This is the request the whitelist-conflict error
-    // tells the user to make (narrow the allowed types, no link key), and also a plain field
-    // rename.
-    // Treating absent as "clear" hard-deleted the row AND left assertDefaultLinksMatchWhitelists
-    // seeing link == null, so the guard passed and the 422 never fired.
+  void aTemplatePayloadThatNeverMentionsTheLinkLeavesItAlone() {
+    // A partial TEMPLATE update must not destroy the default link. This is the request the
+    // whitelist-conflict error tells the user to make (narrow the allowed types, no link key), and
+    // also a plain field rename. Treating absent as "clear" hard-deleted the row AND left
+    // assertDefaultLinksMatchWhitelists seeing link == null, so the guard passed and the 422 never
+    // fired.
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
     apiField.setAllowedRelationTypes(List.of("IsCitedBy"));
 
-    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
+    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user, true);
 
     assertFalse(changed);
     assertSame(dbLink, dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void anItemPayloadThatNeverMentionsTheLinkStillClearsIt() {
+    // The item contract is the opposite way round, and predates this work (RSDEV-1131): an item's
+    // field list arrives complete, so a link field with no link at all means the user cleared it.
+    // Only a template's field list can legitimately be partial, so only a template can read absence
+    // as "no change".
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+
+    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
+
+    assertTrue(changed);
+    assertNull(dbField.getLink());
     verifyNoInteractions(inventoryLinkManager);
   }
 

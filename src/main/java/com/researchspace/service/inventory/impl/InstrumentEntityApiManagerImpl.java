@@ -264,8 +264,25 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
    * so the target is parsed/validated and the Envers revision captured. Mirrors the implementation
    * in {@link SampleApiManagerImpl}.
    */
+  /** Item semantics: see the four-argument overload. */
   boolean applyLinkFieldValue(
       InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
+    return applyLinkFieldValue(field, apiField, user, false);
+  }
+
+  /**
+   * @param omittedLinkPreservesExisting how to read a payload carrying no {@code link} key at all.
+   *     True for a <b>template</b> field, whose PUT accepts a partial field list, so a
+   *     whitelist-only edit must not destroy the default link. False for an <b>item</b> field,
+   *     whose field list always arrives complete, so an absent link means the user cleared it
+   *     (RSDEV-1131). An explicit {@code "link": null} clears in both cases. Mirrors {@link
+   *     SampleApiManagerImpl}.
+   */
+  boolean applyLinkFieldValue(
+      InventoryLinkField field,
+      ApiInventoryEntityField apiField,
+      User user,
+      boolean omittedLinkPreservesExisting) {
     ApiInventoryLink apiLink = apiField.getLink();
     String target = apiLink == null ? null : apiLink.getTargetGlobalId();
     InventoryLink existing = field.getLink();
@@ -273,8 +290,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       if (existing == null) {
         return false;
       }
-      if (!apiField.isLinkProvided()) {
-        // a partial update that never mentions the link: leave it alone rather than destroy it
+      if (omittedLinkPreservesExisting && !apiField.isLinkProvided()) {
+        // a partial template update that never mentions the link: leave it alone
         return false;
       }
       field.setLink(null);
@@ -330,7 +347,9 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
               .findFirst();
       if (dbFieldOpt.isPresent()) {
         rejectSelfLink(apiField.getLink(), dbInstrument);
-        changed |= applyLinkFieldValue((InventoryLinkField) dbFieldOpt.get(), apiField, user);
+        changed |=
+            applyLinkFieldValue(
+                (InventoryLinkField) dbFieldOpt.get(), apiField, user, dbInstrument.isTemplate());
       }
     }
     return changed;
@@ -349,7 +368,10 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   private void rejectSelfLink(ApiInventoryLink apiLink, InstrumentEntity dbInstrument) {
     // getId() first: getOid() throws rather than returning null on an unsaved record, and this is
-    // now reached while creating a template, which has no id yet (and so nothing to self-link to)
+    // now reached while creating a template, which has no id yet (and so nothing to self-link to).
+    // Returning early there is not a hole: the template is not in the database yet either, so
+    // InventoryLinkManager.createLink's target-exists-and-readable check rejects its own future
+    // Global ID before any link row is written. Same reasoning as SampleApiManagerImpl.
     if (apiLink == null || dbInstrument.getId() == null || dbInstrument.getOid() == null) {
       return;
     }
@@ -702,7 +724,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       // the same self-link rejection the edit path applies: adding a link field to an already-saved
       // template must not be a way in for a default that targets that very template
       rejectSelfLink(apiField.getLink(), dbTemplate);
-      applyLinkFieldValue((InventoryLinkField) toAdd, apiField, user);
+      applyLinkFieldValue((InventoryLinkField) toAdd, apiField, user, true);
     }
   }
 

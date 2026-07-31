@@ -140,14 +140,39 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
   @Test
   void clearingTheValueDereferencesTheRowForOrphanRemoval() {
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
-    // an explicit null, not mere absence: absence now means "no change" (see the sample
-    // counterpart)
     apiField.setLink(null);
 
     boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
 
     assertTrue(changed);
     assertNull(dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void anItemUpdateThatOmitsTheLinkEntirelyStillClearsIt() {
+    // RSDEV-1131 semantics, which InstrumentEntityApiManagerTest.linkFieldValue_clearedWhenInstrume
+    // ntUpdated pins: an instrument's field list arrives complete, so a link field carrying no link
+    // at all means the user cleared it. Only a TEMPLATE's field list can be partial.
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+
+    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
+
+    assertTrue(changed);
+    assertNull(dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aTemplatePutThatOmitsTheLinkKeepsTheDefault() {
+    // the whitelist-only template edit: {"fields":[{"id":N,"allowedRelationTypes":[...]}]}. Absence
+    // there cannot mean "clear", or a legitimate partial edit would destroy the default link.
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+
+    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user, true);
+
+    assertFalse(changed);
+    assertSame(dbLink, dbField.getLink());
     verifyNoInteractions(inventoryLinkManager);
   }
 
