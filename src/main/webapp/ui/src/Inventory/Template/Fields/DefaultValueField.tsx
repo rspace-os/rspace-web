@@ -98,6 +98,8 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
               sourceGlobalId={field.owner.globalId ?? ""}
               disabled={!editing}
               onChange={() => {}}
+              // the name is already entered in the Name field above
+              showFieldName={false}
             />
           </InputWrapper>
         </Box>
