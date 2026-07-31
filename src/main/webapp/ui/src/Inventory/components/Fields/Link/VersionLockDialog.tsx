@@ -59,7 +59,7 @@ function isSupportedTarget(parsed: ParsedTarget): boolean {
 
 interface ApiRevisionEntry {
   revisionId: number;
-  revisionType: string;
+  revisionType?: string;
   record: {
     // The user-facing version of the item at this audit revision. Several revisions can share
     // one version (non-version-bumping edits), so callers must group by it, not by revisionId.
@@ -74,21 +74,41 @@ interface ApiRevisionList {
 }
 
 /**
- * The gallery endpoint's AjaxReturnObject envelope around the same revision shape. A failure is
- * signalled by a 200 with `data: null` and the reason in `error`, so both halves are modelled:
- * ignoring `error` would turn a failed fetch into an empty version history.
+ * An `AjaxReturnObject` envelope, which both ELN endpoints behind this dialog return. Failure is
+ * signalled by a 200 carrying `data: null` and the reason in `error`, so both halves are modelled:
+ * reading the payload without checking would turn a failed fetch into an empty version history.
  */
-interface AjaxRevisionList {
-  data: ApiRevisionList | null;
+interface AjaxEnvelope<T> {
+  data: T | null;
   error?: { errorMessages?: string[] } | null;
 }
 
 /**
- * Collapses audit rows to one picker row per user-facing version (several revisions can share one
- * version), pinning the version and carrying its newest revision. Shared by the inventory and
- * gallery branches, whose responses have the same shape.
+ * The payload of an `AjaxReturnObject`, rejecting when the envelope reports a failure instead.
+ * Mirrors how the workspace record-information query treats the same envelope
+ * (`modules/workspace/queries.ts`).
  */
-function toVersionRecords(revisions: ApiRevisionEntry[]): VersionRecord[] {
+function payloadOrThrow<T>(envelope: AjaxEnvelope<T> | undefined, fallbackMessage: string): T {
+  const payload = envelope?.data;
+  if (payload === null || payload === undefined) {
+    throw new Error(envelope?.error?.errorMessages?.[0] ?? fallbackMessage);
+  }
+  return payload;
+}
+
+/**
+ * Collapses audit rows to one picker row per user-facing version (several revisions can share one
+ * version), pinning the version and carrying its newest revision. Shared by all three branches,
+ * whose responses reduce to the same list of audit rows.
+ *
+ * A response with no list at all is a broken response, not an item without versions, so it rejects
+ * rather than resolving to an empty picker: an empty picker states "only the latest version exists",
+ * which is a claim this function cannot make on that evidence.
+ */
+function toVersionRecords(revisions: ApiRevisionEntry[] | null | undefined): VersionRecord[] {
+  if (!Array.isArray(revisions)) {
+    throw new Error("version history response carried no revisions");
+  }
   return groupByVersion(revisions).map(({ version, revision }) => ({
     version,
     revisionId: revision.revisionId,
@@ -100,13 +120,17 @@ function toVersionRecords(revisions: ApiRevisionEntry[]): VersionRecord[] {
 // carries the document `version` number (used to pin, e.g. SD123v2) and a separate audit
 // `revision` id. Mirrors tinyMCE/InternalLink.tsx.
 interface ElnRevisionEntry {
-  version: number;
+  version?: number | null;
   revision: number;
   modificationDate?: string;
 }
 
-interface ElnRevisionHistoryResponse {
-  data: ElnRevisionEntry[];
+/** One ELN document revision as an audit row, so it groups by version like the other two paths. */
+function elnEntryAsAuditRow(entry: ElnRevisionEntry): ApiRevisionEntry {
+  return {
+    revisionId: entry.revision,
+    record: { version: entry.version, lastModified: entry.modificationDate },
+  };
 }
 
 /**
@@ -141,33 +165,23 @@ export default function VersionLockDialog(props: VersionLockDialogProps): React.
     if (parsed.prefix === "SD") {
       // ELN document revisions come from the workspace endpoint, not the inventory
       // API. Pin to the document version number (entry.version); carry the audit id.
-      const { data } = await axios.get<ElnRevisionHistoryResponse>(
+      const { data } = await axios.get<AjaxEnvelope<ElnRevisionEntry[]>>(
         `/workspace/revisionHistory/ajax/${parsed.id}/versions`,
       );
+      const entries = payloadOrThrow(data, "document version history unavailable");
+      if (!Array.isArray(entries)) {
+        throw new Error("document version history was not a list of revisions");
+      }
       // Several audit revisions can share one document version: non-version-bumping
       // edits, and the soft-delete MOD of a deleted document (a delete does not bump the
-      // version). Collapse to one row per version, keeping the newest revision of each,
-      // so the final version is not listed twice (mirrors the inventory path below).
-      const byVersion = new Map<number, VersionRecord>();
-      for (const entry of data.data.toSorted((a, b) => a.revision - b.revision)) {
-        byVersion.set(entry.version, {
-          version: entry.version,
-          revisionId: entry.revision,
-          modificationDate: entry.modificationDate ?? "",
-        });
-      }
-      return [...byVersion.values()].sort((a, b) => b.version - a.version);
+      // version). Collapsing is the shared helper's job, so the three paths cannot disagree.
+      return toVersionRecords(entries.map(elnEntryAsAuditRow));
     }
     if (parsed.prefix === "GL") {
       // Gallery revisions come from the ELN gallery endpoint (RSDEV-1250), which wraps the same
       // revision shape as the inventory API in an AjaxReturnObject.
-      const { data } = await axios.get<AjaxRevisionList>(`/gallery/ajax/versionHistory/${parsed.id}`);
-      if (!data.data) {
-        // a 200 carrying an error envelope must not read as "no version history yet"; rejecting
-        // puts it on the same path as a transport failure, which the picker reports
-        throw new Error(data.error?.errorMessages?.[0] ?? "gallery version history unavailable");
-      }
-      return toVersionRecords(data.data.revisions);
+      const { data } = await axios.get<AjaxEnvelope<ApiRevisionList>>(`/gallery/ajax/versionHistory/${parsed.id}`);
+      return toVersionRecords(payloadOrThrow(data, "gallery version history unavailable").revisions);
     }
     if (parsed.inventoryPathSegment) {
       const { data } = await ApiService.get<ApiRevisionList>(`${parsed.inventoryPathSegment}/${parsed.id}/revisions`);

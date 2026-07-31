@@ -383,6 +383,58 @@ describe("VersionLockDialog (ELN targets: SD documents, GL gallery files)", () =
     expect(screen.getByText("common:versionLockPicker.loadFailed")).toBeInTheDocument();
   });
 
+  it("skips SD revisions that carry no version, rather than offering an unlabelled row", async () => {
+    // there is nothing to pin to on a revision with no version number, and nothing to label its
+    // row with either, so it must not be offered (the shared grouping helper's rule)
+    mockElnRevisions(() =>
+      HttpResponse.json({
+        data: [
+          { version: 1, revision: 101, modificationDate: "2026-01-10T10:00:00Z" },
+          { version: null, revision: 150, modificationDate: "2026-01-11T10:00:00Z" },
+          { version: 2, revision: 202, modificationDate: "2026-02-10T10:00:00Z" },
+        ],
+      }),
+    );
+
+    renderDialog({ globalId: "SD55" });
+
+    await waitFor(() => {
+      expect(getVersionRadio("2")).toBeInTheDocument();
+    });
+    // Latest, version 1 and version 2. The versionless revision must not add a fourth.
+    expect(screen.getAllByRole("radio")).toHaveLength(3);
+  });
+
+  it("reports a failure, not an empty history, when the SD endpoint returns an error envelope", async () => {
+    // /workspace/revisionHistory/ajax/{id}/versions is an AjaxReturnObject, so it reports failure
+    // as a 200 with data: null. Reading the list off that response is how a failure silently
+    // becomes "this document has one version".
+    mockElnRevisions(() => HttpResponse.json({ data: null, error: { errorMessages: ["Record not found"] } }));
+
+    renderDialog({ globalId: "SD55" });
+
+    expect(await screen.findByText("common:versionLockPicker.loadFailed")).toBeInTheDocument();
+    expect(screen.getAllByRole("radio")).toHaveLength(1);
+  });
+
+  it("reports a failure when the inventory revisions response carries no revisions list", async () => {
+    mockInventoryRevisions(() => HttpResponse.json({ revisionsCount: 0 }));
+
+    renderDialog({ globalId: "SA42" });
+
+    expect(await screen.findByText("common:versionLockPicker.loadFailed")).toBeInTheDocument();
+    expect(screen.getAllByRole("radio")).toHaveLength(1);
+  });
+
+  it("reports a failure when the gallery envelope holds no revisions list", async () => {
+    mockGalleryRevisions(() => HttpResponse.json({ data: { revisionsCount: 0 } }));
+
+    renderDialog({ globalId: "GL77" });
+
+    expect(await screen.findByText("common:versionLockPicker.loadFailed")).toBeInTheDocument();
+    expect(screen.getAllByRole("radio")).toHaveLength(1);
+  });
+
   it("reports a failure, not an empty history, when the gallery endpoint returns an error envelope", async () => {
     // AjaxReturnObject signals failure with a 200 carrying {data: null, error}. Treating that as
     // "no versions" would tell the user this item cannot be pinned, when the list merely failed
