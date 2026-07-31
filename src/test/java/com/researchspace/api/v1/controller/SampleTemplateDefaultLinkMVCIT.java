@@ -11,10 +11,8 @@ import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItems;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
-import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.SampleApiManager;
 import java.util.List;
@@ -223,16 +221,8 @@ public class SampleTemplateDefaultLinkMVCIT extends API_MVC_InventoryTestBase {
 
   /** Creates a template with one Link field; {@code targetGlobalId} null means "no default". */
   private ApiSampleTemplate createTemplateWithDefaultLink(String targetGlobalId) throws Exception {
-    ApiSampleTemplatePost templatePost = new ApiSampleTemplatePost();
-    templatePost.setName("template with a default link");
-    templatePost.setDefaultUnitId(RSUnitDef.GRAM.getId());
-    templatePost.setSampleSource(SampleSource.LAB_CREATED);
-    ApiInventoryEntityField linkField = new ApiInventoryEntityField();
-    linkField.setName("Related items");
-    linkField.setType(ApiFieldType.LINK);
-    linkField.setAllowedRelationTypes(List.of("References", "IsDerivedFrom"));
-    templatePost.setFields(List.of(linkField));
-
+    // hand-written JSON rather than the typed DTO, so the "link" key can be omitted entirely
+    // (the DTO cannot express absent-vs-null, which is the distinction under test elsewhere)
     String linkJson =
         targetGlobalId == null
             ? ""

@@ -2918,7 +2918,7 @@ export default interface Resources {
         },
         "link": {
           "relationHelper": "Pick a DataCite relation type",
-          "targetHelper": "Paste a Global ID, or use the Browse buttons above.",
+          "targetHelper": "Paste a Global ID, or Browse",
           "targetNotFound": "{globalId} does not exist, or you do not have permission to view it."
         },
         "maxCharacters": "Must be no more than {max} characters.",
@@ -4140,6 +4140,7 @@ export default interface Resources {
         "linkFieldValue": {
           "apply": "Apply",
           "applyLabel": "Apply link",
+          "bothRequired": "Select both a relationship type and a target before applying.",
           "discard": "Discard",
           "discardLabel": "Discard link changes",
           "none": "None",

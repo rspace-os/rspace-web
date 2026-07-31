@@ -67,6 +67,24 @@ public class ApiInventoryEntityField extends ApiField {
   @JsonInclude(JsonInclude.Include.NON_NULL)
   private ApiInventoryLink link;
 
+  /**
+   * Whether the incoming payload mentioned {@code link} at all, so that an explicit {@code "link":
+   * null} ("clear it") can be told apart from a partial update that simply does not mention it. Set
+   * by the hand-written {@link #setLink} below, which replaces Lombok's generated one.
+   *
+   * <p>Without the distinction, absent meant clear: a template PUT naming only the field's
+   * allowed-relation-types (exactly the request the whitelist-conflict error asks the user to make)
+   * silently destroyed that field's default link, and left the whitelist guard seeing a null link
+   * so it passed (RSDEV-1246). Excluded from JSON, equals and toString: it describes the payload,
+   * not the field.
+   */
+  @JsonIgnore @EqualsAndHashCode.Exclude @ToString.Exclude private boolean linkProvided;
+
+  public void setLink(ApiInventoryLink link) {
+    this.link = link;
+    this.linkProvided = true;
+  }
+
   @JsonProperty("mandatory")
   private Boolean mandatory;
 
