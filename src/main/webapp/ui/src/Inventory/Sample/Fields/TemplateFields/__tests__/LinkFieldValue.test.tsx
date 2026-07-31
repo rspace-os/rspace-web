@@ -94,6 +94,19 @@ beforeEach(() => {
 });
 
 describe("LinkFieldValue", () => {
+  it("surfaces the field name on an item, whose FormField label is hidden", () => {
+    // the template editor opts out with showFieldName={false} (its Name field is right above); an
+    // item has no other label, so the default must keep showing it
+    renderField({
+      field: linkField(),
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    expect(screen.getByText("Related items")).toBeInTheDocument();
+  });
+
   it("constrains the relationship type options to the field's allowed set", async () => {
     const user = userEvent.setup();
     renderField({
@@ -475,7 +488,9 @@ describe("LinkFieldValue", () => {
     await user.click(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" }));
 
     expect(
-      await screen.findByText("SS9999 does not exist, or you do not have permission to view it."),
+      // the message is now the shared catalog key (cimode resolves it to ns:key, so the
+      // interpolated globalId is not part of the rendered text)
+      await screen.findByText("inventory:fields.extraFields.link.targetNotFound"),
     ).toBeInTheDocument();
     expect(setAttributesDirty).not.toHaveBeenCalled();
   });

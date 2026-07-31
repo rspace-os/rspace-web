@@ -58,7 +58,6 @@ import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -81,7 +80,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
-  private @Autowired InventoryLinkManager inventoryLinkManager;
 
   @Override
   public ApiSampleSearchResult getSamplesForUser(
@@ -427,14 +425,36 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
    * alongside it. The chosen relation type must be permitted by the template field's
    * allowed-relation-types whitelist (an empty whitelist permits all).
    */
+  /** Item semantics: see the four-argument overload. */
   boolean applyLinkFieldValue(
       InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
+    return applyLinkFieldValue(field, apiField, user, false);
+  }
+
+  /**
+   * @param omittedLinkPreservesExisting how to read a payload that carries no {@code link} key at
+   *     all. True for a <b>template</b> field, whose PUT accepts a partial field list: a
+   *     whitelist-only edit or a rename must not destroy the default link. False for an <b>item</b>
+   *     field, whose field list always arrives complete, so an absent link means the user cleared
+   *     it (RSDEV-1131, pinned by {@code
+   *     InstrumentEntityApiManagerTest.linkFieldValue_clearedWhenInstrumentUpdated}). An explicit
+   *     {@code "link": null} clears in both cases.
+   */
+  boolean applyLinkFieldValue(
+      InventoryLinkField field,
+      ApiInventoryEntityField apiField,
+      User user,
+      boolean omittedLinkPreservesExisting) {
     ApiInventoryLink apiLink = apiField.getLink();
     String target = apiLink == null ? null : apiLink.getTargetGlobalId();
     InventoryLink existing = field.getLink();
     if (target == null || target.trim().isEmpty()) {
       if (existing == null) {
         return false; // no link before, none requested now
+      }
+      if (omittedLinkPreservesExisting && !apiField.isLinkProvided()) {
+        // a partial template update that never mentions the link: leave it alone
+        return false;
       }
       field.setLink(null); // orphanRemoval hard-deletes the dereferenced row at flush
       return true;
@@ -467,9 +487,13 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
    * Applies link values to an existing sample's structured link fields (the update path). The DTO
    * apply loop leaves link fields untouched because it cannot reach the service-layer {@link
    * InventoryLinkManager}; this matches each modified link field by id and applies it here.
+   *
+   * <p>Takes a {@link SampleEntity}, not a {@link Sample}: a template's link field carries an
+   * editable default link of its own (RSDEV-1246), so templates go through the same write path as
+   * items rather than being skipped.
    */
-  private boolean applyLinkFieldValuesOnUpdate(
-      ApiSampleWithoutSubSamples apiSample, Sample dbSample, User user) {
+  boolean applyLinkFieldValuesOnUpdate(
+      ApiSampleWithoutSubSamples apiSample, SampleEntity dbSample, User user) {
     if (apiSample.getFields() == null) {
       return false;
     }
@@ -489,7 +513,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
               .findFirst();
       if (dbFieldOpt.isPresent()) {
         rejectSelfLink(apiField.getLink(), dbSample);
-        changed |= applyLinkFieldValue((InventoryLinkField) dbFieldOpt.get(), apiField, user);
+        changed |=
+            applyLinkFieldValue(
+                (InventoryLinkField) dbFieldOpt.get(), apiField, user, dbSample.isTemplate());
       }
     }
     return changed;
@@ -503,18 +529,20 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       throw new ApiRuntimeException(
           "errors.inventory.field.link.relationTypeInvalid", relationType);
     }
-    String allowed = field.getAllowedRelationTypes();
-    if (allowed == null || allowed.trim().isEmpty()) {
-      return; // empty whitelist = all relation types allowed
-    }
-    if (!Arrays.asList(allowed.split("\\|")).contains(relationType)) {
+    if (!isRelationPermitted(field, relationType)) {
       throw new ApiRuntimeException(
           "errors.inventory.field.link.relationTypeNotPermitted", relationType, field.getName());
     }
   }
 
-  private void rejectSelfLink(ApiInventoryLink apiLink, Sample dbSample) {
-    if (apiLink == null || dbSample.getOid() == null) {
+  private void rejectSelfLink(ApiInventoryLink apiLink, SampleEntity dbSample) {
+    // getId() first: getOid() throws rather than returning null on an unsaved record, and this is
+    // now reached while creating a template, which has no id yet (and so nothing to self-link to).
+    // Returning early there is not a hole: the template is not in the database yet either, so
+    // InventoryLinkManager.createLink's target-exists-and-readable check rejects its own future
+    // Global ID before any link row is written. Every path where a self-link IS reachable (a
+    // template or item that already exists) passes a saved record and so runs the check below.
+    if (apiLink == null || dbSample.getId() == null || dbSample.getOid() == null) {
       return;
     }
     GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
@@ -532,26 +560,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       return new GlobalIdentifier(targetGlobalId);
     } catch (IllegalArgumentException | NullPointerException ex) {
       return null;
-    }
-  }
-
-  /**
-   * Soft-deletes the {@link InventoryLink} backing a structured link field once that field has been
-   * soft-deleted, so the link row (and its Envers audit trail) stays in step with the field. The
-   * field's {@code deleted} flag is flipped in the model layer (a template link-field delete, or
-   * its propagation to child samples through {@code Sample#updateToLatestTemplateVersion}), which
-   * cannot reach the service-layer {@link InventoryLinkManager}; a soft-delete is also an ordinary
-   * update rather than a JPA remove, so the {@code cascade}/{@code orphanRemoval} on {@code
-   * InventoryLinkField#link} never fires. Without this the link row would linger with {@code
-   * deleted=false} after its field is gone. No-op unless the field is a deleted {@link
-   * InventoryLinkField} whose link is still live.
-   */
-  void softDeleteLinkOfDeletedLinkField(InventoryEntityField field, User user) {
-    if (field instanceof InventoryLinkField && field.isDeleted()) {
-      InventoryLink link = ((InventoryLinkField) field).getLink();
-      if (link != null && !link.isDeleted()) {
-        inventoryLinkManager.deleteLink(link, user);
-      }
     }
   }
 
@@ -811,8 +819,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
         identifiersHelper.createAssignRequestedIdentifiers(
             apiSample.getIdentifiers(), dbSample, user);
     contentChanged |= apiSample.applyChangesToDatabaseSample(dbSample, user);
-    if (!dbSample.isTemplate()) {
-      contentChanged |= applyLinkFieldValuesOnUpdate(apiSample, (Sample) dbSample, user);
+    contentChanged |= applyLinkFieldValuesOnUpdate(apiSample, dbSample, user);
+    if (dbSample.isTemplate()) {
+      assertDefaultLinksMatchWhitelists(dbSample.getActiveFields());
     }
     contentChanged |= saveSharingACLForIncomingApiInvRec(dbSample, apiSample);
     contentChanged |= saveIncomingSampleImage(dbSample, apiSample, user);
@@ -1061,7 +1070,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     sampleTemplate.setDefaultUnitId(apiSample.getDefaultUnitId());
     setBasicFieldsFromNewIncomingApiInventoryRecord(sampleTemplate, apiSample, user);
     setSampleCoreProperties(apiSample, sampleTemplate);
-    createFields(apiSample, sampleTemplate);
+    createFields(apiSample, sampleTemplate, user);
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(sampleTemplate);
     SampleTemplate savedSampleTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
@@ -1073,12 +1082,35 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     return rc;
   }
 
-  private void createFields(ApiSampleTemplatePost apiSample, SampleTemplate sample) {
+  void createFields(ApiSampleTemplatePost apiSample, SampleTemplate sample, User user) {
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         apiSample.getFields(), null);
     for (ApiInventoryEntityField field : apiSample.getFields()) {
       InventoryEntityField toAdd = apiFieldToModelFieldFactory.apiInventoryFieldToModelField(field);
+      applyDefaultLinkOfNewTemplateField(toAdd, field, sample, user);
       sample.addSampleField(toAdd);
+    }
+  }
+
+  /**
+   * Applies a template link field's optional default link (RSDEV-1246). The stateless {@link
+   * ApiFieldToModelFieldFactory} sets only the allowed-relation-types whitelist, so the default has
+   * to be created here, through the same {@link InventoryLinkManager} write path an item's link
+   * uses: validated against the DataCite vocabulary and the field's own whitelist, with the Envers
+   * revision captured. Items created from the template are then stamped with a copy of it by {@code
+   * InventoryLinkField#shallowCopy()}, needing no further code. No-op for any other field type, and
+   * for a link field whose payload carries no link.
+   */
+  private void applyDefaultLinkOfNewTemplateField(
+      InventoryEntityField toAdd,
+      ApiInventoryEntityField apiField,
+      SampleEntity dbTemplate,
+      User user) {
+    if (toAdd instanceof InventoryLinkField) {
+      // the same self-link rejection the edit path applies: adding a link field to an already-saved
+      // template must not be a way in for a default that targets that very template
+      rejectSelfLink(apiField.getLink(), dbTemplate);
+      applyLinkFieldValue((InventoryLinkField) toAdd, apiField, user, true);
     }
   }
 
@@ -1103,7 +1135,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     return (ApiSampleTemplate) getOutgoingApiSample(dbTemplate, user);
   }
 
-  private boolean createDeleteRequestedFieldsInDbSampleTemplate(
+  boolean createDeleteRequestedFieldsInDbSampleTemplate(
       ApiSampleWithoutSubSamples apiSample, SampleTemplate dbTemplate, User user) {
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         apiSample.getFields(), null);
@@ -1112,6 +1144,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       if (apiField.isNewFieldRequest()) {
         InventoryEntityField toAdd =
             apiFieldToModelFieldFactory.apiInventoryFieldToModelField(apiField);
+        applyDefaultLinkOfNewTemplateField(toAdd, apiField, dbTemplate, user);
         dbTemplate.addSampleField(toAdd);
         changed = true;
       }

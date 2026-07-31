@@ -2843,7 +2843,7 @@ export default interface Resources {
         },
         "link": {
           "relationHelper": "Pick a DataCite relation type",
-          "targetHelper": "Paste a Global ID, or use the Browse buttons above.",
+          "targetHelper": "Paste a Global ID, or Browse",
           "targetNotFound": "{globalId} does not exist, or you do not have permission to view it."
         },
         "maxCharacters": "Must be no more than {max} characters.",
@@ -3124,7 +3124,9 @@ export default interface Resources {
           "pinVersion": "Pin version",
           "pinVersionFor": "Pin version for {globalId}",
           "pinnedVersion": "Pinned to v{version}",
-          "targetGlobalId": "Target Global ID"
+          "target": "Target",
+          "targetGlobalId": "Target Global ID",
+          "version": "Version"
         },
         "elnFolderBrowser": {
           "failedToLoadContents": "Failed to load contents",
@@ -3314,6 +3316,8 @@ export default interface Resources {
           "allRelationshipTypes": "All relationship types",
           "allowedRelationshipTypes": "Allowed relationship types",
           "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
+          "defaultLink": "Default link",
+          "defaultLinkExplanation": "An optional link applied to every item created from this template. Its relationship type must be one of the allowed types above. Items can change or remove it afterwards.",
           "none": "None"
         },
         "move": {
@@ -4049,6 +4053,7 @@ export default interface Resources {
         "linkFieldValue": {
           "apply": "Apply",
           "applyLabel": "Apply link",
+          "bothRequired": "Select both a relationship type and a target before applying.",
           "discard": "Discard",
           "discardLabel": "Discard link changes",
           "none": "None"
