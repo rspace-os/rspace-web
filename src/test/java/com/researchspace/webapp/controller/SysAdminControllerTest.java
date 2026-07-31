@@ -4,7 +4,6 @@ import static com.researchspace.Constants.SYSADMIN_ROLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -72,7 +71,6 @@ public class SysAdminControllerTest {
   public void deleteUserRequiresSetDeploymentProperty() {
     sysadmin = TestFactory.createAnyUserWithRole("sys", SYSADMIN_ROLE);
 
-    lenient().when(userManager.getAuthenticatedUserInSession()).thenReturn(sysadmin);
     when(properties.getDeleteUser()).thenReturn(Boolean.FALSE.toString());
     CoreTestUtils.assertIllegalStateExceptionThrown(() -> ctrller.removeUserAccount(2L));
     Mockito.verifyNoInteractions(userExportHandler);
@@ -108,7 +106,6 @@ public class SysAdminControllerTest {
     Principal mockPrincipal = sysadmin::getUsername;
     PaginationCriteria<User> pgcrit = PaginationCriteria.createDefaultForClass(User.class);
     when(userManager.getUserByUsername(sysadmin.getUniqueName())).thenReturn(sysadmin);
-    lenient().when(userManager.getAuthenticatedUserInSession()).thenReturn(sysadmin);
     when(sysMgr.getUserUsageInfo(sysadmin, pgcrit))
         .thenReturn(new SearchResultsImpl<>(Collections.emptyList(), pgcrit, 0));
     final int totalEnabledusers = 4;

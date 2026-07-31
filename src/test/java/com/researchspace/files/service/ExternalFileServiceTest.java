@@ -59,9 +59,7 @@ public class ExternalFileServiceTest extends SpringTransactionalTest {
             anyUser, "anyToken - this is a mock API call");
   }
 
-  // Was annotated @Before (now @BeforeEach) despite being named after() and documented as tidy-up,
-  // so it has never run as teardown. A no-op today because the setFileStore(localFs) call it pairs
-  // with is commented out in before(); kept and corrected so restoring that line stays safe.
+  // A no-op while the setFileStore(localFs) call it pairs with stays commented out in before().
   @AfterEach
   public void restoreFileStore() throws Exception {
     getTargetObject(mediaMgr, MediaManagerImpl.class).setFileStore(fileStore);

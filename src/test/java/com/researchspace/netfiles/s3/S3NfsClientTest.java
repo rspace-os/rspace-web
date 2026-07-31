@@ -118,7 +118,7 @@ public class S3NfsClientTest {
         assertThrows(
             IOException.class, () -> client.uploadFile(new File("Picture1.png"), "dest/folder"));
     assertTrue(ex.getMessage().contains("already exists"));
-    verify(s3Utilities, org.mockito.Mockito.never()).uploadToS3(any(), any(), any());
+    verify(s3Utilities, never()).uploadToS3(any(), any(), any());
   }
 
   @Test
@@ -389,8 +389,7 @@ public class S3NfsClientTest {
             IOException.class,
             () -> client.copyObject("source/huge.bin", dest.client, "dest/huge.bin"));
     assertTrue(ex.getMessage().contains("5"));
-    verify(dest.mockS3Utilities, org.mockito.Mockito.never())
-        .copyObjectFromBucket(any(), any(), any(), any());
+    verify(dest.mockS3Utilities, never()).copyObjectFromBucket(any(), any(), any(), any());
   }
 
   @Test
@@ -404,8 +403,7 @@ public class S3NfsClientTest {
             IOException.class,
             () -> client.copyObject("source/file.txt", dest.client, "dest/file.txt"));
     assertTrue(ex.getMessage().contains("already exists"));
-    verify(dest.mockS3Utilities, org.mockito.Mockito.never())
-        .copyObjectFromBucket(any(), any(), any(), any());
+    verify(dest.mockS3Utilities, never()).copyObjectFromBucket(any(), any(), any(), any());
   }
 
   @Test
@@ -421,8 +419,7 @@ public class S3NfsClientTest {
             IOException.class,
             () -> client.copyObject("source/photos", dest.client, "dest/photos"));
     assertTrue(ex.getMessage().contains("already exists"));
-    verify(dest.mockS3Utilities, org.mockito.Mockito.never())
-        .copyObjectFromBucket(any(), any(), any(), any());
+    verify(dest.mockS3Utilities, never()).copyObjectFromBucket(any(), any(), any(), any());
   }
 
   @Test

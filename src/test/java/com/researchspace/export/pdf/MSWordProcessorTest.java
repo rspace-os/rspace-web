@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atMost;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -76,9 +75,6 @@ public class MSWordProcessorTest {
     rtupdater = new RichTextUpdater();
     rtupdater.setVelocity(setupVelocityWithTextFieldTemplates());
     htmlProcessed = Jsoup.parse(STOICHIOMETRY_HTML).html();
-    lenient()
-        .when(stoichiometryHtmlGenerator.addStoichiometryLinks(eq(htmlProcessed), eq(exporter)))
-        .thenReturn(htmlProcessed);
   }
 
   @Test
@@ -128,6 +124,8 @@ public class MSWordProcessorTest {
 
   @Test
   public void testStoichiometryExportIsAdded() throws IOException {
+    when(stoichiometryHtmlGenerator.addStoichiometryLinks(eq(htmlProcessed), eq(exporter)))
+        .thenReturn(htmlProcessed);
     returnSuccesfullExport(outfile, success);
     mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
     verify(stoichiometryHtmlGenerator, never())

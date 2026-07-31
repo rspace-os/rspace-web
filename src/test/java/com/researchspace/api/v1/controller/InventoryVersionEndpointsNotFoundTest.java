@@ -3,7 +3,6 @@ package com.researchspace.api.v1.controller;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -39,9 +38,7 @@ public class InventoryVersionEndpointsNotFoundTest {
 
   @BeforeEach
   public void setUp() {
-    lenient()
-        .when(messages.getResourceNotFoundMessage(anyString(), anyLong()))
-        .thenReturn("not found");
+    when(messages.getResourceNotFoundMessage(anyString(), anyLong())).thenReturn("not found");
   }
 
   /** Wires the BaseApiInventoryController/BaseApiController fields every controller inherits. */

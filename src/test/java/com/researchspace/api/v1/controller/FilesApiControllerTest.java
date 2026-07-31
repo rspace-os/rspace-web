@@ -50,11 +50,10 @@ public class FilesApiControllerTest {
     fileController.setMessageSource(new MessageSourceUtils(messages));
     validDocFile = TestFactory.createEcatDocument(1L, subject);
     strucDoc = TestFactory.createAnySD();
-    mockBaseUrl();
   }
 
   private void mockBaseUrl() {
-    Mockito.lenient().when(properties.getServerUrl()).thenReturn("http://somewhere.com");
+    Mockito.when(properties.getServerUrl()).thenReturn("http://somewhere.com");
   }
 
   @Test
@@ -81,6 +80,7 @@ public class FilesApiControllerTest {
 
   @Test
   public void updateFileSuccess() throws Exception {
+    mockBaseUrl();
     MockMultipartFile mockFile = createAnyMultipartFile();
     when(recordMgr.getSafeNull(1L)).thenReturn(Optional.of(validDocFile));
     when(permissions.isPermitted(validDocFile, PermissionType.WRITE, subject)).thenReturn(true);

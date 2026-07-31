@@ -1,6 +1,7 @@
 package com.axiope.webapp.listener;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,13 +18,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
 
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 public class StartupListenerViteProxyTest {
 
   @Mock private ApplicationContext applicationContext;
@@ -38,8 +36,7 @@ public class StartupListenerViteProxyTest {
     environment = new MockEnvironment();
     environment.setProperty(FrontendCacheVersion.REACT_DEV_MODE_PROPERTY, "true");
     when(applicationContext.getEnvironment()).thenReturn(environment);
-    when(servletContext.addServlet(
-            eq("viteDevServerProxy"), org.mockito.ArgumentMatchers.any(Servlet.class)))
+    when(servletContext.addServlet(eq("viteDevServerProxy"), any(Servlet.class)))
         .thenReturn(registration);
     listener = new StartupListener();
   }

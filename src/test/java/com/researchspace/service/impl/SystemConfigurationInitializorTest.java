@@ -1,6 +1,5 @@
 package com.researchspace.service.impl;
 
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -68,12 +67,7 @@ public class SystemConfigurationInitializorTest extends SpringTransactionalTest 
     systemConfigurationInitialisor.setChemistryProvider("indigo");
     systemConfigurationInitialisor.setChemistryServiceUrl("http://indigoService:8090");
 
-    // system setting is 'ALLOWED' and properties are configured - do nothing
-    lenient()
-        .when(mockSystemPropertyManager.findByName(SystemPropertyName.CHEMISTRY_AVAILABLE))
-        .thenReturn(
-            new SystemPropertyValue(
-                new SystemProperty(null), HierarchicalPermission.ALLOWED.name()));
+    // properties are configured, so the system setting is not consulted
     systemConfigurationInitialisor.onAppStartup(null);
     verify(mockSystemPropertyManager, Mockito.times(1))
         .save(Mockito.any(), (HierarchicalPermission) Mockito.any(), Mockito.any());

@@ -18,7 +18,6 @@ import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
 import java.util.Collections;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -50,19 +49,15 @@ class TemplateTransferServiceTest {
 
   @InjectMocks TemplateTransferService templateTransferService;
 
-  @BeforeEach
   void setUpMessageSourceStubs() {
-    Mockito.lenient()
-        .when(
+    Mockito.when(
             messageSource.getMessage(
                 TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER, null, null))
         .thenReturn("Deleted Users");
-    Mockito.lenient()
-        .when(
+    Mockito.when(
             messageSource.getMessage(TemplateTransferService.DELETED_USER_NAME_SUFFIX, null, null))
         .thenReturn(" (Deleted)");
-    Mockito.lenient()
-        .when(
+    Mockito.when(
             messageSource.getMessage(
                 Mockito.eq("templates.transfer.audit.description"),
                 Mockito.any(Object[].class),
@@ -92,6 +87,7 @@ class TemplateTransferServiceTest {
 
   @Test
   void transferOwnershipUnsharesMovesTransfersAndNotifiesAuditTrail_whenFoldersExist() {
+    setUpMessageSourceStubs();
     templateTransferService =
         new TemplateTransferService(
             messageSource,
@@ -174,6 +170,7 @@ class TemplateTransferServiceTest {
 
   @Test
   void transferOwnershipCreatesDeletedUsersFoldersWhenMissing() {
+    setUpMessageSourceStubs();
     templateTransferService =
         new TemplateTransferService(
             messageSource,
@@ -241,6 +238,7 @@ class TemplateTransferServiceTest {
 
   @Test
   void transferOwnership_transfersGalleryItemsLinkedFromTemplates() {
+    setUpMessageSourceStubs();
     templateTransferService =
         new TemplateTransferService(
             messageSource,
@@ -341,6 +339,7 @@ class TemplateTransferServiceTest {
 
   @Test
   void transferOwnership_skipsGalleryTransferWhenNoItemsLinkedFromTemplates() {
+    setUpMessageSourceStubs();
     templateTransferService =
         new TemplateTransferService(
             messageSource,

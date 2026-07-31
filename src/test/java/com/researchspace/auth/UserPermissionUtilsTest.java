@@ -152,7 +152,7 @@ class UserPermissionUtilsTest {
   }
 
   private void enableLenientMockGetUser(User target) {
-    Mockito.lenient().when(userManager.getUserByUsername(target.getUsername())).thenReturn(target);
+    Mockito.when(userManager.getUserByUsername(target.getUsername())).thenReturn(target);
   }
 
   private static Stream<Arguments> targetUsersByRole() {

@@ -68,7 +68,6 @@ public class ProtocolsIOOAuthTest {
   public void setUp() throws Exception {
     shiroUtils = new ShiroTestUtils();
     shiroUtils.setSubject(subjct);
-    Mockito.lenient().when(subjct.getSession()).thenReturn(new SimpleSession());
     ReflectionTestUtils.setField(
         ctrller, "protocolsioAccessTokenUrl", PROTOCOLSIO_ACCESS_TOKEN_URL);
     ReflectionTestUtils.setField(ctrller, "protocolsioAuthUrl", PROTOCOLSIO_AUTH_URL);
@@ -86,6 +85,7 @@ public class ProtocolsIOOAuthTest {
 
   @Test
   public void connect() throws MalformedURLException {
+    Mockito.when(subjct.getSession()).thenReturn(new SimpleSession());
     Mockito.when(properties.getServerUrl()).thenReturn("http://somerspace.com");
     RedirectView view = ctrller.connect();
     // assert is valid URL syntax

@@ -8,13 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.axiope.search.SearchManager;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
-import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.field.StringFieldForm;
@@ -94,7 +92,8 @@ public class JournalControllerTest extends SpringTransactionalTest {
 
   @BeforeEach
   public void setUp() throws IOException {
-    setupLoggedInUser("user1a");
+    subjectThreadState = new SubjectThreadState(subject);
+    subjectThreadState.bind();
     recordManagerStub = new JournalRecordManagerStub();
     searchManagerStub = new JournalSearchManagerStub();
     journalController.setRecordManager(recordManagerStub);
@@ -119,17 +118,16 @@ public class JournalControllerTest extends SpringTransactionalTest {
     subjectThreadState.clear();
   }
 
-  private void setupLoggedInUser(String userName) {
-    subjectThreadState = new SubjectThreadState(subject);
-    subjectThreadState.bind();
-    lenient().when(subject.getSession()).thenReturn(shiroSessionMock);
-    lenient()
-        .when(shiroSessionMock.getAttribute(eq(SessionAttributeUtils.USER)))
-        .thenReturn(userMock);
-    lenient().when(userMock.getUsername()).thenReturn(userName);
-    lenient()
-        .when(userMock.isAnonymousGuestAccount())
-        .thenReturn(RecordGroupSharing.ANONYMOUS_USER.equals(userName));
+  private void stubSessionUserLookup(String userName) {
+    when(subject.getSession(false)).thenReturn(shiroSessionMock);
+    when(shiroSessionMock.getAttribute(eq(SessionAttributeUtils.USER))).thenReturn(userMock);
+    when(userMock.getUsername()).thenReturn(userName);
+  }
+
+  private void stubAuthenticatedUser(boolean anonymous) {
+    when(subject.getSession()).thenReturn(shiroSessionMock);
+    when(shiroSessionMock.getAttribute(eq(SessionAttributeUtils.USER))).thenReturn(userMock);
+    when(userMock.isAnonymousGuestAccount()).thenReturn(anonymous);
   }
 
   private void setUpSearchResults() throws IOException {
@@ -139,13 +137,16 @@ public class JournalControllerTest extends SpringTransactionalTest {
     }
     searchResults = new SearchResultsImpl<BaseRecord>(found, 7, 3L);
     noSearchResults = new SearchResultsImpl<BaseRecord>(new ArrayList<BaseRecord>(), 7, 3L);
-    lenient()
-        .when(searchMgr.searchWorkspaceRecords(any(WorkspaceListingConfig.class), eq(userMock)))
+  }
+
+  private void stubSearchResults() throws IOException {
+    when(searchMgr.searchWorkspaceRecords(any(WorkspaceListingConfig.class), eq(userMock)))
         .thenReturn(searchResults);
   }
 
   @Test
   public void retrieveEntryTest() throws Exception {
+    stubSessionUserLookup("user1a");
 
     // 0L represents root record and is not used in the stubs
     final Long targetParent = 0L;
@@ -259,6 +260,7 @@ public class JournalControllerTest extends SpringTransactionalTest {
 
   @Test
   public void retrieveHistoryTest() {
+    stubSessionUserLookup("user1a");
     // 0l represents root record and is not used in the stubs
     final Long targetParent = 0l;
 
@@ -295,6 +297,8 @@ public class JournalControllerTest extends SpringTransactionalTest {
 
   @Test
   public void searchTextTest() throws IOException {
+    stubAuthenticatedUser(false);
+    stubSearchResults();
     final Long targetParent = 0l;
 
     // test search should return 20 records
@@ -322,7 +326,8 @@ public class JournalControllerTest extends SpringTransactionalTest {
     when(folderManager.getNotebook(eq(targetParent))).thenReturn(notebookMock);
     when(notebookMock.getOwner()).thenReturn(userMock);
     when(notebookMock.isPublished()).thenReturn(true);
-    setupLoggedInUser(RecordGroupSharing.ANONYMOUS_USER);
+    stubAuthenticatedUser(true);
+    stubSearchResults();
     // test search should return 20 records
     List<JournalEntry> searchEntries =
         journalController.searchText("abc", targetParent, 0, mockPrincipal).getBody();
@@ -335,8 +340,7 @@ public class JournalControllerTest extends SpringTransactionalTest {
       throws IOException {
     final Long targetParent = 0l;
     when(folderManager.getNotebook(eq(targetParent))).thenReturn(notebookMock);
-    lenient().when(notebookMock.getOwner()).thenReturn(userMock);
-    setupLoggedInUser(RecordGroupSharing.ANONYMOUS_USER);
+    stubAuthenticatedUser(true);
     Exception exception =
         assertThrows(
             AuthorizationException.class,

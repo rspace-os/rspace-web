@@ -9,7 +9,6 @@ import static com.researchspace.testutils.TestFactory.createAFileProperty;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -69,15 +68,16 @@ public class DNAViewerControllerTest {
   @BeforeEach
   public void before() {
     edf.setExtension("gb");
-    lenient()
-        .when(systemPropertyManagerImpl.findByName(SNAPGENE_AVAILABLE))
-        .thenReturn(isSnapgeneAllowed);
-    lenient().when(isSnapgeneAllowed.getValue()).thenReturn(ALLOWED.name());
+  }
+
+  private void stubSnapgeneAllowed() {
+    when(systemPropertyManagerImpl.findByName(SNAPGENE_AVAILABLE)).thenReturn(isSnapgeneAllowed);
+    when(isSnapgeneAllowed.getValue()).thenReturn(ALLOWED.name());
   }
 
   @Test
   public void successScenario() throws IOException {
-    setupMocks();
+    setupPngMocks(true);
     mockSuccessfulSnapgeneCall();
     ResponseEntity<byte[]> bytes =
         dnaController.getPngView(1L, GeneratePngMapConfig.builder().build());
@@ -87,7 +87,7 @@ public class DNAViewerControllerTest {
 
   @Test
   public void snapGeneFailsScenario() throws IOException {
-    setupMocks();
+    setupPngMocks(true);
     mockErrorSnapgeneCall(HttpStatus.BAD_REQUEST);
     ResponseEntity<byte[]> bytes =
         dnaController.getPngView(1L, GeneratePngMapConfig.builder().build());
@@ -99,6 +99,7 @@ public class DNAViewerControllerTest {
 
   @Test
   public void statusFails() throws IOException {
+    stubSnapgeneAllowed();
     mockErrorSnapgeneStatus(HttpStatus.NOT_FOUND);
     ResponseEntity<String> bytes = dnaController.status();
     assertThat(bytes.getBody(), Matchers.startsWith("Snapgene webservice call failed"));
@@ -107,6 +108,7 @@ public class DNAViewerControllerTest {
 
   @Test
   public void statusSucceeds() throws IOException {
+    stubSnapgeneAllowed();
     mockSuccessfulSnapgeneStatus(HttpStatus.OK);
     ResponseEntity<String> bytes = dnaController.status();
     assertEquals("{\"json\": \"someData\"}", bytes.getBody());
@@ -115,6 +117,7 @@ public class DNAViewerControllerTest {
 
   @Test
   public void testEmptyErrorApiSucceedsWithoutThrowingException() {
+    stubSnapgeneAllowed();
     when(wsClient.status()).thenReturn(Either.left(null));
     ResponseEntity<String> bytes = dnaController.status();
     verify(wsClient).status();
@@ -124,6 +127,7 @@ public class DNAViewerControllerTest {
 
   @Test
   public void testWhenSnapgeneDeniedDoesNotAskForStatus() {
+    when(systemPropertyManagerImpl.findByName(SNAPGENE_AVAILABLE)).thenReturn(isSnapgeneAllowed);
     when(isSnapgeneAllowed.getValue()).thenReturn(DENIED.name());
     ResponseEntity<String> bytes = dnaController.status();
     verifyNoInteractions(wsClient);
@@ -133,6 +137,7 @@ public class DNAViewerControllerTest {
 
   @Test
   public void testWhenSnapgeneDeniedByDefaultDoesNotAskForStatus() {
+    when(systemPropertyManagerImpl.findByName(SNAPGENE_AVAILABLE)).thenReturn(isSnapgeneAllowed);
     when(isSnapgeneAllowed.getValue()).thenReturn(DENIED_BY_DEFAULT.name());
     ResponseEntity<String> bytes = dnaController.status();
     verifyNoInteractions(wsClient);
@@ -142,7 +147,7 @@ public class DNAViewerControllerTest {
 
   @Test
   public void permissionFailureOccursBeforeWSCall() throws Exception {
-    setupMocks();
+    setupPngMocks(false);
     when(perms.isRecordAccessPermitted(user, edf, PermissionType.READ)).thenReturn(false);
     assertThrows(
         AuthorizationException.class,
@@ -152,7 +157,7 @@ public class DNAViewerControllerTest {
 
   @Test
   public void rejectTooBigFileBeforeWsCall() throws Exception {
-    setupMocks();
+    setupPngMocks(false);
     edf.setSize(DNAViewerController.MAX_SNAPGENE_FILE_SIZE + 1);
     CoreTestUtils.assertIllegalArgumentException(
         () -> dnaController.getPngView(1L, GeneratePngMapConfig.builder().build()));
@@ -161,17 +166,19 @@ public class DNAViewerControllerTest {
 
   @Test
   public void rejectUnsupportedFileTypeBeforeWsCall() throws Exception {
-    setupMocks();
+    setupPngMocks(false);
     edf.setExtension("xyzz");
     assertIllegalArgumentException(
         () -> dnaController.getPngView(1L, GeneratePngMapConfig.builder().build()));
     verifyNoInteractions(wsClient);
   }
 
-  private void setupMocks() throws IOException {
+  private void setupPngMocks(boolean includeFileLookup) throws IOException {
     edf.setFileProperty(fp);
     when(userManager.getAuthenticatedUserInSession()).thenReturn(user);
-    lenient().when(fileStore.findFile(Mockito.eq(fp))).thenReturn(someGenbankFile);
+    if (includeFileLookup) {
+      when(fileStore.findFile(Mockito.eq(fp))).thenReturn(someGenbankFile);
+    }
     when(rcdMgr.get(1L)).thenReturn(edf);
     when(perms.isRecordAccessPermitted(user, edf, PermissionType.READ)).thenReturn(true);
   }

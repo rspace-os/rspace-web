@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.ldap.UserLdapRepo;
@@ -58,7 +57,6 @@ public class LdapRealmTest {
     user1sid2.setId(1L);
     token = new UsernamePasswordToken(testUsername, "anypass");
     when(userLdapRepo.authenticate(anyString(), anyString())).thenReturn(user1sid2);
-    lenient().when(properties.isUserSignup()).thenReturn(false);
   }
 
   @Test

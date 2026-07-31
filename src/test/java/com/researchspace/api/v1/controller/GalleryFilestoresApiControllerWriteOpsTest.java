@@ -160,7 +160,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
 
     verify(nfsManager)
         .uploadFilesToNfs(anyCollection(), anyString(), any(WritableNfsClient.class), any());
-    verify(deletionManager, org.mockito.Mockito.never()).deleteMediaFileSet(anySet(), any());
+    verify(deletionManager, never()).deleteMediaFileSet(anySet(), any());
   }
 
   @Test
