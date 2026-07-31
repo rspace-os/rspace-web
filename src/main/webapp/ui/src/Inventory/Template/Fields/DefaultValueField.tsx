@@ -15,6 +15,7 @@ import { hasOptions } from "../../../stores/models/FieldTypes";
 import { match } from "../../../util/Util";
 import { DATACITE_RELATION_TYPES } from "../../components/Fields/Link/dataciteRelationTypes";
 import CustomField from "../../components/Inputs/CustomField";
+import LinkFieldValue from "../../Sample/Fields/TemplateFields/LinkFieldValue";
 
 type DefaultValueFieldArgs = {
   field: FieldModel;
@@ -40,9 +41,11 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
   const key = React.useMemo(() => field.id ?? crypto.randomUUID(), [field.id]);
 
   /*
-   * Link template fields don't store a "default value" in the usual sense; instead the template
-   * defines which DataCite relationship types samples may use. An empty whitelist means all
-   * relationship types are allowed.
+   * A Link template field's "default value" has two parts: the whitelist of DataCite relationship
+   * types items created from this template may use (an empty whitelist means all of them), and an
+   * optional default link that is stamped onto those items (RSDEV-1246). The default is edited with
+   * the same LinkFieldValue editor an item's own link uses, so the relation options, self-link
+   * rejection, target-existence check and Apply/Discard guard all come for free.
    */
   if (field.type === "link") {
     return (
@@ -85,6 +88,19 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
             );
           }}
         />
+        <Box sx={{ mt: 2 }}>
+          <InputWrapper
+            label={t("fields.templateFields.defaultValue.defaultLink")}
+            explanation={t("fields.templateFields.defaultValue.defaultLinkExplanation")}
+          >
+            <LinkFieldValue
+              field={field}
+              sourceGlobalId={field.owner.globalId ?? ""}
+              disabled={!editing}
+              onChange={() => {}}
+            />
+          </InputWrapper>
+        </Box>
       </InputWrapper>
     );
   }

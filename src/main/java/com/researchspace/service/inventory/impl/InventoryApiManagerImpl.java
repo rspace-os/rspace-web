@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import static com.researchspace.api.v1.model.ApiInventoryRecordInfo.tagDifferenceExists;
 
 import com.axiope.search.SearchUtils;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiBarcode;
 import com.researchspace.api.v1.model.ApiGroupBasicInfo;
 import com.researchspace.api.v1.model.ApiInventoryEditLock;
@@ -26,6 +27,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
@@ -42,6 +44,7 @@ import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.ApiIdentifiersHelper;
 import com.researchspace.service.inventory.InventoryApiManager;
 import com.researchspace.service.inventory.InventoryFileApiManager;
+import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -75,6 +78,7 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   protected @Autowired UserManager userManager;
   protected @Autowired ContainerDao containerDao;
   protected @Autowired InventoryPermissionUtils invPermissions;
+  protected @Autowired InventoryLinkManager inventoryLinkManager;
   private @Autowired InventoryEditLockTracker tracker;
   private @Autowired GroupDao groupDao;
   private @Autowired InventoryFileApiManager inventoryFileApiManager;
@@ -108,6 +112,61 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
       }
     }
     return changed;
+  }
+
+  /**
+   * Whether a link field's allowed-relation-types whitelist permits the given relation type. An
+   * empty (or absent) whitelist permits all of them.
+   */
+  static boolean isRelationPermitted(InventoryLinkField field, String relationType) {
+    String allowed = field.getAllowedRelationTypes();
+    if (allowed == null || allowed.trim().isEmpty()) {
+      return true;
+    }
+    return Arrays.asList(allowed.split("\\|")).contains(relationType);
+  }
+
+  /**
+   * Rejects a template edit that narrows a link field's allowed-relation-types whitelist so that
+   * the field's own default link (RSDEV-1246) would no longer be permitted. The per-link check in
+   * each manager's {@code assertRelationAllowed} only sees an incoming link, and an unchanged
+   * default is a no-op on that path, so a whitelist-only edit would otherwise leave the template
+   * holding a default its own field forbids. Failing the edit is preferable to silently dropping
+   * the default.
+   */
+  static void assertDefaultLinksMatchWhitelists(List<InventoryEntityField> templateFields) {
+    for (InventoryEntityField field : templateFields) {
+      if (field instanceof InventoryLinkField) {
+        InventoryLinkField linkField = (InventoryLinkField) field;
+        InventoryLink link = linkField.getLink();
+        if (link != null && !isRelationPermitted(linkField, link.getRelationType())) {
+          throw new ApiRuntimeException(
+              "errors.inventory.field.link.defaultRelationTypeNotPermitted",
+              link.getRelationType(),
+              linkField.getName());
+        }
+      }
+    }
+  }
+
+  /**
+   * Soft-deletes the {@link InventoryLink} backing a structured link field once that field has been
+   * soft-deleted, so the link row (and its Envers audit trail) stays in step with the field. The
+   * field's {@code deleted} flag is flipped in the model layer (a template link-field delete, or
+   * its propagation to records through {@code updateToLatestTemplateVersion}), which cannot reach
+   * the service-layer {@link InventoryLinkManager}; a soft-delete is also an ordinary update rather
+   * than a JPA remove, so the {@code cascade}/{@code orphanRemoval} on {@code
+   * InventoryLinkField#link} never fires. Without this the link row would linger with {@code
+   * deleted=false} after its field is gone (RSDEV-1270). No-op unless the field is a deleted {@link
+   * InventoryLinkField} whose link is still live.
+   */
+  void softDeleteLinkOfDeletedLinkField(InventoryEntityField field, User user) {
+    if (field instanceof InventoryLinkField && field.isDeleted()) {
+      InventoryLink link = ((InventoryLinkField) field).getLink();
+      if (link != null && !link.isDeleted()) {
+        inventoryLinkManager.deleteLink(link, user);
+      }
+    }
   }
 
   protected void updateOntologyOnUpdate(
