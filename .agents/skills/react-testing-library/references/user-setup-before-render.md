@@ -39,7 +39,7 @@ expect(screen.getByRole('dialog')).toBeInTheDocument()
 ```tsx
 const user = userEvent.setup({
   delay: null, // Speed up tests by removing typing delay
-  advanceTimers: jest.advanceTimersByTime, // For fake timers
+  advanceTimers: vi.advanceTimersByTime, // For fake timers
 })
 ```
 

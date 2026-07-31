@@ -30,7 +30,7 @@ test('submits form', async () => {
 ```tsx
 test('submits form with valid data', async () => {
   // Arrange
-  const mockSubmit = jest.fn()
+  const mockSubmit = vi.fn()
   const user = userEvent.setup()
   render(<ContactForm onSubmit={mockSubmit} />)
 

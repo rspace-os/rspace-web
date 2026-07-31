@@ -2,17 +2,17 @@
 title: Configure userEvent with Fake Timers
 impact: MEDIUM
 impactDescription: prevents test hangs when using fake timers
-tags: setup, fake-timers, userEvent, jest
+tags: setup, fake-timers, userEvent, vitest
 ---
 
 ## Configure userEvent with Fake Timers
 
-When using Jest's fake timers, configure `userEvent.setup()` with `advanceTimers` to prevent tests from hanging on delays.
+When using Vitest's fake timers, configure `userEvent.setup()` with `advanceTimers` to prevent tests from hanging on delays.
 
 **Incorrect (test hangs):**
 
 ```tsx
-jest.useFakeTimers()
+vi.useFakeTimers()
 
 test('shows loading then content', async () => {
   const user = userEvent.setup()
@@ -26,11 +26,11 @@ test('shows loading then content', async () => {
 **Correct (configure advanceTimers):**
 
 ```tsx
-jest.useFakeTimers()
+vi.useFakeTimers()
 
 test('shows loading then content', async () => {
   const user = userEvent.setup({
-    advanceTimers: jest.advanceTimersByTime
+    advanceTimers: vi.advanceTimersByTime
   })
   render(<DelayedContent delay={1000} />)
 
@@ -47,14 +47,14 @@ test('shows loading then content', async () => {
 let user: ReturnType<typeof userEvent.setup>
 
 beforeEach(() => {
-  jest.useFakeTimers()
+  vi.useFakeTimers()
   user = userEvent.setup({
-    advanceTimers: jest.advanceTimersByTime
+    advanceTimers: vi.advanceTimersByTime
   })
 })
 
 afterEach(() => {
-  jest.useRealTimers()
+  vi.useRealTimers()
 })
 ```
 

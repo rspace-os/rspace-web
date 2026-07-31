@@ -7,9 +7,9 @@ tags: assert, jest-dom, matchers, assertions
 
 ## Use jest-dom Matchers for DOM Assertions
 
-Use `@testing-library/jest-dom` matchers instead of generic Jest matchers. They provide clearer error messages and test semantic properties.
+Use `@testing-library/jest-dom` matchers instead of generic Vitest matchers. They provide clearer error messages and test semantic properties.
 
-**Incorrect (generic Jest matchers):**
+**Incorrect (generic Vitest matchers):**
 
 ```tsx
 render(<Button disabled>Submit</Button>)

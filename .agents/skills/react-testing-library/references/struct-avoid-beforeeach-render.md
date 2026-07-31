@@ -42,7 +42,7 @@ describe('Button', () => {
   })
 
   test('calls onClick when clicked', async () => {
-    const handleClick = jest.fn()
+    const handleClick = vi.fn()
     const user = userEvent.setup()
     render(<Button onClick={handleClick}>Click me</Button>)
 
@@ -57,7 +57,7 @@ describe('Button', () => {
 
 ```tsx
 beforeEach(() => {
-  jest.clearAllMocks()
+  vi.clearAllMocks()
   // Setup mocks, not component renders
 })
 ```
