@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 ---
 
 # A template's default link is whole or nothing
