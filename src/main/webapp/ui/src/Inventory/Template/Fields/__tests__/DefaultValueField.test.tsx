@@ -98,6 +98,41 @@ describe("DefaultValueField", () => {
       expect(screen.getByText("SA2")).toBeInTheDocument();
     });
 
+    it("does not repeat the field name under the Default link heading", () => {
+      // the name is already entered in the Name field above; repeating it here is noise
+      const field = makeMockField({
+        type: "link",
+        name: "Related items",
+        allowedRelationTypes: ["IsCitedBy"],
+      });
+
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <DefaultValueField field={field} editing />
+        </ThemeProvider>,
+      );
+
+      expect(screen.queryByText("Related items")).not.toBeInTheDocument();
+    });
+
+    it("does not repeat the field name inside a committed default link card", () => {
+      const field = makeMockField({
+        type: "link",
+        name: "Related items",
+        allowedRelationTypes: ["IsCitedBy"],
+        link: { relationType: "IsCitedBy", targetGlobalId: "SA2", versionPin: null },
+      });
+
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <DefaultValueField field={field} editing />
+        </ThemeProvider>,
+      );
+
+      expect(screen.getByText("SA2")).toBeInTheDocument();
+      expect(screen.queryByText("Related items")).not.toBeInTheDocument();
+    });
+
     it("renders no default link editor for a non-link field", () => {
       const field = makeMockField({ type: "string", content: "hello" });
 

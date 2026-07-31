@@ -7,6 +7,7 @@ import FormHelperText from "@mui/material/FormHelperText";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -52,9 +53,11 @@ export interface LinkEditorProps {
 
 /**
  * The shared link-editor UI used by both the extra-field editor (UpdateField)
- * and the template-field editor (LinkFieldValue): the relation-type field, the
- * target chip + Browse Inventory/ELN buttons + Target Global ID field, the
- * version pill and version-pin control, and the three picker/version dialogs.
+ * and the template-field editor (LinkFieldValue), in three labelled groups:
+ * "Target" (the target chip, the Target Global ID field and the two Browse
+ * buttons, all on one wrapping row), then the relation-type field, then
+ * "Version" (the version pill and version-pin control). Plus the three
+ * picker/version dialogs.
  *
  * Controlled and presentational: it owns only the open-state of its three
  * dialogs and a neutral vertical layout. All staged values, validation, the
@@ -87,33 +90,15 @@ export default function LinkEditor({
 
   return (
     <Box>
-      <Autocomplete
-        freeSolo={relationFreeSolo}
-        options={relationOptions}
-        value={relationFreeSolo ? relationType : relationType === "" ? null : relationType}
-        onChange={relationFreeSolo ? undefined : (_event, value) => onRelationTypeChange(value ?? "")}
-        onInputChange={relationFreeSolo ? (_event, value) => onRelationTypeChange(value) : undefined}
-        renderInput={(params) => {
-          const { slotProps, ...textFieldProps } = params;
-          return (
-            <TextField
-              {...textFieldProps}
-              variant="standard"
-              label={relationLabel}
-              error={relationError}
-              helperText={relationHelperText}
-              slotProps={{
-                ...slotProps,
-                htmlInput: {
-                  ...slotProps.htmlInput,
-                  "aria-label": relationLabel,
-                },
-              }}
-            />
-          );
-        }}
-      />
-      <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", alignItems: "center" }}>
+      <Typography variant="subtitle1" component="h4" sx={{ fontWeight: 700 }}>
+        {t("fields.link.editor.target")}
+      </Typography>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{ mt: 0.5, flexWrap: "wrap", alignItems: "center" }}
+        data-test-id="LinkEditor-targetRow"
+      >
         {targetGlobalId
           ? (() => {
               const iconData = iconForGlobalId(targetGlobalId);
@@ -129,8 +114,11 @@ export default function LinkEditor({
                   // (spacing(0.5)). The selector is repeated to out-specify the
                   // theme's two-class `.MuiChip-deletable` rule. The cancel
                   // button just widens the chip.
+                  // flexShrink: 0 because the chip shares a flex row with the target field. A
+                  // shrunk chip clips its own delete icon (MuiChip-label is overflow: hidden), so
+                  // the X silently disappears rather than wrapping.
                   size="small"
-                  sx={{ "&.MuiChip-deletable": { pl: 0.5 } }}
+                  sx={{ flexShrink: 0, "&.MuiChip-deletable": { pl: 0.5 } }}
                   icon={iconData ? <RecordTypeIcon record={iconData} aria-hidden /> : undefined}
                   label={targetName ? `${targetGlobalId} — ${targetName}` : targetGlobalId}
                   onDelete={() => onTargetChange("", "")}
@@ -139,6 +127,19 @@ export default function LinkEditor({
               );
             })()
           : null}
+        <TextField
+          label={t("fields.link.editor.targetGlobalId")}
+          value={targetGlobalId}
+          onChange={(e) => onTargetChange(e.target.value, "")}
+          size="small"
+          variant="standard"
+          // a Global ID is short (about 20 characters at the very most, usually far fewer), so the
+          // field is sized to its content rather than flexing to fill the row
+          sx={{ width: "11em", flexShrink: 0 }}
+          helperText={targetHelperText}
+          error={targetError}
+          slotProps={{ htmlInput: { "aria-label": t("fields.link.editor.targetGlobalId") } }}
+        />
         <Button
           size="small"
           variant="outlined"
@@ -156,20 +157,39 @@ export default function LinkEditor({
           {t("fields.link.editor.browseEln")}
         </Button>
       </Stack>
-      <TextField
-        label={t("fields.link.editor.targetGlobalId")}
-        value={targetGlobalId}
-        onChange={(e) => onTargetChange(e.target.value, "")}
-        fullWidth
-        size="small"
-        variant="standard"
-        sx={{ mt: 1 }}
-        helperText={targetHelperText}
-        error={targetError}
-        slotProps={{ htmlInput: { "aria-label": t("fields.link.editor.targetGlobalId") } }}
-      />
       {validationMessage ? <FormHelperText error>{validationMessage}</FormHelperText> : null}
-      <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: "center" }}>
+      <Box sx={{ mt: 2 }}>
+        <Autocomplete
+          freeSolo={relationFreeSolo}
+          options={relationOptions}
+          value={relationFreeSolo ? relationType : relationType === "" ? null : relationType}
+          onChange={relationFreeSolo ? undefined : (_event, value) => onRelationTypeChange(value ?? "")}
+          onInputChange={relationFreeSolo ? (_event, value) => onRelationTypeChange(value) : undefined}
+          renderInput={(params) => {
+            const { slotProps, ...textFieldProps } = params;
+            return (
+              <TextField
+                {...textFieldProps}
+                variant="standard"
+                label={relationLabel}
+                error={relationError}
+                helperText={relationHelperText}
+                slotProps={{
+                  ...slotProps,
+                  htmlInput: {
+                    ...slotProps.htmlInput,
+                    "aria-label": relationLabel,
+                  },
+                }}
+              />
+            );
+          }}
+        />
+      </Box>
+      <Typography variant="subtitle1" component="h4" sx={{ mt: 2, fontWeight: 700 }}>
+        {t("fields.link.editor.version")}
+      </Typography>
+      <Stack direction="row" spacing={1} sx={{ mt: 0.5, alignItems: "center" }} data-test-id="LinkEditor-versionRow">
         <Chip
           size="small"
           variant="outlined"

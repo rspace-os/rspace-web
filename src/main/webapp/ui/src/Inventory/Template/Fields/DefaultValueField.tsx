@@ -93,6 +93,8 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
               sourceGlobalId={field.owner.globalId ?? ""}
               disabled={!editing}
               onChange={() => {}}
+              // the name is already entered in the Name field above
+              showFieldName={false}
             />
           </InputWrapper>
         </Box>

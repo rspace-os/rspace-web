@@ -94,6 +94,19 @@ beforeEach(() => {
 });
 
 describe("LinkFieldValue", () => {
+  it("surfaces the field name on an item, whose FormField label is hidden", () => {
+    // the template editor opts out with showFieldName={false} (its Name field is right above); an
+    // item has no other label, so the default must keep showing it
+    renderField({
+      field: linkField(),
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    expect(screen.getByText("Related items")).toBeInTheDocument();
+  });
+
   it("constrains the relationship type options to the field's allowed set", async () => {
     const user = userEvent.setup();
     renderField({

@@ -23,6 +23,12 @@ type LinkFieldValueArgs = {
   sourceGlobalId: string;
   disabled: boolean;
   onChange: () => void;
+  /**
+   * Whether to surface the field name above the editor and inside the committed card. True on an
+   * item, whose FormField label is hidden. False in the template editor, where the name is already
+   * entered in the Name field just above and repeating it here is noise.
+   */
+  showFieldName?: boolean;
 };
 
 /**
@@ -34,7 +40,13 @@ type LinkFieldValueArgs = {
  * committed on Apply, mirroring the extra-field Link editor. The editor body itself is the shared
  * {@link LinkEditor}.
  */
-function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkFieldValueArgs): React.ReactNode {
+function LinkFieldValue({
+  field,
+  sourceGlobalId,
+  disabled,
+  onChange,
+  showFieldName = true,
+}: LinkFieldValueArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
   const committedRelationType = field.link?.relationType ?? "";
   const committedTargetGlobalId = field.link?.targetGlobalId ?? "";
@@ -160,7 +172,7 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
             />
           </Box>
         )}
-        <LinkField name={field.name} link={committedLink} editable={!disabled} />
+        <LinkField name={showFieldName ? field.name : ""} link={committedLink} editable={!disabled} />
       </Box>
     );
   }
@@ -178,7 +190,7 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
   return (
     <Box>
       {/* The FormField label is hidden, so surface the field name here. */}
-      {field.name && (
+      {showFieldName && field.name && (
         <Typography variant="subtitle1" component="span" sx={{ fontWeight: 700 }}>
           {field.name}
         </Typography>
