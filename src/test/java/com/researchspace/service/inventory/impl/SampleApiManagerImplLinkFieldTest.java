@@ -152,10 +152,12 @@ class SampleApiManagerImplLinkFieldTest {
   @Test
   void clearingTheValueDereferencesTheRowForOrphanRemoval() {
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
-    // no link payload at all: the field's value is being cleared. The field's
+    // an explicit null link: the field's value is being cleared. (Absence is a different thing and
+    // now means "no change" - see aPayloadThatNeverMentionsTheLinkLeavesItAlone.) The field's
     // orphanRemoval mapping hard-deletes the dereferenced row at flush (with a
     // DEL revision in InventoryLink_AUD); an extra soft-delete write would be
     // collapsed away by Envers and is deliberately not attempted.
+    apiField.setLink(null);
     boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
 
     assertTrue(changed);
@@ -197,6 +199,35 @@ class SampleApiManagerImplLinkFieldTest {
     when(inventoryLinkManager.updateLink(dbLink, apiField.getLink(), user)).thenReturn(dbLink);
 
     assertTrue(manager.applyLinkFieldValue(dbField, apiField, user));
+  }
+
+  @Test
+  void aPayloadThatNeverMentionsTheLinkLeavesItAlone() {
+    // A partial update must not destroy the link. This is the request the whitelist-conflict error
+    // tells the user to make (narrow the allowed types, no link key), and also a plain field
+    // rename.
+    // Treating absent as "clear" hard-deleted the row AND left assertDefaultLinksMatchWhitelists
+    // seeing link == null, so the guard passed and the 422 never fired.
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+    apiField.setAllowedRelationTypes(List.of("IsCitedBy"));
+
+    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
+
+    assertFalse(changed);
+    assertSame(dbLink, dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void anExplicitNullLinkStillClearsIt() {
+    // the editor's "remove the link" path sends link: null explicitly, and must keep working
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+    apiField.setLink(null);
+
+    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
+
+    assertTrue(changed);
+    assertNull(dbField.getLink());
   }
 
   @Test

@@ -77,7 +77,7 @@ describe("DefaultValueField", () => {
         </ThemeProvider>,
       );
 
-      await user.click(screen.getByRole("combobox", { name: "Relationship type" }));
+      await user.click(screen.getByRole("combobox", { name: "inventory:fields.extraFields.fields.relationType" }));
       expect(await screen.findByRole("option", { name: "IsCitedBy" })).toBeInTheDocument();
       expect(screen.queryByRole("option", { name: "Cites" })).not.toBeInTheDocument();
     });
@@ -142,7 +142,9 @@ describe("DefaultValueField", () => {
         </ThemeProvider>,
       );
 
-      expect(screen.queryByRole("combobox", { name: "Relationship type" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("combobox", { name: "inventory:fields.extraFields.fields.relationType" }),
+      ).not.toBeInTheDocument();
     });
   });
 });

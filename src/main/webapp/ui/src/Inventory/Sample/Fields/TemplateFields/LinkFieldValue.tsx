@@ -22,7 +22,9 @@ type LinkFieldValueArgs = {
   /** The Global ID of the sample owning this field, used to forbid self-links. */
   sourceGlobalId: string;
   disabled: boolean;
-  onChange: () => void;
+  /** Notifies the owning form that the committed link changed. Omit where there is nothing to tell:
+   * the template editor tracks error state on its Name field only. */
+  onChange?: () => void;
   /**
    * Whether to surface the field name above the editor and inside the committed card. True on an
    * item, whose FormField label is hidden. False in the template editor, where the name is already
@@ -101,8 +103,14 @@ function LinkFieldValue({
   // left-open editor must not keep the field flagged: that would block save with an "Apply or
   // discard" message the user has no way to act on. A record Save happens while still editable
   // (`disabled` is false), so gating on `!disabled` does not weaken the guard.
+  // The cleanup matters: the template editor unmounts this component when the field is marked for
+  // deletion (Template/Fields/CustomField swaps in the delete notice), and record validation walks
+  // every field including deleted ones. Without it, opening the editor on a link field and then
+  // removing that field leaves the flag set and blocks Save with an "Apply or discard" message the
+  // user has no editor left to act on.
   useEffect(() => {
     field.setLinkEditInProgress(!disabled && (changed || (editing && hasLink)));
+    return () => field.setLinkEditInProgress(false);
   }, [changed, editing, hasLink, disabled, field]);
 
   const relationOptions =
@@ -117,8 +125,7 @@ function LinkFieldValue({
   // a stageable value is either fully cleared (removing the link) or a complete, valid link
   const canApply = changed && !checkingTarget && !targetExistenceError && (bothEmpty || (bothSet && targetValidity.ok));
 
-  const validationMessage =
-    changed && !bothEmpty && !bothSet ? "Select both a relationship type and a target before applying." : "";
+  const validationMessage = changed && !bothEmpty && !bothSet ? t("sample.fields.linkFieldValue.bothRequired") : "";
 
   const apply = async (): Promise<void> => {
     const nextLink: FieldLink | null = bothEmpty
@@ -135,14 +142,14 @@ function LinkFieldValue({
       const exists = await checkLinkTargetExists(nextLink.targetGlobalId);
       setCheckingTarget(false);
       if (!exists) {
-        setTargetExistenceError(`${nextLink.targetGlobalId} does not exist, or you do not have permission to view it.`);
+        setTargetExistenceError(t("fields.extraFields.link.targetNotFound", { globalId: nextLink.targetGlobalId }));
         return;
       }
     }
     field.setAttributesDirty({ link: nextLink });
     field.setLinkEditInProgress(false);
     setEditing(false);
-    onChange();
+    onChange?.();
   };
 
   const discard = (): void => {
@@ -200,13 +207,13 @@ function LinkFieldValue({
         onRelationTypeChange={(value) => setStagedRelationType(value)}
         relationOptions={relationOptions}
         relationFreeSolo={false}
-        relationLabel="Relationship type"
+        relationLabel={t("fields.extraFields.fields.relationType")}
         targetGlobalId={stagedTargetGlobalId}
         onTargetChange={(globalId) => setStagedTarget(globalId)}
         targetError={Boolean(targetExistenceError) || !targetValidity.ok}
         targetHelperText={
           targetExistenceError ??
-          (!targetValidity.ok ? targetValidity.reason : "Paste a Global ID, or use the Browse buttons above.")
+          (!targetValidity.ok ? targetValidity.reason : t("fields.extraFields.link.targetHelper"))
         }
         validationMessage={validationMessage}
         versionPin={stagedVersionPin}

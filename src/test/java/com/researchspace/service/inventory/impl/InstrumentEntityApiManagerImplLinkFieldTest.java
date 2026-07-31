@@ -140,6 +140,9 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
   @Test
   void clearingTheValueDereferencesTheRowForOrphanRemoval() {
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+    // an explicit null, not mere absence: absence now means "no change" (see the sample
+    // counterpart)
+    apiField.setLink(null);
 
     boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
 

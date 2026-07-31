@@ -434,6 +434,10 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       if (existing == null) {
         return false; // no link before, none requested now
       }
+      if (!apiField.isLinkProvided()) {
+        // a partial update that never mentions the link: leave it alone rather than destroy it
+        return false;
+      }
       field.setLink(null); // orphanRemoval hard-deletes the dereferenced row at flush
       return true;
     }
@@ -512,7 +516,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   }
 
   private void rejectSelfLink(ApiInventoryLink apiLink, SampleEntity dbSample) {
-    if (apiLink == null || dbSample.getOid() == null) {
+    // getId() first: getOid() throws rather than returning null on an unsaved record, and this is
+    // now reached while creating a template, which has no id yet (and so nothing to self-link to)
+    if (apiLink == null || dbSample.getId() == null || dbSample.getOid() == null) {
       return;
     }
     GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
@@ -1057,7 +1063,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
         apiSample.getFields(), null);
     for (ApiInventoryEntityField field : apiSample.getFields()) {
       InventoryEntityField toAdd = apiFieldToModelFieldFactory.apiInventoryFieldToModelField(field);
-      applyDefaultLinkOfNewTemplateField(toAdd, field, user);
+      applyDefaultLinkOfNewTemplateField(toAdd, field, sample, user);
       sample.addSampleField(toAdd);
     }
   }
@@ -1072,8 +1078,14 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
    * for a link field whose payload carries no link.
    */
   private void applyDefaultLinkOfNewTemplateField(
-      InventoryEntityField toAdd, ApiInventoryEntityField apiField, User user) {
+      InventoryEntityField toAdd,
+      ApiInventoryEntityField apiField,
+      SampleEntity dbTemplate,
+      User user) {
     if (toAdd instanceof InventoryLinkField) {
+      // the same self-link rejection the edit path applies: adding a link field to an already-saved
+      // template must not be a way in for a default that targets that very template
+      rejectSelfLink(apiField.getLink(), dbTemplate);
       applyLinkFieldValue((InventoryLinkField) toAdd, apiField, user);
     }
   }
@@ -1108,7 +1120,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       if (apiField.isNewFieldRequest()) {
         InventoryEntityField toAdd =
             apiFieldToModelFieldFactory.apiInventoryFieldToModelField(apiField);
-        applyDefaultLinkOfNewTemplateField(toAdd, apiField, user);
+        applyDefaultLinkOfNewTemplateField(toAdd, apiField, dbTemplate, user);
         dbTemplate.addSampleField(toAdd);
         changed = true;
       }

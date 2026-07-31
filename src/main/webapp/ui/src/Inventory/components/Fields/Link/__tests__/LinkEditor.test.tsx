@@ -82,11 +82,14 @@ describe("LinkEditor layout", () => {
     ).toBeInTheDocument();
   });
 
-  it("still shows the selected target chip alongside the target field", () => {
+  it("shows the selected target below the id field and pickers, not inside that row", () => {
     const { container } = renderEditor({ targetGlobalId: "SA42" });
 
     const targetRow = row(container, "LinkEditor-targetRow");
-    expect(targetRow.querySelector('[data-test-id="LinkTarget-globalId"]')).toBeInTheDocument();
+    const chip = container.querySelector<HTMLElement>('[data-test-id="LinkTarget-globalId"]');
+    expect(chip).toBeInTheDocument();
+    expect(targetRow.contains(chip)).toBe(false);
+    expect(targetRow.compareDocumentPosition(chip as HTMLElement) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("keeps the chip's delete affordance, which clears the target", async () => {
@@ -98,9 +101,6 @@ describe("LinkEditor layout", () => {
     const deleteIcon = chip?.querySelector<HTMLElement>(".MuiChip-deleteIcon");
     expect(deleteIcon).toBeInTheDocument();
 
-    // the chip must not shrink away in the flex row: a squashed chip clips its own delete icon
-    expect(window.getComputedStyle(chip as HTMLElement).flexShrink).toBe("0");
-
     await user.click(deleteIcon as HTMLElement);
     expect(onTargetChange).toHaveBeenCalledWith("", "");
   });
@@ -108,8 +108,10 @@ describe("LinkEditor layout", () => {
   it("keeps the target field narrow, since a Global ID is short", () => {
     const { container } = renderEditor();
 
-    const field = container.querySelector<HTMLElement>(".MuiTextField-root");
-    // a Global ID tops out around 20 characters, so the field is sized rather than greedy
-    expect(window.getComputedStyle(field as HTMLElement).flexGrow).not.toBe("1");
+    const field = within(row(container, "LinkEditor-targetRow"))
+      .getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" })
+      .closest<HTMLElement>(".MuiTextField-root");
+    // a Global ID tops out around 20 characters, so the field is sized rather than filling the row
+    expect(window.getComputedStyle(field as HTMLElement).width).toBe("11em");
   });
 });

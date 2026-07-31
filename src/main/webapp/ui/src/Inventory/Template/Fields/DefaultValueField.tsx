@@ -47,58 +47,62 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
    * rejection, target-existence check and Apply/Discard guard all come for free.
    */
   if (field.type === "link") {
+    // siblings, not nested: InputWrapper renders a labelled fieldset, so nesting would make the
+    // default-link controls announce as part of the "Allowed relationship types" group
     return (
-      <InputWrapper
-        label={t("fields.templateFields.defaultValue.allowedRelationshipTypes")}
-        explanation={t("fields.templateFields.defaultValue.allowedRelationshipTypesExplanation")}
-      >
-        <Autocomplete
-          multiple
-          disabled={!editing}
-          options={[...DATACITE_RELATION_TYPES]}
-          value={field.allowedRelationTypes}
-          // already-chosen types are greyed out rather than toggled off; they
-          // are removed via their chip's delete icon instead
-          getOptionDisabled={(option) => field.allowedRelationTypes.includes(option)}
-          onChange={(_event, value) => field.setAttributesDirty({ allowedRelationTypes: value })}
-          renderInput={(params) => {
-            const { slotProps, ...textFieldProps } = params;
-            return (
-              <MuiTextField
-                {...textFieldProps}
-                variant="standard"
-                placeholder={
-                  field.allowedRelationTypes.length === 0
-                    ? t("fields.templateFields.defaultValue.allRelationshipTypes")
-                    : ""
-                }
-                slotProps={{
-                  ...slotProps,
-                  htmlInput: {
-                    ...slotProps.htmlInput,
-                    "aria-label": t("fields.templateFields.defaultValue.allowedRelationshipTypes"),
-                  },
-                }}
-              />
-            );
-          }}
-        />
-        <Box sx={{ mt: 2 }}>
-          <InputWrapper
-            label={t("fields.templateFields.defaultValue.defaultLink")}
-            explanation={t("fields.templateFields.defaultValue.defaultLinkExplanation")}
-          >
-            <LinkFieldValue
-              field={field}
-              sourceGlobalId={field.owner.globalId ?? ""}
-              disabled={!editing}
-              onChange={() => {}}
-              // the name is already entered in the Name field above
-              showFieldName={false}
-            />
-          </InputWrapper>
-        </Box>
-      </InputWrapper>
+      <>
+        <InputWrapper
+          label={t("fields.templateFields.defaultValue.allowedRelationshipTypes")}
+          explanation={t("fields.templateFields.defaultValue.allowedRelationshipTypesExplanation")}
+        >
+          <Autocomplete
+            multiple
+            disabled={!editing}
+            options={[...DATACITE_RELATION_TYPES]}
+            value={field.allowedRelationTypes}
+            // already-chosen types are greyed out rather than toggled off; they
+            // are removed via their chip's delete icon instead
+            getOptionDisabled={(option) => field.allowedRelationTypes.includes(option)}
+            onChange={(_event, value) => field.setAttributesDirty({ allowedRelationTypes: value })}
+            renderInput={(params) => {
+              const { slotProps, ...textFieldProps } = params;
+              return (
+                <MuiTextField
+                  {...textFieldProps}
+                  variant="standard"
+                  placeholder={
+                    field.allowedRelationTypes.length === 0
+                      ? t("fields.templateFields.defaultValue.allRelationshipTypes")
+                      : ""
+                  }
+                  slotProps={{
+                    ...slotProps,
+                    htmlInput: {
+                      ...slotProps.htmlInput,
+                      "aria-label": t("fields.templateFields.defaultValue.allowedRelationshipTypes"),
+                    },
+                  }}
+                />
+              );
+            }}
+          />
+        </InputWrapper>
+        <InputWrapper
+          label={t("fields.templateFields.defaultValue.defaultLink")}
+          explanation={t("fields.templateFields.defaultValue.defaultLinkExplanation")}
+        >
+          <LinkFieldValue
+            field={field}
+            // on an unsaved template this is "", which leaves the client-side self-link check inert.
+            // Harmless: a template with no Global ID has nothing to self-link to yet, and the server
+            // rejects it either way once the template exists.
+            sourceGlobalId={field.owner.globalId ?? ""}
+            disabled={!editing}
+            // the name is already entered in the Name field above
+            showFieldName={false}
+          />
+        </InputWrapper>
+      </>
     );
   }
 

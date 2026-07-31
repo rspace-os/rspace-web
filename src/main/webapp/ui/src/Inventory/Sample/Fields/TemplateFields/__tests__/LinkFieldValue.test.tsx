@@ -488,7 +488,9 @@ describe("LinkFieldValue", () => {
     await user.click(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" }));
 
     expect(
-      await screen.findByText("SS9999 does not exist, or you do not have permission to view it."),
+      // the message is now the shared catalog key (cimode resolves it to ns:key, so the
+      // interpolated globalId is not part of the rendered text)
+      await screen.findByText("inventory:fields.extraFields.link.targetNotFound"),
     ).toBeInTheDocument();
     expect(setAttributesDirty).not.toHaveBeenCalled();
   });
