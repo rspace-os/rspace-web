@@ -87,8 +87,8 @@ public class InstrumentTemplateDefaultLinkMVCIT extends API_MVC_InventoryTestBas
                 apiKey, "/instrumentTemplates/" + template.getId(), anyUser, deleteJson))
         .andExpect(status().isOk());
 
-    InventoryLink row = inventoryLinkDao.get(linkRowId);
-    assertTrue(row.isDeleted(), "the default link row must be soft-deleted with its field");
+    assertTrue(
+        linkRowIsDeleted(linkRowId), "the default link row must be soft-deleted with its field");
   }
 
   @Test
@@ -126,9 +126,9 @@ public class InstrumentTemplateDefaultLinkMVCIT extends API_MVC_InventoryTestBas
         synced.getFields().stream().anyMatch(f -> ApiFieldType.LINK.equals(f.getType())),
         "the propagated delete should remove the link field from the instrument");
 
-    InventoryLink row = inventoryLinkDao.get(instrumentLinkRowId);
     assertTrue(
-        row.isDeleted(), "the instrument's orphaned link row must be soft-deleted by the sync");
+        linkRowIsDeleted(instrumentLinkRowId),
+        "the instrument's orphaned link row must be soft-deleted by the sync");
   }
 
   @Test
@@ -155,11 +155,23 @@ public class InstrumentTemplateDefaultLinkMVCIT extends API_MVC_InventoryTestBas
         .andExpect(status().isUnprocessableEntity());
   }
 
-  /** The InventoryLink row id behind a link field, read straight from the DAO. */
-  private Long linkRowIdOfField(Long fieldId) {
-    InventoryLinkField field = (InventoryLinkField) inventoryEntityFieldDao.get(fieldId);
-    assertNotNull(field.getLink(), "the field should hold a link before it is deleted");
-    return field.getLink().getId();
+  /**
+   * The InventoryLink row id behind a link field, read straight from the DAO. This base runs real
+   * transactions per request rather than wrapping the test method in one, so a direct DAO call
+   * needs its own transaction or Hibernate has no session to bind to.
+   */
+  private Long linkRowIdOfField(Long fieldId) throws Exception {
+    return doInTransaction(
+        () -> {
+          InventoryLinkField field = (InventoryLinkField) inventoryEntityFieldDao.get(fieldId);
+          assertNotNull(field.getLink(), "the field should hold a link before it is deleted");
+          return field.getLink().getId();
+        });
+  }
+
+  /** Same reason as {@link #linkRowIdOfField}: the row read needs its own transaction. */
+  private boolean linkRowIsDeleted(Long linkRowId) throws Exception {
+    return doInTransaction(() -> inventoryLinkDao.get(linkRowId).isDeleted());
   }
 
   private ApiInstrumentTemplate createTemplateWithDefaultLink(String targetGlobalId)

@@ -6738,6 +6738,7 @@ export default interface Resources {
           "deleteRequestIdUnknown": "Field id {0} doesn''t match the id of any pre-existing field.",
           "duplicateName": "Field name ''{0}'' is duplicated. Field names on a record must be unique.",
           "link": {
+            "defaultRelationTypeNotPermitted": "Field ''{1}'' has a default link using relation type ''{0}'', so that type cannot be removed from its allowed relationship types. Change or remove the default link first.",
             "selfLinkForbidden": "An item cannot link to itself: ''{0}''."
           },
           "linkRelationTypeInvalid": "Relation type ''{0}'' is not in the DataCite controlled vocabulary.",
