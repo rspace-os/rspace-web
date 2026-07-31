@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 import { ToolbarCreateMenu } from "@/__tests__/e2e/components/shared/ToolbarCreateMenu";
+import { waitForTableSwap } from "./WorkspaceTable";
 
 export type ViewLayout = "tree" | "list";
 export type FolderScope = "folder" | "all";
@@ -46,10 +47,13 @@ export class WorkspaceToolbar {
   }
 
   async switchScope(to: FolderScope): Promise<void> {
+    const staleTable = await this.page.locator("#file_table").elementHandle();
     await this.scopeMenuButton.click();
     await this.clickAndWaitForView(() =>
       this.page.getByRole("menuitem", { name: to === "folder" ? "Folder view" : "View all", exact: true }).click(),
     );
+    await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
+    await waitForTableSwap(this.page, staleTable);
   }
 
   async toggleFilter(filter: ContentFilter): Promise<void> {

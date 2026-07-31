@@ -4,7 +4,9 @@ import { WorkspaceSelectionBar } from "./WorkspaceSelectionBar";
 
 export async function waitForTableSwap(page: Page, staleTable: ElementHandle | null): Promise<void> {
   if (!staleTable) return;
-  await page.waitForFunction((oldEl) => document.querySelector("#file_table") !== oldEl, staleTable);
+  await page
+    .waitForFunction((oldEl) => document.querySelector("#file_table") !== oldEl, staleTable, { timeout: 5_000 })
+    .catch(() => {});
 }
 
 export class WorkspaceTable {
@@ -61,7 +63,7 @@ export class WorkspaceTable {
   }
 
   async sortBy(column: "Name" | "Created" | "Modified"): Promise<void> {
-    const staleTable = await this.page.$("#file_table");
+    const staleTable = await this.root.elementHandle();
     await Promise.all([
       this.page.waitForResponse((res) => {
         const path = new URL(res.url()).pathname;

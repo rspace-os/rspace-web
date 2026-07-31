@@ -51,7 +51,7 @@ export class WorkspaceSearchBar {
   }
 
   async search(term: string): Promise<void> {
-    const staleTable = await this.page.$("#file_table");
+    const staleTable = await this.page.locator("#file_table").elementHandle();
     await this.searchInput.fill(term);
     await Promise.all([
       this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
@@ -66,7 +66,13 @@ export class WorkspaceSearchBar {
     const combobox = this.page.getByRole("combobox", { name: "Select owner(s)" });
     await combobox.fill(query);
     await this.page.getByRole("option", { name: new RegExp(query) }).click();
-    await this.submitButton.click();
+    const staleTable = await this.page.locator("#file_table").elementHandle();
+    await Promise.all([
+      this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
+      this.submitButton.click(),
+    ]);
+    await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
+    await waitForTableSwap(this.page, staleTable);
   }
 
   async clearSearch(): Promise<void> {
@@ -153,7 +159,7 @@ export class WorkspaceSearchBar {
   }
 
   async submitAdvanced(): Promise<void> {
-    const staleTable = await this.page.$("#file_table");
+    const staleTable = await this.page.locator("#file_table").elementHandle();
     await Promise.all([
       this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
       this.page.getByRole("button", { name: "Search", exact: true }).last().click(),
