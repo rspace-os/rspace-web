@@ -13,7 +13,8 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>3.0.0</version>
+    <!-- temporary JitPack commit pin of the Spring 6.2.19 bump; replace with 3.0.1 once released -->
+    <version>1b7f2b3e3c</version>
   </parent>
 
   <repositories>
@@ -792,6 +793,12 @@
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-audit</artifactId>
       <version>1.0.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>
@@ -1591,6 +1598,10 @@
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-core-util</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -1620,6 +1631,10 @@
         <exclusion>
           <groupId>com.google.j2objc</groupId>
           <artifactId>j2objc-annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -1765,6 +1780,10 @@
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-core-util</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -1776,6 +1795,10 @@
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-repository-spi</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -1786,6 +1809,10 @@
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-repository-spi</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -1846,6 +1873,12 @@
       <groupId>com.github.rspace-os</groupId>
       <artifactId>fieldmark-java-client</artifactId>
       <version>4.0.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1860,12 +1893,22 @@
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-core-util</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>argos-java-client</artifactId>
       <version>1.0.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1875,6 +1918,10 @@
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rda-dmp-common-standard</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -1913,6 +1960,12 @@
       <groupId>com.github.rspace-os</groupId>
       <artifactId>datacite-java-client</artifactId>
       <version>1.0.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1926,6 +1979,10 @@
         <exclusion>
           <groupId>jakarta.el</groupId>
           <artifactId>jakarta.el-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -1945,6 +2002,10 @@
         <exclusion>
           <groupId>io.github.resilience4j</groupId>
           <artifactId>resilience4j-all</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -2102,6 +2163,10 @@
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-core-util</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
