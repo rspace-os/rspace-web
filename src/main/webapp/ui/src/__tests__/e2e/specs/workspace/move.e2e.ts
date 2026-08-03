@@ -7,7 +7,7 @@ async function createTopLevelDoc(pageWorkspace: WorkspacePage, name: string): Pr
   await pageWorkspace.open();
   const editor = await pageWorkspace.createBasicDocument();
   await editor.editToolbar.saveAndClose();
-  if (!(await pageWorkspace.isLoaded())) throw new Error("Workspace did not load.");
+  await pageWorkspace.waitUntilLoaded();
   await pageWorkspace.table.selectRecord("Untitled document");
   await pageWorkspace.selectionBar.rename(name);
   await pageWorkspace.table.deselectRecord(name);

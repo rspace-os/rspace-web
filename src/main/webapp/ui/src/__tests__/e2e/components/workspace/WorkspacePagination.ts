@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { waitForTableSwap } from "./WorkspaceTable";
+import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type ItemsPerPage = 10 | 15 | 30 | 50;
 
@@ -50,12 +50,11 @@ export class WorkspacePagination {
 
   async setItemsPerPage(n: ItemsPerPage): Promise<void> {
     const page = this.itemsPerPageSelect.page();
-    const staleTable = await page.$("#file_table");
-    await this.itemsPerPageSelect.selectOption(String(n));
-    await expect(this.itemsPerPageSelect).toHaveValue(String(n));
-    await this.applyItemsPerPageButton.click();
-    await this.waitForPage(1);
-    await page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
-    await waitForTableSwap(page, staleTable);
+    await awaitTableRefresh(page, async () => {
+      await this.itemsPerPageSelect.selectOption(String(n));
+      await expect(this.itemsPerPageSelect).toHaveValue(String(n));
+      await this.applyItemsPerPageButton.click();
+      await this.waitForPage(1);
+    });
   }
 }

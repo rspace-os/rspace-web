@@ -11,7 +11,7 @@ test.describe(`Workspace operations`, () => {
     });
 
     await test.step("Then it appears in the Workspace", async () => {
-      if (!(await pageWorkspace.isLoaded())) throw new Error("Workspace did not load.");
+      await pageWorkspace.waitUntilLoaded();
       await expect(pageWorkspace.table.row("Untitled document")).toBeVisible();
     });
   });
@@ -36,7 +36,7 @@ test.describe(`Workspace operations`, () => {
     await test.step("When I create a document inside it", async () => {
       const editor = await pageWorkspace.createBasicDocument();
       await editor.editToolbar.saveAndClose();
-      if (!(await pageWorkspace.isLoaded())) throw new Error("Workspace did not load.");
+      await pageWorkspace.waitUntilLoaded();
       await pageWorkspace.table.selectRecord("Untitled document");
       await pageWorkspace.selectionBar.rename(docName);
     });

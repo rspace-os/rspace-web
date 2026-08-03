@@ -9,6 +9,13 @@ export async function waitForTableSwap(page: Page, staleTable: ElementHandle | n
     .catch(() => {});
 }
 
+export async function awaitTableRefresh(page: Page, trigger: () => Promise<void>): Promise<void> {
+  const staleTable = await page.locator("#file_table").elementHandle();
+  await trigger();
+  await page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
+  await waitForTableSwap(page, staleTable);
+}
+
 export class WorkspaceTable {
   readonly root: Locator;
   private readonly selectionBar: WorkspaceSelectionBar;
@@ -63,16 +70,15 @@ export class WorkspaceTable {
   }
 
   async sortBy(column: "Name" | "Created" | "Modified"): Promise<void> {
-    const staleTable = await this.root.elementHandle();
-    await Promise.all([
-      this.page.waitForResponse((res) => {
-        const path = new URL(res.url()).pathname;
-        return path.endsWith("/workspace/ajax/search") || path.includes("/workspace/ajax/view/");
-      }),
-      this.root.getByRole("columnheader", { name: column }).getByRole("link", { name: column }).click(),
-    ]);
-    await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
-    await waitForTableSwap(this.page, staleTable);
+    await awaitTableRefresh(this.page, async () => {
+      await Promise.all([
+        this.page.waitForResponse((res) => {
+          const path = new URL(res.url()).pathname;
+          return path.endsWith("/workspace/ajax/search") || path.includes("/workspace/ajax/view/");
+        }),
+        this.root.getByRole("columnheader", { name: column }).getByRole("link", { name: column }).click(),
+      ]);
+    });
   }
 
   get dataRows(): Locator {

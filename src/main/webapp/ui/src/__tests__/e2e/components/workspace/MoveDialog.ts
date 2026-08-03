@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type MoveDialogSortField = "name" | "creationdate" | "modificationdate";
 export type MoveDialogSortOrder = "ASC" | "DESC";
@@ -62,9 +63,11 @@ export class MoveDialog {
   }
 
   async clickMove(): Promise<void> {
-    const movePromise = this.page.waitForResponse((res) => res.url().includes("/workspace/ajax/move"));
-    await this.moveButton.click();
-    await movePromise;
-    await this.root.waitFor({ state: "hidden" });
+    await awaitTableRefresh(this.page, async () => {
+      const movePromise = this.page.waitForResponse((res) => res.url().includes("/workspace/ajax/move"));
+      await this.moveButton.click();
+      await movePromise;
+      await this.root.waitFor({ state: "hidden" });
+    });
   }
 }

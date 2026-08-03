@@ -187,7 +187,7 @@ test.describe(`Workspace views and navigation`, () => {
       const editor = await pageWorkspace.createBasicDocument();
       const autoName = await editor.header.getName();
       await editor.editToolbar.saveAndClose();
-      if (!(await pageWorkspace.isLoaded())) throw new Error("Workspace did not load.");
+      await pageWorkspace.waitUntilLoaded();
       await pageWorkspace.searchBar.search(autoName);
       await pageWorkspace.table.selectRecord(autoName);
       await pageWorkspace.selectionBar.rename(docName);

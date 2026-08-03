@@ -60,7 +60,7 @@ test.describe(`Workspace filters`, () => {
     });
 
     await test.step("Then the Templates filter shows the new template", async () => {
-      if (!(await pageWorkspace.isLoaded())) throw new Error("Workspace did not load.");
+      await pageWorkspace.waitUntilLoaded();
       await pageWorkspace.toolbar.toggleFilter("templates");
       await expect(pageWorkspace.table.row(templateName)).toBeVisible();
     });
@@ -112,7 +112,7 @@ test.describe(`Workspace filters`, () => {
         await pageWorkspace.header.logOut();
         await pageLogin.login(appUser.username, appUser.password);
         await pageWorkspace.open();
-        if (!(await pageWorkspace.isLoaded())) throw new Error("Workspace did not load.");
+        await pageWorkspace.waitUntilLoaded();
       });
 
       await test.step("When I share the document with the group", async () => {

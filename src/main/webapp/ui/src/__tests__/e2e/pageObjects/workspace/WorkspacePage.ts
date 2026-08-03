@@ -47,6 +47,10 @@ export class WorkspacePage extends BasePage {
     }
   }
 
+  async waitUntilLoaded(): Promise<void> {
+    if (!(await this.isLoaded())) throw new Error("Workspace did not load.");
+  }
+
   async isTreeView(): Promise<boolean> {
     return this.tree.root.isVisible();
   }

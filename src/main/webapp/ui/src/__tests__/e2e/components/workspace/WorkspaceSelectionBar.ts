@@ -2,6 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 import { MoveDialog } from "./MoveDialog";
 import { WorkspaceRenameDialog } from "./WorkspaceRenameDialog";
 import { WorkspaceShareDialog } from "./WorkspaceShareDialog";
+import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type SelectionBarAction =
   | "Duplicate"
@@ -48,13 +49,13 @@ export class WorkspaceSelectionBar {
     const dialog = this.page.getByRole("dialog", { name: "Confirm deletion" });
     const confirmButton = dialog.getByRole("button", { name: "Confirm" });
     await confirmButton.waitFor({ state: "visible" });
-    if (viaKeyboard) {
-      await confirmButton.focus();
-      await confirmButton.press("Enter");
-    } else {
-      await confirmButton.click();
-    }
-    await dialog.waitFor({ state: "hidden" });
+    await awaitTableRefresh(this.page, async () => {
+      await Promise.all([
+        this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/delete")),
+        viaKeyboard ? confirmButton.focus().then(() => confirmButton.press("Enter")) : confirmButton.click(),
+      ]);
+      await dialog.waitFor({ state: "hidden" });
+    });
   }
 
   async toggleFavorite(): Promise<void> {

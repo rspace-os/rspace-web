@@ -1,7 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 import { ToolbarCreateMenu } from "@/__tests__/e2e/components/shared/ToolbarCreateMenu";
-import { waitForTableSwap } from "./WorkspaceTable";
+import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type ViewLayout = "tree" | "list";
 export type FolderScope = "folder" | "all";
@@ -47,24 +47,31 @@ export class WorkspaceToolbar {
   }
 
   async switchScope(to: FolderScope): Promise<void> {
-    const staleTable = await this.page.locator("#file_table").elementHandle();
-    await this.scopeMenuButton.click();
-    await this.clickAndWaitForView(() =>
-      this.page.getByRole("menuitem", { name: to === "folder" ? "Folder view" : "View all", exact: true }).click(),
-    );
-    await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
-    await waitForTableSwap(this.page, staleTable);
+    await awaitTableRefresh(this.page, async () => {
+      await this.scopeMenuButton.click();
+      await this.clickAndWaitForView(() =>
+        this.page.getByRole("menuitem", { name: to === "folder" ? "Folder view" : "View all", exact: true }).click(),
+      );
+    });
   }
 
   async toggleFilter(filter: ContentFilter): Promise<void> {
     const button = this.page.getByRole("button", { name: FILTER_ACCESSIBLE_NAME[filter], exact: true });
     const wasActive = ((await button.getAttribute("class")) ?? "").includes("active");
-    await button.click();
-    if (wasActive) {
-      await expect(button).not.toHaveClass(/active/);
-    } else {
-      await expect(button).toHaveClass(/active/);
-    }
+    await awaitTableRefresh(this.page, async () => {
+      await Promise.all([
+        this.page.waitForResponse((res) => {
+          const path = new URL(res.url()).pathname;
+          return path.endsWith("/workspace/ajax/search") || path.includes("/workspace/ajax/view/");
+        }),
+        button.click(),
+      ]);
+      if (wasActive) {
+        await expect(button).not.toHaveClass(/active/);
+      } else {
+        await expect(button).toHaveClass(/active/);
+      }
+    });
   }
 
   async clickLabGroupShortcut(): Promise<void> {

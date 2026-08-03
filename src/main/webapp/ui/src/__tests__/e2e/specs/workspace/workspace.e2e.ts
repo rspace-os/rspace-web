@@ -20,7 +20,7 @@ test.describe("Workspace", () => {
     const doc = await clientDocuments.create({ name });
     createdIds.push(doc.id);
     await pageWorkspace.open();
-    if (!(await pageWorkspace.isLoaded())) throw new Error("Workspace did not load.");
+    await pageWorkspace.waitUntilLoaded();
 
     await pageWorkspace.searchBar.search(name);
 

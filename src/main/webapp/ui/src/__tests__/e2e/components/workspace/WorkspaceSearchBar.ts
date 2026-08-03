@@ -1,5 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
-import { waitForTableSwap } from "./WorkspaceTable";
+import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type SearchField =
   | "All"
@@ -51,14 +51,13 @@ export class WorkspaceSearchBar {
   }
 
   async search(term: string): Promise<void> {
-    const staleTable = await this.page.locator("#file_table").elementHandle();
     await this.searchInput.fill(term);
-    await Promise.all([
-      this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
-      this.submitButton.click(),
-    ]);
-    await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
-    await waitForTableSwap(this.page, staleTable);
+    await awaitTableRefresh(this.page, async () => {
+      await Promise.all([
+        this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
+        this.submitButton.click(),
+      ]);
+    });
   }
 
   async searchByOwner(query: string): Promise<void> {
@@ -66,18 +65,22 @@ export class WorkspaceSearchBar {
     const combobox = this.page.getByRole("combobox", { name: "Select owner(s)" });
     await combobox.fill(query);
     await this.page.getByRole("option", { name: new RegExp(query) }).click();
-    const staleTable = await this.page.locator("#file_table").elementHandle();
-    await Promise.all([
-      this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
-      this.submitButton.click(),
-    ]);
-    await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
-    await waitForTableSwap(this.page, staleTable);
+    await awaitTableRefresh(this.page, async () => {
+      await Promise.all([
+        this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
+        this.submitButton.click(),
+      ]);
+    });
   }
 
   async clearSearch(): Promise<void> {
     if (await this.isSearchActive()) {
-      await this.clearSearchButton.click();
+      await awaitTableRefresh(this.page, async () => {
+        await Promise.all([
+          this.page.waitForResponse((res) => new URL(res.url()).pathname.includes("/workspace/ajax/view/")),
+          this.clearSearchButton.click(),
+        ]);
+      });
     }
   }
 
@@ -159,13 +162,12 @@ export class WorkspaceSearchBar {
   }
 
   async submitAdvanced(): Promise<void> {
-    const staleTable = await this.page.locator("#file_table").elementHandle();
-    await Promise.all([
-      this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
-      this.page.getByRole("button", { name: "Search", exact: true }).last().click(),
-    ]);
-    await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
-    await waitForTableSwap(this.page, staleTable);
+    await awaitTableRefresh(this.page, async () => {
+      await Promise.all([
+        this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
+        this.page.getByRole("button", { name: "Search", exact: true }).last().click(),
+      ]);
+    });
   }
 
   async resetAdvanced(): Promise<void> {
