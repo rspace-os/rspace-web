@@ -6,13 +6,11 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
-import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { DataGrid, type GridRenderCellParams, GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
-import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmpassistant";
 import AppBar from "../../components/AppBar";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
@@ -22,6 +20,7 @@ import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
 import { DataGridColumn } from "../../util/table";
+import DMPDialogThemeProvider from "../DMPDialogThemeProvider";
 import {
   type DmpListing,
   type DmpSummary,
@@ -326,7 +325,7 @@ export default function DMPDialog({ open, setOpen }: DMPDialogArgs): React.React
   const { isViewportSmall } = useViewportDimensions();
 
   return (
-    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+    <DMPDialogThemeProvider accentColor={ACCENT_COLOR}>
       <Portal>
         <DialogBoundary>
           <CustomDialog
@@ -342,6 +341,6 @@ export default function DMPDialog({ open, setOpen }: DMPDialogArgs): React.React
           </CustomDialog>
         </DialogBoundary>
       </Portal>
-    </ThemeProvider>
+    </DMPDialogThemeProvider>
   );
 }

@@ -1,7 +1,7 @@
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
 import MenuItem from "@mui/material/MenuItem";
-import { ThemeProvider } from "@mui/material/styles";
+import { type Theme, ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -11,6 +11,7 @@ import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { LandmarksProvider } from "@/components/LandmarksContext";
+import DMPToolAccentMenuItem from "@/eln-dmp-integration/DMPTool/DMPToolAccentMenuItem";
 import { UiPreferences } from "@/hooks/api/useUiPreference";
 import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
@@ -70,6 +71,38 @@ export function CreateMenuStory(): React.ReactNode {
         <MenuItem>{t("apps:dmpIntegrations.dmptool")}</MenuItem>
       </SidebarCreateMenu>
     </GalleryTheme>
+  );
+}
+
+export function DMPToolCreateMenuStory({ isPicker }: { isPicker: boolean }): React.ReactNode {
+  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
+  const { t } = useTranslation("common");
+  return (
+    <BrowserRouter>
+      <GalleryTheme>
+        <Analytics>
+          <UiPreferences>
+            <Alerts>
+              <ThemeProvider
+                theme={(theme: Theme) =>
+                  isPicker
+                    ? {
+                        ...theme,
+                        zIndex: { ...theme.zIndex, drawer: theme.zIndex.modal + 1, modal: theme.zIndex.modal + 2 },
+                      }
+                    : theme
+                }
+              >
+                <Button onClick={(event) => setAnchorEl(event.currentTarget)}>{t("actions.create")}</Button>
+                <SidebarCreateMenu anchorEl={anchorEl} onClose={() => setAnchorEl(null)}>
+                  <DMPToolAccentMenuItem onDialogClose={() => setAnchorEl(null)} />
+                </SidebarCreateMenu>
+              </ThemeProvider>
+            </Alerts>
+          </UiPreferences>
+        </Analytics>
+      </GalleryTheme>
+    </BrowserRouter>
   );
 }
 

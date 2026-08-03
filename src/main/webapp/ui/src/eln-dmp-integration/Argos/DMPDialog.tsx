@@ -7,7 +7,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Popover from "@mui/material/Popover";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
-import { ThemeProvider } from "@mui/material/styles";
 import TablePagination from "@mui/material/TablePagination";
 import Typography from "@mui/material/Typography";
 import type { GridRowId } from "@mui/x-data-grid";
@@ -16,7 +15,6 @@ import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
-import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/argos";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
@@ -29,6 +27,7 @@ import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { DataGridColumn, paginationOptions } from "../../util/table";
 import type { UseState } from "../../util/types";
+import DMPDialogThemeProvider from "../DMPDialogThemeProvider";
 import { importPlan } from "./ImportIntoGallery";
 import { fetchPlanSummaries, type PlanSummary, type SearchParameters } from "./PlanSummary";
 
@@ -587,7 +586,7 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
    */
 
   return (
-    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+    <DMPDialogThemeProvider accentColor={ACCENT_COLOR}>
       <Portal>
         <DialogBoundary>
           <CustomDialog
@@ -603,7 +602,7 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
           </CustomDialog>
         </DialogBoundary>
       </Portal>
-    </ThemeProvider>
+    </DMPDialogThemeProvider>
   );
 }
 export default observer(DMPDialog);

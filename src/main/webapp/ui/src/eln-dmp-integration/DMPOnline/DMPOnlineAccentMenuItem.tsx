@@ -36,7 +36,7 @@ export default function DMPonlineAccentMenuItem({ onDialogClose }: DMPonlineAcce
           open={showDMPDialog}
           setOpen={(b) => {
             setShowDMPDialog(b);
-            onDialogClose();
+            if (!b) onDialogClose();
           }}
         />
       </EventBoundary>
