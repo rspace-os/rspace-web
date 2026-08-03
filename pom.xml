@@ -48,6 +48,13 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-framework-bom</artifactId>
+        <version>${spring.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
         <groupId>javax.cache</groupId>
         <artifactId>cache-api</artifactId>
         <version>${javax.cache.version}</version>
@@ -793,12 +800,6 @@
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-audit</artifactId>
       <version>1.0.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>
@@ -1598,10 +1599,6 @@
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-core-util</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -1631,10 +1628,6 @@
         <exclusion>
           <groupId>com.google.j2objc</groupId>
           <artifactId>j2objc-annotations</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -1780,10 +1773,6 @@
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-core-util</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -1795,10 +1784,6 @@
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-repository-spi</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -1809,10 +1794,6 @@
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-repository-spi</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -1873,12 +1854,6 @@
       <groupId>com.github.rspace-os</groupId>
       <artifactId>fieldmark-java-client</artifactId>
       <version>4.0.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1893,22 +1868,12 @@
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-core-util</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>argos-java-client</artifactId>
       <version>1.0.1</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1918,10 +1883,6 @@
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rda-dmp-common-standard</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -1960,12 +1921,6 @@
       <groupId>com.github.rspace-os</groupId>
       <artifactId>datacite-java-client</artifactId>
       <version>1.0.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1979,10 +1934,6 @@
         <exclusion>
           <groupId>jakarta.el</groupId>
           <artifactId>jakarta.el-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -2002,10 +1953,6 @@
         <exclusion>
           <groupId>io.github.resilience4j</groupId>
           <artifactId>resilience4j-all</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -2163,10 +2110,6 @@
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-core-util</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
