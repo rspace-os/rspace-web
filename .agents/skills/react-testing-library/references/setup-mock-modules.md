@@ -7,6 +7,10 @@ tags: setup, mock, vitest, modules
 
 ## Mock Modules at Module Level
 
+> **RSpace limits this rule.** Mock each HTTP request with MSW (`server.use`).
+> Do not use `vi.mock()` for an HTTP request. Use this rule only for other
+> modules. Refer to [`rspace-overrides`](rspace-overrides.md).
+
 Call `vi.mock()` at the top level of your test file, not inside tests. Vitest hoists mock calls, but placing them inside tests can cause timing issues.
 
 **Incorrect (mock inside test):**
@@ -47,8 +51,9 @@ test('handles error', async () => {
 })
 ```
 
-Because `vi.mock()` is hoisted above the imports, a factory cannot reference
-top-level variables. Use `vi.hoisted()` when the factory needs one:
+Vitest moves each `vi.mock()` call above the imports. Therefore a factory
+function cannot use a top-level variable. Use `vi.hoisted()` to make a variable
+that the factory function can use:
 
 ```tsx
 const { mockFetchUser } = vi.hoisted(() => ({ mockFetchUser: vi.fn() }))

@@ -7,6 +7,11 @@ tags: anti, cleanup, afterEach, setup
 
 ## Remove Manual cleanup Calls
 
+> **This rule does not apply in RSpace.** This repository uses vitest without
+> `globals: true`. Therefore RTL does not start its automatic cleanup. The
+> `cleanup()` call in `src/__tests__/setup.ts` is necessary. Refer to
+> [`rspace-overrides`](rspace-overrides.md).
+
 Testing Library automatically calls `cleanup` after each test when using modern test frameworks (Jest, Vitest, Mocha with globals). Manual calls are unnecessary.
 
 **Incorrect (manual cleanup):**

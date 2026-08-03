@@ -9,6 +9,11 @@ tags: query, getByRole, name, accessible-name
 
 When multiple elements share the same role, use the `name` option to filter by accessible name. This prevents brittle tests that break when element order changes.
 
+> **In RSpace the name is an i18n key**, for example
+> `{ name: "common:actions.import" }`. The tests start i18next in `cimode` mode.
+> An English name such as `/submit/i` matches no element. Refer to
+> [`rspace-overrides`](rspace-overrides.md).
+
 **Incorrect (relies on element order):**
 
 ```tsx

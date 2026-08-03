@@ -9,6 +9,11 @@ tags: setup, wrapper, providers, context
 
 Use the `wrapper` option in render to provide context. This keeps providers available during `rerender()` and simplifies test setup.
 
+> **RSpace changes this rule.** Use the `wrapper` option for `renderHook`. You
+> can also use it if the providers must stay after a `rerender()` call. For all
+> other tests, put the providers in the JSX. The "Incorrect" example below is
+> correct here. Refer to [`rspace-overrides`](rspace-overrides.md).
+
 **Incorrect (manual wrapping each test):**
 
 ```tsx

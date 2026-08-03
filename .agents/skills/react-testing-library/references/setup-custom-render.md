@@ -7,6 +7,10 @@ tags: setup, custom-render, providers, test-utils
 
 ## Create Custom Render with Providers
 
+> **This rule does not apply in RSpace.** `CLAUDE.md` gives this rule: import
+> `render` and `within` from `@testing-library/react`. Put the providers in the
+> JSX. Refer to [`rspace-overrides`](rspace-overrides.md).
+
 Create a custom render function that includes common providers. Export it from a test utilities file to eliminate boilerplate.
 
 **Incorrect (repeated provider setup):**
