@@ -16,12 +16,18 @@ export class CollapsibleSections {
   async expand(name: string): Promise<void> {
     if (!(await this.isExpanded(name))) {
       await this.section(name).getByRole("button", { name: "Expand section", exact: true }).click();
+      await this.section(name)
+        .getByRole("button", { name: "Collapse section", exact: true })
+        .waitFor({ state: "visible" });
     }
   }
 
   async collapse(name: string): Promise<void> {
     if (await this.isExpanded(name)) {
       await this.section(name).getByRole("button", { name: "Collapse section", exact: true }).click();
+      await this.section(name)
+        .getByRole("button", { name: "Expand section", exact: true })
+        .waitFor({ state: "visible" });
     }
   }
 }

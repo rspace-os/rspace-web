@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type ItemsPerPage = 10 | 15 | 30 | 50;
 
@@ -8,7 +9,6 @@ export class WorkspacePagination {
   private readonly applyItemsPerPageButton: Locator;
 
   constructor(page: Page) {
-    // Legacy Bootstrap pagination has no named landmark; this class identifies its root.
     this.root = page.locator("ul.pagination");
     this.itemsPerPageSelect = page.getByRole("combobox", { name: "Items per page:" });
     this.applyItemsPerPageButton = page.locator("#applyNumberRecords");
@@ -49,8 +49,12 @@ export class WorkspacePagination {
   }
 
   async setItemsPerPage(n: ItemsPerPage): Promise<void> {
-    await this.itemsPerPageSelect.selectOption(String(n));
-    await this.applyItemsPerPageButton.click();
-    await this.waitForPage(1);
+    const page = this.itemsPerPageSelect.page();
+    await awaitTableRefresh(page, async () => {
+      await this.itemsPerPageSelect.selectOption(String(n));
+      await expect(this.itemsPerPageSelect).toHaveValue(String(n));
+      await this.applyItemsPerPageButton.click();
+      await this.waitForPage(1);
+    });
   }
 }

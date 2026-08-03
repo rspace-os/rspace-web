@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { expect } from "@playwright/test";
 
 export class WorkspaceTree {
   readonly root: Locator;
@@ -22,15 +23,13 @@ export class WorkspaceTree {
   async expand(name: string): Promise<void> {
     if (await this.isExpanded(name)) return;
     await this.item(name).getByRole("button").click();
+    await expect(this.item(name)).not.toHaveAttribute("aria-expanded", "false");
   }
 
   async collapse(name: string): Promise<void> {
     if (!(await this.isExpanded(name))) return;
     await this.item(name).getByRole("button").click();
-  }
-
-  async openItem(name: string): Promise<void> {
-    await this.item(name).getByRole("generic").last().click();
+    await expect(this.item(name)).toHaveAttribute("aria-expanded", "false");
   }
 
   children(parentName: string): Locator {
