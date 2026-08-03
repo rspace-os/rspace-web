@@ -97,6 +97,8 @@ class ApiV2OpenApiGeneratorTest {
     assertTrue(paths.containsKey("/api/v2/maintenances/count"));
     assertTrue(paths.containsKey("/api/v2/maintenances/bulk"));
     assertTrue(paths.containsKey("/api/v2/maintenances/{id}"));
+    assertTrue(paths.containsKey("/api/v2/maintenances/{id}/audit"));
+    assertTrue(paths.containsKey("/api/v2/maintenances/{id}/audit/count"));
     assertFalse(paths.containsKey("/api/v2/{resource}"));
     assertFalse(paths.containsKey("/api/v2/instruments"));
 
@@ -184,6 +186,7 @@ class ApiV2OpenApiGeneratorTest {
     assertFalse(readProperties.containsKey("property"));
     assertTrue(schemas.containsKey("ApiV2Problem"));
     assertTrue(schemas.containsKey("ApiV2BulkError"));
+    assertTrue(schemas.containsKey("ApiV2AuditEvent"));
     assertEquals(
         "Stable maintenance identifier.", objectMap(readProperties.get("id")).get("description"));
     assertEquals(42L, objectMap(readProperties.get("id")).get("example"));
@@ -247,6 +250,17 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> example = objectMap(problemMedia.get("example"));
     assertEquals(List.of("title", "status", "code", "detail"), example.keySet().stream().toList());
     assertTrue(objectMap(components.get("headers")).containsKey("RateLimitRemaining"));
+
+    Map<String, Object> audit =
+        objectMap(objectMap(paths.get("/api/v2/maintenances/{id}/audit")).get("get"));
+    assertEquals("listMaintenancesAuditEvents", audit.get("operationId"));
+    assertEquals(2, ((List<?>) audit.get("security")).size());
+    assertTrue(objectMap(audit.get("responses")).containsKey("404"));
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> auditParameters = (List<Map<String, Object>>) audit.get("parameters");
+    assertEquals(
+        List.of("id", "dateFrom", "dateTo", "actions", "page", "limit"),
+        auditParameters.stream().map(parameter -> parameter.get("name")).toList());
   }
 
   @Test

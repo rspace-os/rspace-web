@@ -4,8 +4,11 @@ import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
+import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.collection.AccessDocumentation;
 import com.researchspace.model.collection.AccessDocumentation.AuthenticationRequirement;
+import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.AccessPolicySchema;
 import com.researchspace.model.collection.CollectionDescription.FieldSchema;
@@ -161,6 +164,133 @@ public final class ApiV2OpenApiGenerator {
       }
       pathItem.put(method, operation(resource, operation, component, resourceSchemas));
     }
+    addAuditPaths(paths, resource, component);
+  }
+
+  private void addAuditPaths(
+      Map<String, Object> paths, ApiV2ResourceRegistration<?, ?> resource, String component) {
+    String itemAuditPath = "/api/v2/" + resource.resourceName() + "/{id}/audit";
+    String countPath = itemAuditPath + "/count";
+    paths.put(itemAuditPath, ordered("get", auditOperation(resource, component, false)));
+    paths.put(countPath, ordered("get", auditOperation(resource, component, true)));
+  }
+
+  private Map<String, Object> auditOperation(
+      ApiV2ResourceRegistration<?, ?> resource, String component, boolean count) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("operationId", (count ? "count" : "list") + component + "AuditEvents");
+    result.put(
+        "summary",
+        count
+            ? "Count audit events for one " + resource.resourceName() + " resource"
+            : "List audit events for one " + resource.resourceName() + " resource");
+    result.put(
+        "description",
+        "Returns events from the existing RSpace audit trail. The caller must be authenticated "
+            + "and must be able to read the resource. A resource without audit metadata returns "
+            + "an empty result. The search range is limited to 183 days.");
+    result.put("tags", List.of(resource.resourceName()));
+    result.put("security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    result.put(
+        "x-rspace-access",
+        ordered(
+            "description",
+            "Authenticated callers who can read the resource.",
+            "denialReasonCodes",
+            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
+    result.put("parameters", auditParameters(resource.description().schema(), count));
+    result.put("responses", auditResponses(count));
+    result.put("x-rspace-operation", count ? "AUDIT_COUNT" : "AUDIT_LIST");
+    return result;
+  }
+
+  private static List<Map<String, Object>> auditParameters(ResourceSchema schema, boolean count) {
+    List<Map<String, Object>> parameters = new ArrayList<>();
+    FieldSchema id = field(schema, schema.idField());
+    parameters.add(
+        parameter("id", "path", true, scalarSchema(id.type(), false), "Resource identifier."));
+    parameters.add(
+        parameter(
+            "dateFrom",
+            "query",
+            false,
+            ordered("type", "string", "format", "date-time"),
+            "Earliest event time. The server limits the range to 183 days."));
+    parameters.add(
+        parameter(
+            "dateTo",
+            "query",
+            false,
+            ordered("type", "string", "format", "date-time"),
+            "Latest event time."));
+    Map<String, Object> actions =
+        parameter(
+            "actions",
+            "query",
+            false,
+            ordered(
+                "type",
+                "array",
+                "items",
+                ordered(
+                    "type",
+                    "string",
+                    "enum",
+                    java.util.Arrays.stream(AuditAction.values()).map(Enum::name).toList())),
+            "Audit actions to include.");
+    actions.put("style", "form");
+    actions.put("explode", true);
+    parameters.add(actions);
+    if (!count) {
+      parameters.add(
+          parameter(
+              "page",
+              "query",
+              false,
+              ordered("type", "integer", "minimum", 1, "default", 1),
+              "One-based page number."));
+      parameters.add(
+          parameter(
+              "limit",
+              "query",
+              false,
+              ordered(
+                  "type",
+                  "integer",
+                  "minimum",
+                  1,
+                  "maximum",
+                  CollectionQueryLimits.MAX_PAGE_SIZE,
+                  "default",
+                  20),
+              "Maximum events per page."));
+    }
+    return parameters;
+  }
+
+  private static Map<String, Object> auditResponses(boolean count) {
+    Map<String, Object> responses = new LinkedHashMap<>();
+    responses.put(
+        "200",
+        ordered(
+            "description",
+            count ? "Audit event count." : "Audit event page.",
+            "headers",
+            rateLimitHeaders(),
+            "content",
+            Map.of(
+                JSON,
+                ordered(
+                    "schema",
+                    count ? ref("ApiV2CountResult") : listResult(ref("ApiV2AuditEvent"))))));
+    responses.put("400", responseRef("BadRequest"));
+    responses.put("401", responseRef("Unauthenticated"));
+    responses.put("403", responseRef("Forbidden"));
+    responses.put("404", responseRef("NotFound"));
+    responses.put("406", responseRef("NotAcceptable"));
+    responses.put("429", responseRef("TooManyRequests"));
+    responses.put("500", responseRef("UnexpectedError"));
+    return responses;
   }
 
   private Map<String, Object> operation(
@@ -609,6 +739,37 @@ public final class ApiV2OpenApiGenerator {
             List.of("totalDocs"),
             "properties",
             Map.of("totalDocs", ordered("type", "integer", "format", "int64"))));
+    schemas.put(
+        "ApiV2AuditEvent",
+        ordered(
+            "type",
+            "object",
+            "required",
+            List.of("timestamp", "username", "domain", "action", "payload"),
+            "properties",
+            ordered(
+                "timestamp",
+                ordered("type", "string", "format", "date-time"),
+                "username",
+                ordered("type", "string"),
+                "fullName",
+                ordered("type", List.of("string", "null")),
+                "domain",
+                ordered(
+                    "type",
+                    "string",
+                    "enum",
+                    java.util.Arrays.stream(AuditDomain.values()).map(Enum::name).toList()),
+                "action",
+                ordered(
+                    "type",
+                    "string",
+                    "enum",
+                    java.util.Arrays.stream(AuditAction.values()).map(Enum::name).toList()),
+                "description",
+                ordered("type", List.of("string", "null")),
+                "payload",
+                ordered("type", "object", "additionalProperties", true))));
     schemas.put(
         "ApiV2BulkError",
         ordered(

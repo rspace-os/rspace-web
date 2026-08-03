@@ -55,13 +55,19 @@ public class BookingConfiguration implements Serializable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @AuditTrailIdentifier
   public Long getId() {
     return id;
   }
 
   public void setId(Long id) {
     this.id = id;
+  }
+
+  /** Returns the resource-specific identifier stored in the searchable audit log. */
+  @Transient
+  @AuditTrailIdentifier
+  public String getAuditTrailIdentifier() {
+    return id == null ? null : "booking-configurations:" + id;
   }
 
   @Column(nullable = false)

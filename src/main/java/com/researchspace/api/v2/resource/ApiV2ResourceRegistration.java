@@ -21,6 +21,7 @@ import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.permissions.SecurityLogger;
+import jakarta.ws.rs.NotFoundException;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -193,6 +194,11 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   public ApiV2BulkResult<Map<String, Object>> deleteMany(ResourceRequest request, User actor) {
     AccessContext context = new AccessContext(actor, Operation.DELETE, description.resourceName());
     return crud.deleteMany(authorizeWith(context, request), actor);
+  }
+
+  /** Finds one readable entity for the default audit endpoints. */
+  ResolvedTarget requireReadableForAudit(String rawId, User actor) {
+    return resolveReadable(parseId(rawId), actor).orElseThrow(NotFoundException::new);
   }
 
   /** Finds one entity for a relationship without disclosing why it is unavailable. */

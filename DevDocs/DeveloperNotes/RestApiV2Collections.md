@@ -311,6 +311,31 @@ Operation exposure and access are different controls:
 
 For a read-only HTTP contract, omit all write operations. Also use a read-only access policy.
 
+### Default audit routes
+
+Each registered resource also has these routes:
+
+| Method and route | Result |
+| --- | --- |
+| `GET /api/v2/widgets/{id}/audit` | A page of audit events for one readable resource. |
+| `GET /api/v2/widgets/{id}/audit/count` | The number of matching audit events. |
+
+The caller must authenticate with an API key or an OAuth bearer token. The caller must also have
+read access to the resource. The audit handler applies its normal actor visibility rules.
+
+The list route accepts `page`, `limit`, `dateFrom`, `dateTo`, and repeated `actions` parameters. The
+count route accepts the date and action filters. The server limits each search to 183 days. It uses
+the last 183 days when the client does not supply dates.
+
+The framework reads `@AuditTrailData` and the single `@AuditTrailIdentifier` method from the entity.
+A resource without this metadata returns an empty audit result. Use a stable identifier that is
+unique across audit domains. An entity in the `UNKNOWN` audit domain must include the resource name
+in its audit identifier.
+
+The response payload contains only audit properties that have matching readable REST v2 fields or
+relationships. It does not contain the audit identifier or audit-only properties. This rule
+prevents an audit response from bypassing field access.
+
 ## Resource configuration
 
 ### `@ApiV2ResourceDefinition`
