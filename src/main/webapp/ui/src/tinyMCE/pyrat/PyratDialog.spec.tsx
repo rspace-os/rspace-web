@@ -137,11 +137,15 @@ describe("PyratDialog insertion", () => {
     const container = document.createElement("div");
     container.innerHTML = insertedHtml ?? "";
     const provenanceCell = container.querySelector("th");
-    const serverLink = provenanceCell?.querySelector("a");
+    if (!provenanceCell) throw new Error("Inserted table has no provenance cell");
+    const serverLink = provenanceCell.querySelector("a");
+    if (!serverLink) throw new Error("Provenance cell has no server link");
 
-    expect(provenanceCell?.textContent).toMatch(/^Imported from fakepyrat \(https:\/\/demo\.pyrat\.example\) on .+$/);
-    expect(serverLink?.textContent).toBe("fakepyrat (https://demo.pyrat.example)");
-    expect(serverLink?.getAttribute("href")).toBe("https://demo.pyrat.example");
-    expect(serverLink?.getAttribute("rel")).toBe("noreferrer");
+    await expect
+      .element(provenanceCell)
+      .toHaveTextContent(/^Imported from fakepyrat \(https:\/\/demo\.pyrat\.example\) on .+$/);
+    await expect.element(serverLink).toHaveTextContent(/^fakepyrat \(https:\/\/demo\.pyrat\.example\)$/);
+    await expect.element(serverLink).toHaveAttribute("href", "https://demo.pyrat.example");
+    await expect.element(serverLink).toHaveAttribute("rel", "noreferrer");
   });
 });

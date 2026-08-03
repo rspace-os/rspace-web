@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
@@ -159,17 +160,16 @@ describe("Renders page with booking data", () => {
     });
 
     try {
+      const user = userEvent.setup();
       getWrapper({ clustermarket_web_url: "https://calira.example/" });
       const bookingId = await findFirstByText("CURRENT_2");
-      await waitFor(() => expect(editor.on).toHaveBeenCalled());
-      const listenerRegistrationsBeforeSelection = editor.on.mock.calls.length;
       const bookingRow = bookingId.closest("tr");
       expect(bookingRow).not.toBeNull();
       if (!bookingRow) throw new Error("Booking row is missing");
 
-      fireEvent.click(bookingRow);
+      await user.click(bookingRow);
+      expect(bookingRow).toBeChecked();
 
-      await waitFor(() => expect(editor.on.mock.calls.length).toBeGreaterThan(listenerRegistrationsBeforeSelection));
       handlers.get("clustermarket-insert")?.();
 
       expect(editor.execCommand).toHaveBeenCalledOnce();
