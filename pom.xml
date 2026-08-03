@@ -14,7 +14,7 @@
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
     <!-- temporary JitPack commit pin of the Spring 6.2.19 bump; replace with 3.0.1 once released -->
-    <version>1b7f2b3e3c</version>
+    <version>dbda5e7fd9</version>
   </parent>
 
   <repositories>
@@ -47,13 +47,6 @@
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-framework-bom</artifactId>
-        <version>${spring.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
       <dependency>
         <groupId>javax.cache</groupId>
         <artifactId>cache-api</artifactId>
