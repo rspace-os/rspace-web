@@ -9,6 +9,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.service.MediaManager;
 import com.researchspace.webapp.controller.BaseController;
@@ -347,7 +348,7 @@ public class WopiController extends BaseController {
               mediaFileToUpdate.getId(), inputStream, proposedName, user, null);
       log.info("saved new version of gallery file {}", resultMediaFile.getId());
 
-    } catch (IOException ioe) {
+    } catch (IOException | MediaContentMismatchException ioe) {
       log.warn("couldn't save incoming input stream", ioe);
       resp.setStatus(500);
       return Collections.emptyMap();
@@ -483,7 +484,7 @@ public class WopiController extends BaseController {
       // Optional header for Collabora
       resp.addHeader("LastModifiedTime", getIsoDate(mediaFile.getModificationDateAsDate()));
 
-    } catch (IOException ioe) {
+    } catch (IOException | MediaContentMismatchException ioe) {
       log.warn("couldn't save incoming input stream", ioe);
       resp.setStatus(500);
     }

@@ -14,6 +14,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.UserConnectionManager;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -178,7 +179,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
 
   @Override
   public DMPUser doJsonDownload(DMPToolDMP dmp, String title, String accessToken)
-      throws URISyntaxException, IOException {
+      throws URISyntaxException, IOException, MediaContentMismatchException {
     User user = userManager.getAuthenticatedUserInSession();
     if (!assertIsNewDMP(dmp, user)) {
       return null;
@@ -188,7 +189,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
 
   @Override
   public ServiceOperationResult<DMPUser> doJsonDownload(DMPToolDMP dmp, String title, User user)
-      throws URISyntaxException, IOException {
+      throws URISyntaxException, IOException, MediaContentMismatchException {
     Optional<UserConnection> optConn = getUserConnection(user.getUsername());
     if (!optConn.isPresent()) {
       return noAccessTokenFailure(DMPUser.class);

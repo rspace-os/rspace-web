@@ -38,7 +38,7 @@ public interface MediaManager {
    */
   EcatImage saveNewImage(
       String originalFileName, InputStream inputStream, User user, Folder targetFolder)
-      throws IOException;
+      throws IOException, MediaContentMismatchException;
 
   /**
    * For importing from archives, preserving original information
@@ -57,7 +57,7 @@ public interface MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException;
+      throws IOException, MediaContentMismatchException;
 
   /**
    * Saves provided pngBase64Image as a new Gallery image linked to the original image.
@@ -69,7 +69,7 @@ public interface MediaManager {
    * @throws IOException
    */
   EcatImage saveEditedImage(EcatImage sourceImage, String uiBase64Image, User user)
-      throws IOException;
+      throws IOException, MediaContentMismatchException;
 
   EcatImage saveOriginalImageLink(EcatImage image, Long originalImageId, User user);
 
@@ -92,7 +92,7 @@ public interface MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException;
+      throws IOException, MediaContentMismatchException;
 
   /**
    * Saves a file to File Store and creates a new EcatAudio entity for it. <br>
@@ -113,11 +113,11 @@ public interface MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException;
+      throws IOException, MediaContentMismatchException;
 
   EcatDocumentFile saveNewDMP(
       String originalFileName, InputStream inputStream, User user, ImportOverride override)
-      throws IOException;
+      throws IOException, MediaContentMismatchException;
 
   EcatDocumentFile saveNewDMPWithDescription(
       String originalFileName,
@@ -125,7 +125,7 @@ public interface MediaManager {
       User user,
       ImportOverride override,
       String description)
-      throws IOException;
+      throws IOException, MediaContentMismatchException;
 
   /**
    * Saves a file to File Store and creates a new EcatChemistry entity for it. <br>
@@ -145,7 +145,7 @@ public interface MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException;
+      throws IOException, MediaContentMismatchException;
 
   /**
    * Saves a file to File Store and creates a new EcatDocumentFile entity for it. <br>
@@ -165,7 +165,7 @@ public interface MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException;
+      throws IOException, MediaContentMismatchException;
 
   /**
    * Saves input stream as a file in File Store Gallery, and creates (or updates) EcatMediaFile
@@ -184,10 +184,8 @@ public interface MediaManager {
    * @return subclass of EcatMediaFile (decided on file extension)
    * @throws IOException
    * @throws MediaContentMismatchException if the content is not the type the file extension claims.
-   *     The input stream is closed before this is thrown, as it is on a normal return. Callers that
-   *     need to carry on with other files should check the content with {@link
-   *     MediaFileContentValidator} first, since a rejection here marks the surrounding transaction
-   *     for rollback.
+   *     The input stream is closed before this is thrown, as it is on a normal return. Nothing is
+   *     written, so a caller handling several files can report this one and carry on.
    */
   EcatMediaFile saveMediaFile(
       InputStream inputStream,
@@ -198,7 +196,7 @@ public interface MediaManager {
       Folder targetFolder,
       String caption,
       User user)
-      throws IOException;
+      throws IOException, MediaContentMismatchException;
 
   /**
    * Saves input stream as a new version of existing EcatMediaFile.
@@ -214,7 +212,7 @@ public interface MediaManager {
    */
   EcatMediaFile updateMediaFile(
       Long mediaFileId, InputStream inputStream, String updatedFileName, User user, String lockId)
-      throws IOException;
+      throws IOException, MediaContentMismatchException;
 
   /**
    * Method to insert a new comment.
@@ -384,5 +382,5 @@ public interface MediaManager {
       String caption,
       User user,
       ImportOverride override)
-      throws IOException;
+      throws IOException, MediaContentMismatchException;
 }

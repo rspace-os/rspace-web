@@ -128,7 +128,7 @@ public class MediaManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void gettingImage() throws IOException {
+  public void gettingImage() throws IOException, MediaContentMismatchException {
     User user = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(user);
     EcatImage img = addImageToGallery(user);
@@ -142,7 +142,8 @@ public class MediaManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void saveImageCheckOrientationMaintained() throws IOException {
+  public void saveImageCheckOrientationMaintained()
+      throws IOException, MediaContentMismatchException {
     User user = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(user);
     EcatImage img = addImageToGallery(user, "testimages/imageWithOrientationData.JPG");
@@ -185,7 +186,7 @@ public class MediaManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void savingNewVersionOfEcatImage() throws IOException {
+  public void savingNewVersionOfEcatImage() throws IOException, MediaContentMismatchException {
 
     User user = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(user);

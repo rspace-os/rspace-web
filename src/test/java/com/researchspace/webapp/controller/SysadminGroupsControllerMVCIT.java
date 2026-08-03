@@ -15,6 +15,7 @@ import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
+import com.researchspace.service.MediaContentMismatchException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -173,7 +174,7 @@ public class SysadminGroupsControllerMVCIT extends MVCTestBase {
     assertTrue(results.size() > 10);
   }
 
-  private Group setUp12groupsandReturnLargest() throws IOException {
+  private Group setUp12groupsandReturnLargest() throws IOException, MediaContentMismatchException {
     setUpLoginAsPIUserAndCreateADocument();
     User other = createAndSaveUser(getRandomName(10));
     initUser(other);

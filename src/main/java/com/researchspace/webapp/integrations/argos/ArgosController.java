@@ -3,6 +3,7 @@ package com.researchspace.webapp.integrations.argos;
 import com.researchspace.argos.model.ArgosDMPListing;
 import com.researchspace.argos.model.DataTableData;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.BaseController;
 import java.io.IOException;
@@ -28,7 +29,7 @@ public class ArgosController extends BaseController {
   public AjaxReturnObject<Boolean> importDmp(@PathVariable("id") String id) {
     try {
       return new AjaxReturnObject<>(client.importDmp(id), null);
-    } catch (IOException | URISyntaxException e) {
+    } catch (IOException | URISyntaxException | MediaContentMismatchException e) {
       log.error("Failure on importing DMP", e);
       return new AjaxReturnObject<>(null, ErrorList.of("Couldn't import DMP"));
     }

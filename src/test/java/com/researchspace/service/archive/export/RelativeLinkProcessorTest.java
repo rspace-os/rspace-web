@@ -21,6 +21,7 @@ import com.researchspace.model.User;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.DiskSpaceLimitException;
 import com.researchspace.service.DocumentAlreadyEditedException;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -48,7 +49,8 @@ public class RelativeLinkProcessorTest extends SpringTransactionalTest {
       throws IOException,
           URISyntaxException,
           AuthorizationException,
-          DocumentAlreadyEditedException {
+          DocumentAlreadyEditedException,
+          MediaContentMismatchException {
     ArchiveExportConfig cfg = new ArchiveExportConfig();
     cfg.setExportScope(ExportScope.SELECTION);
 

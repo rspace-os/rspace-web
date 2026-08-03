@@ -49,7 +49,8 @@ public class AttachmentSearchTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void attachmentSearchPartOfFullTextSearchTest() throws URISyntaxException, IOException {
+  public void attachmentSearchPartOfFullTextSearchTest()
+      throws URISyntaxException, IOException, MediaContentMismatchException {
     setupRandomPIUser();
     logoutAndLoginAs(user);
 
@@ -66,7 +67,10 @@ public class AttachmentSearchTest extends SearchSpringTestBase {
 
   @Test
   public void attachmentSearchTest()
-      throws IllegalAddChildOperation, IOException, URISyntaxException {
+      throws IllegalAddChildOperation,
+          IOException,
+          URISyntaxException,
+          MediaContentMismatchException {
 
     // create user and index test file
     User user = createAndSaveRandomUser();
@@ -100,7 +104,8 @@ public class AttachmentSearchTest extends SearchSpringTestBase {
   }
 
   // saves an example file in filsestore and DB
-  private EcatDocumentFile saveTextFileInGallery(User user) throws URISyntaxException, IOException {
+  private EcatDocumentFile saveTextFileInGallery(User user)
+      throws URISyntaxException, IOException, MediaContentMismatchException {
     InputStream is =
         SearchManagerTest.class.getClassLoader().getResourceAsStream("TestResources/genFilesi.txt");
     EcatDocumentFile doc = mediaMgr.saveNewDocument("genFilesi.txt", is, user, null, null);

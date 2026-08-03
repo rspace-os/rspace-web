@@ -52,6 +52,7 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.ImageProcessor;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaFileContentValidator;
 import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.service.MediaManager;
@@ -126,7 +127,7 @@ public class MediaManagerImpl implements MediaManager {
   @Override
   public EcatImage saveNewImage(
       String originalFileName, InputStream inputStream, User user, Folder targetFolder)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     return saveNewImage(originalFileName, inputStream, user, targetFolder, null);
   }
 
@@ -137,7 +138,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     return (EcatImage)
         saveMediaFile(
             inputStream,
@@ -153,7 +154,7 @@ public class MediaManagerImpl implements MediaManager {
 
   @Override
   public EcatImage saveEditedImage(EcatImage sourceImage, String uiBase64Image, User user)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
 
     String newExtension = ImageUtils.getExtensionFromBase64DataImage(uiBase64Image);
     String newName =
@@ -198,7 +199,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     return (EcatVideo)
         saveMediaFile(
             inputStream,
@@ -219,7 +220,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     return (EcatAudio)
         saveMediaFile(
             inputStream,
@@ -236,7 +237,7 @@ public class MediaManagerImpl implements MediaManager {
   @Override
   public EcatDocumentFile saveNewDMP(
       String originalFileName, InputStream inputStream, User user, ImportOverride override)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     return (EcatDocumentFile)
         doSaveMediaFile(
             inputStream,
@@ -258,7 +259,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       ImportOverride override,
       String description)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     return (EcatDocumentFile)
         doSaveMediaFile(
             inputStream,
@@ -280,7 +281,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     return (EcatChemistryFile)
         saveMediaFile(
             inputStream,
@@ -301,7 +302,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     return (EcatDocumentFile)
         saveMediaFile(
             inputStream,
@@ -326,7 +327,7 @@ public class MediaManagerImpl implements MediaManager {
       String caption,
       User user,
       ImportOverride override)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
 
     String mediaFolderType = extractFileTypeFromPath(originalFileName);
     return doSaveMediaFile(
@@ -353,7 +354,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       ImportOverride override,
       String mediaFolderType)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     // are we making new revision of file
     if (mediaFileId != null) {
       return updateMediaFile(mediaFileId, inputStream, originalFileName, user, null);
@@ -447,7 +448,7 @@ public class MediaManagerImpl implements MediaManager {
       Folder targetFolder,
       String caption,
       User user)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     return saveMediaFile(
         inputStream,
         mediaFileId,
@@ -463,7 +464,7 @@ public class MediaManagerImpl implements MediaManager {
   @Override
   public EcatMediaFile updateMediaFile(
       Long mediaFileId, InputStream inputStream, String updatedFileName, User user, String lockId)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
 
     BaseRecord recToUpdate =
         recordManager.getRecordWithLazyLoadedProperties(

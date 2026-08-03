@@ -41,7 +41,7 @@ public final class MediaFileContentValidator {
    *     read, which spares every caller an unwinding path of its own.
    */
   public static InputStream verifyContentMatchesExtension(InputStream inputStream, String fileName)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     String extension = FilenameUtils.getExtension(fileName);
     if (!MediaUtils.isImageFile(extension)) {
       return inputStream;

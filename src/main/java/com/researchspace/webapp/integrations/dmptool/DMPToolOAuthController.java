@@ -11,6 +11,7 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
@@ -204,7 +205,10 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
             null, ErrorList.of("Couldn't get details of DMP with id: " + id));
       }
 
-    } catch (URISyntaxException | IOException | RuntimeException e) {
+    } catch (URISyntaxException
+        | IOException
+        | MediaContentMismatchException
+        | RuntimeException e) {
       log.error("Failure on downloading DMP", e);
       return new AjaxReturnObject<>(null, ErrorList.of("Couldn't download DMP file for id: " + id));
     }

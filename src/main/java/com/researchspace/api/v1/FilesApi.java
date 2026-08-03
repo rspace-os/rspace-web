@@ -8,6 +8,7 @@ import com.researchspace.api.v1.controller.DocumentApiPaginationCriteria;
 import com.researchspace.api.v1.model.ApiFile;
 import com.researchspace.api.v1.model.ApiFileSearchResult;
 import com.researchspace.model.User;
+import com.researchspace.service.MediaContentMismatchException;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -36,7 +37,7 @@ public interface FilesApi {
   @ResponseStatus(code = HttpStatus.CREATED)
   ApiFile uploadFiles(
       Long folderId, String caption, Long originalImageId, MultipartFile file, User user)
-      throws BindException, IOException, URISyntaxException;
+      throws BindException, IOException, URISyntaxException, MediaContentMismatchException;
 
   /**
    * Replaces the file associated with mediaFileId with a new version

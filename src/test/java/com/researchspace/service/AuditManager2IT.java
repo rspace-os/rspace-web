@@ -686,7 +686,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
 
   @Test
   public void checkDocRevisionsAfterUploadingNewAttachmentVersionByOwnerAndSharee()
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
 
     // create doc, ensure just one rev
     StructuredDocument doc = setUpLoginAsPIUserAndCreateADocument();
@@ -751,7 +751,8 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void testRestoreRevisionAsCurrentWithAudioFile() throws IOException {
+  public void testRestoreRevisionAsCurrentWithAudioFile()
+      throws IOException, MediaContentMismatchException {
     // Create structured document and login
     StructuredDocument doc = setUpLoginAsPIUserAndCreateADocument();
     // Add text then save
@@ -856,7 +857,8 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void testRestoreRevisionAsCurrentWithImageFile() throws IOException {
+  public void testRestoreRevisionAsCurrentWithImageFile()
+      throws IOException, MediaContentMismatchException {
     // Create structured document and login
     StructuredDocument doc = setUpLoginAsPIUserAndCreateADocument();
     // Add text then save
@@ -890,7 +892,7 @@ public class AuditManager2IT extends RealTransactionSpringTestBase {
 
   @Test
   public void testRestoreRevisionAsCurrentWithDocumentFile()
-      throws IOException, URISyntaxException {
+      throws IOException, URISyntaxException, MediaContentMismatchException {
     // Create structured document and login
     StructuredDocument doc = setUpLoginAsPIUserAndCreateADocument();
     // Add text then save

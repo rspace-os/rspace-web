@@ -6,6 +6,7 @@ import com.researchspace.dmptool.model.DMPToolList;
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.MediaContentMismatchException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -46,7 +47,7 @@ public interface DMPToolDMPProvider {
    * @throws IOException
    */
   DMPUser doJsonDownload(DMPToolDMP dmp, String title, String accessToken)
-      throws URISyntaxException, IOException;
+      throws URISyntaxException, IOException, MediaContentMismatchException;
 
   /**
    * Downloads a PDF of the DMP, creating a new DMP entry in RSpace if one does not already exist.
@@ -60,7 +61,7 @@ public interface DMPToolDMPProvider {
    * @throws IOException
    */
   ServiceOperationResult<DMPUser> doJsonDownload(DMPToolDMP dmp, String title, User user)
-      throws URISyntaxException, IOException;
+      throws URISyntaxException, IOException, MediaContentMismatchException;
 
   /**
    * Retrieves 1 page of DMPs of given scope

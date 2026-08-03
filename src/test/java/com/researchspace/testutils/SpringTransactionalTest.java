@@ -29,6 +29,7 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.IContentInitializer;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserConnectionManager;
@@ -410,7 +411,8 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   }
 
   protected EcatImageAnnotation addImageAnnotationToField(
-      StructuredDocument parent, Field txtFld, User user) throws IOException {
+      StructuredDocument parent, Field txtFld, User user)
+      throws IOException, MediaContentMismatchException {
     EcatImageAnnotation ann = new EcatImageAnnotation();
     ann.setParentId(txtFld.getId());
     ann.setRecord(txtFld.getStructuredDocument());
@@ -423,7 +425,8 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
     return ann;
   }
 
-  protected void addInternalLinkToField(Field txtFld, BaseRecord targetRecord) {
+  protected void addInternalLinkToField(Field txtFld, BaseRecord targetRecord)
+      throws MediaContentMismatchException {
     String internalLink = richTextUpdater.generateURLStringForInternalLink(targetRecord);
     txtFld.setFieldData(txtFld.getFieldData() + " and link " + internalLink);
     recordDao.save(txtFld.getStructuredDocument()); // with updated field

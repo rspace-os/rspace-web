@@ -56,7 +56,6 @@ import com.researchspace.service.ExternalWorkFlowDataManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.MediaContentMismatchException;
-import com.researchspace.service.MediaFileContentValidator;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
@@ -68,7 +67,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Date;
@@ -202,21 +200,6 @@ abstract class AbstractImporterStrategyImpl {
             oldIdToNewFolder.get(oldFolderId) != null
                 ? oldIdToNewFolder.get(oldFolderId).getName()
                 : "null, using top-level gallery folder");
-        InputStream contentToImport;
-        try {
-          // checked before saveMediaFile so a rejection cannot mark the import transaction
-          // rollback-only, letting the remaining items still be imported
-          contentToImport =
-              MediaFileContentValidator.verifyContentMatchesExtension(fis, galleryMetaFileName);
-        } catch (MediaContentMismatchException e) {
-          log.warn(
-              "Rejected Gallery item {} during import: {} - continuing with import",
-              galleryMetaFileName,
-              e.getMessage());
-          report.getInfoList().addErrorMsg(messages.getMessage(e.getErrorCode(), e.getArgs()));
-          continue;
-        }
-
         try {
           String displayName =
               StringUtils.isBlank(galleryMeta.getName())
@@ -224,7 +207,7 @@ abstract class AbstractImporterStrategyImpl {
                   : galleryMeta.getName();
           EcatMediaFile media =
               mediaManager.saveMediaFile(
-                  contentToImport,
+                  fis,
                   null,
                   displayName,
                   galleryMetaFileName,
@@ -242,6 +225,12 @@ abstract class AbstractImporterStrategyImpl {
               galleryMetaFileName,
               e.getMessage());
           report.getInfoList().addErrorMsg("Importing Gallery item " + e.getMessage());
+        } catch (MediaContentMismatchException e) {
+          log.warn(
+              "Rejected Gallery item {} during import: {} - continuing with import",
+              galleryMetaFileName,
+              e.getMessage());
+          report.getInfoList().addErrorMsg(messages.getMessage(e.getErrorCode(), e.getArgs()));
         }
       }
       monitor.worked((monitor.getTotalWorkUnits() / numElements));
@@ -318,7 +307,7 @@ abstract class AbstractImporterStrategyImpl {
       RecordContext context,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem,
       ArchivalImportConfig iconfig)
-      throws IOException, URISyntaxException {
+      throws IOException, URISyntaxException, MediaContentMismatchException {
 
     ArchivalForm archiveForm = ref.getArchivalForm();
     Long olderId = archiveForm.getFormId();
@@ -418,7 +407,7 @@ abstract class AbstractImporterStrategyImpl {
       File pth,
       ArchivalLinkRecord linkRecord,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws IOException, URISyntaxException {
+      throws IOException, URISyntaxException, MediaContentMismatchException {
 
     strucDoc.setName(archivalDoc.getName());
     strucDoc.addType(RecordType.NORMAL);
@@ -473,7 +462,7 @@ abstract class AbstractImporterStrategyImpl {
       File pth,
       ArchivalLinkRecord linkRecord,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws IOException, URISyntaxException {
+      throws IOException, URISyntaxException, MediaContentMismatchException {
     try {
       fld.setName(archivalField.getFieldName());
       fld.setModificationDate(
@@ -501,7 +490,7 @@ abstract class AbstractImporterStrategyImpl {
       File recordFolder,
       ArchivalLinkRecord linkRecord,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws IOException, URISyntaxException {
+      throws IOException, URISyntaxException, MediaContentMismatchException {
 
     fld = importComments(fld, archiveFld);
 
@@ -559,7 +548,7 @@ abstract class AbstractImporterStrategyImpl {
       User user,
       File recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws FileNotFoundException, IOException {
+      throws FileNotFoundException, IOException, MediaContentMismatchException {
     List<ArchivalGalleryMetadata> imgMeta = archiveFld.getImgMeta();
 
     if (imgMeta != null && imgMeta.size() > 0) {
@@ -605,7 +594,7 @@ abstract class AbstractImporterStrategyImpl {
       User user,
       File recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws FileNotFoundException, IOException {
+      throws FileNotFoundException, IOException, MediaContentMismatchException {
     List<ArchivalGalleryMetadata> audioMeta = archiveFld.getAudioMeta();
     int count = 0;
     if (audioMeta != null && audioMeta.size() > 0) {
@@ -640,7 +629,7 @@ abstract class AbstractImporterStrategyImpl {
       User user,
       File recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     List<ArchivalGalleryMetadata> videoMeta = archiveFld.getVideoMeta();
     int count = 0;
     if (videoMeta != null && !videoMeta.isEmpty()) {
@@ -675,7 +664,7 @@ abstract class AbstractImporterStrategyImpl {
       User user,
       File recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     List<ArchivalGalleryMetadata> attachMeta = archiveFld.getAttachMeta();
     if (attachMeta != null && !attachMeta.isEmpty()) {
       int cnt = 0;
@@ -957,7 +946,7 @@ abstract class AbstractImporterStrategyImpl {
       User user,
       File recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     List<ArchivalGalleryMetadata> attachMeta = archiveFld.getChemFileMeta();
     if (attachMeta != null && !attachMeta.isEmpty()) {
       int cnt = 0;

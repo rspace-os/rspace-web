@@ -22,6 +22,7 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
@@ -71,7 +72,8 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void addRemoveAttachmentToInventoryFile() throws IOException {
+  public void addRemoveAttachmentToInventoryFile()
+      throws IOException, MediaContentMismatchException {
 
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(user);
@@ -113,7 +115,8 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void findAttachingItemsReturnsItemAttachingGalleryFile() throws IOException {
+  public void findAttachingItemsReturnsItemAttachingGalleryFile()
+      throws IOException, MediaContentMismatchException {
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
 
@@ -131,7 +134,8 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void findAttachingItemsReturnsEmptyForUnattachedGalleryFile() throws IOException {
+  public void findAttachingItemsReturnsEmptyForUnattachedGalleryFile()
+      throws IOException, MediaContentMismatchException {
     User user = createInitAndLoginAnyUser();
     // a gallery image no inventory item has attached; also exercises the attachment-field query
     EcatImage image = addImageToGallery(user);
@@ -151,7 +155,8 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void findAttachingItemsResolvesFieldLevelAttachmentToOwningItem() throws IOException {
+  public void findAttachingItemsResolvesFieldLevelAttachmentToOwningItem()
+      throws IOException, MediaContentMismatchException {
     // the headline field-level path: a Gallery file attached to a sample's ATTACHMENT field must
     // surface against the owning sample (not the field), exercising the real
     // InventoryAttachmentField
@@ -173,7 +178,8 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void findAttachingItemsExcludesSoftDeletedAttachment() throws IOException {
+  public void findAttachingItemsExcludesSoftDeletedAttachment()
+      throws IOException, MediaContentMismatchException {
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
     InventoryFile galleryAttachment =

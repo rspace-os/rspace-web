@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.wopi.WopiDiscoveryServiceHandler.WopiAction;
 import com.researchspace.webapp.integrations.wopi.WopiDiscoveryServiceHandler.WopiApp;
@@ -40,7 +41,8 @@ public class CollaboraOnlineControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testActionUrlCreation() throws IOException, URISyntaxException {
+  public void testActionUrlCreation()
+      throws IOException, URISyntaxException, MediaContentMismatchException {
     EcatDocumentFile msDoc = addDocumentFromTestResourcesToGallery("MSattachment.doc", testUser);
     EcatDocumentFile msExcel = addDocumentFromTestResourcesToGallery("simpleExcel.xlsx", testUser);
 

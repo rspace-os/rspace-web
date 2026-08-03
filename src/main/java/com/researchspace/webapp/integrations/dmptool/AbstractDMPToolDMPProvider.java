@@ -7,6 +7,7 @@ import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.service.DMPManager;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserManager;
 import java.io.ByteArrayInputStream;
@@ -41,7 +42,7 @@ public abstract class AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
   }
 
   protected DMPUser saveJsonDMP(DMPToolDMP dmp, String title, User user, String json)
-      throws IOException {
+      throws IOException, MediaContentMismatchException {
     EcatDocumentFile dmpJson = null;
     String abbreviatedTitle = abbreviateTitle(title);
     try (InputStream is = new ByteArrayInputStream(json.getBytes())) {

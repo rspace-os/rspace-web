@@ -11,6 +11,7 @@ import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.service.DMPManager;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
@@ -162,7 +163,8 @@ public class DSWClient {
       throws HttpClientErrorException,
           URISyntaxException,
           MalformedURLException,
-          DSWProjectRetrievalException {
+          DSWProjectRetrievalException,
+          MediaContentMismatchException {
 
     // The description metadata does not come with the questionnaire, only
     // in the list of projects, so first of all we need to retrieve those.

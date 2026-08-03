@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.User;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.chemistry.ChemistryClient;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -47,7 +48,7 @@ public class ChemistrySearchIndexInitialisorTest extends SpringTransactionalTest
   }
 
   @Test
-  public void testOnAppStartupReinitNoReindex() throws IOException {
+  public void testOnAppStartupReinitNoReindex() throws IOException, MediaContentMismatchException {
     User anyUser = createInitAndLoginAnyUser();
     EcatChemistryFile file = addChemistryFileToGallery("Aminoglutethimide.mol", "CCC", anyUser);
     List<RSChemElement> chemElems =

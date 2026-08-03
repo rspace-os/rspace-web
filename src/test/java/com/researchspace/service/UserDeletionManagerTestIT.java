@@ -396,7 +396,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void testRemoveUserWithSamplesLomAndBasket() throws IOException {
+  public void testRemoveUserWithSamplesLomAndBasket()
+      throws IOException, MediaContentMismatchException {
     // create user with standard forms, docs, inventory items
     final User toDelete = createAndSaveUser(getRandomAlphabeticString("toDelete"));
     initUser(toDelete, true);

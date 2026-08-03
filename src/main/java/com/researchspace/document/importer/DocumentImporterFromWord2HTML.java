@@ -12,6 +12,7 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.FieldManager;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RecordManager;
 import java.io.File;
@@ -107,9 +108,13 @@ public class DocumentImporterFromWord2HTML implements RSpaceDocumentCreator {
       File imageFile = new File(contentFolder, src);
       FileInputStream fis = new FileInputStream(imageFile);
       String displayName = strucDoc.getName() + "-" + src;
-      EcatImage savedImage = mediaMgr.saveNewImage(displayName, fis, creator, imageFolder);
-      replaceCurrImageTagWithRSpaceImgTag(textField, img, wordStyle, savedImage);
-      fieldMgr.addMediaFileLink(savedImage.getId(), creator, textField.getId(), true);
+      try {
+        EcatImage savedImage = mediaMgr.saveNewImage(displayName, fis, creator, imageFolder);
+        replaceCurrImageTagWithRSpaceImgTag(textField, img, wordStyle, savedImage);
+        fieldMgr.addMediaFileLink(savedImage.getId(), creator, textField.getId(), true);
+      } catch (MediaContentMismatchException e) {
+        log.warn("Image {} could not be saved to RSpace, skipping: {}", src, e.getMessage());
+      }
     }
     textField.setFieldData(doc.body().html());
     // changes proagated to fields in single transaction for audit trail

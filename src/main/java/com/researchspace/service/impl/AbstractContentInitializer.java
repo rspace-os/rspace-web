@@ -24,6 +24,7 @@ import com.researchspace.service.IContentInitialiserUtils;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IconImageManager;
 import com.researchspace.service.InitializedContent;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserFolderCreator;
@@ -236,8 +237,8 @@ public abstract class AbstractContentInitializer
     Resource resource = new ClassPathResource(path);
     try {
       image = mediaMgr.saveNewImage(name, resource.getInputStream(), user, target);
-    } catch (IOException e) {
-      log.warn("img from path [{}] could not be saved into {}", path, target);
+    } catch (IOException | MediaContentMismatchException e) {
+      log.warn("img from path [{}] could not be saved into {}: {}", path, target, e.getMessage());
     }
     return image;
   }

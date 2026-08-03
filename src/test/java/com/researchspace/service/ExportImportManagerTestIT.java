@@ -2693,7 +2693,11 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   // rspac-2240
   @Test
   public void testLinkLevel0IncludesAttachments()
-      throws IOException, URISyntaxException, ExecutionException, InterruptedException {
+      throws IOException,
+          URISyntaxException,
+          ExecutionException,
+          InterruptedException,
+          MediaContentMismatchException {
     User user = createInitAndLoginAnyUser();
 
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "any");
