@@ -7,6 +7,7 @@ import com.researchspace.model.collection.CollectionDescription.Field;
 import com.researchspace.model.collection.CollectionDescription.Relationship;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionFieldType.InputKind;
+import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
@@ -15,6 +16,7 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.RelationshipInputForm;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
+import com.researchspace.service.CollectionMutationException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,12 +33,88 @@ public final class ApiV2DocumentParser {
 
   private ApiV2DocumentParser() {}
 
+  public static <T> List<ParsedDocument> parseMany(
+      JsonNode body, CollectionDescription<T> description, String errorKey, AccessContext context) {
+    return parseMany(body, description, errorKey, context, true);
+  }
+
+  static <T> List<ParsedDocument> parseManyStructure(
+      JsonNode body, CollectionDescription<T> description, String errorKey, AccessContext context) {
+    return parseMany(body, description, errorKey, context, false);
+  }
+
+  private static <T> List<ParsedDocument> parseMany(
+      JsonNode body,
+      CollectionDescription<T> description,
+      String errorKey,
+      AccessContext context,
+      boolean authorizeFields) {
+    if (body == null
+        || !body.isObject()
+        || body.size() != 1
+        || !body.has("docs")
+        || !body.get("docs").isArray()
+        || body.get("docs").isEmpty()) {
+      throw new DocumentValidationException(
+          errorKey, List.of(new Violation("docs", Reason.INVALID_DOCUMENT)));
+    }
+    if (body.get("docs").size() > CollectionMutationLimits.MAX_BULK_CREATE_ROWS) {
+      throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
+    }
+
+    List<ParsedDocument> documents = new ArrayList<>();
+    int index = 0;
+    for (JsonNode document : body.get("docs")) {
+      try {
+        documents.add(
+            parse(
+                document, description, WriteOperation.CREATE, errorKey, context, authorizeFields));
+      } catch (DocumentValidationException ex) {
+        throw prefixed(ex, "docs[" + index + "]");
+      }
+      index++;
+    }
+    return List.copyOf(documents);
+  }
+
+  static DocumentValidationException prefixed(
+      DocumentValidationException exception, String prefix) {
+    return new DocumentValidationException(
+        exception.getErrorKey(),
+        exception.getViolations().stream()
+            .map(
+                violation ->
+                    new Violation(
+                        violation.field() == null ? prefix : prefix + "." + violation.field(),
+                        violation.reason()))
+            .toList());
+  }
+
   public static <T> ParsedDocument parse(
       JsonNode body,
       CollectionDescription<T> description,
       WriteOperation operation,
       String errorKey,
       AccessContext context) {
+    return parse(body, description, operation, errorKey, context, true);
+  }
+
+  static <T> ParsedDocument parseStructure(
+      JsonNode body,
+      CollectionDescription<T> description,
+      WriteOperation operation,
+      String errorKey,
+      AccessContext context) {
+    return parse(body, description, operation, errorKey, context, false);
+  }
+
+  private static <T> ParsedDocument parse(
+      JsonNode body,
+      CollectionDescription<T> description,
+      WriteOperation operation,
+      String errorKey,
+      AccessContext context,
+      boolean authorizeFields) {
     if (body == null
         || !body.isObject()
         || (operation == WriteOperation.UPDATE && body.isEmpty())) {
@@ -53,13 +131,10 @@ public final class ApiV2DocumentParser {
               try {
                 field = description.requireField(name);
               } catch (CollectionQueryException ex) {
-                relationshipValue(
-                    body.get(name), description, name, operation, context, values, violations);
+                relationshipValue(body.get(name), description, name, operation, values, violations);
                 return;
               }
-              // Same violation whether the field is structurally not writable or this caller may
-              // not write it, so a caller cannot tell "read-only" from "not yours" and probe.
-              if (!field.writableOn(operation, context)) {
+              if (!field.writableOn(operation)) {
                 violations.add(new Violation(name, Reason.READ_ONLY));
                 return;
               }
@@ -95,7 +170,62 @@ public final class ApiV2DocumentParser {
     if (!violations.isEmpty()) {
       throw new DocumentValidationException(errorKey, violations);
     }
-    return new ParsedDocument(operation, values);
+    ParsedDocument parsed = new ParsedDocument(operation, values);
+    if (authorizeFields) {
+      authorizeFields(body, description, operation, errorKey, context.withInput(parsed));
+    }
+    return parsed;
+  }
+
+  static <T> void authorizeFields(
+      JsonNode body,
+      CollectionDescription<T> description,
+      WriteOperation operation,
+      String errorKey,
+      AccessContext inputContext) {
+    List<Violation> violations = new ArrayList<>();
+    body.fieldNames()
+        .forEachRemaining(
+            name -> {
+              try {
+                Field<T, ?> field = description.requireField(name);
+                if (!field.writableOn(operation, inputContext)) {
+                  violations.add(new Violation(name, Reason.READ_ONLY));
+                }
+              } catch (CollectionQueryException ex) {
+                try {
+                  Relationship<T> relationship = description.requireRelationship(name);
+                  if (!relationship.writableOn(operation, inputContext)) {
+                    violations.add(new Violation(name, Reason.READ_ONLY));
+                  }
+                } catch (CollectionQueryException ignored) {
+                  // The structural pass already recorded UNKNOWN_FIELD.
+                }
+              }
+            });
+    if (!violations.isEmpty()) {
+      throw new DocumentValidationException(errorKey, violations);
+    }
+  }
+
+  static <T> void authorizeManyFields(
+      JsonNode body,
+      List<ParsedDocument> documents,
+      CollectionDescription<T> description,
+      String errorKey,
+      AccessContext context) {
+    for (int index = 0; index < documents.size(); index++) {
+      try {
+        authorizeFields(
+            body.get("docs").get(index),
+            description,
+            WriteOperation.CREATE,
+            errorKey,
+            context.withInput(documents.get(index)));
+      } catch (DocumentValidationException ex) {
+        throw prefixed(ex, "docs[" + index + "]");
+      }
+    }
   }
 
   private static <T> void relationshipValue(
@@ -103,7 +233,6 @@ public final class ApiV2DocumentParser {
       CollectionDescription<T> description,
       String name,
       WriteOperation operation,
-      AccessContext context,
       Map<String, Object> values,
       List<Violation> violations) {
     Relationship<T> relationship;
@@ -113,7 +242,7 @@ public final class ApiV2DocumentParser {
       violations.add(new Violation(name, Reason.UNKNOWN_FIELD));
       return;
     }
-    if (!relationship.writableOn(operation, context)) {
+    if (!relationship.writableOn(operation)) {
       violations.add(new Violation(name, Reason.READ_ONLY));
       return;
     }
@@ -151,16 +280,24 @@ public final class ApiV2DocumentParser {
 
   private static ResourceReference<?, ?> objectReference(
       JsonNode node, Relationship<?> relationship) {
-    if (node.size() != 2
+    if ((node.size() != 2 && node.size() != 3)
         || !node.has("relationTo")
         || !node.get("relationTo").isTextual()
         || !node.has("value")
         || node.get("value").isNull()
-        || !hasExpectedKind(node.get("value"), relationship.idType().inputKind())) {
+        || !hasExpectedKind(node.get("value"), relationship.idType().inputKind())
+        || (node.size() == 3 && (!node.has("globalId") || !node.get("globalId").isTextual()))) {
       throw new IllegalArgumentException("Invalid relationship reference");
     }
     RelationshipTarget<?> target = relationship.requireTarget(node.get("relationTo").textValue());
     Object id = relationship.idType().parse(node.get("value").asText());
+    if (node.has("globalId")) {
+      String prefix = target.globalIdPrefix();
+      if (prefix == null || !node.get("globalId").textValue().equals(prefix + id)) {
+        throw new IllegalArgumentException(
+            "Relationship global ID does not match its target and ID");
+      }
+    }
     return new ResourceReference<>(target.storedKind(), id);
   }
 

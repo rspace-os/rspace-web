@@ -23,6 +23,9 @@ public interface CollectionManager<T, ID extends Serializable> {
   /** Validates and persists a new resource. */
   T createResource(T resource, User actor);
 
+  /** Atomically validates and persists new resources in input order. */
+  List<T> createResources(List<T> resources, User actor);
+
   /** Applies a validated patch to one resource, if it exists. */
   Optional<T> updateResource(ID id, ParsedDocument patch, User actor);
 

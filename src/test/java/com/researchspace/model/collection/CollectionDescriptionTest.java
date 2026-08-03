@@ -6,11 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.model.collection.ApiV2ResourceField.Access;
 import com.researchspace.model.collection.CollectionDescription.Field;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
+import java.time.Instant;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,13 +106,43 @@ class CollectionDescriptionTest {
             ApiV2AnnotatedResource.class, List.of(), List.of(new Sort("id", true)));
     AnnotatedEntity entity = new AnnotatedEntity();
 
-    assertEquals(List.of("id", "value"), description.fields().stream().map(Field::name).toList());
+    assertEquals(
+        List.of("id", "value", "serverManaged", "createdAt", "updatedAt", "createdBy", "updatedBy"),
+        description.fields().stream().map(Field::name).toList());
     assertEquals(10, description.requireField("value").schema().type().maxLength());
-    assertEquals(Map.of("id", 1L, "value", "original"), description.toDocument(entity));
+    assertTrue(description.requireField("id").schema().readOnly());
+    assertTrue(description.requireField("serverManaged").schema().readOnly());
+    Map<String, Object> expected = new LinkedHashMap<>();
+    expected.put("id", 1L);
+    expected.put("value", "original");
+    expected.put("serverManaged", "generated");
+    expected.put("createdAt", "2026-08-01T10:15:30Z");
+    expected.put("updatedAt", "2026-08-02T11:16:31Z");
+    expected.put("createdBy", "creator");
+    expected.put("updatedBy", "editor");
+    assertEquals(expected, description.toDocument(entity));
+    assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("createdAt"));
+    assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("updatedAt"));
+    assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("createdBy"));
+    assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("updatedBy"));
 
     description.apply(entity, Map.of("value", "changed"), WriteOperation.UPDATE);
 
     assertEquals("changed", entity.getValue());
+  }
+
+  @Test
+  void mapsAutomaticAuditFieldsToLegacyBeanPropertiesAndOmitsUnavailableProperties() {
+    CollectionDescription<LegacyAuditedEntity> description =
+        CollectionDescription.fromApiV2Resource(
+            LegacyAuditedResource.class, List.of(), List.of(new Sort("id", true)));
+
+    assertEquals(
+        List.of("id", "createdAt"), description.fields().stream().map(Field::name).toList());
+    assertEquals("creationDate", description.requireField("createdAt").property());
+    assertTrue(description.findRelationship("createdBy").isEmpty());
+    assertEquals(
+        "2026-08-01T10:15:30Z", description.toDocument(new LegacyAuditedEntity()).get("createdAt"));
   }
 
   @Test
@@ -287,12 +318,15 @@ class CollectionDescriptionTest {
 
   @ApiV2ResourceDefinition(name = "annotatedEntities", entity = AnnotatedEntity.class, id = "id")
   private record ApiV2AnnotatedResource(
-      @ApiV2ResourceField(access = Access.READ_ONLY) Long id,
-      @ApiV2ResourceField(maxLength = 10) String value) {}
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(maxLength = 10) String value,
+      @ApiV2ResourceField String serverManaged) {}
 
   public static final class AnnotatedEntity {
 
     private String value = "original";
+    private final Date creationDate = Date.from(Instant.parse("2026-08-01T10:15:30Z"));
+    private final Date modificationDate = Date.from(Instant.parse("2026-08-02T11:16:31Z"));
 
     public Long getId() {
       return 1L;
@@ -304,6 +338,43 @@ class CollectionDescriptionTest {
 
     public void setValue(String value) {
       this.value = value;
+    }
+
+    public String getServerManaged() {
+      return "generated";
+    }
+
+    public Date getCreationDate() {
+      return creationDate;
+    }
+
+    public Date getModificationDate() {
+      return modificationDate;
+    }
+
+    public String getCreatedBy() {
+      return "creator";
+    }
+
+    public String getModifiedBy() {
+      return "editor";
+    }
+  }
+
+  @ApiV2ResourceDefinition(
+      name = "legacyAuditedEntities",
+      entity = LegacyAuditedEntity.class,
+      id = "id")
+  private record LegacyAuditedResource(@ApiV2ResourceField Long id) {}
+
+  public static final class LegacyAuditedEntity {
+
+    public Long getId() {
+      return 1L;
+    }
+
+    public Date getCreationDate() {
+      return Date.from(Instant.parse("2026-08-01T10:15:30Z"));
     }
   }
 }

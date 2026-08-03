@@ -5,6 +5,7 @@ public enum ResourceOperation {
   COUNT,
   READ,
   CREATE,
+  BULK_CREATE,
   UPDATE,
   BULK_UPDATE,
   DELETE,

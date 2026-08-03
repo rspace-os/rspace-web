@@ -51,6 +51,8 @@ public final class BookingConfigurationResourceOperations
         Map.of(
             ResourceOperation.CREATE,
             Map.of(409, "errors.api.v2.bookingConfiguration.target.conflict"),
+            ResourceOperation.BULK_CREATE,
+            Map.of(409, "errors.api.v2.bookingConfiguration.target.conflict"),
             ResourceOperation.UPDATE,
             Map.of(409, "errors.api.v2.bookingConfiguration.target.conflict"),
             ResourceOperation.BULK_UPDATE,
@@ -65,7 +67,7 @@ public final class BookingConfigurationResourceOperations
                     Map.of(
                         "enabled",
                         true,
-                        "timeZone",
+                        "timezone",
                         "Europe/Berlin",
                         "target",
                         Map.of("relationTo", "instruments", "value", 123)))
@@ -91,12 +93,12 @@ public final class BookingConfigurationResourceOperations
 
   @Override
   public BookingConfiguration create(ParsedDocument document, User actor) {
-    return manager.createConfiguration(
-        new Create(
-            (boolean) document.values().getOrDefault("enabled", false),
-            value(document, "timeZone"),
-            target(document)),
-        actor);
+    return manager.createConfiguration(create(document), actor);
+  }
+
+  @Override
+  public List<BookingConfiguration> createMany(List<ParsedDocument> documents, User actor) {
+    return manager.createConfigurations(documents.stream().map(this::create).toList(), actor);
   }
 
   @Override
@@ -121,7 +123,14 @@ public final class BookingConfigurationResourceOperations
   }
 
   private static Patch patch(ParsedDocument document) {
-    return new Patch(value(document, "enabled"), value(document, "timeZone"), target(document));
+    return new Patch(value(document, "enabled"), value(document, "timezone"), target(document));
+  }
+
+  private Create create(ParsedDocument document) {
+    return new Create(
+        (boolean) document.values().getOrDefault("enabled", false),
+        value(document, "timezone"),
+        target(document));
   }
 
   private static ResolvedBookableTarget target(ParsedDocument document) {

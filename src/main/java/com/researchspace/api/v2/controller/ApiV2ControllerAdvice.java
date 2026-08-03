@@ -5,6 +5,7 @@ import com.researchspace.booking.service.BookingConfigurationTargetConflictExcep
 import com.researchspace.booking.service.InvalidBookableTargetException;
 import com.researchspace.core.util.throttling.ThrottlingException;
 import com.researchspace.maintenance.service.MaintenanceOperationException;
+import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.permissions.SecurityLogger;
@@ -16,8 +17,6 @@ import jakarta.ws.rs.NotFoundException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.UnavailableSecurityManagerException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,7 +102,7 @@ public class ApiV2ControllerAdvice {
       AuthorizationException exception, HttpServletRequest request) {
     SECURITY_LOG.warn(
         "REST API v2 authorization failure by user [{}] to [{}]: {}",
-        principal(),
+        principal(request),
         request.getRequestURI(),
         exception.getMessage());
     return problem(HttpStatus.FORBIDDEN, "errors.api.v2.forbidden");
@@ -263,11 +262,7 @@ public class ApiV2ControllerAdvice {
     return ApiV2Problem.response(status, detail, messageKey, detail);
   }
 
-  private static Object principal() {
-    try {
-      return SecurityUtils.getSubject().getPrincipal();
-    } catch (UnavailableSecurityManagerException ex) {
-      return null;
-    }
+  private static Object principal(HttpServletRequest request) {
+    return request.getAttribute("user") instanceof User user ? user.getUsername() : null;
   }
 }

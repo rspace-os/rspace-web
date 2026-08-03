@@ -38,6 +38,10 @@ public interface ResourceOperations<T, ID> {
     throw readOnly("create");
   }
 
+  default List<T> createMany(List<ParsedDocument> documents, User actor) {
+    throw readOnly("create");
+  }
+
   default Optional<T> update(ID id, ParsedDocument document, User actor) {
     throw readOnly("update");
   }

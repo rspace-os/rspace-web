@@ -32,7 +32,7 @@ public record ApiV2RelationshipTargetSpec<T, ID>(
     ID id = castId(rawId);
     AccessContext context =
         new AccessContext(actor, Operation.READ, description.resourceName(), id);
-    AccessResult access = description.accessPolicy().read().check(context);
+    AccessResult access = description.accessPolicy().readAccess().check(context);
     if (access.isDenied()) {
       return Optional.empty();
     }

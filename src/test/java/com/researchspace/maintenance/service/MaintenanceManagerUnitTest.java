@@ -17,6 +17,7 @@ import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
+import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RsqlFilterParser;
@@ -119,6 +120,37 @@ class MaintenanceManagerUnitTest {
     ScheduledMaintenance invalid = new ScheduledMaintenance(hoursFromNow(2), hoursFromNow(1));
 
     assertThrows(MaintenanceOperationException.class, () -> manager.createResource(invalid, user));
+
+    verify(dao, never()).save(any());
+  }
+
+  @Test
+  void validatesTheWholeCreateBatchBeforeSavingAndPublishesOnce() {
+    ScheduledMaintenance first = maintenance(2);
+    ScheduledMaintenance second = maintenance(4);
+    when(dao.save(any(ScheduledMaintenance.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    assertEquals(List.of(first, second), manager.createResources(List.of(first, second), user));
+    verify(dao, times(2)).save(any(ScheduledMaintenance.class));
+    verify(events).publishEvent(any(MaintenanceChangedEvent.class));
+
+    ScheduledMaintenance invalid = new ScheduledMaintenance(hoursFromNow(5), hoursFromNow(4));
+    assertThrows(
+        MaintenanceOperationException.class,
+        () -> manager.createResources(List.of(first, invalid), user));
+    verify(dao, times(2)).save(any(ScheduledMaintenance.class));
+  }
+
+  @Test
+  void rejectsOversizedCreateBatchBeforeValidationOrPersistence() {
+    assertThrows(
+        CollectionMutationException.class,
+        () ->
+            manager.createResources(
+                Collections.nCopies(
+                    CollectionMutationLimits.MAX_BULK_CREATE_ROWS + 1, maintenance(2)),
+                user));
 
     verify(dao, never()).save(any());
   }

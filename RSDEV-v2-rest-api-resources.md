@@ -61,7 +61,8 @@ change with time, which makes caching and filtering harder.
 
 Clients format dates and may derive active state from `startDate` and `endDate`.
 
-Endpoints: list, get, count, query, create, patch, delete, and bulk patch/delete by `where`.
+Endpoints: list, get, count, query, create, bulk create, patch, delete, and bulk patch/delete by
+`where`.
 
 Any authenticated user may read maintenance. Only sysadmins may write it.
 
@@ -75,5 +76,7 @@ Phase 5 test of the generic write engine.
 
 ## Cross-reference
 
+- Implementation guide and payload examples for adding a collection →
+  `DevDocs/DeveloperNotes/RestApiV2Collections.md`.
 - Generic engine, envelope, RSQL/blaze/entity-views, i18n error shape, per-row authz, bulk semantics, projections (full/restricted) → `RSDEV-1187-booking-design.md`.
 - `booking` resource (the pilot consumer, with recurrence/availability/iCal) → `RSDEV-1187-booking-design.md`.

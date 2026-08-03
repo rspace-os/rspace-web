@@ -9,16 +9,26 @@ package com.researchspace.model.collection;
  * think about access fails closed.
  */
 public record AccessPolicy(
-    AccessFunction read, AccessFunction create, AccessFunction update, AccessFunction delete) {
+    /** Reading rows and resolving relationship targets. */
+    AccessFunction readAccess,
+    /** Creating one or many resources; parsed candidates are available from the context. */
+    AccessFunction createAccess,
+    /** Updating existing resources. */
+    AccessFunction updateAccess,
+    /** Permanently removing resources. */
+    AccessFunction deleteAccess,
+    /** Transitioning resources to their domain-defined soft-deleted state. */
+    AccessFunction softDeleteAccess) {
 
   public static final String AUTHENTICATION_REQUIRED = "errors.api.v2.authenticationRequired";
   public static final String FORBIDDEN = "errors.api.v2.forbidden";
 
   public AccessPolicy {
-    read = AccessFunction.requireDocumented(read);
-    create = AccessFunction.requireDocumented(create);
-    update = AccessFunction.requireDocumented(update);
-    delete = AccessFunction.requireDocumented(delete);
+    readAccess = AccessFunction.requireDocumented(readAccess);
+    createAccess = AccessFunction.requireDocumented(createAccess);
+    updateAccess = AccessFunction.requireDocumented(updateAccess);
+    deleteAccess = AccessFunction.requireDocumented(deleteAccess);
+    softDeleteAccess = AccessFunction.requireDocumented(softDeleteAccess);
   }
 
   /**
@@ -27,6 +37,7 @@ public record AccessPolicy(
    */
   public static AccessPolicy authenticated() {
     return new AccessPolicy(
+        AccessFunction.authenticated(),
         AccessFunction.authenticated(),
         AccessFunction.authenticated(),
         AccessFunction.authenticated(),
@@ -39,6 +50,7 @@ public record AccessPolicy(
         AccessFunction.anyone(),
         AccessFunction.sysadmin(),
         AccessFunction.sysadmin(),
+        AccessFunction.sysadmin(),
         AccessFunction.sysadmin());
   }
 
@@ -48,21 +60,27 @@ public record AccessPolicy(
         AccessFunction.authenticated(),
         AccessFunction.sysadmin(),
         AccessFunction.sysadmin(),
+        AccessFunction.sysadmin(),
         AccessFunction.sysadmin());
   }
 
   /** Readable subject to {@code read}, with every mutation refused. */
   public static AccessPolicy readOnly(AccessFunction read) {
     return new AccessPolicy(
-        read, AccessFunction.never(), AccessFunction.never(), AccessFunction.never());
+        read,
+        AccessFunction.never(),
+        AccessFunction.never(),
+        AccessFunction.never(),
+        AccessFunction.never());
   }
 
   public AccessFunction forOperation(AccessContext.Operation operation) {
     return switch (operation) {
-      case READ -> read;
-      case CREATE -> create;
-      case UPDATE -> update;
-      case DELETE -> delete;
+      case READ -> readAccess;
+      case CREATE -> createAccess;
+      case UPDATE -> updateAccess;
+      case DELETE -> deleteAccess;
+      case SOFT_DELETE -> softDeleteAccess;
     };
   }
 }

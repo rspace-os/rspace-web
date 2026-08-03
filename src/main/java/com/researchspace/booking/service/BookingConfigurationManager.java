@@ -4,22 +4,27 @@ import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.ResolvedBookableTarget;
+import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CollectionMutationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -27,16 +32,17 @@ import org.springframework.stereotype.Service;
 @Service("bookingConfigurationManager")
 public class BookingConfigurationManager {
 
-  private static final int MAX_BULK_ROWS = 1000;
-
   private final BookingConfigurationDao bookingConfigurationDao;
   private final Validator validator;
+  private final ApplicationEventPublisher events;
 
   public BookingConfigurationManager(
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao bookingConfigurationDao,
-      Validator validator) {
+      Validator validator,
+      ApplicationEventPublisher events) {
     this.bookingConfigurationDao = bookingConfigurationDao;
     this.validator = validator;
+    this.events = events;
   }
 
   /** Values accepted when creating a booking configuration. */
@@ -62,15 +68,38 @@ public class BookingConfigurationManager {
 
   /** Authorizes, validates, and persists a new booking configuration. */
   public BookingConfiguration createConfiguration(Create create, User actor) {
+    return createConfigurations(List.of(create), actor).get(0);
+  }
+
+  /** Authorizes and atomically validates and persists configurations in input order. */
+  public List<BookingConfiguration> createConfigurations(List<Create> creates, User actor) {
     authorizeMutation(actor);
+    if (creates.size() > CollectionMutationLimits.MAX_BULK_CREATE_ROWS) {
+      throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
+    }
+    List<BookingConfiguration> configurations = creates.stream().map(this::configuration).toList();
+    Date now = new Date();
+    configurations.forEach(configuration -> initializeAudit(configuration, actor, now));
+    Set<BookableTargetReference> targets = new HashSet<>();
+    for (BookingConfiguration configuration : configurations) {
+      if (!targets.add(configuration.getTarget())) {
+        throw new BookingConfigurationTargetConflictException();
+      }
+      requireTargetAvailable(configuration.getTarget(), null);
+    }
+    List<BookingConfiguration> saved = configurations.stream().map(this::save).toList();
+    saved.forEach(configuration -> notifyAudit(actor, configuration, AuditAction.CREATE));
+    return saved;
+  }
+
+  private BookingConfiguration configuration(Create create) {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setEnabled(create.enabled());
     configuration.setTimeZone(create.timeZone());
     BookableTargetReference target = validateTarget(create.target());
-    requireTargetAvailable(target, null);
     configuration.replaceTarget(target);
     validate(configuration);
-    return save(configuration);
+    return configuration;
   }
 
   /** Authorizes and applies a validated change when the configuration exists. */
@@ -93,8 +122,11 @@ public class BookingConfigurationManager {
                 return configuration;
               }
               apply(patch, configuration);
+              touchAudit(configuration, actor, new Date());
               validate(configuration);
-              return save(configuration);
+              BookingConfiguration saved = save(configuration);
+              notifyAudit(actor, saved, AuditAction.WRITE);
+              return saved;
             });
   }
 
@@ -112,12 +144,15 @@ public class BookingConfigurationManager {
         matches.get(0).replaceTarget(target);
       }
     }
+    Date now = new Date();
     matches.forEach(
         configuration -> {
           apply(patch, configuration);
+          touchAudit(configuration, actor, now);
           validate(configuration);
         });
     matches.forEach(this::save);
+    matches.forEach(configuration -> notifyAudit(actor, configuration, AuditAction.WRITE));
     return matches;
   }
 
@@ -126,6 +161,7 @@ public class BookingConfigurationManager {
     authorizeMutation(actor);
     Optional<BookingConfiguration> configuration = bookingConfigurationDao.getSafeNull(id);
     configuration.ifPresent(ignored -> bookingConfigurationDao.remove(id));
+    configuration.ifPresent(deleted -> notifyAudit(actor, deleted, AuditAction.DELETE));
     return configuration;
   }
 
@@ -133,6 +169,7 @@ public class BookingConfigurationManager {
   public List<BookingConfiguration> removeConfigurations(ResourceRequest request, User actor) {
     List<BookingConfiguration> matches = bulkMatches(request, actor);
     matches.forEach(configuration -> bookingConfigurationDao.remove(configuration.getId()));
+    matches.forEach(configuration -> notifyAudit(actor, configuration, AuditAction.DELETE));
     return matches;
   }
 
@@ -155,8 +192,9 @@ public class BookingConfigurationManager {
       throw new CollectionMutationException(CollectionMutationException.Reason.FILTER_REQUIRED);
     }
     List<BookingConfiguration> matches =
-        bookingConfigurationDao.getResources(request, MAX_BULK_ROWS + 1);
-    if (matches.size() > MAX_BULK_ROWS) {
+        bookingConfigurationDao.getResources(
+            request, CollectionMutationLimits.MAX_BULK_UPDATE_DELETE_ROWS + 1);
+    if (matches.size() > CollectionMutationLimits.MAX_BULK_UPDATE_DELETE_ROWS) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }
     return matches;
@@ -169,6 +207,23 @@ public class BookingConfigurationManager {
     if (patch.timeZone() != null) {
       configuration.setTimeZone(patch.timeZone());
     }
+  }
+
+  private static void initializeAudit(
+      BookingConfiguration configuration, User actor, Date timestamp) {
+    configuration.setCreatedAt(timestamp);
+    configuration.setUpdatedAt(timestamp);
+    configuration.setCreatedBy(actor);
+    configuration.setUpdatedBy(actor);
+  }
+
+  private static void touchAudit(BookingConfiguration configuration, User actor, Date timestamp) {
+    configuration.setUpdatedAt(timestamp);
+    configuration.setUpdatedBy(actor);
+  }
+
+  private void notifyAudit(User actor, BookingConfiguration configuration, AuditAction action) {
+    events.publishEvent(new BookingConfigurationAuditEvent(actor, configuration, action));
   }
 
   private static BookableTargetReference validateTarget(ResolvedBookableTarget target) {

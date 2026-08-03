@@ -66,6 +66,11 @@ public final class UserResourceOperations implements ResourceOperations<User, Lo
   }
 
   @Override
+  public List<User> createMany(List<ParsedDocument> documents, User actor) {
+    return List.of();
+  }
+
+  @Override
   public Optional<User> update(Long id, ParsedDocument document, User actor) {
     return Optional.empty();
   }

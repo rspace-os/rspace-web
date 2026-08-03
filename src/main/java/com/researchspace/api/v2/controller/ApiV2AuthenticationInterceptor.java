@@ -12,16 +12,14 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * Authenticates protected REST API v2 handlers and adds their user request attribute.
  *
  * <p>Generic CRUD handlers defer authorization to their collection's access functions. For those
- * handlers this interceptor resolves an identity only when credentials or a reusable browser
- * session are present; a genuinely anonymous request proceeds with a null user and is allowed or
- * rejected at the resource registration. All other handlers require authentication unless marked
- * {@link PublicApiV2}.
+ * handlers this interceptor resolves an identity only when API credentials are present; a request
+ * carrying only browser session cookies proceeds with a null user and is allowed or rejected at the
+ * resource registration. All other handlers require authentication unless marked {@link
+ * PublicApiV2}.
  *
- * <p>Deviation from v1: v1 logs out unconditionally in {@code postHandle}, which destroys a browser
- * session that authentication had merely reused. v2 logs out only sessions it created itself, which
- * it detects via {@link ApiV2Authenticator#SESSION_REUSED_ATTRIBUTE}. Doing this in {@code
- * afterCompletion} rather than {@code postHandle} means the session is also released when the
- * handler throws.
+ * <p>Unlike v1, v2 does not log into or out of Shiro. API credentials have already been validated
+ * by their managers, and avoiding Shiro ensures an ambient browser session cannot influence the
+ * request or be destroyed as a side effect.
  */
 @RequiredArgsConstructor
 public class ApiV2AuthenticationInterceptor implements HandlerInterceptor {
@@ -44,21 +42,9 @@ public class ApiV2AuthenticationInterceptor implements HandlerInterceptor {
     return true;
   }
 
-  @Override
-  public void afterCompletion(
-      HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-    if (!isPublic(handler) && request.getAttribute("user") != null && !sessionWasReused(request)) {
-      apiV2Authenticator.logout();
-    }
-  }
-
   private static boolean isDescriptionControlled(Object handler) {
     return handler instanceof HandlerMethod handlerMethod
         && ApiV2CrudController.class.isAssignableFrom(handlerMethod.getBeanType());
-  }
-
-  private static boolean sessionWasReused(HttpServletRequest request) {
-    return Boolean.TRUE.equals(request.getAttribute(ApiV2Authenticator.SESSION_REUSED_ATTRIBUTE));
   }
 
   private static boolean isPublic(Object handler) {

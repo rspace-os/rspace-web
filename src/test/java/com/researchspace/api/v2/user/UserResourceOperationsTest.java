@@ -12,6 +12,7 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.UserManager;
 import java.util.EnumSet;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class UserResourceOperationsTest {
@@ -31,6 +32,7 @@ class UserResourceOperationsTest {
   @Test
   void writeOperationsDoNotPersistAnything() {
     assertSame(actor, operations.create(document, actor));
+    assertTrue(operations.createMany(List.of(document), actor).isEmpty());
     assertTrue(operations.update(1L, document, actor).isEmpty());
     assertTrue(operations.updateMany(request, document, actor).isEmpty());
     assertTrue(operations.delete(1L, actor).isEmpty());

@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -218,7 +219,7 @@ class ApiV2CrudControllerTest {
         request.getValue().sort());
     assertEquals(
         new FilterExpression.Comparison("message", Operator.EQUAL, List.of("*upgrade*"), true),
-        request.getValue().filter());
+        assertAnonymousMaintenanceConstraint(request.getValue().filter()));
   }
 
   @Test
@@ -240,7 +241,8 @@ class ApiV2CrudControllerTest {
     ScheduledMaintenance maintenance = futureMaintenance(2, "Planned database upgrade");
     maintenance.setId(42L);
     when(maintenanceManager.countResources(any(ResourceRequest.class))).thenReturn(3L);
-    when(maintenanceManager.getResource(42L)).thenReturn(Optional.of(maintenance));
+    when(maintenanceManager.getResources(any(ResourceRequest.class)))
+        .thenReturn(new SearchResultsImpl<>(List.of(maintenance), 0, 1, 1));
 
     mockMvc
         .perform(get(ENDPOINT + "/count").param("where", "message==*upgrade*"))
@@ -256,12 +258,23 @@ class ApiV2CrudControllerTest {
 
   @Test
   void returnsNotFoundForExpiredOrUnknownMaintenance() throws Exception {
-    when(maintenanceManager.getResource(42L)).thenReturn(Optional.empty());
+    when(maintenanceManager.getResources(any(ResourceRequest.class)))
+        .thenReturn(new SearchResultsImpl<>(List.of(), 0, 0, 1));
 
     mockMvc
         .perform(get(ENDPOINT + "/42"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("errors.api.v2.notFound"));
+  }
+
+  private static FilterExpression assertAnonymousMaintenanceConstraint(FilterExpression filter) {
+    FilterExpression.And constrained = assertInstanceOf(FilterExpression.And.class, filter);
+    FilterExpression.Comparison endDate =
+        assertInstanceOf(FilterExpression.Comparison.class, constrained.children().get(0));
+    assertEquals("endDate", endDate.field());
+    assertEquals(Operator.GREATER_THAN, endDate.operator());
+    assertInstanceOf(Date.class, endDate.values().get(0));
+    return constrained.children().get(1);
   }
 
   @Test
@@ -420,6 +433,49 @@ class ApiV2CrudControllerTest {
         .perform(delete(ENDPOINT + "/42").requestAttr("user", user))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(42));
+  }
+
+  @Test
+  void bulkCreatesMaintenanceDocumentsInAPayloadEnvelope() throws Exception {
+    ScheduledMaintenance first = futureMaintenance(2, "First");
+    first.setId(41L);
+    ScheduledMaintenance second = futureMaintenance(4, "Second");
+    second.setId(42L);
+    when(maintenanceManager.createResources(any(), eq(user))).thenReturn(List.of(first, second));
+
+    mockMvc
+        .perform(
+            post(ENDPOINT + "/bulk")
+                .requestAttr("user", user)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"docs":[
+                      {
+                        "startDate":"2026-08-01T10:00:00Z",
+                        "endDate":"2026-08-01T11:00:00Z",
+                        "message":"First"
+                      },
+                      {
+                        "startDate":"2026-08-02T10:00:00Z",
+                        "endDate":"2026-08-02T11:00:00Z",
+                        "message":"Second"
+                      }
+                    ]}
+                    """))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.docs[0].id").value(41))
+        .andExpect(jsonPath("$.docs[1].id").value(42))
+        .andExpect(jsonPath("$.errors").isEmpty());
+
+    mockMvc
+        .perform(
+            post(ENDPOINT + "/bulk")
+                .requestAttr("user", user)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"docs\":[]}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
   }
 
   @Test

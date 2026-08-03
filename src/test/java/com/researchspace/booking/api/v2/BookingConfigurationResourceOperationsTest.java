@@ -18,6 +18,7 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResolvedResourceReference;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.inventory.Instrument;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -42,11 +43,37 @@ class BookingConfigurationResourceOperationsTest {
         operations.create(
             new ParsedDocument(
                 WriteOperation.CREATE,
-                Map.of("enabled", true, "timeZone", "Europe/Berlin", "target", resolved)),
+                Map.of("enabled", true, "timezone", "Europe/Berlin", "target", resolved)),
             actor);
 
     assertEquals(configuration, created);
     verify(manager).createConfiguration(new Create(true, "Europe/Berlin", target), actor);
+  }
+
+  @Test
+  void translatesBulkCreatesToOneSharedManagerCall() {
+    ResolvedResourceReference<BookableTargetType, Long> first = resolved(12L);
+    ResolvedResourceReference<BookableTargetType, Long> second = resolved(13L);
+    List<Create> creates =
+        List.of(
+            new Create(true, "Europe/Berlin", target(first)),
+            new Create(false, "UTC", target(second)));
+    List<BookingConfiguration> configurations =
+        List.of(new BookingConfiguration(), new BookingConfiguration());
+    when(manager.createConfigurations(creates, actor)).thenReturn(configurations);
+
+    assertEquals(
+        configurations,
+        operations.createMany(
+            List.of(
+                new ParsedDocument(
+                    WriteOperation.CREATE,
+                    Map.of("enabled", true, "timezone", "Europe/Berlin", "target", first)),
+                new ParsedDocument(
+                    WriteOperation.CREATE,
+                    Map.of("enabled", false, "timezone", "UTC", "target", second))),
+            actor));
+    verify(manager).createConfigurations(creates, actor);
   }
 
   @Test

@@ -2,8 +2,10 @@ package com.researchspace.model.collection;
 
 import com.researchspace.model.User;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -23,13 +25,15 @@ public final class AccessContext {
   private final Operation operation;
   private final String resourceName;
   private final Object targetId;
-  private final Map<String, Object> memo = new HashMap<>();
+  private final List<ParsedDocument> inputDocuments;
+  private final Map<String, Object> memo;
 
   public enum Operation {
     READ,
     CREATE,
     UPDATE,
-    DELETE
+    DELETE,
+    SOFT_DELETE
   }
 
   public AccessContext(User user, Operation operation, String resourceName) {
@@ -37,10 +41,31 @@ public final class AccessContext {
   }
 
   public AccessContext(User user, Operation operation, String resourceName, Object targetId) {
+    this(user, operation, resourceName, targetId, List.of());
+  }
+
+  private AccessContext(
+      User user,
+      Operation operation,
+      String resourceName,
+      Object targetId,
+      List<ParsedDocument> inputDocuments) {
+    this(user, operation, resourceName, targetId, inputDocuments, new HashMap<>());
+  }
+
+  private AccessContext(
+      User user,
+      Operation operation,
+      String resourceName,
+      Object targetId,
+      List<ParsedDocument> inputDocuments,
+      Map<String, Object> memo) {
     this.user = user;
     this.operation = Objects.requireNonNull(operation, "Operation");
     this.resourceName = Objects.requireNonNull(resourceName, "Resource name");
     this.targetId = targetId;
+    this.inputDocuments = List.copyOf(inputDocuments);
+    this.memo = memo;
   }
 
   /** The authenticated caller, or null when anonymous. */
@@ -64,11 +89,34 @@ public final class AccessContext {
    * field check compare the row being acted on against the caller, as in "a system administrator or
    * the user themselves".
    *
-   * <p>Deliberately not the incoming {@code data} or the pre-update {@code doc}, which Payload also
-   * supplies. Those belong with the per-row {@code siblingData} design and are not implemented.
+   * <p>Incoming create data is available separately through {@link #input()} and {@link #inputs()}.
    */
   public Object targetId() {
     return targetId;
+  }
+
+  /** The single parsed input document, when this is a single-document write. */
+  public Optional<ParsedDocument> input() {
+    return inputDocuments.size() == 1 ? Optional.of(inputDocuments.get(0)) : Optional.empty();
+  }
+
+  /** Parsed input documents in request order; empty for operations without a body. */
+  public List<ParsedDocument> inputs() {
+    return inputDocuments;
+  }
+
+  public ParsedDocument requireInput() {
+    return input()
+        .orElseThrow(
+            () -> new IllegalStateException("Access operation requires one input document"));
+  }
+
+  public AccessContext withInput(ParsedDocument input) {
+    return withInputs(List.of(input));
+  }
+
+  public AccessContext withInputs(List<ParsedDocument> inputs) {
+    return new AccessContext(user, operation, resourceName, targetId, inputs, memo);
   }
 
   /**
