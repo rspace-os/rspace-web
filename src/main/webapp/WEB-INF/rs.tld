@@ -164,4 +164,21 @@
         <tag-class>com.axiope.webapp.taglib.CacheVersionTag</tag-class>
     </tag>
 
+    <tag>
+        <name>i18nMessages</name>
+        <tag-class>com.axiope.webapp.taglib.I18nMessagesTag</tag-class>
+    </tag>
+
+    <function>
+        <name>notificationTypeMessageKey</name>
+        <function-class>com.researchspace.service.NotificationTypeMessages</function-class>
+        <function-signature>java.lang.String keyFor(com.researchspace.model.comms.NotificationType)</function-signature>
+    </function>
+
+    <function>
+        <name>communicationStatusMessageKey</name>
+        <function-class>com.researchspace.service.CommunicationStatusMessages</function-class>
+        <function-signature>java.lang.String keyFor(com.researchspace.model.comms.CommunicationStatus)</function-signature>
+    </function>
+
 </taglib>

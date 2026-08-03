@@ -11,6 +11,7 @@ import com.researchspace.webapp.integrations.wopi.WopiProofKeyValidationIntercep
 import java.nio.charset.Charset;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.format.support.FormattingConversionService;
@@ -19,6 +20,7 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.validation.Validator;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
@@ -38,6 +40,10 @@ public class WebConfig extends WebMvcConfigurationSupport {
   @Autowired WopiAuthorisationInterceptor wopiAuthorisation;
   @Autowired WopiProofKeyValidationInterceptor wopiProofKeyValidation;
 
+  @Autowired
+  @Qualifier("validator")
+  private Validator jsonBackedValidator;
+
   @Value("${csrf.filters.enabled}")
   private String csrfFiltersEnabled;
 
@@ -49,6 +55,16 @@ public class WebConfig extends WebMvcConfigurationSupport {
 
   @Value("${deployment.standalone}")
   private String standalone;
+
+  /**
+   * Without this, {@code mvcValidator()} builds its own validator, whose interpolator reads only
+   * {@code ValidationMessages.properties}, and every {@code {some.key}} message reaches the user
+   * with the braces intact.
+   */
+  @Override
+  protected Validator getValidator() {
+    return jsonBackedValidator;
+  }
 
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
