@@ -931,6 +931,7 @@
     },
     "label": "Version Lock Picker",
     "latest": "Latest",
+    "loadFailed": "The version history could not be loaded. Only the latest version can be chosen.",
     "versionValue": "Version {version}"
   },
   "warningBar": {

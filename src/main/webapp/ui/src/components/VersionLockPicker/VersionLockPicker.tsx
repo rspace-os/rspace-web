@@ -1,3 +1,4 @@
+import Alert from "@mui/material/Alert";
 import Radio from "@mui/material/Radio";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -29,6 +30,7 @@ export interface VersionLockPickerProps {
 export default function VersionLockPicker(props: VersionLockPickerProps): React.ReactElement {
   const { t } = useTranslation("common");
   const [versions, setVersions] = useState<VersionRecord[]>([]);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,13 +38,16 @@ export default function VersionLockPicker(props: VersionLockPickerProps): React.
       (rows) => {
         if (!cancelled) {
           setVersions(rows);
+          setLoadFailed(false);
         }
       },
       () => {
-        // a failed fetch degrades to the latest-only view; the rejection must
-        // not escape the component as an unhandled promise rejection
+        // a failed fetch degrades to the latest-only view, and says so: an empty table would
+        // otherwise read as "this record has only one version", which is a different claim.
+        // The rejection must not escape the component as an unhandled promise rejection.
         if (!cancelled) {
           setVersions([]);
+          setLoadFailed(true);
         }
       },
     );
@@ -55,6 +60,11 @@ export default function VersionLockPicker(props: VersionLockPickerProps): React.
 
   return (
     <TableContainer>
+      {loadFailed && (
+        <Alert severity="warning" sx={{ mb: 1 }}>
+          {t("versionLockPicker.loadFailed")}
+        </Alert>
+      )}
       <Table size="small" aria-label={t("versionLockPicker.label")}>
         <TableHead>
           <TableRow>

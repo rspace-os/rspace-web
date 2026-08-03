@@ -557,9 +557,16 @@ describe("UpdateField — version pin is edited in the editor and committed on U
   });
 
   it("greys the clock for targets that cannot be version-pinned", () => {
-    renderExistingLinkField("GL5");
+    // NB is the remaining unversionable target kind: GL became pinnable in RSDEV-1188
+    renderExistingLinkField("NB5");
 
     expect(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" })).toBeDisabled();
+  });
+
+  it("enables the clock for a gallery (GL) target", () => {
+    renderExistingLinkField("GL5");
+
+    expect(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" })).toBeEnabled();
   });
 
   it("greys the clock while editing a no-access committed target", () => {

@@ -69,6 +69,49 @@ resolved during design. This file is a glossary only — no implementation detai
   onwards and may require signing in to that provider, so it is never presented
   as the identifier's public address.
 
+## Record version history
+
+- **Revision** — a single audit row: one recorded change to a record, identified
+  by a monotonic audit id. An internal concept. Never shown to users as a number
+  and never used in user-facing labels.
+- **Version** — the user-facing counter on a record, incremented when a user
+  makes a change the product considers significant (for a Gallery item, uploading
+  new file content). **Several revisions can share one version**, because not
+  every recorded change bumps the counter. Revision and version are therefore not
+  interchangeable, and code that treats them as such is wrong.
+  A version owns its own content and the metadata describing that content: its
+  **filename** (a new version may be a differently named file), its description,
+  its size and its modification date. All of those are properties of a version,
+  never of the item. Only the item's identity (its id and Global ID) and the
+  references made to it are shared across versions.
+- **Version history** — the canonical name, in the UI and in code, for the list
+  of a record's versions, newest first. Where several revisions share a version,
+  the history shows that version once, representing its final state. Named this
+  way everywhere even though the ELN workspace's equivalent legacy button is
+  labelled "Revisions".
+  _Avoid_: revision history, revisions (as a user-facing label)
+- **Gallery item** — the user-facing name for a file a user keeps in the Gallery.
+  The same thing the API and older code variously call a media file or a gallery
+  file.
+  _Avoid_: attachment, media record (when addressing users)
+- **Local Gallery item** — a Gallery item whose bytes RSpace itself stores. The
+  only kind that has a version history, because only these are audited.
+- **Filestore item** — a Gallery item that lives on an external store (S3, iRODS,
+  Samba) and is only referenced by RSpace. Has no version history at all: RSpace
+  never recorded its changes and cannot.
+- **Pinned version view** — a record displayed as it was at one past version,
+  reached by a shareable link and never editable. The version history lists
+  versions; a pinned version view shows one. Every record type has one (the ELN
+  calls its own the audit view), and each states plainly which version is on
+  screen and that it is locked.
+  _Avoid_: revision view, historical view, audit view (outside the ELN's own)
+- **Item-level reference** — a link or attachment from an ELN document or an
+  Inventory item to a Gallery item. References name the item, never one of its
+  versions: nothing records the version a reference was made against. So the
+  references shown beside a pinned version view are the item's, not that
+  version's, and must be worded so no one reads them as the latter.
+  _Avoid_: backlink to a version, version reference
+
 ## Internationalization (i18n)
 
 - **Canonical translation catalog** — i18next JSON. The runtime and
