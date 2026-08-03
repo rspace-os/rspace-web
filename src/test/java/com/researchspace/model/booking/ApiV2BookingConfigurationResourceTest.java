@@ -35,6 +35,14 @@ class ApiV2BookingConfigurationResourceTest {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
+  void usesResourceSpecificAuditIdentifier() {
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setId(7L);
+
+    assertEquals("booking-configurations:7", configuration.getAuditTrailIdentifier());
+  }
+
+  @Test
   void definesScalarFieldsAndTheWritableTargetRelationship() {
     assertEquals(
         List.of("id", "enabled", "timezone", "configurationVersion", "createdAt", "updatedAt"),
