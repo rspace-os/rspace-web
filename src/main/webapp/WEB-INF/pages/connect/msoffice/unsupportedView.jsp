@@ -19,11 +19,9 @@
 
 <body> 
   <div class="bootstrap-custom-flat">
-    <h4>Unsupported action</h4>
+    <h4><spring:message code="connect.msoffice.unsupportedView.heading"/></h4>
     <p>
-        RSpace can't determine the way to open file <strong>${docName}</strong> (.${docExtension} type) for <strong>${actionToPerform}</strong> in Office.com.
-        <br/>
-        That's unexpected. Please try again, or contact your System Admin.
+        <spring:message code="connect.msoffice.unsupportedView.notice"><spring:argument value="${docName}"/><spring:argument value="${docExtension}"/><spring:argument value="${actionToPerform}"/></spring:message>
     </p>
   </div>
 </body>

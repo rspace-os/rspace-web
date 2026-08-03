@@ -8,6 +8,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FolderNavigationService;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -19,11 +20,14 @@ public class FolderNavigationServiceImpl implements FolderNavigationService {
 
   private final FolderManager folderManager;
   private final PermissionUtils permissionUtils;
+  private final MessageSourceUtils messages;
 
   @Autowired
-  public FolderNavigationServiceImpl(FolderManager folderManager, PermissionUtils permissionUtils) {
+  public FolderNavigationServiceImpl(
+      FolderManager folderManager, PermissionUtils permissionUtils, MessageSourceUtils messages) {
     this.folderManager = folderManager;
     this.permissionUtils = permissionUtils;
+    this.messages = messages;
   }
 
   @Override
@@ -37,7 +41,8 @@ public class FolderNavigationServiceImpl implements FolderNavigationService {
 
       if (!isValidParent) {
         throw new IllegalArgumentException(
-            String.format("Folder %s is not a parent of %s", parentId, folder.getId()));
+            messages.getMessage(
+                "folder.navigation.errors.notAParent", new Object[] {parentId, folder.getId()}));
       }
       return folderManager.getFolderSafe(parentId, user);
     } else {

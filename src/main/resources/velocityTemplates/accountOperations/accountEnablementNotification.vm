@@ -4,19 +4,20 @@ Arguments:
 - systemUser - the admin user who locked the account
 - user - A user object.
 - accountDisabled - a boolean
-- htmlPrefix - the base URL of the application
+- baseURL - the base URL of the application
+- msg - MessageSourceUtils for i18n phrase lookup
 *#
 
 <p/>
-Hello ${user.fullName},
+$msg.format("email.common.greeting", [${user.fullName}])
 <p/>
 
 #if (${accountDisabled} == 'true')
-<p>The RSpace system administrator has disabled your user account. For more details, please contact your RSpace administrator at <a href="mailto:${systemUser.email}">${systemUser.email}</a>.</p>
+<p>$msg.format("email.account.accountEnablementNotification.disabled", [${systemUser.email}])
 #else
-<p>The RSpace system administrator has enabled your user account. You can now <a href="${htmlPrefix}/workspace">log in to RSpace</a>.</p>
+<p>$msg.format("email.account.accountEnablementNotification.enabled", [${baseURL}])
 #end
 <br/>
-Best wishes,
+$msg.getMessage("email.common.signatureSignOff")
 <p/>
 ${systemUser.fullName}

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.integrations.clustermarket.client.ClustermarketClient;
 import com.researchspace.integrations.clustermarket.service.ClustermarketService;
 import com.researchspace.model.User;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import java.security.Principal;
 import java.util.List;
@@ -32,10 +33,11 @@ public class ClustermarketController {
       ClustermarketClient client,
       UserManager userManager,
       ClustermarketService clustermarketService,
-      ClustermarketOAuthService clustermarketOAuthService) {
+      ClustermarketOAuthService clustermarketOAuthService,
+      MessageSourceUtils messages) {
     this.client = client;
     this.userManager = userManager;
-    this.clustermarketExceptionHandler = new ClustermarketExceptionHandler();
+    this.clustermarketExceptionHandler = new ClustermarketExceptionHandler(messages);
     this.clustermarketOAuthService = clustermarketOAuthService;
     this.clustermarketService = clustermarketService;
   }

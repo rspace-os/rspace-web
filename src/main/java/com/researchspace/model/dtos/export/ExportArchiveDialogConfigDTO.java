@@ -20,17 +20,17 @@ public class ExportArchiveDialogConfigDTO extends AbstractExportDialog {
   @Data
   @NoArgsConstructor
   public static class ArchiveDialogConfig {
-    @NotNull(message = "maxLinkLevel {errors.required.field}")
+    @NotNull(message = "{validation.errors.maxLinkLevelRequired}")
     Integer maxLinkLevel;
 
-    @NotNull(message = "archiveType {errors.required.field}")
+    @NotNull(message = "{validation.errors.archiveTypeRequired}")
     String archiveType;
 
-    @Size(max = 500, message = "{description} {errors.string.max}")
-    @NotNull(message = "description {errors.required.field}")
+    @Size(max = 500, message = "{validation.errors.descriptionStringMax}")
+    @NotNull(message = "{validation.errors.descriptionRequired}")
     String description;
 
-    @NotNull(message = "allVersions {errors.required.field}")
+    @NotNull(message = "{validation.errors.allVersionsRequired}")
     Boolean allVersions;
   }
 

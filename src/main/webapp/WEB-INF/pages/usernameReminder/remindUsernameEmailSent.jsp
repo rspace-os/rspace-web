@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp" %>
 <head>
-    <title>Username verification</title>
+    <title><spring:message code="remindUsernameEmailSent.title"/></title>
     <link href="<rst:assetUrl value='/styles/pages/public/passwordReset.css'/>" rel="stylesheet">
 </head>
 
@@ -8,11 +8,11 @@
     <div class="row">
         <axt:biggerLogo/>
         <div class="passwordResetSentDiv">
-            <h2 class="form-signup-heading">We need to check it's you...</h2>
+            <h2 class="form-signup-heading"><spring:message code="verificationEmail.checkItsYouHeading"/></h2>
             <br/>
-            Your username has been sent to ${email}.
+            <spring:message code="remindUsernameEmailSent.sentNotice" arguments="${email}"/>
             <br/>
-            Thank you.
+            <spring:message code="verificationEmail.thankYou"/>
         </div>
     </div>
 </div>

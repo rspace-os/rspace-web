@@ -600,10 +600,10 @@ public class WorkspaceController extends BaseController {
                     .anyMatch(
                         result ->
                             result != null && result.getMessage().contains("into own notebook"))
-                ? "workspace.share.owned.into.shared.owned"
+                ? "workspace.share.owned.intoSharedOwned"
                 : "workspace.move.nothing.moved";
       } else {
-        msgKey = getText("workspace.move.some.not.moved");
+        msgKey = "workspace.move.some.notMoved";
       }
       model.addAttribute("errorMsg", getText(msgKey));
     }
@@ -676,7 +676,8 @@ public class WorkspaceController extends BaseController {
       log.warn("Document cannot be deleted: edit status is {}", es);
       String editor = tracker.getEditingUserForRecord(id);
       model.addAttribute(
-          "errorMsg", getText("document.delete.failure.msg", new Object[] {id, editor}));
+          "errorMsg",
+          getText("document.delete.errors.editedByOtherUser", new Object[] {id, editor}));
     }
   }
 

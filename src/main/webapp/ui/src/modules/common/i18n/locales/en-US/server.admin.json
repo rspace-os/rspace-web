@@ -55,10 +55,7 @@
     },
     "activity": {
       "filter": {
-        "admin": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4} or by {5}",
-        "pi": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4}",
-        "sysadmin": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4}, by {5}, or by {6}",
-        "user": "You can filter this audit by {0}, by {1}, by {2}, and by {3}"
+        "lead": "You can filter this audit"
       }
     },
     "communities": {

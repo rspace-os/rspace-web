@@ -123,13 +123,13 @@ public class NfsExportManagerImpl implements NfsExportManager {
   }
 
   public static final String SUBFOLDER_NOT_INCLUDED_MSG_KEY =
-      "archive.export.nfs.subfolder.not.included";
+      "netFileStores.export.subfolderNotIncluded";
 
   public static final String RESOURCE_NOT_ACCESSIBLE_MSG_KEY =
-      "archive.export.nfs.resource.not.accessible";
+      "netFileStores.export.resourceNotAccessible";
 
   public static final String NOT_LOGGED_INTO_FILE_SYSTEM_MSG_KEY =
-      "archive.export.nfs.not.logged.in";
+      "netFileStores.export.notLoggedIn";
 
   private void checkFoundLinksOnConnectedFileSystems(
       NfsExportPlan plan, Map<Long, NfsClient> nfsClients, User exporter) {

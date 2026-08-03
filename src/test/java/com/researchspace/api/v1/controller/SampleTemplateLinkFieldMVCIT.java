@@ -102,7 +102,7 @@ public class SampleTemplateLinkFieldMVCIT extends API_MVC_InventoryTestBase {
     ApiRuntimeException ex =
         assertThrows(
             ApiRuntimeException.class, () -> sampleApiManager.updateApiSample(update, anyUser));
-    assertEquals("errors.inventory.field.link.relationTypeNotPermitted", ex.getErrorCode());
+    assertEquals("errors.inventory.field.linkRelationTypeNotPermitted", ex.getErrorCode());
   }
 
   @Test

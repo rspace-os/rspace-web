@@ -219,7 +219,7 @@ public class RSCommunityController extends BaseController {
     } catch (IllegalArgumentException e) {
       if (e.getMessage().contains("must be at least 3 characters")) {
         ErrorList error =
-            ErrorList.of(getText("errors.minlength", new String[] {"Search term", "3"}));
+            ErrorList.of(getText("errors.minLength", new String[] {"Search term", "3"}));
         return new AjaxReturnObject<>(null, error);
       } else {
         throw e;
@@ -238,7 +238,7 @@ public class RSCommunityController extends BaseController {
 
     if (term.length() < minLength) {
       ErrorList error =
-          ErrorList.of(getText("errors.minlength", new String[] {"Search term", "3"}));
+          ErrorList.of(getText("errors.minLength", new String[] {"Search term", "3"}));
       return new AjaxReturnObject<List<GroupListResult>>(null, error);
     }
 

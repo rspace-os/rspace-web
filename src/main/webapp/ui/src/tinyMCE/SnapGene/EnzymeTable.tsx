@@ -63,7 +63,7 @@ export default function EnzymeTable(props: any) {
       .catch((error) => {
         addAlert(
           mkAlert({
-            message: getErrorMessage(error, "Could not load the enzyme table."),
+            message: getErrorMessage(error, t("tinymce.snapGene.enzymeLoadFailed")),
             variant: "warning",
             isInfinite: true,
           }),

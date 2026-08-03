@@ -44,7 +44,7 @@ public class TextFieldDTOValidatorTest {
     Errors errors = new BeanPropertyBindingResult(NO_NAME, "MyObject");
     validator.validate(NO_NAME, errors);
     assertTrue(errors.hasErrors());
-    assertTrue(ValidationTestUtils.hasError("no.name", errors));
+    assertTrue(ValidationTestUtils.hasError("errors.noValue.name", errors));
   }
 
   @Test
@@ -55,7 +55,7 @@ public class TextFieldDTOValidatorTest {
     dto.setName(randomAlphabetic(MAX_NAME_LENGTH + 1));
     validator.validate(dto, errors);
     assertTrue(errors.hasErrors());
-    assertTrue(ValidationTestUtils.hasError("errors.maxlength", errors));
+    assertTrue(ValidationTestUtils.hasError("errors.maxLength", errors));
   }
 
   @Test

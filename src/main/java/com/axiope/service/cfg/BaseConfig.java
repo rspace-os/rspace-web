@@ -96,6 +96,7 @@ import com.researchspace.service.IRepositoryConfigFactory;
 import com.researchspace.service.ISignupHandlerPolicy;
 import com.researchspace.service.ImageProcessor;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.PiChangeHandler;
 import com.researchspace.service.PostAnyLoginAction;
@@ -275,6 +276,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
@@ -1121,11 +1123,16 @@ public abstract class BaseConfig {
 
   @Bean("validator")
   LocalValidatorFactoryBean localValidatorFactoryBean() {
-    // Bean Validation keeps Hibernate Validator's own ValidationMessages.properties
-    // resolution here. Routing it through a Spring MessageSource runs the template
-    // through ICU MessageFormat first, which eats the {max} and ${...} placeholders
-    // before the validator can interpolate them.
-    return new LocalValidatorFactoryBean();
+    LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+    // Inventory constraint messages are ported to the JSON catalogues, the generic templates
+    // stay in ValidationMessages.properties, so chain both. Templates are left unformatted for
+    // the validator to interpolate {max} and ${validatedValue}.
+    ReloadableResourceBundleMessageSource fallback = new ReloadableResourceBundleMessageSource();
+    fallback.setBasename("classpath:ValidationMessages");
+    JsonMessageSource constraintMessages = new JsonMessageSource();
+    constraintMessages.setParentMessageSource(fallback);
+    validator.setValidationMessageSource(constraintMessages);
+    return validator;
   }
 
   @Bean

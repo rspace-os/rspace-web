@@ -1,9 +1,9 @@
 package com.researchspace.api.v1.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -20,6 +20,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.ApiAvailabilityHandler;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
@@ -45,8 +46,8 @@ class InventoryIdentifiersApiControllerTest {
   @Mock private SampleApiManager mockSampleApiMgr;
   @Mock private DataCiteConnector mockDataCiteConnector;
   @Mock private B2instConnector mockB2instConnector;
-  @Mock private MessageSourceUtils mockMessages;
 
+  private final MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
   private InventoryIdentifiersApiController controller;
   private User user;
 
@@ -59,7 +60,7 @@ class InventoryIdentifiersApiControllerTest {
     ReflectionTestUtils.setField(controller, "sampleApiMgr", mockSampleApiMgr);
     ReflectionTestUtils.setField(controller, "dataCiteConnector", mockDataCiteConnector);
     ReflectionTestUtils.setField(controller, "b2instConnector", mockB2instConnector);
-    ReflectionTestUtils.setField(controller, "messages", mockMessages);
+    ReflectionTestUtils.setField(controller, "messages", messages);
     user = TestFactory.createAnyUser("any");
   }
 
@@ -194,11 +195,13 @@ class InventoryIdentifiersApiControllerTest {
   @Test
   void bulkAllocateRejectsCountAboveMaximum() {
     int tooMany = InventoryIdentifiersApiController.MAX_BULK_IGSN_ALLOCATION + 1;
-    when(mockMessages.getMessage(anyString(), any())).thenReturn("too many");
 
-    assertThrows(
-        IllegalArgumentException.class, () -> controller.bulkAllocateIdentifiers(tooMany, user));
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> controller.bulkAllocateIdentifiers(tooMany, user));
 
+    assertEquals("cannot allocate more than 100 IGSNs in a single request", exception.getMessage());
     verify(mockIdentifierMgr, never()).registerBulkIdentifiers(any(), any());
   }
 }

@@ -1,19 +1,22 @@
 #*
 Template for a sysadmin sending log files to support
+- msg - MessageSourceUtils for i18n phrase lookup
 *#
 <p>
-${user.fullName} (${user.email}) generated an RSpace server error log file on  #formatDate($dateOb) .
+$msg.format("email.admin.supportLogFiles.bodyGenerated", [${user.fullName}, ${user.email}, $date.format('full_date', $dateOb), $date.format('short_time', $dateOb)])
 
 #if($message)
-<p>The following message was sent from $user.fullName<br/>
+<p>$msg.format("email.admin.supportLogFiles.bodyMessageSent", [$user.fullName])<br/>
 $message
 #end
 <p>
-#dontReply
 <p>
-<h3>Logs</h3>
+$msg.getMessage("email.common.dontReply")
+</p>
+<p>
+<h3>$msg.getMessage("email.admin.supportLogFiles.bodyLogsHeader")</h3>
 #foreach ($line in $logLines)
 $line<br/>
 #end
 <p/>
-END OF LOGS
+$msg.getMessage("email.admin.supportLogFiles.bodyLogsEnd")

@@ -1,10 +1,19 @@
+#*
+Template for messaging a user that their account registration was denied.
+Arguments:
+- fullName - the user's full name
+- msg - MessageSourceUtils for i18n phrase lookup
+*#
 <p>
-Dear ${fullName},<br/>
+$msg.format("email.account.genericAccountReview.greeting", [${fullName}])<br/>
 
-Thank you  for registering with RSpace.
+$msg.getMessage("email.account.genericAccountReview.body")
 <p/>
-Unfortunately, your request  was not accepted.
+$msg.getMessage("email.account.genericAccountDenial.denied")
 <p/>
-Please contact support@researchspace.com for more information.
+$msg.getMessage("email.account.genericAccountReview.contactSupport")
 
-#signature
+$msg.getMessage("email.common.signatureSignOff")
+<p>
+$msg.getMessage("email.common.signatureTeam")
+</p>

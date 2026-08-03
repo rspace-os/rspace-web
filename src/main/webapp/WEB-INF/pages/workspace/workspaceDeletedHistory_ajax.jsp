@@ -5,20 +5,20 @@
         <thead>
         <tr>
             <th>
-                <a href="#" class="orderByLink" data-orderby='name' data-sortorder='ASC'>Name</a>
+                <a href="#" class="orderByLink" data-orderby='name' data-sortorder='ASC'><spring:message code="workspace.list.name.header"/></a>
             </th>
-            <th>ID</th>
-            <th>Last Modified&nbsp;by</th>
+            <th><spring:message code="workspace.list.id.header"/></th>
+            <th><spring:message code="deletedItems.lastModifiedByHeader"/></th>
             <th>
-                <a href="#" class="orderByLink" data-orderby='creationDate' data-sortorder='DESC'>Created</a>
-            </th>
-            <th>
-                <a href="#" class="orderByLink" data-orderby='modificationDate' data-sortorder='DESC'>Modified</a>
+                <a href="#" class="orderByLink" data-orderby='creationDate' data-sortorder='DESC'><spring:message code="workspace.list.creationDate.header"/></a>
             </th>
             <th>
-                <a href="#" class="orderByLink" data-orderby='deletedDate' data-sortorder='DESC'>Deleted</a>
+                <a href="#" class="orderByLink" data-orderby='modificationDate' data-sortorder='DESC'><spring:message code="workspace.list.date.header"/></a>
             </th>
-            <th>Options</th>
+            <th>
+                <a href="#" class="orderByLink" data-orderby='deletedDate' data-sortorder='DESC'><spring:message code="deletedItems.deletedHeader"/></a>
+            </th>
+            <th><spring:message code="workspace.list.options.header"/></th>
         </tr>
         </thead>
 
@@ -34,9 +34,9 @@
                 <td>
                     <c:if test="${auditedDoc.record['class'].name eq 'com.researchspace.model.record.StructuredDocument'}">
                         <c:url value="/workspace/editor/structuredDocument/audit/view?recordId=${auditedDoc.record.id}&revision=${auditedDoc.revision}" var="viewDocument"></c:url>
-                        <a href="${viewDocument}" style="margin-right:5px;">View</a>
+                        <a href="${viewDocument}" style="margin-right:5px;"><spring:message code="workspace.list.view.header"/></a>
                     </c:if>
-                    <a href="#" class="restore">Restore</a>
+                    <a href="#" class="restore"><spring:message code="common:actions.restore"/></a>
                     <input type="hidden" name="revision" value="${auditedDoc.revision}"/>
                     <input type="hidden" name="recordId" value="${auditedDoc.record.id}"/>
                 </td>

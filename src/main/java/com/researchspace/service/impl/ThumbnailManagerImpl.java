@@ -17,6 +17,7 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.ThumbnailManager;
 import java.awt.image.BufferedImage;
@@ -49,6 +50,7 @@ public class ThumbnailManagerImpl extends GenericManagerImpl<Thumbnail, Long>
   private @Autowired ThumbnailDao thumbnailDao;
   private @Autowired IPermissionUtils permUtils;
   private @Autowired AuditManager auditManager;
+  private @Autowired MessageSourceUtils messages;
 
   @Autowired
   public void setThumbnailDao(ThumbnailDao thumbnailDao) {
@@ -195,7 +197,9 @@ public class ThumbnailManagerImpl extends GenericManagerImpl<Thumbnail, Long>
       is = fisOpt.get();
     } else {
       log.error("Could not retrieve image {} -  {}", ecatImage.getName(), ecatImage.getId());
-      throw new IllegalStateException("Could not retrieve image file " + ecatImage.getId());
+      throw new IllegalStateException(
+          messages.getMessage(
+              "gallery.errors.imageFileNotRetrievable", new Object[] {ecatImage.getId()}));
     }
     return is;
   }

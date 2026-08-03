@@ -81,6 +81,7 @@ public class StoichiometryTableData {
     if (value == null) {
       return "0";
     }
+    // Keep '.' as the decimal separator for re-import and calculations.
     DecimalFormat df = new DecimalFormat("#.###", DecimalFormatSymbols.getInstance(Locale.US));
     df.setRoundingMode(RoundingMode.HALF_UP);
     return df.format(value);

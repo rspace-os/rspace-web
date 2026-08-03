@@ -17,7 +17,10 @@ import com.researchspace.protocolsio.Protocol;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.IconImageManager;
+import com.researchspace.service.LocaleBoundMessages;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.UserLocaleService;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,6 +60,8 @@ public class ProtocolsIOToDocumentConverterImpl extends AbstractExternalDocImpor
   private @Autowired RecordFactory recordFactory;
   private @Autowired ApplicationContext context;
   private @Autowired IconImageManager imgMgr;
+  private @Autowired MessageSourceUtils messages;
+  private @Autowired UserLocaleService userLocaleService;
 
   public void setVelocity(VelocityEngine velocity) {
     this.velocity = velocity;
@@ -186,6 +191,7 @@ public class ProtocolsIOToDocumentConverterImpl extends AbstractExternalDocImpor
   String generateHtml(Protocol toImport) {
     Map<String, Object> velocityModel = new HashMap<>();
     velocityModel.put("protocol", toImport);
+    velocityModel.put("msg", new LocaleBoundMessages(messages, userLocaleService.getLocale()));
 
     return VelocityEngineUtils.mergeTemplateIntoString(
         velocity, "protocols_io.vm", "UTF-8", velocityModel);

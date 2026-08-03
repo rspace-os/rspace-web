@@ -1,8 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.join;
-
 import com.researchspace.Constants;
 import com.researchspace.auth.UserPermissionUtils;
 import com.researchspace.model.Group;
@@ -18,6 +15,8 @@ import com.researchspace.service.EmailContent;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.UserRoleHandler;
@@ -45,6 +44,7 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
   private @Autowired IContentInitializer initializer;
   private @Autowired RoleManager roleMgr;
   private @Autowired EmailContentGenerator emailContentGenerator;
+  private @Autowired MessageSourceUtils messages;
 
   @Autowired
   @Qualifier("emailBroadcast")
@@ -52,7 +52,7 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
 
   @Override
   public Group promoteUserToPiWithGroup(User admin, User newPI, UserRoleChangeCmnd commd) {
-    assertAuthorizationAndInitUser(admin, newPI, "promote user to PI");
+    assertAuthorizationAndInitUser(admin, newPI, "errors.authorization.failure.promoteUserToPi");
     // we're ok to proceed. move user from existing group
     newPI = groupManager.promoteUserToPi(newPI, admin);
     // now create new LabGroup for new PI
@@ -81,7 +81,7 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
   }
 
   public User grantGlobalPiRoleToUser(User admin, User newPi) {
-    assertAuthorizationAndInitUser(admin, newPi, "grant global PI role");
+    assertAuthorizationAndInitUser(admin, newPi, "errors.authorization.failure.grantGlobalPiRole");
     return doGrantGlobalPiRoleToUser(newPi);
   }
 
@@ -101,14 +101,15 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
     velocityModel.put("newPI", newPI);
     velocityModel.put("systemUser", sysadmin);
     velocityModel.put("newLabGroup", newLabGroup);
-    velocityModel.put("htmlPrefix", properties.getServerUrl());
+    velocityModel.put("baseURL", properties.getServerUrl());
 
-    sentHtmlEmailLogAnyException("email.admin.account.created.subject", newPI, velocityModel);
+    sentHtmlEmailLogAnyException("email.admin.promoteToPiComplete.subject", newPI, velocityModel);
   }
 
   @Override
   public User revokeGlobalPiRoleFromUser(User admin, User piToDemote) {
-    assertAuthorizationAndInitUser(admin, piToDemote, "revoke global PI role");
+    assertAuthorizationAndInitUser(
+        admin, piToDemote, "errors.authorization.failure.revokeGlobalPiRole");
     return doRevokeGlobalPiRoleFromUser(piToDemote);
   }
 
@@ -125,9 +126,9 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
             .collect(Collectors.toList());
     if (!grpsAsPi.isEmpty()) {
       throw new IllegalStateException(
-          format(
-              "PI [%s] cannot be demoted to user as is PI of at least 1 group: %s",
-              piToDemote.getUsername(), join(grpsAsPi, ",")));
+          messages.getMessage(
+              "groups.edit.errors.piCannotBeDemoted",
+              new Object[] {piToDemote.getUsername(), ListFormatUtils.formatList(grpsAsPi)}));
     }
 
     piToDemote.removeRole(roleMgr.getRole(Constants.PI_ROLE));

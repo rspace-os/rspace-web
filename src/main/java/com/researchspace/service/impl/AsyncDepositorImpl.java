@@ -34,6 +34,7 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.IAsyncArchiveDepositor;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.archive.export.ExportEcatDocumentResult;
@@ -93,6 +94,12 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
 
   void setCommMgr(CommunicationManager commMgr) {
     this.commMgr = commMgr;
+  }
+
+  private @Autowired MessageSourceUtils messages;
+
+  void setMessages(MessageSourceUtils messages) {
+    this.messages = messages;
   }
 
   private @Autowired VelocityEngine velocity;
@@ -251,6 +258,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     Map<String, Object> config = new HashMap<>();
     config.put("result", result);
     config.put("app", app);
+    config.put("msg", messages);
 
     String msg =
         VelocityEngineUtils.mergeTemplateIntoString(
@@ -273,6 +281,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     config.put("identifier", result.getRaidIdentifier());
     config.put("url", result.getRaidUrl());
     config.put("doi", result.getDoi());
+    config.put("msg", messages);
 
     String msg =
         VelocityEngineUtils.mergeTemplateIntoString(
@@ -315,7 +324,9 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         Files.delete(symbolicLinkPath);
         Files.delete(tempDir);
       } else {
-        repoDepositResult = new RepositoryOperationResult(false, "No file to deposit", null, null);
+        repoDepositResult =
+            new RepositoryOperationResult(
+                false, messages.getMessage("apps.deposit.errors.noFile"), null, null);
       }
     } catch (IOException | URISyntaxException e) {
       log.error("Submitting deposit failed: {}", e.getMessage());
@@ -449,7 +460,8 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       IntegrationInfo dmpToolInfo =
           integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPTOOL_APP_NAME);
       if (dmpToolInfo.isEnabled()) {
-        throw new IllegalStateException("DMPTool and Argos cannot both be enabled");
+        throw new IllegalStateException(
+            messages.getMessage("apps.dmp.errors.bothArgosAndDmpToolEnabled"));
       }
 
       List<DMPUser> dmpsForUser = dmpManager.findDMPsForUser(subject);
@@ -515,7 +527,9 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         metadata.setLicense(Optional.of(new URL(archiveConfig.getMeta().getLicenseUrl())));
       } catch (MalformedURLException e) {
         throw new IllegalArgumentException(
-            String.format("%s is not a valid URL", archiveConfig.getMeta().getLicenseUrl()));
+            messages.getMessage(
+                "apps.dmp.errors.invalidLicenseUrl",
+                new Object[] {archiveConfig.getMeta().getLicenseUrl()}));
       }
     }
     metadata.setTitle(archiveConfig.getMeta().getTitle());

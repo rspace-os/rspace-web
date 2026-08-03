@@ -43,7 +43,7 @@ public class ContainerApiPutValidator extends ContainerApiValidator {
               "locations",
               "errors.inventory.location.outsideGridDimensions",
               new Object[] {coordX, coordY, dbColumnsNumber, dbRowsNumber},
-              "outsideGrid");
+              null);
         }
       }
     }
@@ -60,7 +60,7 @@ public class ContainerApiPutValidator extends ContainerApiValidator {
               "locations",
               "errors.inventory.location.outsideNewGridDimensions",
               new Object[] {coordX, coordY, incomingColumnsNumber, incomingRowsNumber},
-              "outsideNewGrid");
+              null);
         }
       }
     }

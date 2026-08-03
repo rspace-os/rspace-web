@@ -1,13 +1,16 @@
 package com.axiope.userimport;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.Constants;
 import com.researchspace.model.Role;
 import com.researchspace.model.dto.UserRegistrationInfo;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
+import java.util.Arrays;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,7 +20,7 @@ public class UserLineParserFromCSV {
   private static final int EXPECTED_ELEMENTS_STANDALONE = 6;
   private static final int EXPECTED_ELEMENTS_CLOUD = 7;
 
-  @Autowired private MessageSource messages;
+  @Autowired private MessageSourceUtils messages;
 
   @Autowired private IPropertyHolder properties;
 
@@ -122,23 +125,25 @@ public class UserLineParserFromCSV {
   }
 
   private String createNoUsernameErrorMsg(String line, int lineNumber) {
-    return messages.getMessage(
-        "system.csvimport.user.nousername", new Object[] {line, lineNumber}, null);
+    return messages.getMessage("system.csvImport.user.noUsername", new Object[] {line, lineNumber});
   }
 
   private String createWrongNumberOfElementsMessage(
       String line, int lineNumber, int expected, int actual) {
     return messages.getMessage(
-        "system.csvimport.user.wrongNumberOfFields",
-        new Object[] {line, lineNumber, expected, actual},
-        null);
+        "system.csvImport.user.wrongNumberOfFields",
+        new Object[] {line, lineNumber, expected, actual});
   }
 
   private String createInvalidRoleMsg(String line, int lineNumber, String role) {
     return messages.getMessage(
-        "system.csvimport.user.unrecognisedRole",
-        new Object[] {line, lineNumber, role, StringUtils.join(Role.getValidRoles())},
-        null);
+        "system.csvImport.user.unrecognisedRole",
+        new Object[] {
+          line,
+          lineNumber,
+          role,
+          ListFormatUtils.formatList(Arrays.asList(Role.getValidRoles()), ListFormatter.Type.OR)
+        });
   }
 
   /*
@@ -147,7 +152,7 @@ public class UserLineParserFromCSV {
    * ====================
    */
 
-  public void setMessages(MessageSource messages) {
+  public void setMessages(MessageSourceUtils messages) {
     this.messages = messages;
   }
 

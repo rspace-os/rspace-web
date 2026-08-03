@@ -3,9 +3,9 @@
 <div id="adminForm">
 <form:form modelAttribute="community" method="POST" action="/community/admin/addAdmin">
 <div class="topGreyBar">
-Please choose community admin(s) 
-<a id="addAdminSubmit" class="systemButton systemGoButton" href="#">Go</a>
-<a class="cancel systemButton systemCancelButton" id="addAdminCancel" href="#">Cancel</a>
+<spring:message code="community.addAdmin.chooseLabel"/>
+<a id="addAdminSubmit" class="systemButton systemGoButton" href="#"><spring:message code="community.actions.go"/></a>
+<a class="cancel systemButton systemCancelButton" id="addAdminCancel" href="#"><spring:message code="common:actions.cancel"/></a>
 </div>
 <div id="adminsList" class="communityViewInnerList">
 <form:checkboxes class="admincbox" delimiter="<br/>" items="${community.availableAdmins}" path="adminIds" 

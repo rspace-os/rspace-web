@@ -42,9 +42,9 @@ var custom_toolbar = {
                                     id='${element}' src='/scripts/externalTinymcePlugins/toolbar/img/${element}.png'>`);
         });
       });
-      table_row.append(`<td class='group-${row.length}' ondrop='toolbar_plugin.drop(event, this)' ondragover='toolbar_plugin.allowDrop(event)'><button onclick='toolbar_plugin.appendGroup($(this).parent());'>new group</button></td>`)
+      table_row.append(`<td class='group-${row.length}' ondrop='toolbar_plugin.drop(event, this)' ondragover='toolbar_plugin.allowDrop(event)'><button onclick='toolbar_plugin.appendGroup($(this).parent());'>${RS.msg("legacyjs.tinymce.toolbar.newGroup")}</button></td>`)
     });
-    $('#current_toolbar tbody').append(`<tr id='row-${current_config.length}'><td><button onclick='toolbar_plugin.appendRow($(this).parent());'>new row</button></td></tr>`);
+    $('#current_toolbar tbody').append(`<tr id='row-${current_config.length}'><td><button onclick='toolbar_plugin.appendRow($(this).parent());'>${RS.msg("legacyjs.tinymce.toolbar.newRow")}</button></td></tr>`);
   },
 
   placeUnused() {
@@ -87,7 +87,7 @@ var custom_toolbar = {
   saveSettings: function() {
     this.exportSettings();
     if (Object.keys(current_config).length < 2) {
-      parent.apprise("Toolbar must contain at least two rows");
+      parent.apprise(RS.msg("legacyjs.tinymce.toolbar.minRows"));
       throw new Error("Toolbar must contain at least two rows");
     }
     localStorage.setItem('custom_toolbar', JSON.stringify(current_config));
@@ -160,7 +160,7 @@ var custom_toolbar = {
     $('#current_toolbar tbody').append(row.clone().attr('id', generated_id));
     row.html('<td class="group-0" ondrop="toolbar_plugin.drop(event, this)" ondragover="toolbar_plugin.allowDrop(event)"></td>\
       <td class="group-1" ondrop="toolbar_plugin.drop(event, this)" ondragover="toolbar_plugin.allowDrop(event)">\
-      <button onclick="toolbar_plugin.appendGroup($(this).parent());">new group</button></td>');
+      <button onclick="toolbar_plugin.appendGroup($(this).parent());">' + RS.msg("legacyjs.tinymce.toolbar.newGroup") + '</button></td>');
   },
   
   clearContent: function() {

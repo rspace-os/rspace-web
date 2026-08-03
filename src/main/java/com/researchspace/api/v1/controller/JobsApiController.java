@@ -47,7 +47,8 @@ public class JobsApiController extends BaseApiController implements JobsApi {
       if (s3Link != null) job.addEnclosureLink(s3Link.toString());
       else {
         throw new IllegalStateException(
-            "Couldn't find export on S3 for " + job.getResourceLocation());
+            getMessage(
+                "export.jobs.errors.s3ExportNotFound", new Object[] {job.getResourceLocation()}));
       }
     }
   }

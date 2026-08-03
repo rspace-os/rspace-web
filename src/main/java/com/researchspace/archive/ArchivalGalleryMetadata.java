@@ -1,11 +1,13 @@
 package com.researchspace.archive;
 
+import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.record.ImportOverride;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.time.Instant;
 import java.util.Date;
 import lombok.Getter;
@@ -18,6 +20,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class ArchivalGalleryMetadata {
+
   @XmlAttribute(name = "id", required = true)
   private long id;
 
@@ -58,6 +61,11 @@ public class ArchivalGalleryMetadata {
 
   public ArchivalGalleryMetadata() {
     this.contentType = "application/octet-stream";
+  }
+
+  @XmlTransient
+  public String getGlobalId() {
+    return GlobalIdPrefix.GL.toString() + id;
   }
 
   public ImportOverride createImportOverride(boolean allowCreationDateAfterModificationDate) {

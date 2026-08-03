@@ -269,7 +269,11 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
         return sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(
             apiSample.getTemplateId(), user);
       } catch (NotFoundException e) {
-        errors.rejectValue("templateId", "", e.getMessage());
+        errors.rejectValue(
+            "templateId",
+            "errors.inventory.sample.templateNotFound",
+            new Object[] {apiSample.getTemplateId()},
+            null);
         throwBindExceptionIfErrors(errors);
       }
     }

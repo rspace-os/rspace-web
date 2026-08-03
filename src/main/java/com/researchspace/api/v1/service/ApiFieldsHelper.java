@@ -24,6 +24,7 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.RSChemElementManager;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,6 +51,10 @@ import org.springframework.validation.Errors;
 @Component
 @Slf4j
 public class ApiFieldsHelper {
+
+  private static final String MANDATORY_FIELD_EMPTY = "errors.inventory.field.mandatoryFieldEmpty";
+  private static final String MANDATORY_FIELD_NO_SELECTION =
+      "errors.inventory.field.mandatoryFieldNoSelection";
 
   protected static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
@@ -322,7 +327,6 @@ public class ApiFieldsHelper {
    * <p>Otherwise add the errors if there are problems.
    */
   public void validateMandatoryFieldsForEntityPost(
-      String entityTypeName,
       List<ApiInventoryEntityField> incomingApiFields,
       List<InventoryEntityField> templateFields,
       Errors errors) {
@@ -340,9 +344,9 @@ public class ApiFieldsHelper {
           if (CollectionUtils.isEmpty(selectedOptions)) {
             errors.rejectValue(
                 "fields",
-                "errors.inventory." + entityTypeName + ".mandatory.field.no.selection",
+                MANDATORY_FIELD_NO_SELECTION,
                 new Object[] {templateField.getName()},
-                "no option selected for mandatory field");
+                null);
           }
         } else if (FieldType.LINK.equals(templateField.getType())) {
           // Link fields carry their value in the `link` object, not `content` (which is always
@@ -358,10 +362,7 @@ public class ApiFieldsHelper {
           }
           if (!hasLinkTarget) {
             errors.rejectValue(
-                "fields",
-                "errors.inventory." + entityTypeName + ".mandatory.field.empty",
-                new Object[] {templateField.getName()},
-                "no content for mandatory field");
+                "fields", MANDATORY_FIELD_EMPTY, new Object[] {templateField.getName()}, null);
           }
         } else {
           String incomingContent =
@@ -370,10 +371,7 @@ public class ApiFieldsHelper {
                   : templateField.getFieldData();
           if (!templateField.isValidValueForMandatoryField(incomingContent)) {
             errors.rejectValue(
-                "fields",
-                "errors.inventory." + entityTypeName + ".mandatory.field.empty",
-                new Object[] {templateField.getName()},
-                "no content for mandatory field");
+                "fields", MANDATORY_FIELD_EMPTY, new Object[] {templateField.getName()}, null);
           }
         }
       }
@@ -434,7 +432,7 @@ public class ApiFieldsHelper {
             "Validation problem with "
                 + getFieldDescForErrorMsg(apiField, i)
                 + ": "
-                + validate.getAllErrorMessagesAsStringsSeparatedBy(","));
+                + ListFormatUtils.formatList(validate.getErrorMessages()));
       }
 
       // check attachments in text fields

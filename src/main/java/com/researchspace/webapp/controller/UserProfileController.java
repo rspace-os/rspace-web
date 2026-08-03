@@ -140,7 +140,7 @@ public class UserProfileController extends BaseController {
   private static final long MAX_PROFILE_SIZE = 1_000_000; // 1Mb
   private static final String FIRST_NAME = "firstName";
   private static final String ERRORS_REQUIRED = "errors.required";
-  private static final String ERRORS_MAXLENGTH = "errors.maxlength";
+  private static final String ERRORS_MAXLENGTH = "errors.maxLength";
   private static final String AFFILIATION = "affiliation";
   public static final String API_KEY_IS_ACTIVE = "apiKey is ACTIVE";
   private static final String USER_NOT_FOUND = "errors.user.notfound";
@@ -655,7 +655,7 @@ public class UserProfileController extends BaseController {
       userManager.setAsPrivateProfile(prefsToEnable.contains("PRIVATE_PROFILE"), user);
     }
     analyticsManager.usersPreferencesChanged(user, req);
-    return new AjaxReturnObject<>(getText("userProfile.messageSettingsChanged.msg"), null);
+    return new AjaxReturnObject<>(getText("userProfile.messageSettingsChanged.confirmation"), null);
   }
 
   /**

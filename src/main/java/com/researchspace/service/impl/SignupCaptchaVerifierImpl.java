@@ -48,7 +48,7 @@ public class SignupCaptchaVerifierImpl implements SignupCaptchaVerifier {
 
     String captchaResponse = request.getParameter("g-recaptcha-response");
     if (StringUtils.isEmpty(captchaResponse)) {
-      return ERROR_NO_CAPTCHA_IN_REQUEST;
+      return ERROR_CAPTCHA_RESPONSE_MISSING;
     }
 
     String captchaSiteKey = properties.getSignupCaptchaSiteKey();

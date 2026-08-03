@@ -13,7 +13,7 @@ const publicJournalExtensions = {
       forbidBots();
     }
     const part1 = "<H1 class='publicTitle'>"+notebookName+"</H1><H3 class='publicSummary'>"+publicationSummary+"</H3>";
-    return part1 + (contactDetails?"<H3 class='publicSummary'>contact: "+contactDetails+"</H3>":"");
+    return part1 + (contactDetails?"<H3 class='publicSummary'>"+RS.msg("legacyjs.core.publicJournal.contactLabel", contactDetails)+"</H3>":"");
   },
   springMVCUrlReroutePrefix : "/public/publicView",
   imageSrcPrefix: "/public",

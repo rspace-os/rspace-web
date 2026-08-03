@@ -23,6 +23,7 @@ import com.box.sdk.BoxFileVersion;
 import com.box.sdk.BoxFolder;
 import com.box.sdk.BoxSharedLink;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.io.OutputStream;
@@ -42,6 +43,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 public class BoxControllerMVCIT extends MVCTestBase {
 
   private @Autowired BoxController boxController;
+  private @Autowired MessageSourceUtils messages;
 
   private BoxConnector mockBoxConnector;
   private BoxAPIConnection mockConnection;
@@ -164,7 +166,7 @@ public class BoxControllerMVCIT extends MVCTestBase {
     assertTrue(
         getAuthError(otherErrorResult)
             .getErrorDetails()
-            .contains(BoxController.AUTHORIZATION_ERROR_MSG));
+            .contains(messages.getMessage("apps.box.errors.authorization")));
   }
 
   private OauthAuthorizationError getAuthError(MvcResult otherErrorResult) {
@@ -290,7 +292,7 @@ public class BoxControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
     assertEquals(
-        BoxController.DOWNLOAD_ERROR_MSG,
+        messages.getMessage("apps.box.errors.download"),
         unexistingDownloadResult.getResponse().getContentAsString());
     assertNull(mockSession.getAttribute(BoxController.SESSION_BOX_API_CONNECTION));
   }

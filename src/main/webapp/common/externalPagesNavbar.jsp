@@ -35,7 +35,7 @@
           <li class="rs-navbar__item
             <c:if test="${fn:contains(pageContext.request.servletPath,'/signup')}"> rs-navbar__item--active </c:if>
           ">
-            <a href="<c:url value='/signup' />" class="rs-navbar__tab">Sign up</a>
+            <a href="<c:url value='/signup' />" class="rs-navbar__tab"><spring:message code="button.signup.label"/></a>
           </li>
         </rst:hasDeploymentProperty>
         </rst:hasDeploymentProperty>
@@ -43,14 +43,14 @@
       
       <c:if test="${isLoggedAsNonAnonymousUser}">
         <li class="rs-navbar__item">
-          <a href="/workspace" class="rs-navbar__tab">Workspace</a>
+          <a href="/workspace" class="rs-navbar__tab"><spring:message code="common:appBar.sections.workspace.title"/></a>
         </li>
       </c:if>
       
       <li class="rs-navbar__item
             <c:if test="${fn:contains(pageContext.request.servletPath,'published')}"> rs-navbar__item--active </c:if>
         " id="publishedDocuments">
-        <a href="<c:url value='/public/publishedView/publishedDocuments' />" class="rs-navbar__tab">Published</a>
+        <a href="<c:url value='/public/publishedView/publishedDocuments' />" class="rs-navbar__tab"><spring:message code="common:appBar.published"/></a>
       </li>
       
       <c:if test="${!isLoggedAsNonAnonymousUser}">
@@ -58,7 +58,7 @@
           <c:if test="${fn:contains(pageContext.request.servletPath,'/login') 
             || fn:contains(pageContext.request.servletPath,'/adminLogin')}"> rs-navbar__item--active </c:if>
           ">
-          <a href="<c:url value='/login' />" class="rs-navbar__tab">Log in</a>
+          <a href="<c:url value='/login' />" class="rs-navbar__tab"><spring:message code="button.login.label"/></a>
         </li>
       </c:if>
     </ul>

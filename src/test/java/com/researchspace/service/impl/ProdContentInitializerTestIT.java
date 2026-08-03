@@ -25,6 +25,7 @@ import com.researchspace.service.InitializedContent;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserFolderCreator;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.service.archive.ExportImport;
 import com.researchspace.service.archive.ImportStrategy;
 import com.researchspace.service.inventory.ContainerApiManager;
@@ -35,6 +36,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase {
 
@@ -56,6 +58,8 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
     initializer.setRecordDao(getBeanOfClass(RecordDao.class));
     initializer.setUserDao(getBeanOfClass(UserDao.class));
     initializer.setRecordFactory(getBeanOfClass(RecordFactory.class));
+    ReflectionTestUtils.setField(
+        initializer, "userLocaleService", getBeanOfClass(UserLocaleService.class));
 
     initializer.setApplicationContext(applicationContext);
     initializer.setIconMgr(getBeanOfClass(IconImageManager.class));

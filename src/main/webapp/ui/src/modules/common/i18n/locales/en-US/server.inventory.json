@@ -72,7 +72,10 @@
       },
       "identifier": {
         "assignTypeMismatch": "Identifier of type {0} cannot be assigned to inventory item [{1}]",
+        "b2instDeleteFailed": "Could not delete the instrument PID from B2INST. {0}",
         "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
+        "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
+        "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
         "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
         "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
         "deleteNotOwner": "You can only delete an identifier that you own.",

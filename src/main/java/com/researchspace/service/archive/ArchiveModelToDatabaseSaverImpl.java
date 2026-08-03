@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.field.Field;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.ImportContext;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.UserManager;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ArchiveModelToDatabaseSaverImpl implements ArchiveModelToDatabaseSaver {
 
   @Autowired private UserManager userMgr;
+  @Autowired private MessageSourceUtils messages;
   @Autowired private InternalLinkDao internalLinkDao;
   @Autowired private FieldManager fieldManager;
 
@@ -50,7 +52,9 @@ public class ArchiveModelToDatabaseSaverImpl implements ArchiveModelToDatabaseSa
       importStrategy.doImport(
           importer, archiveModel, iconfig, linkRecord, report, context, monitor);
     } catch (Exception e) {
-      String msg = "Error attempting to insert content into database: " + e.getMessage();
+      String msg =
+          messages.getMessage(
+              "archiveImport.errors.databaseInsertFailed", new Object[] {e.getMessage()});
       log.error(msg);
       report.getErrorList().addErrorMsg(msg);
       report.setComplete(true);

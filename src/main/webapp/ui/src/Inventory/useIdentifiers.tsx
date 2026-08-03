@@ -20,16 +20,6 @@ export type Identifier = {
   state: string;
 };
 
-function getErrorMessage(error: unknown): Result<string> {
-  return Parsers.objectPath(["response", "data", "message"], error)
-    .flatMap(Parsers.isString)
-    .orElseTry(() =>
-      Parsers.isObject(error).flatMap((e) =>
-        e instanceof Error ? Result.Ok(e.message) : Result.Error([new Error("Unknown error")]),
-      ),
-    );
-}
-
 /**
  * Custom hook for working with the /identifiers endpoints
  */
@@ -61,9 +51,18 @@ export function useIdentifiers(): {
    */
   assignIdentifier: (identifier: Identifier, record: InventoryRecord) => Promise<void>;
 } {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+
+  const getErrorMessage = (error: unknown): Result<string> =>
+    Parsers.objectPath(["response", "data", "message"], error)
+      .flatMap(Parsers.isString)
+      .orElseTry(() =>
+        Parsers.isObject(error).flatMap((e) =>
+          e instanceof Error ? Result.Ok(e.message) : Result.Error([new Error(t("common:apiErrors.unknown"))]),
+        ),
+      );
 
   const getIdentifiers = async ({
     state,
@@ -127,7 +126,7 @@ export function useIdentifiers(): {
                   } catch (e) {
                     console.error(e);
                     if (!(e instanceof Error)) {
-                      return Result.Error<Identifier>([new Error("Unknown error")]);
+                      return Result.Error<Identifier>([new Error(t("common:apiErrors.unknown"))]);
                     }
                     return Result.Error<Identifier>([e]);
                   }

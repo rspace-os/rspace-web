@@ -233,7 +233,7 @@ public class UserProfileControllerTest {
     when(usrMgr.getUser(2L + "")).thenReturn(anyUser);
     when(properties.isProfileHidingEnabled()).thenReturn(true);
     when(usrMgr.populateConnectedUserSet(sessionUser)).thenReturn(Collections.emptySet());
-    when(messages.getMessage(Mockito.eq("record.inaccessible"), Mockito.any(Long[].class)))
+    when(messages.getMessage(Mockito.eq("errors.resource.inaccessible"), Mockito.any(Long[].class)))
         .thenReturn("error");
     sessionUser.setConnectedUsers(Collections.emptySet());
     anyUser.setPrivateProfile(true);

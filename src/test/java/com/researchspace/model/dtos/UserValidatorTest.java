@@ -157,7 +157,7 @@ public class UserValidatorTest {
   }
 
   private void assertInvalidUsername(Errors err) {
-    assertTrue(ValidationTestUtils.hasError("errors.invalidusername", err));
+    assertTrue(ValidationTestUtils.hasError("errors.invalidUsername.strict", err));
   }
 
   @Test
@@ -178,8 +178,8 @@ public class UserValidatorTest {
     user.setUsername("u1!");
     userValidator.validate(user, err);
     assertFieldErrors(err);
-    assertFalse(ValidationTestUtils.hasError("errors.invalidusername", err));
-    assertTrue(ValidationTestUtils.hasError("errors.invalidusername.relaxed", err));
+    assertFalse(ValidationTestUtils.hasError("errors.invalidUsername.strict", err));
+    assertTrue(ValidationTestUtils.hasError("errors.invalidUsername.relaxed", err));
 
     // sanity check
     properties.setStandalone("true");
@@ -189,7 +189,7 @@ public class UserValidatorTest {
     String toolong = RandomStringUtils.randomAlphabetic(User.MAX_UNAME_LENGTH + 1);
     user.setUsername(toolong);
     userValidator.validate(user, err);
-    assertTrue(ValidationTestUtils.hasError("errors.maxlength", err));
+    assertTrue(ValidationTestUtils.hasError("errors.maxLength", err));
   }
 
   private void assertNoFieldErrors(Errors err) {
@@ -203,7 +203,7 @@ public class UserValidatorTest {
     user.setConfirmPassword("Valid123");
     Errors err = setUpErrorsObject();
     userValidator.validate(user, err);
-    assertTrue(ValidationTestUtils.hasError("errors.password.notequalusername", err));
+    assertTrue(ValidationTestUtils.hasError("errors.password.notEqualUsername", err));
   }
 
   @Test
@@ -213,7 +213,7 @@ public class UserValidatorTest {
     user.setConfirmPassword("password");
     Errors err = setUpErrorsObject();
     userValidator.validate(user, err);
-    assertTrue(ValidationTestUtils.hasError("errors.password.insecurepassword", err));
+    assertTrue(ValidationTestUtils.hasError("errors.password.insecurePassword", err));
   }
 
   @Test
@@ -223,7 +223,7 @@ public class UserValidatorTest {
     user.setConfirmPassword("2short");
     Errors err = setUpErrorsObject();
     userValidator.validate(user, err);
-    assertTrue(ValidationTestUtils.hasError("errors.invalidpwd", err));
+    assertTrue(ValidationTestUtils.hasError("errors.invalidPassword", err));
   }
 
   @Test
@@ -255,7 +255,7 @@ public class UserValidatorTest {
     for (String emptyCode : toList(null, "", "  ")) {
       properties.setUserSignupCode(emptyCode);
       userValidator.validate(user, err);
-      assertFalse(ValidationTestUtils.hasError("errors.signupcode.failed", err));
+      assertFalse(ValidationTestUtils.hasError("errors.signupCode.failed", err));
     }
     // if it is set, it is required and must be case sensitive
     final String validSignupCode = "trial-123";
@@ -263,14 +263,14 @@ public class UserValidatorTest {
     for (String incorrectUserCode : toList(null, "", "Trial", "Trial-123")) {
       user.setSignupCode(incorrectUserCode);
       userValidator.validate(user, err);
-      assertTrue(ValidationTestUtils.hasError("errors.signupcode.failed", err));
+      assertTrue(ValidationTestUtils.hasError("errors.signupCode.failed", err));
     }
     // must match precisely
     err = setUpErrorsObject();
     user.setSignupCode(validSignupCode);
     userValidator.validate(user, err);
 
-    assertFalse(ValidationTestUtils.hasError("errors.signupcode.failed", err));
+    assertFalse(ValidationTestUtils.hasError("errors.signupCode.failed", err));
   }
 
   @Test

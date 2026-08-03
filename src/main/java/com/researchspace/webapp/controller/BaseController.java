@@ -295,7 +295,7 @@ public abstract class BaseController implements ServletContextAware {
   protected void assertUserIsSysAdmin(User subject) {
     if (!subject.hasRole(Role.SYSTEM_ROLE)) {
       throw new AuthorizationException(
-          getText("system.unauthorized.userrole", new Object[] {subject.getFullName()}));
+          getText("system.unauthorized.userRole", new Object[] {subject.getFullName()}));
     }
   }
 

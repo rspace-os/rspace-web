@@ -383,7 +383,6 @@
           <include>META-INF/**</include>
           <include>sqlUpdates/**</include>
           <include>scripts/**</include>
-          <include>bundles/**</include>
           <include>velocityTemplates/**</include>
           <include>archiveResources/**</include>
           <include>StartUpData/**</include>
@@ -421,13 +420,6 @@
         <includes>
           <include>**/*.properties</include>
         </includes>
-      </resource>
-      <resource>
-        <directory>src/main/resources</directory>
-        <includes>
-          <include>ApplicationResources*.properties</include>
-        </includes>
-        <filtering>false</filtering>
       </resource>
       <resource>
         <directory>target/resources</directory>
@@ -2616,7 +2608,6 @@
               <include>META-INF/**</include>
               <include>sqlUpdates/**</include>
               <include>scripts/**</include>
-              <include>bundles/**</include>
               <include>velocityTemplates/**</include>
               <include>StartUpData/**</include>
               <include>inventory/**</include>

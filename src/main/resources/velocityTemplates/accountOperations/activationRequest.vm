@@ -1,17 +1,29 @@
+#*
+Template for notifying the administrator of a new account registration.
+Arguments:
+- installation - the name of the installation
+- fullName - the registrant's full name
+- email - the registrant's email address
+- acceptlink - URL to accept the request
+- denylink - URL to deny the request
+- msg - MessageSourceUtils for i18n phrase lookup
+*#
 <p>
-Hello,<br/>
+$msg.getMessage("email.common.greetingDefault")<br/>
 
-A new registrant for the ${installation} installation has signed up.
+$msg.format("email.account.activationRequest.body", [${installation}])
 <p/>
-The details are as follows:<br/>
-Full name: ${fullName}<br/>
-Email: ${email}
+$msg.getMessage("email.account.activationRequest.details")<br/>
+$msg.format("email.account.activationRequest.fullName", [${fullName}])<br/>
+$msg.format("email.account.activationRequest.email", [${email}])
 
 <p/>
-To <b>accept</b> this request, please click <a href="${acceptlink}">to accept.</a>
+$msg.format("email.account.activationRequest.accept", [${acceptlink}])
 <p/>
 <p/>
-To <b>reject</b> this request, please click <a href="${denylink}">to deny.</a>
+$msg.format("email.account.activationRequest.reject", [${denylink}])
 <p/>
 
-#dontReply
+<p>
+$msg.getMessage("email.common.dontReply")
+</p>

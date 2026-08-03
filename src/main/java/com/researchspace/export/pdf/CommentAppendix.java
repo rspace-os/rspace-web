@@ -8,7 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CommentAppendix {
-  private String commentName;
   // comments
   private List<String> itemNames;
   private List<String> itemDates;
@@ -18,7 +17,6 @@ public class CommentAppendix {
     itemNames = new ArrayList<String>();
     itemDates = new ArrayList<String>();
     itemContents = new ArrayList<String>();
-    commentName = "Comment";
   }
 
   // single eleemnt
@@ -39,8 +37,8 @@ public class CommentAppendix {
   }
 
   public void add(String username, String date, String content) {
-    itemNames.add(username + " on ");
-    itemDates.add(date + ":  ");
+    itemNames.add(username);
+    itemDates.add(date);
     itemContents.add(content);
   }
 }

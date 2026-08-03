@@ -433,8 +433,8 @@ public class SysAdminUserRegistrationControllerMVCIT extends MVCTestBase {
         "U.user1.password.Password and Confirm Password fields are not identical.",
         errorMsgs.get(2));
     assertEquals("U.user1.confirmPassword.Confirm password is a required field.", errorMsgs.get(3));
-    assertEquals("U.user1.firstName.First Name is a required field.", errorMsgs.get(4));
-    assertEquals("U.user1.lastName.Last Name is a required field.", errorMsgs.get(5));
+    assertEquals("U.user1.firstName.First name is a required field.", errorMsgs.get(4));
+    assertEquals("U.user1.lastName.Last name is a required field.", errorMsgs.get(5));
 
     // same user imported two times, messages not repeated as username is the same
     assertEquals("U." + repeatedUsername + ".username.Repeated username.", errorMsgs.get(6));

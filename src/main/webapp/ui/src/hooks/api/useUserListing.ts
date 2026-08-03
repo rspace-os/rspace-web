@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { getErrorMessage } from "../../util/error";
 import type * as FetchingData from "../../util/fetchingData";
@@ -136,6 +137,7 @@ export type UserListing = {
 export function useUserListing(): {
   userListing: FetchingData.Fetched<UserListing>;
 } {
+  const { t } = useTranslation("common");
   const [userListing, setUserListing] = React.useState<FetchingData.Fetched<UserListing>>({ tag: "loading" });
 
   async function listUsers(params: ApiParameters): Promise<void> {
@@ -195,7 +197,7 @@ export function useUserListing(): {
           await axios.post<"">("/system/ajax/grantPIRole", formData);
           refreshListing();
         } catch (error) {
-          const errorMsg = getErrorMessage(error, "Unknown error");
+          const errorMsg = getErrorMessage(error, t("apiErrors.unknown"));
           console.error(errorMsg);
           throw new Error(errorMsg, { cause: error });
         }
@@ -209,7 +211,7 @@ export function useUserListing(): {
           await axios.post<"">("/system/ajax/revokePIRole", formData);
           refreshListing();
         } catch (error) {
-          const errorMsg = getErrorMessage(error, "Unknown error");
+          const errorMsg = getErrorMessage(error, t("apiErrors.unknown"));
           console.error(errorMsg);
           throw new Error(errorMsg, { cause: error });
         }
@@ -298,7 +300,7 @@ export function useUserListing(): {
             });
           refreshListing();
         } catch (error) {
-          const errorMsg = getErrorMessage(error, "Unknown error");
+          const errorMsg = getErrorMessage(error, t("apiErrors.unknown"));
           console.error(errorMsg);
           throw new Error(errorMsg, { cause: error });
         }

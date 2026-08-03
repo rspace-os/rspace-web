@@ -17,13 +17,14 @@
  */
 function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector = '#publish-dialog') {
     onpublish = onpublish || function (publishedIds) {};
+    const publishLabel = RS.msg("legacyjs.core.share.publish");
 
     $(tagSelector).dialog({
         modal : true,
         autoOpen : false,
         width : 480,
         height : 630,
-        title: 'Publish',
+        title: publishLabel,
         open : function(event, ui) {
             $(this).find(".accordion").accordion({
                 heightStyle: "content", // Another option is heightStyle: "fill".
@@ -45,11 +46,11 @@ function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector =
             clearPublishOnInternetFields();
             clearPublishLinkFields();
         },
-        buttons : {
-            Cancel : function() {
+        buttons : [
+            { text: RS.msg("legacyjs.common.cancel"), click: function() {
                 $(this).dialog('close');
-            },
-            Publish : function() {
+            }},
+            { id: 'publish-dialog-submit-btn', text: publishLabel, click: function() {
                 const isCloud = $(this).data("isCloud");
                 const publishOnInternet = $('input[id="make_public_confirmation"]').val()?.toLowerCase() === 'confirm';
                 const publishLink = $('input[id="make_public_link_confirmation"]').val()?.toLowerCase() === 'confirm';
@@ -71,7 +72,7 @@ function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector =
                     }],
                     publish: true
                 });
-                RS.blockPage("Publishing document(s)");
+                RS.blockPage(RS.msg("legacyjs.core.share.publishing", idsToPublish.length));
                 var urlString = isCloud ? "/cloud/ajax/shareRecord" :  "/workspace/ajax/shareRecord";
                 var jqxhr = $.ajax({
                     url : createURL(urlString),
@@ -111,10 +112,10 @@ function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector =
                     RS.trackEvent("user:publish:documents:workspace");
                 });
                 jqxhr.fail(function(xhr) {
-                    RS.ajaxFailed("Publishing", true, xhr);
+                    RS.ajaxFailed(RS.msg("legacyjs.core.share.publishing", idsToPublish.length), true, xhr);
                 });
-            }
-        }
+            }}
+        ]
     });
 
     // Legacy execCommand copy, for browsers that reject navigator.clipboard.writeText.
@@ -138,7 +139,7 @@ function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector =
         }
         const btn = document.createElement("button");
         btn.setAttribute("id", 'copy_to_clipboard');
-        btn.textContent = 'copy latest links';
+        btn.textContent = RS.msg("legacyjs.core.share.copyLatestLinks");
         btn.onclick = ()=>copyWithSelection(text);
         // // Avoid scrolling to bottom
         btn.style.top = "0";
@@ -161,40 +162,33 @@ function createPublishDialog(idsToPublishGetter, onpublish = null, tagSelector =
             onpublish(publishedIds);
 
             const unpublishedLength = toPublishLength - numPublished;
-            // Each branch produces a whole sentence, so no message is assembled from fragments.
             if (numPublished === toPublishLength) {
-                const publishedMsg = toPublishLength === 1
-                    ? "Document published."
-                    : `${toPublishLength} documents published.`;
-                const clipboardMsg = clipboardButton
-                    ? "There is a copy button at the top left of this screen which will copy document names with their published links to your clipboard."
-                    : "Document names with their published links are in your clipboard.";
-                RS.confirm(numPublicLinks > 0 ? `${publishedMsg} ${clipboardMsg}` : publishedMsg,
+                const clipboardMode = numPublicLinks === 0 ? "none" : clipboardButton ? "button" : "clipboard";
+                RS.confirm(RS.msg("legacyjs.core.share.publicationSuccess", toPublishLength, clipboardMode),
                     "success", clipboardButton ? 5000 : 3000);
             } else {
                 if (publishedLength === 0) {
-                    RS.confirm("No documents were published.", "warning", 3000);
+                    RS.confirm(RS.msg("legacyjs.core.share.noneShared", "publication", unpublishedLength),
+                        "warning", 3000);
                 } else {
-                    RS.confirm("Not all documents were published.", "notice", 3000);
+                    RS.confirm(RS.msg("legacyjs.core.share.notAll", "publication"), "notice", 3000);
                 }
 
-                const outcomeMsg = publishedLength === 0
-                    ? "Publication was unsuccessful."
-                    : (unpublishedLength === 1
-                        ? "Publication was partially unsuccessful, 1 document was skipped."
-                        : `Publication was partially unsuccessful, ${unpublishedLength} documents were skipped.`);
                 const errorsLength = (result.errorMsg && result.errorMsg.errorMessages) ? result.errorMsg.errorMessages.length : 0;
-                const reasonMsg = errorsLength
-                    ? `${errorsLength === 1 ? "The following error was reported:" : "The following errors were reported:"}<br/> - ${getValidationErrorString(result.errorMsg, "<br/> - ")}`
-                    : (unpublishedLength === 1
-                        ? "Maybe the document is already published?"
-                        : "Maybe the documents are already published?");
-                apprise(`${outcomeMsg} ${reasonMsg}`);
+                apprise(RS.msg(
+                    "legacyjs.core.share.failure",
+                    "publication",
+                    publishedLength > 0 ? "partial" : "full",
+                    unpublishedLength,
+                    errorsLength,
+                    errorsLength ? getValidationErrorString(result.errorMsg, "<br/> - ") : ""));
 
                 // TO-DO: RSPAC-1287 Focus the apprise dialog
             }
         } else {
-            apprise("Publishing did not complete. " + getValidationErrorString(result.errorMsg));
+            apprise(RS.msg(
+                "legacyjs.core.share.publishDidNotComplete",
+                getValidationErrorString(result.errorMsg)));
             // TO-DO: RSPAC-1287 Focus the apprise dialog
         }
     }
@@ -270,8 +264,8 @@ $(document).on('click', '#publishRecord', function (e) {
         .dialog("open");
 });
 
-const disablePublishButton = () => $(":contains('Publish')").closest('button').prop('disabled', true).css('opacity',0.5);
-const enablePublishButton = () => $(":contains('Publish')").closest('button').prop('disabled', false).css('opacity',1);
+const disablePublishButton = () => $('#publish-dialog-submit-btn').prop('disabled', true).css('opacity',0.5);
+const enablePublishButton = () => $('#publish-dialog-submit-btn').prop('disabled', false).css('opacity',1);
 
 $(document).on('click', '#clearPublish', function() {
     clearPublishOnInternetFields();
@@ -302,5 +296,5 @@ $(document).on('input','#make_public_link_confirmation', function() {
 
 // Shows or clears the confirmation marker next to a publish section heading.
 function setConfirmedLabel(className, confirmed) {
-    $(className).text(confirmed ? "(confirmed)" : "");
+    $(className).text(confirmed ? RS.msg("legacyjs.core.share.confirmed") : "");
 }

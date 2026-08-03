@@ -3,7 +3,6 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.service.UserDeletionPolicy.UserTypeRestriction.TEMP_USER;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang3.StringUtils.join;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.researchspace.api.v1.SysadminApi;
@@ -33,6 +32,7 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.SysadminUserCreationHandler;
 import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.service.UserDeletionManager;
@@ -112,7 +112,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
   void assertIsSysadmin(User subject, ServletRequest request) {
     if (!subject.hasRole(Role.SYSTEM_ROLE)
         || !ipWhiteListChecker.isRequestWhitelisted(request, subject, SECURITY_LOG)) {
-      throw new AuthorizationException("Sysadmin role with valid IP required for admin operations");
+      throw new AuthorizationException(getMessage("errors.authorization.sysadminIpRequired"));
     }
   }
 
@@ -132,13 +132,13 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
 
   private void validateTempUser(User toDelete) {
     if (!toDelete.isTempAccount() || userIsTooNew(toDelete)) {
-      throw new IllegalArgumentException("Can only delete temp users created more than a year ago");
+      throw new IllegalArgumentException(getMessage("userDeletion.errors.tempUserTooNew"));
     }
   }
 
   private void validateNonTempUser(User toDelete) {
     if (userIsTooNew(toDelete)) {
-      throw new IllegalArgumentException("Can only delete  users created more than a year ago");
+      throw new IllegalArgumentException(getMessage("userDeletion.errors.nonTempUserTooNew"));
     }
   }
 
@@ -176,7 +176,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
         doUserExport(sysadmin, toDeleteId);
       } catch (Exception e) {
         throw new IllegalStateException(
-            "Could not make export of user's work before deleting account; user deletion aborted");
+            getMessage("userDeletion.errors.exportBeforeDeletionFailed"));
       }
       ServiceOperationResult<User> result2 = removeUser(toDeleteId, sysadmin, deletionPolicy);
       processResult(result2);
@@ -314,10 +314,10 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
   @AllArgsConstructor
   @NoArgsConstructor
   public static class GroupApiPost {
-    @NotBlank(message = "Please provide a name for the group")
+    @NotBlank(message = "{errors.group.nameRequired}")
     private String displayName;
 
-    @Size(min = 1, max = 20, message = "Group must contain between {min} and {max} members")
+    @Size(min = 1, max = 20, message = "{errors.group.memberCount}")
     @Valid
     @JsonAlias({"members", "users"})
     private List<UserGroupPost> users = new ArrayList<>();
@@ -329,7 +329,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
   @AllArgsConstructor
   @NoArgsConstructor
   public static class UserGroupPost {
-    @NotBlank(message = "Username must be provided")
+    @NotBlank(message = "{errors.user.usernameRequired}")
     private String username;
 
     @Pattern(regexp = "(DEFAULT)|(RS_LAB_ADMIN)|(PI)|(GROUP_OWNER)")
@@ -364,7 +364,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
       return new ApiUser(createdUser);
     } else {
       throw new IllegalArgumentException(
-          aroAjaxReturnObject.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy(","));
+          ListFormatUtils.formatList(aroAjaxReturnObject.getErrorMsg().getErrorMessages()));
     }
   }
 
@@ -425,9 +425,9 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
             .collect(partitioningBy(username -> userMgr.userExists(username)));
 
     if (!existingUserMap.get(Boolean.FALSE).isEmpty()) {
-      String missingUsers = join(existingUserMap.get(Boolean.FALSE), ",");
+      String missingUsers = ListFormatUtils.formatList(existingUserMap.get(Boolean.FALSE));
       throw new IllegalArgumentException(
-          "Please create these users before creating a group: " + missingUsers);
+          getMessage("groups.creation.errors.missingUsers", new Object[] {missingUsers}));
     }
 
     Map<User, RoleInGroup> users =
@@ -446,16 +446,16 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
               .map(Map.Entry::getKey)
               .collect(Collectors.toList());
       if (piUsers.size() != 1) {
-        throw new IllegalArgumentException("Exactly one user must be the group's PI.");
+        throw new IllegalArgumentException(getMessage("groups.edit.errors.exactlyOnePi"));
       }
       User piUser = piUsers.get(0);
       if (!piUser.hasRole(Role.PI_ROLE)) {
-        throw new IllegalArgumentException("User selected as group's PI must have PI role.");
+        throw new IllegalArgumentException(getMessage("groups.edit.errors.piRoleRequired"));
       }
       group.setOwner(piUser);
     } else {
       if (group.getGroupOwners() == null || group.getGroupOwners().isEmpty()) {
-        throw new IllegalArgumentException("Project group should have at least 1 GROUP_OWNER.");
+        throw new IllegalArgumentException(getMessage("groups.edit.errors.groupOwnerRequired"));
       }
       group.setOwner(sysadmin);
     }
@@ -493,7 +493,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
           groupId,
           recentLogin.getMessage());
       throw new IllegalArgumentException(
-          "Cannot delete group " + groupId + ": a member has logged in within the last year.");
+          getMessage("groups.edit.errors.recentLoginBlocksDeletion", new Object[] {groupId}));
     }
     auditService.notify(new GenericEvent(sysadmin, deleted, AuditAction.DELETE));
   }
