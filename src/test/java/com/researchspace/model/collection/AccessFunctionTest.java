@@ -61,7 +61,34 @@ class AccessFunctionTest {
                 undocumented,
                 AccessFunction.authenticated(),
                 AccessFunction.authenticated(),
+                AccessFunction.authenticated(),
                 AccessFunction.authenticated()));
+  }
+
+  @Test
+  void hardAndSoftDeleteHaveIndependentPolicies() {
+    AccessPolicy policy =
+        new AccessPolicy(
+            AccessFunction.authenticated(),
+            AccessFunction.authenticated(),
+            AccessFunction.authenticated(),
+            AccessFunction.sysadmin(),
+            AccessFunction.never());
+    User systemAdministrator = user(42L, true);
+
+    assertInstanceOf(
+        AccessResult.Allowed.class,
+        policy
+            .deleteAccess()
+            .check(
+                new AccessContext(systemAdministrator, AccessContext.Operation.DELETE, "widgets")));
+    assertInstanceOf(
+        AccessResult.Denied.class,
+        policy
+            .softDeleteAccess()
+            .check(
+                new AccessContext(
+                    systemAdministrator, AccessContext.Operation.SOFT_DELETE, "widgets")));
   }
 
   @Test

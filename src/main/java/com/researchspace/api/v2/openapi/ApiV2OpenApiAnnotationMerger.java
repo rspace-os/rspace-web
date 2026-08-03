@@ -112,10 +112,7 @@ final class ApiV2OpenApiAnnotationMerger {
           "security",
           publicEndpoint
               ? List.of()
-              : List.of(
-                  Map.of("sessionCookie", List.of()),
-                  Map.of("apiKey", List.of()),
-                  Map.of("bearerAuth", List.of())));
+              : List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
     }
 
     List<Map<String, Object>> parameters = parameters(handler, metadata, schemas);

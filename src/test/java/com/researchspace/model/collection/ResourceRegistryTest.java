@@ -67,7 +67,7 @@ class ResourceRegistryTest {
     assertEquals("int64", schema.fields().get(0).type().format());
     assertEquals(RelationshipCardinality.TO_ONE, schema.relationships().get(0).cardinality());
     assertEquals(20, CHILDREN.schema().fields().get(1).type().maxLength());
-    assertEquals("A logged-in session is required.", schema.access().read().description());
+    assertEquals("A logged-in session is required.", schema.access().readAccess().description());
     assertEquals(
         "Anyone may perform this action, including anonymous callers.",
         schema.relationships().get(0).readAccess().description());
@@ -92,7 +92,8 @@ class ResourceRegistryTest {
     Map<String, Object> shallow =
         renderer.render(
             first, nodes, FieldSelection.all(), IncludeTree.toDepth(nodes, registry, 0));
-    assertEquals(Map.of("relationTo", "nodes", "value", 2L), shallow.get("target"));
+    assertEquals(
+        Map.of("relationTo", "nodes", "value", 2L, "globalId", "IN2"), shallow.get("target"));
 
     Map<String, Object> populated =
         renderer.render(
@@ -110,7 +111,8 @@ class ResourceRegistryTest {
     Map<?, ?> secondReference = (Map<?, ?>) secondDocument.get("target");
     Map<?, ?> repeatedFirst = (Map<?, ?>) secondReference.get("value");
     assertEquals(1L, repeatedFirst.get("id"));
-    assertEquals(Map.of("relationTo", "nodes", "value", 2L), repeatedFirst.get("target"));
+    assertEquals(
+        Map.of("relationTo", "nodes", "value", 2L, "globalId", "IN2"), repeatedFirst.get("target"));
 
     Map<String, Object> narrowedTarget =
         renderer.render(
@@ -125,7 +127,8 @@ class ResourceRegistryTest {
                             new ResourceRenderer.ResolvedTarget(
                                 entity, FieldSelection.include(Set.of("id")))));
     assertEquals(
-        Map.of("relationTo", "nodes", "value", Map.of("id", 2L)), narrowedTarget.get("target"));
+        Map.of("relationTo", "nodes", "value", Map.of("id", 2L), "globalId", "IN2"),
+        narrowedTarget.get("target"));
   }
 
   @Test

@@ -19,7 +19,6 @@ import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.Date;
 import lombok.RequiredArgsConstructor;
-import org.apache.shiro.SecurityUtils;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -122,8 +121,6 @@ public class UsersV2Controller {
 
   private Session session(User user) {
     Date lastLogin = user.getLastLogin();
-    return new Session(
-        SecurityUtils.getSubject().isRunAs(),
-        lastLogin == null ? null : lastLogin.toInstant().toString());
+    return new Session(false, lastLogin == null ? null : lastLogin.toInstant().toString());
   }
 }

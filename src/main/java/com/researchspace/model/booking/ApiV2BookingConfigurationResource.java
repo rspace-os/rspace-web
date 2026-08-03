@@ -1,6 +1,6 @@
 package com.researchspace.model.booking;
 
-import static com.researchspace.model.collection.ApiV2ResourceField.Access.READ_ONLY;
+import static com.researchspace.model.collection.ApiV2ResourceField.WriteAccess.NEVER;
 
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ApiV2ResourceDefinition;
@@ -19,22 +19,24 @@ import java.util.List;
 @ApiV2ResourceDefinition(
     name = "booking-configurations",
     entity = BookingConfiguration.class,
-    id = "id")
+    id = "id",
+    auditFields = true)
 public record ApiV2BookingConfigurationResource(
-    @ApiV2ResourceField(
-            access = READ_ONLY,
-            description = "Stable booking-configuration identifier.",
-            example = "7")
+    @ApiV2ResourceField(description = "Stable booking-configuration identifier.", example = "7")
         Long id,
     @ApiV2ResourceField(description = "Whether bookings are enabled for the target.")
         boolean enabled,
     @ApiV2ResourceField(
+            property = "timeZone",
             requiredOnCreate = true,
             maxLength = 255,
             description = "IANA time-zone identifier used for booking windows.",
             example = "Europe/Berlin")
-        String timeZone,
-    @ApiV2ResourceField(access = READ_ONLY, description = "Optimistic configuration revision.")
+        String timezone,
+    @ApiV2ResourceField(
+            createAccess = NEVER,
+            updateAccess = NEVER,
+            description = "Optimistic configuration revision.")
         long configurationVersion) {
 
   private static final AccessPolicy ACCESS = AccessPolicy.authenticatedReadsSysadminWrites();

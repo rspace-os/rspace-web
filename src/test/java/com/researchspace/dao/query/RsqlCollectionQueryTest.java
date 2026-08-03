@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Field;
 import com.researchspace.model.collection.CollectionDescription.Operator;
@@ -186,6 +187,35 @@ class RsqlCollectionQueryTest {
     assertThrows(
         CollectionQueryException.class, () -> relationshipParser.parse("target.globalId==IN1"));
     assertThrows(CollectionQueryException.class, () -> relationshipParser.parse("target==XX1"));
+  }
+
+  @Test
+  void translatesAutomaticAuditFieldAndUserRelationshipFilters() {
+    CollectionDescription<?> description = ApiV2BookingConfigurationResource.DESCRIPTION;
+    RsqlFilterParser auditParser = new RsqlFilterParser(description);
+    RsqlCollectionQuery auditTranslator = new RsqlCollectionQuery(description, "item");
+
+    Predicate result =
+        auditTranslator.translate(
+            auditParser.parse(
+                "createdAt>=2026-08-01T00:00:00Z;updatedAt<2026-08-03T00:00:00Z;"
+                    + "createdBy.value==21;updatedBy.value==22"));
+
+    assertEquals(
+        "(item.createdAt >= :rsql0 AND item.updatedAt < :rsql1 AND "
+            + "item.createdBy.id = :rsql2 AND item.updatedBy.id = :rsql3)",
+        result.expression());
+    assertEquals(
+        Map.of(
+            "rsql0",
+            Date.from(Instant.parse("2026-08-01T00:00:00Z")),
+            "rsql1",
+            Date.from(Instant.parse("2026-08-03T00:00:00Z")),
+            "rsql2",
+            21L,
+            "rsql3",
+            22L),
+        result.parameters());
   }
 
   private static CollectionDescription<Related> relationshipDescription() {

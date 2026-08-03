@@ -32,15 +32,12 @@ class ApiV2AuthenticationInterceptorTest {
   private final MockHttpServletResponse response = new MockHttpServletResponse();
 
   @Test
-  void skipsAuthenticationAndLogoutForPublicHandlers() throws Exception {
+  void skipsAuthenticationForPublicHandlers() throws Exception {
     HandlerMethod handler =
         new HandlerMethod(new PublicController(), PublicController.class.getMethod("read"));
 
     assertTrue(interceptor.preHandle(request, response, handler));
-    interceptor.afterCompletion(request, response, handler, null);
-
     verify(authenticator, never()).authenticate(request);
-    verify(authenticator, never()).logout();
   }
 
   @Test
@@ -71,32 +68,13 @@ class ApiV2AuthenticationInterceptorTest {
   }
 
   @Test
-  void authenticatesProtectedHandlersAndReleasesTheSessionItCreated() throws Exception {
+  void authenticatesProtectedHandlers() throws Exception {
     User user = mock(User.class);
     when(authenticator.authenticate(request)).thenReturn(user);
     HandlerMethod handler = protectedHandler();
 
     assertTrue(interceptor.preHandle(request, response, handler));
     assertSame(user, request.getAttribute("user"));
-    interceptor.afterCompletion(request, response, handler, new RuntimeException("handler failed"));
-
-    verify(authenticator).logout();
-  }
-
-  @Test
-  void leavesAReusedBrowserSessionAlone() throws Exception {
-    when(authenticator.authenticate(request))
-        .thenAnswer(
-            invocation -> {
-              request.setAttribute(ApiV2Authenticator.SESSION_REUSED_ATTRIBUTE, Boolean.TRUE);
-              return mock(User.class);
-            });
-    HandlerMethod handler = protectedHandler();
-
-    assertTrue(interceptor.preHandle(request, response, handler));
-    interceptor.afterCompletion(request, response, handler, null);
-
-    verify(authenticator, never()).logout();
   }
 
   @Test
@@ -117,17 +95,6 @@ class ApiV2AuthenticationInterceptorTest {
     assertTrue(interceptor.preHandle(request, response, crudHandler("create")));
 
     assertSame(user, request.getAttribute("user"));
-  }
-
-  @Test
-  void genericCrudReleasesANewAuthenticationSession() throws Exception {
-    when(authenticator.authenticateIfPresent(request)).thenReturn(Optional.of(mock(User.class)));
-    HandlerMethod handler = crudHandler("list");
-
-    assertTrue(interceptor.preHandle(request, response, handler));
-    interceptor.afterCompletion(request, response, handler, null);
-
-    verify(authenticator).logout();
   }
 
   private static HandlerMethod protectedHandler() throws Exception {

@@ -28,9 +28,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Optional;
-import org.apache.shiro.subject.Subject;
-import org.apache.shiro.util.ThreadContext;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.StaticMessageSource;
@@ -44,20 +41,13 @@ class UsersV2ControllerTest {
   private final UserProfileManager userProfileManager = mock(UserProfileManager.class);
   private final SystemPropertyPermissionManager propertyPermissionManager =
       mock(SystemPropertyPermissionManager.class);
-  private final Subject subject = mock(Subject.class);
   private MockMvc mockMvc;
 
   @BeforeEach
   void setUp() {
     UsersV2Controller controller = newController();
-    ThreadContext.bind(subject);
     mockMvc =
         MockMvcBuilders.standaloneSetup(controller).setControllerAdvice(problemAdvice()).build();
-  }
-
-  @AfterEach
-  void tearDown() {
-    ThreadContext.unbindSubject();
   }
 
   private UsersV2Controller newController() {
@@ -98,8 +88,6 @@ class UsersV2ControllerTest {
         .thenReturn(true);
     when(propertyPermissionManager.isPropertyAllowed(user, SystemPropertyName.PUBLIC_SHARING))
         .thenReturn(false);
-    when(subject.isRunAs()).thenReturn(true);
-
     mockMvc
         .perform(get("/api/v2/users/me").requestAttr("user", user))
         .andExpect(status().isOk())
@@ -119,7 +107,7 @@ class UsersV2ControllerTest {
         .andExpect(jsonPath("$.capabilities.canUseInventory").value(true))
         .andExpect(jsonPath("$.capabilities.canPublish").value(false))
         .andExpect(jsonPath("$.capabilities.canViewSystem").value(true))
-        .andExpect(jsonPath("$.session.operatedAs").value(true))
+        .andExpect(jsonPath("$.session.operatedAs").value(false))
         .andExpect(jsonPath("$.session.lastSession").value("2026-07-15T08:30:00Z"));
   }
 

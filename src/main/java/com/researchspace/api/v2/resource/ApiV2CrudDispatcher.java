@@ -8,6 +8,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
+import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.ParsedDocument;
@@ -18,7 +19,9 @@ import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.model.collection.ResourceRenderer.TargetResolver;
 import com.researchspace.model.collection.ResourceRequest;
 import jakarta.ws.rs.NotFoundException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -89,11 +92,36 @@ public final class ApiV2CrudDispatcher<T, ID> {
   }
 
   public Map<String, Object> create(
-      JsonNode body, User actor, String errorKey, FieldSelection selection, AccessContext context) {
-    ParsedDocument document =
-        ApiV2DocumentParser.parse(body, description, WriteOperation.CREATE, errorKey, context);
+      ParsedDocument document,
+      User actor,
+      String errorKey,
+      FieldSelection selection,
+      AccessContext context) {
     document = relationshipResolver.resolve(document, description, actor, context, errorKey, false);
     return document(operations.create(document, actor), selection, targetResolver(actor));
+  }
+
+  public ApiV2BulkResult<Map<String, Object>> createMany(
+      List<ParsedDocument> parsed,
+      User actor,
+      String errorKey,
+      FieldSelection selection,
+      AccessContext context) {
+    List<ParsedDocument> resolved = new ArrayList<>(parsed.size());
+    for (int index = 0; index < parsed.size(); index++) {
+      try {
+        resolved.add(
+            relationshipResolver.resolve(
+                parsed.get(index), description, actor, context, errorKey, false));
+      } catch (DocumentValidationException ex) {
+        throw ApiV2DocumentParser.prefixed(ex, "docs[" + index + "]");
+      }
+    }
+    TargetResolver targetResolver = targetResolver(actor);
+    return ApiV2BulkResult.success(
+        operations.createMany(resolved, actor).stream()
+            .map(resource -> document(resource, selection, targetResolver))
+            .toList());
   }
 
   public Map<String, Object> update(

@@ -23,6 +23,7 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.CollectionDescription.Operator;
+import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
@@ -37,6 +38,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 
 class BookingConfigurationManagerTest {
@@ -45,13 +47,15 @@ class BookingConfigurationManagerTest {
   private final BookingConfigurationDao dao = mock(BookingConfigurationDao.class);
 
   private final User actor = mock(User.class);
+  private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   private final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
   private final BookingConfigurationManager manager =
-      new BookingConfigurationManager(dao, validatorFactory.getValidator());
+      new BookingConfigurationManager(dao, validatorFactory.getValidator(), events);
 
   @BeforeEach
   void setUp() {
     when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
+    when(actor.getUsername()).thenReturn("sysadmin");
   }
 
   @AfterEach
@@ -71,7 +75,59 @@ class BookingConfigurationManagerTest {
     assertEquals("Europe/Berlin", created.getTimeZone());
     assertEquals(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L), created.getTarget());
+    assertSame(actor, created.getCreatedBy());
+    assertSame(actor, created.getUpdatedBy());
+    assertEquals(created.getCreatedAt(), created.getUpdatedAt());
     verify(dao).saveAndFlush(created);
+    verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
+  }
+
+  @Test
+  void bulkCreateValidatesTheWholeBatchBeforeSavingAndPreservesOrder() {
+    when(dao.saveAndFlush(any(BookingConfiguration.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    List<BookingConfiguration> created =
+        manager.createConfigurations(
+            List.of(
+                new Create(true, "Europe/Berlin", target(12L)),
+                new Create(false, "UTC", target(13L))),
+            actor);
+
+    assertEquals(2, created.size());
+    assertEquals(
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L),
+        created.get(0).getTarget());
+    assertEquals(
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, 13L),
+        created.get(1).getTarget());
+    verify(dao).saveAndFlush(created.get(0));
+    verify(dao).saveAndFlush(created.get(1));
+
+    assertThrows(
+        ConstraintViolationException.class,
+        () ->
+            manager.createConfigurations(
+                List.of(
+                    new Create(true, "UTC", target(14L)),
+                    new Create(true, "Not/A_Zone", target(15L))),
+                actor));
+    verify(dao, never())
+        .findByTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 14L));
+  }
+
+  @Test
+  void bulkCreateRejectsDuplicateTargetsBeforeSaving() {
+    assertThrows(
+        BookingConfigurationTargetConflictException.class,
+        () ->
+            manager.createConfigurations(
+                List.of(
+                    new Create(true, "UTC", target(12L)),
+                    new Create(false, "Europe/Berlin", target(12L))),
+                actor));
+
+    verify(dao, never()).saveAndFlush(any());
   }
 
   @Test
@@ -102,6 +158,24 @@ class BookingConfigurationManagerTest {
 
     assertTrue(updated.isEnabled());
     assertEquals("UTC", updated.getTimeZone());
+    assertSame(actor, updated.getUpdatedBy());
+    assertTrue(updated.getUpdatedAt() != null);
+    verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
+  }
+
+  @Test
+  void bulkCreateRejectsOversizedBatchBeforeValidationOrPersistence() {
+    Create create = new Create(true, "UTC", target(12L));
+
+    assertThrows(
+        CollectionMutationException.class,
+        () ->
+            manager.createConfigurations(
+                Collections.nCopies(CollectionMutationLimits.MAX_BULK_CREATE_ROWS + 1, create),
+                actor));
+
+    verify(dao, never()).findByTarget(any());
+    verify(dao, never()).saveAndFlush(any());
   }
 
   @Test
@@ -129,7 +203,9 @@ class BookingConfigurationManagerTest {
 
     when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
     BookingConfiguration configuration = new BookingConfiguration();
-    when(dao.getResources(request, 1001)).thenReturn(Collections.nCopies(1001, configuration));
+    int oversizedBatch = CollectionMutationLimits.MAX_BULK_UPDATE_DELETE_ROWS + 1;
+    when(dao.getResources(request, oversizedBatch))
+        .thenReturn(Collections.nCopies(oversizedBatch, configuration));
 
     assertThrows(
         CollectionMutationException.class,
@@ -199,7 +275,8 @@ class BookingConfigurationManagerTest {
             new FilterExpression.Comparison("id", Operator.IN, List.of(1L, 2L), false));
     BookingConfiguration first = configuration(1L, 11L);
     BookingConfiguration second = configuration(2L, 12L);
-    when(dao.getResources(request, 1001)).thenReturn(List.of(first, second));
+    when(dao.getResources(request, CollectionMutationLimits.MAX_BULK_UPDATE_DELETE_ROWS + 1))
+        .thenReturn(List.of(first, second));
 
     assertThrows(
         BookingConfigurationTargetConflictException.class,

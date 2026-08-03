@@ -114,6 +114,15 @@ public class ApiV2CrudController {
         .body(requireResource(resource, ResourceOperation.CREATE).create(body, user));
   }
 
+  @PostMapping("/{resource}/bulk")
+  public ResponseEntity<ApiV2BulkResult<Map<String, Object>>> createMany(
+      @PathVariable String resource,
+      @RequestBody JsonNode body,
+      @RequestAttribute(name = "user", required = false) User user) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(requireResource(resource, ResourceOperation.BULK_CREATE).createMany(body, user));
+  }
+
   @PatchMapping("/{resource}/{id}")
   public Map<String, Object> update(
       @PathVariable String resource,

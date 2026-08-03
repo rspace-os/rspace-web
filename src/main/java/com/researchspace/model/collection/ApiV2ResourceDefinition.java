@@ -17,4 +17,7 @@ public @interface ApiV2ResourceDefinition {
   Class<?> entity();
 
   String id();
+
+  /** Whether the framework adds its standard read-only audit fields and user relationships. */
+  boolean auditFields() default true;
 }

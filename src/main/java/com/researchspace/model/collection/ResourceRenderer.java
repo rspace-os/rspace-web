@@ -183,6 +183,9 @@ public final class ResourceRenderer {
     Map<String, Object> referenceDocument = new LinkedHashMap<>();
     referenceDocument.put("relationTo", target.resourceName());
     referenceDocument.put("value", renderedValue);
+    if (target.globalIdPrefix() != null) {
+      referenceDocument.put("globalId", target.globalIdPrefix() + reference.id());
+    }
     return referenceDocument;
   }
 

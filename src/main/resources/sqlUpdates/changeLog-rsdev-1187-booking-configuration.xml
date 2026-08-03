@@ -6,7 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
 
   <changeSet id="rsdev-1187-booking-configuration" author="researchspace" context="run">
-    <comment>Create the scalar BookingConfiguration entity</comment>
+    <comment>Create the BookingConfiguration entity and bookable target</comment>
     <createTable tableName="BookingConfiguration">
       <column name="id" type="BIGINT" autoIncrement="true">
         <constraints primaryKey="true" nullable="false"/>
@@ -17,10 +17,41 @@
       <column name="timeZone" type="VARCHAR(255)">
         <constraints nullable="false"/>
       </column>
+      <column name="targetType" type="VARCHAR(32)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="targetId" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
       <column name="configurationVersion" type="BIGINT" defaultValueNumeric="0">
         <constraints nullable="false"/>
       </column>
+      <column name="createdAt" type="DATETIME(6)"/>
+      <column name="updatedAt" type="DATETIME(6)"/>
+      <column name="createdBy_id" type="BIGINT"/>
+      <column name="updatedBy_id" type="BIGINT"/>
     </createTable>
+    <addUniqueConstraint
+        tableName="BookingConfiguration"
+        columnNames="targetType, targetId"
+        constraintName="UK_BookingConfiguration_target"/>
+    <createIndex tableName="BookingConfiguration" indexName="IX_BookingConfiguration_targetId">
+      <column name="targetId"/>
+    </createIndex>
+    <addForeignKeyConstraint
+        constraintName="FK_BookingConfiguration_createdBy"
+        baseTableName="BookingConfiguration"
+        baseColumnNames="createdBy_id"
+        referencedTableName="User"
+        referencedColumnNames="id"
+        onDelete="SET NULL"/>
+    <addForeignKeyConstraint
+        constraintName="FK_BookingConfiguration_updatedBy"
+        baseTableName="BookingConfiguration"
+        baseColumnNames="updatedBy_id"
+        referencedTableName="User"
+        referencedColumnNames="id"
+        onDelete="SET NULL"/>
     <sql>
       ALTER TABLE BookingConfiguration ENGINE=InnoDB,
       CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
@@ -39,7 +70,13 @@
       <column name="REVTYPE" type="TINYINT"/>
       <column name="enabled" type="BIT(1)"/>
       <column name="timeZone" type="VARCHAR(255)"/>
+      <column name="targetType" type="VARCHAR(32)"/>
+      <column name="targetId" type="BIGINT"/>
       <column name="configurationVersion" type="BIGINT"/>
+      <column name="createdAt" type="DATETIME(6)"/>
+      <column name="updatedAt" type="DATETIME(6)"/>
+      <column name="createdBy_id" type="BIGINT"/>
+      <column name="updatedBy_id" type="BIGINT"/>
     </createTable>
     <addPrimaryKey
         tableName="BookingConfiguration_AUD"
@@ -55,35 +92,5 @@
       ALTER TABLE BookingConfiguration_AUD ENGINE=InnoDB,
       CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
     </sql>
-  </changeSet>
-
-  <changeSet id="rsdev-1187-booking-configuration-target" author="researchspace" context="run">
-    <preConditions onFail="HALT" onError="HALT">
-      <sqlCheck expectedResult="0">SELECT COUNT(*) FROM BookingConfiguration</sqlCheck>
-    </preConditions>
-    <comment>Add the required polymorphic booking target</comment>
-    <addColumn tableName="BookingConfiguration">
-      <column name="targetType" type="VARCHAR(32)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="targetId" type="BIGINT">
-        <constraints nullable="false"/>
-      </column>
-    </addColumn>
-    <addUniqueConstraint
-        tableName="BookingConfiguration"
-        columnNames="targetType, targetId"
-        constraintName="UK_BookingConfiguration_target"/>
-    <createIndex tableName="BookingConfiguration" indexName="IX_BookingConfiguration_targetId">
-      <column name="targetId"/>
-    </createIndex>
-  </changeSet>
-
-  <changeSet id="rsdev-1187-booking-configuration-target-audit" author="researchspace" context="run">
-    <comment>Audit polymorphic booking target changes</comment>
-    <addColumn tableName="BookingConfiguration_AUD">
-      <column name="targetType" type="VARCHAR(32)"/>
-      <column name="targetId" type="BIGINT"/>
-    </addColumn>
   </changeSet>
 </databaseChangeLog>

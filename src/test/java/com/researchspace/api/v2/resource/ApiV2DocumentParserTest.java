@@ -17,6 +17,7 @@ import com.researchspace.model.collection.CollectionDescription.Field;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionFieldTypes;
+import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
@@ -24,6 +25,7 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.SplitReferenceBinding;
+import com.researchspace.service.CollectionMutationException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -159,7 +161,83 @@ class ApiV2DocumentParserTest {
   }
 
   @Test
-  void parsesRelationshipObjectAndUpdateGlobalIdToTheSameReference() throws Exception {
+  void parsesNonEmptyBulkCreateEnvelopeAndReportsTheDocumentIndex() throws Exception {
+    List<ParsedDocument> documents =
+        ApiV2DocumentParser.parseMany(
+            mapper.readTree(
+                """
+                {"docs":[
+                  {"startDate":"2026-08-01T10:00:00Z","endDate":"2026-08-01T11:00:00Z"},
+                  {"startDate":"2026-08-02T10:00:00Z","endDate":"2026-08-02T11:00:00Z"}
+                ]}
+                """),
+            ApiV2MaintenanceResource.DESCRIPTION,
+            "error",
+            writeContext(Operation.CREATE));
+
+    assertEquals(2, documents.size());
+    assertEquals(WriteOperation.CREATE, documents.get(0).operation());
+
+    DocumentValidationException invalidDocument =
+        assertThrows(
+            DocumentValidationException.class,
+            () ->
+                ApiV2DocumentParser.parseMany(
+                    mapper.readTree(
+                        """
+                        {"docs":[
+                          {"startDate":"2026-08-01T10:00:00Z","endDate":"2026-08-01T11:00:00Z"},
+                          {"startDate":42}
+                        ]}
+                        """),
+                    ApiV2MaintenanceResource.DESCRIPTION,
+                    "error",
+                    writeContext(Operation.CREATE)));
+    assertEquals(
+        List.of(
+            new Violation("docs[1].startDate", Reason.WRONG_TYPE),
+            new Violation("docs[1].endDate", Reason.REQUIRED)),
+        invalidDocument.getViolations());
+
+    for (String invalid :
+        List.of("{}", "{\"docs\":[]}", "{\"docs\":{}}", "{\"docs\":[],\"extra\":true}")) {
+      DocumentValidationException exception =
+          assertThrows(
+              DocumentValidationException.class,
+              () ->
+                  ApiV2DocumentParser.parseMany(
+                      mapper.readTree(invalid),
+                      ApiV2MaintenanceResource.DESCRIPTION,
+                      "error",
+                      writeContext(Operation.CREATE)));
+      assertEquals(
+          List.of(new Violation("docs", Reason.INVALID_DOCUMENT)), exception.getViolations());
+    }
+  }
+
+  @Test
+  void rejectsOversizedBulkCreateBeforeParsingIndividualDocuments() throws Exception {
+    var docs = mapper.createArrayNode();
+    for (int i = 0; i <= CollectionMutationLimits.MAX_BULK_CREATE_ROWS; i++) {
+      docs.addObject();
+    }
+    var body = mapper.createObjectNode().set("docs", docs);
+
+    CollectionMutationException exception =
+        assertThrows(
+            CollectionMutationException.class,
+            () ->
+                ApiV2DocumentParser.parseMany(
+                    body,
+                    ApiV2MaintenanceResource.DESCRIPTION,
+                    "error",
+                    writeContext(Operation.CREATE)));
+
+    assertEquals(CollectionMutationException.Reason.BULK_LIMIT, exception.getReason());
+  }
+
+  @Test
+  void parsesRelationshipObjectsAndUpdateGlobalIdToTheSameReference() throws Exception {
     CollectionDescription<RelatedDocument> description = relatedDescription();
 
     ParsedDocument created =
@@ -171,6 +249,14 @@ class ApiV2DocumentParserTest {
             writeContext(Operation.CREATE));
     ParsedDocument updated =
         ApiV2DocumentParser.parse(
+            mapper.readTree(
+                "{\"target\":{\"relationTo\":\"instruments\",\"value\":9,\"globalId\":\"IN9\"}}"),
+            description,
+            WriteOperation.UPDATE,
+            "error",
+            writeContext(Operation.UPDATE));
+    ParsedDocument globalIdOnly =
+        ApiV2DocumentParser.parse(
             mapper.readTree("{\"target\":\"IN9\"}"),
             description,
             WriteOperation.UPDATE,
@@ -179,6 +265,7 @@ class ApiV2DocumentParserTest {
 
     assertEquals(new ResourceReference<>("INSTRUMENT", 9L), created.values().get("target"));
     assertEquals(created.values().get("target"), updated.values().get("target"));
+    assertEquals(created.values().get("target"), globalIdOnly.values().get("target"));
   }
 
   @Test
@@ -189,6 +276,7 @@ class ApiV2DocumentParserTest {
         List.of(
             "{\"target\":{\"relationTo\":\"instruments\"}}",
             "{\"target\":{\"relationTo\":\"instruments\",\"value\":9,\"extra\":true}}",
+            "{\"target\":{\"relationTo\":\"instruments\",\"value\":9,\"globalId\":\"IN10\"}}",
             "{\"target\":null}",
             "{\"target\":\"IN9\"}")) {
       assertThrows(

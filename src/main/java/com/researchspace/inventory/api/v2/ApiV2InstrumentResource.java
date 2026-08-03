@@ -1,6 +1,6 @@
 package com.researchspace.inventory.api.v2;
 
-import static com.researchspace.model.collection.ApiV2ResourceField.Access.READ_ONLY;
+import static com.researchspace.model.collection.ApiV2ResourceField.WriteAccess.NEVER;
 
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
@@ -14,13 +14,10 @@ import java.util.List;
 /** Minimal REST v2 shape used when an Instrument relationship is populated. */
 @ApiV2ResourceDefinition(name = "instruments", entity = Instrument.class, id = "id")
 public record ApiV2InstrumentResource(
+    @ApiV2ResourceField(description = "Stable instrument identifier.", example = "123") Long id,
     @ApiV2ResourceField(
-            access = READ_ONLY,
-            description = "Stable instrument identifier.",
-            example = "123")
-        Long id,
-    @ApiV2ResourceField(
-            access = READ_ONLY,
+            createAccess = NEVER,
+            updateAccess = NEVER,
             description = "Display name of the instrument.",
             example = "Confocal microscope")
         String name) {

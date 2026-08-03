@@ -1,6 +1,6 @@
 package com.researchspace.model.collection;
 
-import static com.researchspace.model.collection.ApiV2ResourceField.Access.READ_ONLY;
+import static com.researchspace.model.collection.ApiV2ResourceField.WriteAccess.NEVER;
 
 import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionDescription.Sort;
@@ -19,16 +19,30 @@ import java.util.List;
  * {@code /api/v2/users/{myId}} return strictly less than {@code /me} for no gain, because {@code
  * AccessFunction} is evaluated with the request's access context.
  */
+// TODO: Expose updatedAt, createdBy, and updatedBy after the shared User entity persists those
+// properties; until then the audit-field builder deliberately omits the unavailable selectors.
 @ApiV2ResourceDefinition(name = "users", entity = User.class, id = "id")
 public record ApiV2UserResource(
-    @ApiV2ResourceField(access = READ_ONLY, description = "Stable user identifier.", example = "42")
-        Long id,
-    @ApiV2ResourceField(access = READ_ONLY, description = "RSpace login name.", example = "ada")
-        String username,
-    @ApiV2ResourceField(access = READ_ONLY, description = "User's given name.") String firstName,
-    @ApiV2ResourceField(access = READ_ONLY, description = "User's family name.") String lastName,
+    @ApiV2ResourceField(description = "Stable user identifier.", example = "42") Long id,
     @ApiV2ResourceField(
-            access = READ_ONLY,
+            createAccess = NEVER,
+            updateAccess = NEVER,
+            description = "RSpace login name.",
+            example = "ada")
+        String username,
+    @ApiV2ResourceField(
+            createAccess = NEVER,
+            updateAccess = NEVER,
+            description = "User's given name.")
+        String firstName,
+    @ApiV2ResourceField(
+            createAccess = NEVER,
+            updateAccess = NEVER,
+            description = "User's family name.")
+        String lastName,
+    @ApiV2ResourceField(
+            createAccess = NEVER,
+            updateAccess = NEVER,
             description = "User's email address.",
             format = "email",
             example = "ada@example.org")

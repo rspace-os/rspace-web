@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -94,9 +95,14 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals("3.1.0", document.get("openapi"));
     assertTrue(paths.containsKey("/api/v2/maintenances"));
     assertTrue(paths.containsKey("/api/v2/maintenances/count"));
+    assertTrue(paths.containsKey("/api/v2/maintenances/bulk"));
     assertTrue(paths.containsKey("/api/v2/maintenances/{id}"));
     assertFalse(paths.containsKey("/api/v2/{resource}"));
     assertFalse(paths.containsKey("/api/v2/instruments"));
+
+    Map<String, Object> securitySchemes =
+        objectMap(objectMap(document.get("components")).get("securitySchemes"));
+    assertEquals(Set.of("apiKey", "bearerAuth"), securitySchemes.keySet());
 
     Map<String, Object> users = objectMap(paths.get("/api/v2/users"));
     assertTrue(users.containsKey("get"));
@@ -117,9 +123,26 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> collection = objectMap(paths.get("/api/v2/maintenances"));
     Map<String, Object> list = objectMap(collection.get("get"));
     Map<String, Object> create = objectMap(collection.get("post"));
+    Map<String, Object> bulkCreate =
+        objectMap(objectMap(paths.get("/api/v2/maintenances/bulk")).get("post"));
 
     assertEquals(List.of(), list.get("security"));
-    assertFalse(((List<?>) create.get("security")).isEmpty());
+    assertEquals(2, ((List<?>) create.get("security")).size());
+    assertEquals("createManyMaintenances", bulkCreate.get("operationId"));
+    assertTrue(objectMap(bulkCreate.get("responses")).containsKey("201"));
+    Map<String, Object> bulkRequestSchema =
+        objectMap(
+            objectMap(
+                    objectMap(objectMap(bulkCreate.get("requestBody")).get("content"))
+                        .get("application/json"))
+                .get("schema"));
+    assertEquals(List.of("docs"), bulkRequestSchema.get("required"));
+    assertEquals(false, bulkRequestSchema.get("additionalProperties"));
+    Map<String, Object> docs =
+        objectMap(objectMap(bulkRequestSchema.get("properties")).get("docs"));
+    assertEquals(1, docs.get("minItems"));
+    assertEquals(
+        "#/components/schemas/MaintenancesCreate", objectMap(docs.get("items")).get("$ref"));
     assertNotNull(list.get("x-rspace-access"));
     assertEquals("Browse maintenance windows", list.get("summary"));
     assertEquals("Developer-supplied list documentation.", list.get("description"));
@@ -169,16 +192,52 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> userProperties =
         objectMap(objectMap(schemas.get("UsersRead")).get("properties"));
     assertEquals("email", objectMap(userProperties.get("email")).get("format"));
+    assertTrue(userProperties.containsKey("createdAt"));
+    assertFalse(userProperties.containsKey("updatedBy"));
+    assertTrue((Boolean) objectMap(userProperties.get("createdAt")).get("readOnly"));
+    assertFalse(readProperties.containsKey("createdAt"));
 
     Map<String, Object> bookingProperties =
         objectMap(objectMap(schemas.get("BookingConfigurationsCreate")).get("properties"));
+    assertTrue(bookingProperties.containsKey("timezone"));
+    assertFalse(bookingProperties.containsKey("timeZone"));
     Map<String, Object> target = objectMap(bookingProperties.get("target"));
     assertEquals("Booking target", target.get("title"));
-    assertNotNull(target.get("$ref"));
+    assertNotNull(target.get("allOf"));
+    List<?> createTargetParts = (List<?>) target.get("allOf");
+    assertTrue(
+        objectMap(objectMap(createTargetParts.get(1)).get("properties")).containsKey("globalId"));
+    assertFalse(bookingProperties.containsKey("createdAt"));
+
+    Map<String, Object> bookingReadProperties =
+        objectMap(objectMap(schemas.get("BookingConfigurationsRead")).get("properties"));
+    assertTrue(bookingReadProperties.containsKey("createdAt"));
+    assertTrue(bookingReadProperties.containsKey("updatedAt"));
+    assertTrue(bookingReadProperties.containsKey("createdBy"));
+    assertTrue(bookingReadProperties.containsKey("updatedBy"));
+    assertTrue(bookingReadProperties.containsKey("timezone"));
+    assertFalse(bookingReadProperties.containsKey("timeZone"));
+    List<?> targetOutputVariants =
+        (List<?>) objectMap(bookingReadProperties.get("target")).get("oneOf");
+    Map<String, Object> targetReference = objectMap(targetOutputVariants.get(0));
+    List<?> targetReferenceParts = (List<?>) targetReference.get("allOf");
+    assertEquals(
+        "#/components/schemas/InstrumentsReference",
+        objectMap(targetReferenceParts.get(0)).get("$ref"));
+    Map<String, Object> targetReferenceProperties =
+        objectMap(objectMap(targetReferenceParts.get(1)).get("properties"));
+    assertEquals("string", objectMap(targetReferenceProperties.get("globalId")).get("type"));
+    assertEquals("^IN\\d+$", objectMap(targetReferenceProperties.get("globalId")).get("pattern"));
+    Map<String, Object> instrumentReferenceProperties =
+        objectMap(objectMap(schemas.get("InstrumentsReference")).get("properties"));
+    assertEquals("integer", objectMap(instrumentReferenceProperties.get("value")).get("type"));
 
     Map<String, Object> bookingUpdateProperties =
         objectMap(objectMap(schemas.get("BookingConfigurationsUpdate")).get("properties"));
-    assertNotNull(objectMap(bookingUpdateProperties.get("target")).get("oneOf"));
+    List<?> updateTargetVariants =
+        (List<?>) objectMap(bookingUpdateProperties.get("target")).get("oneOf");
+    assertNotNull(updateTargetVariants);
+    assertNotNull(objectMap(updateTargetVariants.get(1)).get("allOf"));
 
     Map<String, Object> components = objectMap(document.get("components"));
     Map<String, Object> badRequest =

@@ -12,13 +12,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.RECORD_COMPONENT)
 public @interface ApiV2ResourceField {
 
-  enum Access {
-    READ_ONLY,
-    READ_WRITE,
-    CREATE_ONLY,
-    UPDATE_ONLY
-  }
-
   /** Per-request read visibility presets, resolved to an {@link AccessFunction}. */
   enum ReadAccess {
     /** Visible to anyone who may read the collection. */
@@ -43,9 +36,8 @@ public @interface ApiV2ResourceField {
   /**
    * Per-request write presets, resolved to an {@link AccessFunction}.
    *
-   * <p>There is deliberately no {@code NEVER}: {@code access = READ_ONLY} already says "not
-   * writable", and offering both would let someone express the contradiction {@code access =
-   * READ_WRITE, writeAccess = NEVER}.
+   * <p>{@code NEVER} also removes the field from that operation's input schema. It is the explicit
+   * way to describe server-managed fields whose entity property still has a persistence setter.
    */
   enum WriteAccess {
     /** Writable by anyone who may perform the operation on the collection. */
@@ -53,18 +45,19 @@ public @interface ApiV2ResourceField {
     /** Writable only by an authenticated caller. */
     AUTHENTICATED,
     /** Writable only by a system administrator. */
-    SYSADMIN;
+    SYSADMIN,
+    /** Not accepted by this operation. */
+    NEVER;
 
     AccessFunction resolve() {
       return switch (this) {
         case INHERITED -> AccessFunction.anyone();
         case AUTHENTICATED -> AccessFunction.authenticated();
         case SYSADMIN -> AccessFunction.sysadmin();
+        case NEVER -> AccessFunction.never();
       };
     }
   }
-
-  Access access() default Access.READ_WRITE;
 
   /**
    * Who may read this field.
@@ -77,15 +70,18 @@ public @interface ApiV2ResourceField {
   ReadAccess readAccess() default ReadAccess.INHERITED;
 
   /**
-   * Who may write this field, on the operations {@link #access} already permits.
+   * Who may supply this field when creating a resource.
    *
-   * <p>A preset, for the same reason {@link #readAccess} is: annotations cannot carry code. A check
-   * that needs the caller's identity compared against the row, such as "a system administrator or
-   * the user themselves may change this", cannot be a preset. Build the {@code
-   * CollectionDescription} programmatically and use {@code Field.writableBy(AccessFunction)} for
-   * those.
+   * <p>A preset, for the same reason {@link #readAccess} is: annotations cannot carry code. Build
+   * the {@code CollectionDescription} programmatically and use {@code
+   * Field.creatableBy(AccessFunction)} when access depends on the caller or sibling input. A custom
+   * create function receives the complete parsed candidate through {@link
+   * AccessContext#requireInput()}.
    */
-  WriteAccess writeAccess() default WriteAccess.INHERITED;
+  WriteAccess createAccess() default WriteAccess.INHERITED;
+
+  /** Who may supply this field when updating a resource. */
+  WriteAccess updateAccess() default WriteAccess.INHERITED;
 
   boolean requiredOnCreate() default false;
 

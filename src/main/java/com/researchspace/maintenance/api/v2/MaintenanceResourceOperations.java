@@ -59,6 +59,16 @@ public final class MaintenanceResourceOperations
   }
 
   @Override
+  public List<ScheduledMaintenance> createMany(List<ParsedDocument> documents, User actor) {
+    return manager.createResources(
+        documents.stream()
+            .map(ApiV2MaintenanceInput::from)
+            .map(ApiV2MaintenanceInput::toScheduledMaintenance)
+            .toList(),
+        actor);
+  }
+
+  @Override
   public Optional<ScheduledMaintenance> update(Long id, ParsedDocument document, User actor) {
     return manager.updateResource(id, document, actor);
   }

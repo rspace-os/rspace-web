@@ -5,6 +5,7 @@ import com.researchspace.dao.CollectionDao;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
+import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.CollectionManager;
@@ -21,8 +22,6 @@ import java.util.Optional;
  */
 public abstract class AbstractCollectionManager<T, ID extends Serializable>
     implements CollectionManager<T, ID> {
-
-  private static final int MAX_BULK_ROWS = 1000;
 
   private final CollectionDao<T, ID> collectionDao;
   private final CollectionDescription<T> collectionDescription;
@@ -55,6 +54,20 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
     validateResource(resource);
     T saved = collectionDao.save(resource);
     resourcesChanged();
+    return saved;
+  }
+
+  @Override
+  public List<T> createResources(List<T> resources, User actor) {
+    authorizeMutation(actor);
+    if (resources.size() > CollectionMutationLimits.MAX_BULK_CREATE_ROWS) {
+      throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
+    }
+    resources.forEach(this::validateResource);
+    List<T> saved = resources.stream().map(collectionDao::save).toList();
+    if (!saved.isEmpty()) {
+      resourcesChanged();
+    }
     return saved;
   }
 
@@ -135,8 +148,10 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
     if (request.filter() == null) {
       throw new CollectionMutationException(CollectionMutationException.Reason.FILTER_REQUIRED);
     }
-    List<T> matches = collectionDao.getResources(request, MAX_BULK_ROWS + 1);
-    if (matches.size() > MAX_BULK_ROWS) {
+    List<T> matches =
+        collectionDao.getResources(
+            request, CollectionMutationLimits.MAX_BULK_UPDATE_DELETE_ROWS + 1);
+    if (matches.size() > CollectionMutationLimits.MAX_BULK_UPDATE_DELETE_ROWS) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }
     return matches;

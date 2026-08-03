@@ -2,6 +2,7 @@ package com.researchspace.maintenance.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -13,8 +14,10 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
+import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
+import com.researchspace.model.collection.FilterExpression;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -72,27 +75,40 @@ class ApiV2MaintenanceResourceTest {
   }
 
   @Test
-  void declaresPublicReadsAndSysadminWrites() {
+  void constrainsAnonymousReadsToMaintenanceThatHasNotEnded() {
     User member = mock(User.class);
     User sysadmin = mock(User.class);
     when(sysadmin.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
 
-    assertFalse(
+    AccessResult.AllowedWhere anonymous =
+        assertInstanceOf(
+            AccessResult.AllowedWhere.class,
+            ApiV2MaintenanceResource.DESCRIPTION
+                .accessPolicy()
+                .readAccess()
+                .check(new AccessContext(null, Operation.READ, "maintenances")));
+    FilterExpression.Comparison constraint =
+        assertInstanceOf(FilterExpression.Comparison.class, anonymous.constraint());
+    assertEquals("endDate", constraint.field());
+    assertEquals(Operator.GREATER_THAN, constraint.operator());
+    assertInstanceOf(Date.class, constraint.values().get(0));
+
+    assertInstanceOf(
+        AccessResult.Allowed.class,
         ApiV2MaintenanceResource.DESCRIPTION
             .accessPolicy()
-            .read()
-            .check(new AccessContext(null, Operation.READ, "maintenances"))
-            .isDenied());
+            .readAccess()
+            .check(new AccessContext(member, Operation.READ, "maintenances")));
     assertTrue(
         ApiV2MaintenanceResource.DESCRIPTION
             .accessPolicy()
-            .update()
+            .updateAccess()
             .check(new AccessContext(member, Operation.UPDATE, "maintenances", 1L))
             .isDenied());
     assertFalse(
         ApiV2MaintenanceResource.DESCRIPTION
             .accessPolicy()
-            .update()
+            .updateAccess()
             .check(new AccessContext(sysadmin, Operation.UPDATE, "maintenances", 1L))
             .isDenied());
   }

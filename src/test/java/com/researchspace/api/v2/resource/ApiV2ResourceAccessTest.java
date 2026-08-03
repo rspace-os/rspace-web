@@ -243,6 +243,7 @@ class ApiV2ResourceAccessTest {
                     AccessFunction.authenticated(),
                     AccessFunction.authenticated(),
                     documented(context -> AccessResult.allowedWhere(ownRows)),
+                    AccessFunction.authenticated(),
                     AccessFunction.authenticated()),
                 AccessFunction.anyone()));
 
@@ -365,6 +366,139 @@ class ApiV2ResourceAccessTest {
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.authenticated());
+  }
+
+  @Test
+  @DisplayName("custom create access receives the complete parsed candidate")
+  void customCreateAccessReceivesParsedInput() {
+    AccessFunction allowedSecret =
+        documented(
+            context ->
+                "allowed".equals(context.requireInput().values().get("secret"))
+                    ? AccessResult.allowed()
+                    : AccessResult.denied(AccessPolicy.FORBIDDEN));
+    AccessPolicy policy =
+        new AccessPolicy(
+            AccessFunction.authenticated(),
+            allowedSecret,
+            AccessFunction.authenticated(),
+            AccessFunction.authenticated(),
+            AccessFunction.never());
+    CollectionDescription<Widget> description =
+        new CollectionDescription<>(
+            "widgets",
+            Widget.class,
+            List.of(
+                ID,
+                Field.writable(
+                    "secret",
+                    "secret",
+                    CollectionFieldTypes.text(),
+                    Widget::secret,
+                    (widget, value) -> {})),
+            List.of(),
+            "id",
+            List.of(new Sort("id", true)),
+            policy);
+    ApiV2ResourceRegistration<Widget, Long> widgets = register(description);
+    User actor = user(false);
+    when(operations.create(any(), any())).thenReturn(new Widget(7L, "allowed"));
+
+    assertEquals(7L, widgets.create(secretBody("allowed"), actor).get("id"));
+    assertThrows(
+        org.apache.shiro.authz.AuthorizationException.class,
+        () -> widgets.create(secretBody("denied"), actor));
+  }
+
+  @Test
+  @DisplayName("custom bulk create access receives every candidate in request order")
+  void customBulkCreateAccessReceivesAllParsedInputs() throws Exception {
+    AccessFunction twoOrderedDocuments =
+        documented(
+            context ->
+                context.inputs().stream()
+                        .map(document -> document.values().get("secret"))
+                        .toList()
+                        .equals(List.of("first", "second"))
+                    ? AccessResult.allowed()
+                    : AccessResult.denied(AccessPolicy.FORBIDDEN));
+    AccessPolicy policy =
+        new AccessPolicy(
+            AccessFunction.authenticated(),
+            twoOrderedDocuments,
+            AccessFunction.authenticated(),
+            AccessFunction.authenticated(),
+            AccessFunction.never());
+    CollectionDescription<Widget> description =
+        new CollectionDescription<>(
+            "widgets",
+            Widget.class,
+            List.of(
+                ID,
+                Field.writable(
+                    "secret",
+                    "secret",
+                    CollectionFieldTypes.text(),
+                    Widget::secret,
+                    (widget, value) -> {})),
+            List.of(),
+            "id",
+            List.of(new Sort("id", true)),
+            policy);
+    ApiV2ResourceRegistration<Widget, Long> widgets = register(description);
+    when(operations.createMany(any(), any()))
+        .thenReturn(List.of(new Widget(7L, "first"), new Widget(8L, "second")));
+
+    assertEquals(
+        2,
+        widgets
+            .createMany(
+                new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readTree("{\"docs\":[{\"secret\":\"first\"},{\"secret\":\"second\"}]}"),
+                user(false))
+            .docs()
+            .size());
+  }
+
+  @Test
+  @DisplayName("custom field create access receives sibling input")
+  void customFieldCreateAccessReceivesSiblingInput() {
+    AccessFunction allowedSecret =
+        documented(
+            context ->
+                "allowed".equals(context.requireInput().values().get("secret"))
+                    ? AccessResult.allowed()
+                    : AccessResult.denied(AccessPolicy.FORBIDDEN));
+    CollectionDescription<Widget> description =
+        new CollectionDescription<>(
+            "widgets",
+            Widget.class,
+            List.of(
+                ID,
+                Field.writable(
+                        "secret",
+                        "secret",
+                        CollectionFieldTypes.text(),
+                        Widget::secret,
+                        (widget, value) -> {})
+                    .creatableBy(allowedSecret)),
+            List.of(),
+            "id",
+            List.of(new Sort("id", true)),
+            AccessPolicy.authenticated());
+    ApiV2ResourceRegistration<Widget, Long> widgets = register(description);
+    User actor = user(false);
+    when(operations.create(any(), any())).thenReturn(new Widget(7L, "allowed"));
+
+    assertEquals(7L, widgets.create(secretBody("allowed"), actor).get("id"));
+    assertThrows(
+        DocumentValidationException.class, () -> widgets.create(secretBody("denied"), actor));
+  }
+
+  private static com.fasterxml.jackson.databind.JsonNode secretBody(String value) {
+    return new com.fasterxml.jackson.databind.ObjectMapper()
+        .createObjectNode()
+        .put("secret", value);
   }
 
   @Test

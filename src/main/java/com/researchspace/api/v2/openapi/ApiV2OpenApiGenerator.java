@@ -38,6 +38,7 @@ public final class ApiV2OpenApiGenerator {
           ResourceOperation.COUNT, "get",
           ResourceOperation.READ, "get",
           ResourceOperation.CREATE, "post",
+          ResourceOperation.BULK_CREATE, "post",
           ResourceOperation.UPDATE, "patch",
           ResourceOperation.BULK_UPDATE, "patch",
           ResourceOperation.DELETE, "delete",
@@ -141,11 +142,13 @@ public final class ApiV2OpenApiGenerator {
     String collectionPath = "/api/v2/" + resource.resourceName();
     String itemPath = collectionPath + "/{id}";
     String countPath = collectionPath + "/count";
+    String bulkPath = collectionPath + "/bulk";
     String component = componentNames.get(resource.resourceName());
     for (ResourceOperation operation : resource.exposedOperations()) {
       String path =
           switch (operation) {
             case COUNT -> countPath;
+            case BULK_CREATE -> bulkPath;
             case READ, UPDATE, DELETE -> itemPath;
             default -> collectionPath;
           };
@@ -193,12 +196,29 @@ public final class ApiV2OpenApiGenerator {
       result.put("parameters", parameters);
     }
     if (operation == ResourceOperation.CREATE
+        || operation == ResourceOperation.BULK_CREATE
         || operation == ResourceOperation.UPDATE
         || operation == ResourceOperation.BULK_UPDATE) {
-      String requestComponent =
-          component + (operation == ResourceOperation.CREATE ? "Create" : "Update");
       Map<String, Object> media = new LinkedHashMap<>();
-      media.put("schema", ref(requestComponent));
+      if (operation == ResourceOperation.BULK_CREATE) {
+        media.put(
+            "schema",
+            ordered(
+                "type",
+                "object",
+                "required",
+                List.of("docs"),
+                "additionalProperties",
+                false,
+                "properties",
+                Map.of(
+                    "docs",
+                    ordered("type", "array", "minItems", 1, "items", ref(component + "Create")))));
+      } else {
+        String requestComponent =
+            component + (operation == ResourceOperation.CREATE ? "Create" : "Update");
+        media.put("schema", ref(requestComponent));
+      }
       putIfNotNull(media, "example", documentation.requestExample());
       result.put("requestBody", ordered("required", true, "content", Map.of(JSON, media)));
     }
@@ -211,10 +231,10 @@ public final class ApiV2OpenApiGenerator {
   private static AccessDocumentation access(
       AccessPolicySchema access, ResourceOperation operation) {
     return switch (operation) {
-      case LIST, COUNT, READ -> access.read();
-      case CREATE -> access.create();
-      case UPDATE, BULK_UPDATE -> access.update();
-      case DELETE, BULK_DELETE -> access.delete();
+      case LIST, COUNT, READ -> access.readAccess();
+      case CREATE, BULK_CREATE -> access.createAccess();
+      case UPDATE, BULK_UPDATE -> access.updateAccess();
+      case DELETE, BULK_DELETE -> access.deleteAccess();
     };
   }
 
@@ -223,10 +243,7 @@ public final class ApiV2OpenApiGenerator {
         "security",
         access.authenticationRequirement() == AuthenticationRequirement.PUBLIC
             ? List.of()
-            : List.of(
-                Map.of("sessionCookie", List.of()),
-                Map.of("apiKey", List.of()),
-                Map.of("bearerAuth", List.of())));
+            : List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
     operation.put(
         "x-rspace-access",
         ordered(
@@ -314,8 +331,9 @@ public final class ApiV2OpenApiGenerator {
                   CollectionQueryLimits.MAX_RELATIONSHIP_DEPTH,
                   "default",
                   0),
-              "Relationship expansion depth. The response may contain references or expanded"
-                  + " documents."));
+              "Relationship expansion depth. At depth 0, the response is the canonical update"
+                  + " reference object and value is the raw target ID. At greater depth, value is"
+                  + " the expanded read document; relationTo and globalId remain stable."));
       parameters.add(
           fieldset("fields", schema, resourceSchemas, "Fields to include by resource type."));
       parameters.add(
@@ -466,12 +484,15 @@ public final class ApiV2OpenApiGenerator {
       String component,
       OpenApiOperationDocumentation documentation) {
     Map<String, Object> responses = new LinkedHashMap<>();
-    String successStatus = operation == ResourceOperation.CREATE ? "201" : "200";
+    String successStatus =
+        operation == ResourceOperation.CREATE || operation == ResourceOperation.BULK_CREATE
+            ? "201"
+            : "200";
     Map<String, Object> successSchema =
         switch (operation) {
           case LIST -> listResult(ref(component + "Read"));
           case COUNT -> ref("ApiV2CountResult");
-          case BULK_UPDATE, BULK_DELETE -> bulkResult(ref(component + "Read"));
+          case BULK_CREATE, BULK_UPDATE, BULK_DELETE -> bulkResult(ref(component + "Read"));
           default -> ref(component + "Read");
         };
     Map<String, Object> successMedia = new LinkedHashMap<>();
@@ -499,6 +520,7 @@ public final class ApiV2OpenApiGenerator {
       responses.put("404", responseRef("NotFound"));
     }
     if (operation == ResourceOperation.CREATE
+        || operation == ResourceOperation.BULK_CREATE
         || operation == ResourceOperation.UPDATE
         || operation == ResourceOperation.BULK_UPDATE) {
       responses.put("415", responseRef("UnsupportedMediaType"));
@@ -631,7 +653,12 @@ public final class ApiV2OpenApiGenerator {
       applyDocumentation(property, field.openApi());
       property.put(
           "x-rspace-access",
-          accessExtension(writeOperation == null ? field.readAccess() : field.writeAccess()));
+          accessExtension(
+              writeOperation == null
+                  ? field.readAccess()
+                  : writeOperation == WriteOperation.CREATE
+                      ? field.createAccess()
+                      : field.updateAccess()));
       if (writeOperation == null && field.readOnly()) {
         property.put("readOnly", true);
       }
@@ -672,10 +699,10 @@ public final class ApiV2OpenApiGenerator {
         "x-rspace-access",
         accessExtension(
             writeOperation == null
-                ? resource.access().read()
+                ? resource.access().readAccess()
                 : writeOperation == WriteOperation.CREATE
-                    ? resource.access().create()
-                    : resource.access().update()));
+                    ? resource.access().createAccess()
+                    : resource.access().updateAccess()));
     return schema;
   }
 
@@ -686,8 +713,13 @@ public final class ApiV2OpenApiGenerator {
         .targetResources()
         .forEach(
             target -> {
-              variants.add(ref(names.get(target) + "Reference"));
-              variants.add(ref(names.get(target) + "Read"));
+              String prefix = relationship.globalIdPrefixesByTarget().get(target);
+              variants.add(
+                  prefix == null
+                      ? ref(names.get(target) + "Reference")
+                      : globalReferenceSchema(names.get(target) + "Reference", prefix));
+              variants.add(
+                  expandedReferenceSchema(target, ref(names.get(target) + "Read"), prefix));
             });
     Map<String, Object> value = ordered("oneOf", variants);
     return relationship.cardinality() == RelationshipCardinality.TO_MANY
@@ -701,7 +733,7 @@ public final class ApiV2OpenApiGenerator {
     Set<RelationshipInputForm> forms = relationship.inputForms().getOrDefault(operation, Set.of());
     if (forms.contains(RelationshipInputForm.GLOBAL_ID)) {
       String alternatives =
-          relationship.globalIdPrefixes().stream()
+          relationship.globalIdPrefixesByTarget().values().stream()
               .map(ApiV2OpenApiGenerator::escapeEcmaRegex)
               .collect(java.util.stream.Collectors.joining("|"));
       variants.add(
@@ -711,18 +743,72 @@ public final class ApiV2OpenApiGenerator {
               "pattern",
               "^(?:" + alternatives + ")\\d+$",
               "example",
-              relationship.globalIdPrefixes().get(0) + "1",
+              relationship.globalIdPrefixesByTarget().values().iterator().next() + "1",
               "description",
               "RSpace global identifier. Permitted prefixes: "
-                  + String.join(", ", relationship.globalIdPrefixes())
+                  + String.join(", ", relationship.globalIdPrefixesByTarget().values())
                   + "."));
     }
     if (forms.contains(RelationshipInputForm.OBJECT)) {
       relationship
           .targetResources()
-          .forEach(target -> variants.add(ref(names.get(target) + "Reference")));
+          .forEach(
+              target -> {
+                String referenceComponent = names.get(target) + "Reference";
+                String prefix = relationship.globalIdPrefixesByTarget().get(target);
+                variants.add(
+                    prefix == null
+                        ? ref(referenceComponent)
+                        : globalInputReferenceSchema(referenceComponent, prefix));
+              });
     }
     return variants.size() == 1 ? variants.get(0) : ordered("oneOf", variants);
+  }
+
+  private static Map<String, Object> globalReferenceSchema(
+      String referenceComponent, String prefix) {
+    return ordered(
+        "allOf",
+        List.of(
+            ref(referenceComponent),
+            ordered(
+                "type",
+                "object",
+                "required",
+                List.of("globalId"),
+                "properties",
+                ordered("globalId", globalIdSchema(prefix)))));
+  }
+
+  private static Map<String, Object> globalInputReferenceSchema(
+      String referenceComponent, String prefix) {
+    return ordered(
+        "allOf",
+        List.of(
+            ref(referenceComponent),
+            ordered("type", "object", "properties", ordered("globalId", globalIdSchema(prefix)))));
+  }
+
+  private static Map<String, Object> expandedReferenceSchema(
+      String target, Map<String, Object> value, String prefix) {
+    List<String> required = new ArrayList<>(List.of("relationTo", "value"));
+    Map<String, Object> properties =
+        ordered("relationTo", ordered("type", "string", "const", target), "value", value);
+    if (prefix != null) {
+      required.add("globalId");
+      properties.put("globalId", globalIdSchema(prefix));
+    }
+    return ordered("type", "object", "required", required, "properties", properties);
+  }
+
+  private static Map<String, Object> globalIdSchema(String prefix) {
+    return ordered(
+        "type",
+        "string",
+        "pattern",
+        "^" + escapeEcmaRegex(prefix) + "\\d+$",
+        "example",
+        prefix + "1");
   }
 
   private static Map<String, Object> nullable(Map<String, Object> schema, boolean nullable) {
@@ -954,17 +1040,6 @@ public final class ApiV2OpenApiGenerator {
 
   private static Map<String, Object> securitySchemes() {
     return ordered(
-        "sessionCookie",
-        ordered(
-            "type",
-            "apiKey",
-            "in",
-            "cookie",
-            "name",
-            sessionCookieName(),
-            "description",
-            "Existing authenticated browser session. Deployments may configure a different cookie"
-                + " name."),
         "apiKey",
         ordered("type", "apiKey", "in", "header", "name", "apiKey"),
         "bearerAuth",
@@ -1024,6 +1099,7 @@ public final class ApiV2OpenApiGenerator {
           case COUNT -> "count";
           case READ -> "get";
           case CREATE -> "create";
+          case BULK_CREATE -> "createMany";
           case UPDATE -> "update";
           case BULK_UPDATE -> "updateMany";
           case DELETE -> "delete";
@@ -1038,6 +1114,7 @@ public final class ApiV2OpenApiGenerator {
       case COUNT -> "Count " + resource;
       case READ -> "Get one " + resource;
       case CREATE -> "Create one " + resource;
+      case BULK_CREATE -> "Create many " + resource;
       case UPDATE -> "Update one " + resource;
       case BULK_UPDATE -> "Update matching " + resource;
       case DELETE -> "Delete one " + resource;
@@ -1058,6 +1135,11 @@ public final class ApiV2OpenApiGenerator {
               + resource
               + ". A resource that is absent or not readable is reported as not found.";
       case CREATE -> "Creates one " + resource + " from the documented create schema.";
+      case BULK_CREATE ->
+          "Creates the supplied "
+              + resource
+              + " documents in input order. The batch is handled as one service-layer mutation;"
+              + " validation failure prevents the entire batch from being created.";
       case UPDATE -> "Partially updates one " + resource + " and returns the updated document.";
       case BULK_UPDATE ->
           "Updates every "
@@ -1087,14 +1169,6 @@ public final class ApiV2OpenApiGenerator {
       case LIKE -> "=like=";
       case EXISTS -> "=exists=";
     };
-  }
-
-  private static String sessionCookieName() {
-    String configured = System.getProperty("rs.session.cookie.name");
-    if (configured == null || configured.isBlank()) {
-      configured = System.getenv("RSPACE_SESSION_COOKIE_NAME");
-    }
-    return configured == null || configured.isBlank() ? "JSESSIONID" : configured.trim();
   }
 
   private static String escapeEcmaRegex(String value) {

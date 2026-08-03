@@ -8,12 +8,15 @@ import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
+import com.researchspace.model.collection.AccessDocumentation.AuthenticationRequirement;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.model.collection.ResourceRequest;
@@ -145,9 +148,27 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   }
 
   public Map<String, Object> create(JsonNode body, User actor) {
-    AccessContext context = authorizeWrite(Operation.CREATE, actor, null);
+    requireDocumentedAuthentication(Operation.CREATE, actor);
+    AccessContext base = new AccessContext(actor, Operation.CREATE, description.resourceName());
+    ParsedDocument document =
+        ApiV2DocumentParser.parseStructure(
+            body, description, WriteOperation.CREATE, createErrorKey, base);
+    AccessContext context = authorizeWrite(base.withInput(document));
+    ApiV2DocumentParser.authorizeFields(
+        body, description, WriteOperation.CREATE, createErrorKey, context);
     return crud.create(
-        body, actor, createErrorKey, narrowFields(context, FieldSelection.all()), context);
+        document, actor, createErrorKey, narrowFields(context, FieldSelection.all()), context);
+  }
+
+  public ApiV2BulkResult<Map<String, Object>> createMany(JsonNode body, User actor) {
+    requireDocumentedAuthentication(Operation.CREATE, actor);
+    AccessContext base = new AccessContext(actor, Operation.CREATE, description.resourceName());
+    List<ParsedDocument> documents =
+        ApiV2DocumentParser.parseManyStructure(body, description, createErrorKey, base);
+    AccessContext context = authorizeWrite(base.withInputs(documents));
+    ApiV2DocumentParser.authorizeManyFields(body, documents, description, createErrorKey, context);
+    return crud.createMany(
+        documents, actor, createErrorKey, narrowFields(context, FieldSelection.all()), context);
   }
 
   public Map<String, Object> update(String rawId, JsonNode body, User actor) {
@@ -180,7 +201,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     ID id = castId(rawId);
     AccessContext context =
         new AccessContext(actor, Operation.READ, description.resourceName(), id);
-    AccessResult result = description.accessPolicy().read().check(context);
+    AccessResult result = description.accessPolicy().readAccess().check(context);
     if (result.isDenied()) {
       return Optional.empty();
     }
@@ -238,8 +259,12 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
    * 201 body while looking configured and safe.
    */
   private AccessContext authorizeWrite(Operation operation, User actor, ID targetId) {
-    AccessContext context =
-        new AccessContext(actor, operation, description.resourceName(), targetId);
+    return authorizeWrite(
+        new AccessContext(actor, operation, description.resourceName(), targetId));
+  }
+
+  private AccessContext authorizeWrite(AccessContext context) {
+    Operation operation = context.operation();
     AccessResult result = decide(context, operation);
     if (result.constraintOrEmpty().isPresent()) {
       // No query to fold a constraint into, so fail loudly rather than proceed unconstrained.
@@ -258,6 +283,19 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
       throw refusal(denied.reasonCode());
     }
     return result;
+  }
+
+  private void requireDocumentedAuthentication(Operation operation, User actor) {
+    AuthenticationRequirement authentication =
+        description
+            .accessPolicy()
+            .forOperation(operation)
+            .documentation()
+            .orElseThrow()
+            .authenticationRequirement();
+    if (actor == null && authentication == AuthenticationRequirement.AUTHENTICATED) {
+      throw new ApiV2AuthenticationException("REST API v2 access requires authentication");
+    }
   }
 
   private FilterExpression idEquals(ID id) {
