@@ -13,7 +13,7 @@ import { action, observable, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { Suspense, startTransition, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import axios from "@/common/axios";
+import axios, { isAxiosError } from "@/common/axios";
 import { DEFAULT_STATE, type ExportConfig } from "@/Export/constants";
 import ExportDialogRaid from "@/Export/ExportDialogRaid";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -221,11 +221,7 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
         );
         addAlert(
           mkAlert({
-            variant:
-              response.data.indexOf("Please contact") > -1 ||
-              response.data.indexOf("failed for the following reason") > -1
-                ? "error"
-                : "success",
+            variant: "success",
             message: response.data,
           }),
         );
@@ -233,6 +229,15 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
       })
       .catch((error) => {
         console.log(error);
+        addAlert(
+          mkAlert({
+            variant: "error",
+            message:
+              isAxiosError(error) && typeof error.response?.data === "string"
+                ? error.response.data
+                : t("common:apiErrors.unknown"),
+          }),
+        );
       });
   };
 

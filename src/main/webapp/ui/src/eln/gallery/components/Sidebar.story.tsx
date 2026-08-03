@@ -80,6 +80,7 @@ export function DefaultSidebar(): React.ReactNode {
 /** Sidebar while browsing inside an S3 filestore root. */
 export const S3_FILESTORE_ID = 42;
 export function S3FilestoreSidebar(): React.ReactNode {
+  const { t } = useTranslation("gallery");
   const filestore = new Filestore({
     id: S3_FILESTORE_ID,
     name: "my-bucket",
@@ -87,6 +88,7 @@ export function S3FilestoreSidebar(): React.ReactNode {
     filesystemName: "s3",
     filesystemType: "S3",
     canWrite: true,
+    ownerName: t("unknownOwner"),
   });
   return <SidebarStory folderId={null} path={[filestore]} />;
 }

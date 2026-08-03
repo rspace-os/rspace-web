@@ -244,7 +244,7 @@ An example of this is provided by the StructuredDocumentController class.
 Legacy JavaScript uses `RS.msg("legacyjs.feature.message", ...args)`. Its
 messages live in `server.legacyJs.json` and use positional ICU arguments such
 as `{0}`. React and TypeScript code follows
-`DevDocs/DeveloperNotes/FrontendI18nKeys.md` and uses i18next directly.
+`DevDocs/DeveloperNotes/i18n.md` and uses i18next directly.
 Use the shared `formatList` helper for displayed lists. Tests use the real
 i18next instance (or the real test instance helpers), never a mocked `t`.
 

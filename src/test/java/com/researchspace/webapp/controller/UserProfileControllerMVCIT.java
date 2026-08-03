@@ -1057,7 +1057,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     ErrorList errorList = getErrorListFromAjaxReturnObject(result);
     assertNotNull(errorList);
     assertEquals(
-        "Self-declaring PI not enabled", errorList.getAllErrorMessagesAsStringsSeparatedBy(";"));
+        "Self-declaring PI not enabled.", errorList.getAllErrorMessagesAsStringsSeparatedBy(";"));
 
     // enable deployment property & try again
     propertyHolder.setSSOSelfDeclarePiEnabled(true);

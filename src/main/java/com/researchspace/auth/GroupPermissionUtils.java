@@ -15,7 +15,7 @@ import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.properties.IPropertyHolder;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.Permission;
@@ -27,7 +27,7 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
   private @Autowired UserGroupDao ugDao;
   private @Autowired UserDao userDao;
   private @Autowired IPropertyHolder properties;
-  private @Autowired OperationFailedMessageGenerator authMsgGenerator;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired SystemPropertyPermissionManager systemPropertyMgrPermUtils;
 
   @Override
@@ -121,15 +121,13 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
     }
     // this must come after RSPAC-1662 test above
     if (!permissionUtils.isPermitted(grp, PermissionType.WRITE, subject)) {
-      throwAuthException(subject, "remove user from group");
+      throwAuthException(subject, "errors.authorization.failure.removeUserFromGroup");
     }
     User userToRemove = loadUser(leaveCandidateUsername);
     if (userToRemove.hasRoleInGroup(grp, RoleInGroup.PI)
         && GroupType.LAB_GROUP.equals(grp.getGroupType())
         && !(subject.hasRoleInGroup(grp, RoleInGroup.PI) || subject.hasAdminRole())) {
-      throwAuthException(
-          subject,
-          "remove PI from group. " + "Only A PI or an admin can remove another PI from group.");
+      throwAuthException(subject, "errors.authorization.failure.removePiFromGroup");
     }
     return userToRemove;
   }
@@ -138,7 +136,8 @@ public class GroupPermissionUtils implements IGroupPermissionUtils {
     return userDao.getUserByUsername(leaveCandidateUsername);
   }
 
-  private void throwAuthException(User subject, String msg) {
-    throw new AuthorizationException(authMsgGenerator.getFailedMessage(subject, msg));
+  private void throwAuthException(User subject, String messageKey) {
+    throw new AuthorizationException(
+        messages.getMessage(messageKey, new Object[] {subject.getUsername()}));
   }
 }
