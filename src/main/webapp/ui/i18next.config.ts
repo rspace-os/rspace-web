@@ -14,9 +14,13 @@ export default defineConfig({
       "**/*.test.*",
       "**/*.spec.*",
       "**/*.story.*",
+      "**/*.stories.*",
       "src/test-stubs/**",
       "src/__tests__/**",
       "src/modules/common/i18n/**",
+      "src/modules/**/prototypes/**",
+      // Vendored shadcn primitives, excluded from Biome too (see biome.jsonc) — treat as read-only generated code.
+      "src/modules/common/ui/**",
     ],
     output: "src/modules/common/i18n/locales/{{language}}/{{namespace}}.json",
     primaryLanguage: "en-US",
@@ -37,6 +41,15 @@ export default defineConfig({
     resourcesFile: "src/modules/common/i18n/resources.d.ts",
   },
   lint: {
-    ignore: ["**/__tests__/**", "**/*.test.*", "**/*.spec.*", "**/*.story.*", "src/test-stubs/**"],
+    ignore: [
+      "**/__tests__/**",
+      "**/*.test.*",
+      "**/*.spec.*",
+      "**/*.story.*",
+      "**/*.stories.*",
+      "src/test-stubs/**",
+      "src/modules/**/prototypes/**",
+      "src/modules/common/ui/**",
+    ],
   },
 });

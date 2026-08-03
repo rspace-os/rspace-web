@@ -2,7 +2,11 @@
 export default interface Resources {
   "about": {
     "copyright": "© 2026 ResearchSpace",
-    "license": "RSpace is open-source under AGPL, and powered by open-source libraries.",
+    "description": "RSpace is open-source software for collaborative research data management, built around electronic lab notebooks, inventory, and external integrations.",
+    "license": "RSpace is powered by open-source libraries and distributed under the AGPL.",
+    "licensing": {
+      "heading": "Licensing"
+    },
     "links": {
       "changelog": "Changelog",
       "sourceCode": "Source Code",
@@ -12,11 +16,14 @@ export default interface Resources {
       "alt": "RSpace Logo"
     },
     "support": {
-      "accountLabel": "For account and group queries, email:",
-      "generalLabel": "For general support, email:"
+      "accountsLink": "Accounts and groups",
+      "generalLink": "General support",
+      "heading": "Support"
     },
+    "tagline": "RSpace - Research Data Platform",
     "title": "About RSpace",
     "version": {
+      "label": "Version {version}",
       "loading": "Loading version...",
       "unavailable": "Version unavailable"
     }
@@ -753,6 +760,34 @@ export default interface Resources {
       "insertButton": "Insert"
     }
   },
+  "booking": {
+    "dayTimeline": {
+      "event": {
+        "busy": "Busy",
+        "hideDetails": "Hide details for {title}, {period}",
+        "label": "{title}, {period}",
+        "labelWithNotes": "{title}, {period}. {notes}",
+        "showDetails": "Show details for {title}, {period}"
+      },
+      "now": {
+        "afterWindow": "Now {time}, after visible window",
+        "current": "Now {time}"
+      },
+      "scrollLabel": "24-hour calendar for {date} in {timezone}",
+      "zoom": {
+        "in": "Zoom in",
+        "legend": "Timeline zoom",
+        "out": "Zoom out"
+      }
+    },
+    "sample": {
+      "check": "Sample check {number}.",
+      "maintenance": {
+        "notes": "Laser alignment and safety inspection.",
+        "title": "Scheduled maintenance"
+      }
+    }
+  },
   "common": {
     "accessibilityTips": {
       "buttonLabel": "Accessibility tips",
@@ -821,6 +856,7 @@ export default interface Resources {
       "none": "None",
       "ok": "OK",
       "open": "Open",
+      "previous": "Previous",
       "publish": "Publish",
       "remove": "Remove",
       "republish": "Republish",
@@ -854,9 +890,11 @@ export default interface Resources {
       "warningTitle": "Could not authenticate via API"
     },
     "apiDocs": {
+      "pageTitle": "RSpace API Documentation | ResearchSpace",
       "sources": {
         "eln": "RSpace ELN",
-        "inventory": "RSpace Inventory"
+        "inventory": "RSpace Inventory",
+        "v2": "RSpace v2 (beta)"
       }
     },
     "apiErrors": {
@@ -898,6 +936,7 @@ export default interface Resources {
       "dialogHeader": "dialog header",
       "errorLoadingDetails": "Error loading your details",
       "goTo": "Go to...",
+      "logIn": "Log In",
       "logOut": "Log Out",
       "mainLinks": "main links",
       "mainNavigation": "Main Navigation",
@@ -912,6 +951,10 @@ export default interface Resources {
       "published": "Published",
       "release": "Release",
       "sections": {
+        "booking": {
+          "subheader": "Reserve instruments and equipment",
+          "title": "Booking"
+        },
         "gallery": {
           "subheader": "Your files in RSpace and connected filestores",
           "title": "Gallery"
@@ -932,7 +975,9 @@ export default interface Resources {
           "subheader": "Notebooks and documents",
           "title": "Workspace"
         }
-      }
+      },
+      "switchSection": "Switch section",
+      "userIdentity": "{fullName} ({username})"
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
@@ -1051,6 +1096,7 @@ export default interface Resources {
       "zenodo": "8i37k8kjqz-zenodo-integration"
     },
     "helpDocs": {
+      "brand": "Support",
       "chatWithUs": "Chat with us",
       "documentation": "RSpace Documentation",
       "openHelp": "Open Help",
@@ -1126,6 +1172,23 @@ export default interface Resources {
       "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
     },
     "loading": "Loading",
+    "maintenanceMode": {
+      "description": "Scheduled maintenance is in progress now. Please try again later.",
+      "heading": "Maintenance mode",
+      "recheckNotice": "This page rechecks automatically every 30 seconds, or you can <internalLink to=\"/login\">check the status now</internalLink>."
+    },
+    "notFound": {
+      "message": "Page not found"
+    },
+    "pageTitles": {
+      "withProduct": "{pageTitle} | RSpace"
+    },
+    "pagination": {
+      "label": "Pagination",
+      "morePages": "More pages",
+      "nextPage": "Go to next page",
+      "previousPage": "Go to previous page"
+    },
     "profile": {
       "accountActivity": {
         "action": "Action",
@@ -1446,6 +1509,11 @@ export default interface Resources {
       "titleSingle": "Share <strong>{name}</strong>",
       "unknownFolder": "Unknown folder",
       "updatedSuccessfully": "Shares updated successfully."
+    },
+    "sidebar": {
+      "description": "Displays the mobile sidebar.",
+      "title": "Sidebar",
+      "toggle": "Toggle sidebar"
     },
     "stoichiometry": {
       "addReagent": {
