@@ -38,102 +38,6 @@ type HeaderCell = {
   numeric: boolean;
   label: string;
 };
-const makeBookingHeaderCells = (t: TFunction<"workspace">): Array<HeaderCell> => [
-  {
-    id: "bookingID",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.bookingId"),
-  },
-  {
-    id: "equipmentName",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.equipmentName"),
-  },
-  {
-    id: "manufacturer",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.manufacturer"),
-  },
-  {
-    id: "model",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.model"),
-  },
-  {
-    id: "requesterName",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.bookedBy"),
-  },
-  {
-    id: "start_time",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.startTime"),
-  },
-  {
-    id: "duration",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.durationMins"),
-  },
-  {
-    id: "bookingType",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.bookingType"),
-  },
-  {
-    id: "status",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.status"),
-  },
-];
-const makeEquipmentHeaderCells = (t: TFunction<"workspace">): Array<HeaderCell> => [
-  {
-    id: "equipmentID",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.equipmentId"),
-  },
-  {
-    id: "equipmentName",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.equipmentName"),
-  },
-  {
-    id: "manufacturer",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.manufacturer"),
-  },
-  {
-    id: "model",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.model"),
-  },
-  {
-    id: "bookingType",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.bookingType"),
-  },
-  {
-    id: "bookingID",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.lastUse"),
-  },
-  {
-    id: "start_time",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.onDate"),
-  },
-  {
-    id: "requesterName",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.bookedBy"),
-  },
-];
-// Notes CAN be edited for bookings, however, only 3% of people ever add an additional note
-// therefore its OK to just cache notes in the DB along with the other booking details
-const makeMaintenanceNotesCell = (t: TFunction<"workspace">): HeaderCell => ({
-  id: "maintenance_notes",
-  numeric: false,
-  label: t("tinymce.clustermarket.columns.maintenanceNotes"),
-});
 const ORDER_KEY = "clustermarketSearchOrder";
 const ORDER_BY_KEY = "clustermarketSearchOrderBy";
 const DEFAULT_ORDER = Order.asc;
@@ -161,9 +65,104 @@ function Clustermarket({
   const [isMaintenance, setIsMaintenance] = useLocalStorage("clustermarketIsMaintenance", false);
   const [orderBy, setOrderBy] = useLocalStorage(ORDER_BY_KEY, DEFAULT_ORDERBY);
   const visibleHeaderCells = useMemo(() => {
-    const headers = bookingType === BookingType.EQUIPMENT ? makeEquipmentHeaderCells(t) : makeBookingHeaderCells(t);
+    const bookingHeaderCells: Array<HeaderCell> = [
+      {
+        id: "bookingID",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.bookingId"),
+      },
+      {
+        id: "equipmentName",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.equipmentName"),
+      },
+      {
+        id: "manufacturer",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.manufacturer"),
+      },
+      {
+        id: "model",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.model"),
+      },
+      {
+        id: "requesterName",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.bookedBy"),
+      },
+      {
+        id: "start_time",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.startTime"),
+      },
+      {
+        id: "duration",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.durationMins"),
+      },
+      {
+        id: "bookingType",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.bookingType"),
+      },
+      {
+        id: "status",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.status"),
+      },
+    ];
+    const equipmentHeaderCells: Array<HeaderCell> = [
+      {
+        id: "equipmentID",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.equipmentId"),
+      },
+      {
+        id: "equipmentName",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.equipmentName"),
+      },
+      {
+        id: "manufacturer",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.manufacturer"),
+      },
+      {
+        id: "model",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.model"),
+      },
+      {
+        id: "bookingType",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.bookingType"),
+      },
+      {
+        id: "bookingID",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.lastUse"),
+      },
+      {
+        id: "start_time",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.onDate"),
+      },
+      {
+        id: "requesterName",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.bookedBy"),
+      },
+    ];
+    const headers = bookingType === BookingType.EQUIPMENT ? equipmentHeaderCells : bookingHeaderCells;
     if (isMaintenance) {
-      headers.splice(4, 0, makeMaintenanceNotesCell(t));
+      // Notes CAN be edited for bookings, however, only 3% of people ever add an additional note
+      // therefore its OK to just cache notes in the DB along with the other booking details
+      headers.splice(4, 0, {
+        id: "maintenance_notes",
+        numeric: false,
+        label: t("tinymce.clustermarket.columns.maintenanceNotes"),
+      });
     }
     return headers;
   }, [bookingType, isMaintenance, t]);
