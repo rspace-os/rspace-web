@@ -7,7 +7,9 @@ export class ToolbarCommonActions {
   readonly printButton: Locator;
 
   constructor(page: Page) {
-    this.closeLink = page.getByRole("link", { name: /^(Close|Back)$/ });
+    this.closeLink = page
+      .getByRole("link", { name: "Close", exact: true })
+      .or(page.getByRole("link", { name: "Back", exact: true }));
     this.deleteButton = page.getByRole("button", { name: "Delete" });
     this.exportButton = page.getByRole("button", { name: "Export" });
     this.printButton = page.getByRole("button", { name: "Print" });

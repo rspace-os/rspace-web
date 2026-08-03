@@ -64,7 +64,7 @@ export class WorkspaceSearchBar {
     await this.setFilter("Owner(s)");
     const combobox = this.page.getByRole("combobox", { name: "Select owner(s)" });
     await combobox.fill(query);
-    await this.page.getByRole("option", { name: new RegExp(query) }).click();
+    await this.page.getByRole("option", { name: query }).click();
     await awaitTableRefresh(this.page, async () => {
       await Promise.all([
         this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
@@ -137,7 +137,7 @@ export class WorkspaceSearchBar {
   async setRowOwner(idx: number, query: string): Promise<void> {
     const combobox = this.rowValueCombobox(idx);
     await combobox.fill(query);
-    await this.page.getByRole("option", { name: new RegExp(query) }).click();
+    await this.page.getByRole("option", { name: query }).click();
   }
 
   async setRowTag(idx: number, tag: string): Promise<void> {

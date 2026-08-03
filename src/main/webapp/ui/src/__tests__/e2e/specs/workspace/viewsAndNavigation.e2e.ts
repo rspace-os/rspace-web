@@ -162,8 +162,6 @@ test.describe(`Workspace views and navigation`, () => {
     await test.step("Then its Global ID link is visible with the expected format", async () => {
       const link = pageWorkspace.table.globalIdLink(docName);
       await expect(link).toBeVisible();
-      // `.toHaveText(regExp)` matches raw (untrimmed) textContent, and this
-      // legacy anchor is JSP-indented (e.g. "\n    SD5920\n") — trim first.
       const text = (await link.textContent())?.trim() ?? "";
       expect(text).toMatch(/^(SD|NB|FL)\d+$/);
     });

@@ -170,7 +170,7 @@ test.describe(`Workspace search operations`, () => {
       });
 
       await test.step("Then a validation message tells me the term must be at least 5 characters", async () => {
-        await expect(page.getByText(/at least 5 characters/i)).toBeVisible();
+        await expect(page.getByText("at least 5 characters")).toBeVisible();
       });
     } finally {
       await ctx.close();
