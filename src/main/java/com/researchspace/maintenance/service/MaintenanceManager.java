@@ -1,64 +1,127 @@
 package com.researchspace.maintenance.service;
 
+import com.researchspace.maintenance.dao.MaintenanceDao;
+import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
-import java.util.Collections;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.impl.AbstractCollectionManager;
 import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectRetrievalFailureException;
+import org.springframework.stereotype.Service;
 
-/** For managing scheduled maintenance periods. */
-public interface MaintenanceManager {
+/**
+ * Manages scheduled maintenance and publishes successful changes so the derived next-maintenance
+ * cache can be invalidated.
+ */
+@Service("maintenanceManager")
+public class MaintenanceManager extends AbstractCollectionManager<ScheduledMaintenance, Long> {
+
+  private final MaintenanceDao maintenanceDao;
+  private final ApplicationEventPublisher events;
+  private final MessageSourceUtils messages;
+
+  public MaintenanceManager(
+      MaintenanceDao maintenanceDao,
+      ApplicationEventPublisher events,
+      MessageSourceUtils messages) {
+    super(maintenanceDao, ApiV2MaintenanceResource.DESCRIPTION);
+    this.maintenanceDao = maintenanceDao;
+    this.events = events;
+    this.messages = messages;
+  }
 
   /**
    * Retrieves maintenance object by id.
    *
-   * @param id
-   * @return {@link ScheduledMaintenance} with given id
-   * @throws ObjectRetrievalFailureException if no object with given id
+   * @param id maintenance ID
+   * @return maintenance with the given ID
+   * @throws ObjectRetrievalFailureException if no object has the given ID
    */
-  ScheduledMaintenance getScheduledMaintenance(Long id);
-
-  /**
-   * Get all active or future scheduled maintenances, ordered by startDate.
-   *
-   * @return List of {@link ScheduledMaintenance} or empty list
-   */
-  List<ScheduledMaintenance> getAllFutureMaintenances();
-
-  /**
-   * Get old or expired maintenances, ordered by startDate.
-   *
-   * @return List of {@link ScheduledMaintenance} or empty list
-   */
-  default List<ScheduledMaintenance> getOldMaintenances() {
-    return Collections.emptyList();
+  public ScheduledMaintenance getScheduledMaintenance(Long id) {
+    return maintenanceDao.get(id);
   }
 
   /**
-   * Retrieves nearest scheduled maintenance (may be already active), if there is any.
+   * Gets all active or future scheduled maintenances, ordered by start date.
    *
-   * @param maintenance
-   * @return {@link ScheduledMaintenance} or ScheduledMaintenance.NULL if none found
+   * @return matching maintenances, or an empty list
    */
-  ScheduledMaintenance getNextScheduledMaintenance();
+  public List<ScheduledMaintenance> getAllFutureMaintenances() {
+    return maintenanceDao.getAllFutureMaintenances();
+  }
 
   /**
-   * Inserts or updates maintenance object. Can be only called by user with sysadmin role.
+   * Gets old or expired maintenances, ordered by start date.
    *
-   * @param maintenance
-   * @param user
-   * @return saved {@link ScheduledMaintenance} object
-   * @throws AuthorizationException if user doesn't have sysadmin role
+   * @return matching maintenances, or an empty list
    */
-  ScheduledMaintenance saveScheduledMaintenance(ScheduledMaintenance maintenance, User user);
+  public List<ScheduledMaintenance> getOldMaintenances() {
+    return maintenanceDao.getOldMaintenances();
+  }
 
   /**
-   * Removes maintenance objecdt by id. Can be only called by user with sysadmin role.
+   * Retrieves the nearest scheduled maintenance, which may already be active.
    *
-   * @param id
-   * @param sysUser
-   * @throws AuthorizationException if user doesn't have sysadmin role
+   * @return the nearest maintenance, or {@link ScheduledMaintenance#NULL} if none exists
    */
-  void removeScheduledMaintenance(Long id, User user);
+  @Cacheable(cacheNames = MaintenanceCacheInvalidator.CACHE_NAME)
+  public ScheduledMaintenance getNextScheduledMaintenance() {
+    return maintenanceDao.getNextScheduledMaintenance().orElse(ScheduledMaintenance.NULL);
+  }
+
+  /**
+   * Inserts or updates maintenance. Can only be called by a sysadmin.
+   *
+   * @param maintenance maintenance to save
+   * @param user authenticated user
+   * @return saved maintenance
+   * @throws AuthorizationException if the user is not a sysadmin
+   */
+  public ScheduledMaintenance saveScheduledMaintenance(
+      ScheduledMaintenance maintenance, User user) {
+    return createResource(maintenance, user);
+  }
+
+  /**
+   * Removes a maintenance by ID. Can only be called by a sysadmin.
+   *
+   * @param id maintenance ID
+   * @param user authenticated user
+   * @throws AuthorizationException if the user is not a sysadmin
+   */
+  public void removeScheduledMaintenance(Long id, User user) {
+    authorizeMutation(user);
+    maintenanceDao.remove(id);
+    resourcesChanged();
+  }
+
+  @Override
+  protected void authorizeMutation(User actor) {
+    if (!actor.hasRole(Role.SYSTEM_ROLE)) {
+      throw new AuthorizationException(
+          messages.getMessage("errors.authorization.maintenanceSysadminOnly"));
+    }
+  }
+
+  @Override
+  protected void validateResource(ScheduledMaintenance maintenance) {
+    if (!maintenance.hasValidWindow()) {
+      throw new MaintenanceOperationException(MaintenanceOperationException.Reason.INVALID_WINDOW);
+    }
+  }
+
+  @Override
+  protected Long getId(ScheduledMaintenance maintenance) {
+    return maintenance.getId();
+  }
+
+  @Override
+  protected void resourcesChanged() {
+    events.publishEvent(new MaintenanceChangedEvent());
+  }
 }
