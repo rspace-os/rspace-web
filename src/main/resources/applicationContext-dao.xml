@@ -62,4 +62,13 @@
     	</property>
     </bean>
 
+    <bean id="blazeCriteriaConfiguration"
+          class="com.blazebit.persistence.Criteria"
+          factory-method="getDefault" />
+    <bean id="criteriaBuilderFactory"
+          factory-bean="blazeCriteriaConfiguration"
+          factory-method="createCriteriaBuilderFactory">
+        <constructor-arg ref="sessionFactory" />
+    </bean>
+
 </beans>

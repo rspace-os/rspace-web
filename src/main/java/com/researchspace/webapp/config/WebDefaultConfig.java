@@ -1,6 +1,9 @@
 package com.researchspace.webapp.config;
 
 import com.researchspace.api.v1.controller.*;
+import com.researchspace.api.v2.auth.ApiV2Authenticator;
+import com.researchspace.api.v2.controller.ApiV2AuthenticationInterceptor;
+import com.researchspace.api.v2.controller.ApiV2PermissiveCorsInterceptor;
 import com.researchspace.auth.TimezoneAdjuster;
 import com.researchspace.auth.TimezoneAdjusterImpl;
 import com.researchspace.properties.PropertyHolder;
@@ -41,6 +44,12 @@ public class WebDefaultConfig {
   }
 
   @Bean
+  ApiV2AuthenticationInterceptor apiV2AuthenticationInterceptor(
+      ApiV2Authenticator apiV2Authenticator) {
+    return new ApiV2AuthenticationInterceptor(apiV2Authenticator);
+  }
+
+  @Bean
   PerformanceLoggingInterceptor performanceLoggingInterceptor() {
     return new PerformanceLoggingInterceptor(properties.getSlowLogThreshold());
   }
@@ -48,6 +57,11 @@ public class WebDefaultConfig {
   @Bean
   ApiPermissiveCorsInterceptor apiPermissiveCorsInterceptor() {
     return new ApiPermissiveCorsInterceptor();
+  }
+
+  @Bean
+  ApiV2PermissiveCorsInterceptor apiV2PermissiveCorsInterceptor() {
+    return new ApiV2PermissiveCorsInterceptor();
   }
 
   @Bean

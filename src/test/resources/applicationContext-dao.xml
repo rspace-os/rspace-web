@@ -51,4 +51,20 @@
     	</property>
     </bean>
 
+    <!--
+      This file shadows src/main/resources/applicationContext-dao.xml on the test classpath, so any
+      bean the main file adds must be mirrored here or every Spring test context that needs it fails
+      to load. MaintenanceDaoHibernate autowires CriteriaBuilderFactory (Blaze-Persistence) for the
+      REST API v2 collection queries; without these two beans, every integration test whose context
+      reaches maintenanceDao dies with NoSuchBeanDefinitionException, database or not.
+    -->
+    <bean id="blazeCriteriaConfiguration"
+          class="com.blazebit.persistence.Criteria"
+          factory-method="getDefault" />
+    <bean id="criteriaBuilderFactory"
+          factory-bean="blazeCriteriaConfiguration"
+          factory-method="createCriteriaBuilderFactory">
+        <constructor-arg ref="sessionFactory" />
+    </bean>
+
 </beans>

@@ -13,7 +13,7 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>3.0.1</version>
+    <version>3.1.0-junit6-r1-snapshot</version>
   </parent>
 
   <repositories>
@@ -46,6 +46,13 @@
 
   <dependencyManagement>
     <dependencies>
+      <!-- JUnit 6 no longer supplies Vintage. Keep the final JUnit 5 engine for JUnit 4 tests. -->
+      <dependency>
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+        <version>5.14.4</version>
+        <scope>test</scope>
+      </dependency>
       <dependency>
         <groupId>javax.cache</groupId>
         <artifactId>cache-api</artifactId>
@@ -867,6 +874,33 @@
       <artifactId>jackson-databind</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-core-jakarta</artifactId>
+      <version>2.2.48</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.yaml</groupId>
+          <artifactId>snakeyaml</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!--
+      MockServer brings the non-Jakarta swagger-core onto the test classpath. Keep its duplicate
+      classes API-compatible with the production Jakarta artifact used by OpenAPI generation.
+    -->
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-core</artifactId>
+      <version>2.2.48</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.yaml</groupId>
+          <artifactId>snakeyaml</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
       <version>${jackson.version}</version>
@@ -1393,6 +1427,28 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>com.blazebit</groupId>
+      <artifactId>blaze-persistence-core-api-jakarta</artifactId>
+      <version>${blaze-persistence.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.blazebit</groupId>
+      <artifactId>blaze-persistence-core-impl-jakarta</artifactId>
+      <version>${blaze-persistence.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.blazebit</groupId>
+      <artifactId>blaze-persistence-integration-hibernate-6.2</artifactId>
+      <version>${blaze-persistence.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.github.nstdio</groupId>
+      <artifactId>rsql-parser</artifactId>
+      <version>${rsql-parser.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.javassist</groupId>
       <artifactId>javassist</artifactId>
     </dependency>
@@ -1864,10 +1920,6 @@
     <dependency>
       <groupId>org.junit.vintage</groupId>
       <artifactId>junit-vintage-engine</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-migrationsupport</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -2672,6 +2724,7 @@
   </profiles>
 
   <properties>
+    <blaze-persistence.version>1.6.18</blaze-persistence.version>
     <!-- jetty -->
     <jetty.version>12.1.11</jetty.version>
     <slf4j.version>2.0.2</slf4j.version>
@@ -2689,6 +2742,7 @@
     <hibernate.logLevel>ERROR</hibernate.logLevel>
 
     <javax.cache.version>1.1.1</javax.cache.version>
+    <rsql-parser.version>2.4.0</rsql-parser.version>
 
     <hibernate.search.index>FTsearchIndices</hibernate.search.index>
     <lucene.attachment.searchIndex>LuceneFTsearchIndices</lucene.attachment.searchIndex>
