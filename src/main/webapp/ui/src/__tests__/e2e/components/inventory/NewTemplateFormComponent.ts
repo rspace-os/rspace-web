@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { delegateToForm, NewItemFormShell } from "./NewItemFormShell";
 import { TemplateFieldsEditor, type TemplateFieldType } from "./TemplateFieldsEditor";
 
-export function newTemplateFormComponent(page: Page, title: "New Template" | "New Instrument Template") {
+export function newTemplateFormComponent(page: Page, title: "New Sample Template" | "New Instrument Template") {
   const form = new NewItemFormShell(page, title);
   const fields = () => new TemplateFieldsEditor(page, form.section("Custom Fields"));
 

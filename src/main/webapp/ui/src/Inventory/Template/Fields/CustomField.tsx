@@ -183,7 +183,7 @@ function CustomField({
                   </Grid>
                 </Grid>
               </Box>
-              <DefaultValueField field={field} editing={editable} />
+              <DefaultValueField field={field} editing={editable} recordTypeName={recordTypeName} />
               {editable && <MoveButtons index={i} onClick={(newIndex) => onMove(newIndex)} />}
             </Box>
           )}

@@ -2591,7 +2591,7 @@ export default interface Resources {
       "newInstrument": "New Instrument",
       "newInstrumentTemplate": "New Instrument Template",
       "newSample": "New Sample",
-      "newTemplate": "New Template",
+      "newTemplate": "New Sample Template",
       "thirdPartyImport": "Third-Party Import"
     },
     "createOptions": {
@@ -3314,6 +3314,7 @@ export default interface Resources {
           "allRelationshipTypes": "All relationship types",
           "allowedRelationshipTypes": "Allowed relationship types",
           "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
+          "allowedRelationshipTypesExplanationInstrument": "The DataCite relationship types that links may use on instruments created from this template. Leave empty to allow all relationship types.",
           "none": "None"
         },
         "move": {
