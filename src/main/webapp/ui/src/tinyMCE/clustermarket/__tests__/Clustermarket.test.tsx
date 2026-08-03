@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import Clustermarket, { getOrder, getOrderBy } from "../Clustermarket";
 import { BookingType, Order } from "../Enums";
@@ -51,6 +51,9 @@ beforeEach(() => {
   mockAxios
     .onPut("/apps/clustermarket/equipment/details", { equipmentIDs: "2,3" })
     .reply(200, [EquipmentDetails["2"], EquipmentDetails["3"]]);
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 describe("Has defaultOrderBy", () => {
   test("when no value in localStorage then returns Order by start_time", () => {
@@ -146,7 +149,6 @@ describe("Renders page with booking data", () => {
   });
 
   test("adds noreferrer to links in inserted tables", async () => {
-    const originalTinymce = Object.getOwnPropertyDescriptor(window, "tinymce");
     const handlers = new Map<string, () => void>();
     const editor = {
       execCommand: vi.fn(),
@@ -154,41 +156,31 @@ describe("Renders page with booking data", () => {
       on: vi.fn((event: string, handler: () => void) => handlers.set(event, handler)),
       windowManager: { close: vi.fn() },
     };
-    Object.defineProperty(window, "tinymce", {
-      configurable: true,
-      value: { activeEditor: editor },
+    vi.stubGlobal("tinymce", { activeEditor: editor });
+
+    const user = userEvent.setup();
+    getWrapper({ clustermarket_web_url: "https://calira.example/" });
+    await findFirstByText("CURRENT_2");
+    // The row overrides its role to checkbox and also labels the checkbox
+    // input inside it, so both match the same accessible name; the row
+    // precedes its descendant in document order.
+    const [bookingRow] = screen.getAllByRole("checkbox", { name: /CURRENT_2/ });
+
+    await user.click(bookingRow);
+    expect(bookingRow).toBeChecked();
+
+    handlers.get("clustermarket-insert")?.();
+
+    expect(editor.execCommand).toHaveBeenCalledOnce();
+    const insertedHtml = editor.execCommand.mock.calls[0]?.[2] as string;
+    const container = document.createElement("div");
+    container.innerHTML = insertedHtml;
+    const links = Array.from(container.querySelectorAll("a"));
+
+    expect(links).toHaveLength(2);
+    links.forEach((link) => {
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noreferrer");
     });
-
-    try {
-      const user = userEvent.setup();
-      getWrapper({ clustermarket_web_url: "https://calira.example/" });
-      const bookingId = await findFirstByText("CURRENT_2");
-      const bookingRow = bookingId.closest("tr");
-      expect(bookingRow).not.toBeNull();
-      if (!bookingRow) throw new Error("Booking row is missing");
-
-      await user.click(bookingRow);
-      expect(bookingRow).toBeChecked();
-
-      handlers.get("clustermarket-insert")?.();
-
-      expect(editor.execCommand).toHaveBeenCalledOnce();
-      const insertedHtml = editor.execCommand.mock.calls[0]?.[2] as string;
-      const container = document.createElement("div");
-      container.innerHTML = insertedHtml;
-      const links = Array.from(container.querySelectorAll("a"));
-
-      expect(links).toHaveLength(2);
-      links.forEach((link) => {
-        expect(link).toHaveAttribute("target", "_blank");
-        expect(link).toHaveAttribute("rel", "noreferrer");
-      });
-    } finally {
-      if (originalTinymce) {
-        Object.defineProperty(window, "tinymce", originalTinymce);
-      } else {
-        Reflect.deleteProperty(window, "tinymce");
-      }
-    }
   });
 });
