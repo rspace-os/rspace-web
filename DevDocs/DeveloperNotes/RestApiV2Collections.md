@@ -204,6 +204,16 @@ Keep domain authorization, validation, transactions, audit events, and lifecycle
 manager. Override the default manager hooks for these rules. Do not copy the standard collection
 pipeline into a resource-specific service.
 
+Most collections return the same values to each permitted caller. Implement `find(ResourceRequest)`
+and `count(ResourceRequest)` for these collections.
+
+Some collections calculate values for the current caller. Override `find(ResourceRequest, User)`
+and `count(ResourceRequest, User)` for these collections. Use the supplied user. Do not read a
+browser session or an implicit security context.
+
+Use `InMemoryCollectionQuery` for a bounded collection that does not use database queries. This
+adapter applies the standard filter, sort, page, and count rules to a resource snapshot.
+
 Use an escape hatch only when the standard operations cannot express a domain action. Examples
 include a command that changes several aggregate types or an action that is not CRUD. Keep the
 normal collection routes on the standard contract. Document the reason for each escape hatch near

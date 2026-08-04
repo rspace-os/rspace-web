@@ -47,7 +47,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
   }
 
   public ApiV2ListResult<Map<String, Object>> list(ResourceRequest request, User actor) {
-    ResourcePage<T> page = operations.find(request);
+    ResourcePage<T> page = operations.find(request, actor);
     TargetResolver targetResolver = targetResolver(actor);
     return ApiV2ListResult.of(
         page.resources().stream()
@@ -58,8 +58,8 @@ public final class ApiV2CrudDispatcher<T, ID> {
         request.page().number());
   }
 
-  public ApiV2CountResult count(ResourceRequest request) {
-    return new ApiV2CountResult(operations.count(request));
+  public ApiV2CountResult count(ResourceRequest request, User actor) {
+    return new ApiV2CountResult(operations.count(request, actor));
   }
 
   public Map<String, Object> get(ID id, ResourceRequest request, User actor) {
@@ -80,7 +80,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
    * checks close.
    */
   public Map<String, Object> getMatching(ResourceRequest request, User actor) {
-    return operations.find(request).resources().stream()
+    return operations.find(request, actor).resources().stream()
         .findFirst()
         .map(resource -> document(resource, request, targetResolver(actor)))
         .orElseThrow(NotFoundException::new);

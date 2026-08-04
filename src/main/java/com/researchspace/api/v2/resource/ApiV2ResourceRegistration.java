@@ -94,7 +94,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   }
 
   public ApiV2CountResult count(ResourceRequest request, User caller) {
-    return crud.count(authorize(Operation.READ, caller, request));
+    return crud.count(authorize(Operation.READ, caller, request), caller);
   }
 
   public Map<String, Object> get(String rawId, ResourceRequest request, User caller) {
@@ -192,7 +192,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
           .map(
               constraint ->
                   operations
-                      .find(ResourceRequest.unpaged(and(constraint, idEquals(id))))
+                      .find(ResourceRequest.unpaged(and(constraint, idEquals(id))), actor)
                       .resources()
                       .stream()
                       .findFirst())

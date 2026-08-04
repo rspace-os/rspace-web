@@ -1324,6 +1324,32 @@ public final class CollectionDescription<T> {
     return relationship.read(entity);
   }
 
+  Object readFilterValue(T entity, String selectorName) {
+    FilterSelector selector = requireFilterSelector(selectorName);
+    if (selector instanceof FilterSelector.Property property) {
+      return fields.get(property.name()).reader.apply(entity);
+    }
+    FilterSelector.RelationshipPart part = (FilterSelector.RelationshipPart) selector;
+    @SuppressWarnings("unchecked")
+    Relationship<T> relationship = (Relationship<T>) part.relationship();
+    Object value = readRelationship(entity, relationship);
+    if (value == null) {
+      return null;
+    }
+    if (!(value instanceof ResourceReference<?, ?> reference)) {
+      throw new IllegalStateException("Relationship filter requires a resource reference");
+    }
+    return switch (part.part()) {
+      case ROOT -> reference;
+      case KIND -> reference.kind();
+      case ID -> reference.id();
+    };
+  }
+
+  Object readSortValue(T entity, String fieldName) {
+    return requireField(fieldName).reader.apply(entity);
+  }
+
   private static <T> List<Field<T, ?>> fieldsFrom(
       Class<?> resourceType,
       Class<T> entityType,
