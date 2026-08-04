@@ -84,7 +84,6 @@ import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.DocumentHTMLPreviewHandler;
 import com.researchspace.service.DocumentSharedStateCalculator;
 import com.researchspace.service.EmailBroadcast;
-import com.researchspace.service.ExternalMessageSenderFactory;
 import com.researchspace.service.FolderDeletionOrderPolicy;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IAsyncArchiveDepositor;
@@ -186,7 +185,6 @@ import com.researchspace.service.impl.ExampleContentAction;
 import com.researchspace.service.impl.ExportImportImpl;
 import com.researchspace.service.impl.ExportUtils;
 import com.researchspace.service.impl.ExternalMessageHandlerImpl;
-import com.researchspace.service.impl.ExternalMessageSenderFactoryImpl;
 import com.researchspace.service.impl.ExternalOauthUserSignupPolicy;
 import com.researchspace.service.impl.FieldLinksEntitySyncImpl;
 import com.researchspace.service.impl.FileStoreRootDetector;
@@ -967,16 +965,6 @@ public abstract class BaseConfig {
   @Bean
   ExternalMessageSender msteamsExternalMessageSender() {
     return new MsTeamsMessageSender();
-  }
-
-  @Bean
-  ExternalMessageSenderFactory externalMessageSenderFactory() {
-    ExternalMessageSenderFactoryImpl fac = new ExternalMessageSenderFactoryImpl();
-    List<ExternalMessageSender> senders = new ArrayList<>();
-    senders.add(slackExternalMessageSender());
-    senders.add(msteamsExternalMessageSender());
-    fac.setMessageSenders(senders);
-    return fac;
   }
 
   /**

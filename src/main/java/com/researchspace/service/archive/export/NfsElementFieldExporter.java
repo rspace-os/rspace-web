@@ -14,8 +14,6 @@ import org.apache.commons.io.FileUtils;
 
 class NfsElementFieldExporter extends AbstractFieldExporter<NfsElement> {
 
-  NfsElementFieldExporter() {}
-
   NfsElementFieldExporter(FieldExporterSupport support) {
     super(support);
   }
