@@ -3,7 +3,7 @@
 	<td name="fieldName" class="field-name">${field.name}
 		<c:choose>
 			<c:when test="${field.showAsPickList}">
-				<span class="field-type-enum"> (Picklist)</span>
+				<span class="field-type-enum"> <spring:message code="form.field.picklistSuffix"/></span>
 			</c:when>
 			<c:otherwise>
 				<span class="field-type-enum"> (${field.type.type})</span>

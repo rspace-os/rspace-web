@@ -16,11 +16,11 @@
 </script>
 
 <title>
-  <spring:message code="workspace.title" />
+  <spring:message code="common:appBar.sections.workspace.title" />
 </title>
 
 <head>
-  <meta name="heading" content="Workspace" />
+  <meta name="heading" content="<spring:message code='common:appBar.sections.workspace.title'/>" />
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/workspace/workspace.css'/>" />
 
   <!-- moved to default.jsp -->
@@ -103,7 +103,7 @@
 <!-- <div class="tabularViewTop"> -->
   <div id="searchModePanel" style="display: none;">
     <span id="message"></span>
-    <button id="resetSearch">Clear search</button>
+    <button id="resetSearch"><spring:message code="common:search.clearTooltip"/></button>
     <%--<button class="search-highlight-toggle" data-altLabel="Unighlight matches" data-on="false">Highlight matches</button>--%>
   </div>
 <!-- </div> -->

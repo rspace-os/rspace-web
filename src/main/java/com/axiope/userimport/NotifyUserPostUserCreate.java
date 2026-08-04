@@ -51,7 +51,8 @@ public class NotifyUserPostUserCreate implements IPostUserCreationSetUp {
       rc.put("groupName", newUser.getGroups().iterator().next().getDisplayName());
     }
     EmailContent message =
-        emailContentGenerator.render("email.welcome.subject", emailTemplateResource, rc);
+        emailContentGenerator.render(
+            "email.account.defaultWelcome.subject", emailTemplateResource, rc);
     log.info("Sending mail to {} at {}", newUser.getUsername(), newUser.getEmail());
     emailSender.sendEmail(message, List.of(newUser.getEmail()), null);
   }

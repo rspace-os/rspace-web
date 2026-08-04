@@ -30,9 +30,9 @@ public class ApiExtraFieldsHelperValidatorTest {
     e = new BeanPropertyBindingResult(toValidate, "ef");
     helper.validate(toValidate, e);
     assertEquals(1, e.getErrorCount());
+    assertEquals("errors.inventory.field.validation", e.getFieldError().getCode());
     assertEquals(
-        "'this is not a number' cannot be parsed into number",
-        e.getFieldError().getDefaultMessage());
+        "'this is not a number' cannot be parsed into number", e.getFieldError().getArguments()[0]);
     assertEquals("content", e.getFieldError().getField());
   }
 }

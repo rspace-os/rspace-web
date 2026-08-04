@@ -35,17 +35,22 @@ public class PiToUserCommandValidator implements Validator {
   @Override
   public void validate(Object target, Errors errors) {
     if (activeUsers.contains(candidatePI.getUsername())) {
-      errors.reject("system.user2pi.userIsActive", new Object[] {candidatePI.getFullName()}, null);
+      errors.reject("errors.user.activeSession", new Object[] {candidatePI.getFullName()}, null);
     }
     if (!candidatePI.hasRole(Role.PI_ROLE)) {
-      errors.reject("system.piToUser.piNotpiRole", new Object[] {candidatePI.getFullName()}, null);
+      errors.reject(
+          "system.piToUser.validation.piRoleNotAssigned",
+          new Object[] {candidatePI.getFullName()},
+          null);
     }
     boolean isStillPi =
         candidatePI.getGroups().stream()
             .anyMatch(grp -> candidatePI.hasRoleInGroup(grp, RoleInGroup.PI));
     if (isStillPi) {
       errors.reject(
-          "system.piToUser.piStillPiInGroup", new Object[] {candidatePI.getFullName()}, null);
+          "system.piToUser.validation.piRoleStillAssignedInGroup",
+          new Object[] {candidatePI.getFullName()},
+          null);
     }
   }
 }

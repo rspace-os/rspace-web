@@ -1,10 +1,10 @@
 <%@ include file="/common/taglibs.jsp"%>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RSpace API Documentation | ResearchSpace</title>
+    <title><spring:message code="apiDocs.title"/></title>
     <rst:viteClient />
     <rst:bundle bundle="apiDocs" />
     <style>
@@ -12,7 +12,7 @@
     </style>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to view the RSpace API documentation.</noscript>
+    <noscript><spring:message code="apiDocs.noJsWarning"/></noscript>
     <div id="app"></div>
   </body>
 </html>

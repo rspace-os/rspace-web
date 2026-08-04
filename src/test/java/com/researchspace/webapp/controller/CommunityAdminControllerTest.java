@@ -82,7 +82,7 @@ public class CommunityAdminControllerTest {
     AjaxReturnObject<Long> aro2 = controller.removeGroup(groupIds, OTHER_ID);
     assertNotNull(aro2.getData());
     assertNull(aro2.getErrorMsg());
-    verify(mockMessageSource).getMessage("community.removeFromDefaultProhibited.msg");
+    verify(mockMessageSource).getMessage("community.errors.removeFromDefaultProhibited");
   }
 
   @Test

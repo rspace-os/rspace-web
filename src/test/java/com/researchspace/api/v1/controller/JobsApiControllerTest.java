@@ -13,6 +13,8 @@ import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.aws.S3ExportUtilities;
 import com.researchspace.testutils.TestFactory;
 import java.net.MalformedURLException;
@@ -42,6 +44,7 @@ public class JobsApiControllerTest {
   @Before
   public void setUp() throws Exception {
     response = new MockHttpServletResponse();
+    controller.messages = new MessageSourceUtils(new JsonMessageSource());
   }
 
   @After

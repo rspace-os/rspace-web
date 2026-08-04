@@ -84,7 +84,7 @@ public class CsvInstrumentTemplateExporterTest extends SpringTransactionalTest {
                 ExportScope.USER, CsvExportMode.COMPACT, user)
             .toString();
     assertTrue(
-        csvComment, csvComment.startsWith("# " + InventoryItemCsvExporter.CSV_COMMENT_HEADER));
+        csvComment, csvComment.startsWith("# " + instrumentTemplateExporter.getCsvCommentHeader()));
     assertTrue(csvComment, csvComment.contains("# Exported content: INSTRUMENT_TEMPLATES"));
     assertTrue(csvComment, csvComment.contains("# Export scope: USER"));
     assertTrue(csvComment, csvComment.contains("# Export mode: COMPACT"));

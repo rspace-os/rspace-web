@@ -21,6 +21,8 @@ import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.NfsRSpaceProvidedAuthentication;
 import com.researchspace.netfiles.s3.S3NfsClient;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.util.HashMap;
@@ -31,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * Unit tests for {@link NfsManagerImpl}, focusing on auto-login behaviour for S3 file systems.
@@ -52,6 +55,8 @@ public class NfsManagerImplTest {
   @BeforeEach
   void setUp() {
     MockitoAnnotations.openMocks(this);
+    ReflectionTestUtils.setField(
+        nfsManager, "messages", new MessageSourceUtils(new JsonMessageSource()));
 
     testUser = new User("testUser");
 

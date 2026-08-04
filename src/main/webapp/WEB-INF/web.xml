@@ -14,14 +14,7 @@
         <param-name>spring.profiles.default</param-name>
         <param-value>run</param-value>
     </context-param>
-
-    <!-- Backing bundle for the JSTL fmt:message tags that have not yet been
-         converted to spring:message. Removed with the last of those tags. -->
-    <context-param>
-        <param-name>jakarta.servlet.jsp.jstl.fmt.localizationContext</param-name>
-        <param-value>bundles.ApplicationResources</param-value>
-    </context-param>
-
+  
     <!-- Fallback locale if no bundles found for browser's preferred locale -->
     <!-- Force a single locale using param-name 'jakarta.servlet.jsp.jstl.fmt.locale' -->
     <context-param>

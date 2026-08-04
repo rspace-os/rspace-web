@@ -74,14 +74,15 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
             SystemPropertyName.PIDINST_B2INST_TOKEN,
             null);
       default:
-        throw new IllegalArgumentException("Unsupported identifier provider: " + provider);
+        throw new IllegalArgumentException(
+            getMessage("errors.identifierProvider.unsupported", new Object[] {provider}));
     }
   }
 
   void assertIsSysadmin(User subject, ServletRequest request) {
     if (!subject.hasRole(Role.SYSTEM_ROLE)
         || !ipWhiteListChecker.isRequestWhitelisted(request, subject, SECURITY_LOG)) {
-      throw new AuthorizationException("Sysadmin role with valid IP required for admin operations");
+      throw new AuthorizationException(getMessage("errors.authorization.sysadminIpRequired"));
     }
   }
 
@@ -139,9 +140,7 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
 
     assertIsSysadmin(subject, req);
     if (incomingSettings.getProvider() == null) {
-      errors.reject(
-          "errors.inventory.settings.provider.required",
-          messages.getMessage("errors.inventory.settings.provider.required"));
+      errors.reject("errors.inventory.settings.providerRequired");
     }
     throwBindExceptionIfErrors(errors);
 

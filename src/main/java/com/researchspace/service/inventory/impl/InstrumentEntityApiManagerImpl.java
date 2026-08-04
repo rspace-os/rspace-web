@@ -39,6 +39,7 @@ import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
@@ -85,6 +86,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
+  private @Autowired MessageSourceUtils messages;
 
   @Override
   public boolean instrumentExists(long id) {
@@ -332,8 +334,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   private void assertRelationAllowed(InventoryLinkField field, String relationType) {
     if (!DataCiteRelationType.isValid(relationType)) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.link.relationTypeInvalid", relationType);
+      throw new ApiRuntimeException("errors.inventory.field.linkRelationTypeInvalid", relationType);
     }
     String allowed = field.getAllowedRelationTypes();
     if (allowed == null || allowed.trim().isEmpty()) {
@@ -341,7 +342,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     }
     if (!Arrays.asList(allowed.split("\\|")).contains(relationType)) {
       throw new ApiRuntimeException(
-          "errors.inventory.field.link.relationTypeNotPermitted", relationType, field.getName());
+          "errors.inventory.field.linkRelationTypeNotPermitted", relationType, field.getName());
     }
   }
 
@@ -1017,9 +1018,19 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     return instrumentTemplate;
   }
 
+  private InventoryRecord getParentInventoryEntityOrThrowNotFound(Long fieldId) {
+    try {
+      return inventoryEntityFieldDao.getParentInventoryEntityFromFieldId(fieldId);
+    } catch (NotFoundException nfe) {
+      log.warn("Could not find the parent inventory entity for field {}", fieldId, nfe);
+      throw new NotFoundException(
+          messages.getMessage("errors.inventory.field.notFound", new Object[] {fieldId}));
+    }
+  }
+
   @Override
   public InventoryRecord assertUserCanReadInventoryEntityField(Long id, User user) {
-    InventoryRecord parentEntity = inventoryEntityFieldDao.getParentInventoryEntityFromFieldId(id);
+    InventoryRecord parentEntity = getParentInventoryEntityOrThrowNotFound(id);
     GlobalIdentifier entityGlobalId = parentEntity.getOid();
     switch (parentEntity.getType()) {
       case SAMPLE:
@@ -1038,7 +1049,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public InventoryRecord assertUserCanEditInventoryEntityField(Long id, User user) {
-    InventoryRecord parentEntity = inventoryEntityFieldDao.getParentInventoryEntityFromFieldId(id);
+    InventoryRecord parentEntity = getParentInventoryEntityOrThrowNotFound(id);
     GlobalIdentifier entityGlobalId = parentEntity.getOid();
     switch (parentEntity.getType()) {
       case SAMPLE:

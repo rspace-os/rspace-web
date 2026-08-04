@@ -8,7 +8,7 @@ function initOfficeOnlineFrame() {
     office_frame.id = 'office_frame';
 
     // The title should be set for accessibility
-    office_frame.title = 'Office Online Frame';
+    office_frame.title = RS.msg("legacyjs.msOffice.officeOnlineFrameTitle");
 
     // This attribute allows true fullscreen mode in slideshow view
     // when using PowerPoint Online's 'view' action.
@@ -25,7 +25,7 @@ function initOfficeOnlineFrame() {
 
 function initConvertDialog() {
     $('#convertDlg').dialog({
-        title : "Conversion Required",
+        title : RS.msg("legacyjs.msOffice.conversionRequiredTitle"),
         resizable : true,
         modal : true,
         autoOpen : false,
@@ -37,11 +37,11 @@ function initConvertDialog() {
             $('.ui-dialog-buttonset button:eq(1)').focus();
         },
         buttons : {
-            "No, just keep viewing" : function() {
+            [RS.msg("legacyjs.msOffice.keepViewing")] : function() {
                 office_frame.contentWindow.postMessage("Grab_Focus", "*");
                 $(this).dialog("close");
             },
-            "Yes, convert and edit" : function() {
+            [RS.msg("legacyjs.msOffice.convertAndEdit")] : function() {
                 window.location.href = convertActionUrl;
                 $(this).dialog("close");
             }

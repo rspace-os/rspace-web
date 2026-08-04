@@ -1,8 +1,8 @@
 <div id='comments'>
-  <h4 id='comments-header'>Comments</h4>
+  <h4 id='comments-header'>$msg.getMessage("export.global.comments.title")</h4>
   <br>
   #foreach ($comment in $commentNumberToComments.entrySet())
-      <p id="comment-number">Comment $comment.key</p>
+      <p id="comment-number">$msg.format("export.global.comments.number", [$comment.key])</p>
       #foreach ($commentLine in $comment.value)
           <p>&nbsp; &nbsp; --$commentLine</p>
       #end

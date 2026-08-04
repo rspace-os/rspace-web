@@ -629,7 +629,9 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       }
     } catch (Exception ie) {
       log.warn("Export download failure: {}", ie.getMessage());
-      String msg = messageSource.getMessage("archive.download.failure.msg", new String[] {}, null);
+      String msg =
+          messageSource.getMessage(
+              "importExport.download.errors.missingFile", new String[] {}, null);
       throw new ArchivalFileNotExistException(msg);
     }
   }

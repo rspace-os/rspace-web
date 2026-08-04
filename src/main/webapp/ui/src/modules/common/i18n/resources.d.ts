@@ -943,7 +943,9 @@ export default interface Resources {
       "title": "Leave the editor?"
     },
     "enhancedTableHead": {
-      "selectAllLabel": "select/deselect all"
+      "selectAllLabel": "select/deselect all",
+      "sortedAscending": "sorted ascending",
+      "sortedDescending": "sorted descending"
     },
     "errorBoundary": {
       "message": "Something went wrong! Please refresh the page. If this error persists, please contact <externalLink href=\"mailto:support@researchspace.com\">support@researchspace.com</externalLink> with details of when the issue happens."
@@ -978,6 +980,7 @@ export default interface Resources {
       "viewGroup": "View Group"
     },
     "help": {
+      "additionalServerProperties": "6i9j335fy1-additional-server-properties-settings",
       "apiDirect": "v0dxtfvj7u-api-direct-access",
       "appsIntroduction": "08ky7o0l1y-apps-introduction",
       "argos": "vkd8mt2ffb-argos-integration",
@@ -988,6 +991,7 @@ export default interface Resources {
       "chemistry": "wfxm4xwtio-chemistry-integration",
       "cloudstorage": "j2z5f5r90q-cloud-storage-integrations",
       "clustermarket": "e6pb7y8ak1-calira-integration",
+      "collaborationBetweenLabs": "l72tg5rzze-collaboration-between-labs",
       "controlledVocabularies": "8ujmvpa1no-controlled-vocabularies",
       "createContainer": "e5v4bvcl61-create-a-container",
       "createDialog": "x4y02hje72-edit-a-sample-or-container#create",
@@ -1008,17 +1012,21 @@ export default interface Resources {
       "evernote": "9ckpmfdq8m-evernote-integration",
       "fieldmark": "idbaaggghu-fieldmark-integration",
       "figshare": "ir4ybsamcn-figshare-integration",
+      "formsRadiosAndPicklists": "rozak8tlwr-forms#radios_and_picklists",
       "galaxy": "zzsl46jo5y-galaxy-integration",
       "gallery": "sl6mo1i9do-gallery",
       "gettingStarted": "tffkwcpizj-getting-started",
       "github": "y2080yw30x-github-integration",
       "igsnIdentifiers": "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
       "import": "a5zm2c3vtw-import-records",
+      "inconsistentSharingFolder": "2toicmq4iu",
       "irods": "xt21074dln-irods-integration",
       "jupyter": "gg0ao0rqpt-jupyter-integration",
+      "labAdminRole": "8qekgz9y5b-the-lab-admin-role",
       "listOfMaterials": "cdrc4ed67l-list-of-materials",
       "luceneSyntax": "k919di8naq-search-inventory#expert_lucene_query_syntax",
       "moving": "dncoti2i4t-moving-items",
+      "multipleAccountsSameSso": "bk9ap372vv-setting-up-multiple-rspace-accounts-with-the-same-sso-identity",
       "nextcloud": "na3hn8ilee-nextcloud-integration",
       "omero": "bwwbpkll90-omero-integration",
       "orcid": "yhkbtnj61a-orcid-integration",
@@ -1028,6 +1036,7 @@ export default interface Resources {
       "pidinstIdentifiers": "pidinst-identifiers",
       "protocolsio": "nid9q64pas-protocols-io-integration",
       "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
+      "publicationOfDocuments": "lqxsej13hv-publication-of-documents",
       "pyrat": "9kkeooveia-pyrat-integration",
       "pyratCors": "9kkeooveia-pyrat-integration#cors",
       "raid": "zb4c2c8a4b-raid-integration",
@@ -1105,6 +1114,7 @@ export default interface Resources {
       "tryAgainLater": "There is a problem, please try again later",
       "unknownRelogin": "Unknown issue, please attempt to relogin to RSpace."
     },
+    "javascriptRequired": "You need to enable JavaScript to run this app.",
     "ketcher": {
       "discardChangesDialog": {
         "discard": "Discard",
@@ -1293,6 +1303,7 @@ export default interface Resources {
           "copyError": "Couldn't copy to clipboard. Try again manually.",
           "copySuccess": "Copied to clipboard",
           "createError": "There was a problem while creating your application. Please, try again later or contact support.",
+          "createErrorFallback": "There was a problem while creating your application.",
           "createTitle": "Create an OAuth application",
           "createdTitle": "App Successfully Created",
           "secretWarning": "Please write down the client secret. <strong>It will not be available once you close this window.</strong>",
@@ -1433,6 +1444,7 @@ export default interface Resources {
       "thisItem": "this {itemType, select, snippet {snippet} other {document}}",
       "titleMultiple": "Share {count, plural, one {# {itemType, select, snippet {snippet} other {document}}} other {# {itemType, select, snippet {snippets} other {documents}}}}",
       "titleSingle": "Share <strong>{name}</strong>",
+      "unknownFolder": "Unknown folder",
       "updatedSuccessfully": "Shares updated successfully."
     },
     "stoichiometry": {
@@ -1783,6 +1795,29 @@ export default interface Resources {
       "renamePrompt": "Please give a new name for {name}.",
       "saveAsNewImage": "Save as new image",
       "uploadNewVersion": "Upload New Version",
+      "validation": {
+        "cannotDownloadFolders": "Cannot download folders.",
+        "cannotDownloadSnippets": "Cannot download snippets.",
+        "cannotEdit": "Cannot edit this item.",
+        "cannotLogOut": "Cannot log out of this item.",
+        "currentFolderUnknown": "Current folder is not known.",
+        "deleteLimit": "Cannot delete more than 50 items at once.",
+        "duplicateLimit": "Cannot duplicate more than 50 items at once.",
+        "exportLimit": "Cannot export more than 100 items at once.",
+        "loadingUser": "Loading user information...",
+        "missingGlobalId": "Cannot share snippets that are missing global IDs.",
+        "moveLimit": "Cannot move more than 50 items at once.",
+        "noFilesSelected": "No files selected.",
+        "nothingSelected": "Nothing selected.",
+        "onlyOneLogout": "Only one item may be logged out of at once.",
+        "onlyOneNewVersion": "Only one item may be updated with a new version at once.",
+        "onlyOneRename": "Only one item may be renamed at once.",
+        "onlyOwnerCanShare": "Only owners of the snippet can change its share settings.",
+        "onlySnippetsShareable": "Only snippets can be shared.",
+        "selectSnippet": "At least one snippet must be selected.",
+        "tooManyItems": "Too many items selected.",
+        "userLoadFailed": "Unable to load user information. Sharing is temporarily unavailable."
+      },
       "versionHistory": {
         "columns": {
           "by": "Modified By",
@@ -1893,6 +1928,7 @@ export default interface Resources {
         "unknown": "Unknown"
       }
     },
+    "insertFileFailed": "Could not insert file \"{fileName}\"",
     "irods": {
       "errors": {
         "authenticationFailed": "Authentication failed",
@@ -1994,7 +2030,6 @@ export default interface Resources {
     },
     "moveToIrods": {
       "description": "You have selected {count} {count, plural, one {item} other {items}} to move to the iRODS server",
-      "descriptionSuffix": ". By default, the items will be added to iRODS and removed from RSpace. You will be able to link to the iRODS items inside of RSpace documents and include them into any exports through our iRODS integration.",
       "destination": {
         "explanation": "The available folders are configured in the Gallery's filestore section.",
         "label": "Destination in iRODS",
@@ -2133,6 +2168,7 @@ export default interface Resources {
       "shiftSelectionUnsupportedMessage": "Either use command/ctrl to select each in turn, or use grid view.",
       "shiftSelectionUnsupportedTitle": "Shift selection is not supported in tree view."
     },
+    "unknownError": "",
     "unknownOwner": "Unknown owner"
   },
   "groups": {
@@ -2524,6 +2560,12 @@ export default interface Resources {
         "printBarcode": "Print Barcode",
         "removeFromThisBasket": "Remove from This Basket"
       },
+      "create": {
+        "containerFull": "This Container has no free available locations.",
+        "noPermission": "You do not have permission to create new items from this item.",
+        "nothingSelected": "Nothing is selected.",
+        "singleItemOnly": "Can only create from a single item."
+      },
       "createDialog": {
         "change": "Change",
         "columns": {
@@ -2542,6 +2584,12 @@ export default interface Resources {
         "noOptions": "No options available.",
         "title": "Create new items from <strong>{name}</strong>"
       },
+      "delete": {
+        "noPermission": "{count, plural, one {You do not have permission to delete this item.} other {You do not have permission to delete these items.}}"
+      },
+      "duplicate": {
+        "noPermission": "{count, plural, one {You do not have permission to duplicate this item.} other {You do not have permission to duplicate these items.}}"
+      },
       "edit": {
         "batchEdit": "Batch Edit",
         "batchUnsupported": "Cannot batch edit {globalIds}.",
@@ -2559,8 +2607,23 @@ export default interface Resources {
           "title": "Unsaved changes"
         }
       },
+      "export": {
+        "noPermission": "{count, plural, one {You do not have permission to export this item.} other {You do not have permission to export these items.}}"
+      },
       "historicalVersion": "Cannot modify a historical version.",
       "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
+      "move": {
+        "noPermission": "{count, plural, one {You do not have permission to move this item.} other {You do not have permission to move these items.}}",
+        "templatesCannotBeMoved": "Templates cannot be moved."
+      },
+      "printBarcode": {
+        "noPermission": "{count, plural, one {You do not have permission to print this item.} other {You do not have permission to print these items.}}",
+        "recordBeingEdited": "Cannot print barcodes whilst a record is being edited.",
+        "templatesHaveNoBarcodes": "Templates do not have barcodes."
+      },
+      "restore": {
+        "noPermission": "{count, plural, one {You do not have permission to restore this item.} other {You do not have permission to restore these items.}}"
+      },
       "splitButton": {
         "label": "More selection options",
         "moreOptions": "More selection options"
@@ -3545,6 +3608,11 @@ export default interface Resources {
       },
       "customDetails": "Custom details",
       "customFieldName": "Custom Field Name",
+      "fieldSelect": {
+        "alreadyMapped": "This field is already mapped to another column.",
+        "customField": "Custom Field (Various Types)",
+        "incompatibleData": "Incompatible data in this column."
+      },
       "fieldTypeMenu": {
         "options": "Options"
       },
@@ -3797,11 +3865,12 @@ export default interface Resources {
           "modified": "Modified",
           "version": "Version{version, select, none {} other { {version}}}"
         },
-        "current": " (current)",
+        "current": "(current)",
+        "loadFailed": "Could not load version history.",
         "none": "No version history is available for this item yet.",
         "title": "Version history",
         "view": "View version history",
-        "viewing": " (viewing)"
+        "viewing": "(viewing)"
       }
     },
     "moveToTarget": {
@@ -3911,6 +3980,9 @@ export default interface Resources {
         "standardPrinter": "Standard Printer",
         "standardPrinterHint": "Print multiple labels per sheet (e.g. A4 / A3 / Letter)."
       }
+    },
+    "publicIdentifierPage": {
+      "pageTitle": "RSpace Inventory - Public Item"
     },
     "recordDetails": {
       "labels": {
@@ -4052,7 +4124,8 @@ export default interface Resources {
           "applyLabel": "Apply link",
           "discard": "Discard",
           "discardLabel": "Discard link changes",
-          "none": "None"
+          "none": "None",
+          "selectBothBeforeApplying": "Select both a relationship type and a target before applying."
         },
         "numberOfSubsamples": {
           "count": "Number of {plural}",
@@ -4605,10 +4678,7 @@ export default interface Resources {
       },
       "activity": {
         "filter": {
-          "admin": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4} or by {5}",
-          "pi": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4}",
-          "sysadmin": "You can filter this audit by {0}, by {1}, by {2}, by {3}, and by {4}, by {5}, or by {6}",
-          "user": "You can filter this audit by {0}, by {1}, by {2}, and by {3}"
+          "lead": "You can filter this audit"
         }
       },
       "communities": {
@@ -5340,7 +5410,10 @@ export default interface Resources {
         "sysadminApiOnly": "Only sysadmin can use this API",
         "sysadminCreateSysadminOnly": "Only a sysadmin can create another sysadmin!",
         "sysadminIpRequired": "Sysadmin role with valid IP required for admin operations",
-        "userCreationSysadminOnly": "Creating user accounts requires a sysadmin role"
+        "userCreationSysadminOnly": "Creating user accounts requires a sysadmin role",
+        "versionHistory": {
+          "loginRequired": "Sorry, a Gallery item's version history is only available when you are logged in."
+        }
       },
       "captcha": {
         "response": {
@@ -5358,6 +5431,9 @@ export default interface Resources {
       "dateOutsideAllowedRange": "Default date is outside the allowed range.",
       "detail": "{0}",
       "disorderedRange": "Default value lies outside the min/ max range.",
+      "email": {
+        "format": "\"${validatedValue}\" is an invalid email format."
+      },
       "emptyString": {
         "generic": "Field cannot be empty.",
         "polite": "Please enter a value for {0}."
@@ -6655,7 +6731,10 @@ export default interface Resources {
         },
         "identifier": {
           "assignTypeMismatch": "Identifier of type {0} cannot be assigned to inventory item [{1}]",
+          "b2instDeleteFailed": "Could not delete the instrument PID from B2INST. {0}",
           "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
+          "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
+          "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
           "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
           "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
           "deleteNotOwner": "You can only delete an identifier that you own.",
@@ -7033,6 +7112,9 @@ export default interface Resources {
         "notConfiguredToast": "Connection to your Egnyte account is not configured correctly, please fix it on <a href=\"/egnyte/egnyteConnectionSetup\">connection setup page</a>",
         "skipConfirm": "Are you sure you want to skip Egnyte account configuration? The files uploaded to RSpace will not be saved in Egnyte.",
         "skipConfirmOk": "Skip"
+      },
+      "errors": {
+        "required": "{0} is a required field."
       },
       "gallery": {
         "actionFileUpload": "File upload",
@@ -9956,9 +10038,7 @@ export default interface Resources {
       "export": {
         "allRows": "Export all rows to CSV",
         "onlyOneUser": "Only one user's work can be exported at a time.",
-        "selected": "selected",
-        "thisPageOf": "this page of",
-        "visibleRows": "Export {scope} rows to CSV",
+        "visibleRows": "{scope, select, selected {Export selected rows to CSV} other {Export this page of rows to CSV}}",
         "work": "Export Work"
       },
       "filterLabel": "Filter users",
@@ -10173,7 +10253,7 @@ export default interface Resources {
           },
           "name": "File name",
           "nameHelper": "Name your file",
-          "pageFormatLabel": "Page format: ",
+          "pageFormatLabel": "Page format:",
           "pageSize": {
             "a4": "A4",
             "letter": "Letter"
@@ -10182,7 +10262,7 @@ export default interface Resources {
         },
         "word": {
           "name": "Name your file",
-          "pageFormatLabel": "Page format: ",
+          "pageFormatLabel": "Page format:",
           "pageSize": {
             "a4": "A4",
             "letter": "Letter"
@@ -10381,7 +10461,7 @@ export default interface Resources {
         "largeThumbnail": "large thumbnail",
         "loadingData": "Data is loading...",
         "noImage": "no image",
-        "parentLink": " -> parent_{parentType}",
+        "parentLink": "-> parent_{parentType}",
         "redrawImage": "Redraw image",
         "seeInOmero": "See in OMERO",
         "selectedCount": "Selected: {count}",
@@ -10499,6 +10579,7 @@ export default interface Resources {
         "dialogTitle": "SnapGene",
         "dnaPreviewAlt": "DNA preview",
         "dnaPreviewError": "An error has occurred. This could be because the SnapGene server is down or the DNA sequence is invalid.",
+        "enzymeLoadFailed": "Could not load the enzyme table.",
         "enzymeSetOptions": {
           "commercialNonredundant": "Commercial nonredundant",
           "sixPlus": "Six plus",
@@ -10510,10 +10591,12 @@ export default interface Resources {
         "enzymeSites": "Enzyme sites",
         "enzymeTableLabel": "Enzyme table",
         "enzymeTypeLabel": "Enzyme type",
+        "fastaLoadFailed": "Could not load the FASTA sequence.",
         "imageType": "Image type",
         "linear": "Linear",
         "linearChoiceLabel": "Linear choice",
         "openReadingFrames": "Open Reading Frames",
+        "orfLoadFailed": "Could not load the ORF table.",
         "orfTable": "ORF table",
         "readingFrames": {
           "all": "All",

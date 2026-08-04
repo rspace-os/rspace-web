@@ -59,7 +59,8 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
       redirectResult = ConnectionResultPage.VIEW;
     } catch (Exception ex) {
       log.error("Couldn't complete the token request on RAiD", ex);
-      error.errorMsg("Error during token creation: " + ex.getMessage());
+      error.errorMsg(
+          getText("apps.oauth.errors.tokenCreationWithDetails", new Object[] {ex.getMessage()}));
       error.errorDetails(ex.getMessage());
       model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error.build()));
       redirectResult = ConnectionResultPage.VIEW;
@@ -104,7 +105,8 @@ public class RaIDOAuthController extends BaseOAuth2Controller {
       redirectResult = ConnectionResultPage.VIEW;
     } catch (Exception e) {
       log.error("Error while refreshing token on RAiD: {}", e.getMessage());
-      error.errorMsg("Error during token refresh" + e.getMessage());
+      error.errorMsg(
+          getText("apps.oauth.errors.tokenRefreshWithDetails", new Object[] {e.getMessage()}));
       error.errorDetails(e.getMessage());
       model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error.build()));
       redirectResult = ConnectionResultPage.VIEW;

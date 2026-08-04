@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNull;
 import com.researchspace.model.dto.UserRegistrationInfo;
 import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.properties.PropertyHolder;
+import com.researchspace.service.MessageSourceUtils;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -32,7 +33,7 @@ public class UserLineParserFromCSVTest {
 
     ResourceBundleMessageSource msgSource = new ResourceBundleMessageSource();
     msgSource.setUseCodeAsDefaultMessage(true);
-    lineParser.setMessages(msgSource);
+    lineParser.setMessages(new MessageSourceUtils(msgSource));
 
     properties = new PropertyHolder();
     lineParser.setProperties(properties);
@@ -46,9 +47,9 @@ public class UserLineParserFromCSVTest {
 
     Set<String> seenUsernames = new HashSet<>();
     String result = lineParser.populateUserInfo(null, USER_LINE_VALID_CLOUD, 1, seenUsernames);
-    assertEquals("system.csvimport.user.wrongNumberOfFields", result);
+    assertEquals("system.csvImport.user.wrongNumberOfFields", result);
     String result2 = lineParser.populateUserInfo(null, USER_LINE_VALID_SSO, 1, seenUsernames);
-    assertEquals("system.csvimport.user.wrongNumberOfFields", result2);
+    assertEquals("system.csvImport.user.wrongNumberOfFields", result2);
 
     UserRegistrationInfo tempUser = new UserRegistrationInfo();
     String result3 =
@@ -68,9 +69,9 @@ public class UserLineParserFromCSVTest {
 
     Set<String> seenUsernames = new HashSet<>();
     String result = lineParser.populateUserInfo(null, USER_LINE_VALID_STANDALONE, 1, seenUsernames);
-    assertEquals("system.csvimport.user.wrongNumberOfFields", result);
+    assertEquals("system.csvImport.user.wrongNumberOfFields", result);
     String result2 = lineParser.populateUserInfo(null, USER_LINE_VALID_CLOUD, 1, seenUsernames);
-    assertEquals("system.csvimport.user.wrongNumberOfFields", result2);
+    assertEquals("system.csvImport.user.wrongNumberOfFields", result2);
 
     UserRegistrationInfo tempUser = new UserRegistrationInfo();
     String result3 = lineParser.populateUserInfo(tempUser, USER_LINE_VALID_SSO, 1, seenUsernames);
@@ -89,9 +90,9 @@ public class UserLineParserFromCSVTest {
 
     Set<String> seenUsernames = new HashSet<>();
     String result = lineParser.populateUserInfo(null, USER_LINE_VALID_STANDALONE, 1, seenUsernames);
-    assertEquals("system.csvimport.user.wrongNumberOfFields", result);
+    assertEquals("system.csvImport.user.wrongNumberOfFields", result);
     String result2 = lineParser.populateUserInfo(null, USER_LINE_VALID_SSO, 1, seenUsernames);
-    assertEquals("system.csvimport.user.wrongNumberOfFields", result2);
+    assertEquals("system.csvImport.user.wrongNumberOfFields", result2);
 
     UserRegistrationInfo tempUser = new UserRegistrationInfo();
     String result3 = lineParser.populateUserInfo(tempUser, USER_LINE_VALID_CLOUD, 1, seenUsernames);

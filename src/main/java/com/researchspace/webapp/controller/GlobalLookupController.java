@@ -1,7 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static java.lang.String.format;
-
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import java.util.EnumSet;
@@ -38,7 +36,8 @@ public class GlobalLookupController extends BaseController {
   @GetMapping("/{oid}")
   public String globalIdLookUp(@PathVariable(value = "oid") String oidString) {
     if (!GlobalIdentifier.isValid(oidString)) {
-      throw new IllegalArgumentException(format("Invalid syntax of oid [%s]", oidString));
+      throw new IllegalArgumentException(
+          getText("errors.globalId.invalidSyntax", new Object[] {oidString}));
     }
     GlobalIdentifier oid = new GlobalIdentifier(oidString);
     String redirectString = getRedirect(oid);
@@ -105,7 +104,7 @@ public class GlobalLookupController extends BaseController {
 
     if (url == null) {
       throw new UnsupportedOperationException(
-          format("Currently this OID [%s] is unsupported.", oid));
+          getText("errors.globalId.unsupported", new Object[] {oid}));
     }
     return url;
   }

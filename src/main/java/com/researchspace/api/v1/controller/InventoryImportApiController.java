@@ -129,7 +129,9 @@ public class InventoryImportApiController extends BaseApiInventoryController
           result = importManager.parseInstrumentsCsvFile(file.getOriginalFilename(), is, user);
           break;
         default:
-          throw new IllegalArgumentException("unrecoginzed fileType: " + recordType);
+          throw new IllegalArgumentException(
+              getMessage(
+                  "errors.inventory.import.unrecognizedFileType", new Object[] {recordType}));
       }
     } catch (Exception e) {
       throw new IllegalArgumentException("exception: " + e.getMessage(), e);

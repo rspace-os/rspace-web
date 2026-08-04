@@ -129,13 +129,16 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
 
     String errorMsg = "";
     if (StringUtils.isEmpty(name)) {
-      errorMsg = "Name cannot be empty";
+      errorMsg =
+          getMessage("inventory:fields.templateFields.customField.validation.emptyName", null);
     } else if (StringUtils.length(name) > BaseRecord.DEFAULT_VARCHAR_LENGTH) {
-      errorMsg = "Name is too long (max 255 chars)";
+      errorMsg =
+          getMessage(
+              "errors.inventory.name.tooLong", new Object[] {BaseRecord.DEFAULT_VARCHAR_LENGTH});
     }
 
     if (errorMsg.isEmpty() && instrumentApiMgr.nameExistsForUser(name, user)) {
-      errorMsg = "There is already an instrument named [" + name + "]";
+      errorMsg = getMessage("errors.inventory.instrument.nameExists", new Object[] {name});
     }
     return String.format(
         "{ \"valid\": %s, \"message\": \"%s\" }",
@@ -296,7 +299,11 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       return instrumentApiMgr.assertUserCanReadInstrumentTemplateWithPopulatedFields(
           apiInstrument.getTemplateId(), user);
     } catch (NotFoundException e) {
-      errors.rejectValue("templateId", "", e.getMessage());
+      errors.rejectValue(
+          "templateId",
+          "errors.inventory.instrument.templateNotFound",
+          new Object[] {apiInstrument.getTemplateId()},
+          null);
       throwBindExceptionIfErrors(errors);
     }
     return null;

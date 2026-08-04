@@ -114,7 +114,7 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
               .appName("DigitalCommonsData")
-              .errorMsg("Exception during token exchange")
+              .errorMsg(getText("apps.oauth.errors.tokenExchange"))
               .errorDetails(e.getResponseBodyAsString())
               .build();
       ConnectionResultPage.addError(
@@ -177,7 +177,7 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
               .appName("DigitalCommonsData")
-              .errorMsg("Exception during token exchange")
+              .errorMsg(getText("apps.oauth.errors.tokenExchange"))
               .errorDetails(e.getResponseBodyAsString())
               .build();
       ConnectionResultPage.addError(
@@ -243,7 +243,7 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
               .appName("DigitalCommonsData")
-              .errorMsg("Exception during token refresh")
+              .errorMsg(getText("apps.oauth.errors.tokenRefresh"))
               .errorDetails(e.getResponseBodyAsString())
               .build();
       ConnectionResultPage.addError(

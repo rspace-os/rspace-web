@@ -9,17 +9,17 @@ function createEditDeleteButtons(id) {
 
 function initChangeFormIconDialog() {
   $('#changeFormIconDialog').dialog({
-    title: "Change Form Icon",
+    title: RS.msg("legacyjs.workspace.form.changeIconDialogTitle"),
     resizable: true,
     autoOpen: false,
     height: 250,
     width: 350,
     modal: true,
     buttons: {
-      Cancel: function () {
+      [RS.msg("legacyjs.workspace.form.cancelButton")]: function () {
         $("#changeFormIconDialog").dialog('close');
       },
-      Submit: function () {
+      [RS.msg("legacyjs.workspace.form.submitButton")]: function () {
         var cfg = {
           fileInputId: "#newIconImage",
           postParamName: "filex",
@@ -27,7 +27,7 @@ function initChangeFormIconDialog() {
           "onloadSuccess": function (json) {
             $("#changeFormIconDialog").dialog('close');
             $('#iconImgSrc').attr('src', createURL('/image/getIconImage/' + json.data));
-            RS.confirm("Icon changed!", "success", 3000);
+            RS.confirm(RS.msg("legacyjs.workspace.form.iconChanged"), "success", 3000);
           }
         };
         RS.submitIconUpload(cfg);
@@ -58,13 +58,12 @@ $(document).ready(function () {
     modal: true,
     autoOpen: false,
     width: 350,
-    title: "Configure access to forms",
-    buttons:
-    {
-      Cancel: function () {
+    title: RS.msg("legacyjs.workspace.form.publishShareDialogTitle"),
+    buttons: {
+      [RS.msg("legacyjs.workspace.form.cancelButton")]: function () {
         $(this).dialog('close');
       },
-      OK: function () {
+      [RS.msg("legacyjs.workspace.form.okButton")]: function () {
         $(this).dialog('close');
         var $form = $('#rsFormSharingForm');
         var data = $form.serialize();
@@ -79,7 +78,7 @@ $(document).ready(function () {
             $('#unpublish').show();
             stylePublishStatus(response.data);
           },
-          error: function (xhr, err) { alert('Error'); }
+          error: function (xhr, err) { alert(RS.msg("legacyjs.workspace.form.genericError")); }
         });
       }
     },
@@ -149,10 +148,10 @@ $(document).ready(function () {
       width: 550,
       modal: true,
       buttons: {
-        Cancel: function () {
+        [RS.msg("legacyjs.workspace.form.cancelButton")]: function () {
           $(this).dialog('close');
         },
-        'Save': function () {
+        [RS.msg("legacyjs.workspace.form.saveButton")]: function () {
           $("#errorSummary").hide();
           $("#errorSummary").empty();
           if (fieldFormValid()) {
@@ -173,7 +172,7 @@ $(document).ready(function () {
       close: function () {
         fieldId = -1;
         $('.form_field').remove();
-        $("#fieldEditorSelect").val('1');
+        $("#fieldEditorSelect").val('');
         $('#fieldEditorSelect').attr('disabled', false);
         $('#field-loading').hide();
       }
@@ -194,7 +193,7 @@ $(document).ready(function () {
     $(window).bind('beforeunload', function () {
       if (wasAutosaved) {
         autosave(true);
-        return 'Are you sure you want to exit without saving changes?';
+        return RS.msg("legacyjs.workspace.documentEdit.exitWithoutSavingConfirm");
       }
     });
 
@@ -275,7 +274,7 @@ function setUpPublishButtons() {
         stylePublishStatus(response.data);
       });
       jqxhr.fail(function () {
-        RS.ajaxFailed("Unpublishing form", false, jqxhr);
+        RS.ajaxFailed(RS.msg("legacyjs.workspace.form.unpublishingFormAction"), false, jqxhr);
       });
     }
   });
@@ -382,7 +381,7 @@ function loadFieldForm() {
   // get selected option
   var name = $('#fieldEditorSelect').val();
   $('.form_field').remove();
-  if (name != "Select Field Type") {
+  if (name !== "") {
     // disablw hile loading
     $('#fieldEditorSelect').attr('disabled', true);
     // loading imahe
@@ -706,7 +705,7 @@ function fieldFormValidation(field) {
       const fileSize = file.size;
       const fileKb = fileSize / 1024;
       if (fileKb >= 100) {
-        apprise("Please upload a file smaller than 100kb.");
+        apprise(RS.msg("legacyjs.workspace.form.fileTooLarge"));
         return;
       }
       const reader = new FileReader();
@@ -742,7 +741,7 @@ function fieldFormValidation(field) {
       const merged = [...newText,...existingChoiceNames];
       const uniqueMerged = new Set(merged);
       if (uniqueMerged.size >= 2000) {
-        apprise("The picklist cannot hold more than 2000 items.");
+        apprise(RS.msg("legacyjs.workspace.form.picklistTooLarge"));
         return false;
       }
       return true;
@@ -791,7 +790,7 @@ function fieldFormValidation(field) {
         $('#radioFields').append("<li style='white-space: normal;cursor: pointer'><input type='radio' name='fieldDefaultRadio' value='" +
             radioName + "'> <input type='hidden' name='fieldRadios' value='" + RS.escapeHtml(radioName) + "'> " +
             RS.escapeHtml(radioName) + " <a href='#' id='"+delete_radio_id_prefix+RS.escapeHtml(radioName)+"' " +
-            "style='font-weight:bold;' class='deleteRadio'>(Delete)</a></li>");
+            "style='font-weight:bold;' class='deleteRadio'>" + RS.msg("legacyjs.workspace.form.deleteLink") + "</a></li>");
       }
     }
   } else if (field == "Choice") {
@@ -804,7 +803,7 @@ function fieldFormValidation(field) {
       if ("" !== choiceName) {
         $('#choiceFields').append("<li><input type=\"checkbox\" name=\"fieldSelectedChoices\" value=\"" +
           choiceName + "\"> <input type=\"hidden\" name=\"fieldChoices\" value=\"" + RS.escapeHtml(choiceName) + "\"> " +
-          RS.escapeHtml(choiceName) + " <a href=\"#\" style=\"font-weight:bold;\" class=\"deleteChoice\">(Delete)</a></li>");
+          RS.escapeHtml(choiceName) + " <a href=\"#\" style=\"font-weight:bold;\" class=\"deleteChoice\">" + RS.msg("legacyjs.workspace.form.deleteLink") + "</a></li>");
         $("#addChoiceName").val("");
         $("#addChoiceName").focus();
         $('.deleteChoice').click(function () {
@@ -927,7 +926,7 @@ function addNumberField() {
       if (data.data !== null) {
         addNumberCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
       $("#field-editor").dialog('close');
     }
@@ -936,7 +935,7 @@ function addNumberField() {
   jqxhr.fail(function () {
     $('#field-loading').hide();
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Saving field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
   });
 }
 
@@ -976,7 +975,7 @@ function saveEditedNumberField(fieldId) {
       if (data.data !== null) {
         editNumberCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
       $("#field-editor").dialog('close');
     }
@@ -984,7 +983,7 @@ function saveEditedNumberField(fieldId) {
 
   jqxhr.fail(function () {
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Saving field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
   });
 }
 /*
@@ -1033,14 +1032,14 @@ function addStringField() {
       if (data.data !== null) {
         addStringCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
       // refreshFields();
       $("#field-editor").dialog('close');
     }, "json");
   jqxhr.fail(function () {
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Adding field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.addingFieldAction"), false, jqxhr);
   });
 }
 
@@ -1048,8 +1047,8 @@ function addStringCode(data) {
   const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
   var newrow = "<tr  id=\"field_" + data.id + "\"  name=\"string\" class=\"field\"><td name=\"fieldName\" class=\"field-name\">" +
     RS.escapeHtml(data.name) + "<span class='field-type-enum'> (" + data.type + ")</span>" + mandatoryAsterisk + "</td><td class=\"field-value\">" +
-    "<table><tr><td class=\"icon-field bootstrap-custom-flat\">" + "<button class=\"editButton btn btn-default\" onclick=\"editField(" + data.id + ")\">Edit</button>" +
-    "<button class=\"deleteButton btn btn-default\" onclick=\"deleteField(" + data.id + ")\">Delete</button>" + "</td></tr><tr><td class=\"field-value-inner\">";
+    "<table><tr><td class=\"icon-field bootstrap-custom-flat\">" + "<button class=\"editButton btn btn-default\" onclick=\"editField(" + data.id + ")\">" + RS.msg("legacyjs.workspace.form.editButton") + "</button>" +
+    "<button class=\"deleteButton btn btn-default\" onclick=\"deleteField(" + data.id + ")\">" + RS.msg("legacyjs.workspace.form.deleteButton") + "</button>" + "</td></tr><tr><td class=\"field-value-inner\">";
   if (data.ifPassword) {
     newrow = newrow + "<input  readOnly='true' type=\"password\" id=\"" + data.id + "\" name=\"fieldData\" value=\"" + RS.escapeHtml(data.defaultStringValue) + "\"/>";
   } else {
@@ -1105,12 +1104,12 @@ function saveEditedStringField(fieldId) {
       if (data.data !== null) {
         editStringCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
       $("#field-editor").dialog('close');
     }, "json");
   jqxhr.fail(function () {
-    RS.ajaxFailed("Saving field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
   });
 }
 
@@ -1138,7 +1137,7 @@ function addTextField() {
       if (data.data !== null) {
         addTextCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
 
       $("#field-editor").dialog('close');
@@ -1147,7 +1146,7 @@ function addTextField() {
   jqxhr.fail(function () {
     $('#field-loading').hide();
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Adding field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.addingFieldAction"), false, jqxhr);
   });
 }
 
@@ -1173,14 +1172,14 @@ function saveEditedTextField(fieldId) {
       if (data.data !== null) {
         editTextCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
       $("#field-editor").dialog('close');
     }, "json");
   jqxhr.fail(function () {
     $('#field-loading').hide();
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Saving field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
   });
 }
 
@@ -1221,7 +1220,7 @@ function addRadioField() {
       if (data.data !== null) {
         addRadioCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
 
       // refreshFields();
@@ -1231,7 +1230,7 @@ function addRadioField() {
   jqxhr.fail(function () {
     $('#field-loading').hide();
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Adding field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.addingFieldAction"), false, jqxhr);
   });
 }
 
@@ -1289,20 +1288,20 @@ function saveEditedRadioField(fieldId) {
       if (data.data !== null) {
         editRadioCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
       $("#field-editor").dialog('close');
     }, "json");
   jqxhr.fail(function () {
     $('#field-loading').hide();
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Saving field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
   });
 }
 const updateUIWithRadioOrPicklistAfterSave = (data) => {
   const fieldCode = $("#field_" + data.id);
   const mandatoryAsterisk = data.mandatory ? " <span style=\"color: red\">*</span>" : "";
-  $(fieldCode).find("td[name='fieldName']").text(data.showAsPickList ? data.name + ' (Picklist)': data.name + ' (Radio)');
+  $(fieldCode).find("td[name='fieldName']").text(data.showAsPickList ? RS.msg("legacyjs.workspace.form.fieldNamePicklist", data.name) : RS.msg("legacyjs.workspace.form.fieldNameRadio", data.name));
   $(fieldCode).find("td[name='fieldName']").append(mandatoryAsterisk);
 }
 
@@ -1371,7 +1370,7 @@ function addChoiceField() {
       if (data.data !== null) {
         addChoiceCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
       // refreshFields();
       $("#field-editor").dialog('close');
@@ -1379,7 +1378,7 @@ function addChoiceField() {
   jqxhr.fail(function () {
     $('#field-loading').hide();
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Adding field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.addingFieldAction"), false, jqxhr);
   });
 }
 
@@ -1428,14 +1427,14 @@ function saveEditedChoiceField(fieldId) {
       if (data.data !== null) {
         editChoiceCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
       $("#field-editor").dialog('close');
     }, "json");
   jqxhr.fail(function () {
     $('#field-loading').hide();
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Saving field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
   });
 }
 
@@ -1504,7 +1503,7 @@ function addDateField() {
       if (data.data !== null) {
         addDateCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
       // refreshFields();
       $("#field-editor").dialog('close');
@@ -1512,7 +1511,7 @@ function addDateField() {
   jqxhr.fail(function () {
     $('#field-loading').hide();
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Adding field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.addingFieldAction"), false, jqxhr);
   });
 }
 
@@ -1592,14 +1591,14 @@ function saveEditedDateField(fieldId) {
       if (data.data !== null) {
         editDateCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
       $("#field-editor").dialog('close');
     }, "json");
   jqxhr.fail(function () {
     $('#field-loading').hide();
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Saving field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
   });
 }
 
@@ -1645,7 +1644,7 @@ function addTimeField() {
       if (data.data !== null) {
         addTimeCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
       // refreshFields();
       $("#field-editor").dialog('close');
@@ -1653,7 +1652,7 @@ function addTimeField() {
   jqxhr.fail(function () {
     $('#field-loading').hide();
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Saving field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
   });
 }
 
@@ -1732,14 +1731,14 @@ function saveEditedTimeField(fieldId) {
       if (data.data !== null) {
         editTimeCode(data.data);
       } else if (data.errorMsg !== null) {
-        apprise("Errors : " + getValidationErrorString(data.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       }
       $("#field-editor").dialog('close');
     }, "json");
   jqxhr.fail(function () {
     $('#field-loading').hide();
     $("#field-editor").dialog('close');
-    RS.ajaxFailed("Saving field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFieldAction"), false, jqxhr);
   });
 }
 
@@ -1800,26 +1799,25 @@ function fieldFormValid(field) {
     fieldType = $("#fieldFormType").val();
   }
 
-  if (fieldType == "Select Field Type") {
-    isValid = addError("#fieldEditorSelect", "No field type selected.");
+  if (fieldType === "") {
+    isValid = addError("#fieldEditorSelect", RS.msg("legacyjs.workspace.form.noFieldTypeSelected"));
   } else {
     var MAX_FIELD_NAME_LENGTH = 50;
     if ("" === $("#field_name").val()) {
-      isValid = addError("#field_name", "Field Name required.");
+      isValid = addError("#field_name", RS.msg("legacyjs.workspace.form.fieldNameRequired"));
     } else if ($("#field_name").val().length > MAX_FIELD_NAME_LENGTH) {
-      isValid = addError("#field_name", "Field name maximum length is "
-        + MAX_FIELD_NAME_LENGTH + " characters");
+      isValid = addError("#field_name", RS.msg("legacyjs.workspace.form.fieldNameMaxLength", MAX_FIELD_NAME_LENGTH));
     }
     if (fieldType === "Choice") {
       if ($("#choiceFields").children().length === 0) {
         isValid = addError("#addChoiceName",
-          "No choices have been added.");
+          RS.msg("legacyjs.workspace.form.noChoicesAdded"));
       }
     }
     if (fieldType == "Radio") {
       if ($("#radioFields").children().length === 0) {
         isValid = addError("#addRadioName",
-          "No radios have been added.");
+          RS.msg("legacyjs.workspace.form.noRadiosAdded"));
       }
     }
     if (fieldType == "Number") {
@@ -1841,7 +1839,7 @@ function fieldFormValid(field) {
 
       if (minValue > maxValue) {
         isValid = addError("#field_minvalue",
-          "Min value is greater than max value.");
+          RS.msg("legacyjs.workspace.form.minGreaterThanMaxNumber"));
       }
 
       // if the minValue maxValue is valid then do default value
@@ -1850,13 +1848,13 @@ function fieldFormValid(field) {
         if (defaultValue !== "" && maxValue !== "") {
           if (defaultNumber > maxValue) {
             isValid = addError("#field_defaultvalue",
-              "Default value greater than max value.");
+              RS.msg("legacyjs.workspace.form.defaultGreaterThanMaxNumber"));
           }
         }
         if (defaultValue !== "" && minValue !== "") {
           if (defaultNumber < minValue) {
             isValid = addError("#field_defaultvalue",
-              "Default value less than min value. ");
+              RS.msg("legacyjs.workspace.form.defaultLessThanMinNumber"));
           }
         }
       }
@@ -1882,19 +1880,19 @@ function fieldFormValid(field) {
       if (minTime !== null && maxTime !== null) {
         if (minTime > maxTime) {
           isValid = addError("#field_minvalue",
-            "The min value was greater than the max value. ");
+            RS.msg("legacyjs.workspace.form.minGreaterThanMaxTime"));
         }
       }
       if (defaultTime !== null && maxTime !== null) {
         if (defaultTime > maxTime) {
           isValid = addError("#field_defaulttime",
-            "The defualt time is greater than the max value. ");
+            RS.msg("legacyjs.workspace.form.defaultTimeGreaterThanMax"));
         }
       }
       if (defaultTime !== null && minTime !== null) {
         if (defaultTime < minTime) {
           isValid = addError("#field_defaulttime",
-            "The defualt time is less than the min value.");
+            RS.msg("legacyjs.workspace.form.defaultTimeLessThanMin"));
         }
       }
     }
@@ -1906,19 +1904,19 @@ function fieldFormValid(field) {
       if (maxDate !== null && minDate !== null) {
         if (minDate > maxDate) {
           isValid = addError("#field_minvalue",
-            "The min value is greater than the max value.");
+            RS.msg("legacyjs.workspace.form.minGreaterThanMaxDate"));
         }
       }
       if (defaultDate !== null && minDate !== null) {
         if (defaultDate < minDate) {
           isValid = addError("#field_defaultdate",
-            "The default date is less than the min value.");
+            RS.msg("legacyjs.workspace.form.defaultDateLessThanMin"));
         }
       }
       if (defaultDate !== null && maxDate !== null) {
         if (defaultDate > maxDate) {
           isValid = addError("#field_defaultdate",
-            "The default date is greater than the max value.");
+            RS.msg("legacyjs.workspace.form.defaultDateGreaterThanMax"));
         }
       }
     }
@@ -1932,7 +1930,7 @@ function fieldFormValid(field) {
 
 function addError(field, message) {
   $("#errorSummary").append(
-    "<img src=\"/images/iconWarning.gif\" alt=\"Warning\" class=\"icon\">" + message + " <br/>");
+    "<img src=\"/images/iconWarning.gif\" alt=\"" + RS.msg("legacyjs.workspace.form.warningAlt") + "\" class=\"icon\">" + message + " <br/>");
   $(field).parent().addClass('field-error');
   return false;
 }
@@ -1950,7 +1948,7 @@ function loadRecord(record) {
  */
 function saveForm() {
 
-  RS.blockPage("Saving form...");
+  RS.blockPage(RS.msg("legacyjs.workspace.form.savingFormBlock"));
   $.ajaxSetup({
     async: false
   });
@@ -1971,12 +1969,12 @@ function saveForm() {
   }, "json");
 
   jqxhr.fail(function () {
-    RS.ajaxFailed("Saving form", true, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFormAction"), true, jqxhr);
   });
 }
 
 function updateForm() {
-  RS.blockPage("Updating  form...");
+  RS.blockPage(RS.msg("legacyjs.workspace.form.updatingFormBlock"));
   $.ajaxSetup({
     async: false
   });
@@ -1990,13 +1988,13 @@ function updateForm() {
         async: true
       });
       RS.unblockPage();
-      $('#noMessages').html("Form updated to new version..");
+      $('#noMessages').html(RS.msg("legacyjs.workspace.form.formUpdatedMessage"));
       setTimeout(function () {
         window.location = createURL(LISTFORMS_BY_MODFICATIONDATE_DESC);
       }, 1000);
 
     } else if (data.errorMsg !== null) {
-      apprise("Errors : " + getValidationErrorString(data.errorMsg));
+      apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       $.ajaxSetup({
         async: true
       });
@@ -2005,12 +2003,11 @@ function updateForm() {
   }, "json");
 
   jqxhr.fail(function () {
-    RS.ajaxFailed("Updating form", true, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.updatingFormAction"), true, jqxhr);
   });
 }
 
 function changeOrder() {
-
   // Reorder fields dialog.
   $("#reorderFieldsDialog").dialog({
     resizable: false,
@@ -2025,10 +2022,10 @@ function changeOrder() {
         var name = $(this).children().first().text().toLowerCase();
         var row = "<tr id='row_" + id + "' class='reorderField'><td class='fieldLabel'><input id='radio_" + id + "' type=radio name=fields><label>" + RS.escapeHtml(name) + "</label></td><td>" +
           "<div id='buttonBlock_" + id + "' class='orderButtons' style='display:none;'>" +
-          "<button id='top_" + id + "' type=button alt='Top' title='Top' class=fieldMover><img src='/images/icons/upAll.png'></button>" +
-          "<button id='up_" + id + "' type=button alt='Up' title='Up' class=fieldMover><img src='/images/icons/upOne.png'></button>" +
-          "<button id='down_" + id + "' type=button alt='Down' title='Down' class=fieldMover><img src='/images/icons/downOne.png'></button>" +
-          "<button id='bottom_" + id + "' type=button alt='Bottom' title='Bottom' class=fieldMover><img src='/images/icons/downAll.png'></button>" +
+          "<button id='top_" + id + "' type=button alt='" + RS.msg("legacyjs.workspace.form.moveTop") + "' title='" + RS.msg("legacyjs.workspace.form.moveTop") + "' class=fieldMover><img src='/images/icons/upAll.png'></button>" +
+          "<button id='up_" + id + "' type=button alt='" + RS.msg("legacyjs.workspace.form.moveUp") + "' title='" + RS.msg("legacyjs.workspace.form.moveUp") + "' class=fieldMover><img src='/images/icons/upOne.png'></button>" +
+          "<button id='down_" + id + "' type=button alt='" + RS.msg("legacyjs.workspace.form.moveDown") + "' title='" + RS.msg("legacyjs.workspace.form.moveDown") + "' class=fieldMover><img src='/images/icons/downOne.png'></button>" +
+          "<button id='bottom_" + id + "' type=button alt='" + RS.msg("legacyjs.workspace.form.moveBottom") + "' title='" + RS.msg("legacyjs.workspace.form.moveBottom") + "' class=fieldMover><img src='/images/icons/downAll.png'></button>" +
           "</div>" + "</td></tr>";
         $("#reorderFieldTable").append(row);
       });
@@ -2037,10 +2034,10 @@ function changeOrder() {
       $(".reorderField").remove();
     },
     buttons: {
-      Cancel: function () {
+      [RS.msg("legacyjs.workspace.form.cancelButton")]: function () {
         $(this).dialog('close');
       },
-      'Done': function () {
+      [RS.msg("legacyjs.workspace.form.doneButton")]: function () {
         var ids = [];
         $('.reorderField').each(function () {
           var id = $(this).attr('id').split("_")[1];
@@ -2053,13 +2050,13 @@ function changeOrder() {
             "fieldids[]": ids
           }, function (response) {
             if (response.data) {
-              RS.confirm("Fields reordered, page reloading", "success", 3000);
+              RS.confirm(RS.msg("legacyjs.workspace.form.fieldsReorderedMessage"), "success", 3000);
               location.href = "/workspace/editor/form/edit/" + recordId;
             }
           });
 
         jqxhr.fail(function () {
-          RS.ajaxFailed("Reordering fields", false, jqxhr);
+          RS.ajaxFailed(RS.msg("legacyjs.workspace.form.reorderingFieldsAction"), false, jqxhr);
         });
       }
     }
@@ -2070,7 +2067,7 @@ function changeOrder() {
 }
 
 function abandonUpdateForm() {
-  RS.blockPage("Abandoning form updates...");
+  RS.blockPage(RS.msg("legacyjs.workspace.form.abandoningFormUpdatesBlock"));
   $.ajaxSetup({
     async: false
   });
@@ -2086,7 +2083,7 @@ function abandonUpdateForm() {
       RS.unblockPage();
       window.location = createURL(LISTFORMS_BY_MODFICATIONDATE_DESC);
     } else if (data.errorMsg !== null) {
-      apprise("Errors : " + getValidationErrorString(data.errorMsg));
+      apprise(RS.msg("legacyjs.workspace.form.fieldErrors", getValidationErrorString(data.errorMsg)));
       $.ajaxSetup({
         async: true
       });
@@ -2095,7 +2092,7 @@ function abandonUpdateForm() {
   }, "json");
 
   jqxhr.fail(function () {
-    RS.ajaxFailed("Reverting to previous form version", true, jqxhr)
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.revertingFormAction"), true, jqxhr)
   });
 }
 
@@ -2150,14 +2147,14 @@ function checkNumber(element) {
   // if the minValue maxValue is valid then do default value validation,
   // otherwise the user will be confused
   if (isNaN(value)) {
-    error = "Value [" + value + "] is not a number!";
+    error = RS.msg("legacyjs.workspace.form.valueNotANumber", value);
   } else if (value !== "" && maxValue !== "") {
     if (numberData > maxNumber) {
-      error = "Value greater than max value(" + maxValue + ").";
+      error = RS.msg("legacyjs.workspace.form.valueGreaterThanMaxNumber", maxValue);
     }
   } else if (value !== "" && minValue !== "") {
     if (numberData < minNumber) {
-      error = "Value less than min value(" + minValue + "). ";
+      error = RS.msg("legacyjs.workspace.form.valueLessThanMinNumber", minValue);
     }
   }
   return error;
@@ -2291,7 +2288,7 @@ function loadDatePicker(val) {
 function deleteField(fieldId) {
   var jqxhr = $.post(createURL("/workspace/editor/form/ajax/deleteField"), { fieldId: fieldId }, function (data) {
     if (data.data) {
-      RS.blockPage("Deleting field...");
+      RS.blockPage(RS.msg("legacyjs.workspace.form.deletingFieldBlock"));
       $("#field_" + fieldId).slideUp("slow", function () {
         $("#field_" + fieldId).remove();
       });
@@ -2302,7 +2299,7 @@ function deleteField(fieldId) {
   }, "json");
 
   jqxhr.fail(function () {
-    RS.ajaxFailed("Deleting field", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.deletingFieldAction"), false, jqxhr);
   });
 }
 
@@ -2315,7 +2312,7 @@ var saveFormTag = function saveTmpTag() {
     }
   });
   jqxhr.fail(function () {
-    RS.ajaxFailed("Saving form tags", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.form.savingFormTagsAction"), false, jqxhr);
   });
 };
 

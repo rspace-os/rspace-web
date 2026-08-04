@@ -224,7 +224,7 @@ public class GalleryVersionHistoryTest {
      */
     Mockito.doReturn(anonymous).when(userManager).getAuthenticatedUserInSession();
     // the refusal reaches the UI through the error view, so its wording comes from the bundle
-    when(messages.getMessage("error.authorization.versionHistory.loginRequired"))
+    when(messages.getMessage("errors.authorization.versionHistory.loginRequired"))
         .thenReturn("resolved from the bundle");
 
     AuthorizationException refused =

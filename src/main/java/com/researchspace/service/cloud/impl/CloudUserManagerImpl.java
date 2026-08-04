@@ -223,7 +223,7 @@ public class CloudUserManagerImpl implements CommunityUserManager {
 
     EmailContent content =
         emailContentGenerator.render(
-            "email.emailchange.subject", "emailChangeVerificationMsg.vm", rc);
+            "email.account.emailChangeVerification.subject", "emailChangeVerificationMsg.vm", rc);
 
     log.info("Sending mail to {} at unverified email: {}", user.getUsername(), email);
     emailSender.sendEmail(content, List.of(email), null);
@@ -237,7 +237,9 @@ public class CloudUserManagerImpl implements CommunityUserManager {
 
     EmailContent content =
         emailContentGenerator.render(
-            "email.emailchange.subject", "emailChangeConfirmationMsg.vm", model);
+            "email.account.emailChangeConfirmation.subject",
+            "emailChangeConfirmationMsg.vm",
+            model);
     log.info("Sending confirmation mail to {} at old email {}", user.getUsername(), oldEmail);
     emailSender.sendEmail(content, List.of(oldEmail), null);
   }

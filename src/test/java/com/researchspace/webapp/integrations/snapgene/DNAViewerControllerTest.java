@@ -23,6 +23,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SystemPropertyManager;
@@ -57,7 +58,7 @@ public class DNAViewerControllerTest {
   @Mock SnapgeneWSClient wsClient;
   @Mock RecordManager rcdMgr;
   @Mock IPermissionUtils perms;
-  @Mock MessageSourceUtils messages;
+  MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
   @Mock SystemPropertyManager systemPropertyManagerImpl;
   @Mock SystemPropertyValue isSnapgeneAllowed;
   @InjectMocks DNAViewerController dnaController;
@@ -69,6 +70,7 @@ public class DNAViewerControllerTest {
 
   @Before
   public void before() {
+    dnaController.setMessageSource(messages);
     edf.setExtension("gb");
     when(systemPropertyManagerImpl.findByName(SNAPGENE_AVAILABLE)).thenReturn(isSnapgeneAllowed);
     when(isSnapgeneAllowed.getValue()).thenReturn(ALLOWED.name());
@@ -92,7 +94,7 @@ public class DNAViewerControllerTest {
         dnaController.getPngView(1L, GeneratePngMapConfig.builder().build());
     assertThat(
         new String(bytes.getBody(), "UTF-8"),
-        Matchers.startsWith("Snapgene webservice call failed"));
+        Matchers.startsWith(messages.getMessage("connect.snapgene.errors.webserviceNoDetails")));
     assertEquals(HttpStatus.BAD_REQUEST.value(), bytes.getStatusCodeValue());
   }
 
@@ -100,7 +102,9 @@ public class DNAViewerControllerTest {
   public void statusFails() throws IOException {
     mockErrorSnapgeneStatus(HttpStatus.NOT_FOUND);
     ResponseEntity<String> bytes = dnaController.status();
-    assertThat(bytes.getBody(), Matchers.startsWith("Snapgene webservice call failed"));
+    assertThat(
+        bytes.getBody(),
+        Matchers.startsWith(messages.getMessage("connect.snapgene.errors.webserviceNoDetails")));
     assertEquals(HttpStatus.NOT_FOUND.value(), bytes.getStatusCodeValue());
   }
 
@@ -117,7 +121,8 @@ public class DNAViewerControllerTest {
     when(wsClient.status()).thenReturn(Either.left(null));
     ResponseEntity<String> bytes = dnaController.status();
     verify(wsClient).status();
-    assertEquals("Snapgene webservice call failed", bytes.getBody());
+    assertEquals(
+        messages.getMessage("connect.snapgene.errors.webserviceNoDetails"), bytes.getBody());
     assertEquals(HttpStatus.FAILED_DEPENDENCY.value(), bytes.getStatusCodeValue());
   }
 

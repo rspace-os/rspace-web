@@ -48,7 +48,7 @@ public class ExportImportTest {
   private void setupMessageSources() {
     mockMessageSource = new StaticMessageSource();
     mockMessageSource.addMessage(
-        "archive.download.failure.msg", Locale.getDefault(), "downloadfailed");
+        "importExport.download.errors.missingFile", Locale.getDefault(), "downloadfailed");
     mockMessageSource.addMessage("errors.invalidstringformat", Locale.getDefault(), "badformat");
     exportImpl.setMessageSource(mockMessageSource);
   }

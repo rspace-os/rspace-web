@@ -34,14 +34,17 @@ public class UserToPiCommandValidator implements Validator {
   @Override
   public void validate(Object target, Errors errors) {
     if (activeUsers.contains(candidatePI.getUsername())) {
-      errors.reject("system.user2pi.userIsActive", new Object[] {candidatePI.getFullName()}, null);
+      errors.reject("errors.user.activeSession", new Object[] {candidatePI.getFullName()}, null);
     }
     if (candidatePI.hasRole(Role.PI_ROLE)) {
-      errors.reject("system.user2pi.useralreadyPI", new Object[] {candidatePI.getFullName()}, null);
+      errors.reject(
+          "system.userToPi.validation.alreadyPi", new Object[] {candidatePI.getFullName()}, null);
     }
     if (!candidatePI.hasRole(Role.USER_ROLE)) {
       errors.reject(
-          "system.user2pi.userNotUserRole", new Object[] {candidatePI.getFullName()}, null);
+          "system.userToPi.validation.userRoleRequired",
+          new Object[] {candidatePI.getFullName()},
+          null);
     }
   }
 }

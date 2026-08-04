@@ -25,6 +25,8 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;
@@ -52,6 +54,7 @@ public class SharingHandlerImpl implements SharingHandler {
   private @Autowired FolderManager folderManager;
   private @Autowired RecordManager recordManager;
   private @Autowired IPermissionUtils permissionUtils;
+  private @Autowired MessageSourceUtils messages;
 
   @Override
   public ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> shareRecords(
@@ -219,9 +222,11 @@ public class SharingHandlerImpl implements SharingHandler {
     SharingResult sharingResult = shareRecordsWithResult(shareConfig, baseRecordToMove.getOwner());
     if (sharingResult.getError().hasErrorMessages()) {
       throw new IllegalStateException(
-          "Errors while moving into Shared Notebook: ["
-              + sharingResult.getError().getAllErrorMessagesAsStringsSeparatedBy(",")
-              + "]");
+          messages.getMessage(
+              "sharing.errors.sharedNotebookMoveFailed",
+              new Object[] {
+                ListFormatUtils.formatList(sharingResult.getError().getErrorMessages())
+              }));
     }
     return sharingResult;
   }

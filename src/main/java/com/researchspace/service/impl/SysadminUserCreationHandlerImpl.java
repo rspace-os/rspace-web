@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import static com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.Constants;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
@@ -25,21 +26,22 @@ import com.researchspace.service.EmailContent;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SysadminUserCreationHandler;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.SysAdminCreateUser;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.MessageSource;
 
 public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHandler {
 
@@ -52,7 +54,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
   private @Autowired UserManager userManager;
   private @Autowired GroupManager groupManager;
   private @Autowired IContentInitializer initializer;
-  private @Autowired MessageSource messageSource;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired EmailContentGenerator emailContentGenerator;
 
   @Autowired
@@ -67,7 +69,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
     if (passwordRequiredButBlank(
             userForm.getPassword(), userForm.getPasswordConfirmation(), userForm.isLdapAuthChoice())
         || affiliationRequiredButBlank(userForm.getPassword())) {
-      errorList.addErrorMsg(getText("errors.allfields.required"));
+      errorList.addErrorMsg(getText("errors.allFields.required"));
     }
 
     /* Username validation */
@@ -92,8 +94,12 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
     if (!Role.isRoleStringIdentifiable(role)) {
       errorList.addErrorMsg(
           getText(
-              "errors.invalid.roleidentifier",
-              new Object[] {role, StringUtils.join(Role.getValidRoles())}));
+              "errors.invalid.roleIdentifier",
+              new Object[] {
+                role,
+                ListFormatUtils.formatList(
+                    Arrays.asList(Role.getValidRoles()), ListFormatter.Type.OR)
+              }));
       return new AjaxReturnObject<User>(null, errorList);
     }
 
@@ -116,7 +122,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
         groupManager.addUserToGroup(
             userForm.getUsername(), userForm.getLabGroupId(), RoleInGroup.DEFAULT);
       } else {
-        errorList.addErrorMsg(getText("errors.user.notingroup"));
+        errorList.addErrorMsg(getText("errors.user.notInGroup"));
       }
 
     } else if (isPIRole && (isSubjectSysAdmin || isSubjectRSpaceAdmin)) {
@@ -134,7 +140,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
           communityService.addGroupToCommunity(
               newLabGroup.getId(), userForm.getCommunityId(), subject);
         } else {
-          errorList.addErrorMsg(getText("errors.missinggroup.name"));
+          errorList.addErrorMsg(getText("errors.missingGroup.name"));
           return new AjaxReturnObject<User>(null, errorList);
         }
       } else {
@@ -158,12 +164,13 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
             communityService.addAdminsToCommunity(new Long[] {newUser.getId()}, community.getId());
         communityService.save(comm);
       } else {
-        errorList.addErrorMsg(getText("errors.adminnotincommunity"));
+        errorList.addErrorMsg(getText("errors.adminNotInCommunity"));
       }
 
     } else if (isSysAdminRole) {
       if (!isSubjectSysAdmin) {
-        throw new AuthorizationException("Only a sysadmin can create another sysadmin!");
+        throw new AuthorizationException(
+            getText("errors.authorization.sysadminCreateSysadminOnly"));
       }
       newUser = attemptUserSave(userForm, subject, errorList, newUser);
       if (errorList.hasErrorMessages()) {
@@ -179,11 +186,11 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
   }
 
   private String getText(String string, Object[] args) {
-    return messageSource.getMessage(string, new Object[] {}, Locale.getDefault());
+    return messages.getMessage(string, args, Locale.getDefault());
   }
 
   private String getText(String string) {
-    return getText(string, new Object[] {});
+    return messages.getMessageForLocale(string, Locale.getDefault());
   }
 
   private User attemptUserSave(
@@ -258,10 +265,10 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
     velocityModel.put("newUser", newUser);
     velocityModel.put("newUserRole", role.split("_")[1]);
     velocityModel.put("adminUser", adminUser);
-    velocityModel.put("htmlPrefix", properties.getServerUrl());
+    velocityModel.put("baseURL", properties.getServerUrl());
     EmailContent content =
         emailContentGenerator.render(
-            "email.newuseraccount.complete.subject",
+            "email.account.newUserAccountComplete.subject",
             null,
             "newUserAccountComplete.vm",
             velocityModel);

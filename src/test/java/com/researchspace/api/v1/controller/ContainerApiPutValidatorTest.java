@@ -54,7 +54,7 @@ public class ContainerApiPutValidatorTest extends InventoryRecordValidationTestB
     e = resetErrorsAndValidate(containerPut);
     assertEquals(1, e.getErrorCount());
     assertEquals(
-        "errors.inventory.container.gridLayout.missingOptions", e.getFieldError().getCode());
+        "errors.inventory.container.gridLayoutMissingOptions", e.getFieldError().getCode());
   }
 
   @Test

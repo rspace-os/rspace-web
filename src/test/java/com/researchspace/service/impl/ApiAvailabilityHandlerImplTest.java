@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.model.User;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
@@ -21,7 +22,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,10 +41,7 @@ class ApiAvailabilityHandlerImplTest {
     handler = new ApiAvailabilityHandlerImpl();
     handler.setSystemPropertyManager(mockSysPropMgr);
     handler.setDataCiteConnector(new DataCiteConnectorDummy());
-    // resolve messages against the real inventory bundle, so keys are covered too
-    ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
-    messageSource.setBasename("bundles/inventory/inventory");
-    handler.setMessages(new MessageSourceUtils(messageSource));
+    handler.setMessages(new MessageSourceUtils(new JsonMessageSource()));
   }
 
   @Test

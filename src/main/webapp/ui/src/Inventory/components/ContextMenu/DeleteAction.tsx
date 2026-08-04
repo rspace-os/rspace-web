@@ -24,7 +24,9 @@ const DeleteAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Dele
       [() => disabled !== "", disabled],
       [
         () => selectedResults.some((r) => !r.canEdit),
-        `You do not have permission to delete ${selectedResults.length > 1 ? "these items" : "this item"}.`,
+        t("contextMenu.delete.noPermission", {
+          count: selectedResults.length,
+        }),
       ],
       [() => true, ""],
     ])();

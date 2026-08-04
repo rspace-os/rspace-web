@@ -86,7 +86,7 @@ export const handleDetailedSuccesses = (
 // ../../../../resources/bundles/inventory/inventory.properties). These are
 // flat dot-delimited strings, so a direct lookup beats any tree traversal.
 const messages: Record<string, (record: { name?: string }) => { title: string; help: string }> = {
-  "container.deletion.failure.not.empty": ({ name }) => ({
+  "errors.inventory.container.deletion.notEmpty": ({ name }) => ({
     title: i18n.t("inventory:bulkAlerts.error.containerNotEmpty.title", { name }),
     help: i18n.t("inventory:bulkAlerts.error.containerNotEmpty.help"),
   }),
@@ -94,7 +94,7 @@ const messages: Record<string, (record: { name?: string }) => { title: string; h
     title: i18n.t("inventory:bulkAlerts.error.sampleSubsamplesInContainers.title", { name }),
     help: i18n.t("inventory:bulkAlerts.error.sampleSubsamplesInContainers.help"),
   }),
-  "move.failure.cannot.locate.target.container": () => ({
+  "errors.inventory.move.targetContainer.unavailable": () => ({
     title: i18n.t("inventory:bulkAlerts.error.cannotLocateTargetContainer.title"),
     help: i18n.t("inventory:bulkAlerts.error.cannotLocateTargetContainer.help"),
   }),

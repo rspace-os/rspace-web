@@ -1,12 +1,11 @@
 package com.researchspace.api.v1.model;
 
 import com.researchspace.netfiles.ApiNfsCredentials;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  * Request body for {@code POST /api/v1/gallery/filestores/{filestoreId}/uploadFromGallery}. The
@@ -20,8 +19,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApiGalleryFilestoreOperationRequest {
 
-  @NotNull(message = "recordIds is mandatory")
-  @Size(min = 1, message = "recordIds is mandatory")
+  @NotEmpty(message = "{errors.gallery.filestore.validation.recordIdsRequired}")
   private Set<Long> recordIds;
 
   private ApiNfsCredentials credentials;

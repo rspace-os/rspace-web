@@ -1,14 +1,15 @@
-Hello $!{invited.fullName},
+$msg.format("email.common.greeting", [${invited.fullName}])
 <p>
-${creator.fullName} (${creator.email}) has invited you to create an RSpace group '${groupName}', with you as its Principal Investigator.
+$msg.format("email.cloud.groupPiInvitationExistingUser.body", [${creator.fullName}, ${creator.email}, ${groupName}])
 
 <p>
-If you'd like to accept this invitation, please login to RSpace:
-
-<a href = "${acceptanceLink}">${acceptanceLink}</a>
+$msg.format("email.cloud.groupInvitation.loginPrompt", [${acceptanceLink}])
 
 <p>
-Once you've logged in,  there will be an invitation message waiting for you - accept this invitation and your group will be created, with ${creator.fullName} as your Lab Admin.
+$msg.format("email.cloud.groupPiInvitationExistingUser.onceLoggedIn", [${creator.fullName}])
 
 <p>
-#signature
+$msg.getMessage("email.common.signatureSignOff")
+<p>
+$msg.getMessage("email.common.signatureTeam")
+</p>

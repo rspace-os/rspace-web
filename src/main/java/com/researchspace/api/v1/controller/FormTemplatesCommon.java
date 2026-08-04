@@ -103,9 +103,7 @@ public class FormTemplatesCommon {
     @Pattern(
         regexp =
             "(Text)|(String)|(Number)|(Radio)|(Choice)|(Date)|(Time)|(Reference)|(Uri)|(Attachment)",
-        message =
-            "Please supply a supported 'type' property: was '${validatedValue}' but must match"
-                + " {regexp} ")
+        message = "{form.validation.typeUnsupported}")
     @NotNull
     private String type;
 
@@ -141,7 +139,7 @@ public class FormTemplatesCommon {
 
     private boolean multipleChoice;
 
-    @Size(min = 1, message = "Please provide at least one option")
+    @Size(min = 1, message = "{form.validation.optionRequired}")
     private List<String> options = new ArrayList<>();
 
     private List<String> defaultOptions = new ArrayList<>();
@@ -176,7 +174,7 @@ public class FormTemplatesCommon {
       super(FieldType.RADIO_TYPE);
     }
 
-    @Size(min = 1, message = "Please provide at least one option")
+    @Size(min = 1, message = "{form.validation.optionRequired}")
     private List<String> options = new ArrayList<>();
 
     private boolean showAsPickList;
@@ -236,10 +234,7 @@ public class FormTemplatesCommon {
       super(FieldType.STRING_TYPE);
     }
 
-    @Size(
-        max = BaseRecord.DEFAULT_VARCHAR_LENGTH,
-        message =
-            "String fields must be less than " + BaseRecord.DEFAULT_VARCHAR_LENGTH + " characters")
+    @Size(max = BaseRecord.DEFAULT_VARCHAR_LENGTH, message = "{form.validation.stringTooLong}")
     private String defaultValue = "";
 
     @Override

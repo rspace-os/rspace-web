@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 
 <%@ include file="/common/taglibs.jsp"%>
-
-<html>
+<html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
 <head>
     <script>
       let currentUser = "${sessionScope.userInfo.username}";
@@ -15,7 +14,7 @@
     <%@ include file="/common/meta.jsp"%>
     <rst:viteClient />
     <title>
-        <sitemesh:write property='title'/> | <fmt:message key="webapp.name" />
+        <sitemesh:write property='title'/> | <spring:message code="webapp.name" />
     </title>
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
     <link media="all" href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" rel="stylesheet" />
@@ -32,6 +31,7 @@
     <script src="<rst:assetUrl value='/scripts/jquery.toastmessage.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
     <script>RS.cacheVersion = '<rst:cacheVersion/>';</script>
+    <rst:i18nMessages />
     <script src="<rst:assetUrl value='/scripts/global.settingsStorage.js'/>"></script>
     <jsp:include page="/scripts/templates/blockUI.html"/>
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/jquery.toastmessage.css'/>" />

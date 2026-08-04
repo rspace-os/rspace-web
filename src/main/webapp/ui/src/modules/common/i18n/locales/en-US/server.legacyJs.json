@@ -210,6 +210,9 @@
       "showingForSearchTerm": "Showing {0} for search term ''{1}''.",
       "userSearchPlaceholder": "Type a user's name, email or username"
     },
+    "errors": {
+      "required": "{0} is a required field."
+    },
     "gallery": {
       "actionFileUpload": "File upload",
       "dragAndDropDescription": "Drag and drop files here.</br> They will be added as attachments",

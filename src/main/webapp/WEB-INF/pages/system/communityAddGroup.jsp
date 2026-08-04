@@ -4,15 +4,15 @@
 <div id="defaultCommunityListing" style="display:none">
     <form id="addGroupsForm">
         <div class="topGreyBar">
-            Please choose unassigned groups to add to this community
-            <a id="addGroupSubmit" class="systemButton systemGoButton" href="#">Go</a> 
-            <a id="addGroupCancel" class="cancel systemButton systemCancelButton" href="#">Cancel</a>
+            <spring:message code="community.addGroup.chooseLabel"/>
+            <a id="addGroupSubmit" class="systemButton systemGoButton" href="#"><spring:message code="community.actions.go"/></a>
+            <a id="addGroupCancel" class="cancel systemButton systemCancelButton" href="#"><spring:message code="common:actions.cancel"/></a>
         </div>
         <div class="communityViewInnerList">
             <c:if test="${community.id ne -1}"> <%-- i.e. not a default 'All Groups' community --%>
                 <c:choose>
                     <c:when test="${empty defaultCommunity.labGroups}">
-                        <spring:message code="community.defaultCommunity.nolabGroups.msg" />
+                        <spring:message code="community.defaultCommunity.noLabGroups.emptyState" />
                     </c:when>
                     <c:otherwise>
                         <table>
@@ -27,7 +27,7 @@
                 </c:choose>
             </c:if>
         </div>
-        <input type="hidden" name="from" value="-1"/> 
+        <input type="hidden" name="from" value="-1"/>
         <input type="hidden" name="to" value="${community.id}" />
         <input type="hidden" name="ids" id="addGroupIds" value="" />
     </form>
