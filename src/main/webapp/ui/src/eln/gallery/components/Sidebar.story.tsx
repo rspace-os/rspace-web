@@ -80,27 +80,25 @@ export function DMPToolCreateMenuStory({ isPicker }: { isPicker: boolean }): Rea
   return (
     <BrowserRouter>
       <GalleryTheme>
-        <Analytics>
-          <UiPreferences>
-            <Alerts>
-              <ThemeProvider
-                theme={(theme: Theme) =>
-                  isPicker
-                    ? {
-                        ...theme,
-                        zIndex: { ...theme.zIndex, drawer: theme.zIndex.modal + 1, modal: theme.zIndex.modal + 2 },
-                      }
-                    : theme
-                }
-              >
-                <Button onClick={(event) => setAnchorEl(event.currentTarget)}>{t("actions.create")}</Button>
-                <SidebarCreateMenu anchorEl={anchorEl} onClose={() => setAnchorEl(null)}>
-                  <DMPToolAccentMenuItem onDialogClose={() => setAnchorEl(null)} />
-                </SidebarCreateMenu>
-              </ThemeProvider>
-            </Alerts>
-          </UiPreferences>
-        </Analytics>
+        <UiPreferences>
+          <Alerts>
+            <ThemeProvider
+              theme={(theme: Theme) =>
+                isPicker
+                  ? {
+                      ...theme,
+                      zIndex: { ...theme.zIndex, drawer: theme.zIndex.modal + 1, modal: theme.zIndex.modal + 2 },
+                    }
+                  : theme
+              }
+            >
+              <Button onClick={(event) => setAnchorEl(event.currentTarget)}>{t("actions.create")}</Button>
+              <SidebarCreateMenu anchorEl={anchorEl} onClose={() => setAnchorEl(null)}>
+                <DMPToolAccentMenuItem onDialogClose={() => setAnchorEl(null)} />
+              </SidebarCreateMenu>
+            </ThemeProvider>
+          </Alerts>
+        </UiPreferences>
       </GalleryTheme>
     </BrowserRouter>
   );
