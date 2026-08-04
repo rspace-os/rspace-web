@@ -27,6 +27,10 @@ on:
         type: string
         default: 'temurin'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -57,9 +61,13 @@ jobs:
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
+              - '.github/workflows/**'
             java:
               - 'src/main/java/**'
               - 'src/test/java/**'
+              - 'src/main/resources/**'
+              - 'src/test/resources/**'
+              - 'src/main/webapp/WEB-INF/**'
               - 'pom.xml'
 
   fast-junit-tests:
