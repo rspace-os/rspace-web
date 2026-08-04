@@ -19,7 +19,21 @@ public interface ResourceOperations<T, ID> {
 
   ResourcePage<T> find(ResourceRequest request);
 
+  /**
+   * Finds one page for a caller when the resource representation depends on that caller.
+   *
+   * <p>The default keeps caller-independent collections on the smaller interface.
+   */
+  default ResourcePage<T> find(ResourceRequest request, User actor) {
+    return find(request);
+  }
+
   long count(ResourceRequest request);
+
+  /** Counts matching resources after caller-specific values are resolved. */
+  default long count(ResourceRequest request, User actor) {
+    return count(request);
+  }
 
   Optional<T> findById(ID id);
 

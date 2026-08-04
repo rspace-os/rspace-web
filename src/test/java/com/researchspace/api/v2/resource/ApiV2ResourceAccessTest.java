@@ -94,7 +94,8 @@ class ApiV2ResourceAccessTest {
 
     assertThrows(
         ApiV2AuthenticationException.class, () -> widgets.list(request(null, List.of()), null));
-    verify(operations, org.mockito.Mockito.never()).find(any());
+    verify(operations, org.mockito.Mockito.never())
+        .find(any(), org.mockito.ArgumentMatchers.nullable(User.class));
   }
 
   @Test
@@ -120,12 +121,13 @@ class ApiV2ResourceAccessTest {
         describe(
             AccessPolicy.readOnly(documented(context -> AccessResult.allowedWhere(ownRows))),
             AccessFunction.anyone());
-    when(operations.find(any())).thenReturn(new ResourcePage<>(List.of(), 0));
+    when(operations.find(any(), org.mockito.ArgumentMatchers.nullable(User.class)))
+        .thenReturn(new ResourcePage<>(List.of(), 0));
 
     register(widgets).list(request(callerFilter, List.of()), user(false));
 
     ArgumentCaptor<ResourceRequest> captor = ArgumentCaptor.forClass(ResourceRequest.class);
-    verify(operations).find(captor.capture());
+    verify(operations).find(captor.capture(), org.mockito.ArgumentMatchers.any(User.class));
     FilterExpression applied = captor.getValue().filter();
     assertTrue(applied instanceof FilterExpression.And, "expected a conjunction, got " + applied);
     assertEquals(List.of(ownRows, callerFilter), ((FilterExpression.And) applied).children());
@@ -162,7 +164,7 @@ class ApiV2ResourceAccessTest {
   void unreadableFieldIsOmittedFromOutput() {
     CollectionDescription<Widget> widgets =
         describe(AccessPolicy.readOnly(AccessFunction.anyone()), AccessFunction.sysadmin());
-    when(operations.find(any()))
+    when(operations.find(any(), org.mockito.ArgumentMatchers.nullable(User.class)))
         .thenReturn(new ResourcePage<>(List.of(new Widget(7L, "classified")), 1));
 
     ApiV2ListResult<Map<String, Object>> anonymous =
@@ -182,7 +184,7 @@ class ApiV2ResourceAccessTest {
         describe(
             AccessPolicy.readOnly(AccessFunction.anyone()),
             documented(context -> AccessResult.allowedWhere(constraint)));
-    when(operations.find(any()))
+    when(operations.find(any(), org.mockito.ArgumentMatchers.nullable(User.class)))
         .thenReturn(new ResourcePage<>(List.of(new Widget(7L, "classified")), 1));
 
     assertThrows(
@@ -200,7 +202,8 @@ class ApiV2ResourceAccessTest {
             describe(
                 AccessPolicy.readOnly(documented(context -> AccessResult.allowedWhere(ownRows))),
                 AccessFunction.anyone()));
-    when(operations.find(any())).thenReturn(new ResourcePage<>(List.of(), 0));
+    when(operations.find(any(), org.mockito.ArgumentMatchers.nullable(User.class)))
+        .thenReturn(new ResourcePage<>(List.of(), 0));
 
     assertThrows(
         jakarta.ws.rs.NotFoundException.class,
@@ -209,7 +212,7 @@ class ApiV2ResourceAccessTest {
     // findById would have ignored the constraint entirely and handed back row 9.
     verify(operations, org.mockito.Mockito.never()).findById(any());
     ArgumentCaptor<ResourceRequest> captor = ArgumentCaptor.forClass(ResourceRequest.class);
-    verify(operations).find(captor.capture());
+    verify(operations).find(captor.capture(), org.mockito.ArgumentMatchers.any(User.class));
     assertEquals(
         List.of(ownRows, new FilterExpression.Comparison("id", Operator.EQUAL, List.of(9L), false)),
         ((FilterExpression.And) captor.getValue().filter()).children());
@@ -508,7 +511,7 @@ class ApiV2ResourceAccessTest {
   void sysadminSeesTheRestrictedField() {
     CollectionDescription<Widget> widgets =
         describe(AccessPolicy.readOnly(AccessFunction.anyone()), AccessFunction.sysadmin());
-    when(operations.find(any()))
+    when(operations.find(any(), org.mockito.ArgumentMatchers.nullable(User.class)))
         .thenReturn(new ResourcePage<>(List.of(new Widget(7L, "classified")), 1));
 
     Map<String, Object> document =
