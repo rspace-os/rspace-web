@@ -10,16 +10,15 @@ import java.util.TreeSet;
 
 /** Get/manage tags */
 public interface DocumentTagManager {
-  static final String SMALL_DATASET_IN_SINGLE_BLOCK =
-      "=========SMALL_DATASET_IN_SINGLE_BLOCK=========";
-  static final String FINAL_DATA = "=========FINAL_DATA=========";
+  String SMALL_DATASET_IN_SINGLE_BLOCK = "=========SMALL_DATASET_IN_SINGLE_BLOCK=========";
+  String FINAL_DATA = "=========FINAL_DATA=========";
   // Empirical observations - 1) 120000 results performed with no noticeable lag on a standard AWS
   // instance
   // 2) The largest ontology file on BioOntologies has ~ 110000 terms
   // No actual performance analysis has been done beyond these observations
-  static final int MAX_ONTOLOGY_RESULTS_SIZE = 150000;
-  static final String TOO_MANY_ONTOLOGY_RESULTS = "=========TOO_MANY_ONTOLOGY_RESULTS=========";
-  static final int ONTOLOGY_RESULTS_PAGE_SIZE = 1000;
+  int MAX_ONTOLOGY_RESULTS_SIZE = 150000;
+  String TOO_MANY_ONTOLOGY_RESULTS = "=========TOO_MANY_ONTOLOGY_RESULTS=========";
+  int ONTOLOGY_RESULTS_PAGE_SIZE = 1000;
 
   Set<String> getTagMetaDataForRecordIds(List<Long> ids, User user);
 

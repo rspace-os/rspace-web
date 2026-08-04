@@ -578,7 +578,7 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
     String[] allOntologyTermsInFile = text.split("</p>");
     for (String ontologyEntry : allOntologyTermsInFile) {
       ontologyEntry = ontologyEntry.replaceFirst("<p>", "");
-      int splitPosOnFirstEquals = ontologyEntry.indexOf("=");
+      int splitPosOnFirstEquals = ontologyEntry.indexOf('=');
       if (splitPosOnFirstEquals != -1) {
         String key = ontologyEntry.substring(0, splitPosOnFirstEquals);
         String allValueText = ontologyEntry.substring(splitPosOnFirstEquals + 1);

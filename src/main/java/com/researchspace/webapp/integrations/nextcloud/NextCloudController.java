@@ -285,7 +285,7 @@ public class NextCloudController extends BaseOAuth2Controller {
       path = path.split("__&&__")[0];
     }
     String decodedPath = URLDecoder.decode(path, UTF_8);
-    String parentPath = decodedPath.substring(0, decodedPath.lastIndexOf("/"));
+    String parentPath = decodedPath.substring(0, decodedPath.lastIndexOf('/'));
     if (StringUtils.isBlank(parentPath)) {
       parentPath = "/";
     }

@@ -345,6 +345,8 @@
           <version>${spotless.version}</version>
           <configuration>
               <java>
+                  <toggleOffOn/>
+                  <removeUnusedImports/>
                   <googleJavaFormat>
                       <version>1.28.0</version>
                       <style>GOOGLE</style>
@@ -2693,6 +2695,41 @@
       <properties>
         <context.path>/</context.path>
       </properties>
+    </profile>
+
+    <!-- Not in the base config on purpose: spotless:apply is bound to the compile phase, so
+         CleanThat there would rewrite source on every local build. Fix a violation with
+         `mvn -DspotlessStrict spotless:apply`. -->
+    <profile>
+      <id>spotlessStrict</id>
+      <activation>
+        <property>
+          <name>spotlessStrict</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <version>${spotless.version}</version>
+            <configuration>
+              <java>
+                <cleanthat/>
+              </java>
+            </configuration>
+            <executions>
+              <execution>
+                <id>spotless-strict-check</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <phase>validate</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
 
     <!-- Dummy profile setting up argLine property that is referred by surefire plugin -->

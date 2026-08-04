@@ -112,7 +112,7 @@ public class PublicStructuredDocumentController extends BaseController {
   public String getPublicDocForRecordOrParentOfRecord(
       @RequestParam(value = "globalId", required = true) String globalId) {
     String publicLink = getPublicLinkForRecord(new GlobalIdentifier(globalId).getDbId());
-    if (publicLink.equals("")) {
+    if (publicLink.isEmpty()) {
       long id = new GlobalIdentifier(globalId).getDbId();
       if (recordManager.exists(id)) {
         Record data = recordManager.get(id);

@@ -231,7 +231,7 @@ public abstract class BaseController implements ServletContextAware {
 
   public final String getCancelView() {
     // Default to successView if cancelView is invalid
-    if (this.cancelView == null || this.cancelView.length() == 0) {
+    if (this.cancelView == null || this.cancelView.isEmpty()) {
       return this.successView;
     }
     return this.cancelView;

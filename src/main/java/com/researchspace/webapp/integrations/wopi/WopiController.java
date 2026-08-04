@@ -380,7 +380,7 @@ public class WopiController extends BaseController {
       // if suggestedTargetHeader begins with a dot (.) then it means a file extension, and original
       // name should be used
       String currentName = currentMediaFile.getName();
-      proposedName = currentName.substring(0, currentName.lastIndexOf(".")) + suggestedTargetHeader;
+      proposedName = currentName.substring(0, currentName.lastIndexOf('.')) + suggestedTargetHeader;
     } else {
       // use the provided name
       proposedName = suggestedTargetHeader;

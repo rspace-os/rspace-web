@@ -75,13 +75,13 @@ public abstract class LinkableApiObject {
       path = path + "/" + pathStartingFromId;
     }
     if (!CollectionUtils.isEmpty(reqParameters)) {
-      path = path + '?';
+      path += '?';
       Iterator<Map.Entry<String, String>> paramIterator = reqParameters.entrySet().iterator();
       while (paramIterator.hasNext()) {
         Map.Entry<String, String> currentParameter = paramIterator.next();
         path = path + currentParameter.getKey() + '=' + currentParameter.getValue();
         if (paramIterator.hasNext()) {
-          path = path + '&';
+          path += '&';
         }
       }
     }

@@ -7,7 +7,7 @@ import com.researchspace.model.comms.MessageOrRequest;
 /** DAO for retrieving CollabGroupCreationTracker objects. */
 public interface CollaborationGroupTrackerDao extends GenericDao<CollabGroupCreationTracker, Long> {
 
-  public CollabGroupCreationTracker getByRequestId(MessageOrRequest mor);
+  CollabGroupCreationTracker getByRequestId(MessageOrRequest mor);
 
-  public CollabGroupCreationTracker getByGroupId(Group group);
+  CollabGroupCreationTracker getByGroupId(Group group);
 }

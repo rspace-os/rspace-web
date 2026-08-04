@@ -20,7 +20,7 @@ public interface APIFileUploadThrottler extends Throttler {
   Optional<APIFileUploadStats> getStats(String identifier, ThrottleInterval throttleInterval);
 
   /** Always returns true and does not restrict upload */
-  public static final APIFileUploadThrottler PASS_THRU =
+  APIFileUploadThrottler PASS_THRU =
       new APIFileUploadThrottler() {
 
         @Override
@@ -39,7 +39,7 @@ public interface APIFileUploadThrottler extends Throttler {
       };
 
   /** Rejects all requests, always throwing a {@link TooManyRequestsException} */
-  public static final APIFileUploadThrottler ALWAYS_BLOCK =
+  APIFileUploadThrottler ALWAYS_BLOCK =
       new APIFileUploadThrottler() {
 
         @Override

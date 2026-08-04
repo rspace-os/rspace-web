@@ -285,7 +285,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
   public ModelAndView redirectLink(@RequestParam("path") String path)
       throws UnsupportedEncodingException {
     String decodedPath = URLDecoder.decode(path, UTF_8);
-    String parentPath = decodedPath.substring(0, decodedPath.lastIndexOf("/"));
+    String parentPath = decodedPath.substring(0, decodedPath.lastIndexOf('/'));
     String redirectURL = ownCloudBaseURL + "/index.php/apps/files/?dir=" + parentPath;
 
     return new ModelAndView("redirect:" + redirectURL);

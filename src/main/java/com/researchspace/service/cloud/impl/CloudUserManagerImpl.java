@@ -148,7 +148,7 @@ public class CloudUserManagerImpl implements CommunityUserManager {
   private User createTempUser(String email) {
     String randUsername = email + RandomStringUtils.randomAlphanumeric(4);
     User tempUser = new User();
-    tempUser.setUsername(randUsername.toString());
+    tempUser.setUsername(randUsername);
     tempUser.setPassword(SecureStringUtils.getURLSafeSecureRandomString(16));
     tempUser.setFirstName(email);
     tempUser.setLastName(email);

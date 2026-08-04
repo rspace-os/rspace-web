@@ -24,7 +24,7 @@ public interface ExportRemovalPolicy {
    *
    * @return A String.
    */
-  public String getRemovalCircumstancesMsg();
+  String getRemovalCircumstancesMsg();
 
   /** Always returns false - the archive should not be removed. */
   ExportRemovalPolicy FALSE =

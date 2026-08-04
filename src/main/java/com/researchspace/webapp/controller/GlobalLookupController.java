@@ -115,7 +115,7 @@ public class GlobalLookupController extends BaseController {
       return url;
     }
     if (!url.endsWith("/")) {
-      url = url + "/";
+      url += "/";
     }
     return url;
   }

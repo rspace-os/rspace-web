@@ -7,5 +7,5 @@ import java.util.List;
 public interface UserAccountEventDao extends GenericDao<UserAccountEvent, String> {
 
   /** Gets UserAccountEvents for user */
-  public List<UserAccountEvent> getAccountEventsForUser(User toRetrieve);
+  List<UserAccountEvent> getAccountEventsForUser(User toRetrieve);
 }
