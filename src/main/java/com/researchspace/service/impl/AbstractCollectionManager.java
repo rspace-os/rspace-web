@@ -1,12 +1,12 @@
 package com.researchspace.service.impl;
 
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.CollectionDao;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.CollectionManager;
 import com.researchspace.service.CollectionMutationException;
@@ -34,7 +34,7 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
   }
 
   @Override
-  public ISearchResults<T> getResources(ResourceRequest request) {
+  public ResourcePage<T> getResources(ResourceRequest request) {
     return collectionDao.getResources(request);
   }
 

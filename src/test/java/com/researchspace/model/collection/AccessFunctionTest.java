@@ -66,6 +66,18 @@ class AccessFunctionTest {
   }
 
   @Test
+  void fieldsPermitExplicitInheritanceButRejectOtherUndocumentedFunctions() {
+    AccessFunction undocumented = ignored -> AccessResult.allowed();
+
+    assertSame(
+        AccessFunction.inherited(),
+        AccessFunction.requireDocumentedOrInherited(AccessFunction.inherited()));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> AccessFunction.requireDocumentedOrInherited(undocumented));
+  }
+
+  @Test
   void hardAndSoftDeleteHaveIndependentPolicies() {
     AccessPolicy policy =
         new AccessPolicy(

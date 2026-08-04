@@ -24,7 +24,7 @@ import com.researchspace.model.audittrail.HistoricData;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ApiV2ResourceDefinition;
 import com.researchspace.model.collection.ApiV2ResourceField;
-import com.researchspace.model.collection.ApiV2ResourceField.ReadAccess;
+import com.researchspace.model.collection.ApiV2ResourceField.AccessPreset;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.service.audit.search.AuditTrailHandler;
@@ -192,7 +192,7 @@ class ApiV2AuditLogTest {
   record ThingResource(
       @ApiV2ResourceField Long id,
       @ApiV2ResourceField String name,
-      @ApiV2ResourceField(readAccess = ReadAccess.NEVER) String secret) {
+      @ApiV2ResourceField(readAccess = AccessPreset.NEVER) String secret) {
 
     static final CollectionDescription<AuditedThing> DESCRIPTION =
         CollectionDescription.fromApiV2Resource(

@@ -64,13 +64,15 @@ class ApiV2ResourceAccessTest {
   }
 
   private ApiV2ResourceRegistration<Widget, Long> register(CollectionDescription<Widget> widgets) {
-    return new ApiV2ResourceRegistration<>(
-        widgets,
-        new ResourceRegistry(List.of(widgets)),
-        operations,
-        Long::valueOf,
-        "errors.api.v2.invalidRequest",
-        "errors.api.v2.invalidRequest");
+    ApiV2ResourceSpec<Widget, Long> spec =
+        new ApiV2ResourceSpec<>(
+            widgets,
+            operations,
+            Long::valueOf,
+            "errors.api.v2.invalidRequest",
+            "errors.api.v2.invalidRequest");
+    return spec.bind(
+        new ResourceRegistry(List.of(widgets)), ApiV2RelationshipResolver.unavailable());
   }
 
   private static ResourceRequest request(FilterExpression filter, List<Sort> sort) {

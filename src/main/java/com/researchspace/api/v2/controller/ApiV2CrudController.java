@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 /** Supplies the standard Payload-shaped CRUD routes for every registered REST v2 collection. */
 @RestController
 @RequestMapping("/api/v2")
+@ApiV2Access(ApiV2Access.Mode.RESOURCE_POLICY)
 public class ApiV2CrudController {
 
   private final ApiV2ResourceCatalog resources;

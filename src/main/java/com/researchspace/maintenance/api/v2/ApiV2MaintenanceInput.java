@@ -1,7 +1,6 @@
 package com.researchspace.maintenance.api.v2;
 
 import com.researchspace.maintenance.model.ScheduledMaintenance;
-import com.researchspace.maintenance.service.MaintenanceOperationException;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.ParsedDocument;
 import java.util.Date;
@@ -29,9 +28,6 @@ public record ApiV2MaintenanceInput(
       maintenance.setStopUserLoginDate(stopUserLoginDate);
     }
     maintenance.setMessage(message);
-    if (!maintenance.hasValidWindow()) {
-      throw new MaintenanceOperationException(MaintenanceOperationException.Reason.INVALID_WINDOW);
-    }
     return maintenance;
   }
 }

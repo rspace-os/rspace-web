@@ -1,12 +1,12 @@
 package com.researchspace.booking.dao;
 
 import com.blazebit.persistence.CriteriaBuilderFactory;
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +33,7 @@ public class BookingConfigurationDaoHibernate
   }
 
   @Override
-  public ISearchResults<BookingConfiguration> getResources(ResourceRequest request) {
+  public ResourcePage<BookingConfiguration> getResources(ResourceRequest request) {
     return COLLECTION_QUERY.page(criteriaBuilderFactory, getSession(), request);
   }
 

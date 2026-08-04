@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.collection.CollectionDescription.Field;
+import com.researchspace.model.collection.CollectionDescription.FieldSchema;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
@@ -16,6 +17,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 class CollectionDescriptionTest {
@@ -109,9 +112,14 @@ class CollectionDescriptionTest {
     assertEquals(
         List.of("id", "value", "serverManaged", "createdAt", "updatedAt", "createdBy", "updatedBy"),
         description.fields().stream().map(Field::name).toList());
-    assertEquals(10, description.requireField("value").schema().type().maxLength());
-    assertTrue(description.requireField("id").schema().readOnly());
-    assertTrue(description.requireField("serverManaged").schema().readOnly());
+    Map<String, FieldSchema> schemaFields =
+        description.schema().fields().stream()
+            .collect(Collectors.toMap(FieldSchema::name, Function.identity()));
+    assertEquals(10, schemaFields.get("value").type().maxLength());
+    assertTrue(schemaFields.get("id").readOnly());
+    assertTrue(schemaFields.get("serverManaged").readOnly());
+    assertEquals(
+        description.schema().access().readAccess(), schemaFields.get("value").readAccess());
     Map<String, Object> expected = new LinkedHashMap<>();
     expected.put("id", 1L);
     expected.put("value", "original");

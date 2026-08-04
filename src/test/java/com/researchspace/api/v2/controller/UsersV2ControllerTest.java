@@ -253,7 +253,7 @@ class UsersV2ControllerTest {
   void requiresAuthenticatedUserRequestAttribute() throws Exception {
     ApiV2Authenticator authenticator = mock(ApiV2Authenticator.class);
     when(authenticator.authenticate(org.mockito.ArgumentMatchers.any()))
-        .thenThrow(new ApiV2AuthenticationException("Authentication required"));
+        .thenThrow(new ApiV2AuthenticationException());
     ApiV2AuthenticationInterceptor interceptor = new ApiV2AuthenticationInterceptor(authenticator);
     MockMvc authenticatedMockMvc =
         MockMvcBuilders.standaloneSetup(newController())

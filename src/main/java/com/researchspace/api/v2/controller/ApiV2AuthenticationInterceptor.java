@@ -4,8 +4,6 @@ import com.researchspace.api.v2.auth.ApiV2Authenticator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
@@ -14,8 +12,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * <p>Generic CRUD handlers defer authorization to their collection's access functions. For those
  * handlers this interceptor resolves an identity only when API credentials are present; a request
  * carrying only browser session cookies proceeds with a null user and is allowed or rejected at the
- * resource registration. All other handlers require authentication unless marked {@link
- * PublicApiV2}.
+ * resource registration. The {@link ApiV2Access} annotation defines the mode for every handler.
  *
  * <p>Unlike v1, v2 does not log into or out of Shiro. API credentials have already been validated
  * by their managers, and avoiding Shiro ensures an ambient browser session cannot influence the
@@ -29,10 +26,11 @@ public class ApiV2AuthenticationInterceptor implements HandlerInterceptor {
   @Override
   public boolean preHandle(
       HttpServletRequest request, HttpServletResponse response, Object handler) {
-    if (isPublic(handler)) {
+    ApiV2Access.Mode mode = ApiV2AccessResolver.mode(handler);
+    if (mode == ApiV2Access.Mode.PUBLIC) {
       return true;
     }
-    if (isDescriptionControlled(handler)) {
+    if (mode == ApiV2Access.Mode.RESOURCE_POLICY) {
       apiV2Authenticator
           .authenticateIfPresent(request)
           .ifPresent(user -> request.setAttribute("user", user));
@@ -40,18 +38,5 @@ public class ApiV2AuthenticationInterceptor implements HandlerInterceptor {
     }
     request.setAttribute("user", apiV2Authenticator.authenticate(request));
     return true;
-  }
-
-  private static boolean isDescriptionControlled(Object handler) {
-    return handler instanceof HandlerMethod handlerMethod
-        && ApiV2CrudController.class.isAssignableFrom(handlerMethod.getBeanType());
-  }
-
-  private static boolean isPublic(Object handler) {
-    if (!(handler instanceof HandlerMethod handlerMethod)) {
-      return false;
-    }
-    return handlerMethod.hasMethodAnnotation(PublicApiV2.class)
-        || AnnotatedElementUtils.hasAnnotation(handlerMethod.getBeanType(), PublicApiV2.class);
   }
 }

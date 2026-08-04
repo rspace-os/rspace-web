@@ -9,7 +9,6 @@ import com.blazebit.persistence.CriteriaBuilder;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.blazebit.persistence.PagedList;
 import com.blazebit.persistence.PaginatedCriteriaBuilder;
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Field;
 import com.researchspace.model.collection.CollectionDescription.Operator;
@@ -18,6 +17,7 @@ import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import java.util.List;
 import org.hibernate.Session;
@@ -58,8 +58,9 @@ class CollectionQueryExecutorTest {
     when(query.page(2, 2)).thenReturn(paginated);
     when(paginated.getResultList()).thenReturn(page);
     when(page.getTotalSize()).thenReturn(5L);
+    when(page.toArray()).thenReturn(new Object[0]);
 
-    ISearchResults<Widget> result =
+    ResourcePage<Widget> result =
         executor.page(
             factory,
             session,
@@ -70,7 +71,7 @@ class CollectionQueryExecutorTest {
                 2,
                 2));
 
-    assertEquals(5L, result.getTotalHits().longValue());
+    assertEquals(5L, result.total());
     verify(query).whereExpression("item.name = :rsql0");
     verify(query).setParameter("rsql0", "Ada");
     verify(query).orderBy("item.name", false);
@@ -99,11 +100,11 @@ class CollectionQueryExecutorTest {
     when(paginated.getResultList()).thenReturn(countPage);
     when(countPage.getTotalSize()).thenReturn(7L);
 
-    ISearchResults<Widget> result =
+    ResourcePage<Widget> result =
         executor.page(factory, session, request(null, List.of(), Integer.MAX_VALUE, 2));
 
-    assertEquals(List.of(), result.getResults());
-    assertEquals(7L, result.getTotalHits().longValue());
+    assertEquals(List.of(), result.resources());
+    assertEquals(7L, result.total());
     verify(query).orderByAsc("item.entityId");
   }
 

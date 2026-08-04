@@ -4,9 +4,9 @@ package com.researchspace.model.collection;
  * Collection-level access, one check per operation, after PayloadCMS's {@code access} config.
  *
  * <p>The default is {@link #authenticated()} rather than public. Registering a collection
- * previously made its reads anonymous, because the generic controller annotated them
- * {@code @PublicApiV2}; a collection must now opt into anonymous reads explicitly, so forgetting to
- * think about access fails closed.
+ * previously made its reads anonymous, because the generic controller treated them as public. A
+ * collection must now opt into anonymous reads explicitly, so forgetting to think about access
+ * fails closed.
  */
 public record AccessPolicy(
     /** Reading rows and resolving relationship targets. */

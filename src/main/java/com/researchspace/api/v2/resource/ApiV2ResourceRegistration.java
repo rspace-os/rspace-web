@@ -14,6 +14,7 @@ import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionQueryException;
+import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.ParsedDocument;
@@ -22,13 +23,13 @@ import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.permissions.SecurityLogger;
 import jakarta.ws.rs.NotFoundException;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
@@ -43,58 +44,24 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   private final ResourceRegistry registry;
   private final ResourceOperations<T, ID> operations;
   private final ApiV2CrudDispatcher<T, ID> crud;
-  private final Function<String, ID> idParser;
-  private final String createErrorKey;
-  private final String updateErrorKey;
-  private final Set<ResourceOperation> exposedOperations;
-  private final Map<ResourceOperation, Map<Integer, String>> errorResponses;
-  private final Map<ResourceOperation, OpenApiOperationDocumentation> operationDocumentation;
-
-  public ApiV2ResourceRegistration(
-      CollectionDescription<T> description,
-      ResourceRegistry registry,
-      ResourceOperations<T, ID> operations,
-      Function<String, ID> idParser,
-      String createErrorKey,
-      String updateErrorKey) {
-    this(
-        description,
-        registry,
-        operations,
-        idParser,
-        createErrorKey,
-        updateErrorKey,
-        ApiV2RelationshipResolver.unavailable(),
-        java.util.EnumSet.allOf(ResourceOperation.class),
-        Map.of(),
-        Map.of());
-  }
+  private final ApiV2ResourceSpec<T, ID> spec;
+  private final ApiV2RelationshipResolver relationshipResolver;
 
   ApiV2ResourceRegistration(
-      CollectionDescription<T> description,
+      ApiV2ResourceSpec<T, ID> spec,
       ResourceRegistry registry,
-      ResourceOperations<T, ID> operations,
-      Function<String, ID> idParser,
-      String createErrorKey,
-      String updateErrorKey,
-      ApiV2RelationshipResolver relationshipResolver,
-      Set<ResourceOperation> exposedOperations,
-      Map<ResourceOperation, Map<Integer, String>> errorResponses,
-      Map<ResourceOperation, OpenApiOperationDocumentation> operationDocumentation) {
-    this.description = Objects.requireNonNull(description, "Resource description");
+      ApiV2RelationshipResolver relationshipResolver) {
+    this.spec = Objects.requireNonNull(spec, "Resource spec");
+    this.description = spec.description();
     this.registry = Objects.requireNonNull(registry, "Resource registry");
-    this.idParser = Objects.requireNonNull(idParser, "ID parser");
-    this.createErrorKey = requireText(createErrorKey, "Create error key");
-    this.updateErrorKey = requireText(updateErrorKey, "Update error key");
-    this.operations = Objects.requireNonNull(operations, "Resource operations");
-    this.exposedOperations = Set.copyOf(exposedOperations);
-    this.errorResponses = Map.copyOf(errorResponses);
-    this.operationDocumentation = Map.copyOf(operationDocumentation);
+    this.operations = spec.operations();
+    this.relationshipResolver =
+        Objects.requireNonNull(relationshipResolver, "Relationship resolver");
     if (registry.requireResource(description.resourceName()) != description) {
       throw new IllegalArgumentException(
           "REST API v2 resource description is not registered: " + description.resourceName());
     }
-    crud = new ApiV2CrudDispatcher<>(description, registry, this.operations, relationshipResolver);
+    crud = new ApiV2CrudDispatcher<>(description, registry, operations, relationshipResolver);
   }
 
   public String resourceName() {
@@ -110,19 +77,16 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   }
 
   public Set<ResourceOperation> exposedOperations() {
-    return exposedOperations;
+    return spec.exposedOperations();
   }
 
   public boolean supports(ResourceOperation operation) {
-    return exposedOperations.contains(operation);
-  }
-
-  public Map<Integer, String> errorResponses(ResourceOperation operation) {
-    return errorResponses.getOrDefault(operation, Map.of());
+    return spec.exposedOperations().contains(operation);
   }
 
   public OpenApiOperationDocumentation operationDocumentation(ResourceOperation operation) {
-    return operationDocumentation.getOrDefault(operation, OpenApiOperationDocumentation.EMPTY);
+    return spec.operationDocumentation()
+        .getOrDefault(operation, OpenApiOperationDocumentation.EMPTY);
   }
 
   public ApiV2ListResult<Map<String, Object>> list(ResourceRequest request, User caller) {
@@ -153,36 +117,47 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     AccessContext base = new AccessContext(actor, Operation.CREATE, description.resourceName());
     ParsedDocument document =
         ApiV2DocumentParser.parseStructure(
-            body, description, WriteOperation.CREATE, createErrorKey, base);
+            body, description, WriteOperation.CREATE, spec.createErrorKey(), base);
     AccessContext context = authorizeWrite(base.withInput(document));
     ApiV2DocumentParser.authorizeFields(
-        body, description, WriteOperation.CREATE, createErrorKey, context);
-    return crud.create(
-        document, actor, createErrorKey, narrowFields(context, FieldSelection.all()), context);
+        body, description, WriteOperation.CREATE, spec.createErrorKey(), context);
+    document = resolve(document, actor, context, spec.createErrorKey(), false);
+    return crud.create(document, actor, narrowFields(context, FieldSelection.all()));
   }
 
   public ApiV2BulkResult<Map<String, Object>> createMany(JsonNode body, User actor) {
     requireDocumentedAuthentication(Operation.CREATE, actor);
     AccessContext base = new AccessContext(actor, Operation.CREATE, description.resourceName());
     List<ParsedDocument> documents =
-        ApiV2DocumentParser.parseManyStructure(body, description, createErrorKey, base);
+        ApiV2DocumentParser.parseManyStructure(body, description, spec.createErrorKey(), base);
     AccessContext context = authorizeWrite(base.withInputs(documents));
-    ApiV2DocumentParser.authorizeManyFields(body, documents, description, createErrorKey, context);
+    ApiV2DocumentParser.authorizeManyFields(
+        body, documents, description, spec.createErrorKey(), context);
     return crud.createMany(
-        documents, actor, createErrorKey, narrowFields(context, FieldSelection.all()), context);
+        resolveMany(documents, actor, context, spec.createErrorKey()),
+        actor,
+        narrowFields(context, FieldSelection.all()));
   }
 
   public Map<String, Object> update(String rawId, JsonNode body, User actor) {
     ID id = parseId(rawId);
     AccessContext context = authorizeWrite(Operation.UPDATE, actor, id);
-    return crud.update(
-        id, body, actor, updateErrorKey, narrowFields(context, FieldSelection.all()), context);
+    ParsedDocument document =
+        ApiV2DocumentParser.parse(
+            body, description, WriteOperation.UPDATE, spec.updateErrorKey(), context);
+    document = resolve(document, actor, context, spec.updateErrorKey(), false);
+    return crud.update(id, document, actor, narrowFields(context, FieldSelection.all()));
   }
 
   public ApiV2BulkResult<Map<String, Object>> updateMany(
       ResourceRequest request, JsonNode body, User actor) {
     AccessContext context = new AccessContext(actor, Operation.UPDATE, description.resourceName());
-    return crud.updateMany(authorizeWith(context, request), body, actor, updateErrorKey, context);
+    ResourceRequest authorized = authorizeWith(context, request);
+    ParsedDocument document =
+        ApiV2DocumentParser.parse(
+            body, description, WriteOperation.UPDATE, spec.updateErrorKey(), context);
+    document = resolve(document, actor, context, spec.updateErrorKey(), true);
+    return crud.updateMany(authorized, document, actor);
   }
 
   public Map<String, Object> delete(String rawId, User actor) {
@@ -300,7 +275,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
             .orElseThrow()
             .authenticationRequirement();
     if (actor == null && authentication == AuthenticationRequirement.AUTHENTICATED) {
-      throw new ApiV2AuthenticationException("REST API v2 access requires authentication");
+      throw new ApiV2AuthenticationException();
     }
   }
 
@@ -325,7 +300,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
    */
   private static RuntimeException refusal(String reasonCode) {
     return AccessPolicy.AUTHENTICATION_REQUIRED.equals(reasonCode)
-        ? new ApiV2AuthenticationException("REST API v2 access requires authentication")
+        ? new ApiV2AuthenticationException()
         : new AuthorizationException("REST API v2 access refused");
   }
 
@@ -423,10 +398,33 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
 
   private ID parseId(String rawId) {
     try {
-      return idParser.apply(rawId);
+      return spec.idParser().apply(rawId);
     } catch (IllegalArgumentException ex) {
       throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
     }
+  }
+
+  private ParsedDocument resolve(
+      ParsedDocument document,
+      User actor,
+      AccessContext context,
+      String errorKey,
+      boolean bulkUpdate) {
+    return relationshipResolver.resolve(
+        document, description, actor, context, errorKey, bulkUpdate);
+  }
+
+  private List<ParsedDocument> resolveMany(
+      List<ParsedDocument> documents, User actor, AccessContext context, String errorKey) {
+    List<ParsedDocument> resolved = new ArrayList<>(documents.size());
+    for (int index = 0; index < documents.size(); index++) {
+      try {
+        resolved.add(resolve(documents.get(index), actor, context, errorKey, false));
+      } catch (DocumentValidationException ex) {
+        throw ApiV2DocumentParser.prefixed(ex, "docs[" + index + "]");
+      }
+    }
+    return List.copyOf(resolved);
   }
 
   @SuppressWarnings("unchecked")
@@ -436,12 +434,5 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     } catch (ClassCastException ex) {
       throw new IllegalArgumentException("Relationship target ID has the wrong type", ex);
     }
-  }
-
-  private static String requireText(String value, String label) {
-    if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException(label + " must not be blank");
-    }
-    return value;
   }
 }

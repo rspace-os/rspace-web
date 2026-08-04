@@ -2,7 +2,6 @@ package com.researchspace.maintenance.api.v2;
 
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperations;
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
@@ -38,8 +37,7 @@ public final class MaintenanceResourceOperations
 
   @Override
   public ResourcePage<ScheduledMaintenance> find(ResourceRequest request) {
-    ISearchResults<ScheduledMaintenance> results = manager.getResources(request);
-    return new ResourcePage<>(results.getResults(), results.getTotalHits());
+    return manager.getResources(request);
   }
 
   @Override

@@ -1,7 +1,6 @@
 package com.researchspace.booking.service;
 
 import com.researchspace.booking.dao.BookingConfigurationDao;
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
@@ -10,6 +9,7 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.CollectionMutationLimits;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CollectionMutationException;
@@ -52,7 +52,7 @@ public class BookingConfigurationManager {
   public record Patch(Boolean enabled, String timeZone, ResolvedBookableTarget target) {}
 
   /** Returns one page selected by a parsed collection request. */
-  public ISearchResults<BookingConfiguration> getConfigurations(ResourceRequest request) {
+  public ResourcePage<BookingConfiguration> getConfigurations(ResourceRequest request) {
     return bookingConfigurationDao.getResources(request);
   }
 

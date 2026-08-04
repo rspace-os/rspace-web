@@ -21,6 +21,8 @@ import java.util.function.Predicate;
 @FunctionalInterface
 public interface AccessFunction {
 
+  AccessFunction INHERITED = context -> AccessResult.allowed();
+
   AccessResult check(AccessContext context);
 
   default Optional<AccessDocumentation> documentation() {
@@ -33,6 +35,19 @@ public interface AccessFunction {
       throw new IllegalArgumentException("Access function must be documented");
     }
     return function;
+  }
+
+  static AccessFunction requireDocumentedOrInherited(AccessFunction function) {
+    Objects.requireNonNull(function, "Access function");
+    if (function != INHERITED) {
+      requireDocumented(function);
+    }
+    return function;
+  }
+
+  /** Uses the access documentation from the containing collection operation. */
+  static AccessFunction inherited() {
+    return INHERITED;
   }
 
   /** Applies this function as a field gate, where row constraints are not meaningful. */

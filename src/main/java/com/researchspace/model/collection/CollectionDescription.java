@@ -107,9 +107,9 @@ public final class CollectionDescription<T> {
       this.requiredOnCreate = requiredOnCreate;
       this.nullable = nullable;
       this.defaultValue = defaultValue;
-      this.readAccess = AccessFunction.requireDocumented(readAccess);
-      this.createAccess = AccessFunction.requireDocumented(createAccess);
-      this.updateAccess = AccessFunction.requireDocumented(updateAccess);
+      this.readAccess = AccessFunction.requireDocumentedOrInherited(readAccess);
+      this.createAccess = AccessFunction.requireDocumentedOrInherited(createAccess);
+      this.updateAccess = AccessFunction.requireDocumentedOrInherited(updateAccess);
       this.openApi = Objects.requireNonNull(openApi, "OpenAPI field documentation");
       validateConfiguration();
     }
@@ -126,9 +126,9 @@ public final class CollectionDescription<T> {
           false,
           false,
           null,
-          AccessFunction.anyone(),
-          AccessFunction.anyone(),
-          AccessFunction.anyone(),
+          AccessFunction.inherited(),
+          AccessFunction.inherited(),
+          AccessFunction.inherited(),
           OpenApiSchemaDocumentation.EMPTY);
     }
 
@@ -148,9 +148,9 @@ public final class CollectionDescription<T> {
           false,
           false,
           null,
-          AccessFunction.anyone(),
-          AccessFunction.anyone(),
-          AccessFunction.anyone(),
+          AccessFunction.inherited(),
+          AccessFunction.inherited(),
+          AccessFunction.inherited(),
           OpenApiSchemaDocumentation.EMPTY);
     }
 
@@ -297,7 +297,7 @@ public final class CollectionDescription<T> {
       return type;
     }
 
-    public FieldSchema schema() {
+    public FieldSchema schema(AccessPolicy inherited) {
       return new FieldSchema(
           name,
           property,
@@ -311,9 +311,9 @@ public final class CollectionDescription<T> {
           type.supportsWildcards(),
           type.sortable(),
           openApi,
-          CollectionDescription.documented(readAccess),
-          CollectionDescription.documented(createAccess),
-          CollectionDescription.documented(updateAccess));
+          CollectionDescription.documented(readAccess, inherited.readAccess()),
+          CollectionDescription.documented(createAccess, inherited.createAccess()),
+          CollectionDescription.documented(updateAccess, inherited.updateAccess()));
     }
 
     public Set<Operator> operators() {
@@ -484,8 +484,8 @@ public final class CollectionDescription<T> {
       this.inputForms = immutableInputForms(inputForms);
       this.requiredOnCreate = requiredOnCreate;
       this.nullable = nullable;
-      this.readAccess = AccessFunction.requireDocumented(readAccess);
-      this.writeAccess = AccessFunction.requireDocumented(writeAccess);
+      this.readAccess = AccessFunction.requireDocumentedOrInherited(readAccess);
+      this.writeAccess = AccessFunction.requireDocumentedOrInherited(writeAccess);
       this.selfReferenceAllowed = selfReferenceAllowed;
       this.openApi = Objects.requireNonNull(openApi, "OpenAPI relationship documentation");
       validateConfiguration();
@@ -532,8 +532,8 @@ public final class CollectionDescription<T> {
           Map.of(),
           false,
           true,
-          AccessFunction.anyone(),
-          AccessFunction.anyone(),
+          AccessFunction.inherited(),
+          AccessFunction.inherited(),
           false,
           OpenApiSchemaDocumentation.EMPTY);
     }
@@ -559,8 +559,8 @@ public final class CollectionDescription<T> {
               Set.of(RelationshipInputForm.OBJECT)),
           false,
           false,
-          AccessFunction.anyone(),
-          AccessFunction.anyone(),
+          AccessFunction.inherited(),
+          AccessFunction.inherited(),
           false,
           OpenApiSchemaDocumentation.EMPTY);
     }
@@ -583,8 +583,8 @@ public final class CollectionDescription<T> {
           Map.of(),
           false,
           true,
-          AccessFunction.anyone(),
-          AccessFunction.anyone(),
+          AccessFunction.inherited(),
+          AccessFunction.inherited(),
           false,
           OpenApiSchemaDocumentation.EMPTY);
     }
@@ -942,7 +942,8 @@ public final class CollectionDescription<T> {
       boolean selfReferenceAllowed,
       OpenApiSchemaDocumentation openApi,
       AccessDocumentation readAccess,
-      AccessDocumentation writeAccess) {}
+      AccessDocumentation createAccess,
+      AccessDocumentation updateAccess) {}
 
   public record AccessPolicySchema(
       AccessDocumentation readAccess,
@@ -1260,7 +1261,7 @@ public final class CollectionDescription<T> {
         resourceName,
         entityType,
         idField,
-        fields.values().stream().map(Field::schema).toList(),
+        fields.values().stream().map(field -> field.schema(accessPolicy)).toList(),
         relationships.values().stream()
             .map(
                 relationship ->
@@ -1279,8 +1280,9 @@ public final class CollectionDescription<T> {
                         relationship.inputForms,
                         relationship.selfReferenceAllowed(),
                         relationship.openApi,
-                        documented(relationship.readAccess),
-                        documented(relationship.writeAccess)))
+                        documented(relationship.readAccess, accessPolicy.readAccess()),
+                        documented(relationship.writeAccess, accessPolicy.createAccess()),
+                        documented(relationship.writeAccess, accessPolicy.updateAccess())))
             .toList(),
         filterSelectors.values().stream()
             .map(
@@ -1309,6 +1311,13 @@ public final class CollectionDescription<T> {
     return function
         .documentation()
         .orElseThrow(() -> new IllegalStateException("Access function is not documented"));
+  }
+
+  private static AccessDocumentation documented(
+      AccessFunction function, AccessFunction inheritedFunction) {
+    return function == AccessFunction.INHERITED
+        ? documented(inheritedFunction)
+        : documented(function);
   }
 
   Object readRelationship(T entity, Relationship<T> relationship) {
@@ -1503,11 +1512,11 @@ public final class CollectionDescription<T> {
     boolean createWritable =
         !component.getName().equals(idField)
             && writer != null
-            && definition.createAccess() != ApiV2ResourceField.WriteAccess.NEVER;
+            && definition.createAccess() != ApiV2ResourceField.AccessPreset.NEVER;
     boolean updateWritable =
         !component.getName().equals(idField)
             && writer != null
-            && definition.updateAccess() != ApiV2ResourceField.WriteAccess.NEVER;
+            && definition.updateAccess() != ApiV2ResourceField.AccessPreset.NEVER;
     Field field;
     if (!createWritable && !updateWritable) {
       field = Field.readOnly(component.getName(), property, type, read);

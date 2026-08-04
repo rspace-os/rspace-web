@@ -1,8 +1,8 @@
 package com.researchspace.service;
 
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import java.io.Serializable;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface CollectionManager<T, ID extends Serializable> {
 
   /** Returns one page selected by a fully parsed resource request. */
-  ISearchResults<T> getResources(ResourceRequest request);
+  ResourcePage<T> getResources(ResourceRequest request);
 
   /** Counts resources selected by a fully parsed resource request. */
   long countResources(ResourceRequest request);

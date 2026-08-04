@@ -82,7 +82,6 @@ package com.researchspace.widgets.api.v2;
 
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperations;
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
@@ -116,8 +115,7 @@ public class WidgetResourceOperations implements ResourceOperations<Widget, Long
 
   @Override
   public ResourcePage<Widget> find(ResourceRequest request) {
-    ISearchResults<Widget> results = manager.getWidgets(request);
-    return new ResourcePage<>(results.getResults(), results.getTotalHits());
+    return manager.getWidgets(request);
   }
 
   @Override
@@ -185,11 +183,31 @@ The operations class converts API input to domain commands. The manager has thes
 - Lifecycle actions and side effects.
 - Limits and rules for bulk operations.
 
-The DAO reads and writes the database. The DAO applies the typed `ResourceRequest`. A controller or
-an operations class must not call a DAO.
+The DAO reads and writes the database. The DAO applies the typed `ResourceRequest`. The query
+returns a `ResourcePage`. A controller or an operations class must not call a DAO.
 
 Do not pass raw `where`, `sort`, or field-selection text to a manager. The common request parser
 validates this text against the public resource definition.
+
+### 4. Use the REST API v2 collection standard in application code
+
+Use the REST API v2 collection types as the standard application vocabulary. This rule applies to
+HTTP code, managers, scheduled jobs, event handlers, and other services.
+
+A conventional mutable collection manager must implement `CollectionManager<T, ID>`. Extend
+`AbstractCollectionManager<T, ID>` when its persistence rules fit the default implementation. Use
+`ResourceRequest` for selection, `ResourcePage` for paged results, and `ParsedDocument` for a
+validated update. This common contract removes resource-specific paging, filtering, and bulk CRUD
+code.
+
+Keep domain authorization, validation, transactions, audit events, and lifecycle effects in the
+manager. Override the default manager hooks for these rules. Do not copy the standard collection
+pipeline into a resource-specific service.
+
+Use an escape hatch only when the standard operations cannot express a domain action. Examples
+include a command that changes several aggregate types or an action that is not CRUD. Keep the
+normal collection routes on the standard contract. Document the reason for each escape hatch near
+its public interface.
 
 ## Reuse the operations layer
 
@@ -251,10 +269,10 @@ must supply a validated `ResourceRequest`. For a write, the caller must supply a
 `ParsedDocument` with resolved relationships. The caller must also perform the required access
 checks.
 
-Most services must reuse the domain manager instead of the operations class. The manager is the
-shared application boundary for domain commands. This rule keeps the same transaction,
-authorization, validation, and audit behavior for REST, scheduled jobs, event handlers, and other
-services.
+Most services must call the concrete standard collection manager instead of the operations class.
+The manager is the shared application boundary for collection commands. This rule keeps the same
+transaction, authorization, validation, and audit behavior for REST, scheduled jobs, event
+handlers, and other services.
 
 Use the operations class in these cases:
 
@@ -262,18 +280,19 @@ Use the operations class in these cases:
 - The caller needs the same conversion from `ParsedDocument` to a domain command.
 - The caller has already completed the REST v2 access and validation steps.
 
-Use the manager in these cases:
+Use the standard collection manager in these cases:
 
-- The caller has domain values instead of REST v2 request types.
+- The caller already has an entity or another validated domain value.
 - The caller performs a write outside the REST request pipeline.
 - The caller needs domain authorization, transactions, lifecycle actions, or audit events.
 
 Do not call `ApiV2ResourceRegistration` from a manager or a DAO. Registration is an HTTP boundary.
 A call from a lower layer would reverse the dependency direction.
 
-If many non-HTTP callers need the same document conversion, move that conversion to a small domain
-command factory. Call the factory from the operations class and from the other callers. Do not move
-HTTP parsing or response rendering into a manager.
+If many non-HTTP callers need the same document conversion, move that conversion to a small command
+factory. Call the factory from the operations class and from the other callers. Keep the standard
+collection types at the manager boundary. Do not move HTTP parsing or response rendering into a
+manager.
 
 ## Standard routes
 
@@ -581,8 +600,9 @@ An access function can return a row constraint. The framework combines the const
 client filter. It does this for list, count, read by ID, and bulk operations. An unreadable row
 returns 404.
 
-Do not run authorization functions during OpenAPI generation. A custom function must include
-`AccessDocumentation`. The documentation must state its authentication rules and denial codes.
+Do not run authorization functions during OpenAPI generation. The `INHERITED` preset uses the
+documentation from the matching collection operation. Every other access function must include
+`AccessDocumentation`. The documentation must state its authentication rule and denial codes.
 
 A custom `createAccess` function runs after structural parsing. It runs before relationship
 resolution and persistence. For one create document, `context.requireInput()` returns the complete
@@ -666,12 +686,15 @@ Map.of(
     OpenApiOperationDocumentation.builder()
         .description("Creates one widget in the selected workspace.")
         .requestExample(Map.of("name", "Centrifuge rotor", "enabled", true))
-        .responseDescription(409, "A widget with this name already exists.")
+        .errorResponse(
+            409,
+            "errors.api.v2.widget.name.conflict",
+            "A widget with this name already exists.")
         .build())
 ```
 
-Declare non-standard errors in the resource spec. Use stable message-bundle keys. Startup fails if
-documentation refers to an operation that the resource does not expose.
+Declare each non-standard error in its operation documentation. Use a stable message-bundle key.
+Startup fails if documentation refers to an operation that the resource does not expose.
 
 For a concrete controller, use the standard Swagger annotations. These include `@Operation`,
 `@Parameter`, `@RequestBody`, `@ApiResponse`, and `@Schema`.
@@ -693,7 +716,7 @@ See these examples:
 - `ApiV2MaintenanceResourceTest`
 - `MaintenanceResourceOperations`
 - `BookingConfigurationResourceOperationsTest`
-- `ApiV2BookingConfigurationFuzzTest`
+- `ApiV2BookingConfigurationResourceTest`
 - `ApiV2ResourceConfigTest`
 - `ApiV2OpenApiGeneratorTest`
 
