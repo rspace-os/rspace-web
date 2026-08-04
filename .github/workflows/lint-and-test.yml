@@ -74,7 +74,6 @@ jobs:
         java-version: [17]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
-      github.event_name == 'pull_request' ||
       inputs.fast_java_tests ||
       needs.changed-files.outputs.java == 'true'
     steps:
@@ -223,7 +222,6 @@ jobs:
         shard: [1, 2]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
-      github.event_name == 'pull_request' ||
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
@@ -294,7 +292,6 @@ jobs:
       !cancelled() &&
       (
         (github.event_name == 'push' && github.ref_name == 'main') ||
-        github.event_name == 'pull_request' ||
         inputs.frontend_tests ||
         needs.changed-files.outputs.frontend == 'true'
       )
@@ -352,7 +349,6 @@ jobs:
         browser: [ chromium, firefox, webkit ]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
-      github.event_name == 'pull_request' ||
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
