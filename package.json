@@ -60,7 +60,7 @@
     "fast-check": "4.9.0",
     "hono": "4.12.32",
     "i18next-cli": "1.67.3",
-    "jsdom": "30.0.0",
+    "jsdom": "29.1.1",
     "jsonwebtoken": "9.0.3",
     "lefthook": "2.1.10",
     "lightningcss": "1.33.0",
