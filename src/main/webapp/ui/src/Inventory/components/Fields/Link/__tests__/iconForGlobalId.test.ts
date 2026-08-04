@@ -96,17 +96,21 @@ describe("prefix helpers", () => {
     expect(isInventoryGlobalId("NB1")).toBe(false);
   });
 
-  test("supportsVersionPin is true for inventory and SD, false for NB and GL", () => {
+  test("supportsVersionPin is true for inventory, SD and GL, false for NB", () => {
     expect(supportsVersionPin("SA1")).toBe(true);
     expect(supportsVersionPin("SD1")).toBe(true);
+    expect(supportsVersionPin("GL1")).toBe(true);
     expect(supportsVersionPin("NB1")).toBe(false);
-    expect(supportsVersionPin("GL1")).toBe(false);
   });
 });
 
 describe("openUrlForTarget", () => {
   test("opens a Gallery file at its location in the Gallery", () => {
     expect(openUrlForTarget("GL21", null)).toBe("/gallery/item/21");
+  });
+
+  test("opens a pinned Gallery file at its read-only version view", () => {
+    expect(openUrlForTarget("GL21", 2)).toBe("/gallery/item/21/2");
   });
 
   test("keeps the /globalId route for non-Gallery targets", () => {

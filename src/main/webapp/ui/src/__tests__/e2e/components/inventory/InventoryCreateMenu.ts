@@ -9,7 +9,7 @@ export type InventoryCreateMenuItem =
   | "New Sample"
   | "New Container"
   | "New Instrument"
-  | "New Template"
+  | "New Sample Template"
   | "New Instrument Template";
 
 export type InventoryCsvImportItem = "Samples" | "Subsamples" | "Containers";
@@ -54,7 +54,10 @@ export class InventoryCreateMenu {
   }
 
   async newSampleTemplate(): Promise<NewTemplateFormComponent> {
-    return openDialog(() => this.click("New Template"), newTemplateFormComponent(this.page, "New Template"));
+    return openDialog(
+      () => this.click("New Sample Template"),
+      newTemplateFormComponent(this.page, "New Sample Template"),
+    );
   }
 
   async newInstrumentTemplate(): Promise<NewTemplateFormComponent> {

@@ -98,6 +98,7 @@ const firefoxCiSkippedFiles =
         "**/eln/gallery/components/CallableImagePreview.spec.tsx",
         "**/eln/gallery/components/MainPanel.spec.tsx",
         "**/tinyMCE/pubchem/ImportDialog.spec.tsx",
+        "**/tinyMCE/pyrat/PyratDialog.spec.tsx",
         "**/Inventory/components/FieldmarkImportDialog.spec.tsx",
         "**/Inventory/Identifiers/IGSN/IgsnTable.spec.tsx",
         "**/components/Tags/__tests__/TagsCombobox.spec.tsx",

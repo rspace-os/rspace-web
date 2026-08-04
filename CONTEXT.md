@@ -37,37 +37,124 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Extra field** — an ad-hoc field (text, number or link) a user attaches to an
   individual record after creation, outside any template definition.
 
+## Instrument PID registration (B2INST/PIDINST)
+
+- **PIDINST-mapped field** — a custom field on a concrete Instrument that feeds
+  the B2INST/PIDINST registration metadata because both its name (compared
+  case-insensitively, ignoring surrounding whitespace) and its declared field
+  type match a field of the default PIDINST template. A field matching by name
+  but not by type is ignored. Participation is decided by name+type
+  conformance, never by template lineage: any instrument carrying conforming
+  fields is mapped, however it was created. The template's field names are the
+  canonical spelling of the mapping contract.
+- **Documentation-only field** — a field of the default PIDINST template that
+  deliberately feeds no registration metadata, existing purely so users can
+  record the fact against the instrument. The measurement technique, the
+  calibration and the last calibration date are documentation-only: they have no
+  PIDINST property that fits them, and inventing one was tried and rejected. A
+  documentation-only field is still an ordinary instrument field, so users fill,
+  edit and read it as usual; it simply never leaves RSpace.
+- **Materialised default** — a value RSpace fills into a PIDINST-mapped field
+  the user left empty, applied whenever the Instrument is saved rather than at
+  PID registration, so the field is populated from the moment the instrument
+  exists and regardless of whether it is ever registered. Applies to the landing
+  page, whose default is the instrument's own public RSpace address. Only a blank
+  field is filled and a user's own value is never replaced; once written it is an
+  ordinary field value the user may edit, and clearing it and saving fills it
+  again. Instruments carrying no conforming field are untouched, and templates
+  are never filled, since one instrument's address must not be stamped onto every
+  instrument later created from that template.
+- **Provider record page** — the registered record's own page on the issuing
+  provider, distinct from a citable public URL: it exists from registration
+  onwards and may require signing in to that provider, so it is never presented
+  as the identifier's public address.
+
+## Record version history
+
+- **Revision** — a single audit row: one recorded change to a record, identified
+  by a monotonic audit id. An internal concept. Never shown to users as a number
+  and never used in user-facing labels.
+- **Version** — the user-facing counter on a record, incremented when a user
+  makes a change the product considers significant (for a Gallery item, uploading
+  new file content). **Several revisions can share one version**, because not
+  every recorded change bumps the counter. Revision and version are therefore not
+  interchangeable, and code that treats them as such is wrong.
+  A version owns its own content and the metadata describing that content: its
+  **filename** (a new version may be a differently named file), its description,
+  its size and its modification date. All of those are properties of a version,
+  never of the item. Only the item's identity (its id and Global ID) and the
+  references made to it are shared across versions.
+- **Version history** — the canonical name, in the UI and in code, for the list
+  of a record's versions, newest first. Where several revisions share a version,
+  the history shows that version once, representing its final state. Named this
+  way everywhere even though the ELN workspace's equivalent legacy button is
+  labelled "Revisions".
+  _Avoid_: revision history, revisions (as a user-facing label)
+- **Gallery item** — the user-facing name for a file a user keeps in the Gallery.
+  The same thing the API and older code variously call a media file or a gallery
+  file.
+  _Avoid_: attachment, media record (when addressing users)
+- **Local Gallery item** — a Gallery item whose bytes RSpace itself stores. The
+  only kind that has a version history, because only these are audited.
+- **Filestore item** — a Gallery item that lives on an external store (S3, iRODS,
+  Samba) and is only referenced by RSpace. Has no version history at all: RSpace
+  never recorded its changes and cannot.
+- **Pinned version view** — a record displayed as it was at one past version,
+  reached by a shareable link and never editable. The version history lists
+  versions; a pinned version view shows one. Every record type has one (the ELN
+  calls its own the audit view), and each states plainly which version is on
+  screen and that it is locked.
+  _Avoid_: revision view, historical view, audit view (outside the ELN's own)
+- **Item-level reference** — a link or attachment from an ELN document or an
+  Inventory item to a Gallery item. References name the item, never one of its
+  versions: nothing records the version a reference was made against. So the
+  references shown beside a pinned version view are the item's, not that
+  version's, and must be worded so no one reads them as the latter.
+  _Avoid_: backlink to a version, version reference
+
 ## Internationalization (i18n)
 
 - **Canonical translation catalog** — i18next JSON. The runtime and
-  translator-facing catalog format. The English (`en-US`) base JSON is generated
-  from frontend `defaultValue`s; translated locale JSON is owned by the future
-  translation workflow. Everything else (Spring `.properties`) is derived from
-  JSON catalogs.
-- **Generated bundle** — a Spring `.properties` file produced *from* the canonical
-  JSON for backend-rendered text. Never edited by hand or by translators.
+  translator-facing catalog format shared by the frontend and the backend's
+  `JsonMessageSource`. English (`en-US`) text is authored in the base JSON;
+  translated locale JSON is owned by the future translation workflow.
 - **Namespace** — a named slice of translations, one per product module
   (`workspace`, `gallery`, `inventory`, `groups`, `dashboard`, `admin`, `apps`,
   `system`, `public`) plus a shared `common`. Loaded independently.
 - **Base file** — the English (`en-US`) file for a namespace. The monolingual
   source/template every other locale is translated against. Locale codes are
-  region-qualified BCP 47, hyphenated (`en-US`, `zh-TW`, `zh-HK`) at runtime;
-  the underscore form (`en_US`) belongs only to the generated Java bundle.
+  region-qualified BCP 47 and hyphenated (`en-US`, `zh-TW`, `zh-HK`) in catalog
+  paths and at runtime.
 - **Key** — a stable structured dot-notation identifier (`ns:section.name`) that
   names a string independently of its wording. Distinct from the **default
-  value** (the English source text co-located at the call site).
-- **Default value** — the English source string supplied inline at the `t()` call
-  site and extracted into the `en-US` base file. Mandatory for every key; copy
-  changes start in code and regenerate the base JSON, not by hand-editing
-  `en-US` JSON.
+  value** stored in the base catalog.
+- **Default value** — the English source string stored in the `en-US` base file.
+  Mandatory for every key; copy changes start in the canonical base JSON.
 - **ICU MessageFormat** — the message syntax used for all keys (plurals, gender/
   `select`, ordinals, inline number/date formatting).
-- **Extraction** — the build step (via `i18next-cli`) that scans code for keys +
-  default values and synchronizes the `en-US` base files; also the source of the
-  generated key types and the unused-key check.
+- **Extraction** — the build step (via `i18next-cli`) that scans code for keys,
+  adds missing entries to the `en-US` base files, and identifies unused keys.
+  The same catalogs generate the TypeScript key types.
 - **Ratchet** — the per-module enforcement progression: a converted module flips
   its `noJsxLiterals` lint rule to `error`, so the gated (fully-converted)
   surface only ever grows.
 - **No-orchestration gap** — the period before Weblate is connected. While the
   product is English-only, this gap is invisible: every string falls back to its
   English default.
+- **Locale** — a single BCP 47 tag (e.g. `de-DE`) that controls both the UI
+  language (which translation catalog renders) and regional formatting (dates,
+  numbers). One value, two effects; they are not independently configurable.
+- **CSV-export carve-out** — machine-readable CSV exports are always formatted
+  as `en-US` regardless of anyone's locale, so downstream parsers never see
+  locale-dependent decimal separators or date formats.
+- **First day of week** — fixed instance-wide, not part of a user's locale
+  choice.
+- **Bundled locale** — a locale whose translation catalog ships with the
+  release. Only bundled locales can be allowed by a sysadmin.
+- **Allowed set** — the sysadmin-chosen subset of bundled locales users may
+  pick from. Always contains the instance default; never empty.
+- **Instance default** — the locale served when no valid user choice applies,
+  including to all anonymous visitors.
+- **Effective locale** — the locale actually served: the user's stored choice
+  if it is in the allowed set, otherwise the instance default. A stored choice
+  outside the allowed set is kept (not erased) and springs back if re-allowed.

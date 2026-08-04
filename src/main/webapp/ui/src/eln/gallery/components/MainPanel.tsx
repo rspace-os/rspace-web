@@ -14,6 +14,7 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import BrokenImageIcon from "@mui/icons-material/BrokenImage";
 import CloseIcon from "@mui/icons-material/Close";
+import HistoryIcon from "@mui/icons-material/History";
 import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
 import LinkIcon from "@mui/icons-material/Link";
 import SearchIcon from "@mui/icons-material/Search";
@@ -742,9 +743,15 @@ const FileCard = observer(
                   </Grid>
                 </Grid>
               </Grid>
-              {typeof file.version === "number" && file.version > 1 && (
+              {/* Version 1 normally needs no badge, but a version being viewed
+                  historically always does, however low its number. */}
+              {typeof file.version === "number" && (file.version > 1 || typeof file.pinnedVersion === "number") && (
                 <Box
-                  aria-label={t("mainPanel.versionLabel", { version: file.version })}
+                  aria-label={
+                    typeof file.pinnedVersion === "number"
+                      ? t("mainPanel.historicalVersionLabel", { version: file.version })
+                      : t("mainPanel.versionLabel", { version: file.version })
+                  }
                   sx={(theme) => ({
                     position: "absolute",
                     top: "0",
@@ -752,6 +759,9 @@ const FileCard = observer(
                     margin: theme.spacing(0.25),
                     padding: theme.spacing(0.25, 0.5),
                     borderRadius: "5px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: theme.spacing(0.25),
                     color: window.matchMedia("(prefers-contrast: more)").matches
                       ? "rgb(255,255,255)"
                       : `hsl(${ACCENT_COLOR.contrastText.hue}deg, ${ACCENT_COLOR.contrastText.saturation}%, ${ACCENT_COLOR.contrastText.lightness}%, 100%)`,
@@ -766,6 +776,9 @@ const FileCard = observer(
                   })}
                 >
                   {`v${file.version}`}
+                  {/* The same clock as a version-pinned Inventory link. Decorative:
+                      the Box's own label already says the version is an old one. */}
+                  {typeof file.pinnedVersion === "number" && <HistoryIcon fontSize="inherit" />}
                 </Box>
               )}
             </CardActionArea>

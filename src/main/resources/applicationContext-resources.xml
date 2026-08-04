@@ -9,7 +9,18 @@
           http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd" 
        default-lazy-init="true">
 
-    <bean id="messageSource"
+	<!-- JSON catalogues are canonical for new phrases. Keys that have not been ported
+	     yet still resolve through the legacy .properties bundles below, which remain
+	     the backing bundle for the JSTL fmt:message tags configured in web.xml.
+	     Both the parent and the bundles go away once every key and tag is migrated. -->
+	<bean id="messageSource" class="com.researchspace.service.JsonMessageSource">
+		<property name="useCodeAsDefaultMessage" value="true" />
+		<property name="parentMessageSource" ref="legacyMessageSource" />
+	</bean>
+	<!-- autowire-candidate=false: this is reached only as the parent above, never
+	     injected. Without it, beans autowiring MessageSource by type see two
+	     candidates and the context fails to start. -->
+	<bean id="legacyMessageSource" autowire-candidate="false"
 		class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
 		<property name="basenames">
 		    <list>

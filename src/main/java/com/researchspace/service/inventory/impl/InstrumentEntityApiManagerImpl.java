@@ -28,6 +28,7 @@ import com.researchspace.model.events.InventoryEditingEvent;
 import com.researchspace.model.events.InventoryMoveEvent;
 import com.researchspace.model.events.InventoryRestoreEvent;
 import com.researchspace.model.events.InventoryTransferEvent;
+import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
@@ -37,6 +38,7 @@ import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
@@ -54,17 +56,27 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<InstrumentEntity>
     implements InstrumentEntityApiManager {
 
   public static final String INSTRUMENT_DEFAULT_NAME = "Generic Instrument";
 
+  /*
+   * Canonical spelling from the default PIDINST template; see CONTEXT.md ("PIDINST-mapped field").
+   * Matched the same way the PID mapping matches it, on trimmed case-insensitive name plus URI type,
+   * so an instrument shaped by that template is recognised however it was created.
+   */
+  private static final String LANDING_PAGE_FIELD_NAME = "Landing page";
+
+  private @Autowired IPropertyHolder properties;
   private @Autowired InstrumentDao instrumentDao;
   private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   private @Autowired InventoryEntityFieldDao inventoryEntityFieldDao;
@@ -135,6 +147,10 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(instrumentToSave);
     Instrument savedInstrument = instrumentDao.save(instrumentToSave);
+    // needs the persisted id, since the default is built from the instrument's own global id
+    if (fillBlankLandingPage(savedInstrument, user)) {
+      savedInstrument = instrumentDao.save(savedInstrument);
+    }
     saveIncomingInstrumentImage(savedInstrument, apiInstrument, user);
 
     publisher.publishEvent(new InventoryCreationEvent(savedInstrument, user));
@@ -146,6 +162,54 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     populateOutgoingApiInstrumentEntity(apiResultInstrument, savedInstrument, user);
 
     return apiResultInstrument;
+  }
+
+  /**
+   * Gives an instrument shaped by the PIDINST template a landing page whenever the user leaves the
+   * field empty, filling it with the instrument's own public RSpace address. A value the user typed
+   * is never replaced, and saving an instrument whose field is already filled changes nothing, so
+   * this is safe to run on every save. Instruments carrying no such field are untouched.
+   *
+   * <p>Deliberately applied to concrete Instruments only. Filling an InstrumentTemplate's field
+   * would stamp one instrument's address onto every instrument later created from that template.
+   *
+   * @return whether the instrument was changed, so the caller knows it needs saving
+   */
+  private boolean fillBlankLandingPage(Instrument instrument, User user) {
+    if (instrument.getId() == null) {
+      return false;
+    }
+    Optional<InventoryEntityField> blankLandingPage =
+        instrument.getActiveFields().stream()
+            .filter(field -> field.getType() == FieldType.URI)
+            .filter(
+                field ->
+                    field.getName() != null
+                        && LANDING_PAGE_FIELD_NAME.equalsIgnoreCase(field.getName().trim()))
+            .filter(field -> StringUtils.isBlank(field.getFieldData()))
+            .findFirst();
+    if (blankLandingPage.isEmpty()) {
+      return false;
+    }
+    /*
+     * Persisting a site-relative "/globalId/IN123" would be a one-way door: the field would no longer
+     * be blank, so this fill could never repair it once the property is set, and the bad value would
+     * survive in the row and in the Envers revision. InventoryUriField.validate accepts a relative
+     * reference, so nothing downstream would reject it either. GlobalIdUrls returns empty rather than
+     * a relative address for exactly this reason; a blank field is the recoverable state.
+     */
+    Optional<String> defaultUrl =
+        GlobalIdUrls.globalIdUrl(properties, instrument.getGlobalIdentifier());
+    if (defaultUrl.isEmpty()) {
+      log.warn(
+          "Leaving the Landing page of {} blank: no server URL is configured, and a site-relative"
+              + " default could not be corrected once persisted.",
+          instrument.getGlobalIdentifier());
+      return false;
+    }
+    ApiInventoryEntityField update = new ApiInventoryEntityField();
+    update.setContent(defaultUrl.get());
+    return update.applyChangesToDatabaseField(blankLandingPage.get(), user);
   }
 
   private void setLocationForNewInstrument(
@@ -382,6 +446,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
               apiInstrument.getIdentifiers(), dbInstrument, user);
       contentChanged |= apiInstrument.applyChangesToDatabaseInstrument(dbInstrument, user);
       contentChanged |= applyLinkFieldValuesOnUpdate(apiInstrument, dbInstrument, user);
+      // after the incoming changes, so clearing the field on this same save refills it
+      contentChanged |= fillBlankLandingPage(dbInstrument, user);
       contentChanged |= saveSharingACLForIncomingApiInvRec(dbInstrument, apiInstrument);
       contentChanged |= saveIncomingInstrumentImage(dbInstrument, apiInstrument, user);
       InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(dbInstrument);

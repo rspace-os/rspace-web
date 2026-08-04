@@ -29,6 +29,11 @@ export class AppHeader {
     return (await this.mobileNav.count()) > 0;
   }
 
+  async isActive(item: NavItem): Promise<boolean> {
+    const link = this.desktopNav.getByRole("link", { name: item, exact: true });
+    return (await link.getAttribute("aria-current")) === "page";
+  }
+
   async navigateTo(item: NavItem): Promise<void> {
     if (await this.isMobileNav()) {
       await this.mobileNav.getByRole("button").click();

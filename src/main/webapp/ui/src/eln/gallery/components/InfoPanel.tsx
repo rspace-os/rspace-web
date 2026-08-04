@@ -36,6 +36,7 @@ import { usePdfPreview } from "./CallablePdfPreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
 import { useSnippetPreview } from "./CallableSnippetPreview";
 import { useFolderOpen } from "./OpenFolderProvider";
+import PinnedVersionNotice, { ItemLevelReferencesNotice } from "./PinnedVersionNotice";
 import { ReferencingInventoryItemsPanel } from "./ReferencingInventoryItemsPanel";
 
 /**
@@ -293,6 +294,16 @@ const DescriptionField = observer(
     const { t } = useTranslation(["gallery", "common"]);
     const [description, setDescription] = React.useState<string>(initialDescription);
     const prefersMoreContrast = window.matchMedia("(prefers-contrast: more)").matches;
+
+    /*
+     * Only an object that can accept a new description offers a setter, which is
+     * the same test changeDescription makes before saving one. A past version has
+     * none, so its description is shown but not editable: without this the field
+     * invited an edit that would have altered the live item.
+     *
+     * Read-only rather than disabled, so the text stays legible and selectable.
+     */
+    const readOnly = typeof file.setDescription === "undefined";
     return (
       <Stack>
         <TextField
@@ -354,7 +365,9 @@ const DescriptionField = observer(
           })}
           onChange={({ target: { value } }) => setDescription(value)}
           multiline
+          slotProps={{ input: { readOnly } }}
           onKeyDown={(e) => {
+            if (readOnly) return;
             if (e.key === "Enter" && e.shiftKey) {
               e.stopPropagation();
               e.preventDefault();
@@ -475,13 +488,25 @@ const InfoPanelContent = observer(
           height: "100%",
         }}
       >
+        {typeof file.pinnedVersion === "number" && (
+          <PinnedVersionNotice version={file.pinnedVersion} fileId={idToString(file.id).orElse(null)} />
+        )}
         <DescriptionList
           content={[
             ...(typeof file.globalId === "string"
               ? [
                   {
                     label: t("infoPanel.labels.globalId"),
-                    value: file.globalId,
+                    /*
+                     * The versioned form names the version on screen, and is
+                     * composed here for display only: /globalId/GL42v2 still
+                     * downloads the bytes rather than opening this view, and the
+                     * shareable link for the view is the address-bar URL. The
+                     * file object keeps its unversioned globalId so the backlink
+                     * lookups below are unaffected. See ADR 0004.
+                     */
+                    value:
+                      typeof file.pinnedVersion === "number" ? `${file.globalId}v${file.pinnedVersion}` : file.globalId,
                   },
                 ]
               : []),
@@ -498,7 +523,21 @@ const InfoPanelContent = observer(
               .map((desc) => [
                 {
                   label: t("infoPanel.labels.description"),
-                  value: <DescriptionField file={file} description={desc} minimalStyling={!smallViewport} />,
+                  /*
+                   * Keyed so the field remounts when the description it started
+                   * from changes: it holds the pending edit in local state, which
+                   * a prop change alone would not reset. Without this, switching
+                   * the selected file, or moving between a pinned version and the
+                   * live item, leaves the previous text in an editable field.
+                   */
+                  value: (
+                    <DescriptionField
+                      key={`${file.key}:${desc}`}
+                      file={file}
+                      description={desc}
+                      minimalStyling={!smallViewport}
+                    />
+                  ),
                   below: true,
                 },
               ])
@@ -654,6 +693,8 @@ const InfoPanelContent = observer(
             }}
           />
         </Box>
+        {/* Above both reference lists, so it is clearly about the pair of them. */}
+        {typeof file.pinnedVersion === "number" && <ItemLevelReferencesNotice />}
         {file.linkedDocuments}
         {/* Inventory items can only link to gallery media files (GL...); folders (GF),
             snippets (ST) etc. 404 and would show a spurious error. See PRT-1091. */}

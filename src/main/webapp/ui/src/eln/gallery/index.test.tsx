@@ -26,7 +26,7 @@ import type { GallerySection } from "./common";
 function GalleryStory({
   urlSuffix,
 }: {
-  urlSuffix?: `?mediaType=${GallerySection}` | `/${number}` | `/item/${number}`;
+  urlSuffix?: `?mediaType=${GallerySection}` | `/${number}` | `/item/${number}` | `/item/${number}/${string}`;
 }) {
   return (
     <LandmarksProvider>
@@ -370,6 +370,339 @@ describe("Gallery", () => {
       await waitFor(() => {
         expect(getUploadedFilesMediaTypes()).toEqual(["Images", "Chemistry"]);
       });
+    });
+  });
+
+  describe("Pinned version view", () => {
+    const PINNED_ITEM_ID = 42;
+
+    /** The live item, at version 3. */
+    function mockLiveItem() {
+      mockAxios.onGet(`/api/v1/files/${PINNED_ITEM_ID}`).reply(200, {
+        id: PINNED_ITEM_ID,
+        globalId: `GL${PINNED_ITEM_ID}`,
+        name: "assay.png",
+        contentType: "image/png",
+        created: "2025-07-07T11:09:18.312Z",
+        size: 40721,
+        version: 3,
+        parentFolderId: 123,
+      });
+    }
+
+    /**
+     * Its version history: versions 1 and 3, newest last. Version 1 was a
+     * differently named file, as a new version may be.
+     */
+    function mockVersionHistory() {
+      mockAxios.onGet(`/gallery/ajax/versionHistory/${PINNED_ITEM_ID}`).reply(200, {
+        data: {
+          revisions: [
+            {
+              revisionId: 10,
+              revisionType: "MOD",
+              record: {
+                version: 1,
+                lastModified: "2026-06-11T09:30:00Z",
+                modifiedByFullName: "Alice Smith",
+                size: 918,
+                name: "first-draft.png",
+                description: "A rough cut",
+              },
+            },
+            {
+              revisionId: 20,
+              revisionType: "MOD",
+              record: {
+                version: 3,
+                lastModified: "2026-06-12T09:30:00Z",
+                modifiedByFullName: "Alice Smith",
+                size: 40721,
+                name: "assay.png",
+                description: "A draft assay",
+              },
+            },
+          ],
+          revisionsCount: 2,
+        },
+        error: null,
+        success: true,
+      });
+    }
+
+    /** A listing containing the pinned item, so it can be selected. */
+    function mockListingWithItem() {
+      mockAxios.onGet("/gallery/getUploadedFiles").reply(200, {
+        data: {
+          parentId: 123,
+          items: {
+            totalHits: 1,
+            totalPages: 1,
+            results: [
+              {
+                id: PINNED_ITEM_ID,
+                oid: { idString: `GL${PINNED_ITEM_ID}` },
+                name: "assay.png",
+                ownerId: 1,
+                ownerFullName: "Test User",
+                ownerUsername: "testuser",
+                description: "A draft assay",
+                creationDate: 1672531200,
+                modificationDate: 1672531200,
+                type: "Image",
+                systemFolder: false,
+                sharedFolder: false,
+                extension: "png",
+                thumbnailId: null,
+                size: 40721,
+                version: 3,
+                originalImageOid: null,
+              },
+            ],
+          },
+        },
+        error: null,
+        success: true,
+        errorMsg: null,
+      });
+    }
+
+    test("the info panel says which version is shown, and that it is locked", async () => {
+      mockLiveItem();
+      mockVersionHistory();
+      mockListingWithItem();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+      // rendered once per InfoPanel layout, desktop and mobile drawer alike
+      expect(await screen.findAllByText("gallery:pinnedVersion.notice")).not.toHaveLength(0);
+    });
+
+    /**
+     * The InfoPanel's way back to the live item, rendered once per InfoPanel
+     * layout, desktop and mobile drawer alike.
+     */
+    async function findWayBackLinks() {
+      return await screen.findAllByRole("link", {
+        name: "gallery:pinnedVersion.viewLatest",
+      });
+    }
+
+    test("offers a way back to the live item", async () => {
+      mockLiveItem();
+      mockVersionHistory();
+      mockListingWithItem();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+      const links = await findWayBackLinks();
+      expect(links).not.toHaveLength(0);
+      for (const link of links) {
+        // a real href, so it can be copied or opened in a new tab
+        expect(link).toHaveAttribute("href", `/gallery/item/${PINNED_ITEM_ID}`);
+      }
+    });
+
+    test("following that link leaves the locked view for the editable one", async () => {
+      const user = userEvent.setup();
+      mockLiveItem();
+      mockVersionHistory();
+      mockListingWithItem();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+      const [link] = await findWayBackLinks();
+      await user.click(link);
+
+      await waitFor(() => {
+        expect(screen.queryByText("gallery:pinnedVersion.notice")).not.toBeInTheDocument();
+      });
+      /*
+       * The selection keys on the item id, which the decorator delegates, so the
+       * live object replaces the pinned one rather than joining it. Matched
+       * loosely because the tile's version badge contributes its own label to the
+       * accessible name.
+       */
+      expect(await screen.findByRole("gridcell", { name: /assay\.png/ })).toBeInTheDocument();
+      for (const field of await screen.findAllByDisplayValue("A draft assay")) {
+        expect(field).not.toHaveAttribute("readonly");
+      }
+    });
+
+    test("the item itself is badged with the version, marked as old", async () => {
+      /*
+       * Version 1 gets no badge on a live item, but a version being viewed
+       * historically always needs one, however low its number.
+       */
+      mockLiveItem();
+      mockVersionHistory();
+      mockListingWithItem();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+      const tile = await screen.findByRole("gridcell", { name: /first-draft\.png/ });
+      const badge = within(tile).getByLabelText("gallery:mainPanel.historicalVersionLabel");
+      expect(badge).toHaveTextContent("v1");
+      // the same clock as a version-pinned Inventory link, in place of any "(old)" text
+      expect(within(badge).getByTestId("HistoryIcon")).toBeInTheDocument();
+    });
+
+    test("a live item's badge carries no clock", async () => {
+      mockLiveItem();
+      mockListingWithItem();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}`} />);
+
+      const tile = await screen.findByRole("gridcell", { name: /assay\.png/ });
+      const badge = within(tile).getByLabelText("gallery:mainPanel.versionLabel");
+      expect(badge).toHaveTextContent("v3");
+      expect(within(badge).queryByTestId("HistoryIcon")).not.toBeInTheDocument();
+    });
+
+    test("refuses to edit the pinned item, while still allowing a download", async () => {
+      const user = userEvent.setup();
+      mockLiveItem();
+      mockVersionHistory();
+      mockListingWithItem();
+      mockAxios.onGet(/\/gallery\/ajax\/getLinkedDocuments\//).reply(200, {
+        data: [],
+        error: null,
+        success: true,
+      });
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+      // the item named in the URL is selected automatically
+      await user.click(await screen.findByRole("button", { name: "gallery:actionsMenu.actions" }));
+
+      /*
+       * The decoration happens in the listing, so the Actions menu sees the
+       * pinned object and refuses through the predicates it already consults.
+       */
+      expect(await screen.findByRole("menuitem", { name: /common:actions.delete/ })).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+      expect(screen.getByRole("menuitem", { name: /common:actions.export/ })).toHaveAttribute("aria-disabled", "true");
+      /*
+       * Edit is decided by which editor applies, not by a predicate, so it needed
+       * its own refusal: Collabora and Office Online would edit the live bytes,
+       * and the image editor would derive a new file from a version being viewed.
+       */
+      expect(screen.getByRole("menuitem", { name: /common:actions.edit/ })).toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByRole("menuitem", { name: /common:actions.download/ })).not.toHaveAttribute("aria-disabled");
+    });
+
+    test("shows the pinned version's filename and image, not the live item's", async () => {
+      /*
+       * The reported bug: version 1 was a different picture under a different
+       * name, and both came out as version 3's. The name comes from the audit
+       * row, and the image from /Streamfile, which is version-aware where
+       * /gallery/getThumbnail is not.
+       */
+      mockLiveItem();
+      mockVersionHistory();
+      mockListingWithItem();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+      // loose match: the version badge contributes its label to the tile's name
+      const tile = await screen.findByRole("gridcell", { name: /first-draft\.png/ });
+      // the tile's image is decorative, so it is queried by tag rather than role
+      expect(tile.querySelector("img")).toHaveAttribute("src", `/Streamfile/${PINNED_ITEM_ID}?version=1`);
+      expect(screen.queryByRole("gridcell", { name: /assay\.png/ })).not.toBeInTheDocument();
+    });
+
+    test("shows the pinned version's description, not the live item's", async () => {
+      mockLiveItem();
+      mockVersionHistory();
+      mockListingWithItem();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+      expect(await screen.findAllByDisplayValue("A rough cut")).not.toHaveLength(0);
+      expect(screen.queryAllByDisplayValue("A draft assay")).toHaveLength(0);
+    });
+
+    test("the description cannot be edited on a pinned version", async () => {
+      // an edit here would have altered the live item while the page says "locked"
+      mockLiveItem();
+      mockVersionHistory();
+      mockListingWithItem();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+      for (const field of await screen.findAllByDisplayValue("A rough cut")) {
+        expect(field).toHaveAttribute("readonly");
+      }
+    });
+
+    test("the description is still editable on the live item", async () => {
+      mockLiveItem();
+      mockListingWithItem();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}`} />);
+
+      for (const field of await screen.findAllByDisplayValue("A draft assay")) {
+        expect(field).not.toHaveAttribute("readonly");
+      }
+    });
+
+    test("one notice above both reference lists says they are the item's, not the version's", async () => {
+      mockLiveItem();
+      mockVersionHistory();
+      mockListingWithItem();
+      mockAxios.onGet(/\/gallery\/ajax\/getLinkedDocuments\//).reply(200, {
+        data: [],
+        error: null,
+        success: true,
+      });
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/1`} />);
+
+      /*
+       * One notice covering both lists, rather than a caption inside each. The
+       * InfoPanel renders per layout, so the first of each is compared: within a
+       * layout the notice comes before the Linked Documents heading, which is what
+       * makes it read as covering that list and the inventory one below it.
+       */
+      const notices = await screen.findAllByText("gallery:pinnedVersion.referencesAreItemLevel");
+      expect(notices).not.toHaveLength(0);
+      const heading = screen.getAllByText("gallery:linkedDocumentsPanel.heading")[0];
+      // eslint-disable-next-line no-bitwise -- the DOM order API is a bitmask
+      expect(notices[0].compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    test("a version the item does not have is reported, not quietly replaced with the live one", async () => {
+      mockLiveItem();
+      mockVersionHistory();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/2`} />);
+
+      expect(await screen.findByText("gallery:landingPage.error")).toBeVisible();
+      expect(screen.queryByText("gallery:pinnedVersion.notice")).not.toBeInTheDocument();
+    });
+
+    test("a version that is not a number is reported", async () => {
+      mockLiveItem();
+      mockVersionHistory();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/latest`} />);
+
+      expect(await screen.findByText("gallery:landingPage.error")).toBeVisible();
+    });
+
+    test("pinning the live version shows the ordinary editable view, not a locked one", async () => {
+      mockLiveItem();
+      mockVersionHistory();
+      mockListingWithItem();
+
+      render(<GalleryStory urlSuffix={`/item/${PINNED_ITEM_ID}/3`} />);
+
+      await waitFor(() => {
+        expect(document.title).toBe("gallery:pageTitleWithContext");
+      });
+      expect(screen.queryByText("gallery:pinnedVersion.notice")).not.toBeInTheDocument();
     });
   });
 

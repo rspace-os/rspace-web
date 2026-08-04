@@ -249,14 +249,24 @@ export function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias:
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const handleChangePage = (newPage: any) => {
     setPage(newPage);
-    fetchAnimals();
   };
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const handleRowsPerPageChange = (pageSize: any) => {
     setRowsPerPage(pageSize);
-    handleChangePage(0);
+    setPage(0);
   };
+
+  // Reset to the first page whenever the filters or sort change. Done during
+  // render rather than in an effect so the reset and the triggering change are
+  // seen in the same committed render; otherwise fetchAnimals fires once with a
+  // stale page offset before the reset lands on the next render.
+  const filterOrderKey = `${filterCounter}|${order}|${orderBy}`;
+  const [prevFilterOrderKey, setPrevFilterOrderKey] = useState(filterOrderKey);
+  if (filterOrderKey !== prevFilterOrderKey) {
+    setPrevFilterOrderKey(filterOrderKey);
+    setPage(0);
+  }
 
   useEffect(() => {
     pyrat
@@ -361,11 +371,6 @@ export function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias:
       });
   }
 
-  useEffect(() => {
-    setPage(0);
-    fetchAnimals();
-  }, [filterCounter, order, orderBy]);
-
   const makeQueryString = useMemo(() => {
     const params = [filterSpecial.animal_state.value.map((state) => `&state=${state}`).join("")];
 
@@ -394,6 +399,13 @@ export function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias:
       page * rowsPerPage
     }&${params.join("")}&s=${orderBy}:${order}`;
   }, [filterCounter, order, orderBy, page, rowsPerPage, tableHeaderCells]);
+
+  // makeQueryString encodes the query parameters, while filterCounter is the
+  // explicit apply trigger. Keep both dependencies because animal_type selects
+  // the animals/pups collection rather than appearing in the query string.
+  useEffect(() => {
+    fetchAnimals();
+  }, [filterCounter, makeQueryString]);
 
   VISIBLE_HEADER_CELLS = useMemo(
     () => tableHeaderCells.filter((cell) => visibleColumnIds.includes(cell.id)),

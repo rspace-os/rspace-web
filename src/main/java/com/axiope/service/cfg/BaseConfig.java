@@ -1121,6 +1121,10 @@ public abstract class BaseConfig {
 
   @Bean("validator")
   LocalValidatorFactoryBean localValidatorFactoryBean() {
+    // Bean Validation keeps Hibernate Validator's own ValidationMessages.properties
+    // resolution here. Routing it through a Spring MessageSource runs the template
+    // through ICU MessageFormat first, which eats the {max} and ${...} placeholders
+    // before the validator can interpolate them.
     return new LocalValidatorFactoryBean();
   }
 
@@ -1327,7 +1331,7 @@ public abstract class BaseConfig {
 
   @Bean(name = "rspaceToExternalProviderAdapter")
   public RspaceToExternalProviderAdapter getRspaceToExternalProviderAdapter() {
-    return new RspaceToExternalProviderAdapterImpl();
+    return new RspaceToExternalProviderAdapterImpl(propertyHolder());
   }
 
   @Bean(name = "pyrat")

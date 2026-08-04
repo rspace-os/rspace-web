@@ -177,6 +177,11 @@
       <from>^/gallery/item/([0-9]+)$</from>
       <to>/eln/gallery.jsp</to>
     </rule>
+    <!-- The same item pinned to a past version: /gallery/item/<id>/<version> -->
+    <rule match-type="regex">
+      <from>^/gallery/item/([0-9]+)/([0-9]+)$</from>
+      <to>/eln/gallery.jsp</to>
+    </rule>
     <rule match-type="regex">
       <from>^/gallery/([0-9]+)$</from>
       <to>/eln/gallery.jsp</to>

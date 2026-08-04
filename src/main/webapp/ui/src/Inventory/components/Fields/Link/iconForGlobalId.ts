@@ -1,3 +1,4 @@
+import { galleryItemHref } from "@/eln/gallery/components/GalleryItemLink";
 import i18n from "../../../../modules/common/i18n";
 import type { RecordIconData } from "../../../../stores/definitions/BaseRecord";
 
@@ -101,27 +102,26 @@ export function isInventoryGlobalId(globalId: string): boolean {
 }
 
 /**
- * Targets that support version pinning in the link UI: Inventory items and ELN documents (SD).
- * Notebooks (NB) and gallery files (GL) do not, so the version-pin affordance must not be rendered
- * for them.
+ * Targets that support version pinning in the link UI: Inventory items, ELN documents (SD) and
+ * gallery files (GL, since RSDEV-1250 gave them a revision history). Notebooks (NB) do not, so the
+ * version-pin affordance must not be rendered for them.
  */
 export function supportsVersionPin(globalId: string): boolean {
-  return isInventoryGlobalId(globalId) || prefixOf(globalId) === "SD";
+  const prefix = prefixOf(globalId);
+  return isInventoryGlobalId(globalId) || prefix === "SD" || prefix === "GL";
 }
 
 /**
  * URL to OPEN a link target in a new tab. A Gallery file (GL) opens at its
- * location in the Gallery (/gallery/item/<id>) rather than downloading via
- * /globalId, which is the misleading default the backend resolves to Streamfile.
+ * location in the Gallery (/gallery/item/<id>[/<version>]) rather than downloading
+ * via /globalId, which is the misleading default the backend resolves to Streamfile.
  * Every other target keeps the existing /globalId/<gid>[v<n>] behaviour, which
- * the backend resolves per type (e.g. SD documents, inventory items). GL cannot
- * be version-pinned (see supportsVersionPin), so the gallery route ignores
- * versionPin by design.
+ * the backend resolves per type (e.g. SD documents, inventory items).
  */
 export function openUrlForTarget(globalId: string, versionPin: number | null): string {
   const match = GLOBAL_ID_PATTERN.exec(globalId);
   if (match && match[1] === "GL") {
-    return `/gallery/item/${match[2]}`;
+    return galleryItemHref(match[2], versionPin ?? undefined);
   }
   // rebuild from the parsed base id: rows written before the backend
   // normalised stored ids can already carry a "vN" suffix, which must not be

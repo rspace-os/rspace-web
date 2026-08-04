@@ -362,7 +362,7 @@ public class StructuredDocumentControllerTest {
   @Test(expected = ObjectRetrievalFailureException.class)
   public void editDescriptionThrowsISEIfNotExists() {
     generalExpectations();
-    messageSource.addMessage("record.inaccessible", Locale.getDefault(), "any");
+    messageSource.addMessage("errors.resource.inaccessible", Locale.getDefault(), "any");
     final Folder toEdit = TestFactory.createAFolder("any", user);
     toEdit.setId(1L);
     when(baseRecordMgr.get(1L, user)).thenThrow(new ObjectRetrievalFailureException("", null));
@@ -511,7 +511,7 @@ public class StructuredDocumentControllerTest {
     // now try if permission denied....throws AuthException
     when(permissionUtils.isPermitted(sd, PermissionType.READ, user)).thenReturn(false);
 
-    messageSource.addMessage("record.inaccessible", Locale.getDefault(), "any");
+    messageSource.addMessage("errors.resource.inaccessible", Locale.getDefault(), "any");
     assertAuthExceptionThrown(
         new Invokable() {
           public void invoke() {

@@ -19,9 +19,10 @@ import CustomField from "../../components/Inputs/CustomField";
 type DefaultValueFieldArgs = {
   field: FieldModel;
   editing: boolean;
+  recordTypeName?: "sample" | "instrument";
 };
 
-function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.ReactNode {
+function DefaultValueField({ field, editing, recordTypeName = "sample" }: DefaultValueFieldArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
   const _hasOptions = hasOptions(field.fieldType);
   const isAttachment = field.type === "attachment";
@@ -47,7 +48,11 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
     return (
       <InputWrapper
         label={t("fields.templateFields.defaultValue.allowedRelationshipTypes")}
-        explanation={t("fields.templateFields.defaultValue.allowedRelationshipTypesExplanation")}
+        explanation={t(
+          recordTypeName === "instrument"
+            ? "fields.templateFields.defaultValue.allowedRelationshipTypesExplanationInstrument"
+            : "fields.templateFields.defaultValue.allowedRelationshipTypesExplanation",
+        )}
       >
         <Autocomplete
           multiple

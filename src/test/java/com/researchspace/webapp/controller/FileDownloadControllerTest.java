@@ -23,6 +23,7 @@ import com.researchspace.model.record.BaseRecordAdaptable;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.FileDuplicateStrategy;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSigningManager;
@@ -33,7 +34,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Locale;
 import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
@@ -45,7 +45,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.springframework.context.support.StaticMessageSource;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 public class FileDownloadControllerTest {
@@ -58,7 +57,6 @@ public class FileDownloadControllerTest {
   @Mock UserManager userMgr;
   @Mock IPermissionUtils permUtils;
   @Mock BaseRecordAdaptable adapter;
-  StaticMessageSource source;
   @Mock FileStore fileStore;
   @Mock DocumentConversionService converter;
   @Mock RecordSigningManager recordSigner;
@@ -100,8 +98,7 @@ public class FileDownloadControllerTest {
     resp = new MockHttpServletResponse();
     root = new FileStoreRoot(tempFolder.getRoot().toURI().toString());
 
-    source = new StaticMessageSource();
-    ctrller.setMessageSource(new MessageSourceUtils(source));
+    ctrller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
   }
 
   @Test
@@ -339,7 +336,6 @@ public class FileDownloadControllerTest {
     File any = RSpaceTestUtils.getAnyPdf();
     final long SignatureId = 1L;
     final long filePropertyId = 2L;
-    source.addMessage("record.inaccessible", Locale.getDefault(), "any");
     when(recordSigner.getSignedExport(SignatureId, user, filePropertyId))
         .thenReturn(nullOptional());
     ctrller.streamFilePropertyDirect(SignatureId, filePropertyId, resp);

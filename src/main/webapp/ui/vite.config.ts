@@ -7,13 +7,161 @@ import browserslist from "browserslist";
 import browserslistToEsbuild from "browserslist-to-esbuild";
 import { browserslistToTargets } from "lightningcss";
 import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
+import { normalizePath } from "vite";
 import { defineConfig } from "vitest/config";
 import bundleEntries from "./bundleEntries.json";
+import { flattenMessages } from "./src/modules/common/i18n/flattenMessages";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const resolveFromRoot = (relativePath: string) => path.resolve(__dirname, relativePath);
+// Module ids always use forward slashes, so paths compared against one have to be normalised or
+// nothing matches on Windows, where `path.resolve` returns backslashes.
+const resolveFromRoot = (relativePath: string) => normalizePath(path.resolve(__dirname, relativePath));
+
+const legacyI18nEntryPath = resolveFromRoot("src/modules/common/i18n/legacyI18n.ts");
+const listFormatPath = resolveFromRoot("src/modules/common/i18n/listFormat.ts");
+const localesPath = resolveFromRoot("src/modules/common/i18n/locales");
+const intlMessageFormatBundlePath = path.join(
+  path.dirname(createRequire(import.meta.url).resolve("intl-messageformat")),
+  "intl-messageformat.iife.js",
+);
+
+const legacyCatalogueFileName = (locale: string) => `legacyMessages.${locale}.js`;
+
+/*
+ * Emits the legacy message catalogue as one static file per locale, assigning `window.RS.i18n`.
+ * Kept out of the `legacyI18n` chunk so the messages, which change on any copy edit, cache
+ * separately from the formatting code, which does not. They land under `/ui/dist/`, already served
+ * anonymously with a JavaScript MIME type, so nothing serves them at runtime.
+ */
+function legacyMessages(): Plugin {
+  const catalogues = fs
+    .readdirSync(localesPath, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(localesPath, entry.name, "server.legacyJs.json")))
+    .map((entry) => {
+      const messages = flattenMessages(
+        JSON.parse(fs.readFileSync(path.join(localesPath, entry.name, "server.legacyJs.json"), "utf8")),
+      );
+      return {
+        locale: entry.name,
+        fileName: legacyCatalogueFileName(entry.name),
+        source: `window.RS = window.RS || {};\nwindow.RS.i18n = ${JSON.stringify(messages)};\n`,
+      };
+    });
+
+  if (catalogues.length === 0) {
+    throw new Error(`No server.legacyJs.json found under ${localesPath}; RS.msg would resolve nothing.`);
+  }
+
+  return {
+    name: "rspace:legacy-messages",
+    generateBundle() {
+      for (const { fileName, source } of catalogues) {
+        this.emitFile({ type: "asset", fileName, source });
+      }
+    },
+    // `generateBundle` never runs under `vite dev`, so serve the same bytes from memory there.
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const requested = req.url?.split("?")[0] ?? "";
+        const catalogue = catalogues.find(({ fileName }) => requested.endsWith(`/${fileName}`));
+        if (!catalogue) {
+          next();
+          return;
+        }
+        res.setHeader("Content-Type", "text/javascript;charset=utf-8");
+        res.end(catalogue.source);
+      });
+    },
+  };
+}
+
+function legacyI18n(): Plugin {
+  const formatter = fs.readFileSync(intlMessageFormatBundlePath, "utf8");
+  // Rendered as a blocking classic <script src>, so any top-level import/export left in the
+  // chunk is a SyntaxError that leaves `RS.msg` undefined on every page. `listFormat` keeps its
+  // own exports: thirteen other modules import it.
+  const inlinedModules = [
+    {
+      importLine: /^import \{ formatList as formatLocalizedList \} from "\.\/listFormat";$/m,
+      path: listFormatPath,
+      epilogue: "const formatLocalizedList = formatList;",
+    },
+  ];
+  const topLevelEsm = /^\s*(?:import|export)\b/m;
+  return {
+    name: "rspace:legacy-i18n",
+    // The stripping below has to run after `vite:esbuild`, which erases the type-only imports
+    // and then appends its own `export {}` to keep the file a module.
+    enforce: "post",
+    load(id) {
+      if (id.split("?")[0] === legacyI18nEntryPath) {
+        let entry = fs.readFileSync(legacyI18nEntryPath, "utf8");
+        for (const { importLine, path: modulePath, epilogue } of inlinedModules) {
+          if (!importLine.test(entry)) {
+            this.error(
+              `legacyI18n.ts no longer matches the expected import of ${path.basename(modulePath)}. Inline its ` +
+                "replacement or the entry will emit an ESM import and break as a classic script.",
+            );
+          }
+          entry = entry.replace(importLine, `${fs.readFileSync(modulePath, "utf8")}\n${epilogue}`);
+        }
+        return `${formatter}\nglobalThis.RSpaceIntlMessageFormat = IntlMessageFormat;\n${entry}`;
+      }
+    },
+    transform(code, id) {
+      if (id.split("?")[0] !== legacyI18nEntryPath) {
+        return null;
+      }
+      // Drops the inlined modules' `export` keywords, the trailing re-export block FormatJS's
+      // "iife" bundle ends with despite its name, and esbuild's `export {}` marker.
+      const script = code
+        .replace(/^export \{[^}]*\};?$/gm, "")
+        .replace(/^export (?=(?:const|let|var|function|class|async)\b)/gm, "");
+      // `renderChunk` and `generateBundle` never run under `vite dev`, so this is the HMR
+      // path's only guard.
+      if (topLevelEsm.test(script)) {
+        this.error(
+          "The legacyI18n entry still has a top-level import/export, so it would throw a " +
+            `SyntaxError as a classic script: ${topLevelEsm.exec(script)?.[0].trim()}`,
+        );
+      }
+      return { code: script, map: null };
+    },
+    renderChunk(code, chunk) {
+      if (chunk.name !== "legacyI18n") {
+        return null;
+      }
+      // Minification is free to name a top-level binding `$` (it did, for `formatterCache`),
+      // which shadows jQuery and breaks every later `$(...)` on the page. Scoping the chunk
+      // avoids that; it communicates through `window.RS` and `globalThis` explicitly.
+      return { code: `(function () {\n${code}\n})();\n`, map: null };
+    },
+    generateBundle(_options, bundle) {
+      // Fail the build rather than silently shipping an unloadable classic script.
+      for (const chunk of Object.values(bundle)) {
+        if (chunk.type !== "chunk" || chunk.name !== "legacyI18n") {
+          continue;
+        }
+        if (chunk.imports.length > 0 || chunk.exports.length > 0) {
+          this.error(
+            `The legacyI18n entry must be import-free to load as a classic script, but emitted ` +
+              `imports [${chunk.imports.join(", ")}] and exports [${chunk.exports.join(", ")}].`,
+          );
+        }
+        // Minification rewrites the wrapper's shape, so match any IIFE opening rather
+        // than an exact prefix.
+        if (!/^\s*[!(;]*\s*(?:function\s*\(|\(\s*\)\s*=>)/.test(chunk.code)) {
+          this.error(
+            `The legacyI18n entry must stay wrapped in an IIFE so it leaks no globals onto ` +
+              `window, but starts with: ${chunk.code.slice(0, 60)}`,
+          );
+        }
+      }
+    },
+  };
+}
 
 /*
  * Serves the self-hosted TinyMCE 8 build as static files under
@@ -137,7 +285,7 @@ const resolvedBundleEntries = Object.fromEntries(
 export default defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  const plugins: PluginOption[] = [react()];
+  const plugins: PluginOption[] = [react(), legacyI18n(), legacyMessages()];
 
   if (!isVitest) {
     plugins.push(tinymceAssets("/ui/dist/"));
