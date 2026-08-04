@@ -5,8 +5,6 @@ import java.util.List;
 /** Structured field failures found while parsing a create or update document. */
 public final class DocumentValidationException extends RuntimeException {
 
-  private static final long serialVersionUID = 8897495474224791037L;
-
   public enum Reason {
     INVALID_DOCUMENT("invalidDocument"),
     UNKNOWN_FIELD("unknownField"),

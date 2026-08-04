@@ -3,8 +3,6 @@ package com.researchspace.model.collection;
 /** Safe request-query failure that can cross the controller, manager, and persistence layers. */
 public class CollectionQueryException extends RuntimeException {
 
-  private static final long serialVersionUID = 4073923414641262704L;
-
   public enum Reason {
     SYNTAX,
     FIELD,
