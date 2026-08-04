@@ -137,6 +137,8 @@ export default defineConfig({
       // Pulled in by Inventory/Identifiers/IGSN/IgsnTable at runtime; pre-bundling
       // prevents a mid-run optimizer reload that causes duplicate React/emotion instances.
       "@mui/material/utils",
+      // Imported by SidebarPage to inspect the MUI modal stacking root.
+      "@mui/material/Modal",
       // TinyMCE React wrapper: discovered lazily the first time a component
       // mounts a TinyMCE editor, causing a mid-run optimizer reload that
       // makes the Vitest runner warn and can cause flakiness.

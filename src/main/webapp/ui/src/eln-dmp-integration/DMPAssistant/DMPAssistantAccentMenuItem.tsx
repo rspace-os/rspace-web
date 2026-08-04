@@ -36,7 +36,7 @@ export default function DMPAssistantAccentMenuItem({ onDialogClose }: DMPAssista
           open={showDialog}
           setOpen={(b) => {
             setShowDialog(b);
-            onDialogClose();
+            if (!b) onDialogClose();
           }}
         />
       </EventBoundary>
