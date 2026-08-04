@@ -935,7 +935,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-test</artifactId>
-      <optional>true</optional>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.batch</groupId>
