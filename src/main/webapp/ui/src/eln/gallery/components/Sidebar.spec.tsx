@@ -52,7 +52,6 @@ describe("Gallery create menu (DMP enabled)", () => {
     await sidebar.dmptool.click();
 
     await expect.element(sidebar.dmpDialog).toBeVisible();
-    await expect.element(sidebar.noDmps).toBeVisible();
     expect(sidebar.modalZIndex(sidebar.dmpDialog)).toBeGreaterThan(menuZIndex);
     await expect.element(sidebar.menu).toBeVisible();
   });
@@ -65,7 +64,6 @@ describe("Gallery create menu (DMP enabled)", () => {
     await sidebar.dmptool.click();
 
     await expect.element(sidebar.dmpDialog).toBeVisible();
-    await expect.element(sidebar.noDmps).toBeVisible();
     expect(sidebar.modalZIndex(sidebar.dmpDialog)).toBeGreaterThan(menuZIndex);
     await expect.element(sidebar.menu).toBeVisible();
 

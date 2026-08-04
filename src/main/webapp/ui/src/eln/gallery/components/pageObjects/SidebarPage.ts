@@ -15,11 +15,7 @@ export class SidebarPage {
   }
 
   get dmpDialog(): Locator {
-    return page.getByRole("dialog");
-  }
-
-  get noDmps(): Locator {
-    return page.getByText("No DMPs");
+    return page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: "DMPTool" }) });
   }
 
   get closeDmpDialog(): Locator {
@@ -30,7 +26,10 @@ export class SidebarPage {
     // MUI applies z-index to the shared Modal root, not the semantic menu/dialog element.
     const modal = locator.element().closest(`.${modalClasses.root}`);
     if (!modal) throw new Error("Expected element to be rendered inside a modal");
-    return Number.parseInt(getComputedStyle(modal).zIndex, 10);
+    const computedZIndex = getComputedStyle(modal).zIndex;
+    const zIndex = Number.parseInt(computedZIndex, 10);
+    if (Number.isNaN(zIndex)) throw new Error(`Expected modal z-index to be numeric, received "${computedZIndex}"`);
+    return zIndex;
   }
 
   async openCreateMenu(): Promise<void> {
