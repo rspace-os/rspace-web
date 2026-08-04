@@ -111,7 +111,7 @@ class ApiV2AuthenticationInterceptorTest {
     return new HandlerMethod(new ApiV2CrudController(mock(ApiV2ResourceCatalog.class)), method);
   }
 
-  @PublicApiV2
+  @ApiV2Access(ApiV2Access.Mode.PUBLIC)
   static class PublicController {
     public void read() {}
   }
@@ -121,7 +121,7 @@ class ApiV2AuthenticationInterceptorTest {
   }
 
   static class MethodPublicController {
-    @PublicApiV2
+    @ApiV2Access(ApiV2Access.Mode.PUBLIC)
     public void read() {}
   }
 }

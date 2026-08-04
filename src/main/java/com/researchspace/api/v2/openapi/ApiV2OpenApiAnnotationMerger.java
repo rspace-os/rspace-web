@@ -1,9 +1,7 @@
 package com.researchspace.api.v2.openapi;
 
-import com.researchspace.api.v2.controller.PublicApiV2;
-import io.swagger.v3.core.converter.AnnotatedType;
-import io.swagger.v3.core.converter.ModelConverters;
-import io.swagger.v3.core.converter.ResolvedSchema;
+import com.researchspace.api.v2.controller.ApiV2Access;
+import com.researchspace.api.v2.controller.ApiV2AccessResolver;
 import io.swagger.v3.core.util.AnnotationsUtils;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.annotations.Operation;
@@ -98,9 +96,7 @@ final class ApiV2OpenApiAnnotationMerger {
                 operation.put(
                     "servers", Json31.mapper().convertValue(value, java.util.ArrayList.class)));
     operation.putAll(AnnotationsUtils.getExtensions(metadata.extensions()));
-    boolean publicEndpoint =
-        handler.hasMethodAnnotation(PublicApiV2.class)
-            || AnnotatedElementUtils.hasAnnotation(handler.getBeanType(), PublicApiV2.class);
+    boolean publicEndpoint = ApiV2AccessResolver.mode(handler) == ApiV2Access.Mode.PUBLIC;
     if (metadata.security().length > 0) {
       operation.put(
           "security",
@@ -123,7 +119,7 @@ final class ApiV2OpenApiAnnotationMerger {
         .ifPresent(body -> operation.put("requestBody", body));
 
     Type responseType = unwrapResponseEntity(handler.getMethod().getGenericReturnType());
-    Map<String, Object> responseSchema = schemaFor(responseType, schemas);
+    Map<String, Object> responseSchema = ApiV2OpenApiSchemas.schemaFor(responseType, schemas);
     List<String> mediaTypes =
         mapping.getProducesCondition().getProducibleMediaTypes().isEmpty()
             ? List.of("application/json")
@@ -201,7 +197,7 @@ final class ApiV2OpenApiAnnotationMerger {
                   "required",
                   location.required(),
                   "schema",
-                  schemaFor(parameter.getParameterizedType(), schemas))
+                  ApiV2OpenApiSchemas.schemaFor(parameter.getParameterizedType(), schemas))
               : documentedParameter(documented, parameter.getParameterizedType(), schemas);
       value.putIfAbsent("name", location.name());
       value.putIfAbsent("in", location.in());
@@ -261,7 +257,8 @@ final class ApiV2OpenApiAnnotationMerger {
     if (documented.content().length > 0) {
       result.put(
           "content",
-          annotatedContent(documented.content(), schemaFor(fallbackType, schemas), schemas));
+          annotatedContent(
+              documented.content(), ApiV2OpenApiSchemas.schemaFor(fallbackType, schemas), schemas));
     } else {
       result.put(
           "schema",
@@ -283,7 +280,7 @@ final class ApiV2OpenApiAnnotationMerger {
     mergeSchemas(schemas, components);
     return documented
         .map(Json31::jsonSchemaAsMap)
-        .orElseGet(() -> schemaFor(fallbackType, schemas));
+        .orElseGet(() -> ApiV2OpenApiSchemas.schemaFor(fallbackType, schemas));
   }
 
   private static java.util.Optional<Map<String, Object>> requestBody(
@@ -316,7 +313,7 @@ final class ApiV2OpenApiAnnotationMerger {
     io.swagger.v3.oas.annotations.parameters.RequestBody documented =
         explicitlyDocumented ? operationBody : parameterBody;
     Type type = javaBody == null ? Object.class : javaBody.getParameterizedType();
-    Map<String, Object> schema = schemaFor(type, schemas);
+    Map<String, Object> schema = ApiV2OpenApiSchemas.schemaFor(type, schemas);
     List<String> mediaTypes =
         mapping.getConsumesCondition().getConsumableMediaTypes().isEmpty()
             ? List.of("application/json")
@@ -458,20 +455,6 @@ final class ApiV2OpenApiAnnotationMerger {
       return parameterized.getActualTypeArguments()[0];
     }
     return type;
-  }
-
-  private static Map<String, Object> schemaFor(Type type, Map<String, Object> components) {
-    if (type == byte[].class) {
-      return map("type", "string", "format", "binary");
-    }
-    ResolvedSchema resolved =
-        ModelConverters.getInstance(true)
-            .resolveAsResolvedSchema(new AnnotatedType(type).resolveAsRef(true));
-    resolved.referencedSchemas.forEach(
-        (name, schema) -> components.put(name, Json31.jsonSchemaAsMap(schema)));
-    return resolved.schema == null
-        ? map("type", "object")
-        : Json31.jsonSchemaAsMap(resolved.schema);
   }
 
   private static boolean isSuccessResponse(String responseCode) {

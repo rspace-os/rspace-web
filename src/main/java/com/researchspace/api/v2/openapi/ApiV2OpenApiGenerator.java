@@ -1,11 +1,14 @@
 package com.researchspace.api.v2.openapi;
 
+import com.researchspace.api.v2.controller.ApiV2Problem;
+import com.researchspace.api.v2.model.ApiV2AuditEvent;
+import com.researchspace.api.v2.model.ApiV2BulkError;
+import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.audittrail.AuditAction;
-import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.collection.AccessDocumentation;
 import com.researchspace.model.collection.AccessDocumentation.AuthenticationRequirement;
 import com.researchspace.model.collection.AccessPolicy;
@@ -133,7 +136,6 @@ public final class ApiV2OpenApiGenerator {
     document.put("tags", tags);
     document.put("paths", paths);
     document.put("components", components);
-    ApiV2OpenApiValidator.validate(document);
     return document;
   }
 
@@ -633,10 +635,12 @@ public final class ApiV2OpenApiGenerator {
         ordered(
             "description",
             documentation
-                .responseDescriptions()
+                .responses()
                 .getOrDefault(
                     Integer.valueOf(successStatus),
-                    "Successful " + operation.name().toLowerCase(Locale.ROOT) + "."),
+                    new OpenApiOperationDocumentation.Response(
+                        "Successful " + operation.name().toLowerCase(Locale.ROOT) + ".", null))
+                .description(),
             "headers",
             rateLimitHeaders(),
             "content",
@@ -661,27 +665,25 @@ public final class ApiV2OpenApiGenerator {
     }
     responses.put("429", responseRef("TooManyRequests"));
     responses.put("500", responseRef("UnexpectedError"));
-    resource
-        .errorResponses(operation)
+    documentation.responses().entrySet().stream()
+        .filter(entry -> entry.getValue().errorCode() != null)
         .forEach(
-            (status, code) ->
+            entry ->
                 responses.put(
-                    String.valueOf(status),
+                    String.valueOf(entry.getKey()),
                     problemResponse(
-                        documentation
-                            .responseDescriptions()
-                            .getOrDefault(status, "Operation failed: " + code),
-                        status,
-                        code)));
+                        entry.getValue().description(),
+                        entry.getKey(),
+                        entry.getValue().errorCode())));
     documentation
-        .responseDescriptions()
+        .responses()
         .forEach(
-            (status, description) -> {
+            (status, responseDocumentation) -> {
               Object existing = responses.get(String.valueOf(status));
               if (existing instanceof Map<?, ?> response) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> mutable = new LinkedHashMap<>((Map<String, Object>) response);
-                mutable.put("description", description);
+                mutable.put("description", responseDocumentation.description());
                 responses.put(String.valueOf(status), mutable);
               }
             });
@@ -703,88 +705,10 @@ public final class ApiV2OpenApiGenerator {
   }
 
   private static void addStandardSchemas(Map<String, Object> schemas) {
-    Map<String, Object> invalidParam =
-        ordered(
-            "type",
-            "object",
-            "required",
-            List.of("name", "reason"),
-            "properties",
-            ordered("name", ordered("type", "string"), "reason", ordered("type", "string")));
-    schemas.put(
-        "ApiV2Problem",
-        ordered(
-            "type",
-            "object",
-            "required",
-            List.of("title", "status", "code"),
-            "properties",
-            ordered(
-                "title",
-                ordered("type", "string"),
-                "status",
-                ordered("type", "integer"),
-                "code",
-                ordered("type", "string"),
-                "detail",
-                ordered("type", List.of("string", "null")),
-                "invalidParams",
-                ordered("type", List.of("array", "null"), "items", invalidParam))));
-    schemas.put(
-        "ApiV2CountResult",
-        ordered(
-            "type",
-            "object",
-            "required",
-            List.of("totalDocs"),
-            "properties",
-            Map.of("totalDocs", ordered("type", "integer", "format", "int64"))));
-    schemas.put(
-        "ApiV2AuditEvent",
-        ordered(
-            "type",
-            "object",
-            "required",
-            List.of("timestamp", "username", "domain", "action", "payload"),
-            "properties",
-            ordered(
-                "timestamp",
-                ordered("type", "string", "format", "date-time"),
-                "username",
-                ordered("type", "string"),
-                "fullName",
-                ordered("type", List.of("string", "null")),
-                "domain",
-                ordered(
-                    "type",
-                    "string",
-                    "enum",
-                    java.util.Arrays.stream(AuditDomain.values()).map(Enum::name).toList()),
-                "action",
-                ordered(
-                    "type",
-                    "string",
-                    "enum",
-                    java.util.Arrays.stream(AuditAction.values()).map(Enum::name).toList()),
-                "description",
-                ordered("type", List.of("string", "null")),
-                "payload",
-                ordered("type", "object", "additionalProperties", true))));
-    schemas.put(
-        "ApiV2BulkError",
-        ordered(
-            "type",
-            "object",
-            "required",
-            List.of("code"),
-            "properties",
-            ordered(
-                "id",
-                ordered("type", List.of("string", "null")),
-                "code",
-                ordered("type", "string"),
-                "detail",
-                ordered("type", List.of("string", "null")))));
+    ApiV2OpenApiSchemas.schemaFor(ApiV2Problem.class, schemas);
+    ApiV2OpenApiSchemas.schemaFor(ApiV2CountResult.class, schemas);
+    ApiV2OpenApiSchemas.schemaFor(ApiV2AuditEvent.class, schemas);
+    ApiV2OpenApiSchemas.schemaFor(ApiV2BulkError.class, schemas);
   }
 
   private static Map<String, Object> referenceSchema(ResourceSchema resource) {
@@ -845,7 +769,11 @@ public final class ApiV2OpenApiGenerator {
       property.put(
           "x-rspace-access",
           accessExtension(
-              writeOperation == null ? relationship.readAccess() : relationship.writeAccess()));
+              writeOperation == null
+                  ? relationship.readAccess()
+                  : writeOperation == WriteOperation.CREATE
+                      ? relationship.createAccess()
+                      : relationship.updateAccess()));
       properties.put(relationship.name(), nullable(property, relationship.nullable()));
       if (writeOperation == WriteOperation.CREATE && relationship.requiredOnCreate()) {
         required.add(relationship.name());

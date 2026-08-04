@@ -12,8 +12,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.RECORD_COMPONENT)
 public @interface ApiV2ResourceField {
 
-  /** Per-request read visibility presets, resolved to an {@link AccessFunction}. */
-  enum ReadAccess {
+  /** Per-request access presets, resolved to an {@link AccessFunction}. */
+  enum AccessPreset {
     /** Visible to anyone who may read the collection. */
     INHERITED,
     /** Visible only to an authenticated caller. */
@@ -25,33 +25,7 @@ public @interface ApiV2ResourceField {
 
     AccessFunction resolve() {
       return switch (this) {
-        case INHERITED -> AccessFunction.anyone();
-        case AUTHENTICATED -> AccessFunction.authenticated();
-        case SYSADMIN -> AccessFunction.sysadmin();
-        case NEVER -> AccessFunction.never();
-      };
-    }
-  }
-
-  /**
-   * Per-request write presets, resolved to an {@link AccessFunction}.
-   *
-   * <p>{@code NEVER} also removes the field from that operation's input schema. It is the explicit
-   * way to describe server-managed fields whose entity property still has a persistence setter.
-   */
-  enum WriteAccess {
-    /** Writable by anyone who may perform the operation on the collection. */
-    INHERITED,
-    /** Writable only by an authenticated caller. */
-    AUTHENTICATED,
-    /** Writable only by a system administrator. */
-    SYSADMIN,
-    /** Not accepted by this operation. */
-    NEVER;
-
-    AccessFunction resolve() {
-      return switch (this) {
-        case INHERITED -> AccessFunction.anyone();
+        case INHERITED -> AccessFunction.inherited();
         case AUTHENTICATED -> AccessFunction.authenticated();
         case SYSADMIN -> AccessFunction.sysadmin();
         case NEVER -> AccessFunction.never();
@@ -67,7 +41,7 @@ public @interface ApiV2ResourceField {
    * changes which rows are returned. Row narrowing belongs on the collection's {@link
    * AccessPolicy}.
    */
-  ReadAccess readAccess() default ReadAccess.INHERITED;
+  AccessPreset readAccess() default AccessPreset.INHERITED;
 
   /**
    * Who may supply this field when creating a resource.
@@ -78,10 +52,10 @@ public @interface ApiV2ResourceField {
    * create function receives the complete parsed candidate through {@link
    * AccessContext#requireInput()}.
    */
-  WriteAccess createAccess() default WriteAccess.INHERITED;
+  AccessPreset createAccess() default AccessPreset.INHERITED;
 
   /** Who may supply this field when updating a resource. */
-  WriteAccess updateAccess() default WriteAccess.INHERITED;
+  AccessPreset updateAccess() default AccessPreset.INHERITED;
 
   boolean requiredOnCreate() default false;
 

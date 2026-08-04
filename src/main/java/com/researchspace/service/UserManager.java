@@ -8,6 +8,7 @@ import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.UserRoleView;
@@ -389,7 +390,7 @@ public interface UserManager extends GenericManager<User, Long> {
    * @param request already narrowed by {@code ApiV2UserResource}'s access policy, so an ordinary
    *     caller's request carries an {@code id} constraint limiting it to their own row
    */
-  ISearchResults<User> getUsers(ResourceRequest request);
+  ResourcePage<User> getUsers(ResourceRequest request);
 
   /** Total users matching a REST API v2 collection request. */
   long countUsers(ResourceRequest request);

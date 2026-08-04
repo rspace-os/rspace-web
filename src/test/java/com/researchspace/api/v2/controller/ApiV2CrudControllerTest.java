@@ -25,7 +25,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
-import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.maintenance.api.v2.MaintenanceResourceOperations;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
@@ -36,6 +35,7 @@ import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.Calendar;
@@ -128,14 +128,12 @@ class ApiV2CrudControllerTest {
   void pagesAllFutureMaintenancesThroughTheEnvelope() throws Exception {
     when(maintenanceManager.getResources(any(ResourceRequest.class)))
         .thenReturn(
-            new SearchResultsImpl<>(
+            new ResourcePage<>(
                 List.of(
                     futureMaintenance(2, "Planned database upgrade"),
                     futureMaintenance(26, "Second window")),
-                0,
-                3,
-                2),
-            new SearchResultsImpl<>(List.of(futureMaintenance(50, "Third window")), 1, 3, 2));
+                3),
+            new ResourcePage<>(List.of(futureMaintenance(50, "Third window")), 3));
 
     mockMvc
         .perform(get(ENDPOINT).param("limit", "2"))
@@ -242,7 +240,7 @@ class ApiV2CrudControllerTest {
     maintenance.setId(42L);
     when(maintenanceManager.countResources(any(ResourceRequest.class))).thenReturn(3L);
     when(maintenanceManager.getResources(any(ResourceRequest.class)))
-        .thenReturn(new SearchResultsImpl<>(List.of(maintenance), 0, 1, 1));
+        .thenReturn(new ResourcePage<>(List.of(maintenance), 1));
 
     mockMvc
         .perform(get(ENDPOINT + "/count").param("where", "message==*upgrade*"))
@@ -259,7 +257,7 @@ class ApiV2CrudControllerTest {
   @Test
   void returnsNotFoundForExpiredOrUnknownMaintenance() throws Exception {
     when(maintenanceManager.getResources(any(ResourceRequest.class)))
-        .thenReturn(new SearchResultsImpl<>(List.of(), 0, 0, 1));
+        .thenReturn(new ResourcePage<>(List.of(), 0));
 
     mockMvc
         .perform(get(ENDPOINT + "/42"))
@@ -506,7 +504,7 @@ class ApiV2CrudControllerTest {
   private void stubPage(
       List<ScheduledMaintenance> results, long total, int page, int resultsPerPage) {
     when(maintenanceManager.getResources(any(ResourceRequest.class)))
-        .thenReturn(new SearchResultsImpl<>(results, page - 1, total, resultsPerPage));
+        .thenReturn(new ResourcePage<>(results, total));
   }
 
   private static ApiV2ControllerAdvice problemAdvice() {

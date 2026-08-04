@@ -5,7 +5,5 @@ public class ApiV2AuthenticationException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;
 
-  public ApiV2AuthenticationException(String message) {
-    super(message);
-  }
+  public ApiV2AuthenticationException() {}
 }

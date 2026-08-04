@@ -8,8 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
-import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
@@ -26,7 +24,7 @@ public class ApiV2AbstractThrottleInterceptor implements HandlerInterceptor {
   }
 
   String assertApiAccess(HttpServletRequest request, Object handler) {
-    if (isPublicApiV2Handler(handler)) {
+    if (ApiV2AccessResolver.mode(handler) == ApiV2Access.Mode.PUBLIC) {
       // RequestUtil.remoteAddr honours X-Forwarded-For, so deployments must accept that header only
       // from trusted proxies. The value is hashed to avoid retaining client addresses in memory.
       return clientFingerprint("publicApiUser", request);
@@ -58,13 +56,5 @@ public class ApiV2AbstractThrottleInterceptor implements HandlerInterceptor {
     } catch (NoSuchAlgorithmException ex) {
       throw new IllegalStateException("SHA-256 is unavailable", ex);
     }
-  }
-
-  private boolean isPublicApiV2Handler(Object handler) {
-    if (!(handler instanceof HandlerMethod handlerMethod)) {
-      return false;
-    }
-    return handlerMethod.hasMethodAnnotation(PublicApiV2.class)
-        || AnnotatedElementUtils.hasAnnotation(handlerMethod.getBeanType(), PublicApiV2.class);
   }
 }

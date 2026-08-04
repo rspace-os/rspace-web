@@ -1,17 +1,12 @@
 package com.researchspace.maintenance.dao;
 
 import com.blazebit.persistence.CriteriaBuilderFactory;
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
-import com.researchspace.model.collection.CollectionDescription.Operator;
-import com.researchspace.model.collection.FieldSelection;
-import com.researchspace.model.collection.FilterExpression;
-import com.researchspace.model.collection.IncludeTree;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
-import com.researchspace.model.collection.ResourceRequest.Page;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +34,13 @@ public class MaintenanceDaoHibernate extends GenericDaoHibernate<ScheduledMainte
 
   @Override
   public Optional<ScheduledMaintenance> getNextScheduledMaintenance() {
-    return Optional.ofNullable(getResources(nextMaintenanceRequest()).getFirstResult());
+    return getSession()
+        .createQuery(
+            "from ScheduledMaintenance where endDate > :now order by startDate asc",
+            ScheduledMaintenance.class)
+        .setParameter("now", new Date())
+        .setMaxResults(1)
+        .uniqueResultOptional();
   }
 
   @Override
@@ -48,7 +49,7 @@ public class MaintenanceDaoHibernate extends GenericDaoHibernate<ScheduledMainte
   }
 
   @Override
-  public ISearchResults<ScheduledMaintenance> getResources(ResourceRequest request) {
+  public ResourcePage<ScheduledMaintenance> getResources(ResourceRequest request) {
     return COLLECTION_QUERY.page(criteriaBuilderFactory, getSession(), request);
   }
 
@@ -79,15 +80,5 @@ public class MaintenanceDaoHibernate extends GenericDaoHibernate<ScheduledMainte
             ScheduledMaintenance.class)
         .setParameter("now", new Date())
         .list();
-  }
-
-  private static ResourceRequest nextMaintenanceRequest() {
-    return new ResourceRequest(
-        new FilterExpression.Comparison(
-            "endDate", Operator.GREATER_THAN, List.of(new Date()), false),
-        ApiV2MaintenanceResource.DESCRIPTION.defaultSort(),
-        new Page(1, 1),
-        FieldSelection.all(),
-        IncludeTree.empty());
   }
 }

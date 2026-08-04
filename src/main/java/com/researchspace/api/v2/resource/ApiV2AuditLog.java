@@ -57,7 +57,7 @@ public final class ApiV2AuditLog {
   public ApiV2ListResult<ApiV2AuditEvent> search(
       ApiV2ResourceRegistration<?, ?> resource, String rawId, ApiV2AuditQuery query, User actor) {
     if (actor == null) {
-      throw new ApiV2AuthenticationException("REST API v2 audit access requires authentication");
+      throw new ApiV2AuthenticationException();
     }
     ResolvedTarget target = resource.requireReadableForAudit(rawId, actor);
     Optional<AuditTarget> auditTarget = auditTarget(resource, target);

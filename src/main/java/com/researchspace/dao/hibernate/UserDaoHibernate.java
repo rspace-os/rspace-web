@@ -25,6 +25,7 @@ import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
 import com.researchspace.model.collection.ApiV2UserResource;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.dtos.UserSearchCriteria;
@@ -832,7 +833,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   }
 
   @Override
-  public ISearchResults<User> getUsers(ResourceRequest request) {
+  public ResourcePage<User> getUsers(ResourceRequest request) {
     return COLLECTION_QUERY.page(criteriaBuilderFactory, getSession(), request);
   }
 

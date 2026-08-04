@@ -7,7 +7,6 @@ import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -41,6 +40,13 @@ public final class BookingConfigurationResourceOperations
 
   @Bean
   ApiV2ResourceSpec<BookingConfiguration, Long> bookingConfigurationApiV2Resource() {
+    OpenApiOperationDocumentation conflict =
+        OpenApiOperationDocumentation.builder()
+            .errorResponse(
+                409,
+                "errors.api.v2.bookingConfiguration.target.conflict",
+                "The instrument already has a booking configuration.")
+            .build();
     return new ApiV2ResourceSpec<>(
         ApiV2BookingConfigurationResource.DESCRIPTION,
         this,
@@ -48,15 +54,6 @@ public final class BookingConfigurationResourceOperations
         "errors.api.v2.bookingConfiguration.create",
         "errors.api.v2.bookingConfiguration.patch",
         EnumSet.allOf(ResourceOperation.class),
-        Map.of(
-            ResourceOperation.CREATE,
-            Map.of(409, "errors.api.v2.bookingConfiguration.target.conflict"),
-            ResourceOperation.BULK_CREATE,
-            Map.of(409, "errors.api.v2.bookingConfiguration.target.conflict"),
-            ResourceOperation.UPDATE,
-            Map.of(409, "errors.api.v2.bookingConfiguration.target.conflict"),
-            ResourceOperation.BULK_UPDATE,
-            Map.of(409, "errors.api.v2.bookingConfiguration.target.conflict")),
         Map.of(
             ResourceOperation.CREATE,
             OpenApiOperationDocumentation.builder()
@@ -71,14 +68,22 @@ public final class BookingConfigurationResourceOperations
                         "Europe/Berlin",
                         "target",
                         Map.of("relationTo", "instruments", "value", 123)))
-                .responseDescription(409, "The instrument already has booking configuration.")
-                .build()));
+                .errorResponse(
+                    409,
+                    "errors.api.v2.bookingConfiguration.target.conflict",
+                    "The instrument already has a booking configuration.")
+                .build(),
+            ResourceOperation.BULK_CREATE,
+            conflict,
+            ResourceOperation.UPDATE,
+            conflict,
+            ResourceOperation.BULK_UPDATE,
+            conflict));
   }
 
   @Override
   public ResourcePage<BookingConfiguration> find(ResourceRequest request) {
-    ISearchResults<BookingConfiguration> results = manager.getConfigurations(request);
-    return new ResourcePage<>(results.getResults(), results.getTotalHits());
+    return manager.getConfigurations(request);
   }
 
   @Override

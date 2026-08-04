@@ -3,7 +3,6 @@ package com.researchspace.dao;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription.Operator;
@@ -11,6 +10,7 @@ import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
@@ -73,13 +73,13 @@ class ApiV2UserResourceDaoIT extends SpringTransactionalTest {
     ResourceRequest scoped =
         request(
             new FilterExpression.Comparison("id", Operator.EQUAL, List.of(target.getId()), false));
-    ISearchResults<User> page = userDao.getUsers(scoped);
+    ResourcePage<User> page = userDao.getUsers(scoped);
 
-    assertEquals(1, page.getResults().size());
-    assertEquals(target.getId(), page.getResults().get(0).getId());
+    assertEquals(1, page.resources().size());
+    assertEquals(target.getId(), page.resources().get(0).getId());
     // The total must respect the constraint too, or an ordinary caller's pagination would advertise
     // rows they cannot see.
-    assertEquals(1, page.getTotalHits().intValue());
+    assertEquals(1, page.total());
     assertEquals(1L, userDao.countUsers(scoped));
   }
 
@@ -88,7 +88,7 @@ class ApiV2UserResourceDaoIT extends SpringTransactionalTest {
   void unfilteredQueryCounts() {
     createAndSaveUserIfNotExists("collectionqueryunfiltered");
 
-    assertEquals(userDao.countUsers(request(null)), userDao.getUsers(request(null)).getTotalHits());
+    assertEquals(userDao.countUsers(request(null)), userDao.getUsers(request(null)).total());
   }
 
   @Test

@@ -13,8 +13,20 @@ public record OpenApiOperationDocumentation(
     boolean deprecated,
     Object requestExample,
     Object responseExample,
-    Map<Integer, String> responseDescriptions,
+    Map<Integer, Response> responses,
     Map<String, Object> extensions) {
+
+  /** Documentation for one response. Error responses also carry their stable problem code. */
+  public record Response(String description, String errorCode) {
+    public Response {
+      if (description == null || description.isBlank()) {
+        throw new IllegalArgumentException("OpenAPI response description must not be blank");
+      }
+      if (errorCode != null && errorCode.isBlank()) {
+        throw new IllegalArgumentException("OpenAPI error response code must not be blank");
+      }
+    }
+  }
 
   public static final OpenApiOperationDocumentation EMPTY =
       new OpenApiOperationDocumentation(
@@ -24,16 +36,18 @@ public record OpenApiOperationDocumentation(
     summary = blankToNull(summary);
     description = blankToNull(description);
     tags = List.copyOf(tags);
-    responseDescriptions = Map.copyOf(responseDescriptions);
+    responses = Map.copyOf(responses);
     extensions = Map.copyOf(extensions);
     if (tags.stream().anyMatch(tag -> tag == null || tag.isBlank())) {
       throw new IllegalArgumentException("OpenAPI operation tags must not be blank");
     }
-    responseDescriptions.forEach(
-        (status, text) -> {
-          if (status < 100 || status > 599 || text == null || text.isBlank()) {
-            throw new IllegalArgumentException(
-                "OpenAPI response descriptions require a valid HTTP status and text");
+    responses.forEach(
+        (status, response) -> {
+          if (status < 100 || status > 599 || response == null) {
+            throw new IllegalArgumentException("OpenAPI responses require a valid HTTP status");
+          }
+          if (response.errorCode() != null && status < 400) {
+            throw new IllegalArgumentException("OpenAPI error response requires an error status");
           }
         });
     if (extensions.keySet().stream().anyMatch(name -> !name.startsWith("x-"))) {
@@ -56,7 +70,7 @@ public record OpenApiOperationDocumentation(
     private boolean deprecated;
     private Object requestExample;
     private Object responseExample;
-    private final Map<Integer, String> responseDescriptions = new LinkedHashMap<>();
+    private final Map<Integer, Response> responses = new LinkedHashMap<>();
     private final Map<String, Object> extensions = new LinkedHashMap<>();
 
     public Builder summary(String value) {
@@ -90,7 +104,13 @@ public record OpenApiOperationDocumentation(
     }
 
     public Builder responseDescription(int status, String value) {
-      responseDescriptions.put(status, value);
+      Response current = responses.get(status);
+      responses.put(status, new Response(value, current == null ? null : current.errorCode()));
+      return this;
+    }
+
+    public Builder errorResponse(int status, String code, String description) {
+      responses.put(status, new Response(description, code));
       return this;
     }
 
@@ -107,7 +127,7 @@ public record OpenApiOperationDocumentation(
           deprecated,
           requestExample,
           responseExample,
-          responseDescriptions,
+          responses,
           extensions);
     }
   }

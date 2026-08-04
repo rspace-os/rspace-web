@@ -1,7 +1,6 @@
 package com.researchspace.api.v2.auth;
 
 import static com.researchspace.model.UserApiKey.APIKEY_REGEX;
-import static org.apache.commons.lang3.StringUtils.abbreviate;
 
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.core.util.RequestUtil;
@@ -39,13 +38,7 @@ public class ApiV2Authenticator {
   private final ApiAvailabilityHandler apiAvailabilityHandler;
 
   public User authenticate(HttpServletRequest request) {
-    return authenticateIfPresent(request)
-        .orElseThrow(
-            () ->
-                new ApiV2AuthenticationException(
-                    "API authentication information is missing - please include your apiKey as a"
-                        + " header in the format 'apiKey:myAPikey' or with OAuth in the format"
-                        + " 'Authorization: Bearer <myAccessToken>'."));
+    return authenticateIfPresent(request).orElseThrow(ApiV2AuthenticationException::new);
   }
 
   /**
@@ -69,16 +62,14 @@ public class ApiV2Authenticator {
 
   private User authenticateApiKey(HttpServletRequest request, String apiKey) {
     if (!apiAvailabilityHandler.isApiAvailableForUser(null)) {
-      throw new ApiV2AuthenticationException(
-          "Access to API has been disabled by RSpace administrator.");
+      throw new ApiV2AuthenticationException();
     }
     if (!apiKey.matches(APIKEY_REGEX)) {
-      throw new ApiV2AuthenticationException("API key invalid - must match regexp:" + APIKEY_REGEX);
+      throw new ApiV2AuthenticationException();
     }
-    User user = apiKeyManager.findUserByKey(apiKey).orElseThrow(() -> unknownToken(apiKey));
+    User user = apiKeyManager.findUserByKey(apiKey).orElseThrow(ApiV2Authenticator::unknownToken);
     if (!apiAvailabilityHandler.isApiAvailableForUser(user)) {
-      throw new ApiV2AuthenticationException(
-          String.format("Access to API has been disabled for user '%s'", user.getUsername()));
+      throw new ApiV2AuthenticationException();
     }
     user.setAuthenticatedBy(UserAuthenticationMethod.API_KEY);
     assertLoginAllowed(user);
@@ -89,17 +80,16 @@ public class ApiV2Authenticator {
   private User authenticateOAuth(HttpServletRequest request, String authorization) {
     String[] headerParts = authorization.split("\\s+");
     if (headerParts.length != 2 || !"Bearer".equals(headerParts[0])) {
-      throw new ApiV2AuthenticationException(
-          "Authorization header for OAuth must be in the form \"Bearer <myAccessToken>\"");
+      throw new ApiV2AuthenticationException();
     }
     String tokenValue = headerParts[1];
     ServiceOperationResult<Void> validation = oAuthTokenManager.validateToken(tokenValue);
     if (!validation.isSucceeded()) {
-      throw new ApiV2AuthenticationException(validation.getMessage());
+      throw new ApiV2AuthenticationException();
     }
     ServiceOperationResult<OAuthToken> authentication = oAuthTokenManager.authenticate(tokenValue);
     if (!authentication.isSucceeded()) {
-      throw unknownToken(tokenValue);
+      throw unknownToken();
     }
     OAuthToken token = authentication.getEntity();
     User user = token.getUser();
@@ -112,17 +102,13 @@ public class ApiV2Authenticator {
     // path. Scoped to API_OAUTH_TOKEN so that UI tokens keep working when the public API is off.
     if (UserAuthenticationMethod.API_OAUTH_TOKEN.equals(user.getAuthenticatedBy())) {
       if (!apiAvailabilityHandler.isApiAvailableForUser(null)) {
-        throw new ApiV2AuthenticationException(
-            "Access to API has been disabled by RSpace administrator.");
+        throw new ApiV2AuthenticationException();
       }
       if (!apiAvailabilityHandler.isApiAvailableForUser(user)) {
-        throw new ApiV2AuthenticationException(
-            String.format("Access to API has been disabled for user '%s'", user.getUsername()));
+        throw new ApiV2AuthenticationException();
       }
       if (!apiAvailabilityHandler.isOAuthAccessAllowed(user)) {
-        throw new ApiV2AuthenticationException(
-            String.format(
-                "Access through OAuth tokens has been disabled for user '%s'", user.getUsername()));
+        throw new ApiV2AuthenticationException();
       }
     }
     assertLoginAllowed(user);
@@ -134,17 +120,12 @@ public class ApiV2Authenticator {
 
   private static void assertLoginAllowed(User user) {
     if (user.isLoginDisabled()) {
-      throw new ApiV2AuthenticationException(
-          String.format(
-              "Api access denied as account for user '%s', who is associated with provided "
-                  + "authentication token, is locked or disabled",
-              user.getUsername()));
+      throw new ApiV2AuthenticationException();
     }
   }
 
-  private static ApiV2AuthenticationException unknownToken(String token) {
-    return new ApiV2AuthenticationException(
-        String.format("User could not be authenticated for token %s...", abbreviate(token, 4)));
+  private static ApiV2AuthenticationException unknownToken() {
+    return new ApiV2AuthenticationException();
   }
 
   private void logExternalApiRequest(HttpServletRequest request, User user) {

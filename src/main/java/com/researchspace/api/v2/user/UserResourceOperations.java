@@ -2,7 +2,6 @@ package com.researchspace.api.v2.user;
 
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperations;
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.ParsedDocument;
@@ -41,8 +40,7 @@ public final class UserResourceOperations implements ResourceOperations<User, Lo
 
   @Override
   public ResourcePage<User> find(ResourceRequest request) {
-    ISearchResults<User> results = manager.getUsers(request);
-    return new ResourcePage<>(results.getResults(), results.getTotalHits());
+    return manager.getUsers(request);
   }
 
   @Override

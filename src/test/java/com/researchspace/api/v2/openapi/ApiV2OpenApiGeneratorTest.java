@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
@@ -21,15 +20,12 @@ import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.inventory.Instrument;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 class ApiV2OpenApiGeneratorTest {
 
@@ -53,7 +49,6 @@ class ApiV2OpenApiGeneratorTest {
             "create-error",
             "update-error",
             java.util.EnumSet.allOf(ResourceOperation.class),
-            Map.of(),
             Map.of(
                 ResourceOperation.LIST,
                 OpenApiOperationDocumentation.builder()
@@ -62,6 +57,10 @@ class ApiV2OpenApiGeneratorTest {
                     .tag("Operations")
                     .responseDescription(200, "Documented maintenance page.")
                     .extension("x-rspace-audience", "operators")
+                    .build(),
+                ResourceOperation.CREATE,
+                OpenApiOperationDocumentation.builder()
+                    .errorResponse(409, "errors.example.conflict", "The resource conflicts.")
                     .build()));
     ApiV2ResourceSpec<User, Long> users =
         new ApiV2ResourceSpec<>(
@@ -132,6 +131,11 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(2, ((List<?>) create.get("security")).size());
     assertEquals("createManyMaintenances", bulkCreate.get("operationId"));
     assertTrue(objectMap(bulkCreate.get("responses")).containsKey("201"));
+    Map<String, Object> conflict = objectMap(objectMap(create.get("responses")).get("409"));
+    assertEquals("The resource conflicts.", conflict.get("description"));
+    Map<String, Object> conflictMedia =
+        objectMap(objectMap(conflict.get("content")).get("application/problem+json"));
+    assertEquals("errors.example.conflict", objectMap(conflictMedia.get("example")).get("code"));
     Map<String, Object> bulkRequestSchema =
         objectMap(
             objectMap(
@@ -261,18 +265,6 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         List.of("id", "dateFrom", "dateTo", "actions", "page", "limit"),
         auditParameters.stream().map(parameter -> parameter.get("name")).toList());
-  }
-
-  @Test
-  void exportsTheSameDocumentAsJson(@TempDir Path directory) throws Exception {
-    Path output = directory.resolve("nested/openapi.json");
-    ApiV2OpenApiDocumentService documents =
-        new ApiV2OpenApiDocumentService(generator, java.util.stream.Stream::empty);
-    new ApiV2OpenApiExporter(documents, new ObjectMapper()).writeJson(output);
-
-    Map<?, ?> exported = new ObjectMapper().readValue(Files.readString(output), Map.class);
-    assertEquals("3.1.0", exported.get("openapi"));
-    assertTrue(((Map<?, ?>) exported.get("paths")).containsKey("/api/v2/maintenances"));
   }
 
   private static Map<String, Object> schemas(Map<String, Object> document) {

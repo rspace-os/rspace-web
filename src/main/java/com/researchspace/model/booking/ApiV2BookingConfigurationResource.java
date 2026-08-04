@@ -1,6 +1,6 @@
 package com.researchspace.model.booking;
 
-import static com.researchspace.model.collection.ApiV2ResourceField.WriteAccess.NEVER;
+import static com.researchspace.model.collection.ApiV2ResourceField.AccessPreset.NEVER;
 
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ApiV2ResourceDefinition;

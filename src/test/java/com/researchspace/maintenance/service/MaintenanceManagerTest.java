@@ -5,7 +5,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.Constants;
-import com.researchspace.core.util.ISearchResults;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.model.User;
@@ -13,6 +12,7 @@ import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.ResourceRequest.Page;
 import com.researchspace.model.collection.RsqlFilterParser;
@@ -138,7 +138,7 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
     other.setMessage("apiV2Other");
     maintenanceManager.saveScheduledMaintenance(other, sysUser);
 
-    ISearchResults<ScheduledMaintenance> results =
+    ResourcePage<ScheduledMaintenance> results =
         maintenanceManager.getResources(
             new ResourceRequest(
                 new RsqlFilterParser(ApiV2MaintenanceResource.DESCRIPTION)
@@ -148,8 +148,8 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
                 FieldSelection.all(),
                 IncludeTree.empty()));
 
-    assertEquals(Long.valueOf(1), results.getTotalHits());
-    assertEquals(matching.getId(), results.getFirstResult().getId());
+    assertEquals(1L, results.total());
+    assertEquals(matching.getId(), results.resources().get(0).getId());
     assertEquals(
         1L,
         maintenanceManager.countResources(
@@ -201,9 +201,9 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
             List.of(new Sort("message", true), new Sort("id", false)),
             1,
             1);
-    ISearchResults<ScheduledMaintenance> firstPage = maintenanceManager.getResources(sorted);
-    assertEquals(Long.valueOf(2), firstPage.getTotalHits());
-    assertEquals(fourth.getId(), firstPage.getFirstResult().getId());
+    ResourcePage<ScheduledMaintenance> firstPage = maintenanceManager.getResources(sorted);
+    assertEquals(2L, firstPage.total());
+    assertEquals(fourth.getId(), firstPage.resources().get(0).getId());
     assertEquals(2L, maintenanceManager.countResources(sorted));
   }
 
@@ -218,9 +218,9 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
             1,
             20);
 
-    ISearchResults<ScheduledMaintenance> results = maintenanceManager.getResources(matchingBoth);
-    assertEquals(Long.valueOf(2), results.getTotalHits());
-    assertEquals(expired.getId(), results.getFirstResult().getId());
+    ResourcePage<ScheduledMaintenance> results = maintenanceManager.getResources(matchingBoth);
+    assertEquals(2L, results.total());
+    assertEquals(expired.getId(), results.resources().get(0).getId());
     assertEquals(2L, maintenanceManager.countResources(matchingBoth));
     assertTrue(maintenanceManager.getResource(expired.getId()).isPresent());
 
@@ -270,7 +270,7 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
     return maintenanceManager.saveScheduledMaintenance(maintenance, sysUser);
   }
 
-  private ISearchResults<ScheduledMaintenance> find(String where) {
+  private ResourcePage<ScheduledMaintenance> find(String where) {
     return maintenanceManager.getResources(request(where, List.of(new Sort("id", true)), 1, 20));
   }
 
@@ -284,9 +284,9 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
   }
 
   private static void assertIds(
-      List<ScheduledMaintenance> expected, ISearchResults<ScheduledMaintenance> actual) {
+      List<ScheduledMaintenance> expected, ResourcePage<ScheduledMaintenance> actual) {
     assertEquals(
         expected.stream().map(ScheduledMaintenance::getId).toList(),
-        actual.getResults().stream().map(ScheduledMaintenance::getId).toList());
+        actual.resources().stream().map(ScheduledMaintenance::getId).toList());
   }
 }

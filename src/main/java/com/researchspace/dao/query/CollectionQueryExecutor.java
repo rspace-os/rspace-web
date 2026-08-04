@@ -3,14 +3,11 @@ package com.researchspace.dao.query;
 import com.blazebit.persistence.CriteriaBuilder;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.blazebit.persistence.PagedList;
-import com.researchspace.core.util.ISearchResults;
-import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
-import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Sort;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.hibernate.Session;
@@ -34,20 +31,16 @@ public final class CollectionQueryExecutor<T> {
     filterQuery = new RsqlCollectionQuery(description, alias);
   }
 
-  public ISearchResults<T> page(
+  public ResourcePage<T> page(
       CriteriaBuilderFactory factory, Session session, ResourceRequest request) {
-    PaginationCriteria<T> pagination = new PaginationCriteria<>();
-    pagination.setPageNumber((long) request.page().number() - 1);
-    pagination.setResultsPerPage(request.page().size());
-    long firstResult = pagination.getPageNumber() * pagination.getResultsPerPage();
+    long firstResult = (long) (request.page().number() - 1) * request.page().size();
     CriteriaBuilder<T> query = query(factory, session, request);
     if (firstResult > Integer.MAX_VALUE) {
-      return new SearchResultsImpl<>(Collections.emptyList(), pagination, totalMatching(query));
+      return new ResourcePage<>(List.of(), totalMatching(query));
     }
     request.sort().forEach(sort -> applySort(query, sort));
-    PagedList<T> page =
-        query.page((int) firstResult, pagination.getResultsPerPage().intValue()).getResultList();
-    return new SearchResultsImpl<>(page, pagination, page.getTotalSize());
+    PagedList<T> page = query.page((int) firstResult, request.page().size()).getResultList();
+    return new ResourcePage<>(page, page.getTotalSize());
   }
 
   public long count(CriteriaBuilderFactory factory, Session session, ResourceRequest request) {

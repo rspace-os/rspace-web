@@ -1,6 +1,6 @@
 package com.researchspace.model.collection;
 
-import static com.researchspace.model.collection.ApiV2ResourceField.WriteAccess.NEVER;
+import static com.researchspace.model.collection.ApiV2ResourceField.AccessPreset.NEVER;
 
 import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionDescription.Sort;

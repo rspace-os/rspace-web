@@ -1,6 +1,6 @@
 package com.researchspace.dao;
 
-import com.researchspace.core.util.ISearchResults;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import java.io.Serializable;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.List;
 public interface CollectionDao<T, ID extends Serializable> extends GenericDao<T, ID> {
 
   /** Returns one page selected by a fully parsed resource request. */
-  ISearchResults<T> getResources(ResourceRequest request);
+  ResourcePage<T> getResources(ResourceRequest request);
 
   /** Counts rows selected by a fully parsed resource request. */
   long countResources(ResourceRequest request);

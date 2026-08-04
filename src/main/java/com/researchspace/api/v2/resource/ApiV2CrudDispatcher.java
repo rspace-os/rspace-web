@@ -1,14 +1,10 @@
 package com.researchspace.api.v2.resource;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.api.v2.model.ApiV2BulkResult;
 import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.model.User;
-import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionDescription.WriteOperation;
-import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.ParsedDocument;
@@ -19,7 +15,6 @@ import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.model.collection.ResourceRenderer.TargetResolver;
 import com.researchspace.model.collection.ResourceRequest;
 import jakarta.ws.rs.NotFoundException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,49 +86,18 @@ public final class ApiV2CrudDispatcher<T, ID> {
         .orElseThrow(NotFoundException::new);
   }
 
-  public Map<String, Object> create(
-      ParsedDocument document,
-      User actor,
-      String errorKey,
-      FieldSelection selection,
-      AccessContext context) {
-    document = relationshipResolver.resolve(document, description, actor, context, errorKey, false);
+  public Map<String, Object> create(ParsedDocument document, User actor, FieldSelection selection) {
     return document(operations.create(document, actor), selection, targetResolver(actor));
   }
 
   public ApiV2BulkResult<Map<String, Object>> createMany(
-      List<ParsedDocument> parsed,
-      User actor,
-      String errorKey,
-      FieldSelection selection,
-      AccessContext context) {
-    List<ParsedDocument> resolved = new ArrayList<>(parsed.size());
-    for (int index = 0; index < parsed.size(); index++) {
-      try {
-        resolved.add(
-            relationshipResolver.resolve(
-                parsed.get(index), description, actor, context, errorKey, false));
-      } catch (DocumentValidationException ex) {
-        throw ApiV2DocumentParser.prefixed(ex, "docs[" + index + "]");
-      }
-    }
-    TargetResolver targetResolver = targetResolver(actor);
+      List<ParsedDocument> documents, User actor, FieldSelection selection) {
     return ApiV2BulkResult.success(
-        operations.createMany(resolved, actor).stream()
-            .map(resource -> document(resource, selection, targetResolver))
-            .toList());
+        renderMany(operations.createMany(documents, actor), selection, actor));
   }
 
   public Map<String, Object> update(
-      ID id,
-      JsonNode body,
-      User actor,
-      String errorKey,
-      FieldSelection selection,
-      AccessContext context) {
-    ParsedDocument document =
-        ApiV2DocumentParser.parse(body, description, WriteOperation.UPDATE, errorKey, context);
-    document = relationshipResolver.resolve(document, description, actor, context, errorKey, false);
+      ID id, ParsedDocument document, User actor, FieldSelection selection) {
     return operations
         .update(id, document, actor)
         .map(resource -> document(resource, selection, targetResolver(actor)))
@@ -141,14 +105,9 @@ public final class ApiV2CrudDispatcher<T, ID> {
   }
 
   public ApiV2BulkResult<Map<String, Object>> updateMany(
-      ResourceRequest request, JsonNode body, User actor, String errorKey, AccessContext context) {
-    ParsedDocument document =
-        ApiV2DocumentParser.parse(body, description, WriteOperation.UPDATE, errorKey, context);
-    document = relationshipResolver.resolve(document, description, actor, context, errorKey, true);
+      ResourceRequest request, ParsedDocument document, User actor) {
     return ApiV2BulkResult.success(
-        operations.updateMany(request, document, actor).stream()
-            .map(resource -> document(resource, request.fields(), targetResolver(actor)))
-            .toList());
+        renderMany(operations.updateMany(request, document, actor), request.fields(), actor));
   }
 
   public Map<String, Object> delete(ID id, User actor, FieldSelection selection) {
@@ -160,9 +119,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
 
   public ApiV2BulkResult<Map<String, Object>> deleteMany(ResourceRequest request, User actor) {
     return ApiV2BulkResult.success(
-        operations.deleteMany(request, actor).stream()
-            .map(resource -> document(resource, request.fields(), targetResolver(actor)))
-            .toList());
+        renderMany(operations.deleteMany(request, actor), request.fields(), actor));
   }
 
   private Map<String, Object> document(
@@ -182,6 +139,14 @@ public final class ApiV2CrudDispatcher<T, ID> {
   private Map<String, Object> document(
       T resource, FieldSelection selection, TargetResolver targetResolver) {
     return renderer.render(resource, description, selection, IncludeTree.empty(), targetResolver);
+  }
+
+  private List<Map<String, Object>> renderMany(
+      List<T> resources, FieldSelection selection, User actor) {
+    TargetResolver targetResolver = targetResolver(actor);
+    return resources.stream()
+        .map(resource -> document(resource, selection, targetResolver))
+        .toList();
   }
 
   private TargetResolver targetResolver(User actor) {
