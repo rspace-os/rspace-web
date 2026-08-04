@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import com.axiope.search.FileSearchStrategy;
 import com.axiope.search.IFileIndexer;
 import com.axiope.search.IFileSearcher;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
@@ -197,7 +198,7 @@ public class SanityChecker extends AbstractAppInitializor {
   // don't show all of sensitive values
   private Object desensitiseValue(Map.Entry<String, String> e) {
     if (StringUtils.containsAny(e.getKey(), sensitiveNames)) {
-      return StringUtils.abbreviate(e.getValue(), 6);
+      return StringAbbreviationUtils.abbreviate(e.getValue(), 6);
     } else {
       return e.getValue();
     }

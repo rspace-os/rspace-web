@@ -22,7 +22,7 @@ import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.InternalLinkManager;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.RecordSigningManager;
@@ -43,7 +43,7 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
   private @Autowired FolderManager folderManager;
   private @Autowired RecordEditorTracker tracker;
   private @Autowired IPermissionUtils permissionUtils;
-  private @Autowired OperationFailedMessageGenerator authGenerator;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired RecordSharingManager sharingManager;
   private @Autowired AuditManager auditMgr;
 
@@ -59,7 +59,8 @@ public class DetailedRecordInformationProviderImpl implements DetailedRecordInfo
         baseRecord,
         PermissionType.READ,
         subject,
-        authGenerator.getFailedMessage(subject, "read record"));
+        messages.getMessage(
+            "errors.authorization.failure.readRecord", new Object[] {subject.getUsername()}));
 
     boolean isMediaRevisionInfo = (revision != null && baseRecord.isMediaRecord());
     if (isMediaRevisionInfo) {

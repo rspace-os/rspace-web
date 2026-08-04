@@ -1,7 +1,7 @@
 package com.researchspace.archive;
 
 import static com.researchspace.archive.ArchiveUtils.filterArchiveNameString;
-import static org.apache.commons.lang3.StringUtils.abbreviate;
+import static com.researchspace.core.util.StringAbbreviationUtils.abbreviate;
 
 import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.model.core.RecordType;

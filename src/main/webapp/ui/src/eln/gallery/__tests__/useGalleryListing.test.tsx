@@ -202,6 +202,7 @@ function makeFilestore(filesystemType: string, canWrite = true): Filestore {
     filesystemName: "My S3 Filesystem",
     filesystemType,
     canWrite,
+    ownerName: "gallery:unknownOwner",
   });
 }
 
@@ -215,6 +216,7 @@ function makeRemoteFile({ folder, path }: { folder: boolean; path: ReadonlyArray
     path,
     logicPath: "42:/test.jpg",
     token: "",
+    ownerName: "gallery:unknownOwner",
   });
 }
 
@@ -229,6 +231,7 @@ describe("RemoteFile owner fields", () => {
       path: [],
       logicPath: "1:folder",
       token: "token",
+      ownerName: "gallery:unknownOwner",
     });
 
     // Filestore items have no RSpace owner; write provenance is shown separately
