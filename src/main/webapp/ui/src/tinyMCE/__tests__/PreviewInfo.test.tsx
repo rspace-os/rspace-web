@@ -12,6 +12,12 @@ const mockCreateRoot = vi.fn((container: Element) => ({
   }),
 }));
 
+const firstRootRenderCall = () => {
+  const call = rootRenderCalls[0];
+  if (!call) throw new Error("Expected React root to render");
+  return call;
+};
+
 vi.mock("react-dom/client", () => ({
   createRoot: mockCreateRoot,
 }));
@@ -80,7 +86,7 @@ describe("PreviewInfo event handlers", () => {
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
     expect(rootRenderCalls[0]?.container).toHaveAttribute("id", "preview-host");
 
-    const renderedNode = (rootRenderCalls[0]?.node as React.ReactElement<{ children: unknown }>).props
+    const renderedNode = (firstRootRenderCall().node as React.ReactElement<{ children: unknown }>).props
       .children as React.ReactElement<{
       item: Record<string, string | undefined>;
     }>;
@@ -112,7 +118,7 @@ describe("PreviewInfo event handlers", () => {
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
     expect(rootRenderCalls[0]?.container).toHaveAttribute("id", "table-only-preview");
 
-    const renderedNode = (rootRenderCalls[0]?.node as React.ReactElement<{ children: unknown }>).props
+    const renderedNode = (firstRootRenderCall().node as React.ReactElement<{ children: unknown }>).props
       .children as React.ReactElement<{
       item: Record<string, string | undefined>;
     }>;
@@ -162,7 +168,7 @@ describe("PreviewInfo event handlers", () => {
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
     expect(rootRenderCalls[0]?.container).toHaveAttribute("id", "updated-preview-host");
 
-    const renderedNode = (rootRenderCalls[0]?.node as React.ReactElement<{ children: unknown }>).props
+    const renderedNode = (firstRootRenderCall().node as React.ReactElement<{ children: unknown }>).props
       .children as React.ReactElement<{
       item: Record<string, string | undefined>;
     }>;
