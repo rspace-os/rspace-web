@@ -150,10 +150,15 @@ A file's name and declared content type come from the client, so neither is
 evidence of what the bytes actually are. `MediaFileContentValidator` checks the
 content of uploads whose extension claims an image against the type that
 extension implies, and `MediaManagerImpl` calls it on both the new-upload and
-the new-version path, which every upload passes through. Callers that need to
-continue past a rejected file, such as the archive importer, must run the check
-themselves before calling the media manager, because a rejection thrown from
-inside a transactional manager marks the surrounding transaction for rollback.
+the new-version path, which every upload passes through.
+
+A rejection is a checked `MediaContentMismatchException`, so the compiler makes
+each caller decide what to do with it. Nothing has been written at that point,
+which is why the exception is checked rather than unchecked: a caller inside a
+transaction can catch it, report the file and carry on. An unchecked exception
+could not offer that, because Spring's default rule would mark the surrounding
+transaction for rollback at the boundary it passed through, and no catching
+further up can undo that.
 
 Detection reads the leading bytes only, so a valid image with content appended
 after it still passes. Treat stored files as untrusted bytes regardless.
