@@ -724,6 +724,23 @@
       </exclusions>
     </dependency>
     <dependency>
+      <!-- Container (Tomcat 10.1 / Jetty ee10) provides jakarta.websocket at runtime. Only the
+           test JVM lacks it, so ProdConfigWiringTest can't boot the prod context (Spring's
+           stompWebSocketHandlerMapping needs jakarta.websocket.Endpoint). test scope, not bundled.
+           EE 10 split the API into two jars: core jakarta.websocket.* (client-api) and
+           jakarta.websocket.server.* (websocket-api). Spring's STOMP mapping needs both. -->
+      <groupId>jakarta.websocket</groupId>
+      <artifactId>jakarta.websocket-client-api</artifactId>
+      <version>2.1.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.websocket</groupId>
+      <artifactId>jakarta.websocket-api</artifactId>
+      <version>2.1.1</version>
+      <scope>test</scope>
+    </dependency>    
+    <dependency>
       <groupId>org.glassfish.web</groupId>
       <artifactId>jakarta.servlet.jsp.jstl</artifactId>
       <version>${jstl.version}</version>
