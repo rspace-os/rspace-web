@@ -5,14 +5,12 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
-import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { ColumnsPanelTrigger, Toolbar as DataGridToolbar, type GridRowId } from "@mui/x-data-grid";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogBoundary } from "@/components/DialogBoundary";
 import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
-import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmponline";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
@@ -21,6 +19,7 @@ import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/Val
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import * as FetchingData from "../../util/fetchingData";
 import { DataGridColumn } from "../../util/table";
+import DMPDialogThemeProvider from "../DMPDialogThemeProvider";
 import { type DmpListing, type DmpSummary, useDmpOnlineEndpoint } from "./useDmpOnlineEndpoint";
 
 function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
@@ -279,7 +278,7 @@ export default function DMPDialog({ open, setOpen }: DMPDialogArgs): React.React
    */
 
   return (
-    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+    <DMPDialogThemeProvider accentColor={ACCENT_COLOR}>
       <Portal>
         <DialogBoundary>
           <CustomDialog
@@ -295,6 +294,6 @@ export default function DMPDialog({ open, setOpen }: DMPDialogArgs): React.React
           </CustomDialog>
         </DialogBoundary>
       </Portal>
-    </ThemeProvider>
+    </DMPDialogThemeProvider>
   );
 }

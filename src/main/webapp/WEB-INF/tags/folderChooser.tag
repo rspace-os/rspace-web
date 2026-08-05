@@ -1,36 +1,34 @@
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags" %>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 <%@ attribute name="folderChooserId" required="true" type="java.lang.String" %>
 
 <script src="<rst:assetUrl value='/scripts/tags/folderChooser.js'/>"></script>
 
 <div id="folderChooser${folderChooserId}" style="display: none;">
-    Optionally,
-    <a href="#" class="nobutton" id="folderChooserLnk${folderChooserId}">
-        choose a folder or notebook
-    </a>
+    <span id="folderChooserPrompt${folderChooserId}"><a href="#" class="nobutton" id="folderChooserLnk${folderChooserId}"><spring:message code="dialogs.folderChooser.optionalLinkText"/></a></span>
     <span id="folderChooserDesc${folderChooserId}"></span>
 
     <div>
         <div id="folderChooserInfo${folderChooserId}" style="display: none">
             <div class="formfield_highlighted">
-                Selected folder:
+                <spring:message code="common:folderSelectionDialog.selectedFolderWithColon"/>
                 <span id="folderChooser-path${folderChooserId}"></span>
             </div>
             <div id="folderChooserFolderCreation${folderChooserId}">
                 <p style="margin-bottom:5px">
-                    Optionally, create a new folder in the chosen folder:
+                    <spring:message code="dialogs.folderChooser.createNewFolderInstruction"/>
                 </p>
                 <div class="bootstrap-custom-flat">
                     <input class="form-control folderChooserData${folderChooserId}"
                            id="newFolder${folderChooserId}"
                            name="newFolder"
-                           placeholder="New Folder Name"
-                           aria-label="New folder name"
+                           placeholder="<spring:message code='dialogs.folderChooser.newFolderPlaceholder'/>"
+                           aria-label="<spring:message code='dialogs.folderChooser.newFolderAriaLabel'/>"
                            style="font-size:12px;height:24px;padding-left:1px;padding-right:1px"/>
                     <span id="folderChooser-createFolderSpan${folderChooserId}">
                         <a style="color:#337ab7;padding-left:1px"
                            id="folderChooser-createNewSubfolder${folderChooserId}"
-                           class="nobutton" href="#">Create</a>
+                           class="nobutton" href="#"><spring:message code="common:actions.create"/></a>
                     </span>
                 </div>
             </div>

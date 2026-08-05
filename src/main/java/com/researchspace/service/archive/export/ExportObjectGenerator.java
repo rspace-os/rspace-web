@@ -294,19 +294,17 @@ public class ExportObjectGenerator {
     FieldExportContext context =
         new FieldExportContext(
             aconfig, archiveField, recordFolder, exportFolder, revision, nfsContext, exportList);
-    try {
-      // New export classes may be added in the sections below
-      // which call export explicitly eg 'addImageAnnotationsToExport', 'addSketchesToExport' etc.
-      // It is not necessary to make more calls to 'addElementsToExport'
-      addElementsToExport(
-          context, fieldContents, RsChemElementFieldExporter.class, RSChemElement.class);
-      addElementsToExport(context, fieldContents, MathFieldExporter.class, RSMath.class);
-      addElementsToExport(context, fieldContents, CommentFieldExporter.class, EcatComment.class);
-      addElementsToExport(context, fieldContents, ImageFieldExporter.class, EcatImage.class);
-      addElementsToExport(context, fieldContents, NfsElementFieldExporter.class, NfsElement.class);
-    } catch (InstantiationException | IllegalAccessException e) {
-      log.warn("exception parsing content of archive field " + archiveField.getFieldId(), e);
-    }
+    // New export classes may be added in the sections below
+    // which call export explicitly eg 'addImageAnnotationsToExport', 'addSketchesToExport' etc.
+    // It is not necessary to make more calls to 'addElementsToExport'
+    addElementsToExport(
+        context, fieldContents, new RsChemElementFieldExporter(support), RSChemElement.class);
+    addElementsToExport(context, fieldContents, new MathFieldExporter(support), RSMath.class);
+    addElementsToExport(
+        context, fieldContents, new CommentFieldExporter(support), EcatComment.class);
+    addElementsToExport(context, fieldContents, new ImageFieldExporter(support), EcatImage.class);
+    addElementsToExport(
+        context, fieldContents, new NfsElementFieldExporter(support), NfsElement.class);
     // ********* may add new export code here *********
     // These explicit method calls reduce the number of layers of indirection
     addImageAnnotationsToExport(context, fieldContents);
@@ -382,18 +380,14 @@ public class ExportObjectGenerator {
   }
 
   // generic method
-  private <F extends AbstractFieldExporter<T>, T extends IFieldLinkableElement>
-      void addElementsToExport(
-          FieldExportContext context,
-          FieldContents fieldContents,
-          Class<F> exporterClass,
-          Class<T> type)
-          throws InstantiationException, IllegalAccessException {
+  private <T extends IFieldLinkableElement> void addElementsToExport(
+      FieldExportContext context,
+      FieldContents fieldContents,
+      AbstractFieldExporter<T> exporter,
+      Class<T> type) {
     FieldElementLinkPairs<T> elements = fieldContents.getElements(type);
     for (FieldElementLinkPair<T> element : elements.getPairs()) {
-      FieldExporterFactory.createFactory(exporterClass, type)
-          .create(support)
-          .export(context, element);
+      exporter.export(context, element);
     }
   }
 

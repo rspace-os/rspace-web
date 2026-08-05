@@ -11,8 +11,8 @@ function init(){
   configurePermittedActions();
   initCommentDialog();
   initCommentViewDialog();
-  initSignDialog("Signing Entry");
-  initWitnessDialog("Witnessing Entry");
+  initSignDialog(RS.msg("legacyjs.workspace.notebookEditor.signingEntryTitle"));
+  initWitnessDialog(RS.msg("legacyjs.workspace.notebookEditor.witnessingEntryTitle"));
   initFormListDlg();
 
   // Load the journal plugin
@@ -38,7 +38,7 @@ function editEntryHandler(e) {
       entryId = entryId.substring('journalEntry'.length);
     }
     if(entryId === null){
-      apprise("There are no entries to edit yet in this notebook - please click on Create > New Entry to start editing.");
+      apprise(RS.msg("legacyjs.workspace.notebookEditor.noEntriesToEdit"));
       return false;
     }
     // Redirect to the structuredDocument/entryId to modify the entry from there.
@@ -67,13 +67,13 @@ function deleteEntry(){
         reloadFileTreeBrowser();
       });
     jxqr.fail(function() {
-      RS.ajaxFailed("Delete entry",false,jxqr);
+      RS.ajaxFailed(RS.msg("legacyjs.workspace.notebookEditor.ajaxDeleteEntry"),false,jxqr);
     });
   };
 
   RS.createConfirmationDialog({
-    title: "Confirm deletion",
-    consequences: `Are you sure you want to delete the following entry?<br><strong>${$("#recordNameInHeader").html()}</strong><br /><br />Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.`,
+    title: RS.msg("legacyjs.workspace.notebookEditor.confirmDeletionTitle"),
+    consequences: RS.msg("legacyjs.workspace.notebookEditor.deleteEntryConfirm", $("#recordNameInHeader").html()),
     variant: "warning",
     callback: callback
   });
@@ -100,9 +100,9 @@ function initFormListDlg(){
     modal : true,
     autoOpen: false,
     height: 500,
-    title: "Choose a form",
+    title: RS.msg("legacyjs.workspace.notebookEditor.chooseFormTitle"),
     buttons: {
-      Cancel: function (){$(this).dialog('close');},
+      [RS.msg("legacyjs.workspace.notebookEditor.cancelButton")]: function (){$(this).dialog('close');},
     },
     open: function () {
       var t = $(this).parent(), w = window;
@@ -122,8 +122,8 @@ $(window).on('load',function () {
   configurePermittedActions();
   initCommentDialog();
   initCommentViewDialog();
-  initSignDialog("Signing Entry");
-  initWitnessDialog("Witnessing Entry");
+  initSignDialog(RS.msg("legacyjs.workspace.notebookEditor.signingEntryTitle"));
+  initWitnessDialog(RS.msg("legacyjs.workspace.notebookEditor.witnessingEntryTitle"));
   initFormListDlg();
 });
 
@@ -180,8 +180,8 @@ $(document).ready(function(e) {
       $('#createFromWord').click( function (e){
         e.preventDefault();
         openWordChooserDlg({
-          title:"Import from Word/Open Office",
-          fileType:"Word or Open Office",
+          title: RS.msg("legacyjs.workspace.notebookEditor.importWordTitle"),
+          fileType: RS.msg("legacyjs.workspace.notebookEditor.wordFileType"),
           listNotebooks:true
         });
       });
@@ -235,7 +235,7 @@ $(document).ready(function(e) {
     e.preventDefault();
     $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function(response) {
       if (response.data) {
-        apprise("Please set your verification password in <a href=\"/userform\" target=\"_blank\">My RSpace</a> before signing.");
+        apprise(RS.msg("legacyjs.workspace.notebookEditor.setVerificationPasswordBeforeSigning"));
       } else {
         var entryId = getCurrentEntryId();
         $('#signDocumentDialog').data("recordId", entryId).dialog('open');
@@ -248,7 +248,7 @@ $(document).ready(function(e) {
       e.preventDefault();
       $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function(response) {
         if (response.data) {
-          apprise("Please set your verification password in <a href=\"/userform\" target=\"_blank\">My RSpace</a> before signing.");
+          apprise(RS.msg("legacyjs.workspace.notebookEditor.setVerificationPasswordBeforeSigning"));
         } else {
           var entryId = getCurrentEntryId();
           $('#witnessDocumentDialog').data("recordId", entryId ).dialog('open');
@@ -273,7 +273,7 @@ $(document).ready(function(e) {
   $(window).bind('beforeunload', function() {
     if (wasAutosaved) {
       autoSave();
-      return 'Are you sure you want to exit without saving changes?';
+      return RS.msg("legacyjs.workspace.notebookEditor.exitWithoutSavingConfirm");
     }
   });
 

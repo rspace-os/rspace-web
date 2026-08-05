@@ -25,11 +25,15 @@ const DuplicateAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, D
       [() => disabled !== "", disabled],
       [
         () => selectedResults.some((r) => r instanceof SubSampleModel && !r.canEdit),
-        `You do not have permission to duplicate ${selectedResults.length > 1 ? "these items" : "this item"}.`,
+        t("contextMenu.duplicate.noPermission", {
+          count: selectedResults.length,
+        }),
       ],
       [
         () => selectedResults.some((r) => !r.canRead),
-        `You do not have permission to duplicate ${selectedResults.length > 1 ? "these items" : "this item"}.`,
+        t("contextMenu.duplicate.noPermission", {
+          count: selectedResults.length,
+        }),
       ],
       [() => true, ""],
     ])();

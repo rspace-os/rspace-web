@@ -17,7 +17,7 @@ import lombok.Setter;
 @Setter
 public class InventorySearchConfig extends SearchConfig {
 
-  public static enum InventorySearchType {
+  public enum InventorySearchType {
     ALL,
     SAMPLE,
     SUBSAMPLE,
@@ -28,7 +28,7 @@ public class InventorySearchConfig extends SearchConfig {
   }
 
   /** Strategy for including deleted items in inventory search results */
-  public static enum InventorySearchDeletedOption {
+  public enum InventorySearchDeletedOption {
     EXCLUDE,
     INCLUDE,
     DELETED_ONLY

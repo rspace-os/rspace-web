@@ -1,31 +1,28 @@
-
-<h2>Notification from RSpace</h2>
-<a href="$baseURL/userform?userId=$cmm.originator.id">$cmm.originator.fullName</a>
+<h2>$msg.getMessage("email.notification.notification.notificationFromRSpace")</h2>
 #if ($cmm.notification)
-generated a notification for you of type [$cmm.notificationType] on
+$msg.format("email.notification.notification.generatedNotificationWithType", ["$baseURL/userform?userId=$cmm.originator.id", $cmm.originator.fullName, $msg.getMessage($notificationTypeKey), $date.format('full_date', $dateOb), $date.format('short_time', $dateOb)])
 #else
-generated a notification for you on
+$msg.format("email.notification.notification.generatedNotification", ["$baseURL/userform?userId=$cmm.originator.id", $cmm.originator.fullName, $date.format('full_date', $dateOb), $date.format('short_time', $dateOb)])
 #end
-
-#formatDate($dateOb)
-#if ($cmm.record && $cmm.record.notebook)
-concerning notebook
-#if (! $cmm.ignoreRecordLinkInMessage)
-<a href="$baseURL/notebookEditor/$cmm.record.id">$cmm.record.name ($cmm.record.globalIdentifier)</a>
+#if ($cmm.record)
+#if ($cmm.record.notebook)
+#set($recordType = "notebook")
+#set($recordUrl = "$baseURL/notebookEditor/$cmm.record.id")
 #else
-$cmm.record.name ($cmm.record.globalIdentifier)
+#set($recordType = "document")
+#set($recordUrl = "$baseURL/workspace/editor/structuredDocument/$cmm.record.id")
+#end
+#if (! $cmm.ignoreRecordLinkInMessage)
+#set($recordRef = "<a href=""$recordUrl"">$cmm.record.name ($cmm.record.globalIdentifier)</a>")
+#else
+#set($recordRef = "$cmm.record.name ($cmm.record.globalIdentifier)")
 #end
 <br>
-#elseif($cmm.record)
-#if (! $cmm.ignoreRecordLinkInMessage)
-concerning document <a href="$baseURL/workspace/editor/structuredDocument/$cmm.record.id">$cmm.record.name  ($cmm.record.globalIdentifier)</a>
-#else
-$cmm.record.name ($cmm.record.globalIdentifier)
-#end
+$msg.format("email.notification.notification.concerning", [$recordType, $recordRef])
 <br>
 #end
 #if ($cmm.message)
-More details:<br>
+$msg.getMessage("email.notification.notification.moreDetails")<br>
 $cmm.message
 <br/>
 #end
@@ -33,6 +30,10 @@ $cmm.message
 #if ($cmm.notification)
 $cmm.notificationMessage
 #end
-#notificationPrefInfoSuffix
+<p style = 'font-size:75%'>
+$msg.getMessage("email.common.notificationPrefSuffix")
+</p>
 <br/>
-#dontReply
+<p>
+$msg.getMessage("email.common.dontReply")
+</p>

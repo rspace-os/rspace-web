@@ -41,7 +41,7 @@ public class InventoryImportPostFullValidator implements Validator {
       if (containerSettings.getFieldMappings() == null
           || !containerSettings.getFieldMappings().containsValue("name")) {
         errors.rejectValue(
-            "containerSettings.fieldMappings", "errors.inventory.import.fieldMappings.missingName");
+            "containerSettings.fieldMappings", "errors.inventory.import.fieldMappingsMissingName");
       }
     }
 
@@ -49,12 +49,12 @@ public class InventoryImportPostFullValidator implements Validator {
     if (sampleSettings != null) {
       if (sampleSettings.getTemplateInfo() == null) {
         errors.rejectValue(
-            "sampleSettings.templateInfo", "errors.inventory.import.templateInfo.empty");
+            "sampleSettings.templateInfo", "errors.inventory.import.templateInfoEmpty");
       }
       if (sampleSettings.getFieldMappings() == null
           || !sampleSettings.getFieldMappings().containsValue("name")) {
         errors.rejectValue(
-            "sampleSettings.fieldMappings", "errors.inventory.import.fieldMappings.missingName");
+            "sampleSettings.fieldMappings", "errors.inventory.import.fieldMappingsMissingName");
       }
     }
 
@@ -63,7 +63,7 @@ public class InventoryImportPostFullValidator implements Validator {
       if (subSampleSettings.getFieldMappings() == null
           || !subSampleSettings.getFieldMappings().containsValue("name")) {
         errors.rejectValue(
-            "subSampleSettings.fieldMappings", "errors.inventory.import.fieldMappings.missingName");
+            "subSampleSettings.fieldMappings", "errors.inventory.import.fieldMappingsMissingName");
       } else {
         if (!subSampleSettings.getFieldMappings().containsValue("parent sample import id")
             && !subSampleSettings.getFieldMappings().containsValue("parent sample global id")) {
@@ -85,19 +85,18 @@ public class InventoryImportPostFullValidator implements Validator {
       if (instrumentSettings.getTemplateId() == null
           && instrumentSettings.getTemplateInfo() == null) {
         errors.rejectValue(
-            "instrumentSettings.templateInfo", "errors.inventory.import.templateInfo.empty");
+            "instrumentSettings.templateInfo", "errors.inventory.import.templateInfoEmpty");
       }
       if (instrumentSettings.getTemplateId() != null
           && instrumentSettings.getTemplateInfo() != null) {
         errors.rejectValue(
             "instrumentSettings.templateId",
-            "errors.inventory.import.instrument.templateId.and.templateInfo.conflict");
+            "errors.inventory.import.instrumentTemplateIdAndTemplateInfoConflict");
       }
       if (instrumentSettings.getFieldMappings() == null
           || !instrumentSettings.getFieldMappings().containsValue("name")) {
         errors.rejectValue(
-            "instrumentSettings.fieldMappings",
-            "errors.inventory.import.fieldMappings.missingName");
+            "instrumentSettings.fieldMappings", "errors.inventory.import.fieldMappingsMissingName");
       }
     }
   }

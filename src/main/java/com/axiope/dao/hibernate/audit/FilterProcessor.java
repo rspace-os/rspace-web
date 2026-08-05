@@ -15,5 +15,5 @@ public interface FilterProcessor {
    * @return <code>true</code> if this processor decides the objects pass the filters, <code>false
    *     </code> otherwise.
    */
-  public boolean process(Set<ObjectAuditFilter> toProcess, Object entity);
+  boolean process(Set<ObjectAuditFilter> toProcess, Object entity);
 }

@@ -251,7 +251,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
 
     String result = controller.prepareNfsFileForDownload(filePath, null, request, principalStub);
 
-    assertEquals(getMsgFromResourceBundler("net.filestores.error.disabled"), result);
+    assertEquals(getMsgFromResourceBundler("netFileStores.errors.disabled"), result);
   }
 
   private void loginTestUserToTestFileSystem() {

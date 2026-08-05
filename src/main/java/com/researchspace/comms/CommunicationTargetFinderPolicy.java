@@ -16,7 +16,7 @@ public interface CommunicationTargetFinderPolicy {
   }
 
   /** Enum to convert UI choices of target finder policy to a policy implemtation */
-  public enum TargetFinderPolicy {
+  enum TargetFinderPolicy {
     /** Configures an {@link com.researchspace.service.impl.AllUsersPolicy} */
     ALL,
 

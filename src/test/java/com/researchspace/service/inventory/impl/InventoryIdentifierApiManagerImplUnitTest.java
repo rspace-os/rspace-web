@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -25,6 +24,7 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectionException;
@@ -114,7 +114,7 @@ class InventoryIdentifierApiManagerImplUnitTest {
   void publishB2instInterpolatesOnlyTheProviderReasonNotTheDeveloperMessage() throws Exception {
     InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
     B2instConnector b2instConnector = mock(B2instConnector.class);
-    MessageSourceUtils messages = mock(MessageSourceUtils.class);
+    MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
     ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
     ReflectionTestUtils.setField(mgr, "messages", messages);
 
@@ -127,12 +127,6 @@ class InventoryIdentifierApiManagerImplUnitTest {
             reason,
             null);
     when(b2instConnector.publishDoi("k2j9p-7yh21")).thenThrow(original);
-    when(messages.getMessage(
-            eq("errors.inventory.identifier.b2inst.publish.failed"), any(Object[].class)))
-        .thenAnswer(
-            invocation ->
-                "Could not publish the instrument PID in B2INST. "
-                    + ((Object[]) invocation.getArgument(1))[0]);
 
     Method publish =
         InventoryIdentifierApiManagerImpl.class.getDeclaredMethod(
@@ -245,7 +239,7 @@ class InventoryIdentifierApiManagerImplUnitTest {
   void deleteUnassociatedIdentifierRejectsNonOwner() {
     InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
     DigitalObjectIdentifierDao doiDao = mock(DigitalObjectIdentifierDao.class);
-    MessageSourceUtils messages = mock(MessageSourceUtils.class);
+    MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
     ReflectionTestUtils.setField(mgr, "doiDao", doiDao);
     ReflectionTestUtils.setField(mgr, "messages", messages);
 
@@ -254,14 +248,16 @@ class InventoryIdentifierApiManagerImplUnitTest {
     DigitalObjectIdentifier doi = mock(DigitalObjectIdentifier.class);
     when(doi.getOwner()).thenReturn(owner);
     when(doiDao.get(5L)).thenReturn(doi);
-    when(messages.getMessage(anyString())).thenReturn("not owner");
 
     ApiInventoryDOI apiDoi = mock(ApiInventoryDOI.class);
     when(apiDoi.getId()).thenReturn(5L);
 
-    assertThrows(
-        IllegalArgumentException.class, () -> mgr.deleteUnassociatedIdentifier(apiDoi, attacker));
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> mgr.deleteUnassociatedIdentifier(apiDoi, attacker));
 
+    assertEquals("You can only delete an identifier that you own.", exception.getMessage());
     verify(doiDao, never()).save(any());
     verify(doi, never()).setDeleted(true);
   }

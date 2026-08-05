@@ -168,7 +168,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     if (!settingTypeFor(inventoryItem).equals(settingTypeFor(identifierToAssign.getType()))) {
       throw new IllegalArgumentException(
           messages.getMessage(
-              "errors.inventory.identifier.assign.type.mismatch",
+              "errors.inventory.identifier.assignTypeMismatch",
               new Object[] {identifierToAssign.getType(), inventoryOid}));
     }
 
@@ -185,8 +185,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
     throw new IllegalArgumentException(
         messages.getMessage(
-            "errors.inventory.identifier.minting.unsupported.type",
-            new Object[] {invRec.getType()}));
+            "errors.inventory.identifier.mintingUnsupportedType", new Object[] {invRec.getType()}));
   }
 
   private InventorySettingType settingTypeFor(IdentifierType identifierType) {
@@ -205,7 +204,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       default:
         throw new UnsupportedOperationException(
             messages.getMessage(
-                "errors.inventory.identifier.type.unsupported", new Object[] {identifierType}));
+                "errors.inventory.identifier.typeUnsupported", new Object[] {identifierType}));
     }
   }
 
@@ -220,7 +219,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     if (!dataciteEnabled && !b2instEnabled) {
       throw new UnsupportedOperationException(
           messages.getMessage(
-              "errors.inventory.identifier.integration.not.enabled",
+              "errors.inventory.identifier.integrationNotEnabled",
               new Object[] {InventorySettingType.PIDINST}));
     }
   }
@@ -287,7 +286,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     DigitalObjectIdentifier doi = doiDao.get(identifier.getId());
     if (!user.equals(doi.getOwner())) {
       throw new IllegalArgumentException(
-          messages.getMessage("errors.inventory.identifier.delete.not.owner"));
+          messages.getMessage("errors.inventory.identifier.deleteNotOwner"));
     }
     doi.setDeleted(true);
     doi = doiDao.save(doi);
@@ -426,7 +425,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     } catch (B2instConnectionException b2instException) {
       throw B2instConnectionException.wrapping(
           messages.getMessage(
-              "errors.inventory.identifier.b2inst.register.failed",
+              "errors.inventory.identifier.b2instRegisterFailed",
               new Object[] {b2instException.getReason()}),
           b2instException);
     }
@@ -501,7 +500,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       log.error("Error when deleting the PID from B2INST: ", b2instException);
       throw B2instConnectionException.wrapping(
           messages.getMessage(
-              "errors.inventory.identifier.b2inst.delete.failed",
+              "errors.inventory.identifier.b2instDeleteFailed",
               new Object[] {b2instException.getReason()}),
           b2instException);
     }
@@ -593,7 +592,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     } catch (B2instConnectionException b2instException) {
       throw B2instConnectionException.wrapping(
           messages.getMessage(
-              "errors.inventory.identifier.b2inst.publish.failed",
+              "errors.inventory.identifier.b2instPublishFailed",
               new Object[] {b2instException.getReason()}),
           b2instException);
     }
@@ -614,7 +613,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
      * what is an expected refusal; this one resolves the bundle key itself and answers 422. The UI
      * already disables Delete/Retract for every B2INST review state, but the API is callable directly.
      */
-    throw new ApiRuntimeException("errors.inventory.identifier.b2inst.retract.unsupported");
+    throw new ApiRuntimeException("errors.inventory.identifier.b2instRetractUnsupported");
   }
 
   @NotNull

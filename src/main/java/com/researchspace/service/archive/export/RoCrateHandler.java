@@ -376,7 +376,7 @@ public class RoCrateHandler {
     try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
       String line;
       while ((line = br.readLine()) != null) {
-        if (line.indexOf("keywords") != -1 && line.indexOf("[") == -1) {
+        if (line.indexOf("keywords") != -1 && line.indexOf('[') == -1) {
           replaceRoCrate = true;
           String singleKeyword = line.replace("\"keywords\" :", "");
           singleKeyword = singleKeyword.substring(0, singleKeyword.length() - 1);

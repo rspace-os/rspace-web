@@ -69,8 +69,9 @@ public class SelfServiceLabGroupController extends BaseController {
           .equals(createCloudGroup.getGroupName().toLowerCase())) {
         errors.rejectValue(
             "groupName",
-            "duplicate.groupname",
-            "You have already created a Group with the name: " + createCloudGroup.getGroupName());
+            "groups.creation.errors.duplicateName",
+            new Object[] {createCloudGroup.getGroupName()},
+            null);
         break;
       }
     }
@@ -135,18 +136,11 @@ public class SelfServiceLabGroupController extends BaseController {
       @RequestParam(value = "term", required = true) String term) {
 
     term = SecureStringUtils.removeWildCards(term);
-    List<UserBasicInfo> userInfos = null;
-    try {
-      userInfos = userManager.searchPublicUserInfoList(term);
-    } catch (IllegalArgumentException e) {
-      if (e.getMessage().contains("must be at least 3 characters")) {
-        ErrorList error =
-            ErrorList.of(getText("errors.minlength", new String[] {"Search term", "3"}));
-        return new AjaxReturnObject<>(null, error);
-      } else {
-        throw e;
-      }
+    if (term.length() < 3) {
+      ErrorList error = ErrorList.of(getText("errors.searchTermMinLength", new Object[] {3}));
+      return new AjaxReturnObject<>(null, error);
     }
+    List<UserBasicInfo> userInfos = userManager.searchPublicUserInfoList(term);
     return new AjaxReturnObject<>(userInfos, null);
   }
 }

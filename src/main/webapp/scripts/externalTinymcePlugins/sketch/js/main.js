@@ -65,7 +65,7 @@ var sketchDialog = {
           }
         }, "json");
       jxqr.fail(function () {
-        tinymceDialogUtils.showErrorAlert("Loading annotations failed.");
+        tinymceDialogUtils.showErrorAlert(tinymceDialogUtils.msg("legacyjs.tinymce.sketch.loadAnnotationsFailed"));
       });
       jxqr.always(function () {
         $.ajaxSetup({ async: true });
@@ -410,7 +410,7 @@ var sketchDialog = {
   addZwibblerButtons: function () {
 
     Zwibbler.addButton({
-      name: "Delete",
+      name: tinymceDialogUtils.msg("legacyjs.core.action.delete"),
       image: "/scripts/zwibbler2/wd-delete.png",
       onclick: function (zwibbler) {
         zwibbler.deleteSelection();
@@ -418,7 +418,7 @@ var sketchDialog = {
     });
 
     Zwibbler.addButton({
-      name: "Small brush",
+      name: tinymceDialogUtils.msg("legacyjs.tinymce.sketch.smallBrush"),
       image: "/scripts/zwibbler2/wd-brush-small.png",
       onclick: function (zwibbler) {
         zwibbler.useBrushTool(null, 3);
@@ -426,7 +426,7 @@ var sketchDialog = {
     });
 
     Zwibbler.addButton({
-      name: "Large brush",
+      name: tinymceDialogUtils.msg("legacyjs.tinymce.sketch.largeBrush"),
       image: "/scripts/zwibbler2/wd-brush-large.png",
       onclick: function (zwibbler) {
         zwibbler.useBrushTool(null, 12);
@@ -434,7 +434,7 @@ var sketchDialog = {
     });
 
     Zwibbler.addButton({
-      name: "Zoom-In",
+      name: tinymceDialogUtils.msg("legacyjs.tinymce.sketch.zoomIn"),
       image: "/scripts/zwibbler2/wd-zoom-in.png",
       onclick: function (zwibbler) {
         zwibbler.zoomIn();
@@ -442,7 +442,7 @@ var sketchDialog = {
     });
 
     Zwibbler.addButton({
-      name: "Zoom-out",
+      name: tinymceDialogUtils.msg("legacyjs.tinymce.sketch.zoomOut"),
       image: "/scripts/zwibbler2/wd-zoom-out.png",
       onclick: function (zwibbler) {
         zwibbler.zoomOut();
@@ -518,7 +518,7 @@ var sketchDialog = {
         });
       });
     jxqr.fail(function () {
-      tinymceDialogUtils.showErrorAlert("Saving sketch/annotation failed.");
+      tinymceDialogUtils.showErrorAlert(tinymceDialogUtils.msg("legacyjs.tinymce.sketch.saveFailed"));
     });
   }
 

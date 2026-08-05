@@ -12,5 +12,5 @@ public interface ArchiveDao extends GenericDao<ArchivalCheckSum, String> {
    *
    * @return A {@link List} of {@link ArchivalCheckSum} objects.
    */
-  public List<ArchivalCheckSum> getUnexpiredArchives();
+  List<ArchivalCheckSum> getUnexpiredArchives();
 }

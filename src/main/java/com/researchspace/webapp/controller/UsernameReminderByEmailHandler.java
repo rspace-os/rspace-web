@@ -6,6 +6,7 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.EmailContent;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.EmailContentGenerator;
 import io.github.resilience4j.ratelimiter.RateLimiter;
@@ -34,6 +35,7 @@ public class UsernameReminderByEmailHandler {
   @Autowired IPropertyHolder properties;
   @Autowired UserManager userManager;
   @Autowired VelocityEngine velocity;
+  @Autowired MessageSourceUtils messages;
 
   @Autowired
   @Qualifier("emailBroadcast")
@@ -46,7 +48,9 @@ public class UsernameReminderByEmailHandler {
     String remoteIpAddress = RequestUtil.remoteAddr(request);
 
     if (StringUtils.isBlank(email)) {
-      throw new IllegalArgumentException("email cannot be empty!");
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "errors.emptyString.polite", new Object[] {messages.getMessage("label.email")}));
     }
 
     List<User> users = userManager.getUserByEmail(email);
@@ -68,7 +72,7 @@ public class UsernameReminderByEmailHandler {
 
               EmailContent emailContent =
                   emailContentGenerator.render(
-                      "email.username.reminder.subject",
+                      "email.account.usernameReminderMessage.subject",
                       null,
                       "usernameReminderMessage.vm",
                       velocityModel);
@@ -77,8 +81,9 @@ public class UsernameReminderByEmailHandler {
           });
     } catch (RequestNotPermitted e) {
       throw new IllegalStateException(
-          "You have exceeded the number of username reminder requests. Please contact ResearchSpace"
-              + " support for assistance");
+          messages.getMessage(
+              "errors.rateLimitExceeded",
+              new Object[] {messages.getMessage("requestType.usernameReminder")}));
     }
 
     SECURITY_LOG.info("Username reminder request from {} sent to [{}]", remoteIpAddress, email);

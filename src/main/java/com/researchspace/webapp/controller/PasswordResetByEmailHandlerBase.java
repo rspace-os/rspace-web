@@ -10,6 +10,7 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.EmailContent;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.EmailContentGenerator;
 import io.github.resilience4j.ratelimiter.RateLimiter;
@@ -43,6 +44,7 @@ public abstract class PasswordResetByEmailHandlerBase {
   EmailBroadcast emailer;
 
   @Autowired UserValidator userValidator;
+  @Autowired MessageSourceUtils messages;
   private @Autowired EmailContentGenerator emailContentGenerator;
   Map<String, RateLimiter> resetsPerMinutePerUser = new ConcurrentHashMap<String, RateLimiter>();
 
@@ -76,8 +78,9 @@ public abstract class PasswordResetByEmailHandlerBase {
             });
       } catch (RequestNotPermitted e) {
         throw new IllegalStateException(
-            "You have exceeded the number of password reminder requests. Please contact"
-                + " ResearchSpace support for assistance.");
+            messages.getMessage(
+                "errors.rateLimitExceeded",
+                new Object[] {messages.getMessage("requestType.passwordReminder")}));
       }
     } else {
       SECURITY_LOG.warn(

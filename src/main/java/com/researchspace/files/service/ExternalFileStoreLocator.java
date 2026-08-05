@@ -17,7 +17,7 @@ public interface ExternalFileStoreLocator {
   ExternalFileStoreProvider getExternalProvider();
 
   /** No-op implementation for when there is no external file store configured. */
-  public static final ExternalFileStoreLocator NOOP_ExternalFileStoreLocator =
+  ExternalFileStoreLocator NOOP_ExternalFileStoreLocator =
       new ExternalFileStoreLocator() {
 
         @Override

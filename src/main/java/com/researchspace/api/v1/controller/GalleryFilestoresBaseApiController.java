@@ -15,9 +15,7 @@ public class GalleryFilestoresBaseApiController extends BaseApiController {
 
   protected void assertFilestoresApiEnabled(User subject) {
     if (!properties.isNetFileStoresEnabled() && !subject.hasSysadminRole()) {
-      throw new UnsupportedOperationException(
-          "Gallery Filestores API is not enabled for use on this RSpace instance "
-              + "(netfilestores.enabled=false)");
+      throw new UnsupportedOperationException(getMessage("netFileStores.errors.apiNotEnabled"));
     }
   }
 }

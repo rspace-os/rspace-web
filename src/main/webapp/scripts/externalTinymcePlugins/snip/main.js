@@ -15,12 +15,12 @@ var snippetDialog = {
 		var snippetContent = $("#snippet_content").html();
 
 		if (snippetName === "") {
-			apprise("Please provide a name for the snippet");
+			apprise(RS.msg("legacyjs.tinymce.snip.nameRequired"));
 			return;
 		}
 
 		if (snippetContent === "") {
-			apprise("No content was selected");
+			apprise(RS.msg("legacyjs.tinymce.snip.noContentSelected"));
 			return;
 		}
 
@@ -38,13 +38,13 @@ var snippetDialog = {
 
 		var jxqr = $.post(url, data, function (result) {
 			if (result.errorMsg !== null) {
-				apprise(getValidationErrorString(result.errorMsg));
+				apprise(RS.msg(result.errorMsg.key, ...result.errorMsg.arguments));
 			} else {
-				successMsg = result.data;
+				successMsg = RS.msg(result.data.key, ...result.data.arguments);
 			}
 		});
 		jxqr.fail(function () {
-			tinymceDialogUtils.showErrorAlert("Creating new snippet failed.");
+			tinymceDialogUtils.showErrorAlert(RS.msg("legacyjs.tinymce.snip.createFailed"));
 		});
 
 		$.ajaxSetup({ async: true });

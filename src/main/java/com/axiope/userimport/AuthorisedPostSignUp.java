@@ -79,7 +79,7 @@ public class AuthorisedPostSignUp implements IPostUserSignup {
     try {
       EmailContent content =
           contentGenerator.render(
-              "email.signup.request.subject",
+              "email.account.activationRequest.subject",
               new Object[] {installationName},
               emailTemplateResource,
               rc);

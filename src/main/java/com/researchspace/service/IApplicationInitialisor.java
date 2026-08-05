@@ -9,7 +9,7 @@ public interface IApplicationInitialisor {
    * Implementations of this method are only called when an application is initialised for the first
    * time after deployment.
    */
-  public void onInitialAppDeployment();
+  void onInitialAppDeployment();
 
   /**
    * Implementations of this method are only called when
@@ -19,12 +19,12 @@ public interface IApplicationInitialisor {
    *   <li>An application version is updated.
    * </ul>
    */
-  public void onAppVersionUpdate();
+  void onAppVersionUpdate();
 
   /**
    * Implementations of this method are called on each application startup and restart.
    *
    * @param applicationContext
    */
-  public void onAppStartup(ApplicationContext applicationContext);
+  void onAppStartup(ApplicationContext applicationContext);
 }

@@ -40,7 +40,7 @@ public class LuceneSearchTermListFactory {
 
     for (int i = 0; i < terms.length; i++) {
       final String term = terms[i];
-      if (term.equals("")) {
+      if (term.isEmpty()) {
         continue; // Skip empty terms
       }
 

@@ -61,25 +61,21 @@ describe("Identifiers section", () => {
    * cancelled, expired), none of which are DataCite states. Rendering must never throw on one.
    */
   describe("When a PIDINST identifier carries a B2INST review state", () => {
-    test.each<PidinstPublishingState>([
-      "submitted",
-      "accepted",
-      "declined",
-      "cancelled",
-      "expired",
-      "created",
-    ])("state '%s' renders without crashing", (state) => {
-      const instrument: InventoryRecord = makeMockSample();
-      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state }];
+    test.each<PidinstPublishingState>(["submitted", "accepted", "declined", "cancelled", "expired", "created"])(
+      "state '%s' renders without crashing",
+      (state) => {
+        const instrument: InventoryRecord = makeMockSample();
+        instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state }];
 
-      expect(() =>
-        render(
-          <ThemeProvider theme={materialTheme}>
-            <IdentifiersList activeResult={instrument} />
-          </ThemeProvider>,
-        ),
-      ).not.toThrow();
-    });
+        expect(() =>
+          render(
+            <ThemeProvider theme={materialTheme}>
+              <IdentifiersList activeResult={instrument} />
+            </ThemeProvider>,
+          ),
+        ).not.toThrow();
+      },
+    );
 
     test("the submitted state is shown to the user", () => {
       const instrument: InventoryRecord = makeMockSample();
@@ -141,29 +137,25 @@ describe("Identifiers section", () => {
      * only offered for "draft". The button rendering at all is new: these states used to throw during
      * render. It must therefore be disabled rather than offer an action that always errors.
      */
-    test.each<PidinstPublishingState>([
-      "created",
-      "submitted",
-      "accepted",
-      "declined",
-      "cancelled",
-      "expired",
-    ])("Retract is disabled for the '%s' review state, since B2INST cannot retract", (state) => {
-      const instrument: InventoryRecord = makeMockSample();
-      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state }];
+    test.each<PidinstPublishingState>(["created", "submitted", "accepted", "declined", "cancelled", "expired"])(
+      "Retract is disabled for the '%s' review state, since B2INST cannot retract",
+      (state) => {
+        const instrument: InventoryRecord = makeMockSample();
+        instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state }];
 
-      render(
-        <ThemeProvider theme={materialTheme}>
-          <IdentifiersList activeResult={instrument} />
-        </ThemeProvider>,
-      );
+        render(
+          <ThemeProvider theme={materialTheme}>
+            <IdentifiersList activeResult={instrument} />
+          </ThemeProvider>,
+        );
 
-      // exact key, not /retract/i: the label key "deleteOrRetract.retract" contains both words,
-      // so a loose regex would pass for the Delete label too
-      expect(
-        screen.getByRole("button", { name: "inventory:fields.identifiers.list.deleteOrRetract.retract" }),
-      ).toBeDisabled();
-    });
+        // exact key, not /retract/i: the label key "deleteOrRetract.retract" contains both words,
+        // so a loose regex would pass for the Delete label too
+        expect(
+          screen.getByRole("button", { name: "inventory:fields.identifiers.list.deleteOrRetract.retract" }),
+        ).toBeDisabled();
+      },
+    );
 
     /*
      * The gate is provider-keyed, so it must also catch a state this frontend does not model: the
@@ -269,35 +261,33 @@ describe("Identifiers section", () => {
       expect(screen.getByText("4bj4n-92921")).toBeInTheDocument();
     });
 
-    test.each<PidinstPublishingState | "draft">([
-      "draft",
-      "submitted",
-      "accepted",
-      "declined",
-    ])("state '%s' links the identifier to its B2INST record page", (state) => {
-      const instrument: InventoryRecord = makeMockSample();
-      instrument.identifiers = [
-        {
-          ...mockIGSNIdentifier("sample"),
-          doiType: "PIDINST_B2INST",
-          state,
-          doi: "wp4pm-n0r55",
-          publicUrl: null,
-          providerUrl: "https://b2inst-test.gwdg.de/uploads/wp4pm-n0r55",
-        },
-      ];
+    test.each<PidinstPublishingState | "draft">(["draft", "submitted", "accepted", "declined"])(
+      "state '%s' links the identifier to its B2INST record page",
+      (state) => {
+        const instrument: InventoryRecord = makeMockSample();
+        instrument.identifiers = [
+          {
+            ...mockIGSNIdentifier("sample"),
+            doiType: "PIDINST_B2INST",
+            state,
+            doi: "wp4pm-n0r55",
+            publicUrl: null,
+            providerUrl: "https://b2inst-test.gwdg.de/uploads/wp4pm-n0r55",
+          },
+        ];
 
-      render(
-        <ThemeProvider theme={materialTheme}>
-          <IdentifiersList activeResult={instrument} />
-        </ThemeProvider>,
-      );
+        render(
+          <ThemeProvider theme={materialTheme}>
+            <IdentifiersList activeResult={instrument} />
+          </ThemeProvider>,
+        );
 
-      expect(screen.getByRole("link", { name: "wp4pm-n0r55" })).toHaveAttribute(
-        "href",
-        "https://b2inst-test.gwdg.de/uploads/wp4pm-n0r55",
-      );
-    });
+        expect(screen.getByRole("link", { name: "wp4pm-n0r55" })).toHaveAttribute(
+          "href",
+          "https://b2inst-test.gwdg.de/uploads/wp4pm-n0r55",
+        );
+      },
+    );
 
     test("the identifier is plain text when the provider gave no record page", () => {
       const instrument: InventoryRecord = makeMockSample();

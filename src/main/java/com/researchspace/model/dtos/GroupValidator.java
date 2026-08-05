@@ -6,6 +6,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import com.researchspace.model.Group;
 import com.researchspace.model.Organisation;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -15,13 +16,13 @@ import org.springframework.validation.Validator;
 public class GroupValidator implements Validator {
 
   // actual string stored in property file
-  public static final String GROUP_MEMBERS_NONESELECTED = "group.members.noneselected";
-  public static final String GROUP_MEMBERS_NON_UNIQUE_NAME = "group.members.non_unique_name";
-  public static final String PI_NOT_IN_GROUP = "group.members.pi_not_group";
-  public static final String ADMIN_NOT_IN_GROUP = "group.members.admin_not_group";
-  public static final String PI_NOT_SELECTED = "group.members.nopi";
-  public static final String GROUP_OWNER_NOT_SELECTED = "group.members.no_group_owner";
-  public static final String GROUP_OWNER_NOT_IN_GROUP = "group.members.group_owner_not_in_group";
+  public static final String GROUP_MEMBERS_NONESELECTED = "groups.members.noneSelected";
+  public static final String GROUP_MEMBERS_NON_UNIQUE_NAME = "groups.members.nonUniqueName";
+  public static final String PI_NOT_IN_GROUP = "groups.members.piNotGroup";
+  public static final String ADMIN_NOT_IN_GROUP = "groups.members.adminNotGroup";
+  public static final String PI_NOT_SELECTED = "groups.members.noPi";
+  public static final String GROUP_OWNER_NOT_SELECTED = "groups.members.noGroupOwner";
+  public static final String GROUP_OWNER_NOT_IN_GROUP = "groups.members.groupOwnerNotInGroup";
 
   @Override
   public boolean supports(Class<?> clazz) {
@@ -42,30 +43,33 @@ public class GroupValidator implements Validator {
     Group group = (Group) target;
 
     if (isBlank(group.getDisplayName())) {
-      errors.rejectValue("displayName", "group.emptyname", null, null);
+      errors.rejectValue("displayName", "groups.emptyName");
     }
     if (!isBlank(group.getUniqueName()) && !isAlphanumeric(group.getUniqueName())) {
-      errors.rejectValue("uniqueName", "group.invalidcharacters", null, null);
+      errors.rejectValue("uniqueName", "groups.invalidCharacters");
     }
     if (!isBlank(group.getUniqueName())
         && Organisation.MAX_INDEXABLE_UTF_LENGTH
             < group.getUniqueName().length() + Group.GROUP_UNIQUE_NAME_SUFFIX_LENGTH) {
       errors.rejectValue(
           "uniqueName",
-          "errors.maxlength",
-          new String[] {"group name", "" + Organisation.MAX_INDEXABLE_UTF_LENGTH},
+          "errors.maxLength",
+          new Object[] {
+            new DefaultMessageSourceResolvable("label.groupName"),
+            Organisation.MAX_INDEXABLE_UTF_LENGTH
+          },
           null);
     }
     if (group.getMemberString() == null || group.getMemberString().isEmpty()) {
-      errors.rejectValue("memberString", GROUP_MEMBERS_NONESELECTED, null, null);
+      errors.rejectValue("memberString", GROUP_MEMBERS_NONESELECTED);
     }
 
     if (!group.isProjectGroup() && isBlank(group.getPis())) {
-      errors.rejectValue("pis", PI_NOT_SELECTED, null, null);
+      errors.rejectValue("pis", PI_NOT_SELECTED);
     }
     // check for owners in project group
     if (group.isProjectGroup() && isBlank(group.getGroupOwners())) {
-      errors.rejectValue("groupOwners", GROUP_OWNER_NOT_SELECTED, null, null);
+      errors.rejectValue("groupOwners", GROUP_OWNER_NOT_SELECTED);
     }
 
     // check pi name is in group

@@ -246,7 +246,7 @@ public interface ExportImport {
    * <p>This method is scheduled; see applicationContext-service.xml for its configuration using
    * Spring Quartz scheduler.
    */
-  public void removeOldArchives();
+  void removeOldArchives();
 
   /**
    * Exports a PDF of all the user's records.
@@ -291,7 +291,7 @@ public interface ExportImport {
    * @param zipname
    * @param response
    */
-  public void streamArchiveDownload(String zipname, HttpServletResponse response);
+  void streamArchiveDownload(String zipname, HttpServletResponse response);
 
   /**
    * Gets {@link ArchivalCheckSum} for archives that are not deleted, i.e that are still available

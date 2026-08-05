@@ -299,7 +299,7 @@ const AddFilestoreMenuItem = ({
                       id: number;
                       name: string;
                       url: string;
-                    }>([e instanceof Error ? e : new Error("Unknown error")]);
+                    }>([e instanceof Error ? e : new Error(t("unknownError"))]);
                   }
                 }),
             ),

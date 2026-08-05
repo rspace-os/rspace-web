@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
@@ -13,12 +14,23 @@ import com.researchspace.model.User;
 import com.researchspace.model.frontend.OAuthAppInfo;
 import com.researchspace.service.OAuthAppManager;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.After;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MvcResult;
 
 public class OAuthClientControllerMVCIT extends MVCTestBase {
   @Autowired private OAuthAppManager oAuthAppManager;
+
+  /**
+   * These tests disable API access mid-method, and the system property outlives the test, so a
+   * failure before the re-enabling line left every later API test unauthorised.
+   */
+  @After
+  public void restoreApiAccess() {
+    enableGlobalApiAccess();
+    enableApiOAuthAuthentication();
+  }
 
   @Test
   public void incorrectGrants() throws Exception {
@@ -55,11 +67,10 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
                 .param("client_secret", clientSecret)
                 .param("grant_type", "invalid"))
         .andExpect(status().isUnauthorized())
+        // The advice renders the exception's key into the response; assert on what callers see.
         .andExpect(
-            result ->
-                assertEquals(
-                    "Access to API has been disabled by RSpace administrator.",
-                    result.getResolvedException().getMessage()));
+            jsonPath("$.message")
+                .value("Access to API has been disabled by RSpace administrator."));
 
     // re-enable global API access
     enableGlobalApiAccess();
@@ -73,10 +84,8 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
                 .param("grant_type", "invalid"))
         .andExpect(status().isUnauthorized())
         .andExpect(
-            result ->
-                assertEquals(
-                    "OAuth authentication has been disabled by RSpace administrator.",
-                    result.getResolvedException().getMessage()));
+            jsonPath("$.message")
+                .value("OAuth authentication has been disabled by RSpace administrator."));
 
     // re-enable OAuth authentication
     enableApiOAuthAuthentication();
@@ -137,10 +146,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
                 .param("username", username)
                 .param("password", "invalid"))
         .andExpect(status().isUnauthorized())
-        .andExpect(
-            result ->
-                assertEquals(
-                    "Invalid user credentials.", result.getResolvedException().getMessage()));
+        .andExpect(jsonPath("$.message").value("Invalid user credentials."));
 
     // invalid username
     mockMvc
@@ -152,10 +158,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
                 .param("username", "unknown-username")
                 .param("password", password))
         .andExpect(status().isUnauthorized())
-        .andExpect(
-            result ->
-                assertEquals(
-                    "Invalid user credentials.", result.getResolvedException().getMessage()));
+        .andExpect(jsonPath("$.message").value("Invalid user credentials."));
 
     // missing refresh token
     mockMvc
@@ -256,9 +259,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
                 .param("refresh_token", response.getRefreshToken()))
         .andExpect(status().isUnauthorized())
         .andExpect(
-            res ->
-                assertEquals(
-                    "OAuth authentication has been disabled by RSpace administrator.",
-                    res.getResolvedException().getMessage()));
+            jsonPath("$.message")
+                .value("OAuth authentication has been disabled by RSpace administrator."));
   }
 }

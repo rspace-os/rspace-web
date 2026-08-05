@@ -1,17 +1,17 @@
 <%@ include file="/common/taglibs.jsp"%>
 
 <c:if test="${empty requests}">
-	<p>You have no shared document requests to manage.
+	<p><spring:message code="groups.sharing.noSharedDocumentRequests"/>
 </c:if>
 
 <c:if test="${not empty requests}">
 	<table class="table">
 		<tr>
-			<th>Document name</th>
-			<th>Global Id</th>
-			<th>Shared with</th>
-			<th>Permission</th>
-			<th>Actions</th>
+			<th><spring:message code="groups.sharing.table.documentName"/></th>
+			<th><spring:message code="groups.sharing.table.globalId"/></th>
+			<th><spring:message code="groups.sharing.table.sharedWith"/></th>
+			<th><spring:message code="common:shareDialog.columns.permission"/></th>
+			<th><spring:message code="groups.sharing.table.actions"/></th>
 		</tr>
 		<c:forEach items="${requests}" var="request">
 			<c:choose>
@@ -28,7 +28,7 @@
 				<td><a href="${globalURL}">${request.record.globalIdentifier}</a></td>
 				<td>${request.email}</td>
 				<td><span class='permType'>${fn:toUpperCase(request.permission)}</span></td>
-				<td><a data-requestid="${request.requestId}" class="cancel" href="#">Cancel</a></td>
+				<td><a data-requestid="${request.requestId}" class="cancel" href="#"><spring:message code="common:actions.cancel"/></a></td>
 			</tr>
 		</c:forEach>
 	</table>

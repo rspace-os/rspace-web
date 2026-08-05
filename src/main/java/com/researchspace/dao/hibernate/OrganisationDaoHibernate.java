@@ -39,7 +39,7 @@ public class OrganisationDaoHibernate extends GenericDaoHibernate<Organisation, 
   public List<Organisation> getApprovedOrganisations(String term) {
     String likeTerm = term.toLowerCase();
     if (keywordStartsWith(term)) {
-      likeTerm = likeTerm + "%";
+      likeTerm += "%";
     } else {
       likeTerm = "%" + likeTerm + "%";
     }

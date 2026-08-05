@@ -49,5 +49,5 @@ public interface PostFirstLoginAction {
    * @param session
    * @param sessionAttributeName
    */
-  public void setCompleted(User user, HttpSession session, String sessionAttributeName);
+  void setCompleted(User user, HttpSession session, String sessionAttributeName);
 }

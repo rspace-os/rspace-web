@@ -50,7 +50,7 @@ export default function useUserDetails(): {
           message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
-      throw new Error("Could not fetch group members", {
+      throw new Error(t("apiErrors.users.fetchGroupMembersFailed"), {
         cause: e,
       });
     }

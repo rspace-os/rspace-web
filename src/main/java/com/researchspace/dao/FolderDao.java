@@ -20,7 +20,7 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    */
   Folder getRootRecordForUser(User user);
 
-  public List<Long> getFolderChildrenIds(Folder fd);
+  List<Long> getFolderChildrenIds(Folder fd);
 
   /**
    * Get Gallery folder child of user's root folder.
@@ -28,7 +28,7 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    * @param user user;
    * @return media Folder from User, or <code>null</code> if could not be found.
    */
-  public Folder getGalleryRootFolderForUser(User user);
+  Folder getGalleryRootFolderForUser(User user);
 
   /**
    * Get Template folder child of user's root folder.
@@ -36,7 +36,7 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    * @param user;
    * @return Template Folder from User, or <code>null</code> if could not be found.
    */
-  public Folder getTemplateFolderForUser(User user);
+  Folder getTemplateFolderForUser(User user);
 
   /**
    * Gets the user's LabGroup folder or <code>null</code> if it doesn't exist.
@@ -44,7 +44,7 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    * @param u user
    * @return The user's lab group folder.
    */
-  public Folder getLabGroupFolderForUser(User u);
+  Folder getLabGroupFolderForUser(User u);
 
   /**
    * Gets the user's IndividualSharedItems folder or <code>null</code> if it doesn't exist.
@@ -52,7 +52,7 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    * @param u user
    * @return The user's lab group folder.
    */
-  public Folder getIndividualSharedItemsFolderForUser(User u);
+  Folder getIndividualSharedItemsFolderForUser(User u);
 
   /**
    * Gets the user's Collaboration group's folder or <code>null</code> if it doesn't exist.
@@ -60,7 +60,7 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    * @param u user
    * @return The user's lab group folder.
    */
-  public Folder getCollaborationGroupsSharedFolderForUser(User u);
+  Folder getCollaborationGroupsSharedFolderForUser(User u);
 
   /**
    * Gets the user's ProjectGroups shared folder or <code>null</code> if it doesn't exist.
@@ -68,7 +68,7 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    * @param u- The
    * @return The user's shared ProjectGroups.
    */
-  public Folder getProjectGroupsSharedFolderForUser(User u);
+  Folder getProjectGroupsSharedFolderForUser(User u);
 
   /**
    * Gets a shared group folder for a particular group
@@ -76,7 +76,7 @@ public interface FolderDao extends GenericDao<Folder, Long> {
    * @param group
    * @return
    */
-  public Folder getSharedFolderForGroup(Group group);
+  Folder getSharedFolderForGroup(Group group);
 
   Folder getSharedSnippetFolderForGroup(Group group);
 

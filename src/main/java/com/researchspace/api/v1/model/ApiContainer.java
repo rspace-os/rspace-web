@@ -78,11 +78,11 @@ public class ApiContainer extends ApiContainerInfo {
   @JsonProperty("locations")
   private List<ApiContainerLocationWithContent> locations = new ArrayList<>();
 
-  @Size(max = 10_000_000, message = "Container image cannot be larger than 10MB")
+  @Size(max = 10_000_000, message = "{errors.inventory.container.imageTooLarge}")
   @JsonProperty(value = "newBase64Image", access = Access.WRITE_ONLY)
   private String newBase64Image;
 
-  @Size(max = 10_000_000, message = "Container locations image cannot be larger than 10MB")
+  @Size(max = 10_000_000, message = "{errors.inventory.container.locationsImageTooLarge}")
   @JsonProperty(value = "newBase64LocationsImage", access = Access.WRITE_ONLY)
   private String newBase64LocationsImage;
 

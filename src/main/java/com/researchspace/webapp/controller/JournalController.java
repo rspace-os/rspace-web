@@ -108,7 +108,7 @@ public class JournalController extends BaseController {
 
     // this is returned if user is unauthorised but not sure why?
     // mk: this is used for new notebook too
-    if (readableRecords == null || readableRecords.size() == 0) {
+    if (readableRecords == null || readableRecords.isEmpty()) {
       return new JournalEntry("EMPTY", "");
     }
 

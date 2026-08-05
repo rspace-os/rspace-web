@@ -1,6 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import com.researchspace.core.util.RequestUtil;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.core.util.TransformerUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -155,7 +156,7 @@ public class LoggingInterceptor implements HandlerInterceptor {
     System.arraycopy(paramValue, 0, copies, 0, paramValue.length);
     for (int i = 0; i < copies.length; i++) {
       if (!StringUtils.isBlank(copies[i])) {
-        copies[i] = StringUtils.abbreviate(copies[i], maxWidth);
+        copies[i] = StringAbbreviationUtils.abbreviate(copies[i], maxWidth);
       }
     }
     return copies;

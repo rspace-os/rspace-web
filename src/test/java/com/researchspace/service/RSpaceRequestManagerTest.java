@@ -15,6 +15,7 @@ import com.researchspace.testutils.TestFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class RSpaceRequestManagerTest extends SpringTransactionalTest {
 
@@ -32,6 +33,9 @@ public class RSpaceRequestManagerTest extends SpringTransactionalTest {
 
     mockCommDao = mock(CommunicationDao.class);
     requestMgr.setCommDao(mockCommDao);
+    // built with new(), so the @Autowired message source needs wiring by hand
+    ReflectionTestUtils.setField(
+        requestMgr, "messages", new MessageSourceUtils(new JsonMessageSource()));
   }
 
   @After

@@ -118,7 +118,7 @@ public interface AuditManager {
    * @param deletedId Teh Id of the deleted record
    * @return An {@link AuditedRecord} with a <code>null</code> revision number field.
    */
-  public AuditedRecord restoredDeletedForView(Long deletedId);
+  AuditedRecord restoredDeletedForView(Long deletedId);
 
   /**
    * Does a full restore of a deleted document or folder
@@ -129,7 +129,7 @@ public interface AuditManager {
    * @throws AuthorizationException if you don't have read permission on a document you're trying to
    *     restore
    */
-  public RestoreDeletedItemResult fullRestore(Long deletedId, User user);
+  RestoreDeletedItemResult fullRestore(Long deletedId, User user);
 
   /**
    * Generic method to retrieve revisions of an instance of any audited entity.
@@ -138,7 +138,7 @@ public interface AuditManager {
    * @param primaryKey
    * @return A List of AuditedEntities of type T.
    */
-  public <T> List<AuditedEntity<T>> getRevisionsForEntity(Class<T> cls, Long primaryKey);
+  <T> List<AuditedEntity<T>> getRevisionsForEntity(Class<T> cls, Long primaryKey);
 
   /**
    * Gets the audited object of specified class with specified identifier at the given revision
@@ -168,7 +168,7 @@ public interface AuditManager {
    * @param objectId
    * @return An {@link AuditedEntity} wrapping the object.
    */
-  public <T> AuditedEntity<T> getNewestRevisionForEntity(Class<T> clazz, Long objectId);
+  <T> AuditedEntity<T> getNewestRevisionForEntity(Class<T> clazz, Long objectId);
 
   /**
    * Special case of revision retrieval for linked items, that loads up relations as well for

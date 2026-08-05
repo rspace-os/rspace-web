@@ -92,7 +92,7 @@ public interface AbstractFormManager<T extends AbstractForm> extends GenericMana
    * @param useSessionToCalculateEditStatus
    * @return
    */
-  public T getForEditing(
+  T getForEditing(
       Long id, User user, UserSessionTracker activeUsers, boolean useSessionToCalculateEditStatus);
 
   /**

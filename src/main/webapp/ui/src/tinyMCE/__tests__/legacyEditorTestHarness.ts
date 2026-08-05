@@ -161,6 +161,13 @@ export function bootstrapLegacyEditorHarness(): LegacyEditorHarness {
   });
 
   const RS = {
+    msg(key: string) {
+      const messages: Record<string, string> = {
+        "legacyjs.workspace.tinymcePaste.copyingContent": "Copying content",
+        "legacyjs.workspace.tinymcePaste.copyingElements": "Copying elements in pasted content...",
+      };
+      return messages[key] ?? key;
+    },
     createAbsoluteUrl(relPath = "") {
       return `${window.location.protocol}//${window.location.host}${relPath}`;
     },

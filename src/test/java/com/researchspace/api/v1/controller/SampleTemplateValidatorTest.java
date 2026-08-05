@@ -24,8 +24,8 @@ import org.springframework.validation.Validator;
  */
 public class SampleTemplateValidatorTest extends InventoryRecordValidationTestBase {
 
-  static final String NOT_AMOUNT_ERROR_CODE = "errors.inventory.template.invalid.unitId.notAmount";
-  static final String INVALID_UNIT_ERROR_CODE = "errors.inventory.template.invalid.unitId";
+  static final String NOT_AMOUNT_ERROR_CODE = "errors.inventory.template.invalidUnitIdNotAmount";
+  static final String INVALID_UNIT_ERROR_CODE = "errors.inventory.template.invalidUnitIdDefault";
 
   @Autowired private SampleTemplatePostValidator postValidator;
   @Autowired private SampleTemplatePutValidator putValidator;
@@ -171,7 +171,7 @@ public class SampleTemplateValidatorTest extends InventoryRecordValidationTestBa
 
     assertTrue(
         errors.getFieldErrors().stream()
-            .anyMatch(fe -> "errors.inventory.template.invalid.relation.type".equals(fe.getCode())),
+            .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode())),
         "expected an invalid-relation-type error, got: " + errors.getAllErrors());
   }
 

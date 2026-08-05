@@ -150,11 +150,11 @@ class InventoryLinkManagerImplUnitTest {
     ApiRuntimeException malformed =
         assertThrows(
             ApiRuntimeException.class, () -> linkManager.getTargetSummary("not-a-gid", actor));
-    assertEquals("errors.inventory.field.link.targetNotFound", malformed.getErrorCode());
+    assertEquals("errors.inventory.field.linkTargetNotFound", malformed.getErrorCode());
 
     // FL is not an allowed link target kind, so its summary must not resolve
     ApiRuntimeException unsupported =
         assertThrows(ApiRuntimeException.class, () -> linkManager.getTargetSummary("FL3", actor));
-    assertEquals("errors.inventory.field.link.targetKindUnsupported", unsupported.getErrorCode());
+    assertEquals("errors.inventory.field.linkTargetKindUnsupported", unsupported.getErrorCode());
   }
 }

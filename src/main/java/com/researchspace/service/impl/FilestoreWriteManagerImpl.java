@@ -139,26 +139,21 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
 
     if (sourceFilestoreId.equals(request.getDestFilestoreId())) {
       throw new UnsupportedOperationException(
-          "Within-filestore transfers are not supported by this endpoint "
-              + "(source and destination filestore ids are identical)");
+          messages.getMessage("netFileStores.write.transfer.sameFilestore"));
     }
 
     NfsFileStore sourceFilestore = nfsManager.getNfsFileStore(sourceFilestoreId);
     NfsFileStore destFilestore = nfsManager.getNfsFileStore(request.getDestFilestoreId());
     if (sourceFilestore == null) {
-      errors.addError(
-          new ObjectError(
-              "sourceFilestore",
-              messages.getMessage(
-                  "netfilestores.write.filestore.notFound", new Object[] {sourceFilestoreId})));
+      addError(
+          errors, "sourceFilestore", "netFileStores.write.filestore.notFound", sourceFilestoreId);
     }
     if (destFilestore == null) {
-      errors.addError(
-          new ObjectError(
-              "destFilestore",
-              messages.getMessage(
-                  "netfilestores.write.filestore.notFound",
-                  new Object[] {request.getDestFilestoreId()})));
+      addError(
+          errors,
+          "destFilestore",
+          "netFileStores.write.filestore.notFound",
+          request.getDestFilestoreId());
     }
     throwBindExceptionIfErrors(errors);
 
@@ -176,8 +171,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
 
     if (!sourceClient.supportsServerSideTransfer() || !destClient.supportsServerSideTransfer()) {
       throw new UnsupportedOperationException(
-          "Filestore-to-filestore transfer currently supports only S3↔S3; "
-              + "source and destination filestores must both be S3");
+          messages.getMessage("netFileStores.write.transfer.unsupportedBackend"));
     }
 
     // /transfer has no RSpace record context, so recordNames and recordId are both null.
@@ -197,7 +191,8 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
             : destFilestoreRootPath + "/" + StringUtils.stripStart(request.getDestPath(), "/");
     if (absoluteSourcePath.equals(absoluteDestPath)) {
       throw new UnsupportedOperationException(
-          "Source and destination resolve to the same S3 key: " + absoluteSourcePath);
+          messages.getMessage(
+              "netFileStores.write.transfer.sameS3Key", new Object[] {absoluteSourcePath}));
     }
     ApiExternalStorageOperationResult result = new ApiExternalStorageOperationResult();
     try {
@@ -230,6 +225,10 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       DeletableTarget target = client.resolveDeletableTarget(absolutePath);
       assertDeletable(target.audit(), user);
       client.deleteByKey(target.objectKey());
+    } catch (UnsupportedOperationException e) {
+      log.warn("Filestore {} does not support deleting {}", filestoreId, path, e);
+      throw new UnsupportedOperationException(
+          messages.getMessage("netFileStores.write.delete.unsupportedBackend"));
     } catch (IOException e) {
       log.error("Error deleting object from filestore: ", e);
       errors.addError(new ObjectError("path", e.getMessage()));
@@ -247,6 +246,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     try {
       client = resolveWritableClient(user, filestore, null, errors);
     } catch (UnsupportedOperationException | BindException e) {
+      log.warn("Could not resolve audit metadata client for filestore {}", filestoreId, e);
       // unsupported backend, or missing per-user credentials: no RSpace metadata to read
       return FilestoreAuditMetadata.from(null);
     }
@@ -267,17 +267,17 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     // No RSpace creation record: deny before the creator check, which would mislabel it.
     if (audit.createdBy() == null || !audit.hasTimestamp()) {
       throw new FilestoreOperationForbiddenException(
-          messages.getMessage("netfilestores.s3.delete.denied.noMetadata"));
+          messages.getMessage("netFileStores.s3.delete.deniedNoMetadata"));
     }
     if (!audit.isCreatedBy(user.getUsername())) {
       throw new FilestoreOperationForbiddenException(
-          messages.getMessage("netfilestores.s3.delete.denied.notCreator"));
+          messages.getMessage("netFileStores.s3.delete.deniedNotCreator"));
     }
     int windowMinutes = properties.getS3DeleteWindowMinutes();
     if (!audit.isWithin(Instant.now(clock).minus(Duration.ofMinutes(windowMinutes)))) {
       throw new FilestoreOperationForbiddenException(
           messages.getMessage(
-              "netfilestores.s3.delete.denied.tooOld", new Object[] {windowMinutes}));
+              "netFileStores.s3.delete.deniedTooOld", new Object[] {windowMinutes}));
     }
   }
 
@@ -286,13 +286,9 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       Long filestoreId, String parentPath, String folderName, BindingResult errors, User user)
       throws BindException {
     if (StringUtils.isBlank(folderName)) {
-      errors.addError(
-          new ObjectError(
-              "folderName", messages.getMessage("netfilestores.write.folderName.mandatory")));
+      addError(errors, "folderName", "netFileStores.write.folderName.mandatory");
     } else if (folderName.contains("/") || !folderName.equals(folderName.strip())) {
-      errors.addError(
-          new ObjectError(
-              "folderName", messages.getMessage("netfilestores.write.folderName.invalid")));
+      addError(errors, "folderName", "netFileStores.write.folderName.invalid");
     }
     throwBindExceptionIfErrors(errors);
     NfsFileStore filestore = getFilestoreOrThrow(filestoreId, errors);
@@ -329,6 +325,10 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     String absoluteDestFolder = resolveAbsolute(filestore, destFolderPath);
     try {
       return toFilestoreRelative(filestore, client.moveWithin(absoluteSource, absoluteDestFolder));
+    } catch (UnsupportedOperationException e) {
+      log.warn("Filestore {} does not support moving {}", filestoreId, sourcePath, e);
+      throw new UnsupportedOperationException(
+          messages.getMessage("netFileStores.write.move.unsupportedBackend"));
     } catch (IOException e) {
       log.error("Error moving object within filestore: ", e);
       errors.addError(new ObjectError("sourcePath", e.getMessage()));
@@ -349,11 +349,10 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
    * Rejects operations whose target path resolves to the filestore root itself (e.g. {@code ""} or
    * {@code "/"}); the root cannot be moved or deleted.
    */
-  private void assertNotFilestoreRoot(String relativePath, String field, BindingResult errors)
+  private void assertNotFilestoreRoot(String relativePath, String objectName, BindingResult errors)
       throws BindException {
     if (StringUtils.isBlank(StringUtils.strip(relativePath, "/"))) {
-      errors.addError(
-          new ObjectError(field, messages.getMessage("netfilestores.write.cannot.modify.root")));
+      addError(errors, objectName, "netFileStores.write.rootModificationForbidden");
       throw new BindException(errors);
     }
   }
@@ -362,11 +361,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       throws BindException {
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
     if (filestore == null) {
-      errors.addError(
-          new ObjectError(
-              "nfsFileStore",
-              messages.getMessage(
-                  "netfilestores.write.filestore.notFound", new Object[] {filestoreId})));
+      addError(errors, "nfsFileStore", "netFileStores.write.filestore.notFound", filestoreId);
       throw new BindException(errors);
     }
     return filestore;
@@ -392,19 +387,15 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
   private NfsFileStore validateInputAndGetFilestore(
       Set<Long> recordIds, Long filestorePathId, BindingResult errors) throws BindException {
     if (CollectionUtils.isEmpty(recordIds)) {
-      errors.addError(new ObjectError("recordIds", "recordIds is mandatory"));
+      addError(errors, "recordIds", "netFileStores.write.recordIdsMandatory");
     }
     if (filestorePathId == null) {
-      errors.addError(new ObjectError("filestorePathId", "filestorePathId is mandatory"));
+      addError(errors, "filestorePathId", "netFileStores.write.filestorePathIdMandatory");
     }
     throwBindExceptionIfErrors(errors);
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestorePathId);
     if (filestore == null) {
-      errors.addError(
-          new ObjectError(
-              "nfsFileStore",
-              messages.getMessage(
-                  "netfilestores.write.filestore.notFound", new Object[] {filestorePathId})));
+      addError(errors, "nfsFileStore", "netFileStores.write.filestore.notFound", filestorePathId);
     }
     throwBindExceptionIfErrors(errors);
     return filestore;
@@ -417,23 +408,13 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       try {
         BaseRecord record = baseRecordManager.get(recordId, user);
         if (record.isFolder()) {
-          errors.addError(
-              new ObjectError(
-                  "recordIds",
-                  new String[] {"gallery.filestore.folder.upload.rejected"},
-                  null,
-                  "Cannot move folders to filestores."));
+          addError(errors, "recordIds", "gallery.filestore.folder.uploadRejected");
         } else if (record.isMediaRecord()) {
           // baseRecordManager.get() bypasses READ permission for record IDs; re-fetch via
           // retrieveMediaFile() which asserts the permission before returning the file.
           filesRetrieved.add(baseRecordManager.retrieveMediaFile(user, recordId));
         } else {
-          errors.addError(
-              new ObjectError(
-                  "recordIds",
-                  new String[] {"gallery.filestore.not.media.file"},
-                  null,
-                  "Only media files can be moved to filestores."));
+          addError(errors, "recordIds", "gallery.filestore.mediaFileRequired");
         }
       } catch (ObjectRetrievalFailureException ex) {
         errors.addError(new ObjectError("recordIds", ex.getMessage()));
@@ -441,6 +422,13 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     }
     throwBindExceptionIfErrors(errors);
     return filesRetrieved;
+  }
+
+  private static void addError(
+      BindingResult errors, String objectName, String code, Object... arguments) {
+    errors.addError(
+        new ObjectError(
+            objectName, new String[] {code}, arguments.length == 0 ? null : arguments, null));
   }
 
   private WritableNfsClient resolveWritableClient(
@@ -456,7 +444,9 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     }
     if (!(nfsClient instanceof WritableNfsClient writable)) {
       throw new UnsupportedOperationException(
-          "Filestore backend does not support write operations: " + filestore.getName());
+          messages.getMessage(
+              "netFileStores.write.filestore.backendNotWritable",
+              new Object[] {filestore.getName()}));
     }
     return writable;
   }

@@ -22,7 +22,7 @@ public class SambaUrlStreamHandler extends URLStreamHandler {
     if (spec.equals("smb://")) {
       spec = "smb:////";
       limit += 2;
-    } else if (spec.startsWith("smb://") == false && host != null && host.length() == 0) {
+    } else if (spec.startsWith("smb://") == false && host != null && host.isEmpty()) {
       spec = "//" + spec;
       limit += 2;
     }

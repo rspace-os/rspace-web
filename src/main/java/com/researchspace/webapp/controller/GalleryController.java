@@ -116,7 +116,7 @@ public class GalleryController extends BaseController {
     try {
       folder = folderManager.getFolder(folderId, user);
     } catch (ObjectRetrievalFailureException | AuthorizationException ex) {
-      throw new IllegalArgumentException("access denied");
+      throw new IllegalArgumentException(getText("gallery.errors.accessDenied"));
     }
 
     Folder galleryRootFolder = folderManager.getGalleryRootFolderForUser(user);
@@ -124,7 +124,7 @@ public class GalleryController extends BaseController {
 
     int numberOfParents = pathToFolder.size();
     if (numberOfParents == 0) {
-      throw new IllegalArgumentException("provided folderId doesn't point to Gallery folder");
+      throw new IllegalArgumentException(getText("gallery.errors.folderNotInGallery"));
     }
 
     if (numberOfParents > 1) {
@@ -297,7 +297,8 @@ public class GalleryController extends BaseController {
       throws IOException {
 
     if (selectedMediaId != null && fieldId != null) {
-      throw new IllegalArgumentException("selectedMediaId and fieldId shouldn't be both provided");
+      throw new IllegalArgumentException(
+          getText("gallery.errors.selectedMediaIdAndFieldIdBothProvided"));
     }
 
     User subject = userManager.getAuthenticatedUserInSession();
@@ -340,7 +341,8 @@ public class GalleryController extends BaseController {
       return new AjaxReturnObject<>(media.toRecordInfo(), null);
 
     } catch (IllegalStateException e) {
-      ErrorList errorList = ErrorList.of("Save action failed [" + e.getMessage() + "]");
+      ErrorList errorList =
+          ErrorList.of(getText("gallery.errors.saveFailed", new Object[] {e.getMessage()}));
       return new AjaxReturnObject<>(null, errorList);
     } catch (MediaContentMismatchException e) {
       return new AjaxReturnObject<>(null, ErrorList.of(getText(e.getErrorCode(), e.getArgs())));
@@ -474,7 +476,8 @@ public class GalleryController extends BaseController {
 
   private AjaxReturnObject<Boolean> generateTooManyItemsFailureMsg() {
     return new AjaxReturnObject<>(
-        null, ErrorList.of(getText("errors.too.manyitems", MAX_IDS_TO_PROCESS + "")));
+        null,
+        ErrorList.of(getText("errors.valueCount.tooMany", new Object[] {MAX_IDS_TO_PROCESS})));
   }
 
   private void doMove(User user, Folder target, Long id) {
@@ -652,7 +655,8 @@ public class GalleryController extends BaseController {
     User user = userManager.getAuthenticatedUserInSession();
     if (user == null || user.isAnonymousGuestAccount()) {
       // reaches the user through the error view, so the wording lives in the bundle
-      throw new AuthorizationException(getText("error.authorization.versionHistory.loginRequired"));
+      throw new AuthorizationException(
+          getText("errors.authorization.versionHistory.loginRequired"));
     }
     // throws AuthorizationException unless the item exists and is readable by this user
     EcatMediaFile mediaFile = baseRecordManager.retrieveMediaFile(user, mediaFileId);
@@ -725,7 +729,7 @@ public class GalleryController extends BaseController {
       if (revisions.length == 0 && ids.length == 1) {
         revisions = new Long[] {null};
       } else {
-        throw new IllegalArgumentException("Revisions and ids must be same length");
+        throw new IllegalArgumentException(getText("gallery.errors.revisionsIdsMismatch"));
       }
     }
 

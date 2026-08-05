@@ -43,8 +43,6 @@ public class ImageFieldExporter extends AbstractFieldExporter<EcatImage> {
     super(support);
   }
 
-  ImageFieldExporter() {}
-
   void createFieldArchiveObject(EcatImage item, String archiveLink, FieldExportContext context) {
     ArchivalField field = context.getArchiveField();
     ArchivalGalleryMetadata agm = archiveModelFactory.createGalleryMetadata(item);

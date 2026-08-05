@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 
 <head>
-  <title>MS Teams Tab config</title>
+  <title><spring:message code="connect.msteams.tabConfig.title"/></title>
 
   <link href="<rst:assetUrl value='/scripts/bower_components/Apprise-v2/apprise-v2.css'/>" rel="stylesheet" />
   <link href="<rst:assetUrl value='/styles/pages/connect/msteams/msTeamsThemes.css'/>" rel="stylesheet" />
@@ -35,5 +35,5 @@
 
 <hr id="footerHr"/>
 <div id="showServerUrl">
-  <span>Current RSpace Server: </span> <span id="currentServerUrl"></span>
+  <span><spring:message code="connect.msteams.tabConfig.currentServerLabel"/> </span> <span id="currentServerUrl"></span>
 </div>

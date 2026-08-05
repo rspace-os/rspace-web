@@ -17,7 +17,7 @@ public interface ExternalFileService {
 
   boolean exists(ExternalFileStoreWithCredentials exFS, FileProperty fileProperty);
 
-  public static final ExternalFileService NOOP =
+  ExternalFileService NOOP =
       new ExternalFileService() {
 
         @Override

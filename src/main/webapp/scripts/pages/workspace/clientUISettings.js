@@ -50,6 +50,6 @@ function updateClientUISetting(name, value) {
         }
     });
     jqxhr.fail(function() {
-        RS.ajaxFailed("Saving UI settings", false, jqxhr);
+        RS.ajaxFailed(RS.msg("legacyjs.workspace.clientUISettings.savingUiSettingsAction"), false, jqxhr);
     });
 }

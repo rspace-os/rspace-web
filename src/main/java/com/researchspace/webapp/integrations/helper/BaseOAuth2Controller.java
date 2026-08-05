@@ -54,7 +54,7 @@ public class BaseOAuth2Controller extends BaseController {
     String state = request.getParameter("state");
     String originalState = extractCachedOAuth2State();
     if (originalState != null && (state == null || !state.equals(originalState))) {
-      throw new IllegalStateException("The OAuth2 'state' parameter is missing or doesn't match.");
+      throw new IllegalStateException(getText("connect.authorizationError.stateMismatch"));
     }
   }
 

@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = {ValidChoiceFormFieldPostValidator.class})
 @Documented
 public @interface ValidChoiceFormFieldPost {
-  String message() default "Default options must be included in the possible options";
+  String message() default "{form.validation.choiceDefaultsInvalid}";
 
   Class<?>[] groups() default {};
 

@@ -51,7 +51,7 @@ public class StandaloneShiroFormAuthFilterExt extends BaseShiroFormAuthFilterExt
       }
       if (RequestUtil.isAjaxRequest(request)) {
         ((HttpServletResponse) response).setStatus(HttpStatus.FORBIDDEN.value());
-        String msg = messages.getMessage("ajax.unauthenticated.msg");
+        String msg = messages.getMessage("errors.ajax.unauthenticated.refreshRequired");
         response.getWriter().append(msg);
       } else if (!isResponseAlreadyRedirected(response)) {
         saveRequestAndRedirectToLogin(request, response);

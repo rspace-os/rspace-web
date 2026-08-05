@@ -17,6 +17,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
@@ -31,7 +32,7 @@ public class UserValidator implements Validator {
   /** value returned by field validation method if the field is valid */
   public static final String FIELD_OK = "OK";
 
-  private static final String ERRORS_MAXLENGTH_KEY = "errors.maxlength";
+  private static final String ERRORS_MAXLENGTH_KEY = "errors.maxLength";
   private static final String ERRORS_REQUIRED_KEY = "errors.required";
 
   private Pattern userNamePattern = null;
@@ -102,7 +103,7 @@ public class UserValidator implements Validator {
   private void validateSignupCode(String signupCode, Errors errors) {
     if (!isBlank(properties.getUserSignupCode())
         && !properties.getUserSignupCode().equals(signupCode)) {
-      addToErrorsAndGetMessage(errors, "signupCode", "errors.signupcode.failed", null);
+      addToErrorsAndGetMessage(errors, "signupCode", "errors.signupCode.failed", null);
     }
   }
 
@@ -114,19 +115,24 @@ public class UserValidator implements Validator {
 
     if (StringUtils.isBlank(username)) {
       return addToErrorsAndGetMessage(
-          errors, "username", ERRORS_REQUIRED_KEY, new Object[] {"Username"});
+          errors,
+          "username",
+          ERRORS_REQUIRED_KEY,
+          new Object[] {new DefaultMessageSourceResolvable("label.username")});
     }
     if (usernameTooLong(username)) {
       return addToErrorsAndGetMessage(
           errors,
           "username",
           ERRORS_MAXLENGTH_KEY,
-          new Object[] {"Username", User.MAX_UNAME_LENGTH});
+          new Object[] {
+            new DefaultMessageSourceResolvable("label.username"), User.MAX_UNAME_LENGTH
+          });
     }
     if (!usernameHasValidCharactersAndLength(username)) {
-      String invalidUsernameMsg = "errors.invalidusername";
+      String invalidUsernameMsg = "errors.invalidUsername.strict";
       if (shouldRelaxedUsernamePatternBeUsed()) {
-        invalidUsernameMsg = "errors.invalidusername.relaxed";
+        invalidUsernameMsg = "errors.invalidUsername.relaxed";
       }
       return addToErrorsAndGetMessage(errors, "username", invalidUsernameMsg, null);
     }
@@ -173,14 +179,20 @@ public class UserValidator implements Validator {
   private String validateEmail(String email, Errors errors) {
 
     if (StringUtils.isBlank(email)) {
-      return addToErrorsAndGetMessage(errors, "email", ERRORS_REQUIRED_KEY, new Object[] {"Email"});
+      return addToErrorsAndGetMessage(
+          errors,
+          "email",
+          ERRORS_REQUIRED_KEY,
+          new Object[] {new DefaultMessageSourceResolvable("label.email")});
     }
     if (emailTooLong(email)) {
       return addToErrorsAndGetMessage(
           errors,
           "email",
           ERRORS_MAXLENGTH_KEY,
-          new Object[] {"Email", User.DEFAULT_MAXFIELD_LEN + ""});
+          new Object[] {
+            new DefaultMessageSourceResolvable("label.email"), User.DEFAULT_MAXFIELD_LEN
+          });
     }
 
     return FIELD_OK;
@@ -231,27 +243,30 @@ public class UserValidator implements Validator {
 
     if (StringUtils.isBlank(password)) {
       return addToErrorsAndGetMessage(
-          errors, "password", ERRORS_REQUIRED_KEY, new Object[] {"Password"});
+          errors,
+          "password",
+          ERRORS_REQUIRED_KEY,
+          new Object[] {new DefaultMessageSourceResolvable("label.password")});
     }
     if (passwordTooLong(password)) {
       return addToErrorsAndGetMessage(
           errors,
           "password",
           ERRORS_MAXLENGTH_KEY,
-          new Object[] {"Password", User.MAX_PWD_LENGTH + ""});
+          new Object[] {new DefaultMessageSourceResolvable("label.password"), User.MAX_PWD_LENGTH});
     }
     if (!passwordHasValidCharacters(password)) {
       return addToErrorsAndGetMessage(
           errors,
           "password",
-          "errors.invalidpwd",
+          "errors.invalidPassword",
           new Object[] {User.MIN_PWD_LENGTH, User.MAX_PWD_LENGTH});
     }
     if (!passwordIsValid(password)) {
-      return addToErrorsAndGetMessage(errors, "password", "errors.password.insecurepassword", null);
+      return addToErrorsAndGetMessage(errors, "password", "errors.password.insecurePassword", null);
     }
     if (passwordEqualsUserName(password, username)) {
-      return addToErrorsAndGetMessage(errors, "password", "errors.password.notequalusername", null);
+      return addToErrorsAndGetMessage(errors, "password", "errors.password.notEqualUsername", null);
     }
     if (pwdDoesntMatchConfirmPassword(password, confirmPassword)) {
       return addToErrorsAndGetMessage(errors, "password", "errors.password.conflict", null);
@@ -293,7 +308,10 @@ public class UserValidator implements Validator {
   private String validateConfirmPassword(String confirmPwd, Errors errors) {
     if (StringUtils.isBlank(confirmPwd)) {
       return addToErrorsAndGetMessage(
-          errors, "confirmPassword", ERRORS_REQUIRED_KEY, new Object[] {"Confirm password"});
+          errors,
+          "confirmPassword",
+          ERRORS_REQUIRED_KEY,
+          new Object[] {new DefaultMessageSourceResolvable("label.confirmPassword")});
     }
     return FIELD_OK;
   }
@@ -305,7 +323,10 @@ public class UserValidator implements Validator {
   protected String validateFirstName(String firstName, Errors errors) {
     if (StringUtils.isBlank(firstName)) {
       return addToErrorsAndGetMessage(
-          errors, "firstName", ERRORS_REQUIRED_KEY, new Object[] {"First Name"});
+          errors,
+          "firstName",
+          ERRORS_REQUIRED_KEY,
+          new Object[] {new DefaultMessageSourceResolvable("label.firstName")});
     }
     return FIELD_OK;
   }
@@ -313,7 +334,10 @@ public class UserValidator implements Validator {
   protected String validateLastName(String lastName, Errors errors) {
     if (StringUtils.isBlank(lastName)) {
       return addToErrorsAndGetMessage(
-          errors, "lastName", ERRORS_REQUIRED_KEY, new Object[] {"Last Name"});
+          errors,
+          "lastName",
+          ERRORS_REQUIRED_KEY,
+          new Object[] {new DefaultMessageSourceResolvable("label.lastName")});
     }
     return FIELD_OK;
   }
@@ -322,15 +346,21 @@ public class UserValidator implements Validator {
     if (properties != null && properties.isCloud()) {
       if (StringUtils.isBlank(affiliation)) {
         return addToErrorsAndGetMessage(
-            errors, "affiliation", ERRORS_REQUIRED_KEY, new Object[] {"Affiliation"});
+            errors,
+            "affiliation",
+            ERRORS_REQUIRED_KEY,
+            new Object[] {new DefaultMessageSourceResolvable("label.affiliation")});
         // rspac-932
       } else if (!StringUtils.isBlank(affiliation)
           && affiliation.length() > Organisation.MAX_INDEXABLE_UTF_LENGTH) {
         return addToErrorsAndGetMessage(
             errors,
             "affiliation",
-            "errors.maxlength",
-            new String[] {"affiliation", "" + Organisation.MAX_INDEXABLE_UTF_LENGTH});
+            "errors.maxLength",
+            new Object[] {
+              new DefaultMessageSourceResolvable("label.affiliation"),
+              Organisation.MAX_INDEXABLE_UTF_LENGTH
+            });
       }
     }
     return FIELD_OK;

@@ -15,7 +15,10 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.units.QuantityInfo;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -25,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class ListOfMaterialsAuditTrailTest {
 
@@ -37,6 +41,12 @@ public class ListOfMaterialsAuditTrailTest {
 
   User anyUser = TestFactory.createAnyUser("any");
 
+  @Before
+  public void setUpMessages() {
+    ReflectionTestUtils.setField(
+        listener, "messages", new MessageSourceUtils(new JsonMessageSource()));
+  }
+
   @Test
   public void lomCreateEventIsLogged() {
     ListOfMaterials lom = createTestLomWithSampleAndSubSample();
@@ -47,7 +57,7 @@ public class ListOfMaterialsAuditTrailTest {
     listener.listOfMaterialsCreated(event);
     verify(auditTrail).notify(eventArgumentCaptor.capture());
     assertEquals(
-        "Added List of Materials LM123. Added inventory items: SA11, SS22.",
+        "Added List of Materials LM123. Added inventory items: SA11 and SS22.",
         eventArgumentCaptor.getValue().getDescription());
 
     Mockito.verifyNoMoreInteractions(auditTrail);
@@ -77,7 +87,7 @@ public class ListOfMaterialsAuditTrailTest {
     listener.listOfMaterialsCreated(event);
     verify(auditTrail).notify(eventArgumentCaptor.capture());
     assertEquals(
-        "Added List of Materials LM123. Added inventory items: SA11, IN42.",
+        "Added List of Materials LM123. Added inventory items: SA11 and IN42.",
         eventArgumentCaptor.getValue().getDescription());
 
     Mockito.verifyNoMoreInteractions(auditTrail);
@@ -148,7 +158,7 @@ public class ListOfMaterialsAuditTrailTest {
     listener.listOfMaterialsDeleted(event);
     verify(auditTrail).notify(eventArgumentCaptor.capture());
     assertEquals(
-        "Deleted List of Materials LM123. Removed inventory items: SA11, SS22.",
+        "Deleted List of Materials LM123. Removed inventory items: SA11 and SS22.",
         eventArgumentCaptor.getValue().getDescription());
 
     Mockito.verifyNoMoreInteractions(auditTrail);

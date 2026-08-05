@@ -19,7 +19,8 @@
   script) so provider-supplied error text cannot break out of the JS context.
 --%>
 <head>
-  <title><c:out value="${appName}" default="RSpace connection result"/></title>
+  <spring:message code="connect.connected.defaultTitle" var="connectedDefaultTitle"/>
+  <title><c:out value="${appName}" default="${connectedDefaultTitle}"/></title>
 </head>
 <body>
 <div id="rs-connection-result"
@@ -29,7 +30,7 @@
      data-token="<c:out value='${connectionToken}'/>"
      data-error="<c:out value='${connectionError}'/>"
      data-response="<c:out value='${connectionResponse}'/>"></div>
-<p>You may now close this window.</p>
+<p><spring:message code="connect.connected.closeWindowNotice"/></p>
 <script>
   window.addEventListener("load", () => {
     const result = document.getElementById("rs-connection-result");

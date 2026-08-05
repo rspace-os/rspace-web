@@ -47,28 +47,28 @@ $(document).ready(function() {
 		//Note - there can be multiple Invite Toasts on the screen, all with the same ID for accept and reject buttons
 		if ($(e.target.acceptLabGrpRequest).length != 0) {
 			$(e.target.acceptLabGrpRequest).prop("disabled", true);
-			$(e.target.acceptLabGrpRequest).prop("value", "Sending...");
+			$(e.target.acceptLabGrpRequest).prop("value", RS.msg("legacyjs.messaging.sendingEllipsis"));
 			$(e.target.parentElement.parentElement).find("#rejectLabGrpRequest").prop("disabled", true);
-			$(e.target.parentElement.parentElement).find("#rejectLabGrpRequest").prop("value", "Sending...");
+			$(e.target.parentElement.parentElement).find("#rejectLabGrpRequest").prop("value", RS.msg("legacyjs.messaging.sendingEllipsis"));
 		} else if ($(e.target.rejectLabGrpRequest?.parentElement?.parentElement).length != 0) {
 			$(e.target.rejectLabGrpRequest).prop("disabled", true);
-			$(e.target.rejectLabGrpRequest).prop("value", "Sending...");
+			$(e.target.rejectLabGrpRequest).prop("value", RS.msg("legacyjs.messaging.sendingEllipsis"));
 			$(e.target.parentElement.parentElement).find("#acceptLabGrpRequest").prop("disabled", true);
-			$(e.target.parentElement.parentElement).find("#acceptLabGrpRequest").prop("value", "Sending...");
+			$(e.target.parentElement.parentElement).find("#acceptLabGrpRequest").prop("value", RS.msg("legacyjs.messaging.sendingEllipsis"));
 		}
 		var postData = $(this).closest('form').serialize();
 		var jqxhr = $.post('/dashboard/ajax/messageStatus', postData,  function (resp) {
 			form$.closest('.toast-item').remove(); // remove the toast we've just clicked in
 			var action = form$.attr('data-action');
 			if (action === 'accept') {
-				RS.defaultConfirm("Request accepted");
+				RS.defaultConfirm(RS.msg("legacyjs.messaging.requestAccepted"));
 			} else if (action === 'reject') {
-				RS.defaultConfirm("Request declined");
+				RS.defaultConfirm(RS.msg("legacyjs.messaging.requestDeclined"));
 			}
 			_displayedSpecialMessagesCount--;
 		} );
 		jqxhr.fail(function (){
-			RS.ajaxFailed('Changing message status', false, jqxhr);
+			RS.ajaxFailed(RS.msg("legacyjs.messaging.actionChangingMessageStatus"), false, jqxhr);
 		});
 	});
 
@@ -90,7 +90,7 @@ $(document).ready(function() {
 				unescapeMessageContent();
 			});
 			jqxhr.fail(function() {
-				RS.ajaxFailed("Listing notifications", false, jxqr);
+				RS.ajaxFailed(RS.msg("legacyjs.messaging.actionListingNotifications"), false, jxqr);
 			});
 		}
 	});
@@ -111,7 +111,7 @@ $(document).ready(function() {
 				RS.webResultCache.put(url, xhr, 30 * 1000);
 				unescapeMessageContent();
 			}).fail(function() {
-				RS.ajaxFailed("Listing notifications", false, jxqr);
+				RS.ajaxFailed(RS.msg("legacyjs.messaging.actionListingNotifications"), false, jxqr);
 			});
 		}
 	});
@@ -128,7 +128,7 @@ $(document).ready(function() {
 			unescapeMessageContent();
       clearNotificationsBadge();
 		}).fail(function() {
-			RS.ajaxFailed("Marking notifications as read", false, jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.messaging.actionMarkingNotificationsRead"), false, jxqr);
 		});
 	});
 
@@ -156,7 +156,7 @@ $(document).ready(function() {
 		$.post(createURL('/dashboard/ajax/markAsRead'), postData, function (xhr) { });
 		tr$.hide("fade", function () {
 			if( $('tr.notificationRow').filter(":visible").size() == 0 ){
-				contentDiv$.html("There are no new notifications.");
+				contentDiv$.html(RS.msg("legacyjs.messaging.noNewNotifications"));
 			}
 			// if we've deleted some, pagination links will hold notifications that
 			// are now deleted.
@@ -173,7 +173,7 @@ $(document).ready(function() {
 	// set up pop-up dialog with notification listings, dialog defined in notifications_ajax.jsp
 	$('#notificationsDlg').dialog({
 		resizable: true,
-		title: "Notifications",
+		title: RS.msg("legacyjs.messaging.notificationsDialogTitle"),
 		modal: true,
 		autoOpen:false,
 		height:500,
@@ -186,12 +186,12 @@ $(document).ready(function() {
 				$('.notificationList').html(html);
 				unescapeMessageContent();
 			}).fail(function() {
-				RS.ajaxFailed("Listing notifications", false, jxqr);
+				RS.ajaxFailed(RS.msg("legacyjs.messaging.actionListingNotifications"), false, jxqr);
 			});
 		},
 		close: doPoll, // refresh count after possible modification
 		buttons: {
-			"Close": function() {
+			[RS.msg("legacyjs.common.close")]: function() {
 				$(this).dialog( "close" );
 			}
 		}
@@ -272,7 +272,7 @@ function _displaySpecialMessages() {
 		_displayedSpecialMessagesCount = messagesData.data.length;
 	});
 	requestsPromise.fail(function (){
-		RS.ajaxFailed('Getting special messages', false, requestsPromise);
+		RS.ajaxFailed(RS.msg("legacyjs.messaging.actionGettingSpecialMessages"), false, requestsPromise);
 	});
 }
 
@@ -285,15 +285,17 @@ function _displayCommunicationStateInNonWorkspace(pollResult) {
 	if (notificationCount > 0 || messageCount > 0 ) {
 		$('#messageToolbar').append("<div id='comsContainer'></div>");
 		if (notificationCount > 0){
+			var notificationsTooltip = RS.msg("legacyjs.messaging.notificationsTooltip");
 			$('#comsContainer').append("<div class='commAndCountContainer'><input type='image' src='/images/notificationReceived.png' " +
-				"href='#' id='openNotificationDlgLink' alt='Notifications' title='Notifications' class='messageButtonClass'></input>" +
+				"href='#' id='openNotificationDlgLink' alt='" + notificationsTooltip + "' title='" + notificationsTooltip + "' class='messageButtonClass'></input>" +
 				"<div class='commCountContainer'>" +
 				"<span class='commCount'>" + notificationCount +"</span>"+
 				"</div></div>");
 		}
 		if (messageCount > 0){
+			var messagesTooltip = RS.msg("legacyjs.messaging.messagesTooltip");
 			$('#comsContainer').append("<div class='commAndCountContainer'><input type='image' src='/images/messageReceived.png' " +
-				"href='#' id='openMessageDlgLink' alt='Messages' title='Messages' class='messageButtonClass'></input>" +
+				"href='#' id='openMessageDlgLink' alt='" + messagesTooltip + "' title='" + messagesTooltip + "' class='messageButtonClass'></input>" +
 				"<div class='commCountContainer'>" +
 				"<span class='commCount'>" + messageCount +"</span>"+
 				"</div></div>");

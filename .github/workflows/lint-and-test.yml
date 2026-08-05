@@ -198,9 +198,11 @@ jobs:
       # independent job from frontend-checks, so it runs in parallel and a
       # Spotless failure here fails the overall CI run without stopping the
       # frontend checks (and vice versa).
+      # -DspotlessStrict adds the CleanThat checks. Plain spotless:apply will not
+      # fix those; use `./mvnw -DspotlessStrict spotless:apply`.
       - name: Spotless check
         run: |
-          ./mvnw -q spotless:check \
+          ./mvnw -q spotless:check -DspotlessStrict \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 

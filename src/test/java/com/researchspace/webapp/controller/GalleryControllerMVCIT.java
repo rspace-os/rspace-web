@@ -158,7 +158,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     Exception unexistingException = unexistingResult.getResolvedException();
     assertNotNull(unexistingException);
-    assertEquals("access denied", unexistingException.getMessage());
+    assertEquals("Access denied", unexistingException.getMessage());
 
     // other user's images folder
     User other = createAndSaveUser(getRandomAlphabeticString("other"));
@@ -173,7 +173,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     Exception otherUsersFolderException = otherUsersFolderResult.getResolvedException();
     assertNotNull(otherUsersFolderException);
-    assertEquals("access denied", otherUsersFolderException.getMessage());
+    assertEquals("Access denied", otherUsersFolderException.getMessage());
 
     // folder outside othe Gallery
     Folder usersRootFolder = getRootFolderForUser(owner);
@@ -185,7 +185,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     Exception notInGalleryException = notInGalleryResult.getResolvedException();
     assertNotNull(notInGalleryException);
     assertEquals(
-        "provided folderId doesn't point to Gallery folder", notInGalleryException.getMessage());
+        "Provided folder id doesn't point to a Gallery folder", notInGalleryException.getMessage());
   }
 
   @Test

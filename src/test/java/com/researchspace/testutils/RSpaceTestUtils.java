@@ -13,8 +13,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Properties;
 import javax.imageio.ImageIO;
 import org.apache.commons.io.FileUtils;
@@ -25,8 +23,6 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.subject.Subject;
 import org.apache.velocity.app.VelocityEngine;
-import org.springframework.context.MessageSource;
-import org.springframework.context.support.StaticMessageSource;
 
 public class RSpaceTestUtils {
 
@@ -253,18 +249,6 @@ public class RSpaceTestUtils {
         "file.resource.loader.path", "src/main/resources/velocityTemplates/textFieldElements");
     vel.init(p);
     return vel;
-  }
-
-  /**
-   * Creates a test message source with supplied key-value messagecodes:messages
-   *
-   * @param messages
-   * @return
-   */
-  public static MessageSource messageSource(Map<String, String> messages) {
-    StaticMessageSource sms = new StaticMessageSource();
-    sms.addMessages(messages, Locale.getDefault());
-    return sms;
   }
 
   /**

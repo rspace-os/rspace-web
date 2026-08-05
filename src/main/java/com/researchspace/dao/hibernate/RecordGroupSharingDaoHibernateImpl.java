@@ -375,8 +375,8 @@ public class RecordGroupSharingDaoHibernateImpl
               + " concat('SD',rgs.shared.id) = :globalId or concat('NB',rgs.shared.id) ="
               + " :globalId)";
       if (!isEmpty(searchTerm)) {
-        qStr = qStr + where;
-        qStrCount = qStrCount + where;
+        qStr += where;
+        qStrCount += where;
       }
     }
 

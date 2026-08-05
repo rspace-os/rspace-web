@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.extmessages.base.ExternalMessageSender;
@@ -15,18 +17,20 @@ import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ExternalMessageHandler;
-import com.researchspace.service.ExternalMessageSenderFactory;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.testutils.TestFactory;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,11 +43,11 @@ public class ExternalMessageHandlerImplUnitTest {
   private static final Long CFG_SET_ID = 1L;
 
   @Mock private UserAppConfigManager userAppMgr;
-  @Mock private ExternalMessageSenderFactory messageSenderFactory;
   @Mock private IPermissionUtils permUtils;
   @Mock private MessageSourceUtils messageSource;
   @Mock private MessageOrRequestCreatorManager commMgr;
   @Mock private ExternalMessageSender sender;
+  @Spy private List<ExternalMessageSender> messageSenders = new ArrayList<>();
 
   @InjectMocks private ExternalMessageHandlerImpl handler;
 
@@ -52,20 +56,35 @@ public class ExternalMessageHandlerImplUnitTest {
   @BeforeEach
   public void setUp() {
     user = TestFactory.createAnyUser("any");
+    messageSenders.add(sender);
   }
 
   private AppConfigElementSet setUpConfigForApp(String appName) {
+    return setUpConfigForApp(appName, true);
+  }
+
+  private AppConfigElementSet setUpConfigForApp(String appName, boolean supported) {
     App app = new App(appName, appName, false);
     UserAppConfig appConfig = new UserAppConfig(user, app, true);
     AppConfigElementSet cfgSet = new AppConfigElementSet();
     cfgSet.setUserAppConfig(appConfig);
     when(userAppMgr.findByAppConfigElementSetId(CFG_SET_ID)).thenReturn(Optional.of(cfgSet));
-    when(messageSenderFactory.findMessageSenderForApp(app)).thenReturn(Optional.of(sender));
+    when(sender.supportsApp(app)).thenReturn(supported);
     return cfgSet;
   }
 
   private ServiceOperationResult<ResponseEntity<String>> sendMessage() {
     return handler.sendExternalMessage("a message", CFG_SET_ID, Collections.emptyList(), user);
+  }
+
+  @Test
+  public void noSupportingSenderReturnsFailedResult() {
+    setUpConfigForApp(App.APP_SLACK, false);
+
+    ServiceOperationResult<ResponseEntity<String>> result = sendMessage();
+
+    assertFalse(result.isSucceeded());
+    verify(sender, never()).sendMessage(any(), any(), any());
   }
 
   @Test

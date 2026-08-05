@@ -189,7 +189,9 @@ public class BaseApiInventoryController extends BaseApiController {
         return instrumentApiMgr.assertUserCanEditInventoryEntityField(recordOid.getDbId(), user);
       default:
         throw new IllegalArgumentException(
-            "unsupported global id type: " + recordOid.getIdString());
+            getMessage(
+                "errors.inventory.globalId.unsupportedType",
+                new Object[] {recordOid.getIdString()}));
     }
   }
 
@@ -212,7 +214,9 @@ public class BaseApiInventoryController extends BaseApiController {
         return instrumentApiMgr.assertUserCanReadInventoryEntityField(recordOid.getDbId(), user);
       default:
         throw new IllegalArgumentException(
-            "unsupported global id type: " + recordOid.getIdString());
+            getMessage(
+                "errors.inventory.globalId.unsupportedType",
+                new Object[] {recordOid.getIdString()}));
     }
   }
 }

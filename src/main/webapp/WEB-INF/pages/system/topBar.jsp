@@ -5,13 +5,13 @@
 		<ul class="nav navbar-nav">
 			<c:if test="${empty hasCommunity or hasCommunity eq 'true'}">
 				<li>
-					<a id="listUsersButton" href="/system"><spring:message code="system.usersList.button.label" /></a>
+					<a id="listUsersButton" href="/system"><spring:message code="system:usersPage.title" /></a>
 				</li>
 				<li>
 					<c:url value='/system/groups/list?resultsPerPage=20&orderBy=displayName&sortOrder=ASC' var="listgroups"/>
 				</li>
 				<li>
-					<a id="listGroupButton" href="${listgroups}"><spring:message code="system.groupsList.button.label" /></a>
+					<a id="listGroupButton" href="${listgroups}"><spring:message code="system:usersPage.groupMembership.panelLabel" /></a>
 				</li>
 				<li>
 					<a id="listCommunityButton" href="/community/admin/list"><spring:message code="system.communityList.button.label" /></a>

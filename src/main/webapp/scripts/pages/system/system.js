@@ -1,7 +1,7 @@
 function setUpRunAsUserDlg() {
 	$(document).ready(function () {
 		$('#runAsUserDlg').dialog({
-			title: "Operate as user",
+			title: RS.msg("legacyjs.system.system.runAsUserDialogTitle"),
 			resizable: true,
 			autoOpen: false,
 			height: 450,
@@ -17,15 +17,15 @@ function setUpRunAsUserDlg() {
 				});
 				jxqr.fail(function () {
 					RS.unblockPage();
-					RS.ajaxFailed("Could not initialise admin role creation..", false, jxqr);
+					RS.ajaxFailed(RS.msg("legacyjs.system.system.runAsInitFailedAction"), false, jxqr);
 				});
 			},
 			buttons:
 			{
-				Cancel: function () {
+				[RS.msg("legacyjs.system.common.cancel")]: function () {
 					$("#runAsUserDlg").dialog('close');
 				},
-				Submit: function () {
+				[RS.msg("legacyjs.system.common.submit")]: function () {
 					// Remove the inventory JWT token
 					window.sessionStorage.removeItem("id_token");
 
@@ -58,7 +58,7 @@ $(document).ready(function () {
 		var dlgId = "#" + $(this).data("dlgid");
 		$.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function (response) {
 			if (response.data) {
-				apprise("Please set your verification password in <a href=\"/userform\" target=\"_blank\">My RSpace</a> before performing this action.");
+				apprise(RS.msg("legacyjs.system.system.verificationPasswordRequired"));
 			} else {
 				$(dlgId).dialog('open');
 			}

@@ -1,12 +1,13 @@
 package com.researchspace.api.v1.controller;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v1.model.ApiField;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.inventory.DataCiteRelationType;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -33,19 +34,17 @@ abstract class InstrumentTemplateFieldValidator implements Validator {
     }
     if (reservedFieldNames.contains(fieldName.toLowerCase())) {
       String reservedFieldNamesString =
-          reservedFieldNames.stream().sorted().collect(Collectors.joining("/"));
+          ListFormatUtils.formatList(
+              reservedFieldNames.stream().sorted().toList(), ListFormatter.Type.OR);
       errors.rejectValue(
           "name",
-          "errors.inventory.template.reserved.field.name",
+          "errors.inventory.template.reservedFieldName",
           new Object[] {fieldName, reservedFieldNamesString},
-          "reserved field name");
+          null);
     }
     if (StringUtils.length(fieldName) > 50) {
       errors.rejectValue(
-          "name",
-          "errors.inventory.template.field.name.too.long",
-          new Object[] {fieldName, 50},
-          "template field name too long");
+          "name", "errors.inventory.template.fieldNameTooLong", new Object[] {fieldName, 50}, null);
     }
   }
 
@@ -58,9 +57,9 @@ abstract class InstrumentTemplateFieldValidator implements Validator {
       } catch (IllegalArgumentException e) {
         errors.rejectValue(
             "content",
-            "errors.inventory.template.invalid.field.content",
+            "errors.inventory.template.invalidFieldContent",
             new Object[] {e.getMessage()},
-            e.getMessage());
+            null);
       }
     }
 
@@ -76,9 +75,9 @@ abstract class InstrumentTemplateFieldValidator implements Validator {
         if (!DataCiteRelationType.isValid(relationType)) {
           errors.rejectValue(
               "allowedRelationTypes",
-              "errors.inventory.template.invalid.relation.type",
+              "errors.inventory.template.invalidRelationType",
               new Object[] {relationType},
-              "invalid relation type");
+              null);
         }
       }
     }

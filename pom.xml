@@ -13,7 +13,7 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
   </parent>
 
   <repositories>
@@ -345,6 +345,8 @@
           <version>${spotless.version}</version>
           <configuration>
               <java>
+                  <toggleOffOn/>
+                  <removeUnusedImports/>
                   <googleJavaFormat>
                       <version>1.28.0</version>
                       <style>GOOGLE</style>
@@ -381,7 +383,6 @@
           <include>META-INF/**</include>
           <include>sqlUpdates/**</include>
           <include>scripts/**</include>
-          <include>bundles/**</include>
           <include>velocityTemplates/**</include>
           <include>archiveResources/**</include>
           <include>StartUpData/**</include>
@@ -419,13 +420,6 @@
         <includes>
           <include>**/*.properties</include>
         </includes>
-      </resource>
-      <resource>
-        <directory>src/main/resources</directory>
-        <includes>
-          <include>ApplicationResources*.properties</include>
-        </includes>
-        <filtering>false</filtering>
       </resource>
       <resource>
         <directory>target/resources</directory>
@@ -723,6 +717,23 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <!-- Container (Tomcat 10.1 / Jetty ee10) provides jakarta.websocket at runtime. Only the
+           test JVM lacks it, so ProdConfigWiringTest can't boot the prod context (Spring's
+           stompWebSocketHandlerMapping needs jakarta.websocket.Endpoint). test scope, not bundled.
+           EE 10 split the API into two jars: core jakarta.websocket.* (client-api) and
+           jakarta.websocket.server.* (websocket-api). Spring's STOMP mapping needs both. -->
+      <groupId>jakarta.websocket</groupId>
+      <artifactId>jakarta.websocket-client-api</artifactId>
+      <version>2.1.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.websocket</groupId>
+      <artifactId>jakarta.websocket-api</artifactId>
+      <version>2.1.1</version>
+      <scope>test</scope>
+    </dependency>    
     <dependency>
       <groupId>org.glassfish.web</groupId>
       <artifactId>jakarta.servlet.jsp.jstl</artifactId>
@@ -2185,7 +2196,7 @@
             <version>2.0.0</version>
             <configuration>
               <nodeVersion>v24.15.0</nodeVersion>
-              <pnpmVersion>11.10.0</pnpmVersion>
+              <pnpmVersion>11.18.0</pnpmVersion>
               <workingDirectory>.</workingDirectory>
             </configuration>
             <executions>
@@ -2597,7 +2608,6 @@
               <include>META-INF/**</include>
               <include>sqlUpdates/**</include>
               <include>scripts/**</include>
-              <include>bundles/**</include>
               <include>velocityTemplates/**</include>
               <include>StartUpData/**</include>
               <include>inventory/**</include>
@@ -2676,6 +2686,41 @@
       <properties>
         <context.path>/</context.path>
       </properties>
+    </profile>
+
+    <!-- Not in the base config on purpose: spotless:apply is bound to the compile phase, so
+         CleanThat there would rewrite source on every local build. Fix a violation with
+         `mvn -DspotlessStrict spotless:apply`. -->
+    <profile>
+      <id>spotlessStrict</id>
+      <activation>
+        <property>
+          <name>spotlessStrict</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <version>${spotless.version}</version>
+            <configuration>
+              <java>
+                <cleanthat/>
+              </java>
+            </configuration>
+            <executions>
+              <execution>
+                <id>spotless-strict-check</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <phase>validate</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
 
     <!-- Dummy profile setting up argLine property that is referred by surefire plugin -->

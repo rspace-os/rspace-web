@@ -46,7 +46,7 @@ public class InventoryImportPostFullValidatorTest extends SpringTransactionalTes
     Errors e = resetErrorsAndValidate(fullSettings);
     assertEquals(1, e.getErrorCount());
     assertEquals("containerSettings.fieldMappings", e.getFieldError().getField());
-    assertEquals("errors.inventory.import.fieldMappings.missingName", e.getFieldError().getCode());
+    assertEquals("errors.inventory.import.fieldMappingsMissingName", e.getFieldError().getCode());
 
     // sanity check with valid request
     Map<String, String> fieldMappings = new HashMap<>();
@@ -70,7 +70,7 @@ public class InventoryImportPostFullValidatorTest extends SpringTransactionalTes
     Errors e = resetErrorsAndValidate(fullSettings);
     assertEquals(1, e.getErrorCount());
     assertEquals("sampleSettings.fieldMappings", e.getFieldError().getField());
-    assertEquals("errors.inventory.import.fieldMappings.missingName", e.getFieldError().getCode());
+    assertEquals("errors.inventory.import.fieldMappingsMissingName", e.getFieldError().getCode());
 
     HashMap<String, String> fieldMappings = new HashMap<>();
     fieldMappings.put("csvColumn1", "description");
@@ -78,7 +78,7 @@ public class InventoryImportPostFullValidatorTest extends SpringTransactionalTes
     e = resetErrorsAndValidate(fullSettings);
     assertEquals(1, e.getErrorCount());
     assertEquals("sampleSettings.fieldMappings", e.getFieldError().getField());
-    assertEquals("errors.inventory.import.fieldMappings.missingName", e.getFieldError().getCode());
+    assertEquals("errors.inventory.import.fieldMappingsMissingName", e.getFieldError().getCode());
 
     fieldMappings.put("csvColumn2", "name");
     importSettings.getSampleSettings().setFieldMappings(fieldMappings);
@@ -133,7 +133,7 @@ public class InventoryImportPostFullValidatorTest extends SpringTransactionalTes
     Errors e = resetErrorsAndValidate(fullSettings);
     assertEquals(1, e.getErrorCount());
     assertEquals("instrumentSettings.templateInfo", e.getFieldError().getField());
-    assertEquals("errors.inventory.import.templateInfo.empty", e.getFieldError().getCode());
+    assertEquals("errors.inventory.import.templateInfoEmpty", e.getFieldError().getCode());
 
     // both templateId AND templateInfo → ambiguity error
     instrSettings.setTemplateId(42L);
@@ -142,7 +142,7 @@ public class InventoryImportPostFullValidatorTest extends SpringTransactionalTes
     assertEquals(1, e.getErrorCount());
     assertEquals("instrumentSettings.templateId", e.getFieldError().getField());
     assertEquals(
-        "errors.inventory.import.instrument.templateId.and.templateInfo.conflict",
+        "errors.inventory.import.instrumentTemplateIdAndTemplateInfoConflict",
         e.getFieldError().getCode());
 
     // only templateId → valid
