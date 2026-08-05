@@ -45,6 +45,7 @@ public class WebConfig extends WebMvcConfigurationSupport {
   @Autowired ApiV2RequestThrottlingInterceptor apiV2RequestThrottle;
   @Autowired ApiV2AuthenticationInterceptor apiV2Authentication;
   @Autowired ApiV2ControllerAdvice apiV2ControllerAdvice;
+  @Autowired ObjectMapper objectMapper;
 
   @Autowired WopiAuthorisationInterceptor wopiAuthorisation;
   @Autowired WopiProofKeyValidationInterceptor wopiProofKeyValidation;
@@ -213,7 +214,7 @@ public class WebConfig extends WebMvcConfigurationSupport {
    */
   @Override
   protected void extendHandlerExceptionResolvers(List<HandlerExceptionResolver> resolvers) {
-    resolvers.add(0, new ApiV2PreHandlerProblemResolver(apiV2ControllerAdvice, new ObjectMapper()));
+    resolvers.add(0, new ApiV2PreHandlerProblemResolver(apiV2ControllerAdvice, objectMapper));
   }
 
   @Override
