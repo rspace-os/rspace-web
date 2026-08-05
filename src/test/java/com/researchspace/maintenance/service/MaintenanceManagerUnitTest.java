@@ -1,6 +1,7 @@
 package com.researchspace.maintenance.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,6 +33,7 @@ import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.context.ApplicationEventPublisher;
 
 class MaintenanceManagerUnitTest {
@@ -40,11 +42,19 @@ class MaintenanceManagerUnitTest {
   private final User user = mock(User.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   private final MessageSourceUtils messages = mock(MessageSourceUtils.class);
-  private final MaintenanceManager manager = new MaintenanceManager(dao, events, messages);
+  private final MaintenanceManager manager = new MaintenanceManagerImpl(dao, events, messages);
 
   @BeforeEach
   void setUp() {
     when(user.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
+  }
+
+  @Test
+  void exposesTheServiceContractThroughAJdkProxy() {
+    ProxyFactory proxyFactory = new ProxyFactory(manager);
+    proxyFactory.setProxyTargetClass(false);
+
+    assertInstanceOf(MaintenanceManager.class, proxyFactory.getProxy());
   }
 
   @Test
