@@ -311,11 +311,9 @@ function PolygonCard({
             />
           </FormLabel>
           <FormHelperText component="div" sx={{ mx: 0, mt: 1 }}>
-            {t(
-              recordTypeName === "instrument"
-                ? "fields.identifiers.polygonCard.polygonDescriptionPidinst"
-                : "fields.identifiers.polygonCard.polygonDescription",
-            )}
+            {recordTypeName === "instrument"
+              ? t("fields.identifiers.polygonCard.polygonDescriptionPidinst")
+              : t("fields.identifiers.polygonCard.polygonDescription")}
           </FormHelperText>
           <Box sx={{ my: 1 }}>
             <PolygonStateAlert
