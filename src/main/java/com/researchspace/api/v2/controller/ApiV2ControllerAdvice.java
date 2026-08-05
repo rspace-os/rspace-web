@@ -2,10 +2,7 @@ package com.researchspace.api.v2.controller;
 
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
-import com.researchspace.booking.service.BookingConfigurationTargetConflictException;
-import com.researchspace.booking.service.InvalidBookableTargetException;
 import com.researchspace.core.util.throttling.ThrottlingException;
-import com.researchspace.maintenance.service.MaintenanceOperationException;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
@@ -42,17 +39,17 @@ import org.springframework.web.server.ResponseStatusException;
 /**
  * Renders v2 controller errors as RFC 9457 {@link ApiV2Problem} bodies.
  *
- * <p>{@code @Order(HIGHEST_PRECEDENCE)} makes this advice's {@code Exception.class} handler run
- * before Spring's {@code DefaultHandlerExceptionResolver}, so an exception that Spring would
- * otherwise map to a specific status reaches the catch-all here instead. Rather than enumerate
- * Spring's whole exception list, {@link #handleUnexpected} honours {@link ErrorResponse}, the
- * Spring 6 interface every standard MVC exception implements to carry its own status and headers.
- * That covers types with no handler of their own -- {@code NoResourceFoundException} and {@code
- * NoHandlerFoundException} (404), {@code AsyncRequestTimeoutException} (503) -- and any type a
- * future Spring version adds, which would otherwise silently become a 500.
+ * <p>This advice runs immediately after collection-specific advice. Its {@code Exception.class}
+ * handler therefore handles every remaining v2 exception before Spring's {@code
+ * DefaultHandlerExceptionResolver}. Rather than enumerate Spring's whole exception list, {@link
+ * #handleUnexpected} honours {@link ErrorResponse}, the Spring 6 interface every standard MVC
+ * exception implements to carry its own status and headers. That covers types with no handler of
+ * their own -- {@code NoResourceFoundException} and {@code NoHandlerFoundException} (404), {@code
+ * AsyncRequestTimeoutException} (503) -- and any type a future Spring version adds, which would
+ * otherwise silently become a 500.
  */
 @ControllerAdvice(basePackageClasses = ApiV2ControllerAdvice.class)
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 @Slf4j
 public class ApiV2ControllerAdvice {
 
@@ -163,22 +160,6 @@ public class ApiV2ControllerAdvice {
           case COMPLEXITY -> "errors.api.v2.query.complexity";
         };
     return problem(HttpStatus.BAD_REQUEST, key);
-  }
-
-  @ExceptionHandler(MaintenanceOperationException.class)
-  public ResponseEntity<ApiV2Problem> handleMaintenanceOperation(
-      MaintenanceOperationException ignored) {
-    return problem(HttpStatus.BAD_REQUEST, "errors.api.v2.maintenance.window");
-  }
-
-  @ExceptionHandler(InvalidBookableTargetException.class)
-  public ResponseEntity<ApiV2Problem> handleInvalidBookableTarget() {
-    return problem(HttpStatus.BAD_REQUEST, "errors.api.v2.bookingConfiguration.target.invalid");
-  }
-
-  @ExceptionHandler(BookingConfigurationTargetConflictException.class)
-  public ResponseEntity<ApiV2Problem> handleBookingConfigurationTargetConflict() {
-    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingConfiguration.target.conflict");
   }
 
   @ExceptionHandler(CollectionMutationException.class)
