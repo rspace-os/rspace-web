@@ -302,9 +302,11 @@ public class MediaManagerTest extends SpringTransactionalTest {
     assertEquals(doc.getId(), updatedDoc.getId());
     assertEquals(2, updatedDoc.getVersion());
 
-    // extension check should be case-insensitive
+    // extension check should be case-insensitive; the first update closed its stream
+    InputStream secondDocxInputStream =
+        RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("PowerPasteTesting_RSpace.docx");
     EcatMediaFile updatedAgainDoc =
-        mediaMgr.updateMediaFile(doc.getId(), docxInputStream, "NEW_NAME.DOCX", user, null);
+        mediaMgr.updateMediaFile(doc.getId(), secondDocxInputStream, "NEW_NAME.DOCX", user, null);
     assertEquals(doc.getId(), updatedAgainDoc.getId());
     assertEquals(3, updatedAgainDoc.getVersion());
   }

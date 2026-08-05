@@ -5543,6 +5543,9 @@ export default interface Resources {
       "termsOptionsMismatch": "The number of terms ({0}) should equal the number of options ({1})",
       "textQueryWildcardStartDisallowed": "Search term [{0}] should not begin with a wildcard (* or ?).",
       "unknownSearchOption": "Unknown search option {0}",
+      "upload": {
+        "imageContentMismatch": "File {0} was rejected: its file extension claims {1} but its content is {2}."
+      },
       "username": "An invalid username was specified",
       "valueCount": {
         "tooMany": "Only {0} values can be handled at once, please choose fewer items."
