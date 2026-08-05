@@ -1,7 +1,6 @@
 package com.researchspace.service.impl;
 
 import com.researchspace.dao.FeatureFlagDao;
-import com.researchspace.featureflags.ApiV2FeatureFlagResource;
 import com.researchspace.featureflags.FeatureFlagBooleanParser;
 import com.researchspace.featureflags.FeatureFlagDefinition;
 import com.researchspace.featureflags.FeatureFlagManifestLoader;
@@ -13,26 +12,29 @@ import com.researchspace.featureflags.FeatureFlagResource;
 import com.researchspace.featureflags.FeatureFlagSource;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
-import com.researchspace.model.collection.InMemoryCollectionQuery;
 import com.researchspace.model.collection.ParsedDocument;
-import com.researchspace.model.collection.ResourcePage;
-import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service("featureFlagManager")
 @Slf4j
 public class FeatureFlagManagerImpl implements FeatureFlagManager {
+
+  private static final Set<String> DEVELOPMENT_PROFILES = Set.of("dev", "run", "prod-test");
 
   private final FeatureFlagDao featureFlagDao;
   private final FeatureFlagManifestLoader manifestLoader;
@@ -41,11 +43,9 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
   private final ApplicationEventPublisher events;
   private final String devModeEnabled;
   private final String reactDevMode;
+  private final String activeProfiles;
 
   private volatile RuntimeFeatureFlags runtime;
-
-  private final InMemoryCollectionQuery<FeatureFlagResource> resourceQuery =
-      new InMemoryCollectionQuery<>(ApiV2FeatureFlagResource.DESCRIPTION);
 
   public FeatureFlagManagerImpl(
       FeatureFlagDao featureFlagDao,
@@ -54,7 +54,8 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
       UserManager userManager,
       ApplicationEventPublisher events,
       @Value("${dev.mode.enabled:}") String devModeEnabled,
-      @Value("${reactDevMode:false}") String reactDevMode) {
+      @Value("${reactDevMode:false}") String reactDevMode,
+      @Value("${spring.profiles.active:}") String activeProfiles) {
     this.featureFlagDao = featureFlagDao;
     this.manifestLoader = manifestLoader;
     this.propertiesLoader = propertiesLoader;
@@ -62,6 +63,7 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     this.events = events;
     this.devModeEnabled = devModeEnabled;
     this.reactDevMode = reactDevMode;
+    this.activeProfiles = activeProfiles;
   }
 
   @Override
@@ -87,38 +89,38 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
   }
 
   @Override
-  public ResourcePage<FeatureFlagResource> getResources(ResourceRequest request, User actor) {
-    return resourceQuery.page(resources(actor), request);
-  }
-
-  @Override
-  public long countResources(ResourceRequest request, User actor) {
-    return resourceQuery.count(resources(actor), request);
+  public List<FeatureFlagResource> getResources(User actor) {
+    RuntimeFeatureFlags snapshot = requireRuntime();
+    Map<String, Boolean> overrides = getUserOverrides(actor);
+    boolean canOverride = canOverrideFeatureFlags(actor);
+    return snapshot.definitions().values().stream()
+        .map(definition -> snapshot.resolveResource(definition, overrides, canOverride))
+        .toList();
   }
 
   @Override
   public Optional<FeatureFlagResource> getResource(String flagName, User actor) {
-    ensureReady();
-    FeatureFlagDefinition definition = runtime.definitions().get(flagName);
+    RuntimeFeatureFlags snapshot = requireRuntime();
+    FeatureFlagDefinition definition = snapshot.definitions().get(flagName);
     if (definition == null) {
       return Optional.empty();
     }
     Map<String, Boolean> overrides = getUserOverrides(actor);
     return Optional.of(
-        runtime.resolveResource(definition, overrides, canOverrideFeatureFlags(actor)));
+        snapshot.resolveResource(definition, overrides, canOverrideFeatureFlags(actor)));
   }
 
   @Override
   public synchronized Optional<FeatureFlagResource> updateResource(
       String flagName, ParsedDocument patch, User actor) {
-    ensureReady();
-    if (!runtime.definitions().containsKey(flagName)) {
+    RuntimeFeatureFlags snapshot = requireRuntime();
+    if (!snapshot.definitions().containsKey(flagName)) {
       return Optional.empty();
     }
     if (patch.operation() != WriteOperation.UPDATE) {
       throw new IllegalArgumentException("Feature flag change requires an update document");
     }
-    assertWritable(flagName);
+    assertWritable(flagName, snapshot);
     boolean changesBaseline = patch.values().containsKey("baselineValue");
     boolean changesOverride = patch.values().containsKey("overrideValue");
     if (changesBaseline && !canChangeFeatureFlagBaselines(actor)) {
@@ -129,8 +131,14 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     }
 
     boolean changed = false;
+    RuntimeFeatureFlags responseSnapshot = snapshot;
     if (changesBaseline) {
-      changed = setBaselineValue(flagName, (boolean) patch.values().get("baselineValue"));
+      Optional<RuntimeFeatureFlags> updatedSnapshot =
+          setBaselineValue(snapshot, flagName, (boolean) patch.values().get("baselineValue"));
+      if (updatedSnapshot.isPresent()) {
+        responseSnapshot = updatedSnapshot.orElseThrow();
+        changed = true;
+      }
     }
     if (changesOverride) {
       Boolean value = (Boolean) patch.values().get("overrideValue");
@@ -144,7 +152,7 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
         changed = true;
       }
     }
-    FeatureFlagResource updated = getResource(flagName, actor).orElseThrow();
+    FeatureFlagResource updated = resolveResource(flagName, actor, responseSnapshot).orElseThrow();
     if (changed) {
       events.publishEvent(new FeatureFlagResourceChangedEvent(actor, updated));
     }
@@ -163,8 +171,7 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
 
   @Override
   public boolean isFeatureFlagEnabled(String flagName, User user) {
-    ensureReady();
-    RuntimeFeatureFlags snapshot = runtime;
+    RuntimeFeatureFlags snapshot = requireRuntime();
     FeatureFlagDefinition definition = snapshot.definitions().get(flagName);
     if (definition == null) {
       throw new FeatureFlagNotFoundException(flagName);
@@ -174,19 +181,17 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     return snapshot.resolveResource(definition, userOverrides, false).isValue();
   }
 
-  private boolean setBaselineValue(String flagName, boolean value) {
-    RuntimeFeatureFlags snapshot = runtime;
+  private Optional<RuntimeFeatureFlags> setBaselineValue(
+      RuntimeFeatureFlags snapshot, String flagName, boolean value) {
     FeatureFlagDefinition definition = snapshot.definitions().get(flagName);
     boolean currentBaseline = snapshot.baselineValue(definition);
     if (currentBaseline == value) {
-      return false;
+      return Optional.empty();
     }
     featureFlagDao.upsertBaseline(flagName, value);
-    Map<String, Boolean> updatedBaselines = new LinkedHashMap<>(snapshot.baselineValues());
-    updatedBaselines.put(flagName, value);
-    runtime =
-        new RuntimeFeatureFlags(snapshot.definitions(), updatedBaselines, snapshot.forcedValues());
-    return true;
+    RuntimeFeatureFlags updated = snapshot.withBaseline(flagName, value);
+    updateRuntimeAfterCommit(flagName, value);
+    return Optional.of(updated);
   }
 
   @Override
@@ -210,33 +215,66 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
         : featureFlagDao.getOverridesForUser(user.getId());
   }
 
-  private void ensureReady() {
-    if (runtime == null) {
-      reconcileOnStartup();
+  private RuntimeFeatureFlags requireRuntime() {
+    RuntimeFeatureFlags snapshot = runtime;
+    if (snapshot == null) {
+      throw new IllegalStateException("Feature flags have not been reconciled");
     }
+    return snapshot;
   }
 
-  private void assertWritable(String flagName) {
-    ensureReady();
-    if (runtime.forcedValues().containsKey(flagName)) {
+  private void assertWritable(String flagName, RuntimeFeatureFlags snapshot) {
+    if (snapshot.forcedValues().containsKey(flagName)) {
       throw new FeatureFlagReadOnlyException(flagName);
     }
   }
 
-  private List<FeatureFlagResource> resources(User actor) {
-    ensureReady();
-    RuntimeFeatureFlags snapshot = runtime;
-    Map<String, Boolean> overrides = getUserOverrides(actor);
-    boolean canOverride = canOverrideFeatureFlags(actor);
-    return snapshot.definitions().values().stream()
-        .map(definition -> snapshot.resolveResource(definition, overrides, canOverride))
-        .toList();
+  private Optional<FeatureFlagResource> resolveResource(
+      String flagName, User actor, RuntimeFeatureFlags snapshot) {
+    FeatureFlagDefinition definition = snapshot.definitions().get(flagName);
+    if (definition == null) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        snapshot.resolveResource(
+            definition, getUserOverrides(actor), canOverrideFeatureFlags(actor)));
+  }
+
+  private void updateRuntimeAfterCommit(String flagName, boolean value) {
+    Runnable update =
+        () -> {
+          synchronized (this) {
+            runtime = requireRuntime().withBaseline(flagName, value);
+          }
+        };
+    if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+      update.run();
+      return;
+    }
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void afterCommit() {
+            update.run();
+          }
+        });
   }
 
   private boolean isDevModeEnabled() {
-    return devModeEnabled == null || devModeEnabled.isBlank()
-        ? Boolean.parseBoolean(reactDevMode)
-        : FeatureFlagBooleanParser.parse(devModeEnabled, "dev.mode.enabled");
+    List<String> profiles =
+        Arrays.stream(activeProfiles.split(","))
+            .map(String::trim)
+            .filter(profile -> !profile.isEmpty())
+            .toList();
+    boolean developmentSystem =
+        !profiles.contains("prod")
+            && (Boolean.parseBoolean(reactDevMode)
+                || profiles.stream().anyMatch(DEVELOPMENT_PROFILES::contains));
+    boolean enabled =
+        devModeEnabled == null || devModeEnabled.isBlank()
+            ? developmentSystem
+            : FeatureFlagBooleanParser.parse(devModeEnabled, "dev.mode.enabled");
+    return enabled && developmentSystem;
   }
 
   private boolean isRealSysadmin(User user) {
@@ -306,6 +344,12 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
 
     private boolean isForced(String flagName) {
       return forcedValues.containsKey(flagName);
+    }
+
+    private RuntimeFeatureFlags withBaseline(String flagName, boolean value) {
+      Map<String, Boolean> updatedBaselines = new LinkedHashMap<>(baselineValues);
+      updatedBaselines.put(flagName, value);
+      return new RuntimeFeatureFlags(definitions, updatedBaselines, forcedValues);
     }
   }
 }

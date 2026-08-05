@@ -6,6 +6,7 @@ import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.InMemoryCollectionQuery;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
@@ -24,6 +25,8 @@ public class FeatureFlagResourceOperations
     implements ResourceOperations<FeatureFlagResource, String> {
 
   private final FeatureFlagManager manager;
+  private final InMemoryCollectionQuery<FeatureFlagResource> resourceQuery =
+      new InMemoryCollectionQuery<>(ApiV2FeatureFlagResource.DESCRIPTION);
 
   public FeatureFlagResourceOperations(FeatureFlagManager manager) {
     this.manager = manager;
@@ -68,22 +71,22 @@ public class FeatureFlagResourceOperations
 
   @Override
   public ResourcePage<FeatureFlagResource> find(ResourceRequest request) {
-    return manager.getResources(request, null);
+    return find(request, null);
   }
 
   @Override
   public ResourcePage<FeatureFlagResource> find(ResourceRequest request, User actor) {
-    return manager.getResources(request, actor);
+    return resourceQuery.page(manager.getResources(actor), request);
   }
 
   @Override
   public long count(ResourceRequest request) {
-    return manager.countResources(request, null);
+    return count(request, null);
   }
 
   @Override
   public long count(ResourceRequest request, User actor) {
-    return manager.countResources(request, actor);
+    return resourceQuery.count(manager.getResources(actor), request);
   }
 
   @Override

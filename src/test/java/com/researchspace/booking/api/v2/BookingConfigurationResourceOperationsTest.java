@@ -23,10 +23,10 @@ import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
-import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -130,8 +130,9 @@ class BookingConfigurationResourceOperationsTest {
     assertEquals(List.of(), operations.find(request, actor).resources());
     assertEquals(0, operations.count(request, actor));
     assertEquals(Optional.empty(), operations.findById(42L, actor));
-    assertThrows(NotFoundException.class, () -> operations.create(document, actor));
-    assertEquals(List.of(), operations.createMany(List.of(document), actor));
+    assertThrows(AuthorizationException.class, () -> operations.create(document, actor));
+    assertThrows(
+        AuthorizationException.class, () -> operations.createMany(List.of(document), actor));
     assertEquals(Optional.empty(), operations.update(42L, document, actor));
     assertEquals(List.of(), operations.updateMany(request, document, actor));
     assertEquals(Optional.empty(), operations.delete(42L, actor));

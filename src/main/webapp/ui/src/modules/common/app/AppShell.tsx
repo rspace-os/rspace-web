@@ -68,7 +68,11 @@ export default function AppShell() {
       <React.Suspense fallback={<p>{t("loading")}</p>}>
         <Outlet />
       </React.Suspense>
-      {appBarConfig !== false && appBarConfig.authenticated !== false && <FeatureFlagDevtoolsMount />}
+      {appBarConfig !== false && appBarConfig.authenticated !== false && (
+        <React.Suspense fallback={null}>
+          <FeatureFlagDevtoolsMount />
+        </React.Suspense>
+      )}
     </>
   );
 }

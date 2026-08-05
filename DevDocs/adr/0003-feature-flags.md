@@ -41,8 +41,9 @@ reconciliation. Code must not evaluate flags before reconciliation finishes.
 Retired names may be reused later, but not in adjacent releases.
 
 Baseline values are held in memory after startup. Writes update the database
-and the current node's snapshot. There is no database polling or multi-node
-propagation; a future multi-node deployment will need shared state.
+inside a transaction and update the current node's snapshot only after commit.
+There is no database polling or multi-node propagation; a future multi-node
+deployment will need shared state.
 
 ## API and access
 
@@ -84,6 +85,11 @@ Use one `PATCH` request to change one feature flag:
 The route is `PATCH /api/v2/feature-flags/{flagName}`. Unknown flags return
 `404`. Missing permission returns `403`. A properties-file value returns `409`.
 The API does not expose create, bulk update, or delete operations.
+
+`bookingEnabled` gates the whole Booking feature: its navigation and pages and
+the REST API v2 `booking-configurations` resource. While disabled, collection
+reads are empty, individual reads are absent, and single or bulk create
+attempts return `403` without calling the booking service.
 
 Each successful change publishes an audit event after the transaction commits.
 The stable audit identifier is `feature-flags:{flagName}`. The standard REST API

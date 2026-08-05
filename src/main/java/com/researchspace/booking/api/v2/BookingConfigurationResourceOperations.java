@@ -26,11 +26,11 @@ import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.FeatureFlagManager;
-import jakarta.ws.rs.NotFoundException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -123,7 +123,7 @@ public final class BookingConfigurationResourceOperations
   @Override
   public BookingConfiguration create(ParsedDocument document, User actor) {
     if (!enabled(actor)) {
-      throw new NotFoundException();
+      throw new AuthorizationException();
     }
     return manager.createConfiguration(create(document), actor);
   }
@@ -131,7 +131,7 @@ public final class BookingConfigurationResourceOperations
   @Override
   public List<BookingConfiguration> createMany(List<ParsedDocument> documents, User actor) {
     if (!enabled(actor)) {
-      return List.of();
+      throw new AuthorizationException();
     }
     return manager.createConfigurations(documents.stream().map(this::create).toList(), actor);
   }

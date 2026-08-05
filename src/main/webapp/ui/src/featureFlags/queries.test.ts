@@ -85,6 +85,28 @@ describe("feature flag queries", () => {
     await expect(getFeatureFlags("token")).rejects.toThrow("500 Server Error");
   });
 
+  test("disables a flag when its document is invalid", async () => {
+    server.use(
+      http.get("/api/v2/feature-flags", () =>
+        HttpResponse.json({
+          ...validFlagResponse,
+          docs: [{ name: FEATURE_FLAGS.bookingEnabled, value: true }],
+        }),
+      ),
+    );
+
+    await expect(getFeatureFlags("token")).resolves.toEqual({
+      flags: {
+        [FEATURE_FLAGS.bookingEnabled]: {
+          value: false,
+          baselineValue: false,
+          source: "DEFAULT",
+          canOverride: false,
+        },
+      },
+    });
+  });
+
   test("rejects pagination that cannot reach the next page", async () => {
     server.use(
       http.get("/api/v2/feature-flags", () =>
