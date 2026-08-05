@@ -3,17 +3,30 @@ package com.researchspace.featureflags;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
 import com.researchspace.model.audittrail.AuditTrailProperty;
+import lombok.Getter;
+import lombok.Setter;
 
 /** Caller-specific REST v2 state for one feature flag. */
 @AuditTrailData
 public final class FeatureFlagResource {
 
-  private final String name;
+  @Getter private final String name;
+
+  @Getter(onMethod_ = @AuditTrailProperty(name = "value"))
   private final boolean value;
+
+  @Getter(onMethod_ = @AuditTrailProperty(name = "baselineValue"))
+  @Setter
   private boolean baselineValue;
+
+  @Getter(onMethod_ = @AuditTrailProperty(name = "overrideValue"))
+  @Setter
   private Boolean overrideValue;
+
+  @Getter(onMethod_ = @AuditTrailProperty(name = "source"))
   private final String source;
-  private final boolean canOverride;
+
+  @Getter private final boolean canOverride;
 
   public FeatureFlagResource(
       String name,
@@ -30,44 +43,8 @@ public final class FeatureFlagResource {
     this.canOverride = canOverride;
   }
 
-  public String getName() {
-    return name;
-  }
-
   @AuditTrailIdentifier
   public String getAuditTrailIdentifier() {
     return "feature-flags:" + name;
-  }
-
-  @AuditTrailProperty(name = "value")
-  public boolean isValue() {
-    return value;
-  }
-
-  @AuditTrailProperty(name = "baselineValue")
-  public boolean isBaselineValue() {
-    return baselineValue;
-  }
-
-  public void setBaselineValue(boolean baselineValue) {
-    this.baselineValue = baselineValue;
-  }
-
-  @AuditTrailProperty(name = "overrideValue")
-  public Boolean getOverrideValue() {
-    return overrideValue;
-  }
-
-  public void setOverrideValue(Boolean overrideValue) {
-    this.overrideValue = overrideValue;
-  }
-
-  @AuditTrailProperty(name = "source")
-  public String getSource() {
-    return source;
-  }
-
-  public boolean isCanOverride() {
-    return canOverride;
   }
 }
