@@ -33,7 +33,8 @@ public class PostTextSearchResultFilterer {
     Stream<BaseRecord> filterStream =
         initialHits.stream()
             .filter(this::filterInvisibleRecords)
-            .filter(this::filterDeletedRecords);
+            .filter(this::filterDeletedRecords)
+            .filter(this::filterTemporaryDocs);
     if (luceneSrchConfig.isNotebookFilter())
       filterStream = filterStream.filter(this::filterResultsByNotebook);
     if (luceneSrchConfig.areRecordsSelected())
@@ -66,6 +67,15 @@ public class PostTextSearchResultFilterer {
   private boolean filterDeletedRecords(BaseRecord toFilter) {
     return !(toFilter.isDeleted()
         || toFilter.isDeletedForUser(luceneSrchConfig.getAuthenticatedUser()));
+  }
+
+  /*
+   * Removing temporary autosave copies of documents from the result. They are normally kept out
+   * of the Lucene index by TemporaryDocRoutingBinder, but may survive in indexes built before
+   * that binder existed.
+   */
+  private boolean filterTemporaryDocs(BaseRecord toFilter) {
+    return !(toFilter.isStructuredDocument() && toFilter.asStrucDoc().isTemporaryDoc());
   }
 
   private boolean filterByRecordFilter(BaseRecord hit) {
