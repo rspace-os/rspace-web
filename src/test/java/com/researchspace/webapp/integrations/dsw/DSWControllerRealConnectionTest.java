@@ -94,7 +94,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
 
     ReflectionTestUtils.setField(
         dswController, "messages", new MessageSourceUtils(new JsonMessageSource()));
-    
+
     u = new User();
     u.setId(1701l);
     u.setUsername("Test user");
