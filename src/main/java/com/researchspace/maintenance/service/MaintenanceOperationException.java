@@ -1,5 +1,7 @@
 package com.researchspace.maintenance.service;
 
+import lombok.Getter;
+
 /** Domain failure while applying a maintenance collection mutation. */
 public class MaintenanceOperationException extends RuntimeException {
 
@@ -7,14 +9,10 @@ public class MaintenanceOperationException extends RuntimeException {
     INVALID_WINDOW
   }
 
-  private final Reason reason;
+  @Getter private final Reason reason;
 
   public MaintenanceOperationException(Reason reason) {
     super(reason.name());
     this.reason = reason;
-  }
-
-  public Reason getReason() {
-    return reason;
   }
 }

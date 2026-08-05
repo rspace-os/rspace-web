@@ -34,6 +34,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -180,9 +181,9 @@ public final class ApiV2AuditLog {
 
     private Date dateFrom;
     private Date dateTo;
-    private final Set<AuditDomain> domains;
-    private final Set<AuditAction> actions;
-    private final String oid;
+    @Getter private final Set<AuditDomain> domains;
+    @Getter private final Set<AuditAction> actions;
+    @Getter private final String oid;
 
     private AuditSearchConfig(
         Date dateFrom, Date dateTo, AuditDomain domain, Set<AuditAction> actions, String oid) {
@@ -211,21 +212,6 @@ public final class ApiV2AuditLog {
     @Override
     public void setDateTo(Date dateTo) {
       this.dateTo = copy(dateTo);
-    }
-
-    @Override
-    public Set<AuditDomain> getDomains() {
-      return domains;
-    }
-
-    @Override
-    public Set<AuditAction> getActions() {
-      return actions;
-    }
-
-    @Override
-    public String getOid() {
-      return oid;
     }
 
     @Override

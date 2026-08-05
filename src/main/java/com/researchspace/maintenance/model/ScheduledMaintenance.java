@@ -15,6 +15,8 @@ import jakarta.validation.constraints.Size;
 import java.util.Calendar;
 import java.util.Date;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -35,10 +37,21 @@ public class ScheduledMaintenance {
   public static final ScheduledMaintenance NULL =
       new ScheduledMaintenance(new Date(0), new Date(1));
 
+  @Getter(onMethod_ = {@Id, @GeneratedValue(strategy = GenerationType.IDENTITY)})
+  @Setter
   private Long id;
+
   private Long startDate;
   private Long endDate;
   private Long stopUserLoginDate;
+
+  @Getter(
+      onMethod_ =
+          @Size(
+              min = 0,
+              max = User.DEFAULT_MAXFIELD_LEN,
+              message = "{message} {errors.string.max}"))
+  @Setter
   private String message;
 
   protected ScheduledMaintenance() {}
@@ -53,16 +66,6 @@ public class ScheduledMaintenance {
     setStartDate(startDate);
     setEndDate(endDate);
     setDefaultStopUserLoginDate();
-  }
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  public Long getId() {
-    return id;
-  }
-
-  public void setId(Long id) {
-    this.id = id;
   }
 
   @Column(nullable = false)
@@ -122,15 +125,6 @@ public class ScheduledMaintenance {
 
   public void setStopUserLoginDate(Date stopUserLoginDate) {
     this.stopUserLoginDate = stopUserLoginDate == null ? null : stopUserLoginDate.getTime();
-  }
-
-  @Size(min = 0, max = User.DEFAULT_MAXFIELD_LEN, message = "{message} {errors.string.max}")
-  public String getMessage() {
-    return message;
-  }
-
-  public void setMessage(String message) {
-    this.message = message;
   }
 
   @Transient

@@ -1,5 +1,7 @@
 package com.researchspace.service;
 
+import lombok.Getter;
+
 /** Failure of a collection-wide mutation guard. */
 public class CollectionMutationException extends RuntimeException {
 
@@ -8,14 +10,10 @@ public class CollectionMutationException extends RuntimeException {
     BULK_LIMIT
   }
 
-  private final Reason reason;
+  @Getter private final Reason reason;
 
   public CollectionMutationException(Reason reason) {
     super(reason.name());
     this.reason = reason;
-  }
-
-  public Reason getReason() {
-    return reason;
   }
 }

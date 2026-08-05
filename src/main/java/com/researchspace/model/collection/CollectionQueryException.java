@@ -1,5 +1,7 @@
 package com.researchspace.model.collection;
 
+import lombok.Getter;
+
 /** Safe request-query failure that can cross the controller, manager, and persistence layers. */
 public class CollectionQueryException extends RuntimeException {
 
@@ -11,14 +13,10 @@ public class CollectionQueryException extends RuntimeException {
     COMPLEXITY
   }
 
-  private final Reason reason;
+  @Getter private final Reason reason;
 
   public CollectionQueryException(Reason reason) {
     super(reason.name());
     this.reason = reason;
-  }
-
-  public Reason getReason() {
-    return reason;
   }
 }

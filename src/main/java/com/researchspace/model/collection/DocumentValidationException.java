@@ -1,8 +1,10 @@
 package com.researchspace.model.collection;
 
 import java.util.List;
+import lombok.Getter;
 
 /** Structured field failures found while parsing a create or update document. */
+@Getter
 public final class DocumentValidationException extends RuntimeException {
 
   public enum Reason {
@@ -37,13 +39,5 @@ public final class DocumentValidationException extends RuntimeException {
     if (this.violations.isEmpty()) {
       throw new IllegalArgumentException("Document validation requires at least one violation");
     }
-  }
-
-  public String getErrorKey() {
-    return errorKey;
-  }
-
-  public List<Violation> getViolations() {
-    return violations;
   }
 }
