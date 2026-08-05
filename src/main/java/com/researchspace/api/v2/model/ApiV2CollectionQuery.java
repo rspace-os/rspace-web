@@ -30,7 +30,7 @@ public class ApiV2CollectionQuery extends ApiV2PaginationCriteria {
 
   private String sort;
 
-  @Min(value = 0, message = "{errors.api.v2.depth.range}")
-  @Max(value = MAX_DEPTH, message = "{errors.api.v2.depth.range}")
+  @Min(value = 0, message = "{errors.api.v2.depth.min}")
+  @Max(value = MAX_DEPTH, message = "{errors.api.v2.depth.max}")
   private int depth;
 }

@@ -512,11 +512,15 @@ class ApiV2CrudControllerTest {
     source.addMessage(
         "errors.api.pagination.page.min", Locale.ENGLISH, "Page must be 1 or greater.");
     source.addMessage(
-        "errors.api.pagination.limit.range", Locale.ENGLISH, "Limit must be between 1 and {0}.");
+        "errors.api.pagination.limit.min", Locale.ENGLISH, "Limit must be 1 or greater.");
+    source.addMessage(
+        "errors.api.pagination.limit.max", Locale.ENGLISH, "Limit must not exceed {value}.");
     source.addMessage(
         "errors.api.v2.invalidRequest", Locale.ENGLISH, "The request contains an invalid value.");
     source.addMessage(
         "errors.api.v2.depth.range", Locale.ENGLISH, "Depth must be between 0 and {0}.");
+    source.addMessage("errors.api.v2.depth.min", Locale.ENGLISH, "Depth must be 0 or greater.");
+    source.addMessage("errors.api.v2.depth.max", Locale.ENGLISH, "Depth must not exceed {value}.");
     source.addMessage(
         "errors.api.v2.select.mode",
         Locale.ENGLISH,

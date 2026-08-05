@@ -10,8 +10,8 @@ public class ApiV2PaginationCriteria {
 
   public static final int MAX_LIMIT = CollectionQueryLimits.MAX_PAGE_SIZE;
 
-  @Min(value = 1, message = "{errors.api.pagination.limit.range}")
-  @Max(value = MAX_LIMIT, message = "{errors.api.pagination.limit.range}")
+  @Min(value = 1, message = "{errors.api.pagination.limit.min}")
+  @Max(value = MAX_LIMIT, message = "{errors.api.pagination.limit.max}")
   private int limit = 20;
 
   @Min(value = 1, message = "{errors.api.pagination.page.min}")

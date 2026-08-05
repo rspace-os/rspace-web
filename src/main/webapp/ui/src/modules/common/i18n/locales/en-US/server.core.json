@@ -25,7 +25,8 @@
     "api": {
       "pagination": {
         "limit": {
-          "range": "Limit must be between 1 and {0}."
+          "max": "Limit must not exceed {value}.",
+          "min": "Limit must be 1 or greater."
         },
         "page": {
           "min": "Page must be 1 or greater."
@@ -52,6 +53,8 @@
           "limit": "The bulk operation exceeds the allowed batch size for this operation."
         },
         "depth": {
+          "max": "Depth must not exceed {value}.",
+          "min": "Depth must be 0 or greater.",
           "range": "Depth must be between 0 and {0}."
         },
         "forbidden": "You do not have permission to perform this action.",
