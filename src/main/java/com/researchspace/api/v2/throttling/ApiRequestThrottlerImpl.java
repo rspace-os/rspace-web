@@ -12,6 +12,7 @@ import com.researchspace.core.util.throttling.ThrottleLimitDefinition;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
 import java.util.Map;
 import java.util.Optional;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import org.joda.time.DateTime;
@@ -39,11 +40,7 @@ public class ApiRequestThrottlerImpl extends AbstractTokenBucketThrottler
 
   public static final int DEFAULT_MIN_INTERVAL_MILLIS = 100;
 
-  private int minIntervalMillis = DEFAULT_MIN_INTERVAL_MILLIS;
-
-  public int getMinIntervalMillis() {
-    return minIntervalMillis;
-  }
+  @Getter private int minIntervalMillis = DEFAULT_MIN_INTERVAL_MILLIS;
 
   /**
    * Sets min rate interval. A min rate interval of 0 means there is no absolute restriction on rate

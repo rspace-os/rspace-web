@@ -26,6 +26,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import lombok.Getter;
 
 /**
  * Immutable description of the fields and default ordering shared by a collection's adapters.
@@ -76,7 +77,7 @@ public final class CollectionDescription<T> {
     private final Function<T, V> reader;
     private final BiConsumer<T, V> writer;
     private final Set<WriteOperation> writeOperations;
-    private final boolean requiredOnCreate;
+    @Getter private final boolean requiredOnCreate;
     private final boolean nullable;
     private final Supplier<? extends V> defaultValue;
     private final AccessFunction readAccess;
@@ -332,10 +333,6 @@ public final class CollectionDescription<T> {
       return writeOperations.contains(operation);
     }
 
-    public boolean isRequiredOnCreate() {
-      return requiredOnCreate;
-    }
-
     public boolean nullable() {
       return nullable;
     }
@@ -452,7 +449,7 @@ public final class CollectionDescription<T> {
     private final SplitReferenceBinding<T, ?, ?> binding;
     private final Set<WriteOperation> writeOperations;
     private final Map<WriteOperation, Set<RelationshipInputForm>> inputForms;
-    private final boolean requiredOnCreate;
+    @Getter private final boolean requiredOnCreate;
     private final boolean nullable;
     private final AccessFunction readAccess;
     private final AccessFunction writeAccess;
@@ -771,10 +768,6 @@ public final class CollectionDescription<T> {
 
     public Set<RelationshipInputForm> inputForms(WriteOperation operation) {
       return inputForms.getOrDefault(operation, Set.of());
-    }
-
-    public boolean isRequiredOnCreate() {
-      return requiredOnCreate;
     }
 
     public boolean nullable() {

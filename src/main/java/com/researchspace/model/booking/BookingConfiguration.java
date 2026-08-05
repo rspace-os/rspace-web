@@ -24,6 +24,8 @@ import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.Date;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
 
@@ -37,58 +39,59 @@ public class BookingConfiguration implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;
 
+  @Getter(onMethod_ = {@Id, @GeneratedValue(strategy = GenerationType.IDENTITY)})
+  @Setter
   private Long id;
+
+  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "enabled")})
+  @Setter
   private boolean enabled;
+
+  @Getter(
+      onMethod_ = {
+        @Column(nullable = false),
+        @NotBlank(message = "{errors.api.v2.bookingConfiguration.timeZone.required}"),
+        @AuditTrailProperty(name = "timezone")
+      })
+  @Setter
   private String timeZone;
+
   private Date createdAt;
   private Date updatedAt;
+
+  @Getter(
+      onMethod_ = {
+        @ManyToOne(fetch = FetchType.LAZY),
+        @JoinColumn(name = "createdBy_id", updatable = false),
+        @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+      })
+  @Setter
   private User createdBy;
+
+  @Getter(
+      onMethod_ = {
+        @ManyToOne(fetch = FetchType.LAZY),
+        @JoinColumn(name = "updatedBy_id"),
+        @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+      })
+  @Setter
   private User updatedBy;
 
   @Embedded
   @Access(AccessType.FIELD)
   private BookableTargetReference target;
 
+  @Getter(onMethod_ = {@Version, @Column(nullable = false)})
+  @Setter
   private long configurationVersion;
 
   public BookingConfiguration() {}
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  public Long getId() {
-    return id;
-  }
-
-  public void setId(Long id) {
-    this.id = id;
-  }
 
   /** Returns the resource-specific identifier stored in the searchable audit log. */
   @Transient
   @AuditTrailIdentifier
   public String getAuditTrailIdentifier() {
     return id == null ? null : "booking-configurations:" + id;
-  }
-
-  @Column(nullable = false)
-  @AuditTrailProperty(name = "enabled")
-  public boolean isEnabled() {
-    return enabled;
-  }
-
-  public void setEnabled(boolean enabled) {
-    this.enabled = enabled;
-  }
-
-  @Column(nullable = false)
-  @NotBlank(message = "{errors.api.v2.bookingConfiguration.timeZone.required}")
-  @AuditTrailProperty(name = "timezone")
-  public String getTimeZone() {
-    return timeZone;
-  }
-
-  public void setTimeZone(String timeZone) {
-    this.timeZone = timeZone;
   }
 
   @Column(nullable = true, updatable = false)
@@ -109,28 +112,6 @@ public class BookingConfiguration implements Serializable {
     this.updatedAt = updatedAt == null ? null : new Date(updatedAt.getTime());
   }
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "createdBy_id", updatable = false)
-  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-  public User getCreatedBy() {
-    return createdBy;
-  }
-
-  public void setCreatedBy(User createdBy) {
-    this.createdBy = createdBy;
-  }
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "updatedBy_id")
-  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-  public User getUpdatedBy() {
-    return updatedBy;
-  }
-
-  public void setUpdatedBy(User updatedBy) {
-    this.updatedBy = updatedBy;
-  }
-
   /** Returns the complete type and ID of the configured bookable entity. */
   @AuditTrailProperty(name = "target")
   public BookableTargetReference getTarget() {
@@ -140,16 +121,6 @@ public class BookingConfiguration implements Serializable {
   /** Replaces the complete bookable target without exposing partial identity setters. */
   public void replaceTarget(BookableTargetReference target) {
     this.target = target;
-  }
-
-  @Version
-  @Column(nullable = false)
-  public long getConfigurationVersion() {
-    return configurationVersion;
-  }
-
-  public void setConfigurationVersion(long configurationVersion) {
-    this.configurationVersion = configurationVersion;
   }
 
   @Transient
