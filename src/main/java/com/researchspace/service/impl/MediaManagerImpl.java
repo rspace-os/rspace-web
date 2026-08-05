@@ -411,9 +411,12 @@ public class MediaManagerImpl implements MediaManager {
           File.createTempFile("tmp_file_upload_" + originalFileName, "." + extension, secureTmpDir);
       try (FileOutputStream fos = new FileOutputStream(tempFile); ) {
         IOUtils.copy(inputStream, fos);
-        FileProperty fp =
-            fileStore.createAndSaveFileProperty(
-                mediaFolderType, user, originalFileName, new FileInputStream(tempFile));
+        FileProperty fp;
+        try (FileInputStream tempFileStream = new FileInputStream(tempFile)) {
+          fp =
+              fileStore.createAndSaveFileProperty(
+                  mediaFolderType, user, originalFileName, tempFileStream);
+        }
         media =
             mediaFactory.generateEcatImage(
                 user, fp, tempFile, extension, originalFileName, override);
@@ -540,9 +543,10 @@ public class MediaManagerImpl implements MediaManager {
       try (FileOutputStream fos = new FileOutputStream(tempFile); ) {
         IOUtils.copy(inputStream, fos);
 
-        newFileProperty =
-            fileStore.createAndSaveFileProperty(
-                fileType, user, updatedFileName, new FileInputStream(tempFile));
+        try (FileInputStream tempFileStream = new FileInputStream(tempFile)) {
+          newFileProperty =
+              fileStore.createAndSaveFileProperty(fileType, user, updatedFileName, tempFileStream);
+        }
         EcatImage mediaAsImage = (EcatImage) media;
         mediaFactory.updateEcatImageWithUploadedFileDetails(
             mediaAsImage, tempFile, newFileProperty, media.getExtension());
