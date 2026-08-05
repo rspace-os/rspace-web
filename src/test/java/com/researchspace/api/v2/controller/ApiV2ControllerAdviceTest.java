@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v2.model.ApiV2PaginationCriteria;
-import com.researchspace.maintenance.service.MaintenanceOperationException;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
@@ -22,6 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.support.StaticMessageSource;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -56,16 +57,6 @@ class ApiV2ControllerAdviceTest {
     source.addMessage("errors.api.v2.notFound", Locale.getDefault(), "Not found detail");
     source.addMessage("errors.api.v2.query.field", Locale.getDefault(), "Invalid field detail");
     source.addMessage("errors.api.v2.select.mode", Locale.getDefault(), "Invalid select detail");
-    source.addMessage(
-        "errors.api.v2.maintenance.window", Locale.getDefault(), "Invalid window detail");
-    source.addMessage(
-        "errors.api.v2.bookingConfiguration.target.invalid",
-        Locale.getDefault(),
-        "Invalid target detail");
-    source.addMessage(
-        "errors.api.v2.bookingConfiguration.target.conflict",
-        Locale.getDefault(),
-        "Target conflict detail");
     source.addMessage("errors.api.v2.bulk.limit", Locale.getDefault(), "Bulk limit detail");
     source.addMessage("errors.api.v2.tooManyRequests", Locale.getDefault(), "Throttle detail");
     source.addMessage("errors.api.v2.unexpected", Locale.getDefault(), "Unexpected detail");
@@ -166,31 +157,11 @@ class ApiV2ControllerAdviceTest {
         "errors.api.v2.query.field",
         "Invalid field detail");
     assertProblem(
-        advice.handleMaintenanceOperation(
-            new MaintenanceOperationException(MaintenanceOperationException.Reason.INVALID_WINDOW)),
-        HttpStatus.BAD_REQUEST,
-        "errors.api.v2.maintenance.window",
-        "Invalid window detail");
-    assertProblem(
         advice.handleCollectionMutation(
             new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT)),
         HttpStatus.UNPROCESSABLE_ENTITY,
         "errors.api.v2.bulk.limit",
         "Bulk limit detail");
-  }
-
-  @Test
-  void mapsBookingTargetErrorsToTheirPublicStatuses() {
-    assertProblem(
-        advice.handleInvalidBookableTarget(),
-        HttpStatus.BAD_REQUEST,
-        "errors.api.v2.bookingConfiguration.target.invalid",
-        "Invalid target detail");
-    assertProblem(
-        advice.handleBookingConfigurationTargetConflict(),
-        HttpStatus.CONFLICT,
-        "errors.api.v2.bookingConfiguration.target.conflict",
-        "Target conflict detail");
   }
 
   @Test
@@ -311,6 +282,9 @@ class ApiV2ControllerAdviceTest {
             ApiV2ControllerAdvice.class.getAnnotation(ControllerAdvice.class));
 
     assertTrue(adviceBean.isApplicableToBeanType(UsersV2Controller.class));
+    assertEquals(
+        Ordered.HIGHEST_PRECEDENCE + 1,
+        ApiV2ControllerAdvice.class.getAnnotation(Order.class).value());
   }
 
   private static void assertProblem(
