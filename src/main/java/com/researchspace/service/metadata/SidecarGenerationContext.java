@@ -21,7 +21,7 @@ public class SidecarGenerationContext {
 
   String bucketName;
 
-  /** Absolute prefix within the bucket; single level, no trailing slash. */
+  /** Absolute prefix within the bucket; no leading or trailing slash. */
   String folderPath;
 
   List<SidecarFileEntry> files;

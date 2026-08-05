@@ -473,12 +473,14 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
     return Result.all(...selection.asSet().map((f) => f.canDelete)).map(() => null);
   });
   const renameAllowed = computed((): Result<null> => {
+    if (selection.isEmpty) return nothingSelected;
     return selection
       .asSet()
       .only.toResult(() => new Error(t("actionsMenu.validation.onlyOneRename")))
       .flatMap((file) => file.canRename);
   });
   const versionHistoryAllowed = computed((): Result<null> => {
+    if (selection.isEmpty) return nothingSelected;
     return selection
       .asSet()
       .only.toResult(() => new Error("Only one item's version history may be viewed at once."))
