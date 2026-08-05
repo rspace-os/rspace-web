@@ -2,7 +2,7 @@
   "flags": [
     {
       "name": "bookingEnabled",
-      "description": "Shows the Booking action in the application bar.",
+      "description": "Enables the Booking user interface and REST API v2 booking-configuration resource.",
       "owner": "RSpace",
       "expires": "2027-06-30",
       "default": false

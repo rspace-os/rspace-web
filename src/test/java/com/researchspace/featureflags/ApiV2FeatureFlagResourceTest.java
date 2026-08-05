@@ -10,7 +10,6 @@ import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.CollectionDescription.FieldSchema;
 import com.researchspace.model.collection.ParsedDocument;
-import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
 import java.util.List;
@@ -64,14 +63,13 @@ class ApiV2FeatureFlagResourceTest {
 
   @Test
   void passesTheCallerAndValidatedPatchToTheManager() {
-    ResourceRequest request = Mockito.mock(ResourceRequest.class);
+    ResourceRequest request = ResourceRequest.unpaged(null);
     User actor = Mockito.mock(User.class);
     ParsedDocument patch = Mockito.mock(ParsedDocument.class);
     FeatureFlagResource state =
         new FeatureFlagResource(
             "bookingEnabled", true, false, true, FeatureFlagSource.USER_OVERRIDE, true);
-    Mockito.when(manager.getResources(request, actor))
-        .thenReturn(new ResourcePage<>(List.of(state), 1));
+    Mockito.when(manager.getResources(actor)).thenReturn(List.of(state));
     Mockito.when(manager.updateResource("bookingEnabled", patch, actor))
         .thenReturn(Optional.of(state));
 
@@ -79,7 +77,7 @@ class ApiV2FeatureFlagResourceTest {
     assertEquals(state, operations.update("bookingEnabled", patch, actor).orElseThrow());
 
     ArgumentCaptor<User> caller = ArgumentCaptor.forClass(User.class);
-    Mockito.verify(manager).getResources(Mockito.eq(request), caller.capture());
+    Mockito.verify(manager).getResources(caller.capture());
     assertEquals(actor, caller.getValue());
   }
 }

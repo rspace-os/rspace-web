@@ -36,6 +36,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @ExtendWith(MockitoExtension.class)
 class FeatureFlagManagerImplTest {
@@ -57,6 +59,9 @@ class FeatureFlagManagerImplTest {
 
   @AfterEach
   void tearDown() {
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      TransactionSynchronizationManager.clearSynchronization();
+    }
     ThreadContext.unbindSubject();
   }
 
@@ -109,6 +114,20 @@ class FeatureFlagManagerImplTest {
   }
 
   @Test
+  void devModeCannotBeEnabledOnAProductionSystem() {
+    featureFlagManager = createManager("true", "false", "prod");
+
+    assertFalse(featureFlagManager.canUseDevtools(user("user", 8L)));
+  }
+
+  @Test
+  void reactDevModeCannotEnableDevtoolsOnAProductionSystem() {
+    featureFlagManager = createManager("", "true", "prod");
+
+    assertFalse(featureFlagManager.canUseDevtools(user("user", 18L)));
+  }
+
+  @Test
   void nonSysadminCannotChangeBaselineEvenInDevMode() {
     featureFlagManager = createManager("true", "false");
     initialiseRuntime(Map.of(FeatureFlags.BOOKING_ENABLED, false), false);
@@ -138,6 +157,46 @@ class FeatureFlagManagerImplTest {
 
     verify(featureFlagDao).upsertBaseline(FeatureFlags.BOOKING_ENABLED, true);
     assertTrue(resource(null).isBaselineValue());
+  }
+
+  @Test
+  void baselineSnapshotChangesOnlyAfterTransactionCommit() {
+    initialiseRuntime(Map.of(FeatureFlags.BOOKING_ENABLED, false), false);
+    User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
+    sysadmin.setId(16L);
+    TransactionSynchronizationManager.initSynchronization();
+
+    FeatureFlagResource response =
+        featureFlagManager
+            .updateResource(FeatureFlags.BOOKING_ENABLED, baseline(true), sysadmin)
+            .orElseThrow();
+
+    assertTrue(response.isBaselineValue());
+    assertFalse(resource(null).isBaselineValue());
+    TransactionSynchronizationManager.getSynchronizations().stream()
+        .forEach(TransactionSynchronization::afterCommit);
+    assertTrue(resource(null).isBaselineValue());
+  }
+
+  @Test
+  void rolledBackBaselineDoesNotChangeRuntimeSnapshot() {
+    initialiseRuntime(Map.of(FeatureFlags.BOOKING_ENABLED, false), false);
+    User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
+    sysadmin.setId(17L);
+    TransactionSynchronizationManager.initSynchronization();
+
+    featureFlagManager.updateResource(FeatureFlags.BOOKING_ENABLED, baseline(true), sysadmin);
+    TransactionSynchronizationManager.clearSynchronization();
+
+    assertFalse(resource(null).isBaselineValue());
+  }
+
+  @Test
+  void evaluationBeforeStartupReconciliationFailsWithoutInitialisingState() {
+    assertThrows(
+        IllegalStateException.class,
+        () -> featureFlagManager.isFeatureFlagEnabled(FeatureFlags.BOOKING_ENABLED, (User) null));
+    verify(manifestLoader, never()).loadDefinitions();
   }
 
   @Test
@@ -192,6 +251,11 @@ class FeatureFlagManagerImplTest {
   }
 
   private FeatureFlagManagerImpl createManager(String devModeEnabled, String reactDevMode) {
+    return createManager(devModeEnabled, reactDevMode, "dev");
+  }
+
+  private FeatureFlagManagerImpl createManager(
+      String devModeEnabled, String reactDevMode, String activeProfiles) {
     return new FeatureFlagManagerImpl(
         featureFlagDao,
         manifestLoader,
@@ -199,7 +263,8 @@ class FeatureFlagManagerImplTest {
         userManager,
         events,
         devModeEnabled,
-        reactDevMode);
+        reactDevMode,
+        activeProfiles);
   }
 
   private void initialiseRuntime(Map<String, Boolean> baselines, boolean forcedValue) {

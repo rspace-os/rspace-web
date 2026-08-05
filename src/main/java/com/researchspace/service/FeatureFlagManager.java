@@ -3,8 +3,7 @@ package com.researchspace.service;
 import com.researchspace.featureflags.FeatureFlagResource;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ParsedDocument;
-import com.researchspace.model.collection.ResourcePage;
-import com.researchspace.model.collection.ResourceRequest;
+import java.util.List;
 import java.util.Optional;
 
 public interface FeatureFlagManager {
@@ -12,11 +11,8 @@ public interface FeatureFlagManager {
   /** Reconciles persisted feature flag state with the manifest. */
   void reconcileOnStartup();
 
-  /** Returns one page of caller-specific feature flag resources. */
-  ResourcePage<FeatureFlagResource> getResources(ResourceRequest request, User actor);
-
-  /** Counts caller-specific resources that match the request filter. */
-  long countResources(ResourceRequest request, User actor);
+  /** Returns all caller-specific feature flag resources for the REST adapter to query. */
+  List<FeatureFlagResource> getResources(User actor);
 
   /** Returns one caller-specific resource when the flag exists. */
   Optional<FeatureFlagResource> getResource(String flagName, User actor);

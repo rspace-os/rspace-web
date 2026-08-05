@@ -2,7 +2,7 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, test } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { FEATURE_FLAGS } from "./generatedFeatureFlags";
-import { clearFeatureFlagOverride, setFeatureFlagBaseline, setFeatureFlagOverride } from "./mutations";
+import { patchFeatureFlag } from "./mutations";
 
 describe("feature flag mutations", () => {
   test("sets an override", async () => {
@@ -14,7 +14,7 @@ describe("feature flag mutations", () => {
       }),
     );
 
-    await setFeatureFlagOverride({ flagName: FEATURE_FLAGS.bookingEnabled, value: true }, "token");
+    await patchFeatureFlag({ flagName: FEATURE_FLAGS.bookingEnabled, document: { overrideValue: true } }, "token");
 
     expect(request?.method).toBe("PATCH");
     expect(request?.headers.get("Authorization")).toBe("Bearer token");
@@ -32,7 +32,7 @@ describe("feature flag mutations", () => {
       }),
     );
 
-    await setFeatureFlagBaseline({ flagName: FEATURE_FLAGS.bookingEnabled, value: false }, "token");
+    await patchFeatureFlag({ flagName: FEATURE_FLAGS.bookingEnabled, document: { baselineValue: false } }, "token");
 
     await expect(request?.json()).resolves.toEqual({ baselineValue: false });
   });
@@ -46,7 +46,7 @@ describe("feature flag mutations", () => {
       }),
     );
 
-    await clearFeatureFlagOverride({ flagName: FEATURE_FLAGS.bookingEnabled }, "token");
+    await patchFeatureFlag({ flagName: FEATURE_FLAGS.bookingEnabled, document: { overrideValue: null } }, "token");
 
     expect(request?.method).toBe("PATCH");
     expect(request?.headers.get("Authorization")).toBe("Bearer token");
@@ -63,7 +63,7 @@ describe("feature flag mutations", () => {
     );
 
     await expect(
-      setFeatureFlagOverride({ flagName: FEATURE_FLAGS.bookingEnabled, value: true }, "token"),
+      patchFeatureFlag({ flagName: FEATURE_FLAGS.bookingEnabled, document: { overrideValue: true } }, "token"),
     ).rejects.toThrow("403 Forbidden");
   });
 });

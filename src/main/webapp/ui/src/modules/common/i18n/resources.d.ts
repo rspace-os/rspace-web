@@ -1086,11 +1086,15 @@ export default interface Resources {
         "name": "Name",
         "source": "Source"
       },
+      "errors": {
+        "requestFailed": "The feature flag request failed."
+      },
       "overrideLabel": "{flagName} override",
       "reload": {
         "action": "Reload page to apply changes"
       },
       "tableLabel": "Feature flags",
+      "title": "Feature Flags",
       "values": {
         "off": "Off",
         "on": "On"

@@ -63,7 +63,7 @@ export default function FeatureFlagRow({
               aria-label={t("featureFlags.baseline.controlLabel", { flagName })}
             />
             <span className="text-muted-foreground w-7 text-sm">
-              {t(baselineValue ? "featureFlags.values.on" : "featureFlags.values.off")}
+              {baselineValue ? t("featureFlags.values.on") : t("featureFlags.values.off")}
             </span>
             <Button
               size="sm"
@@ -75,7 +75,7 @@ export default function FeatureFlagRow({
           </div>
         ) : (
           <span className="text-sm">
-            {t(entry.baselineValue ? "featureFlags.values.on" : "featureFlags.values.off")}
+            {entry.baselineValue ? t("featureFlags.values.on") : t("featureFlags.values.off")}
           </span>
         )}
       </TableCell>

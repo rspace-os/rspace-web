@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -55,6 +57,15 @@ public class FeatureFlagManifestLoader {
         if (!names.add(name)) {
           throw new IllegalStateException("Feature flag manifest contains duplicate flag " + name);
         }
+        requireNonBlankText(flag, "description", name);
+        requireNonBlankText(flag, "owner", name);
+        String expires = requireNonBlankText(flag, "expires", name);
+        try {
+          LocalDate.parse(expires);
+        } catch (DateTimeParseException e) {
+          throw new IllegalStateException(
+              "Feature flag manifest contains an invalid expires date for " + name, e);
+        }
         JsonNode defaultNode = flag.get("default");
         if (defaultNode != null && !defaultNode.isBoolean()) {
           throw new IllegalStateException(
@@ -68,5 +79,14 @@ public class FeatureFlagManifestLoader {
       log.error("Unable to read feature flag manifest", e);
       throw new IllegalStateException("Unable to read feature flag manifest", e);
     }
+  }
+
+  private static String requireNonBlankText(JsonNode flag, String field, String flagName) {
+    JsonNode value = flag.get(field);
+    if (value == null || !value.isTextual() || value.textValue().isBlank()) {
+      throw new IllegalStateException(
+          "Feature flag manifest contains an invalid " + field + " for " + flagName);
+    }
+    return value.textValue();
   }
 }

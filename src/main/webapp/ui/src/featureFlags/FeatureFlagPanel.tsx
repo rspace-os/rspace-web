@@ -8,11 +8,7 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/modules/co
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { cn } from "@/modules/common/utils/cn";
 import FeatureFlagRow from "./FeatureFlagRow";
-import {
-  useClearFeatureFlagOverrideMutation,
-  useSetFeatureFlagBaselineMutation,
-  useSetFeatureFlagOverrideMutation,
-} from "./mutations";
+import { usePatchFeatureFlagMutation } from "./mutations";
 import { useFeatureFlags } from "./queries";
 import { featureFlagNames } from "./schema";
 
@@ -20,14 +16,10 @@ export default function FeatureFlagPanel({ theme }: { theme: "light" | "dark" })
   const { t } = useTranslation("common");
   const featureFlags = useFeatureFlags();
   const { data: currentUser } = useCurrentUserQuery();
-  const overrideMutation = useSetFeatureFlagOverrideMutation();
-  const clearOverrideMutation = useClearFeatureFlagOverrideMutation();
-  const baselineMutation = useSetFeatureFlagBaselineMutation();
+  const mutation = usePatchFeatureFlagMutation();
   const [hasChanges, setHasChanges] = useState(false);
   const canChangeBaselines = currentUser.session.canChangeFeatureFlagBaselines;
-  const mutationPending = overrideMutation.isPending || clearOverrideMutation.isPending || baselineMutation.isPending;
-  const requestError =
-    featureFlags.error ?? overrideMutation.error ?? clearOverrideMutation.error ?? baselineMutation.error;
+  const requestError = featureFlags.error ?? mutation.error;
   const markChanged = () => setHasChanges(true);
 
   return (
@@ -43,7 +35,7 @@ export default function FeatureFlagPanel({ theme }: { theme: "light" | "dark" })
           {requestError && (
             <Alert variant="destructive">
               <TriangleAlert />
-              <AlertDescription>{requestError.message}</AlertDescription>
+              <AlertDescription>{t("featureFlags.errors.requestFailed")}</AlertDescription>
             </Alert>
           )}
           {hasChanges && (
@@ -88,10 +80,16 @@ export default function FeatureFlagPanel({ theme }: { theme: "light" | "dark" })
                     flagName={flagName}
                     entry={entry}
                     canChangeBaselines={canChangeBaselines}
-                    mutationPending={mutationPending}
-                    onOverride={(value) => overrideMutation.mutate({ flagName, value }, { onSuccess: markChanged })}
-                    onClearOverride={() => clearOverrideMutation.mutate({ flagName }, { onSuccess: markChanged })}
-                    onBaseline={(value) => baselineMutation.mutate({ flagName, value }, { onSuccess: markChanged })}
+                    mutationPending={mutation.isPending}
+                    onOverride={(value) =>
+                      mutation.mutate({ flagName, document: { overrideValue: value } }, { onSuccess: markChanged })
+                    }
+                    onClearOverride={() =>
+                      mutation.mutate({ flagName, document: { overrideValue: null } }, { onSuccess: markChanged })
+                    }
+                    onBaseline={(value) =>
+                      mutation.mutate({ flagName, document: { baselineValue: value } }, { onSuccess: markChanged })
+                    }
                   />
                 );
               })}
