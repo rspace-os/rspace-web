@@ -4,6 +4,7 @@ import com.researchspace.core.util.MediaUtils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -21,6 +22,7 @@ import org.apache.tika.mime.MimeTypes;
  * <p>Because detection only inspects a prefix, a valid image carrying appended trailing content
  * still passes. Closing that gap needs the image to be re-encoded rather than inspected.
  */
+@Slf4j
 public final class MediaFileContentValidator {
 
   private static final MimeTypes MIME_TYPES = MimeTypes.getDefaultMimeTypes();
@@ -47,8 +49,15 @@ public final class MediaFileContentValidator {
     MediaType detected = MIME_TYPES.detect(markable, new Metadata());
     MediaType expected = typeImpliedByExtension(extension);
     if (!expected.equals(detected)) {
+      // the detected type is logged, not sent to the client, so a rejection cannot be used as
+      // an oracle for what the server made of the bytes
+      log.warn(
+          "Rejected upload {}: extension claims {} but content was detected as {}",
+          fileName,
+          expected,
+          detected);
       throw new MediaContentMismatchException(
-          "errors.upload.imageContentMismatch", fileName, expected.toString(), detected.toString());
+          "errors.upload.imageContentMismatch", fileName, expected.toString());
     }
     return markable;
   }

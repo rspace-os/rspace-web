@@ -5544,7 +5544,7 @@ export default interface Resources {
       "textQueryWildcardStartDisallowed": "Search term [{0}] should not begin with a wildcard (* or ?).",
       "unknownSearchOption": "Unknown search option {0}",
       "upload": {
-        "imageContentMismatch": "File {0} was rejected: its file extension claims {1} but its content is {2}."
+        "imageContentMismatch": "File {0} was rejected: its content does not match the {1} type claimed by its file extension."
       },
       "username": "An invalid username was specified",
       "valueCount": {

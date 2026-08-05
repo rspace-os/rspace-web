@@ -23,7 +23,7 @@
   },
   "errors": {
     "upload": {
-      "imageContentMismatch": "File {0} was rejected: its file extension claims {1} but its content is {2}."
+      "imageContentMismatch": "File {0} was rejected: its content does not match the {1} type claimed by its file extension."
     },
     "form": {
       "invalidFieldIds": "At least one ID in the incoming form fields does not exist in form [{0}]. Persisted field form IDs are [{1}]; supplied IDs are [{2}]."
