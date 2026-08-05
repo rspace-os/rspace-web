@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.controller;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.booking.service.BookingConfigurationTargetConflictException;
 import com.researchspace.booking.service.InvalidBookableTargetException;
@@ -10,11 +11,12 @@ import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.CollectionMutationException;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.NotFoundException;
-import java.util.stream.Collectors;
+import java.util.List;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authz.AuthorizationException;
@@ -65,16 +67,22 @@ public class ApiV2ControllerAdvice {
   @ExceptionHandler(BindException.class)
   public ResponseEntity<ApiV2Problem> handleBindException(BindException ex) {
     String code = "errors.api.v2.invalidRequest";
-    String detail =
+    List<String> details =
         Stream.concat(
                 ex.getBindingResult().getFieldErrors().stream(),
                 ex.getBindingResult().getGlobalErrors().stream())
             .map(ObjectError.class::cast)
-            .map(messages::getMessage)
+            .map(this::validationMessage)
             .distinct()
-            .collect(Collectors.joining("; "));
-    return ApiV2Problem.response(
-        HttpStatus.BAD_REQUEST, messages.getMessage(code), code, detail.isEmpty() ? null : detail);
+            .toList();
+    String detail =
+        details.isEmpty() ? null : ListFormatUtils.formatList(details, ListFormatter.Type.UNITS);
+    return ApiV2Problem.response(HttpStatus.BAD_REQUEST, messages.getMessage(code), code, detail);
+  }
+
+  private String validationMessage(ObjectError error) {
+    String interpolatedMessage = error.getDefaultMessage();
+    return interpolatedMessage != null ? interpolatedMessage : messages.getMessage(error);
   }
 
   @ExceptionHandler(TypeMismatchException.class)
@@ -205,8 +213,7 @@ public class ApiV2ControllerAdvice {
     if (status == null) {
       return problem(HttpStatus.INTERNAL_SERVER_ERROR, "errors.api.v2.unexpected");
     }
-    String code = messageKeyFor(status);
-    return ApiV2Problem.response(status, messages.getMessage(code), code, ex.getReason());
+    return problem(status, messageKeyFor(status));
   }
 
   @ExceptionHandler(Exception.class)

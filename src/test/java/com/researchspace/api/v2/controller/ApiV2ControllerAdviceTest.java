@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v2.model.ApiV2PaginationCriteria;
 import com.researchspace.maintenance.service.MaintenanceOperationException;
 import com.researchspace.model.collection.CollectionQueryException;
@@ -11,6 +12,8 @@ import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
 import com.researchspace.service.CollectionMutationException;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import java.util.Locale;
@@ -105,6 +108,7 @@ class ApiV2ControllerAdviceTest {
     pagination.setPage(0);
     BeanPropertyBindingResult errors = new BeanPropertyBindingResult(pagination, "pagination");
     LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+    validator.setValidationMessageSource(new JsonMessageSource());
     validator.afterPropertiesSet();
     validator.validate(pagination, errors);
     validator.close();
@@ -116,7 +120,10 @@ class ApiV2ControllerAdviceTest {
         response,
         HttpStatus.BAD_REQUEST,
         "errors.api.v2.invalidRequest",
-        "Page must be 1 or greater.; Invalid detail");
+        ListFormatUtils.formatList(
+            List.of("Page must be 1 or greater.", "Invalid detail"),
+            Locale.getDefault(),
+            ListFormatter.Type.UNITS));
     assertEquals("Invalid detail", response.getBody().title());
   }
 
@@ -241,7 +248,7 @@ class ApiV2ControllerAdviceTest {
         advice.handleResponseStatus(
             new ResponseStatusException(HttpStatus.CONFLICT, "conflict reason"));
     assertProblem(
-        response, HttpStatus.CONFLICT, "errors.api.v2.requestRejected", "conflict reason");
+        response, HttpStatus.CONFLICT, "errors.api.v2.requestRejected", "Rejected detail");
     assertEquals("Rejected detail", response.getBody().title());
 
     ResponseEntity<ApiV2Problem> nonStandard =
