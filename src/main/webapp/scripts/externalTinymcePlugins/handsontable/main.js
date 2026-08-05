@@ -75,7 +75,7 @@ var hotDialog = {
 			$.ajaxSetup({ async: true });
 		});
 		jqxhr.fail(function () {
-			tinymceDialogUtils.showErrorAlert("Inserting calculation table failed.");
+			tinymceDialogUtils.showErrorAlert(tinymceDialogUtils.msg("legacyjs.tinymce.handsontable.insertFailed"));
 		});
 	},
 };

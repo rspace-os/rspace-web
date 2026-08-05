@@ -410,7 +410,7 @@ public class ContainersApiControllerTest extends SpringTransactionalTest {
     assertEquals(barcodeRequest.getFormat(), firstBarcode.getFormat());
     assertEquals(1, firstBarcode.getLinks().size());
     assertEquals(
-        "http://localhost:8080/api/inventory/v1/barcodes%3Fcontent=123-defaultBarcode&barcodeType=QR",
+        "http://localhost:8080/api/inventory/v1/barcodes?content=123-defaultBarcode&barcodeType=QR",
         firstBarcode.getLinkOfType(ApiLinkItem.ENCLOSURE_REL).get().getLink());
 
     // change container name, update barcode description, add another barcode

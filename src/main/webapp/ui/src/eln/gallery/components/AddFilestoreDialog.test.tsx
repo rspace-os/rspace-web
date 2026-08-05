@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import { cleanup, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { expectAccessible, render } from "@/__tests__/customQueries";
+import { expectAccessible } from "@/__tests__/accessibility";
 import axios from "@/common/axios";
 import { AddFilestoreDialogStory } from "./AddFilestoreDialog.story";
 

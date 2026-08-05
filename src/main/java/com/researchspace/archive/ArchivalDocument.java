@@ -2,7 +2,15 @@ package com.researchspace.archive;
 
 import com.researchspace.archive.elninventory.ArchivalListOfMaterials;
 import com.researchspace.archive.elninventory.ArchivalMaterialUsage;
+import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.record.ImportOverride;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -10,13 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -113,6 +114,11 @@ public class ArchivalDocument {
     String originalOwner = getCreatedBy() != null ? getCreatedBy() : "n/a";
     return new ImportOverride(
         created, modified, originalOwner, allowCreationDateAfterModificationDate);
+  }
+
+  @XmlTransient
+  public String getGlobalId() {
+    return GlobalIdPrefix.SD.toString() + docId;
   }
 
   public Set<String> getIgsnInventoryLinkedItems() {

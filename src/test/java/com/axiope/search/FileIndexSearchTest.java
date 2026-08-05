@@ -99,9 +99,11 @@ public class FileIndexSearchTest {
 
     indexer = new FileIndexerTSS();
     try {
+      indexer.setIndexFolderDirectly(indexFolder);
+      searcher.setIndexFolderDirectly(indexFolder);
       indexer.init(true);
       int indexedDocs = indexer.indexFolder(dataFolder, failFast);
-      assertEquals(indexedDocs, indexer.getWriter().numDocs());
+      assertEquals(indexedDocs, indexer.getWriter().getDocStats().numDocs);
     } finally {
       indexer.close();
     }

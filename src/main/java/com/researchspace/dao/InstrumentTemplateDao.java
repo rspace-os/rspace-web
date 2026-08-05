@@ -23,6 +23,14 @@ public interface InstrumentTemplateDao extends InstrumentEntityDao<InstrumentTem
       String searchTerm,
       User user);
 
+  /**
+   * @return username of the user who owns the locked default instrument template (the oldest
+   *     template whose {@code isEditable} flag is {@code false}), or {@code null} if no default
+   *     template has been seeded yet. Every user may read (and duplicate) templates owned by this
+   *     account.
+   */
+  String getDefaultTemplatesOwner();
+
   /** Returns all instrument templates with the given name owned by the given user. */
   List<InstrumentTemplate> findInstrumentTemplatesByName(String name, User user);
 

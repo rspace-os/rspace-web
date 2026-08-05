@@ -22,7 +22,6 @@ import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.EcatMediaFile;
-import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
@@ -72,14 +71,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.ObjectRetrievalFailureException;
@@ -97,10 +93,11 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired UserConnectionManager userConn;
   private @Autowired JdbcTemplate jdbcTemplate;
   private @Autowired StoichiometryManager stoichiometryMgr;
+  private @Autowired StoichiometryMoleculeManager stoichiometryMoleculeMgr;
   private @Autowired RSChemElementManager rsChemElementMgr;
   private @Autowired StoichiometryInventoryLinkDao stoichiometryInventoryLinkDao;
   private @Autowired InstrumentDao instrumentDao;
-  private @Autowired MessageSource messageSource;
+  private @Autowired MessageSourceUtils messages;
 
   @Before
   public void setUp() throws Exception {
@@ -272,10 +269,11 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     Object rc =
         sessionFactory
             .getCurrentSession()
-            .createCriteria(FileProperty.class)
-            .add(Restrictions.eq("fileOwner", username))
-            .setProjection(Projections.countDistinct("id"))
-            .uniqueResult();
+            .createQuery(
+                "select count(distinct fp.id) from FileProperty fp where fp.fileOwner = :owner",
+                Long.class)
+            .setParameter("owner", username)
+            .getSingleResult();
     commitTransaction();
     return (Long) rc;
   }
@@ -287,7 +285,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(sysadmin.getId(), policy, sysadmin);
     assertFalse(report.isSucceeded());
-    assertEquals(report.getMessage(), messages.getMessage("errors.deleteuser.nonself"));
+    assertEquals(report.getMessage(), messages.getMessage("errors.deleteUser.nonSelf"));
   }
 
   @Test
@@ -829,7 +827,10 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   private Long saveStoichiometryInventoryLink(
       StoichiometryMolecule molecule, InventoryRecord inventoryRecord) {
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
-    link.setStoichiometryMolecule(molecule);
+    // Reload the molecule within the current transaction so it is a managed (not detached)
+    // entity, mirroring StoichiometryInventoryLinkManagerImpl.createLink. Hibernate 6's persist()
+    // cannot cascade to a detached association, unlike Hibernate 5's saveOrUpdate().
+    link.setStoichiometryMolecule(stoichiometryMoleculeMgr.getById(molecule.getId()));
     link.setInventoryRecord(inventoryRecord);
     return stoichiometryInventoryLinkDao.save(link).getId();
   }
@@ -1146,7 +1147,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
   private Folder findDeletedUsersTemplateFolder(User deletedUser, User sysadmin) {
     String deletedFolderName =
-        messageSource.getMessage(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER, null, null);
+        messages.getMessage(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER);
     Folder templateRoot = folderMgr.getTemplateFolderForUser(sysadmin);
     Folder deletedUsersFolder =
         folderMgr.getSubFolders(templateRoot).stream()
@@ -1165,7 +1166,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
   private Folder findDeletedUsersSubfolder(Folder categoryFolder, User deletedUser, User sysadmin) {
     String deletedFolderName =
-        messageSource.getMessage(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER, null, null);
+        messages.getMessage(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER);
     Folder deletedUsersFolder =
         folderMgr.getSubFolders(categoryFolder).stream()
             .filter(f -> deletedFolderName.equals(f.getName()))

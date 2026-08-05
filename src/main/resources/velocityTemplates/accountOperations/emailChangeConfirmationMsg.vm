@@ -1,25 +1,19 @@
 #*
-Template for message sent to user's previous email account after successful 
+Template for message sent to user's previous email account after successful
 email address change.
 
 Arguments:
-  - firstName
-  - newEmailAddress
+- firstName
+- newEmailAddress
+- msg - MessageSourceUtils for i18n phrase lookup
 *#
-<html>
-#utf8header
-<body>
-<p>Hello $firstName,</p>
 
-<p>Your RSpace email address was updated. New address is:</p>
-<p>
-${newEmailAddress}
-</p>
+<p>$msg.format("email.common.greeting", [$firstName])</p>
 
-<p> If you did not just change your email, please get in touch with your RSpace
- support team.
+<p>$msg.format("email.account.emailChangeConfirmation.body", [${newEmailAddress}])</p>
+
+<p>$msg.getMessage("email.account.emailChangeConfirmation.ifNotYou")
 <p/>
-#dontReply
-
-</body>
-</html>
+<p>
+$msg.getMessage("email.common.dontReply")
+</p>

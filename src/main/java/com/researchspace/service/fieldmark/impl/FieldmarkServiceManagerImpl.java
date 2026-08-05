@@ -44,6 +44,7 @@ import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.webapp.integrations.fieldmark.FieldmarkApiImportRequest;
 import com.researchspace.webapp.integrations.fieldmark.FieldmarkApiImportResult;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -52,7 +53,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.naming.InvalidNameException;
-import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -269,7 +269,11 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
         return sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(
             apiSample.getTemplateId(), user);
       } catch (NotFoundException e) {
-        errors.rejectValue("templateId", "", e.getMessage());
+        errors.rejectValue(
+            "templateId",
+            "errors.inventory.sample.templateNotFound",
+            new Object[] {apiSample.getTemplateId()},
+            null);
         throwBindExceptionIfErrors(errors);
       }
     }

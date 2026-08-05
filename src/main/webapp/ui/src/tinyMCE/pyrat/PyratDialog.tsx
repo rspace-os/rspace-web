@@ -1,0 +1,661 @@
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Divider from "@mui/material/Divider";
+import Grid from "@mui/material/Grid";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Typography from "@mui/material/Typography";
+import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import axios from "@/common/axios";
+import AppBar from "@/components/AppBar";
+import useLocalStorage from "@/hooks/browser/useLocalStorage";
+import i18n from "@/modules/common/i18n";
+import { formatList } from "@/modules/common/i18n/listFormat";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
+import { getHeader } from "@/util/axios";
+import * as FetchingData from "@/util/fetchingData";
+import * as Parsers from "@/util/parsers";
+import { parseInteger } from "@/util/parsers";
+import Result from "@/util/result";
+import ColumnVisibilitySettings from "./ColumnVisibilitySettings";
+import ColumnVisibilitySettingsButton from "./ColumnVisibilitySettingsButton";
+import { AnimalState, AnimalType, ErrorReason, Order, Sex } from "./Enums";
+import ErrorView from "./ErrorView";
+import Filter from "./Filter";
+import FilterButton from "./FilterButton";
+import ResultsTable from "./ResultsTable";
+
+function useAuthenticatedServers() {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  const [servers, setServers] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  const [error, setError] = React.useState<any>(null);
+
+  useEffect(() => {
+    axios
+      .get("/integration/integrationInfo", {
+        params: new URLSearchParams({ name: "PYRAT" }),
+        responseType: "json",
+      })
+      .then(({ data }) => {
+        setServers(
+          Parsers.objectPath(["data", "options"], data)
+            .flatMap(Parsers.isObject)
+            .flatMap(Parsers.isNotNull)
+            .map((servers) => Object.entries(servers).filter(([k]) => k !== "PYRAT_CONFIGURED_SERVERS"))
+            .flatMap((servers) =>
+              Result.all(
+                ...servers.map(([, config]) => {
+                  try {
+                    const server = Parsers.isObject(config).flatMap(Parsers.isNotNull).elseThrow();
+                    const alias = Parsers.getValueWithKey("PYRAT_ALIAS")(server).flatMap(Parsers.isString).elseThrow();
+                    const url = Parsers.getValueWithKey("PYRAT_URL")(server).flatMap(Parsers.isString).elseThrow();
+                    return Result.Ok({ alias, url });
+                  } catch {
+                    return Result.Error([new Error("Could not parse out pyrat authenticated server")]);
+                  }
+                }),
+              ),
+            )
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+            .elseThrow() as any[],
+        );
+      })
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      .catch((error: any) => {
+        setError(error);
+        console.error("Failed to fetch servers", error);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return { tag: "loading" } as const;
+  if (error) return { tag: "error", error } as const;
+  return { tag: "success", value: servers } as const;
+}
+
+const SUPPORTED_PYRAT_API_VERSION = 3;
+
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+let VISIBLE_HEADER_CELLS: any[] = [];
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+let PYRAT_URL: any = null;
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+let PYRAT_ALIAS: any = null;
+
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+export function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; setSelectedAnimals: any }) {
+  const pyrat = axios.create({
+    baseURL: "/apps/pyrat",
+    timeout: 15000,
+  });
+  const { t } = useTranslation("workspace");
+  const tableHeaderCells = useMemo(
+    () => [
+      // Some of these are numeric, but the enhanced table alignment for numerics looks bad.
+      { id: "eartag_or_id", numeric: false, label: t("tinymce.pyrat.columns.id") },
+      { id: "sex", numeric: false, label: t("tinymce.pyrat.columns.sex") },
+      { id: "age_days", numeric: false, label: t("tinymce.pyrat.columns.ageDays") },
+      { id: "strain_name", numeric: false, label: t("tinymce.pyrat.columns.strain") },
+      { id: "mutations", numeric: false, label: t("tinymce.pyrat.columns.mutations"), sortable: false },
+      { id: "dateborn", numeric: false, label: t("tinymce.pyrat.columns.dob") },
+      { id: "datesacrificed", numeric: false, label: t("tinymce.pyrat.columns.sacrificedOn") },
+      { id: "classification", numeric: false, label: t("tinymce.pyrat.columns.classification") },
+      { id: "licence_number", numeric: false, label: t("tinymce.pyrat.columns.license") },
+      { id: "labid", numeric: false, label: t("tinymce.pyrat.columns.labId") },
+      { id: "building_name", numeric: false, label: t("tinymce.pyrat.columns.building") },
+      { id: "projects", numeric: false, label: t("tinymce.pyrat.columns.project") },
+      { id: "responsible_fullname", numeric: false, label: t("tinymce.pyrat.columns.responsible") },
+    ],
+    [t],
+  );
+
+  // Counter is increased when filtering is required.
+  // Counter instead of boolean, as useEffect functions below that depend on
+  // this hook should only execute once (boolean switch is two changes)
+  const [filterCounter, setFilterCounter] = useState(0);
+  const [filter, setFilter] = useState({
+    age_days_from: {
+      label: t("tinymce.pyrat.filters.ageDaysFrom"),
+      type: "number",
+      value: "",
+    },
+    age_days_to: {
+      label: t("tinymce.pyrat.filters.ageDaysTo"),
+      type: "number",
+      value: "",
+    },
+    eartag: {
+      label: t("tinymce.pyrat.columns.id"),
+      type: "string",
+      value: "",
+    },
+    labid: {
+      label: t("tinymce.pyrat.columns.labId"),
+      type: "string",
+      value: "",
+    },
+  });
+  // Multi request filter fields
+  const [filterMultiReq, setFilterMultiReq] = useState({
+    licence_id: {
+      label: t("tinymce.pyrat.columns.license"),
+      value: "",
+      query: `licenses?serverAlias=${serverAlias}&k=license_id&k=license_number&s=license_id:asc&license_number=`,
+      enumObj: {},
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      renderFunc: ({ license_id, license_number }: { license_id: any; license_number: any }) => [
+        license_id,
+        { label: license_number, value: license_id },
+      ],
+    },
+    responsible_id: {
+      label: t("tinymce.pyrat.columns.responsible"),
+      value: "",
+      query: `users?serverAlias=${serverAlias}&k=userid&k=fullname&s=username:asc&fullname=`,
+      enumObj: {},
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      renderFunc: ({ userid, fullname }: { userid: any; fullname: any }) => [
+        userid,
+        { label: fullname, value: userid },
+      ],
+    },
+    project_id: {
+      label: t("tinymce.pyrat.columns.project"),
+      value: "",
+      query: `projects?serverAlias=${serverAlias}&k=id&k=name&s=id:asc&status=active&status=inactive&name=`,
+      enumObj: {},
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      renderFunc: ({ id, name }: { id: any; name: any }) => [id, { label: name, value: id }],
+    },
+  });
+  // Other special filter fields
+  const [filterSpecial, setFilterSpecial] = useState({
+    animal_type: {
+      label: t("tinymce.pyrat.filters.animalType"),
+      defaultValue: AnimalType.Animal,
+      value: AnimalType.Animal,
+      enumObj: AnimalType,
+    },
+    animal_state: {
+      label: t("tinymce.pyrat.filters.animalState"),
+      defaultValue: [AnimalState.Live],
+      value: [AnimalState.Live],
+      enumObj: AnimalState,
+    },
+    sex: {
+      label: t("tinymce.pyrat.columns.sex"),
+      defaultValue: Sex.None,
+      value: Sex.None,
+      enumObj: Sex,
+    },
+    building_id: {
+      label: t("tinymce.pyrat.columns.building"),
+      defaultValue: "",
+      value: "",
+      enumObj: {},
+    },
+    birth_date_from: {
+      label: t("tinymce.pyrat.filters.birthDateFrom"),
+      defaultValue: null,
+      value: null,
+    },
+    birth_date_to: {
+      label: t("tinymce.pyrat.filters.birthDateTo"),
+      defaultValue: null,
+      value: null,
+    },
+    sacrifice_date_from: {
+      label: t("tinymce.pyrat.filters.sacrificedFrom"),
+      defaultValue: null,
+      value: null,
+    },
+    sacrifice_date_to: {
+      label: t("tinymce.pyrat.filters.sacrificedTo"),
+      defaultValue: null,
+      value: null,
+    },
+  });
+
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  const [animals, setAnimals] = useState<any[]>([]);
+  const [fetchDone, setFetchDone] = useState(false);
+  const [errorReason, setErrorReason] = useState(ErrorReason.None);
+
+  const [showSettings, setShowSettings] = useLocalStorage("pyratShowSettings", false);
+  const [showFilter, setShowFilter] = useLocalStorage("pyratShowFilter", false);
+  const [visibleColumnIds, setVisibleColumnIds] = useLocalStorage(
+    "pyratVisibleColumns",
+    tableHeaderCells.map((cell) => cell.id),
+  );
+
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  const [selectedAnimalIds, setSelectedAnimalIds] = useState<any[]>([]);
+  const [order, setOrder] = useLocalStorage("pyratSearchOrder", Order.desc);
+  const [orderBy, setOrderBy] = useLocalStorage("pyratSearchOrderBy", "eartag_or_id");
+
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useLocalStorage("pyratRowsPerPage", 10);
+  const [count, setCount] = useState(0);
+
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  const handleChangePage = (newPage: any) => {
+    setPage(newPage);
+  };
+
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  const handleRowsPerPageChange = (pageSize: any) => {
+    setRowsPerPage(pageSize);
+    setPage(0);
+  };
+
+  // Reset to the first page whenever the filters or sort change. Done during
+  // render rather than in an effect so the reset and the triggering change are
+  // seen in the same committed render; otherwise fetchAnimals fires once with a
+  // stale page offset before the reset lands on the next render.
+  const filterOrderKey = `${filterCounter}|${order}|${orderBy}`;
+  const [prevFilterOrderKey, setPrevFilterOrderKey] = useState(filterOrderKey);
+  if (filterOrderKey !== prevFilterOrderKey) {
+    setPrevFilterOrderKey(filterOrderKey);
+    setPage(0);
+  }
+
+  useEffect(() => {
+    pyrat
+      .get(`version?serverAlias=${serverAlias}`)
+      .then((response) => {
+        if (response.data.api_version !== SUPPORTED_PYRAT_API_VERSION) {
+          setErrorReason(ErrorReason.APIVersion);
+        }
+      })
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      .catch((error: any) => {
+        handlePyratError(error);
+      });
+  }, []);
+
+  useEffect(() => {
+    pyrat
+      .get(
+        `locations?serverAlias=${serverAlias}&s=full_name:asc&k=building_id&k=full_name&type=building&=status=available`,
+      )
+      .then((response) => {
+        if (response.data) {
+          const enumObj = response.data.reduce(
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+            (acc: any, building: any) => {
+              acc[building.full_name] = building.building_id;
+              return acc;
+            },
+            { None: "" },
+          );
+
+          setFilterSpecial({
+            ...filterSpecial,
+            building_id: {
+              ...filterSpecial.building_id,
+              enumObj,
+            },
+          });
+        }
+      })
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      .catch((error: any) => {
+        handlePyratError(error);
+      });
+  }, []);
+
+  function fetchAnimals() {
+    setFetchDone(false);
+    setAnimals([]);
+
+    const collection = AnimalType.Animal === filterSpecial.animal_type.value ? "animals" : "pups";
+
+    pyrat
+      .get(`${collection}?${makeQueryString}`)
+      .then((response) => {
+        if (response.data) {
+          const animals = response.data;
+
+          // Not done at render time as "animals" is reused for inserting TinyMCE table
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          animals.forEach((animal: any) => {
+            // projects contain a lot of metadata that should not be displayed
+            if (animal.projects) {
+              animal.projects = formatList(
+                animal.projects.map(
+                  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                  (project: any) => project.project_label,
+                ),
+                i18n.resolvedLanguage ?? i18n.language,
+              );
+            }
+
+            if (animal.mutations) {
+              animal.mutations = formatList(
+                animal.mutations.map(
+                  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                  (mutation: any) => `${mutation.mutationname} ${mutation.mutationgrade}`,
+                ),
+                i18n.resolvedLanguage ?? i18n.language,
+              );
+            }
+          });
+
+          setAnimals(animals);
+
+          setCount(
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+            getHeader(response as any, "x-total-count")
+              .flatMap(parseInteger)
+              .orElseGet(([error]) => {
+                throw new Error("Pagination header missing", { cause: error });
+              }),
+          );
+        }
+      })
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      .catch((error: any) => {
+        handlePyratError(error);
+      })
+      .finally(() => {
+        setFetchDone(true);
+      });
+  }
+
+  const makeQueryString = useMemo(() => {
+    const params = [filterSpecial.animal_state.value.map((state) => `&state=${state}`).join("")];
+
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    for (const [key, { value }] of Object.entries(filterMultiReq) as [string, any][]) {
+      if (value?.value) {
+        params.push(`&${key}=${value.value}`);
+      }
+    }
+
+    tableHeaderCells.forEach((config) => {
+      params.push(`&k=${config.id}`);
+    });
+    Object.entries(filter).forEach(([key, config]) => {
+      if (config.value) {
+        params.push(`&${key}=${config.value}`);
+      }
+    });
+    Object.entries(filterSpecial).forEach(([key, config]) => {
+      if (key !== "animal_type" && config.value) {
+        params.push(`&${key}=${config.value}`);
+      }
+    });
+
+    return `serverAlias=${serverAlias}&l=${rowsPerPage}&o=${
+      page * rowsPerPage
+    }&${params.join("")}&s=${orderBy}:${order}`;
+  }, [filterCounter, order, orderBy, page, rowsPerPage, tableHeaderCells]);
+
+  // makeQueryString encodes the query parameters, while filterCounter is the
+  // explicit apply trigger. Keep both dependencies because animal_type selects
+  // the animals/pups collection rather than appearing in the query string.
+  useEffect(() => {
+    fetchAnimals();
+  }, [filterCounter, makeQueryString]);
+
+  VISIBLE_HEADER_CELLS = useMemo(
+    () => tableHeaderCells.filter((cell) => visibleColumnIds.includes(cell.id)),
+    [tableHeaderCells, visibleColumnIds],
+  );
+
+  React.useEffect(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    setSelectedAnimals(animals.filter((animal: any) => selectedAnimalIds.includes(animal.eartag_or_id)));
+  }, [animals, selectedAnimalIds, setSelectedAnimals]);
+
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  function handlePyratError(error: any) {
+    if (error.message === "Network Error") {
+      setErrorReason(ErrorReason.NetworkError);
+    } else if (error.message.startsWith("timeout")) {
+      setErrorReason(ErrorReason.Timeout);
+    } else if (error.response) {
+      if (error.response.status === 401) {
+        setErrorReason(ErrorReason.Unauthorized);
+      } else if (error.response.status === 400) {
+        setErrorReason(ErrorReason.BadRequest);
+      } else {
+        setErrorReason(ErrorReason.Unknown);
+      }
+    } else {
+      setErrorReason(ErrorReason.Unknown);
+    }
+  }
+
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  function handleOptionsFilterChange(filterKey: any, input: any) {
+    if (new Set(Object.keys(filterMultiReq)).has(filterKey)) {
+      (async () => {
+        try {
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          const multiReq = filterMultiReq as Record<string, any>;
+          const response = await pyrat.get(`${multiReq[filterKey].query}${input}`);
+
+          if (response.data) {
+            const enumObj = Object.fromEntries(response.data.map(multiReq[filterKey].renderFunc));
+            setFilterMultiReq({
+              ...filterMultiReq,
+              [filterKey]: { ...multiReq[filterKey], enumObj },
+            });
+          }
+        } catch (error) {
+          handlePyratError(error);
+        }
+      })();
+    }
+  }
+
+  if (errorReason !== ErrorReason.None) {
+    return <ErrorView errorReason={errorReason} />;
+  }
+  return (
+    <Grid container spacing={1}>
+      <Grid container sx={{ justifyContent: "flex-start", alignItems: "center" }} size={12}>
+        <FilterButton showFilter={showFilter} setShowFilter={setShowFilter} />
+        <ColumnVisibilitySettingsButton showSettings={showSettings} setShowSettings={setShowSettings} />
+      </Grid>
+      {showFilter && (
+        <Grid size={12}>
+          <Filter
+            filter={filter}
+            setFilter={setFilter}
+            filterMultiReq={filterMultiReq}
+            setFilterMultiReq={setFilterMultiReq}
+            filterSpecial={filterSpecial}
+            setFilterSpecial={setFilterSpecial}
+            filterCounter={filterCounter}
+            setFilterCounter={setFilterCounter}
+            onOptionsFilterChange={handleOptionsFilterChange}
+          />
+        </Grid>
+      )}
+      {showSettings && (
+        <Grid size={12}>
+          <ColumnVisibilitySettings
+            visibleColumnIds={visibleColumnIds}
+            setVisibleColumnIds={setVisibleColumnIds}
+            allTableHeaderCells={tableHeaderCells}
+          />
+        </Grid>
+      )}
+      <Grid size={12}>
+        <ResultsTable
+          page={page}
+          onPageChange={handleChangePage}
+          visibleHeaderCells={VISIBLE_HEADER_CELLS}
+          animals={animals}
+          selectedAnimalIds={selectedAnimalIds}
+          setSelectedAnimalIds={setSelectedAnimalIds}
+          order={order}
+          orderBy={orderBy}
+          setOrder={setOrder}
+          setOrderBy={setOrderBy}
+          onRowsPerPageChange={handleRowsPerPageChange}
+          rowsPerPage={rowsPerPage}
+          count={count}
+        />
+      </Grid>
+      <Grid sx={{ textAlign: "center" }} size={12}>
+        {!fetchDone && <CircularProgress />}
+      </Grid>
+    </Grid>
+  );
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+export default function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClose: any }) {
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  const [serverAlias, setServerAlias] = React.useState<any>(null);
+  const servers = useAuthenticatedServers();
+  const { t } = useTranslation(["apps", "common", "workspace"]);
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  const [selectedAnimals, setSelectedAnimals] = React.useState<any[]>([]);
+
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  FetchingData.getSuccessValue(servers as any).do((servers: any) => {
+    if (servers.length === 1) {
+      PYRAT_URL = servers[0].url;
+      PYRAT_ALIAS = servers[0].alias;
+    }
+  });
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
+      <AppBar
+        variant="dialog"
+        currentPage="PyRAT"
+        helpPage={{
+          docLink: helpDocsArticleUrl("pyrat"),
+          title: t("workspace:tinymce.pyrat.helpTitle"),
+        }}
+        accessibilityTips={{}}
+      />
+      <DialogTitle>{t("workspace:tinymce.pyrat.dialogTitle")}</DialogTitle>
+      <DialogContent>
+        {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
+        {FetchingData.match(servers as any, {
+          loading: () => <CircularProgress />,
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          error: (error: any) => <Typography color="error">{error.message}</Typography>,
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          success: (servers: any) => {
+            if (servers.length === 1)
+              return <PyratListing serverAlias={servers[0].alias} setSelectedAnimals={setSelectedAnimals} />;
+            if (serverAlias) return <PyratListing serverAlias={serverAlias} setSelectedAnimals={setSelectedAnimals} />;
+            return (
+              <>
+                <Typography variant="body1" gutterBottom>
+                  {t("workspace:tinymce.pyrat.chooseServer")}
+                </Typography>
+                <List>
+                  <Divider />
+                  {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
+                  {servers.map((server: any) => (
+                    <>
+                      <ListItem disablePadding key={server.alias}>
+                        <ListItemButton
+                          onClick={() => {
+                            setServerAlias(server.alias);
+                            PYRAT_URL = server.url;
+                            PYRAT_ALIAS = server.alias;
+                          }}
+                        >
+                          <ListItemText primary={server.alias} secondary={server.url} />
+                        </ListItemButton>
+                      </ListItem>
+                      <Divider />
+                    </>
+                  ))}
+                </List>
+              </>
+            );
+          },
+        })}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => onClose()}>{t("common:actions.cancel")}</Button>
+        <Button
+          disabled={selectedAnimals.length === 0}
+          color="callToAction"
+          variant="contained"
+          onClick={() => {
+            editor.execCommand("mceInsertContent", false, createTinyMceTable(selectedAnimals).outerHTML);
+            onClose();
+          }}
+        >
+          {t("pyrat.insertButton")}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+function createTinyMceTable(selectedAnimals: any[]) {
+  const pyratTable = document.createElement("table");
+  pyratTable.setAttribute("data-tableSource", "pyrat");
+  pyratTable.style = "font-size: 0.7em";
+
+  if (!PYRAT_URL) throw new Error("PYRAT_URL is not known");
+  if (!PYRAT_ALIAS) throw new Error("PYRAT_ALIAS is not known");
+
+  const link = PYRAT_URL.slice(0, PYRAT_URL.lastIndexOf("/api/"));
+
+  const linkRow = document.createElement("tr");
+  const linkCell = document.createElement("th");
+  linkCell.appendChild(document.createTextNode("Imported from "));
+  const anchor = document.createElement("a");
+  anchor.href = link;
+  anchor.appendChild(document.createTextNode(`${PYRAT_ALIAS} (${link})`));
+  anchor.setAttribute("rel", "noreferrer");
+  linkCell.appendChild(anchor);
+  linkCell.appendChild(document.createTextNode(" on "));
+  linkCell.appendChild(document.createTextNode(new Date().toDateString()));
+  linkCell.appendChild(document.createTextNode(" "));
+  linkCell.appendChild(document.createTextNode(new Date().toLocaleTimeString()));
+  linkCell.setAttribute("colspan", String(VISIBLE_HEADER_CELLS.length));
+  linkCell.style = "font-weight: 400";
+  linkRow.appendChild(linkCell);
+  pyratTable.appendChild(linkRow);
+
+  const tableHeader = document.createElement("tr");
+  VISIBLE_HEADER_CELLS.forEach((cell) => {
+    const columnName = document.createElement("th");
+    columnName.textContent = cell.label;
+    tableHeader.appendChild(columnName);
+  });
+  pyratTable.appendChild(tableHeader);
+
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+  selectedAnimals.forEach((animal: any) => {
+    const row = document.createElement("tr");
+
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    VISIBLE_HEADER_CELLS.forEach((headerCell: any) => {
+      const cell = document.createElement("td");
+
+      const textContent = animal[headerCell.id];
+      if (textContent) cell.textContent = textContent;
+
+      row.appendChild(cell);
+    });
+
+    pyratTable.appendChild(row);
+  });
+
+  return pyratTable;
+}

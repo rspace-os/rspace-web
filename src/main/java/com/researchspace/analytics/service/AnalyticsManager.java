@@ -3,7 +3,7 @@ package com.researchspace.analytics.service;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.HistoricalEvent;
 import com.researchspace.model.core.Person;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.event.EventListener;
 
 /** Registering events for analytics. */

@@ -1,7 +1,7 @@
 package com.researchspace.model.repository;
 
 import com.researchspace.core.testutil.CoreTestUtils;
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.stream.IntStream;
 import org.junit.After;
 import org.junit.Test;
 
-public class RepoDepositConfigValidationTest extends JavaxValidatorTest {
+public class RepoDepositConfigValidationTest extends JakartaValidatorTest {
 
   @After
   public void tearDown() throws Exception {}

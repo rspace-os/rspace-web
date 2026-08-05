@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import i18n from "@/modules/common/i18n";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { getErrorMessage } from "@/util/error";
 import useOauthToken from "../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
@@ -27,20 +27,6 @@ const UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
 
 const firstResult = <T>(items: ReadonlyArray<T>): Result<T> =>
   Result.fromNullable(items.at(0), new Error("Array is empty"));
-
-/**
- * Best error message from a failed filestore API call: the first non-blank entry of the
- * BindException `errors` array, else `data.message`/`exceptionMessage` via getErrorMessage. A 403
- * gate denial returns its reason in `message` with a blank `errors: [""]`, so blanks must not win.
- */
-function firstErrorMessage(e: unknown): string {
-  return Parsers.objectPath(["response", "data", "errors"], e)
-    .flatMap(Parsers.isArray)
-    .flatMap(firstResult)
-    .flatMap(Parsers.isString)
-    .flatMap((s) => (s.trim().length > 0 ? Result.Ok(s) : Result.Error<string>([new Error("blank")])))
-    .orElse(getErrorMessage(e, i18n.t("gallery:errors.unknownError")));
-}
 
 /**
  * The destination of a move operation.
@@ -160,7 +146,21 @@ export function useGalleryActions(): {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const { t } = useTranslation("gallery");
+  const { t, i18n } = useTranslation("gallery");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+
+  /**
+   * Best error message from a failed filestore API call: the first non-blank entry of the
+   * BindException `errors` array, else `data.message`/`exceptionMessage` via getErrorMessage. A 403
+   * gate denial returns its reason in `message` with a blank `errors: [""]`, so blanks must not win.
+   */
+  const firstErrorMessage = (e: unknown): string =>
+    Parsers.objectPath(["response", "data", "errors"], e)
+      .flatMap(Parsers.isArray)
+      .flatMap(firstResult)
+      .flatMap(Parsers.isString)
+      .flatMap((s) => (s.trim().length > 0 ? Result.Ok(s) : Result.Error<string>([new Error("blank")])))
+      .orElse(getErrorMessage(e, t("errors.unknownError")));
 
   /*
    * We create these axios objects because the global axios object is polluted
@@ -477,7 +477,7 @@ export function useGalleryActions(): {
           mkAlert({
             variant: "error",
             title: messages.failure(failures.length),
-            message: failures.join("; "),
+            message: formatList(failures, language),
           }),
         );
       }

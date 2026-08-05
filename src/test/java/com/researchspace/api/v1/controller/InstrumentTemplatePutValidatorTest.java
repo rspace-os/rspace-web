@@ -67,7 +67,7 @@ public class InstrumentTemplatePutValidatorTest extends InventoryRecordValidatio
     putValidator.validate(put, e);
 
     assertTrue(e.getErrorCount() >= 1);
-    assertEquals("errors.inventory.template.empty.field.name", e.getFieldError().getCode());
+    assertEquals("errors.inventory.template.emptyFieldName", e.getFieldError().getCode());
   }
 
   @Test
@@ -102,7 +102,7 @@ public class InstrumentTemplatePutValidatorTest extends InventoryRecordValidatio
     // so match by error code rather than by top-level field name.
     assertTrue(
         e.getFieldErrors().stream()
-            .anyMatch(fe -> "errors.inventory.template.invalid.relation.type".equals(fe.getCode())),
+            .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode())),
         "expected an invalid-relation-type error, got: " + e.getAllErrors());
   }
 
@@ -120,8 +120,7 @@ public class InstrumentTemplatePutValidatorTest extends InventoryRecordValidatio
 
     assertTrue(
         e.getFieldErrors().stream()
-            .noneMatch(
-                fe -> "errors.inventory.template.invalid.relation.type".equals(fe.getCode())),
+            .noneMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode())),
         "unexpected invalid-relation-type error, got: " + e.getAllErrors());
   }
 
@@ -142,7 +141,7 @@ public class InstrumentTemplatePutValidatorTest extends InventoryRecordValidatio
 
     assertTrue(
         e.getFieldErrors().stream()
-            .anyMatch(fe -> "errors.inventory.template.invalid.relation.type".equals(fe.getCode())),
+            .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode())),
         "expected an invalid-relation-type error, got: " + e.getAllErrors());
   }
 }

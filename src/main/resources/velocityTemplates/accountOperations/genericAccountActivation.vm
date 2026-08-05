@@ -1,15 +1,28 @@
+#*
+Template for messaging a user that their account has been activated.
+Arguments:
+- fullName - the user's full name
+- link - the URL to access the application
+- msg - MessageSourceUtils for i18n phrase lookup
+*#
 <p>
- Dear ${fullName}, <br/>
- 
- Thank you  for registering with RSpace.
- <p/>
- Your account is now activated and can be accessed by going to: <p/>
-  ${link} <p/>
-  in your browser.
- <p/>
- #dontReply - please contact support@researchspace.com
-  for more information.
-  
-#notificationPrefInfoNewUser 
-  
-#signature
+$msg.format("email.account.genericAccountReview.greeting", [${fullName}])<br/>
+
+$msg.getMessage("email.account.genericAccountReview.body")
+<p/>
+$msg.format("email.account.genericAccountActivation.activated", [${link}])
+<p/>
+<p>
+$msg.getMessage("email.common.dontReply")
+</p>
+<p/>
+$msg.getMessage("email.account.genericAccountReview.contactSupport")
+
+<p>
+$msg.getMessage("email.common.notificationPrefNewUser")
+</p>
+
+$msg.getMessage("email.common.signatureSignOff")
+<p>
+$msg.getMessage("email.common.signatureTeam")
+</p>

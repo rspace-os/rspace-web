@@ -41,11 +41,15 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /*
  * mostly refactored out of ExportImport and AbstractArchiveExporter, for RSPAC-1711
  */
+@Service
 @Slf4j
+@Transactional
 public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
 
   private @Autowired RecordManager recordManager;
@@ -59,7 +63,10 @@ public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
   private @Autowired IGroupPermissionUtils groupPermUtils;
   private @Autowired @Lazy GroupManager grpMgr;
 
+  // Folder.children is lazy under Hibernate 6; @Transactional ensures session is open for
+  // traversal
   @Override
+  @Transactional(readOnly = true)
   public ExportRecordList createExportRecordList(
       IArchiveExportConfig exportConfig, ExportSelection exportSelection) {
     StopWatch sw = StopWatch.createStarted();
@@ -128,6 +135,7 @@ public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public void updateExportListWithLinkedRecords(
       ExportRecordList exportList, IArchiveExportConfig aconfig) {
 

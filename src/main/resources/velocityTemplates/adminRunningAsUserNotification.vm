@@ -1,38 +1,16 @@
 #*
 Template for messaging a user that someone has 'RunAs' them
 Arguments:
- - runAs - The user who was impersonated
- - systemUser - The admin user  who performed the 'RunAs' operation
+- runAs - The user who was impersonated
+- systemUser - The admin user  who performed the 'RunAs' operation
+- msg - MessageSourceUtils for i18n phrase lookup
 *#
-<html>
-<body>
+
 <p/>
-Hello ${runAs.fullName},
+$msg.format("email.common.greeting", [${runAs.fullName}])
 <p/>
-The RSpace system administrator (${systemUser.fullName}) has recently  logged into your RSpace account.
- 
+$msg.format("email.admin.adminRunningAsUserNotification.body", [${systemUser.fullName}, ${systemUser.email}])
 <p/>
-There are  several reasons why this might happen: 
-<ul>
-<li> To perform some admin function
-<li> Maintenance work
-<li> User assistance/fault diagnosis.
-</ul>
-<br/>
-If this is not expected, or your account has been tampered with, please contact the RSpace admin at
-${systemUser.email}
-<p/>
-Best wishes <br/>
- RSpace admin
- <p/>
- #dontReply
-</body>
-</html>
-
-
-
-
-
-
-
-
+<p>
+$msg.getMessage("email.common.dontReply")
+</p>

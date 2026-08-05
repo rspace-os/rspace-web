@@ -1,0 +1,17 @@
+{
+  "_embedded": {
+    "projects": [
+      {
+        "uuid": "22222222-2222-2222-2222-222222222222",
+        "name": "Mock DSW Project",
+        "description": "A mock Data Management Plan project for e2e tests.",
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "updatedAt": "2026-01-02T00:00:00.000Z",
+        "sharing": "restricted",
+        "state": "default",
+        "template": false,
+        "visibility": "private"
+      }
+    ]
+  }
+}

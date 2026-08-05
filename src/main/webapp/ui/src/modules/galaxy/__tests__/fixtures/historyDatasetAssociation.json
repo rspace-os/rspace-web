@@ -1,0 +1,14 @@
+{
+  "id": "d1e2a3t4a5s6e7t8",
+  "hda_ldda": "hda",
+  "uuid": "11111111-2222-3333-4444-555555555555",
+  "hid": 1,
+  "model_class": "HistoryDatasetAssociation",
+  "name": "galaxy-attachment.txt",
+  "deleted": false,
+  "purged": false,
+  "visible": true,
+  "state": "ok",
+  "history_id": "a1b2c3d4e5f6a1b2",
+  "annotation": "Document: http://localhost:8080/mock Data: http://localhost:8080/mock Download: http://localhost:8080/mock"
+}

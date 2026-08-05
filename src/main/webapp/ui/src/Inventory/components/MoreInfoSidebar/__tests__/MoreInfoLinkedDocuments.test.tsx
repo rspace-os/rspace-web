@@ -1,9 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { AxiosResponse } from "axios";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { render, within } from "@/__tests__/customQueries";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import { findTableCell } from "@/__tests__/tableQueries";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import InvApiService from "../../../../common/InvApiService";
@@ -54,6 +54,41 @@ describe("LinkedDocuments", () => {
     expect(spy).toHaveBeenCalledWith("referencingItems/IT5");
   });
 
+  test("fetches instrument-template back-references via the generic referencingItems route", async () => {
+    // NT has an entry in INVENTORY_PREFIX_TO_API_PATH, but the typed
+    // instrumentTemplates/{id}/referencingItems endpoint does not exist on the
+    // backend; like IT sample templates, instrument templates must use the
+    // generic /referencingItems/{globalId} route
+    const spy = vi.spyOn(InvApiService, "get").mockImplementation((url) => {
+      if (String(url).startsWith("referencingItems/")) {
+        return Promise.resolve({
+          data: {
+            referencingItems: [
+              {
+                sourceGlobalId: "SA1",
+                sourceName: "A sample",
+                sourceType: "SAMPLE",
+                relationType: "References",
+                versionPin: null,
+              },
+            ],
+          },
+        } as AxiosResponse);
+      }
+      return Promise.resolve({ data: [] } as AxiosResponse);
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkedDocuments factory={mockFactory()} globalId="NT5" />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedDocuments.show" }));
+
+    expect(await screen.findByText("A sample")).toBeVisible();
+    expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/NT5");
+    expect(spy).toHaveBeenCalledWith("referencingItems/NT5");
+  });
+
   test("Assert that correct API endpoint is called with Global ID", async () => {
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.reject(new Error("An error")));
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
@@ -93,17 +128,13 @@ describe("LinkedDocuments", () => {
     fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedDocuments.show" }));
     expect(within(await screen.findByRole("table")).getAllByRole("row")).toHaveLength(3);
     expect(
-      // @ts-expect-error findTableCell exists on the custom within function
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await within(screen.getByRole("table")).findTableCell({
+      await findTableCell(screen.getByRole("table"), {
         columnHeading: "inventory:moreInfo.linkedDocuments.columns.name",
         rowIndex: 0,
       }),
     ).toHaveTextContent("Foo");
     expect(
-      // @ts-expect-error findTableCell exists on the custom within function
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await within(screen.getByRole("table")).findTableCell({
+      await findTableCell(screen.getByRole("table"), {
         columnHeading: "inventory:moreInfo.linkedDocuments.columns.name",
         rowIndex: 1,
       }),
@@ -137,9 +168,7 @@ describe("LinkedDocuments", () => {
 
     expect(rows).toHaveLength(2);
     expect(
-      // @ts-expect-error findTableCell exists on the custom within function
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await within(screen.getByRole("table")).findTableCell({
+      await findTableCell(screen.getByRole("table"), {
         columnHeading: "inventory:moreInfo.linkedDocuments.columns.name",
         rowIndex: 0,
       }),

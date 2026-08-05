@@ -4,9 +4,12 @@ import static com.researchspace.CacheNames.RAID_CONNECTION;
 
 import com.researchspace.CacheNames;
 import com.researchspace.core.util.NumberUtils;
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.config.CacheConfiguration;
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import org.ehcache.config.builders.ResourcePoolsBuilder;
+import org.ehcache.config.units.EntryUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 /**
@@ -14,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
  * beans.
  */
 class EhCacheConfigurer {
+  private static final Logger log = LoggerFactory.getLogger(EhCacheConfigurer.class);
 
   static final String filePropertyCachename = "com.researchspace.model.FileProperty";
   static final String imageBlobCachename = "com.researchspace.model.ImageBlob";
@@ -53,27 +57,48 @@ class EhCacheConfigurer {
 
   public EhCacheConfigurer() {}
 
-  public void configure(CacheManager ehCcheMgr) {
-    override(ehCcheMgr, imageBlobMaxElementsInMemory, imageBlobCachename);
-    override(ehCcheMgr, filePropertyMaxElementsInMemory, filePropertyCachename);
-    override(ehCcheMgr, userRoleMaxElementsInMemory, userRolesCachename);
-    override(ehCcheMgr, fieldFormMaxElementsInMemory, fieldFormCachename);
-    override(ehCcheMgr, formMaxElementsInMemory, formCachename);
-    override(ehCcheMgr, integrationInfoMaxElementsInMemory, CacheNames.INTEGRATION_INFO);
-    override(ehCcheMgr, raidAliveConnectionMaxElementsInMemory, RAID_CONNECTION);
-    override(ehCcheMgr, baseRecordMaxElementsInMemory, "com.researchspace.model.record.BaseRecord");
-    override(ehCcheMgr, userGroupMaxElementsInMemory, "com.researchspace.model.UserGroup");
-    override(
-        ehCcheMgr, userPreferenceMaxElementsInMemory, "com.researchspace.model.UserPreference");
+  public void configure(CacheManager cacheManager) {
+    applyOverride(cacheManager, imageBlobMaxElementsInMemory, imageBlobCachename);
+    applyOverride(cacheManager, filePropertyMaxElementsInMemory, filePropertyCachename);
+    applyOverride(cacheManager, userRoleMaxElementsInMemory, userRolesCachename);
+    applyOverride(cacheManager, fieldFormMaxElementsInMemory, fieldFormCachename);
+    applyOverride(cacheManager, formMaxElementsInMemory, formCachename);
+    applyOverride(cacheManager, integrationInfoMaxElementsInMemory, CacheNames.INTEGRATION_INFO);
+    applyOverride(cacheManager, raidAliveConnectionMaxElementsInMemory, RAID_CONNECTION);
+    applyOverride(
+        cacheManager, baseRecordMaxElementsInMemory, "com.researchspace.model.record.BaseRecord");
+    applyOverride(cacheManager, userGroupMaxElementsInMemory, "com.researchspace.model.UserGroup");
+    applyOverride(
+        cacheManager, userPreferenceMaxElementsInMemory, "com.researchspace.model.UserPreference");
   }
 
-  private void override(CacheManager ehCcheMgr, String value, String cachename) {
-    if (isCacheSizeOverrideDefined(value)) {
-      CacheConfiguration config = getCacheConfigurationForCache(ehCcheMgr, cachename);
-      config.setMaxEntriesLocalHeap(Integer.parseInt(value));
-    }
+  private void applyOverride(CacheManager cacheManager, String value, String cacheName) {
     if (isCacheSizeSetToZero(value)) {
-      disableCache(ehCcheMgr, cachename);
+      log.warn(
+          "Cache override for [{}] is set to 0 (disable) which is not supported"
+              + " at runtime with JCache/Ehcache3. Configure this in ehcache.xml instead.",
+          cacheName);
+      return;
+    }
+    if (!isCacheSizeOverrideDefined(value)) {
+      return;
+    }
+    int size = NumberUtils.stringToInt(value, -1);
+    Cache<?, ?> jcache = cacheManager.getCache(cacheName);
+    if (jcache == null) {
+      log.warn("Cache [{}] not found in CacheManager, cannot apply override.", cacheName);
+      return;
+    }
+    try {
+      org.ehcache.Cache<?, ?> nativeCache =
+          (org.ehcache.Cache<?, ?>) jcache.unwrap(org.ehcache.Cache.class);
+      nativeCache
+          .getRuntimeConfiguration()
+          .updateResourcePools(
+              ResourcePoolsBuilder.newResourcePoolsBuilder().heap(size, EntryUnit.ENTRIES).build());
+      log.info("Applied cache heap override for [{}]: {} entries", cacheName, size);
+    } catch (Exception e) {
+      log.warn("Failed to apply cache override for [{}]: {}", cacheName, e.getMessage());
     }
   }
 
@@ -83,16 +108,6 @@ class EhCacheConfigurer {
 
   private boolean isCacheSizeSetToZero(String cacheOverridValue) {
     return NumberUtils.stringToInt(cacheOverridValue, -1) == 0;
-  }
-
-  private CacheConfiguration getCacheConfigurationForCache(CacheManager mgr, String cacheName) {
-    Cache cache = mgr.getCache(cacheName);
-    return cache.getCacheConfiguration();
-  }
-
-  private void disableCache(CacheManager mgr, String cacheName) {
-    Cache cache = mgr.getCache(cacheName);
-    cache.setDisabled(true);
   }
 
   // for testing

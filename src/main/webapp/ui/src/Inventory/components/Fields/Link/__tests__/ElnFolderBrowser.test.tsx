@@ -1,8 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@/__tests__/customQueries";
+
 import materialTheme from "../../../../../theme";
 
 const { mockGetFolderTree } = vi.hoisted(() => ({

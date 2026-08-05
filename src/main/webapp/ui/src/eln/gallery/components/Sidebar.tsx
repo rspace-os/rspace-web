@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import DSWAccentMenuItem, { type DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import AccentMenuItem from "../../../components/AccentMenuItem";
-import { Drawer, Menu } from "../../../components/DialogBoundary";
+import { Drawer } from "../../../components/DialogBoundary";
 import DrawerTab from "../../../components/DrawerTab";
 import EventBoundary from "../../../components/EventBoundary";
 import { useLandmark } from "../../../components/LandmarksContext";
@@ -44,6 +44,7 @@ import { type GallerySection, gallerySectionIcon } from "../common";
 import { useGalleryActions } from "../useGalleryActions";
 import { asWritableS3Filestore, type GalleryFile, type Id, RemoteFile } from "../useGalleryListing";
 import AddFilestoreDialog from "./AddFilestoreDialog";
+import SidebarCreateMenu from "./SidebarCreateMenu";
 
 const UploadMenuItem = ({
   folderId,
@@ -298,7 +299,7 @@ const AddFilestoreMenuItem = ({
                       id: number;
                       name: string;
                       url: string;
-                    }>([e instanceof Error ? e : new Error("Unknown error")]);
+                    }>([e instanceof Error ? e : new Error(t("unknownError"))]);
                   }
                 }),
             ),
@@ -494,26 +495,11 @@ const Sidebar = ({
         >
           {drawerOpen && <div>{t("common:actions.create")}</div>}
         </Button>
-        <Menu
-          open={Boolean(newMenuAnchorEl)}
+        <SidebarCreateMenu
           anchorEl={newMenuAnchorEl}
           onClose={() => {
             if (viewport.isViewportSmall) setDrawerOpen(false);
             setNewMenuAnchorEl(null);
-          }}
-          sx={{
-            [`& .${paperClasses.root}`]: {
-              ...(newMenuAnchorEl
-                ? {
-                    transform: "translate(-4px, 4px) !important",
-                  }
-                : {}),
-            },
-          }}
-          slotProps={{
-            list: {
-              disablePadding: true,
-            },
           }}
         >
           <UploadMenuItem
@@ -559,7 +545,7 @@ const Sidebar = ({
               }
             }}
           />
-        </Menu>
+        </SidebarCreateMenu>
       </Box>
       <Divider />
       <Box

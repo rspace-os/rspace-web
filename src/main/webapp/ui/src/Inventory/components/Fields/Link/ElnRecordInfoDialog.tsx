@@ -14,7 +14,7 @@ import TransRichText from "@/modules/common/i18n/TransRichText";
 import { useGetWorkspaceRecordInformationAjaxQuery } from "@/modules/workspace/queries";
 import DocumentSections from "./DocumentSections";
 import GallerySections from "./GallerySections";
-import { iconForGlobalId, openUrlForTarget, prefixOf } from "./iconForGlobalId";
+import { iconForGlobalId, openUrlForTarget, prefixOf, supportsVersionPin } from "./iconForGlobalId";
 import { GLOBAL_ID_PATTERN } from "./linkTarget";
 
 export interface ElnRecordInfoDialogProps {
@@ -128,8 +128,13 @@ export default function ElnRecordInfoDialog(props: ElnRecordInfoDialogProps): Re
 
   const iconData = iconForGlobalId(props.globalId);
   const recordId = numericIdOf(props.globalId);
-  // Only SD documents are versionable; ignore a pin on any other target (NB/GL).
+  // The BODY can only be shown at a past version for SD documents: getRecordInformation takes a
+  // document version and has no notion of a past Gallery revision, so a pinned GL target is
+  // fetched, and displayed, live. NB is not versionable at all.
   const effectiveVersionPin = prefixOf(props.globalId) === "SD" ? (props.versionPin ?? null) : null;
+  // OPEN, unlike the body, honours a GL pin: openUrlForTarget routes it to the read-only
+  // /gallery/item/<id>/<version> view, which does serve a past version.
+  const openVersionPin = supportsVersionPin(props.globalId) ? (props.versionPin ?? null) : null;
 
   return (
     <Dialog
@@ -157,7 +162,7 @@ export default function ElnRecordInfoDialog(props: ElnRecordInfoDialogProps): Re
           <Button
             size="small"
             startIcon={<OpenInNewIcon />}
-            href={openUrlForTarget(props.globalId, effectiveVersionPin)}
+            href={openUrlForTarget(props.globalId, openVersionPin)}
             target="_blank"
             rel="noopener noreferrer"
           >

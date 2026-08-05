@@ -26,11 +26,14 @@ public class RSMetaDataHibernateDao extends GenericDaoHibernate<RSMetaData, Long
   @Override
   public ArchiveVersionToAppVersion getAppVersionForArchiveVersion(
       Version archiveVersion, String name) {
+    // Use schemaVersion.version (the embedded Long field) instead of comparing the embedded
+    // object directly — Hibernate 6 doesn't support embedded-object equality in JPQL queries.
     return getSession()
         .createQuery(
-            "from ArchiveVersionToAppVersion where schemaName=:name and schemaVersion=:version",
+            "from ArchiveVersionToAppVersion where schemaName=:name and"
+                + " schemaVersion.version=:versionNum",
             ArchiveVersionToAppVersion.class)
-        .setParameter("version", archiveVersion)
+        .setParameter("versionNum", archiveVersion.getVersion())
         .setParameter("name", name)
         .uniqueResult();
   }

@@ -1,0 +1,46 @@
+{
+  "errors": {
+    "gallery": {
+      "filestore": {
+        "validation": {
+          "destFilestoreIdRequired": "destFilestoreId is mandatory",
+          "destPathRequired": "destPath is mandatory",
+          "nameRequired": "name is mandatory",
+          "pathRequired": "path is mandatory",
+          "recordIdsRequired": "recordIds is mandatory",
+          "sourcePathRequired": "sourcePath is mandatory"
+        }
+      },
+      "invalidContentType": "contentType must be empty (for workspace) or one of {0} for files"
+    }
+  },
+  "gallery": {
+    "api": {
+      "noTopLevelFolder": "You cannot create a top-level folder in the Gallery; create folder in one of the sub-galleries, e.g. Images, Documents"
+    },
+    "filestore": {
+      "folder": {
+        "uploadRejected": "Cannot move folders to filestores."
+      },
+      "mediaFileRequired": "Only media files can be moved to filestores."
+    },
+    "errors": {
+      "accessDenied": "Access denied",
+      "extensionChangeNotAllowed": "Cannot update .{0} file with .{1}",
+      "fileLocked": "The file is currently locked and can't be updated",
+      "folderNotInGallery": "Provided folder id doesn't point to a Gallery folder",
+      "imageFileNotRetrievable": "Could not retrieve image file {0}",
+      "notAMediaRecord": "{0} is not a media record",
+      "revisionsIdsMismatch": "Revisions and ids must be same length",
+      "saveFailed": "Save action failed [{0}]",
+      "saveFailedFile": "Media file could not be saved - {0}",
+      "selectedMediaIdAndFieldIdBothProvided": "selectedMediaId and fieldId shouldn't be both provided"
+    },
+    "snippet": {
+      "creation": {
+        "failed": "Some problems occurred during creation of the snippet. Please try again.",
+        "ok": "A new snippet ''{0}'' has been added to the Gallery."
+      }
+    }
+  }
+}

@@ -54,6 +54,7 @@ import com.researchspace.service.inventory.InventoryLinkValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -63,7 +64,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -500,8 +500,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     // ApiRuntimeException maps to a 422 with the resolved bundle message, where a raw
     // IllegalArgumentException would surface as an unmapped 500.
     if (!DataCiteRelationType.isValid(relationType)) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.link.relationTypeInvalid", relationType);
+      throw new ApiRuntimeException("errors.inventory.field.linkRelationTypeInvalid", relationType);
     }
     String allowed = field.getAllowedRelationTypes();
     if (allowed == null || allowed.trim().isEmpty()) {
@@ -509,7 +508,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     }
     if (!Arrays.asList(allowed.split("\\|")).contains(relationType)) {
       throw new ApiRuntimeException(
-          "errors.inventory.field.link.relationTypeNotPermitted", relationType, field.getName());
+          "errors.inventory.field.linkRelationTypeNotPermitted", relationType, field.getName());
     }
   }
 
@@ -862,6 +861,11 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
           /* then delete the sample */
           dbSample.setRecordDeleted(true);
+          // Recompute the active-subsample cache now the deleted flag is set: a deleted sample
+          // lists its deletedOnSampleDeletion subsamples as active, but the refresh above ran
+          // pre-deletion (leaving it empty). Hibernate 5 refreshed this transient cache as a
+          // side effect of a setter call during merge/flush; Hibernate 6 no longer does.
+          dbSample.refreshActiveSubSamples();
           dbSample = saveSampleEntity(dbSample);
           publisher.publishEvent(new InventoryDeleteEvent(dbSample, user));
         }
@@ -1112,7 +1116,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       }
       if (apiField.isDeleteFieldRequest()) {
         if (apiField.getId() == null) {
-          throw new ApiRuntimeException("errors.inventory.field.deleteRequest.idMissing");
+          throw new ApiRuntimeException("errors.inventory.field.deleteRequestIdMissing");
         }
         Optional<InventoryEntityField> dbFieldOpt =
             dbTemplate.getActiveFields().stream()
@@ -1120,7 +1124,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
                 .findFirst();
         if (dbFieldOpt.isEmpty()) {
           throw new ApiRuntimeException(
-              "errors.inventory.field.deleteRequest.idUnknown", apiField.getId());
+              "errors.inventory.field.deleteRequestIdUnknown", apiField.getId());
         }
         dbTemplate.deleteSampleField(dbFieldOpt.get(), apiField.isDeleteFieldOnSampleUpdate());
         softDeleteLinkOfDeletedLinkField(dbFieldOpt.get(), user);

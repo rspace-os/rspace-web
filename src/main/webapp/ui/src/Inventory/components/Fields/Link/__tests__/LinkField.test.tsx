@@ -1,8 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@/__tests__/customQueries";
+
 import materialTheme from "../../../../../theme";
 
 vi.mock("../InventoryInfoDialog", () => ({
@@ -237,6 +238,30 @@ describe("LinkField", () => {
     expect(openLink).toHaveAttribute("target", "_blank");
   });
 
+  it("links Open to the versioned viewer for a pinned instrument target", () => {
+    renderField({
+      link: { ...baseLink, targetGlobalId: "IN42", versionPin: 3 },
+    });
+
+    // exercises INVENTORY_PREFIX_TO_ROUTE.IN: a pinned instrument link opens the
+    // read-only versioned instrument viewer, not the live record.
+    const openLink = screen.getByRole("link", { name: "inventory:fields.link.linkField.openLabel" });
+    expect(openLink).toHaveAttribute("href", "/inventory/instrument/42?version=3");
+    expect(openLink).toHaveAttribute("target", "_blank");
+  });
+
+  it("links Open to the versioned viewer for a pinned instrument-template target", () => {
+    renderField({
+      link: { ...baseLink, targetGlobalId: "NT42", versionPin: 3 },
+    });
+
+    // exercises INVENTORY_PREFIX_TO_ROUTE.NT: a pinned instrument-template link
+    // opens the read-only versioned template viewer, not the live template.
+    const openLink = screen.getByRole("link", { name: "inventory:fields.link.linkField.openLabel" });
+    expect(openLink).toHaveAttribute("href", "/inventory/instrumenttemplate/42?version=3");
+    expect(openLink).toHaveAttribute("target", "_blank");
+  });
+
   it("keeps Open enabled when no versionPin is set", () => {
     renderField({ link: { ...baseLink, versionPin: null } });
     expect(screen.getByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).toHaveAttribute(
@@ -288,14 +313,13 @@ describe("LinkField", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("hides the version-pin clock for gallery (GL) targets even when editable", () => {
+  it("shows the version-pin clock for gallery (GL) targets when editable", () => {
+    // Gallery items gained a revision history in RSDEV-1250, so they can be pinned (RSDEV-1188)
     renderField({
       editable: true,
       link: { ...baseLink, targetGlobalId: "GL9" },
     });
-    expect(
-      screen.queryByRole("button", { name: "inventory:fields.link.linkField.pinVersionLabel" }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "inventory:fields.link.linkField.pinVersionLabel" })).toBeInTheDocument();
   });
 
   it("shows the version-pin clock for document (SD) targets when editable", () => {

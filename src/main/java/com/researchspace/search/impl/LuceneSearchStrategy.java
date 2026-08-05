@@ -7,10 +7,12 @@ import com.researchspace.model.User;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexNotFoundException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
@@ -23,6 +25,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 /** Performs Lucene search on locally indexed FileStore */
+@Slf4j
 public class LuceneSearchStrategy extends AttachmentSearchBase implements FileSearchStrategy {
   private int defaultReturnDocs;
   private boolean isInitialized = false;
@@ -61,6 +64,12 @@ public class LuceneSearchStrategy extends AttachmentSearchBase implements FileSe
       IndexSearcher luceneSearcher = new IndexSearcher(indexReader);
       TopDocs docs = luceneSearcher.search(query, defaultReturnDocs);
       files = setResultFiles(luceneSearcher, docs, query);
+    } catch (IndexNotFoundException e) {
+      // Index has not been initialised yet (no attachments have been indexed); return empty
+      // results.
+      log.info(
+          "Attachment search index not found at {}, returning empty results", getIndexFolderPath());
+      return new ArrayList<>();
     } catch (ParseException e) {
       throw new SearchQueryParseException(e);
     }

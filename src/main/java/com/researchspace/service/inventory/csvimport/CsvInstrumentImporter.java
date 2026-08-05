@@ -16,13 +16,13 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -146,7 +146,7 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
           bulkOperationHandler.convertExceptionToApiError(
               new IllegalArgumentException(
                   messages.getMessage(
-                      "errors.inventory.import.instrument.column.count.mismatch",
+                      "errors.inventory.import.instrumentColumnCountMismatch",
                       new Object[] {csvFieldsMappedToTemplateFieldsCount, templateFieldsCount})));
       csvProcessingResult.addTemplateError(error);
     }
@@ -179,7 +179,7 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
         if (line.length != expectedColumnsNumber) {
           throw new IllegalArgumentException(
               messages.getMessage(
-                  "errors.inventory.import.instrument.csv.line.unexpected.column.count",
+                  "errors.inventory.import.instrumentCsvLineUnexpectedColumnCount",
                   new Object[] {expectedColumnsNumber, line.length}));
         }
         for (int currentColumnIndex = 0; currentColumnIndex < line.length; currentColumnIndex++) {
@@ -246,7 +246,7 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
       default:
         throw new IllegalArgumentException(
             messages.getMessage(
-                "errors.inventory.import.instrument.unrecognized.field.mapping",
+                "errors.inventory.import.instrumentUnrecognizedFieldMapping",
                 new Object[] {fieldName}));
     }
   }

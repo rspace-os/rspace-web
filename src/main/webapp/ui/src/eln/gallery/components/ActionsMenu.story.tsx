@@ -59,6 +59,8 @@ const nonFolderFile: GalleryFile = {
   canBeMoved: Result.Ok(null),
   canUploadNewVersion: Result.Ok(null),
   canBeLoggedOutOf: Result.Ok(null),
+  canBeEdited: Result.Ok(null),
+  canViewVersionHistory: Result.Ok(null),
   treeViewItemId: "GF1",
   key: "GF1",
   metadata: {},
@@ -104,6 +106,8 @@ const folderFile: GalleryFile = {
   canBeMoved: Result.Ok(null),
   canUploadNewVersion: Result.Ok(null),
   canBeLoggedOutOf: Result.Ok(null),
+  canBeEdited: Result.Ok(null),
+  canViewVersionHistory: Result.Error([new Error("Folders do not have a version history.")]),
   treeViewItemId: "GF2",
   key: "GF2",
   metadata: {},
@@ -149,6 +153,8 @@ const snippetFile: GalleryFile = {
   canBeMoved: Result.Ok(null),
   canUploadNewVersion: Result.Ok(null),
   canBeLoggedOutOf: Result.Ok(null),
+  canBeEdited: Result.Ok(null),
+  canViewVersionHistory: Result.Error([new Error("Snippets do not have a version history.")]),
   treeViewItemId: "GF3",
   key: "GF3",
   metadata: {},
@@ -226,6 +232,7 @@ const writableS3Filestore = new Filestore({
   filesystemName: "LRZ filestore",
   filesystemType: "S3",
   canWrite: true,
+  ownerName: "Joe Bloggs",
 });
 
 export function ActionsMenuInWritableS3Filestore() {

@@ -32,7 +32,7 @@ import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../../../componen
 import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../../stores/contexts/Analytics";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
-import type { Identifier, IdentifierField, IGSNPublishingState } from "../../../../stores/definitions/Identifier";
+import type { Identifier, IdentifierField, PublishingState } from "../../../../stores/definitions/Identifier";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import RsSet from "../../../../util/set";
@@ -71,6 +71,8 @@ const IdentifierWrapper = observer(
       (typeof field.id === "string" || typeof field.id === "number") &&
       "name" in field &&
       typeof field.name === "string";
+
+    const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
 
     const rawCustomFields: Array<unknown> =
       "fields" in activeResult && Array.isArray(activeResult.fields) ? activeResult.fields : [];
@@ -185,7 +187,13 @@ const IdentifierWrapper = observer(
             {t("fields.identifiers.wrapper.inventoryFields.title")}
           </Typography>
           <Alert severity="info">
-            <TransRichText i18nKey="inventory:fields.identifiers.wrapper.inventoryFields.alert" />
+            <TransRichText
+              i18nKey={
+                isInstrument
+                  ? "inventory:fields.identifiers.wrapper.inventoryFields.alertPidinst"
+                  : "inventory:fields.identifiers.wrapper.inventoryFields.alert"
+              }
+            />
           </Alert>
           <FormControlLabel
             control={
@@ -236,6 +244,20 @@ const IdentifierWrapper = observer(
   },
 );
 
+/*
+ * B2INST has no retract operation at all (B2instConnectorImpl.retractDoi refuses outright), and
+ * Delete is only offered for "draft". Until this component tolerated the review states it threw
+ * during render, so the Delete/Retract button was never reachable for them; now that it renders, it
+ * has to be disabled rather than offer an action guaranteed to fail.
+ *
+ * Keyed on the provider and "not a draft", NOT on a list of known states. The server stores whatever
+ * status the provider reported, and only sets it when the response carries one
+ * (InventoryIdentifierApiManagerImpl), so a state this frontend has never heard of is expected here —
+ * the catch-alls in identifierStateLabel and StateInfo exist for exactly that. A state-keyed gate
+ * would leave every such value on the old path with an enabled "Retract" that always errors.
+ */
+const isB2instBeyondDraft = (id: Identifier): boolean => id.doiType === "PIDINST_B2INST" && id.state !== "draft";
+
 type IdentifiersListArgs = { activeResult: InventoryRecord };
 
 export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ activeResult }: IdentifiersListArgs) => {
@@ -244,36 +266,75 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
   const { addAlert } = useContext(AlertContext);
   const { uiStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
-  const identifierStateLabel = (state: IGSNPublishingState): string =>
-    match<IGSNPublishingState, string>([
+  const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
+  /*
+   * PIDINST identifiers report the B2INST review-request status rather than a DataCite state, so
+   * this must cover both vocabularies. The final arm is a deliberate catch-all: the server passes
+   * the provider's status through verbatim, and an unrecognised value must degrade to showing the
+   * raw state rather than throwing out of render and blanking the whole page.
+   */
+  const identifierStateLabel = (state: PublishingState): string =>
+    match<PublishingState, string>([
       [(s) => s === "draft", t("igsnTable.filters.stateOptions.draft.title")],
       [(s) => s === "findable", t("igsnTable.filters.stateOptions.findable.title")],
       [(s) => s === "registered", t("igsnTable.filters.stateOptions.registered.title")],
+      [(s) => s === "created", t("fields.identifiers.list.stateLabels.created")],
+      [(s) => s === "submitted", t("fields.identifiers.list.stateLabels.submitted")],
+      [(s) => s === "accepted", t("fields.identifiers.list.stateLabels.accepted")],
+      [(s) => s === "declined", t("fields.identifiers.list.stateLabels.declined")],
+      [(s) => s === "cancelled", t("fields.identifiers.list.stateLabels.cancelled")],
+      [(s) => s === "expired", t("fields.identifiers.list.stateLabels.expired")],
+      [() => true, String(state)],
     ])(state);
 
   const StateInfo = ({
     identifierState,
     identifierUrl,
   }: {
-    identifierState: IGSNPublishingState;
+    identifierState: PublishingState;
     identifierUrl: string | null | undefined;
   }): ReactNode => {
-    if (identifierState === "draft") return <>{t("fields.identifiers.list.stateInfo.draft")}</>;
+    if (identifierState === "draft")
+      return (
+        <>
+          {isInstrument
+            ? t("fields.identifiers.list.stateInfo.draftPidinst")
+            : t("fields.identifiers.list.stateInfo.draft")}
+        </>
+      );
     if (identifierState === "findable")
       return (
         <TransRichText
-          i18nKey="inventory:fields.identifiers.list.stateInfo.findable"
+          i18nKey={
+            isInstrument
+              ? "inventory:fields.identifiers.list.stateInfo.findablePidinst"
+              : "inventory:fields.identifiers.list.stateInfo.findable"
+          }
           values={{ link: identifierUrl || "" }}
         />
       );
     if (identifierState === "registered")
       return (
         <TransRichText
-          i18nKey="inventory:fields.identifiers.list.stateInfo.registered"
+          i18nKey={
+            isInstrument
+              ? "inventory:fields.identifiers.list.stateInfo.registeredPidinst"
+              : "inventory:fields.identifiers.list.stateInfo.registered"
+          }
           values={{ link: identifierUrl || "" }}
         />
       );
-    throw new Error("Invalid state");
+    /*
+     * PIDINST review states. Publishing a B2INST identifier submits it to a community for curator
+     * review, so the outcome is decided outside RSpace and is only reported back here.
+     */
+    if (identifierState === "submitted") return <>{t("fields.identifiers.list.stateInfo.pidinstSubmitted")}</>;
+    if (identifierState === "accepted") return <>{t("fields.identifiers.list.stateInfo.pidinstAccepted")}</>;
+    if (identifierState === "declined") return <>{t("fields.identifiers.list.stateInfo.pidinstDeclined")}</>;
+    if (identifierState === "cancelled") return <>{t("fields.identifiers.list.stateInfo.pidinstCancelled")}</>;
+    if (identifierState === "expired") return <>{t("fields.identifiers.list.stateInfo.pidinstExpired")}</>;
+    // Unknown state: the label still renders, there is just nothing extra to explain.
+    return null;
   };
 
   const [selectedIdentifier, setSelectedIdentifier] = useState<Identifier | undefined>();
@@ -348,12 +409,24 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
             </Grid>
             <Grid container direction="row" spacing={1} sx={{ width: "100%", marginBottom: "8px" }}>
               <Grid sx={{ padding: "6px" }} size={6}>
-                {id.state === "draft" ? (
-                  id.doi
-                ) : (
-                  <a href={id.publicUrl || ""} target="_blank" rel="noreferrer">
+                {/*
+                 * Keyed on the URLs available rather than on the state, since the two providers
+                 * reach a linkable URL at different points. A citable public URL wins when present
+                 * (DataCite, once findable). Otherwise the provider's own record page is used, which
+                 * a PIDINST identifier has from registration onwards; the identifier value is the
+                 * link text there, since the provider URL itself is noise to the reader. With
+                 * neither, the identifier is shown as plain text.
+                 */}
+                {id.publicUrl ? (
+                  <a href={id.publicUrl} target="_blank" rel="noreferrer">
                     {id.publicUrl}
                   </a>
+                ) : id.providerUrl ? (
+                  <a href={id.providerUrl} target="_blank" rel="noreferrer">
+                    {id.doi}
+                  </a>
+                ) : (
+                  id.doi
                 )}
               </Grid>
               <Grid size={2}>{id.doiTypeLabel}</Grid>
@@ -428,7 +501,9 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                       ? t("fields.identifiers.list.tooltips.deleteDraft")
                       : id.state === "findable"
                         ? t("fields.identifiers.list.tooltips.retract")
-                        : t("fields.identifiers.list.tooltips.notPublished")
+                        : isB2instBeyondDraft(id)
+                          ? t("fields.identifiers.list.tooltips.pidinstNotRetractable")
+                          : t("fields.identifiers.list.tooltips.notPublished")
                   }
                 >
                   <Button
@@ -439,6 +514,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                     disabled={
                       activeResult.state === "edit" ||
                       id.state === "registered" ||
+                      isB2instBeyondDraft(id) ||
                       Boolean(activeResult.historicalVersion)
                     }
                   >
@@ -456,8 +532,12 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
             </Grid>
             <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
               <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
-              <a href={helpDocsArticleUrl("igsnIdentifiers")} target="_blank" rel="noreferrer">
-                {t("fields.identifiers.list.igsnDocLink")}
+              <a
+                href={helpDocsArticleUrl(isInstrument ? "pidinstIdentifiers" : "igsnIdentifiers")}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {isInstrument ? t("fields.identifiers.list.pidinstDocLink") : t("fields.identifiers.list.igsnDocLink")}
               </a>
             </Alert>
             <Collapse in={openIdForm}>
@@ -568,6 +648,7 @@ const AssignDialog = observer(
 const IdentifiersCard = observer((): ReactNode => {
   const {
     searchStore: { activeResult },
+    authStore,
   } = useStores();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
   const identifiers = activeResult.identifiers ?? [];
@@ -576,6 +657,7 @@ const IdentifiersCard = observer((): ReactNode => {
   const { t } = useTranslation(["inventory", "common"]);
   const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
   const identifierLabel = isInstrument ? t("fields.identifiers.card.pidinst") : t("fields.identifiers.card.igsnId");
+  const { pidinstEnabled } = authStore;
 
   return (
     <>
@@ -585,27 +667,30 @@ const IdentifiersCard = observer((): ReactNode => {
           <Button
             color="primary"
             variant="outlined"
-            disabled={isInstrument}
+            disabled={isInstrument && !pidinstEnabled}
             onClick={() => void activeResult.addIdentifier()}
           >
             {t("fields.identifiers.card.createNew", { identifierLabel })}
           </Button>
-          <Button
-            color="primary"
-            variant="outlined"
-            disabled={isInstrument}
-            onClick={() => {
-              setAssignDialogOpen(true);
-              trackEvent("user:open:assign-existing-igsn-dialog");
-            }}
-          >
-            {t("fields.identifiers.card.linkExisting", { identifierLabel })}
-          </Button>
-          <AssignDialog
-            recordToAssignTo={activeResult}
-            open={assignDialogOpen}
-            onClose={() => setAssignDialogOpen(false)}
-          />
+          {!isInstrument && (
+            <>
+              <Button
+                color="primary"
+                variant="outlined"
+                onClick={() => {
+                  setAssignDialogOpen(true);
+                  trackEvent("user:open:assign-existing-igsn-dialog");
+                }}
+              >
+                {t("fields.identifiers.card.linkExisting", { identifierLabel })}
+              </Button>
+              <AssignDialog
+                recordToAssignTo={activeResult}
+                open={assignDialogOpen}
+                onClose={() => setAssignDialogOpen(false)}
+              />
+            </>
+          )}
         </Stack>
       )}
       {identifiers.length > 0 && (

@@ -7,12 +7,12 @@ import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.axiope.search.InventorySearchConfig.InventorySearchType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.model.User;
+import jakarta.persistence.Transient;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javax.persistence.Transient;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -28,7 +28,7 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
 
   public static final int MAX_QUERY_LENGTH = 2000;
 
-  @Size(max = MAX_QUERY_LENGTH, message = "Max query length is " + MAX_QUERY_LENGTH)
+  @Size(max = MAX_QUERY_LENGTH, message = "{errors.inventory.search.maxQueryLength}")
   private String query;
 
   @Pattern(
@@ -38,19 +38,17 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
 
   @Pattern(
       regexp = "(IC|BE|SA|IT|BA|NT)(\\d+)(v\\d+)?",
-      message =
-          "Requested parentGlobalId is incorrect, must be global id of a Container, Workbench,"
-              + " Sample, Sample Template, Instrument Template or Basket")
+      message = "{errors.inventory.search.parentGlobalId.invalid}")
   @JsonProperty("parentGlobalId")
   private String parentGlobalId;
 
-  @Size(max = User.MAX_UNAME_LENGTH, message = "Provided value is too long for a username")
+  @Size(max = User.MAX_UNAME_LENGTH, message = "{errors.inventory.search.usernameTooLong}")
   @JsonProperty("ownedBy")
   private String ownedBy;
 
   @Pattern(
       regexp = "EXCLUDE|INCLUDE|DELETED_ONLY",
-      message = "Requested deletedItems option must be one of: EXCLUDE, INCLUDE or DELETED_ONLY")
+      message = "{errors.inventory.search.deletedItems.invalid}")
   private String deletedItems;
 
   /**
@@ -63,7 +61,7 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
   public static String modifyTagSearch(String query) {
     if (!org.springframework.util.StringUtils.hasText(query)
         || query.indexOf("tags:") == -1
-        || (query.indexOf("/") == -1 && query.indexOf(",") == -1)) {
+        || (query.indexOf('/') == -1 && query.indexOf(',') == -1)) {
       return query;
     } else {
       if (query.indexOf(" AND ") == -1

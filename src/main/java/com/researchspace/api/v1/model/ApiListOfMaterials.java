@@ -7,10 +7,10 @@ import com.researchspace.model.elninventory.MaterialUsage;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.service.inventory.InventoryMaterialUsageHelper;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import javax.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -24,11 +24,11 @@ public class ApiListOfMaterials {
   @JsonProperty("globalId")
   String globalId;
 
-  @Size(max = 255, message = "Name cannot be longer than 255 chars")
+  @Size(max = 255, message = "{errors.inventory.listOfMaterials.nameTooLong}")
   @JsonProperty("name")
   String name;
 
-  @Size(max = 255, message = "Description cannot be longer than 255 chars")
+  @Size(max = 255, message = "{errors.inventory.listOfMaterials.descriptionTooLong}")
   @JsonProperty("description")
   String description;
 

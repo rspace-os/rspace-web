@@ -1,7 +1,5 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.core.util.TransformerUtils.toList;
-
 import com.researchspace.licensews.LicenseExceededException;
 import com.researchspace.licensews.LicenseServerUnavailableException;
 import com.researchspace.model.Role;
@@ -10,13 +8,14 @@ import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.LicenseRequestResult;
 import com.researchspace.service.LicenseService;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +24,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class UserEnablementUtilsImpl implements UserEnablementUtils {
-  @Autowired private StrictEmailContentGenerator strictEmailContentGenerator;
+  @Autowired private EmailContentGenerator emailContentGenerator;
 
   @Autowired private UserManager userManager;
 
@@ -45,12 +44,14 @@ public class UserEnablementUtilsImpl implements UserEnablementUtils {
     velocityModel.put("user", user);
     velocityModel.put("accountDisabled", !newStatus);
     velocityModel.put("systemUser", systemUser);
-    velocityModel.put("htmlPrefix", properties.getServerUrl());
+    velocityModel.put("baseURL", properties.getServerUrl());
+    String subjectKey =
+        newStatus
+            ? "email.account.accountEnablementNotification.subjectEnabled"
+            : "email.account.accountEnablementNotification.subjectDisabled";
     EmailContent content =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-            "accountEnablementNotification.vm", velocityModel);
-    String title = newStatus ? "RSpace account enabled" : "RSpace account disabled";
-    emailer.sendHtmlEmail(title, content, toList(user.getEmail()), null);
+        emailContentGenerator.render(subjectKey, "accountEnablementNotification.vm", velocityModel);
+    emailer.sendEmail(content, List.of(user.getEmail()), null);
   }
 
   @Override
@@ -66,15 +67,10 @@ public class UserEnablementUtilsImpl implements UserEnablementUtils {
     if (result.isLicenseServerAvailable() && !result.isRequestOK()) {
       String customMessage = properties.getLicenseExceededCustomMessage();
 
-      if (numSeatsRequested == 1) {
-        throw new LicenseExceededException(
-            getMessage("license.insufficientSeatsSingle.msg", new Object[] {customMessage}));
-      } else {
-        throw new LicenseExceededException(
-            getMessage(
-                "license.insufficientSeatsMultiple.msg",
-                new Object[] {result.getAvailableSeats(), numSeatsRequested, customMessage}));
-      }
+      throw new LicenseExceededException(
+          getMessage(
+              "license.insufficientSeats.details",
+              new Object[] {result.getAvailableSeats(), numSeatsRequested, customMessage}));
     } else if (!result.isLicenseServerAvailable()) {
       throw new LicenseServerUnavailableException();
     }

@@ -8,10 +8,10 @@ import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailProperty;
 import com.researchspace.model.preference.ExportPageSize;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import java.util.Date;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
-import org.hibernate.validator.constraints.NotEmpty;
 
 /** user defined configuration details for export to external format */
 @Data
@@ -41,7 +41,7 @@ public class ExportToFileConfig implements StructuredDocumentHTMLViewConfig, IEx
 
   private ExportFormat exportFormat = ExportFormat.PDF;
 
-  @NotEmpty(message = "PDF name {errors.required.field}")
+  @NotEmpty(message = "{validation.errors.pdfNameRequired}")
   private String exportName = "PDF export";
 
   private boolean provenance = true;

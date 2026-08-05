@@ -9,15 +9,15 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import org.hibernate.Criteria;
+import org.hibernate.MappingException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.criterion.Projections;
+import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
 /**
@@ -76,7 +76,6 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   }
 
   @Autowired
-  @Required
   public void setSessionFactory(SessionFactory sessionFactory) {
     this.sessionFactory = sessionFactory;
   }
@@ -84,15 +83,13 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   /** {@inheritDoc} */
   @SuppressWarnings("unchecked")
   public List<T> getAll() {
-    Criteria criteria = getSession().createCriteria(persistentClass);
-    criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-    return criteria.list();
+    String hql = "select distinct e from " + persistentClass.getName() + " e";
+    return getSession().createQuery(hql, persistentClass).list();
   }
 
   public Long getCount() {
-    Criteria criteria =
-        getSession().createCriteria(persistentClass).setProjection(Projections.count("id"));
-    return (Long) criteria.uniqueResult();
+    String hql = "select count(e.id) from " + persistentClass.getName() + " e";
+    return getSession().createQuery(hql, Long.class).uniqueResult();
   }
 
   /** {@inheritDoc} */
@@ -117,10 +114,64 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
     return entity != null;
   }
 
-  /** {@inheritDoc} */
-  @SuppressWarnings("unchecked")
+  /**
+   * Replaces the previous {@code merge()}-only implementation. Under Hibernate 6, {@code merge()}
+   * of a new entity that a parent collection in the session already references throws {@code
+   * EntityExistsException}, because merge returns a managed copy rather than adopting the passed
+   * instance (Hibernate 5 tolerated this usage). So we use {@code persist()} for new/managed
+   * entities (same-instance semantics) and {@code merge()} only for detached entities.
+   *
+   * <p>Note: a NEW entity with an application-assigned id (no {@code @GeneratedValue}, e.g. {@code
+   * ArchivalCheckSum}) has a non-null id while still transient, so it is indistinguishable from a
+   * detached entity here and goes through {@code merge()}. Callers must therefore use the returned
+   * instance, not the argument, as the managed entity.
+   *
+   * <p>{@inheritDoc}
+   */
   public T save(T object) {
-    return (T) getSession().merge(object);
+    return persistOrMerge(object);
+  }
+
+  /**
+   * Saves an entity of any type using the same new/managed-vs-detached logic as {@link
+   * #save(Object)}: {@code persist()} for new or session-managed instances (preserving
+   * same-instance semantics) and {@code merge()} for detached instances. Subclasses that save
+   * entities other than their primary {@code persistentClass} should use this rather than {@code
+   * session.merge()} or {@code PersistenceUnitUtil.getIdentifier()} directly (see {@link
+   * #getEntityId} for why).
+   *
+   * @return the managed instance; callers must use this, not the argument (see {@link
+   *     #save(Object)}).
+   */
+  @SuppressWarnings("unchecked")
+  protected <E> E persistOrMerge(E object) {
+    Session session = getSession();
+    Object id = getEntityId(object, session);
+    if (id == null || session.contains(object)) {
+      session.persist(object);
+      return object;
+    }
+    return (E) session.merge(object);
+  }
+
+  /**
+   * Returns the database identifier of {@code object}, or {@code null} if the entity is new.
+   *
+   * <p>Uses Hibernate's {@link EntityPersister} to extract the identifier, which works correctly
+   * for both field-access and property-access entities. {@code PersistenceUnitUtil.getIdentifier()}
+   * incorrectly returns {@code null} for property-access entities in Hibernate 6. If the model
+   * entities are migrated to field-access ({@code @Id} on the field instead of the getter), this
+   * method could be replaced with a simple {@code PersistenceUnitUtil.getIdentifier()} call.
+   */
+  private Object getEntityId(Object object, Session session) {
+    SessionImplementor si = (SessionImplementor) session;
+    try {
+      EntityPersister persister = si.getEntityPersister(null, object);
+      return persister.getIdentifier(object, si);
+    } catch (MappingException e) {
+      // Entity type not registered with this persistence unit
+      return null;
+    }
   }
 
   /** {@inheritDoc} */

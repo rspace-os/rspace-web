@@ -9,8 +9,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
+import com.researchspace.api.v1.model.ApiInstrumentTemplate;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.apiutils.ApiError;
@@ -676,5 +680,107 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
   private MockHttpServletRequestBuilder getInstrumentById(
       User user, String apiKey, Long instrumentId) {
     return createBuilderForGet(API_VERSION.ONE, apiKey, "/instruments/{id}", user, instrumentId);
+  }
+
+  private String landingPageOf(ApiInstrument instrument) {
+    return instrument.getFields().stream()
+        .filter(f -> "Landing page".equals(f.getName()))
+        .map(ApiInventoryEntityField::getContent)
+        .findFirst()
+        .orElse(null);
+  }
+
+  private Long postPidinstShapedTemplate(User anyUser, String apiKey, String landingPageContent)
+      throws Exception {
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName(getRandomName(10));
+    templatePost
+        .getFields()
+        .add(createBasicApiSampleField("Landing page", ApiFieldType.URI, landingPageContent));
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/instrumentTemplates", anyUser, templatePost))
+            .andExpect(status().isCreated())
+            .andReturn();
+    return mvcUtils.getFromJsonResponseBody(result, ApiInstrumentTemplate.class).getId();
+  }
+
+  private ApiInstrument postInstrumentFromTemplate(User anyUser, String apiKey, Long templateId)
+      throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey,
+                    "/instruments",
+                    anyUser,
+                    "{ \"name\": \""
+                        + getRandomName(8)
+                        + "\", \"templateId\": "
+                        + templateId
+                        + "}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    return mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+  }
+
+  /*
+   * An instrument shaped by the PIDINST template should always carry a landing page: when the user
+   * leaves the field empty, saving fills it with the instrument's own public RSpace address. This is
+   * independent of PIDINST registration - it happens on save.
+   */
+  @Test
+  public void blankLandingPageIsFilledWithTheInstrumentsOwnAddressOnCreate() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    Long templateId = postPidinstShapedTemplate(anyUser, apiKey, "");
+
+    ApiInstrument created = postInstrumentFromTemplate(anyUser, apiKey, templateId);
+
+    assertNotNull(created.getGlobalId());
+    assertTrue(
+        StringUtils.endsWith(landingPageOf(created), "/globalId/" + created.getGlobalId()),
+        "expected the default landing page, got: " + landingPageOf(created));
+  }
+
+  @Test
+  public void aLandingPageTheUserSuppliedIsNeverReplaced() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    Long templateId = postPidinstShapedTemplate(anyUser, apiKey, "https://lab.example.org/mine");
+
+    ApiInstrument created = postInstrumentFromTemplate(anyUser, apiKey, templateId);
+
+    assertEquals("https://lab.example.org/mine", landingPageOf(created));
+  }
+
+  @Test
+  public void clearingTheLandingPageAndSavingRestoresTheDefault() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    Long templateId = postPidinstShapedTemplate(anyUser, apiKey, "https://lab.example.org/mine");
+    ApiInstrument created = postInstrumentFromTemplate(anyUser, apiKey, templateId);
+    Long fieldId =
+        created.getFields().stream()
+            .filter(f -> "Landing page".equals(f.getName()))
+            .map(ApiInventoryEntityField::getId)
+            .findFirst()
+            .orElseThrow();
+
+    String clearJson = "{ \"fields\": [ { \"id\": " + fieldId + ", \"content\": \"\" } ] }";
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/instruments/" + created.getId(), anyUser, clearJson))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiInstrument updated = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
+
+    assertTrue(
+        StringUtils.endsWith(landingPageOf(updated), "/globalId/" + created.getGlobalId()),
+        "expected the default restored on save, got: " + landingPageOf(updated));
   }
 }

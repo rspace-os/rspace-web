@@ -43,17 +43,6 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
   const location: UseLocation = useLocation();
 
   useEffect(() => {
-    if (paramsOverride?.permalink) {
-      document.title = `${globalId({
-        type: permalinkTypeToGlobalIdType[paramsOverride.permalink.type],
-        id: paramsOverride.permalink.id,
-      })} | RSpace Inventory`;
-    } else {
-      document.title = "RSpace Inventory";
-    }
-  }, [paramsOverride]);
-
-  useEffect(() => {
     void (async () => {
       const params = paramsOverride ?? parseCoreFetcherArgsFromUrl(new URLSearchParams(location.search));
 
@@ -94,6 +83,16 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
 
   return (
     <>
+      <title>
+        {paramsOverride?.permalink
+          ? t("pageTitleWithContext", {
+              pageContext: globalId({
+                type: permalinkTypeToGlobalIdType[paramsOverride.permalink.type],
+                id: paramsOverride.permalink.id,
+              }),
+            })
+          : t("pageTitle")}
+      </title>
       <Header sidebarId={sidebarId} />
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
         <Sidebar id={sidebarId} />

@@ -6,6 +6,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
@@ -34,6 +35,7 @@ public class DSWController {
   private final DSWClient dswClient;
   private final UserManager userManager;
   private final UserAppConfigManager userAppConfigMgr;
+  private @Autowired MessageSourceUtils messages;
 
   private static String MSG_PROJECT_ERROR = "Error retrieving DSW project";
   private static String MSG_PROJECTS_ERROR = "Error getting DSW projects";
@@ -51,8 +53,7 @@ public class DSWController {
 
   @GetMapping("/currentUser")
   @ResponseBody
-  public ResponseEntity<JsonNode> currentUsers(@RequestParam() String serverAlias)
-      throws URISyntaxException, MalformedURLException {
+  public ResponseEntity<JsonNode> currentUsers(@RequestParam() String serverAlias) {
     User user = userManager.getAuthenticatedUserInSession();
     try {
       AppConfigElementSet cfg = getConfigForServer(user, serverAlias);
@@ -68,24 +69,24 @@ public class DSWController {
   @GetMapping("/plans")
   @ResponseBody
   public AjaxReturnObject<JsonNode> listDSWPlans(@RequestParam() String serverAlias)
-      throws URISyntaxException, MalformedURLException {
+      throws URISyntaxException {
     User user = userManager.getAuthenticatedUserInSession();
     try {
       AppConfigElementSet cfg = getConfigForServer(user, serverAlias);
       JsonNode plans = dswClient.getProjectsForCurrentUserJson(serverAlias, cfg);
       return new AjaxReturnObject<>(plans, null);
-    } catch (MalformedURLException e) {
+    } catch (MalformedURLException | ResourceAccessException e) {
       log.warn(MSG_PROJECTS_ERROR_URL, e);
-      return new AjaxReturnObject<>(null, ErrorList.of(MSG_PROJECTS_ERROR_URL));
-    } catch (ResourceAccessException e) {
-      log.warn(MSG_PROJECTS_ERROR_URL, e);
-      return new AjaxReturnObject<>(null, ErrorList.of(MSG_PROJECTS_ERROR_URL));
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(messages.getMessage("apps.dsw.errors.serverUrl")));
     } catch (HttpClientErrorException e) {
       log.warn(MSG_PROJECTS_ERROR_CREDS, e);
-      return new AjaxReturnObject<>(null, ErrorList.of(MSG_PROJECTS_ERROR_CREDS));
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(messages.getMessage("apps.dsw.errors.credentials")));
     } catch (Exception e) {
       log.warn(MSG_PROJECTS_ERROR, e);
-      return new AjaxReturnObject<>(null, ErrorList.of(MSG_PROJECTS_ERROR));
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(messages.getMessage("apps.dsw.errors.projects")));
     }
   }
 
@@ -101,7 +102,8 @@ public class DSWController {
       return new AjaxReturnObject<>(plan, null);
     } catch (DSWProjectRetrievalException e) {
       log.warn(MSG_PROJECT_ERROR, e);
-      return new AjaxReturnObject<>(null, ErrorList.of(e.getMessage()));
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(messages.getMessage("apps.dsw.errors.project")));
     }
   }
 

@@ -23,6 +23,7 @@ import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
+import jakarta.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,7 +38,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.PostConstruct;
 import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -144,7 +144,7 @@ public class DMPOnlineController extends BaseOAuth2Controller {
       redirectResult = CONNECTED_VIEW;
     } catch (Exception ex) {
       log.error("Couldn't complete the token request on DMPonline", ex);
-      error.errorMsg("Error during token creation");
+      error.errorMsg(getText("apps.oauth.errors.tokenCreation"));
       error.errorDetails(ex.getMessage());
       ConnectionResultPage.addError(
           model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());
@@ -221,7 +221,7 @@ public class DMPOnlineController extends BaseOAuth2Controller {
 
     } catch (Exception e) {
       log.error("Error while refreshing token on DMPonline: {}", e.getMessage());
-      error.errorMsg("Error during token refresh");
+      error.errorMsg(getText("apps.oauth.errors.tokenRefresh"));
       error.errorDetails(e.getMessage());
       ConnectionResultPage.addError(
           model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());
@@ -243,7 +243,7 @@ public class DMPOnlineController extends BaseOAuth2Controller {
       return new AjaxReturnObject(dmpOnlineProvider.listPlans(page, per_page, accessToken), null);
     } catch (HttpClientErrorException | URISyntaxException | MalformedURLException e) {
       log.warn("error connecting to DMPonline", e);
-      return new AjaxReturnObject<>(null, ErrorList.of("Error connecting to DMPonline."));
+      return new AjaxReturnObject<>(null, ErrorList.of(getText("apps.dmpOnline.errors.connect")));
     }
   }
 

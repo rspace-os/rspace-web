@@ -3,9 +3,10 @@ import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/useWhoAmI";
 import "@/__tests__/__mocks__/useWebSocketNotifications";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { render, screen, waitFor } from "@/__tests__/customQueries";
+
 import { stubAppChrome, type VisibleTabs } from "@/__tests__/helpers/appChrome";
 import axios from "@/common/axios";
 import { SimplePageWithAppBar } from "./index.story";

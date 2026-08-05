@@ -9,5 +9,5 @@ public interface DAOUtils {
    * @param entity
    * @return the initialised object
    */
-  public <T> T initializeAndUnproxy(T entity);
+  <T> T initializeAndUnproxy(T entity);
 }

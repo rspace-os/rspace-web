@@ -1,7 +1,10 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { I18nextProvider } from "react-i18next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/__tests__/customQueries";
+import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
+import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import type { Field } from "@/stores/definitions/Field";
 import materialTheme from "@/theme";
 import LinkFieldValue from "../LinkFieldValue";
@@ -86,6 +89,23 @@ function renderField(props: { field: Field; sourceGlobalId: string; disabled: bo
       <LinkFieldValue {...props} />
     </ThemeProvider>,
   );
+}
+
+async function renderFieldWithRealI18n(props: {
+  field: Field;
+  sourceGlobalId: string;
+  disabled: boolean;
+  onChange: () => void;
+}) {
+  const i18n = await createTestI18n({ inventory: inventoryEn }, "inventory");
+  render(
+    <I18nextProvider i18n={i18n}>
+      <ThemeProvider theme={materialTheme}>
+        <LinkFieldValue {...props} />
+      </ThemeProvider>
+    </I18nextProvider>,
+  );
+  return i18n.getFixedT("en-US", "inventory");
 }
 
 beforeEach(() => {
@@ -461,21 +481,21 @@ describe("LinkFieldValue", () => {
     const user = userEvent.setup();
     const setAttributesDirty = vi.fn();
     const field = linkField({ setAttributesDirty });
-    renderField({
+    const t = await renderFieldWithRealI18n({
       field,
       sourceGlobalId: "SA1",
       disabled: false,
       onChange: () => {},
     });
 
-    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SS9999");
+    await user.type(screen.getByRole("textbox", { name: t("fields.link.editor.targetGlobalId") }), "SS9999");
     await user.click(screen.getByRole("button", { name: "Open" }));
     await user.click(screen.getByRole("option", { name: "References" }));
-    await user.click(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" }));
+    await user.click(screen.getByRole("button", { name: t("sample.fields.linkFieldValue.applyLabel") }));
 
-    expect(
-      await screen.findByText("SS9999 does not exist, or you do not have permission to view it."),
-    ).toBeInTheDocument();
+    const expected = t("fields.extraFields.link.targetNotFound", { globalId: "SS9999" });
+    expect(expected).toContain("SS9999");
+    expect(await screen.findByText(expected)).toBeInTheDocument();
     expect(setAttributesDirty).not.toHaveBeenCalled();
   });
 

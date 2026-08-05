@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.wopi;
 
 import com.researchspace.webapp.integrations.wopi.WopiDiscoveryServiceHandler.WopiPublicKeys;
+import jakarta.xml.bind.DatatypeConverter;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -13,7 +14,6 @@ import java.security.spec.KeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.time.Duration;
 import java.time.Instant;
-import javax.xml.bind.DatatypeConverter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 

@@ -14,6 +14,7 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import BrokenImageIcon from "@mui/icons-material/BrokenImage";
 import CloseIcon from "@mui/icons-material/Close";
+import HistoryIcon from "@mui/icons-material/History";
 import HorizontalRuleIcon from "@mui/icons-material/HorizontalRule";
 import LinkIcon from "@mui/icons-material/Link";
 import SearchIcon from "@mui/icons-material/Search";
@@ -476,13 +477,20 @@ const FileCard = observer(
        * after triggering another re-rendering with drag-and-drop not active,
        * and then onClick fires to update the selection state.
        *
-       * This state variable contains a reference to a setTimeout that is
+       * This ref contains a setTimeout handle that is
        * intended to only fire onMouseDown/onTouchStart if the user holds the
        * mouse key/their finger down for more than half a second to prevent
        * these excessive re-renders and make the UI more responsive in
        * updating the selection state.
        */
-      const [dndDebounce, setDndDebounce] = React.useState<null | NodeJS.Timeout>(null);
+      const dndDebounce = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+      const clearDndDebounce = () => {
+        if (dndDebounce.current !== null) {
+          clearTimeout(dndDebounce.current);
+          dndDebounce.current = null;
+        }
+      };
       const dropStyle = {
         ...(isOver
           ? {
@@ -501,11 +509,10 @@ const FileCard = observer(
             }
           : {}),
       };
+      const activeFileBeingMoved = dndContext.active?.data.current?.fileBeingMoved as GalleryFile | undefined;
       const inGroupBeingDraggedStyle =
-        dndContext.active?.data.current?.fileBeingMoved &&
-        (selection.includes(dndContext.active?.data.current?.fileBeingMoved as GalleryFile)
-          ? selection.includes(file)
-          : file.id === (dndContext.active?.data.current?.fileBeingMoved as GalleryFile).id)
+        activeFileBeingMoved &&
+        (selection.includes(activeFileBeingMoved) ? selection.includes(file) : file.id === activeFileBeingMoved.id)
           ? {
               opacity: 0.2,
             }
@@ -584,25 +591,19 @@ const FileCard = observer(
               }
             }}
             onMouseDown={(...args) => {
-              setDndDebounce(
-                setTimeout(() => {
-                  listeners?.onMouseDown(...args);
-                }, 500),
-              );
+              dndDebounce.current = setTimeout(() => {
+                dndDebounce.current = null;
+                listeners?.onMouseDown(...args);
+              }, 500);
             }}
-            onMouseUp={() => {
-              if (dndDebounce) clearTimeout(dndDebounce);
-            }}
+            onMouseUp={clearDndDebounce}
             onTouchStart={(...args) => {
-              setDndDebounce(
-                setTimeout(() => {
-                  listeners?.onTouchStart(...args);
-                }, 500),
-              );
+              dndDebounce.current = setTimeout(() => {
+                dndDebounce.current = null;
+                listeners?.onTouchStart(...args);
+              }, 500);
             }}
-            onTouchEnd={() => {
-              if (dndDebounce) clearTimeout(dndDebounce);
-            }}
+            onTouchEnd={clearDndDebounce}
             onKeyDown={listeners?.onKeyDown as React.KeyboardEventHandler<HTMLDivElement>}
             {...attributes}
             tabIndex={tabIndex}
@@ -741,9 +742,15 @@ const FileCard = observer(
                   </Grid>
                 </Grid>
               </Grid>
-              {typeof file.version === "number" && file.version > 1 && (
+              {/* Version 1 normally needs no badge, but a version being viewed
+                  historically always does, however low its number. */}
+              {typeof file.version === "number" && (file.version > 1 || typeof file.pinnedVersion === "number") && (
                 <Box
-                  aria-label={t("mainPanel.versionLabel", { version: file.version })}
+                  aria-label={
+                    typeof file.pinnedVersion === "number"
+                      ? t("mainPanel.historicalVersionLabel", { version: file.version })
+                      : t("mainPanel.versionLabel", { version: file.version })
+                  }
                   sx={(theme) => ({
                     position: "absolute",
                     top: "0",
@@ -751,6 +758,9 @@ const FileCard = observer(
                     margin: theme.spacing(0.25),
                     padding: theme.spacing(0.25, 0.5),
                     borderRadius: "5px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: theme.spacing(0.25),
                     color: window.matchMedia("(prefers-contrast: more)").matches
                       ? "rgb(255,255,255)"
                       : `hsl(${ACCENT_COLOR.contrastText.hue}deg, ${ACCENT_COLOR.contrastText.saturation}%, ${ACCENT_COLOR.contrastText.lightness}%, 100%)`,
@@ -765,6 +775,9 @@ const FileCard = observer(
                   })}
                 >
                   {`v${file.version}`}
+                  {/* The same clock as a version-pinned Inventory link. Decorative:
+                      the Box's own label already says the version is an old one. */}
+                  {typeof file.pinnedVersion === "number" && <HistoryIcon fontSize="inherit" />}
                 </Box>
               )}
             </CardActionArea>

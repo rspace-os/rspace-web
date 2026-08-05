@@ -6,7 +6,9 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.dtos.WorkspaceFilters;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.record.BaseRecord;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +17,7 @@ import lombok.Setter;
 @Setter
 public class InventorySearchConfig extends SearchConfig {
 
-  public static enum InventorySearchType {
+  public enum InventorySearchType {
     ALL,
     SAMPLE,
     SUBSAMPLE,
@@ -26,7 +28,7 @@ public class InventorySearchConfig extends SearchConfig {
   }
 
   /** Strategy for including deleted items in inventory search results */
-  public static enum InventorySearchDeletedOption {
+  public enum InventorySearchDeletedOption {
     EXCLUDE,
     INCLUDE,
     DELETED_ONLY
@@ -38,7 +40,7 @@ public class InventorySearchConfig extends SearchConfig {
 
   private List<String> limitResultsToGlobalIds;
 
-  private String defaultTemplatesOwner;
+  private Set<String> defaultTemplatesOwners = new HashSet<>();
 
   private GlobalIdentifier parentOid;
 

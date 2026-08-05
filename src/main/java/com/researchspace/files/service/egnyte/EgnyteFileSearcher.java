@@ -11,13 +11,13 @@ import com.researchspace.egnyte.api2.EgnyteResult;
 import com.researchspace.files.service.ExternalFileStoreLocator;
 import com.researchspace.files.service.ExternalFileStoreWithCredentials;
 import com.researchspace.model.User;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import javax.validation.ConstraintViolation;
-import javax.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 

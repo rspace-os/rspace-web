@@ -7,6 +7,7 @@
     "allowJs": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "strict": true,
     // These expose widespread pre-existing array-index and optional-property typing errors;
     // migrate those incrementally before enabling the checks (RSDEV-1242).

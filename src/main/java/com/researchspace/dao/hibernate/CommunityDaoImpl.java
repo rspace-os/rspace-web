@@ -9,21 +9,17 @@ import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.Community;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
-import org.hibernate.Criteria;
-import org.hibernate.FetchMode;
 import org.hibernate.Session;
-import org.hibernate.criterion.MatchMode;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Projections;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.graph.GraphParser;
 import org.hibernate.graph.RootGraph;
 import org.hibernate.query.Query;
@@ -42,73 +38,91 @@ public class CommunityDaoImpl extends GenericDaoHibernate<Community, Long> imple
     }
     Session session = getSession();
 
-    // load admins
-    Criteria listQuery =
-        session.createCriteria(Community.class).setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+    CriteriaBuilder builder = session.getCriteriaBuilder();
 
+    CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+    Root<Community> countRoot = countQuery.from(Community.class);
+    List<Predicate> predicates = buildCommunityPredicates(pgCrit, builder, countRoot);
+    countQuery.select(builder.countDistinct(countRoot.get("id")));
+    if (!predicates.isEmpty()) {
+      countQuery.where(predicates.toArray(new Predicate[0]));
+    }
+
+    Long count = session.createQuery(countQuery).getSingleResult();
+    if (count == 0) {
+      return createEmptyResultSet(pgCrit);
+    }
+
+    CriteriaQuery<Long> idQuery = builder.createQuery(Long.class);
+    Root<Community> idRoot = idQuery.from(Community.class);
+    List<Predicate> idPredicates = buildCommunityPredicates(pgCrit, builder, idRoot);
+    idQuery.select(idRoot.get("id")).distinct(true);
+    if (!idPredicates.isEmpty()) {
+      idQuery.where(idPredicates.toArray(new Predicate[0]));
+    }
+    applyCommunityOrder(pgCrit, builder, idRoot, idQuery);
+
+    Query<Long> idQueryExec =
+        session
+            .createQuery(idQuery)
+            .setFirstResult(pgCrit.getFirstResultIndex())
+            .setMaxResults(pgCrit.getResultsPerPage());
+    List<Long> comms = idQueryExec.list();
+    if (comms.isEmpty()) {
+      return createEmptyResultSet(pgCrit);
+    }
+
+    CriteriaQuery<Community> fetchQuery = builder.createQuery(Community.class);
+    Root<Community> fetchRoot = fetchQuery.from(Community.class);
+    fetchRoot.fetch("admins", JoinType.LEFT);
+    fetchQuery.select(fetchRoot).distinct(true);
+    fetchQuery.where(fetchRoot.get("id").in(comms));
+    applyCommunityOrder(pgCrit, builder, fetchRoot, fetchQuery);
+
+    return new SearchResultsImpl<>(session.createQuery(fetchQuery).list(), pgCrit, count);
+  }
+
+  private List<Predicate> buildCommunityPredicates(
+      PaginationCriteria<Community> pgCrit, CriteriaBuilder builder, Root<Community> root) {
+    List<Predicate> predicates = new ArrayList<>();
     if (pgCrit.getSearchCriteria() != null) {
       FilterCriteria sc = pgCrit.getSearchCriteria();
-
       Map<String, Object> key2Value;
       try {
         key2Value = sc.getSearchTermField2Values();
         for (Entry<String, Object> entry : key2Value.entrySet()) {
           if ("displayName".equals(entry.getKey())) {
-            listQuery.add(
-                Restrictions.disjunction()
-                    .add(
-                        Restrictions.ilike(
-                            "displayName", entry.getValue().toString(), MatchMode.ANYWHERE)));
+            String term = entry.getValue().toString().toLowerCase();
+            predicates.add(builder.like(builder.lower(root.get("displayName")), "%" + term + "%"));
           }
         }
       } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
         log.error("Error getting parsing search terms: ", e);
       }
     }
-
-    Long count = getTotalCommunityCount(listQuery);
-    listQuery.setProjection(null);
-    // listQuery.setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY);
-    if (count == 0) {
-      return createEmptyResultSet(pgCrit);
-    }
-
-    DatabasePaginationUtils.addPaginationCriteriaToHibernateCriteria(pgCrit, listQuery);
-
-    listQuery.setProjection(Projections.distinct(Projections.id()));
-    @SuppressWarnings("unchecked")
-    // now, retrieve by id, paginate, load associated admins and sort see JIRA-97
-    List<Long> comms = listQuery.list();
-    if (!comms.isEmpty()) {
-      listQuery =
-          getSession()
-              .createCriteria(Community.class)
-              .add(Restrictions.in("id", comms))
-              .setFetchMode("admins", FetchMode.JOIN)
-              .setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-      if (pgCrit.getOrderBy() != null) {
-        if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
-          listQuery.addOrder(Order.asc(pgCrit.getOrderBy()));
-        } else {
-          listQuery.addOrder(Order.desc(pgCrit.getOrderBy()));
-        }
-      }
-      return new SearchResultsImpl<Community>(listQuery.list(), pgCrit, count);
-    } else {
-      return createEmptyResultSet(pgCrit);
-    }
+    return predicates;
   }
 
-  public Long getTotalCommunityCount(Criteria crit) {
-    crit.setProjection(Projections.count("id"));
-    Long count = (Long) crit.uniqueResult();
-    return count;
+  private void applyCommunityOrder(
+      PaginationCriteria<Community> pgCrit,
+      CriteriaBuilder builder,
+      Root<Community> root,
+      CriteriaQuery<?> query) {
+    if (pgCrit.getOrderBy() != null && pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
+      if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
+        query.orderBy(builder.asc(root.get(pgCrit.getOrderBy())));
+      } else {
+        query.orderBy(builder.desc(root.get(pgCrit.getOrderBy())));
+      }
+    }
   }
 
   public List<User> listAdminsForCommunity(Long communityId) {
-    Criteria listQuery = getSession().createCriteria(Community.class);
-    listQuery.add(Restrictions.idEq(communityId));
-    Community comm = (Community) listQuery.uniqueResult();
+    Community comm =
+        getSession()
+            .createQuery("from Community where id=:id", Community.class)
+            .setParameter("id", communityId)
+            .uniqueResult();
     return new ArrayList<>(comm.getAdmins());
   }
 
@@ -143,54 +157,54 @@ public class CommunityDaoImpl extends GenericDaoHibernate<Community, Long> imple
   @SuppressWarnings("unchecked")
   public List<Community> listCommunitiesForAdmin(Long userId) {
     return getSession()
-        .createCriteria(Community.class)
-        .createCriteria("admins")
-        .add(Restrictions.idEq(userId))
+        .createQuery(
+            "select distinct c from Community c join c.admins admin where admin.id=:userId",
+            Community.class)
+        .setParameter("userId", userId)
         .list();
   }
 
   @Override()
   public Community getCommunityForGroup(Long groupId) {
-    Community rc =
-        (Community)
-            getSession()
-                .createCriteria(Community.class)
-                .createCriteria("labGroups")
-                .add(Restrictions.idEq(groupId))
-                .uniqueResult();
-    return rc;
+    return getSession()
+        .createQuery(
+            "select c from Community c join c.labGroups lg where lg.id=:groupId", Community.class)
+        .setParameter("groupId", groupId)
+        .uniqueResult();
   }
 
   @Override
   public Community getCommunityWithGroupsAndAdmins(Long communityId) {
-    Criteria query =
-        getSession()
-            .createCriteria(Community.class)
-            .setFetchMode("admins", FetchMode.JOIN)
-            .setFetchMode("labGroups", FetchMode.JOIN)
-            .add(Restrictions.idEq(communityId));
-    return (Community) query.uniqueResult();
+    return getSession()
+        .createQuery(
+            "select distinct c from Community c "
+                + "left join fetch c.admins "
+                + "left join fetch c.labGroups "
+                + "where c.id=:communityId",
+            Community.class)
+        .setParameter("communityId", communityId)
+        .uniqueResult();
   }
 
   @Override
   public Community getWithAdmins(Long communityId) {
-    Criteria query =
-        getSession()
-            .createCriteria(Community.class)
-            .setFetchMode("admins", FetchMode.JOIN)
-            .add(Restrictions.idEq(communityId));
-    return (Community) query.uniqueResult();
+    return getSession()
+        .createQuery(
+            "select distinct c from Community c left join fetch c.admins where c.id=:communityId",
+            Community.class)
+        .setParameter("communityId", communityId)
+        .uniqueResult();
   }
 
   @Override
   public boolean hasCommunity(User admin) {
-    Criteria countQuery =
+    Long count =
         getSession()
-            .createCriteria(Community.class)
-            .createCriteria("admins")
-            .add(Restrictions.eq("id", admin.getId()))
-            .setProjection(Projections.count("id"));
-    Long count = (Long) countQuery.uniqueResult();
+            .createQuery(
+                "select count(c) from Community c join c.admins admin where admin.id=:adminId",
+                Long.class)
+            .setParameter("adminId", admin.getId())
+            .uniqueResult();
     return count > 0;
   }
 }

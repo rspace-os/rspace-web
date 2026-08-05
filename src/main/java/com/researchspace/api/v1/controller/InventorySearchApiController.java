@@ -15,8 +15,8 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import jakarta.validation.Valid;
 import java.util.List;
-import javax.validation.Valid;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
@@ -150,7 +150,8 @@ public class InventorySearchApiController extends BaseApiInventoryController
         return findBasketItems(
             parentOid.getDbId(), ownedBy, searchType, deletedItemsOption, pgCrit, user);
       default:
-        throw new IllegalArgumentException("unknown parent global id: " + parentOid);
+        throw new IllegalArgumentException(
+            getMessage("errors.inventory.globalId.unsupportedParent", new Object[] {parentOid}));
     }
   }
 

@@ -159,8 +159,7 @@ public class RevisionHistoryController extends BaseController {
       throw new AuthorizationException(" Resource is not authorized ");
     }
     if (!strucDoc.isStructuredDocument()) {
-      throw new IllegalStateException(
-          "Viewing this record's audit history only works with StructuredDocuments!");
+      throw new IllegalStateException(getText("document.audit.errors.notStructuredDocument"));
     }
     return strucDoc.asStrucDoc();
   }
@@ -196,7 +195,7 @@ public class RevisionHistoryController extends BaseController {
           auditService.notify(new RestoreEvent(user, updated, revision));
           return new AjaxReturnObject<>(res.name(), null);
         } else {
-          ErrorList el = getErrorListFromMessageCode("restore.failure.message", res);
+          ErrorList el = getErrorListFromMessageCode("document.restore.errors.notEditable", res);
           return new AjaxReturnObject<>(null, el);
         }
         // we're restoring a deleted document. Could be anything

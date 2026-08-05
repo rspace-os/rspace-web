@@ -28,7 +28,7 @@ function App(): React.ReactNode {
         setLoadingDone(true);
       } else {
         const currentUser = await peopleStore.fetchCurrentUser();
-        await unitStore.fetchUnits();
+        await Promise.all([unitStore.fetchUnits(), authStore.fetchPidinstEnabled()]);
         setLoadingDone(true);
         if (currentUser) {
           await currentUser.getBench();
@@ -37,44 +37,49 @@ function App(): React.ReactNode {
     })();
   }, []);
 
-  return loadingDone ? (
-    (authStore.isAuthenticated || authStore.isSigningOut) && peopleStore.currentUser ? (
-      <>
-        <GoogleLoginProvider />
-        <StyledEngineProvider injectFirst enableCssLayer>
-          <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
-            <QueryClientProvider client={queryClient}>
-              <Analytics>
-                <Router />
-              </Analytics>
-            </QueryClientProvider>
-          </ThemeProvider>
-        </StyledEngineProvider>
-      </>
-    ) : (
-      ERROR_MSG
-    )
-  ) : null;
+  return (
+    <>
+      {window.location.pathname.startsWith("/inventory") && (
+        <meta
+          name="theme-color"
+          content={`hsl(${INVENTORY_COLOR.background.hue}, ${INVENTORY_COLOR.background.saturation}%, ${INVENTORY_COLOR.background.lightness}%)`}
+        />
+      )}
+      {loadingDone ? (
+        (authStore.isAuthenticated || authStore.isSigningOut) && peopleStore.currentUser ? (
+          <>
+            <GoogleLoginProvider />
+            <StyledEngineProvider injectFirst enableCssLayer>
+              <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
+                <QueryClientProvider client={queryClient}>
+                  <Analytics>
+                    <Router />
+                  </Analytics>
+                </QueryClientProvider>
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </>
+        ) : (
+          ERROR_MSG
+        )
+      ) : null}
+    </>
+  );
 }
 
 window.addEventListener("load", () => {
   const domContainer = document.getElementById("app");
   window.scrollTo(0, 1);
 
-  if (domContainer) {
+  // WebKit can fire this handler twice for the same container.
+  if (domContainer && domContainer.dataset.reactRootMounted !== "true") {
+    domContainer.dataset.reactRootMounted = "true";
     const root = createRoot(domContainer);
     root.render(
       <I18nRoot namespaces={["inventory", "common", "about"]} fallback={<LoaderCircular />}>
         <App />
       </I18nRoot>,
     );
-  }
-
-  if (window.location.pathname.startsWith("/inventory")) {
-    const meta = document.createElement("meta");
-    meta.name = "theme-color";
-    meta.content = `hsl(${INVENTORY_COLOR.background.hue}, ${INVENTORY_COLOR.background.saturation}%, ${INVENTORY_COLOR.background.lightness}%)`;
-    document.head?.appendChild(meta);
   }
 });
 

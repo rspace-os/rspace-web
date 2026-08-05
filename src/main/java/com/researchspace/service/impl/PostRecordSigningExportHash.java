@@ -70,7 +70,7 @@ public class PostRecordSigningExportHash implements PostSigningManager {
     this.exportImport = exportImport;
   }
 
-  static interface ArchiveSignable {
+  interface ArchiveSignable {
     Optional<ArchiveResult> archiveAndSign() throws InterruptedException, ExecutionException;
 
     SignatureHashType getSignatureHashType();

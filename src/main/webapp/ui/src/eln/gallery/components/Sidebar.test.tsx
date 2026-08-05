@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { expectAccessible, render, screen, waitFor, within } from "@/__tests__/customQueries";
+import { expectAccessible } from "@/__tests__/accessibility";
 import axios from "@/common/axios";
 import { DefaultSidebar, S3_FILESTORE_ID, S3FilestoreSidebar } from "./Sidebar.story";
 

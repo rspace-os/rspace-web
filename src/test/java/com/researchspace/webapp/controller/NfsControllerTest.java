@@ -28,6 +28,7 @@ import com.researchspace.netfiles.NfsViewProperty;
 import com.researchspace.service.NfsManager;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +36,6 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.Before;
@@ -251,7 +251,7 @@ public class NfsControllerTest extends SpringTransactionalTest {
 
     String result = controller.prepareNfsFileForDownload(filePath, null, request, principalStub);
 
-    assertEquals(getMsgFromResourceBundler("net.filestores.error.disabled"), result);
+    assertEquals(getMsgFromResourceBundler("netFileStores.errors.disabled"), result);
   }
 
   private void loginTestUserToTestFileSystem() {

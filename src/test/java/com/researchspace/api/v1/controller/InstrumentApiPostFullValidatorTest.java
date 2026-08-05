@@ -52,9 +52,9 @@ public class InstrumentApiPostFullValidatorTest extends InventoryRecordValidatio
     assertFieldNameIs(errors, "fields");
     FieldError firstError = errors.getFieldErrors().get(0);
     FieldError secondError = errors.getFieldErrors().get(1);
-    assertEquals("errors.inventory.instrument.mandatory.field.empty", firstError.getCode());
+    assertEquals("errors.inventory.field.mandatoryFieldEmpty", firstError.getCode());
     assertEquals("myText (mandatory - no default value)", getFirstArgument(firstError));
-    assertEquals("errors.inventory.instrument.mandatory.field.no.selection", secondError.getCode());
+    assertEquals("errors.inventory.field.mandatoryFieldNoSelection", secondError.getCode());
     assertEquals("myRadio (mandatory - no default value)", getFirstArgument(secondError));
 
     apiInstrumentPost.setFields(
@@ -91,10 +91,10 @@ public class InstrumentApiPostFullValidatorTest extends InventoryRecordValidatio
     Errors errors = new BeanPropertyBindingResult(apiInstrumentPost, "apiInstrument");
     validator.validate(fullPost, errors);
     assertEquals(1, errors.getErrorCount());
-    assertNotNull(errors.getGlobalErrors().get(0).getDefaultMessage());
+    assertEquals("errors.inventory.field.validation", errors.getGlobalErrors().get(0).getCode());
     assertEquals(
         "\"fields\" array should have 2 fields, but had 1",
-        errors.getGlobalErrors().get(0).getDefaultMessage());
+        errors.getGlobalErrors().get(0).getArguments()[0]);
 
     ApiInventoryEntityField invalidNumberField = new ApiInventoryEntityField();
     invalidNumberField.setType(ApiFieldType.NUMBER);
@@ -106,8 +106,8 @@ public class InstrumentApiPostFullValidatorTest extends InventoryRecordValidatio
     errors = new BeanPropertyBindingResult(apiInstrumentPost, "apiInstrument");
     validator.validate(fullPost, errors);
     assertEquals(1, errors.getErrorCount());
-    String invalidNumberMessage = errors.getGlobalErrors().get(0).getDefaultMessage();
-    assertNotNull(invalidNumberMessage);
+    assertEquals("errors.inventory.field.validation", errors.getGlobalErrors().get(0).getCode());
+    String invalidNumberMessage = (String) errors.getGlobalErrors().get(0).getArguments()[0];
     assertTrue(invalidNumberMessage.contains("Invalid number"));
 
     invalidNumberField.setContent("3.56");

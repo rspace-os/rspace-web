@@ -22,6 +22,5 @@ public interface AsyncDocConverterService extends DocumentConversionService, Ver
    * @return a {@link Future}
    */
   @Async(value = "docConverter")
-  public Future<ConversionResult> submitAsync(
-      Convertible toConvert, String outputExt, File outFile);
+  Future<ConversionResult> submitAsync(Convertible toConvert, String outputExt, File outFile);
 }

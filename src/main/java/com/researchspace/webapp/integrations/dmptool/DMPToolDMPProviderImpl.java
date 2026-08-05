@@ -14,6 +14,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.views.ServiceOperationResult;
+import com.researchspace.service.HelpDocsUrls;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserConnectionManager;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -41,6 +43,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
 
   private @Autowired UserConnectionManager userConnectionManager;
   private @Autowired AnalyticsManager analyticsManager;
+  private @Autowired MessageSourceUtils messages;
 
   private final RestTemplate restTemplate;
 
@@ -67,10 +70,11 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
         | URISyntaxException
         | JsonProcessingException e) {
       return ServiceOperationResult.fromOptionalError(
-          Optional.of("Couldn't update DMP with DOI: " + e.getMessage()));
+          Optional.of(
+              messages.getMessage("apps.dmpTool.errors.updateDoi", new Object[] {e.getMessage()})));
     }
 
-    return new ServiceOperationResult<>("DMP updated", true);
+    return new ServiceOperationResult<>(messages.getMessage("apps.dmpTool.update.success"), true);
   }
 
   @Override
@@ -101,9 +105,11 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
       if (cex.getStatusCode().equals(HttpStatus.NOT_FOUND)
           && cex.getMessage().contains("\"items\": []")) { // DMPTool side known issue
         throw new UnsupportedOperationException(
-            "Unable to load your DMPs. "
-                + "For more information visit "
-                + "https://documentation.researchspace.com/article/o0wlhlgxnr-dmptool-integration");
+            messages.getMessage(
+                "apps.dmpTool.errors.loadUnavailable",
+                new Object[] {
+                  HelpDocsUrls.urlFromSlug(messages.getMessage("common:help.dmptool"))
+                }));
       }
     }
     return null;
@@ -158,7 +164,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
   }
 
   private String noAccessTokenMsg() {
-    return "Access token isn't enabled - user must connect in Apps page";
+    return messages.getMessage("apps.dmpTool.errors.noAccessToken");
   }
 
   public <T> T doGet(String accessToken, String path, Class<T> response)
@@ -200,7 +206,8 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
         return new ServiceOperationResult<>(
             null,
             false,
-            "A DMP with id " + dmp.getId() + ", title: " + dmp.getTitle() + " already exists");
+            messages.getMessage(
+                "apps.dmpTool.errors.alreadyExists", new Object[] {dmp.getId(), dmp.getTitle()}));
       }
     }
   }

@@ -2,10 +2,10 @@ package com.researchspace.auth;
 
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.permissions.SecurityLogger;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.web.util.WebUtils;
 import org.slf4j.Logger;

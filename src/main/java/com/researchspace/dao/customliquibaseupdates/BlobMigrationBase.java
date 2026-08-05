@@ -58,7 +58,7 @@ abstract class BlobMigrationBase extends AbstractCustomLiquibaseUpdater {
     while (results.next()) {
       // reuse file property for imageblobs used multiple times
       Map<Long, FileProperty> blobIdToFileProperty = new HashMap<>();
-      User user = (User) results.get(0);
+      User user = (User) results.get();
       TransactionStatus nestedTx =
           getTxMger()
               .getTransaction(
@@ -69,7 +69,7 @@ abstract class BlobMigrationBase extends AbstractCustomLiquibaseUpdater {
         List docs =
             sessionFactory
                 .getCurrentSession()
-                .createSQLQuery(query)
+                .createNativeQuery(query)
                 .setParameter("userId", user.getId())
                 .list();
         for (int i = 0; i < docs.size(); i++) {
@@ -104,7 +104,7 @@ abstract class BlobMigrationBase extends AbstractCustomLiquibaseUpdater {
           int rowsModified =
               sessionFactory
                   .getCurrentSession()
-                  .createSQLQuery(updateSQL)
+                  .createNativeQuery(updateSQL)
                   .setParameter("fpid", fp.getId())
                   .setParameter("id", recordOrThumbnailId.longValue())
                   .setParameter("blobId", blobId.longValue())

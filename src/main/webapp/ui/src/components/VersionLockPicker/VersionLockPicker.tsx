@@ -1,3 +1,4 @@
+import Alert from "@mui/material/Alert";
 import Radio from "@mui/material/Radio";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -29,6 +30,7 @@ export interface VersionLockPickerProps {
 export default function VersionLockPicker(props: VersionLockPickerProps): React.ReactElement {
   const { t } = useTranslation("common");
   const [versions, setVersions] = useState<VersionRecord[]>([]);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,13 +38,16 @@ export default function VersionLockPicker(props: VersionLockPickerProps): React.
       (rows) => {
         if (!cancelled) {
           setVersions(rows);
+          setLoadFailed(false);
         }
       },
       () => {
-        // a failed fetch degrades to the latest-only view; the rejection must
-        // not escape the component as an unhandled promise rejection
+        // a failed fetch degrades to the latest-only view, and says so: an empty table would
+        // otherwise read as "this record has only one version", which is a different claim.
+        // The rejection must not escape the component as an unhandled promise rejection.
         if (!cancelled) {
           setVersions([]);
+          setLoadFailed(true);
         }
       },
     );
@@ -55,6 +60,11 @@ export default function VersionLockPicker(props: VersionLockPickerProps): React.
 
   return (
     <TableContainer>
+      {loadFailed && (
+        <Alert severity="warning" sx={{ mb: 1 }}>
+          {t("versionLockPicker.loadFailed")}
+        </Alert>
+      )}
       <Table size="small" aria-label={t("versionLockPicker.label")}>
         <TableHead>
           <TableRow>
@@ -66,7 +76,11 @@ export default function VersionLockPicker(props: VersionLockPickerProps): React.
         <TableBody>
           <TableRow hover onClick={() => props.onChange(LATEST_SELECTION)} data-test-id="VersionLockPicker-latest">
             <TableCell padding="checkbox">
-              <Radio checked={isLatest} value={LATEST_SELECTION} />
+              <Radio
+                checked={isLatest}
+                value={LATEST_SELECTION}
+                slotProps={{ input: { "aria-label": t("versionLockPicker.latest") } }}
+              />
             </TableCell>
             <TableCell>{t("versionLockPicker.latest")}</TableCell>
             <TableCell />
@@ -81,7 +95,13 @@ export default function VersionLockPicker(props: VersionLockPickerProps): React.
                 data-test-id={`VersionLockPicker-row-${v.version}`}
               >
                 <TableCell padding="checkbox">
-                  <Radio checked={checked} value={v.version} />
+                  <Radio
+                    checked={checked}
+                    value={v.version}
+                    slotProps={{
+                      input: { "aria-label": t("versionLockPicker.versionValue", { version: v.version }) },
+                    }}
+                  />
                 </TableCell>
                 <TableCell>{t("versionLockPicker.versionValue", { version: v.version })}</TableCell>
                 <TableCell>{v.modificationDate}</TableCell>

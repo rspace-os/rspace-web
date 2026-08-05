@@ -31,12 +31,12 @@ import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -478,7 +478,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
       if (!dbContainer.isDeleted()) {
         if (dbContainer.getContentCount() > 0) {
           throw new ApiRuntimeException(
-              "container.deletion.failure.not.empty", dbContainer.getGlobalIdentifier());
+              "errors.inventory.container.deletion.notEmpty", dbContainer.getGlobalIdentifier());
         }
         dbContainer.removeFromCurrentParent();
         dbContainer.setRecordDeleted(true);

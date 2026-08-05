@@ -15,7 +15,7 @@ public interface ArchiveModelToDatabaseSaver {
    * @param archiveModel
    * @param monitor
    */
-  public void saveArchiveToDB(
+  void saveArchiveToDB(
       ArchivalImportConfig iconfig,
       ImportArchiveReport report,
       IArchiveModel archiveModel,

@@ -6,7 +6,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordT
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.model.User;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
@@ -24,7 +24,7 @@ public class InventoryPublicApiController extends BaseApiInventoryController
 
     ApiInventoryRecordInfo fullRec = identifierMgr.findPublishedItemVersionByPublicLink(publicLink);
     if (fullRec == null) {
-      throw new NotFoundException(messages.getMessage("inventory.item.not.public"));
+      throw new NotFoundException(messages.getMessage("errors.inventory.publicLink.unavailable"));
     }
 
     return getRecordCopyLimitedToPublishedDetails(fullRec);

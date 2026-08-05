@@ -35,8 +35,8 @@ public class DatabaseMetaDataManagerImpl implements DatabaseMetaDataManager {
   private String getVersionFromDB() {
     return sessionFactory
         .getCurrentSession()
-        .createSQLQuery("select version()")
-        .uniqueResult()
+        .createNativeQuery("select version()")
+        .getSingleResult()
         .toString();
   }
 

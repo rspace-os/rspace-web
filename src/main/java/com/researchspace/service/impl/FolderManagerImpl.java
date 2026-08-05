@@ -4,7 +4,6 @@ import static com.researchspace.core.util.MediaUtils.GALLERY_MEDIA_FOLDERS;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.contains;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.core.util.CollectionFilter;
 import com.researchspace.core.util.ISearchResults;
@@ -47,7 +46,8 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RequiresActiveLicense;
@@ -86,10 +86,10 @@ public class FolderManagerImpl implements FolderManager {
   private UserManager userManager;
   private IPermissionUtils permissionUtils;
   private IPropertyHolder properties;
-  private OperationFailedMessageGenerator messages;
   private ApplicationEventPublisher publisher;
   private CommunityServiceManager communityServiceManager;
   private PermissionFactory permFac = new DefaultPermissionFactory();
+  @Autowired private MessageSourceUtils messageSourceUtils;
 
   @Autowired
   public FolderManagerImpl(
@@ -100,7 +100,6 @@ public class FolderManagerImpl implements FolderManager {
       UserManager userManager,
       IPermissionUtils permissionUtils,
       IPropertyHolder properties,
-      OperationFailedMessageGenerator messages,
       ApplicationEventPublisher publisher,
       CommunityServiceManager communityServiceManager) {
     this.folderDao = folderDao;
@@ -110,20 +109,15 @@ public class FolderManagerImpl implements FolderManager {
     this.userManager = userManager;
     this.permissionUtils = permissionUtils;
     this.properties = properties;
-    this.messages = messages;
     this.publisher = publisher;
     this.communityServiceManager = communityServiceManager;
   }
 
   public FolderManagerImpl(
-      RecordFactory rfactory,
-      FolderDao folderDao,
-      IPermissionUtils permissionUtils,
-      OperationFailedMessageGenerator messages) {
+      RecordFactory rfactory, FolderDao folderDao, IPermissionUtils permissionUtils) {
     this.recordFactory = rfactory;
     this.folderDao = folderDao;
     this.permissionUtils = permissionUtils;
-    this.messages = messages;
   }
 
   public FolderManagerImpl() {}
@@ -176,9 +170,8 @@ public class FolderManagerImpl implements FolderManager {
     if (src.isNotebook() && src.isShared()) {
       if (grandParentId == null) {
         throw new IllegalStateException(
-            "Cannot infer shared context for Notebook with ID=["
-                + parentId
-                + "], as \"grandParentId\" param is not set");
+            messageSourceUtils.getMessage(
+                "folder.navigation.errors.sharedContextUndetermined", new Object[] {parentId}));
       }
       src = folderDao.get(grandParentId);
     }
@@ -590,12 +583,13 @@ public class FolderManagerImpl implements FolderManager {
   }
 
   private String deletedMsg(User user) {
-    return messages.getFailedMessage(user.getUsername(), "open a deleted folder.");
+    return messageSourceUtils.getMessage(
+        "errors.authorization.failure.openDeletedFolder", new Object[] {user.getUsername()});
   }
 
   private String unauthorisedMsg(User user) {
-    String msg = messages.getFailedMessage(user.getUsername(), "open an unauthorised folder.");
-    return msg;
+    return messageSourceUtils.getMessage(
+        "errors.authorization.failure.openUnauthorisedFolder", new Object[] {user.getUsername()});
   }
 
   private void assertUserHasCreatePermission(User user, Folder parent) {
@@ -604,8 +598,9 @@ public class FolderManagerImpl implements FolderManager {
             parent, PermissionType.CREATE_FOLDER, getUserWithRefreshedPermissions(user));
     if (!canCreateFolder) {
       String msg =
-          messages.getFailedMessage(
-              user.getUsername(), "create folder in [" + parent.getId() + "]");
+          messageSourceUtils.getMessage(
+              "errors.authorization.failure.createFolderIn",
+              new Object[] {user.getUsername(), parent.getId()});
       throw new AuthorizationException(msg);
     }
   }
@@ -706,10 +701,9 @@ public class FolderManagerImpl implements FolderManager {
             }
             if (targetRecord == null) {
               throw new IllegalStateException(
-                  "The record named '"
-                      + pathItems[i]
-                      + "' does not exist in the path, or cannot be accessed. "
-                      + path);
+                  messageSourceUtils.getMessage(
+                      "folder.navigation.errors.pathNotAccessible",
+                      new Object[] {pathItems[i], path}));
             }
           }
         }
@@ -739,9 +733,9 @@ public class FolderManagerImpl implements FolderManager {
   public Folder getApiUploadTargetFolder(String contentType, User subject, Long folderId) {
     Validate.isTrue(
         isValidContentType(contentType),
-        format(
-            "contentType must be empty string (for workspace) or one of (%s) for files",
-            join(GALLERY_MEDIA_FOLDERS, ",")));
+        messageSourceUtils.getMessage(
+            "errors.gallery.invalidContentType",
+            new Object[] {ListFormatUtils.formatList(List.of(GALLERY_MEDIA_FOLDERS))}));
     boolean isDestinationWorkspace = isDestinationWorkspace(contentType);
     boolean isDestinationGallery = !isDestinationWorkspace;
     String parentFolderName = isDestinationWorkspace ? subject.getUsername() : contentType;

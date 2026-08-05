@@ -4,10 +4,10 @@ import com.researchspace.model.User;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -185,7 +185,9 @@ public class DeploymentPropertiesController extends BaseController {
       case "deployment.helpEmail":
         return deploymentHelpEmail;
       default:
-        throw new IllegalArgumentException("No property available for name: " + propertyName);
+        throw new IllegalArgumentException(
+            messages.getResourceNotFoundMessage(
+                messages.getMessage("resourceType.property"), propertyName));
     }
   }
 

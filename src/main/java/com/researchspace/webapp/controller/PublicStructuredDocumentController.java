@@ -15,14 +15,13 @@ import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.UserSessionTracker;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.shiro.web.util.WebUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -72,7 +71,7 @@ public class PublicStructuredDocumentController extends BaseController {
     }
     User sharedBy = rgs.getSharedBy();
     if (!systemPropertyPermissionManager.isPropertyAllowed(sharedBy, "public_sharing")) {
-      WebUtils.issueRedirect(request, response, "/public/publishIsDisabled");
+      response.sendRedirect("/public/publishIsDisabled");
     }
     if (user == null) {
       user = getUserByUsername(RecordGroupSharing.ANONYMOUS_USER);
@@ -100,7 +99,6 @@ public class PublicStructuredDocumentController extends BaseController {
     if (rgs.isDisplayContactDetails()) {
       model.addAttribute("contactDetails", sharedBy.getEmail());
     }
-    PublicDocumentsUtilities.addGroupAttributes(model, user, groupManager.listGroupsForUser());
     auditService.notify(new GenericEvent(user, structuredDocument, AuditAction.READ));
 
     String view = STRUCTURED_DOCUMENT_EDITOR_VIEW_NAME;
@@ -114,7 +112,7 @@ public class PublicStructuredDocumentController extends BaseController {
   public String getPublicDocForRecordOrParentOfRecord(
       @RequestParam(value = "globalId", required = true) String globalId) {
     String publicLink = getPublicLinkForRecord(new GlobalIdentifier(globalId).getDbId());
-    if (publicLink.equals("")) {
+    if (publicLink.isEmpty()) {
       long id = new GlobalIdentifier(globalId).getDbId();
       if (recordManager.exists(id)) {
         Record data = recordManager.get(id);

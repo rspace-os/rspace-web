@@ -9,7 +9,7 @@ import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
 import com.researchspace.model.User;
 import com.researchspace.model.record.StructuredDocument;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -57,7 +57,7 @@ public class ApiDocumentInfo extends IdentifiableNameableApiObject {
   private Boolean signed = null;
 
   @JsonProperty("tags")
-  @Size(max = 8000, message = "Document tags cannot be longer than 8000 characters")
+  @Size(max = 8000, message = "{document.validation.tagsTooLong}")
   private String tags = null;
 
   @JsonProperty("tagMetaData")

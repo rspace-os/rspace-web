@@ -26,10 +26,6 @@ export default function ImportRouter(): React.ReactNode {
     importStore.importData?.updateRecordType(new URLSearchParams(location.search));
   }, [location.search]);
 
-  useEffect(() => {
-    document.title = t("import.browserTitle");
-  }, []);
-
   const sidebarId = React.useId();
   const mainContentRef = useLandmark(t("import.landmark"));
 
@@ -37,6 +33,7 @@ export default function ImportRouter(): React.ReactNode {
   if (recordType === "SAMPLES" || recordType === "CONTAINERS" || recordType === "SUBSAMPLES") {
     return (
       <NavigationContext>
+        <title>{t("import.browserTitle")}</title>
         <Header sidebarId={sidebarId} />
         <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
           <Sidebar id={sidebarId} />

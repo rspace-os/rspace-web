@@ -1,0 +1,10 @@
+{
+  "uuid": "11111111-1111-1111-1111-111111111111",
+  "firstName": "Mock",
+  "lastName": "User",
+  "email": "mock@example.com",
+  "role": "researcher",
+  "permissions": [],
+  "sources": [],
+  "active": "true"
+}

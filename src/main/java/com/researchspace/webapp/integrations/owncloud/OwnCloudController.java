@@ -14,6 +14,7 @@ import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -27,7 +28,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import javax.servlet.http.HttpSession;
 import lombok.Data;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
@@ -132,7 +132,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
     if (params.containsKey(ERROR)) {
       OauthAuthorizationError error =
           getAuthErrorBuilder()
-              .errorMsg("Error connecting to ownCloud")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"ownCloud"}))
               .errorDetails(params.get(ERROR))
               .build();
 
@@ -144,7 +144,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
     if (userManager.getAuthenticatedUserInSession() == null) {
       OauthAuthorizationError error =
           getAuthErrorBuilder()
-              .errorMsg("Error connecting to ownCloud")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"ownCloud"}))
               .errorDetails(params.get(ERROR))
               .build();
 
@@ -285,7 +285,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
   public ModelAndView redirectLink(@RequestParam("path") String path)
       throws UnsupportedEncodingException {
     String decodedPath = URLDecoder.decode(path, UTF_8);
-    String parentPath = decodedPath.substring(0, decodedPath.lastIndexOf("/"));
+    String parentPath = decodedPath.substring(0, decodedPath.lastIndexOf('/'));
     String redirectURL = ownCloudBaseURL + "/index.php/apps/files/?dir=" + parentPath;
 
     return new ModelAndView("redirect:" + redirectURL);

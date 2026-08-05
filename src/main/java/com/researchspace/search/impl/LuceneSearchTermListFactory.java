@@ -40,7 +40,7 @@ public class LuceneSearchTermListFactory {
 
     for (int i = 0; i < terms.length; i++) {
       final String term = terms[i];
-      if (term.equals("")) {
+      if (term.isEmpty()) {
         continue; // Skip empty terms
       }
 
@@ -114,6 +114,9 @@ public class LuceneSearchTermListFactory {
                   FieldNames.INV_TAGS,
                   FieldNames.DESCRIPTION,
                   FieldNames.FIELD_DATA,
+                  FieldNames.EXTRA_FIELD_DATA,
+                  FieldNames.NOTES_FIELD_DATA,
+                  FieldNames.FILES_FIELD_DATA,
                   /* FieldNames.BARCODE - barcode matches handled by direct db search rather than lucene */
                   FieldNames.BARCODE_FIELD_DATA)
               .forEach(

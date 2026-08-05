@@ -59,6 +59,7 @@ window.addEventListener("load", () => {
             }}
           >
             <CssBaseline />
+            <meta name="theme-color" content="hsl(200, 10%, 81%)" />
             <QueryClientProvider client={queryClient}>
               <Analytics>
                 <ErrorBoundary>
@@ -74,10 +75,5 @@ window.addEventListener("load", () => {
         </StyledEngineProvider>
       </React.StrictMode>,
     );
-
-    const meta = document.createElement("meta");
-    meta.name = "theme-color";
-    meta.content = `hsl(200, 10%, 81%)`;
-    document.head?.appendChild(meta);
   }
 });

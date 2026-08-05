@@ -1,6 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/__tests__/customQueries";
+
 import { FieldTypes } from "@/stores/models/FieldTypes";
 import materialTheme from "@/theme";
 import FieldTypeMenuItem from "../FieldTypeMenuItem";

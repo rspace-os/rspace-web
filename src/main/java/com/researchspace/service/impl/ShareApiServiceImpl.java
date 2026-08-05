@@ -33,16 +33,16 @@ import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.ShareApiService;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.mapping.DocumentSharesBuilder;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -52,9 +52,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
 
 @Service
+@Transactional
 public class ShareApiServiceImpl extends BaseApiController implements ShareApiService {
 
   private static final Logger log = LoggerFactory.getLogger(ShareApiServiceImpl.class);
@@ -160,7 +162,9 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
 
     if (errors != null && errors.hasErrorMessages()) {
       throw new IllegalArgumentException(
-          "Could not update permission: " + errors.getAllErrorMessagesAsStringsSeparatedBy(", "));
+          getMessage(
+              "sharing.errors.permissionUpdateFailed",
+              new Object[] {ListFormatUtils.formatList(errors.getErrorMessages())}));
     }
   }
 
@@ -193,9 +197,10 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   }
 
   @Override
+  @Transactional(readOnly = true)
   public DocumentShares getAllSharesForDoc(Long docId, User user) {
     if (docId == null) {
-      throw new IllegalArgumentException("Document id cannot be null");
+      throw new IllegalArgumentException(getMessage("sharing.errors.docIdRequired"));
     }
 
     BaseRecord record;
@@ -231,11 +236,14 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
 
     if (result.getExceptionCount() > 0 && result.getResultCount() == 0) {
       String exceptionMessages =
-          result.getExceptions().stream().map(Throwable::getMessage).collect(Collectors.joining());
+          ListFormatUtils.formatList(
+              result.getExceptions().stream().map(Throwable::getMessage).toList());
       if (result.getExceptions().stream().anyMatch(e -> e instanceof IllegalAddChildOperation)) {
-        throw new IllegalArgumentException("Problem sharing: " + exceptionMessages);
+        throw new IllegalArgumentException(
+            getMessage("sharing.errors.sharingFailed", new Object[] {exceptionMessages}));
       } else {
-        throw new RuntimeException("Problem sharing: " + exceptionMessages);
+        throw new RuntimeException(
+            getMessage("sharing.errors.sharingFailed", new Object[] {exceptionMessages}));
       }
     }
   }

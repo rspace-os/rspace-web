@@ -7,18 +7,18 @@ import com.researchspace.api.v1.service.ExportApiHandler;
 import com.researchspace.model.User;
 import com.researchspace.service.archive.ExportImport;
 import com.researchspace.service.archive.export.ExportFailureException;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -32,12 +32,12 @@ public class ExportApiController extends BaseApiController implements ExportApi 
   @AllArgsConstructor
   @NoArgsConstructor
   public static class ExportApiConfig {
-    @NotNull
-    @Pattern(regexp = "(xml)|(html)", message = "format {errors.required.field}")
+    @NotNull(message = "{validation.errors.exportFormatRequired}")
+    @Pattern(regexp = "xml|html", message = "{validation.errors.exportFormatInvalid}")
     private String format;
 
-    @NotNull
-    @Pattern(regexp = "(user)|(group)|(selection)", message = "scope {errors.required.field}")
+    @NotNull(message = "{validation.errors.exportScopeRequired}")
+    @Pattern(regexp = "user|group|selection", message = "{validation.errors.exportScopeInvalid}")
     private String scope;
 
     private Long id = null;
@@ -60,7 +60,7 @@ public class ExportApiController extends BaseApiController implements ExportApi 
   @NoArgsConstructor
   public static class ExportRetrievalConfig {
     @NotBlank
-    @Pattern(regexp = ".*(\\.zip)?", message = "File must be a zip name")
+    @Pattern(regexp = ".*(\\.zip)?", message = "{export.validation.zipFileRequired}")
     private String resource;
   }
 
@@ -75,7 +75,8 @@ public class ExportApiController extends BaseApiController implements ExportApi 
     ApiJob job =
         handler
             .export(cfg, user)
-            .orElseThrow(() -> new ExportFailureException("couldn't launch export job"));
+            .orElseThrow(
+                () -> new ExportFailureException(getMessage("export.errors.launchFailed")));
     addJobProgressLink(job);
     return job;
   }

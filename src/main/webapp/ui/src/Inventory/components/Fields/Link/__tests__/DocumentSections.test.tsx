@@ -1,8 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@/__tests__/customQueries";
+
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";

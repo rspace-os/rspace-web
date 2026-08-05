@@ -5,6 +5,7 @@ import static com.researchspace.model.inventory.field.InventoryIdentifierField.i
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
@@ -110,6 +111,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
 
     return doiDao.getActiveIdentifiersByOwner(owner).stream()
+        .filter(r -> IdentifierType.IGSN_DATACITE.equals(r.getType()))
         .filter(
             r -> isBlank(finalIdentifier) || matchIdentifier(r, finalIdentifier, allowSubstring))
         .filter(r -> (isAssociated == null) || isAssociated.equals(r.isAssociated()))
@@ -166,7 +168,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     if (!settingTypeFor(inventoryItem).equals(settingTypeFor(identifierToAssign.getType()))) {
       throw new IllegalArgumentException(
           messages.getMessage(
-              "errors.inventory.identifier.assign.type.mismatch",
+              "errors.inventory.identifier.assignTypeMismatch",
               new Object[] {identifierToAssign.getType(), inventoryOid}));
     }
 
@@ -183,8 +185,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
     throw new IllegalArgumentException(
         messages.getMessage(
-            "errors.inventory.identifier.minting.unsupported.type",
-            new Object[] {invRec.getType()}));
+            "errors.inventory.identifier.mintingUnsupportedType", new Object[] {invRec.getType()}));
   }
 
   private InventorySettingType settingTypeFor(IdentifierType identifierType) {
@@ -203,7 +204,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       default:
         throw new UnsupportedOperationException(
             messages.getMessage(
-                "errors.inventory.identifier.type.unsupported", new Object[] {identifierType}));
+                "errors.inventory.identifier.typeUnsupported", new Object[] {identifierType}));
     }
   }
 
@@ -218,7 +219,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     if (!dataciteEnabled && !b2instEnabled) {
       throw new UnsupportedOperationException(
           messages.getMessage(
-              "errors.inventory.identifier.integration.not.enabled",
+              "errors.inventory.identifier.integrationNotEnabled",
               new Object[] {InventorySettingType.PIDINST}));
     }
   }
@@ -285,7 +286,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     DigitalObjectIdentifier doi = doiDao.get(identifier.getId());
     if (!user.equals(doi.getOwner())) {
       throw new IllegalArgumentException(
-          messages.getMessage("errors.inventory.identifier.delete.not.owner"));
+          messages.getMessage("errors.inventory.identifier.deleteNotOwner"));
     }
     doi.setDeleted(true);
     doi = doiDao.save(doi);
@@ -422,9 +423,10 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     try {
       draft = b2instConnector.registerDoi(b2instDoi);
     } catch (B2instConnectionException b2instException) {
-      throw new B2instConnectionException(
-          "Error when registering a new instrument PID with B2INST. "
-              + "If the problem persists, please contact your System Admin",
+      throw B2instConnectionException.wrapping(
+          messages.getMessage(
+              "errors.inventory.identifier.b2instRegisterFailed",
+              new Object[] {b2instException.getReason()}),
           b2instException);
     }
     if (draft == null || isBlank(draft.getId())) {
@@ -435,6 +437,11 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     newDoi.setRegisterIdentifierRequest(true);
     newDoi.setDoi(draft.getId()); // the draft RID; the Handle PID is minted on publish
     newDoi.setState("draft");
+    // B2INST reports the record's own page; prefer it over building the URL from the server
+    // setting. It is not a public URL (viewing it needs a B2INST sign-in), hence not publicUrl.
+    if (draft.getLinks() != null) {
+      newDoi.setProviderUrl(draft.getLinks().getSelfHtml());
+    }
     newDoi.setCreatorName(user.getFullName());
     newDoi.setCreatorType("Personal");
     newDoi.setPublisher(properties.getCustomerName());
@@ -491,9 +498,10 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       deleteResult = b2instConnector.deleteDoi(doi.getIdentifier());
     } catch (B2instConnectionException b2instException) {
       log.error("Error when deleting the PID from B2INST: ", b2instException);
-      throw new B2instConnectionException(
-          "Error when deleting the PID from B2INST. "
-              + "If the problem persists, please contact your System Admin",
+      throw B2instConnectionException.wrapping(
+          messages.getMessage(
+              "errors.inventory.identifier.b2instDeleteFailed",
+              new Object[] {b2instException.getReason()}),
           b2instException);
     }
     if (!deleteResult) {
@@ -582,9 +590,10 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     try {
       result = b2instConnector.publishDoi(doi.getIdentifier());
     } catch (B2instConnectionException b2instException) {
-      throw new B2instConnectionException(
-          "Error when publishing the instrument PID in B2INST. "
-              + "If the problem persists, please contact your System Admin",
+      throw B2instConnectionException.wrapping(
+          messages.getMessage(
+              "errors.inventory.identifier.b2instPublishFailed",
+              new Object[] {b2instException.getReason()}),
           b2instException);
     }
     ApiInventoryDOI publishDoi = new ApiInventoryDOI();
@@ -596,9 +605,15 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   }
 
   private ApiInventoryDOI createUpdateWithRetractedB2instDoi(DigitalObjectIdentifier doi) {
-    // B2INST/Invenio has no retract operation; this surfaces an UnsupportedOperationException.
-    b2instConnector.retractDoi(doi.getIdentifier());
-    return new ApiInventoryDOI();
+    /*
+     * B2INST/Invenio has no retract operation at all, so refuse before touching the connector, whose
+     * UnsupportedOperationException would reach the user as developer-facing English. ApiRuntimeException
+     * rather than UnsupportedOperationException because the advice maps the latter to 404 alongside
+     * NotFoundException, which misreports an existing record as missing, and logs a full stack trace for
+     * what is an expected refusal; this one resolves the bundle key itself and answers 422. The UI
+     * already disables Delete/Retract for every B2INST review state, but the API is callable directly.
+     */
+    throw new ApiRuntimeException("errors.inventory.identifier.b2instRetractUnsupported");
   }
 
   @NotNull

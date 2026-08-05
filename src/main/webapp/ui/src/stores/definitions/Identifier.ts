@@ -70,6 +70,19 @@ export type CreatorType = "Personal" | "Organizational";
 
 export type IGSNPublishingState = "draft" | "findable" | "registered";
 
+/**
+ * PIDINST identifiers registered with B2INST are published by submitting the record to a community
+ * for curator review. The server stores the Invenio review-request status verbatim, so these are
+ * the states a PIDINST_B2INST identifier can report in place of the DataCite ones above.
+ */
+export type PidinstPublishingState = "created" | "submitted" | "accepted" | "declined" | "cancelled" | "expired";
+
+/**
+ * Any state an identifier can report. Both providers share {@link IGSNPublishingState}'s "draft";
+ * everything else is provider-specific, so consumers must tolerate a state they do not model.
+ */
+export type PublishingState = IGSNPublishingState | PidinstPublishingState;
+
 export type IdentifierDate = { value: Date; type: IGSNDateType };
 
 /*
@@ -87,12 +100,18 @@ export type IdentifierAttrs = {
   creatorAffiliationIdentifier: string | null;
   title: string;
   publicUrl: URL | null;
+
+  /**
+   * The record's page on the issuing provider (for example the B2INST deposit page). Present from
+   * registration onwards, unlike {@link publicUrl}, and may require signing in to that provider.
+   */
+  providerUrl: URL | null;
   publisher: string;
   publicationYear: number;
   resourceType: string;
   resourceTypeGeneral: string;
   url: URL | null;
-  state: IGSNPublishingState;
+  state: PublishingState;
   subjects: Array<IdentifierSubject> | null;
   descriptions: Array<IdentifierDescription> | null;
   alternateIdentifiers: Array<AlternateIdentifier> | null;
@@ -114,12 +133,18 @@ export interface Identifier {
   creatorAffiliationIdentifier: string | null;
   title: string; // item.name
   publicUrl: URL | null;
+
+  /**
+   * The record's page on the issuing provider (for example the B2INST deposit page). Present from
+   * registration onwards, unlike {@link publicUrl}, and may require signing in to that provider.
+   */
+  providerUrl: URL | null;
   publisher: string;
   publicationYear: string;
   resourceType: string;
   resourceTypeGeneral: string;
   url: URL | null;
-  state: IGSNPublishingState;
+  state: PublishingState;
   subjects: Array<IdentifierSubject> | null;
   descriptions: Array<IdentifierDescription> | null;
   alternateIdentifiers: Array<AlternateIdentifier> | null;
@@ -137,6 +162,7 @@ export interface Identifier {
   publish({
     confirm,
     addAlert,
+    onPublished,
   }: {
     confirm: (
       title: React.ReactNode,
@@ -145,6 +171,7 @@ export interface Identifier {
       cancelLabel: string,
     ) => Promise<boolean>;
     addAlert: (alert: Alert) => void;
+    onPublished?: () => void;
   }): Promise<void>;
   retract({
     confirm,

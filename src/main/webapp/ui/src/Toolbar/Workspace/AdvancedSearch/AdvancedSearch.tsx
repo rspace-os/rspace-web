@@ -315,6 +315,7 @@ class AdvancedSearch extends React.Component<any, any> {
         <td className="search-type">
           <Select
             variant="standard"
+            SelectDisplayProps={{ "aria-label": i18n.t("workspace:toolbar.advancedSearch.searchType") }}
             data-test-id={`a-search-type-${idx}`}
             value={query.filter}
             onChange={this.handleChange(idx, "filter")}

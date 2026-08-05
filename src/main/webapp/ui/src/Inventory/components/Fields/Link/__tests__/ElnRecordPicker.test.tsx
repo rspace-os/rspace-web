@@ -1,8 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@/__tests__/customQueries";
+
 import materialTheme from "../../../../../theme";
 
 // The folder browser has its own tests; stub it so we can drive selection changes

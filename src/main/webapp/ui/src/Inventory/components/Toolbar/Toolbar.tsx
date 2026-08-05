@@ -9,6 +9,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import GlobalId from "../../../components/GlobalId";
 import type { AllowedFormTypes } from "../../../stores/contexts/FormSections";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -31,6 +32,7 @@ type CustomToolbarArgs = {
  * which displays the name of the current record alongside visual elements.
  */
 function CustomToolbar({ title, record, recordType, batch, stickyAlert }: CustomToolbarArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const theme = useTheme();
   const {
     uiStore,
@@ -76,7 +78,11 @@ function CustomToolbar({ title, record, recordType, batch, stickyAlert }: Custom
         }}
       >
         {isSingleColumnLayout && (
-          <IconButton onClick={handleBackClick} sx={{ p: theme.spacing(1, 0.5, 1, 1.5) }}>
+          <IconButton
+            aria-label={t("actions.back")}
+            onClick={handleBackClick}
+            sx={{ p: theme.spacing(1, 0.5, 1, 1.5) }}
+          >
             <ArrowBackIosIcon
               fontSize="small"
               data-test-id="backIcon"

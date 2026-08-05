@@ -61,7 +61,7 @@ class InventoryLinkManagerImplValidationTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> manager.createLink(apiLink("References", "not-a-gid"), user));
-    assertEquals("errors.inventory.field.link.targetNotFound", ex.getErrorCode());
+    assertEquals("errors.inventory.field.linkTargetNotFound", ex.getErrorCode());
     verify(linkDao, never()).save(any());
   }
 
@@ -71,7 +71,7 @@ class InventoryLinkManagerImplValidationTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> manager.createLink(apiLink("References", "FL12"), user));
-    assertEquals("errors.inventory.field.link.targetKindUnsupported", ex.getErrorCode());
+    assertEquals("errors.inventory.field.linkTargetKindUnsupported", ex.getErrorCode());
     verify(linkDao, never()).save(any());
   }
 
@@ -81,7 +81,7 @@ class InventoryLinkManagerImplValidationTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> manager.createLink(apiLink("NotARelation", "SD123"), user));
-    assertEquals("errors.inventory.field.link.relationTypeInvalid", ex.getErrorCode());
+    assertEquals("errors.inventory.field.linkRelationTypeInvalid", ex.getErrorCode());
     verify(linkDao, never()).save(any());
   }
 
@@ -92,7 +92,7 @@ class InventoryLinkManagerImplValidationTest {
             ApiRuntimeException.class,
             () -> manager.updateLink(new InventoryLink(), apiLink("References", "ZZ99"), user));
     // ZZ is not a known prefix, so the id fails to parse at all
-    assertEquals("errors.inventory.field.link.targetNotFound", ex.getErrorCode());
+    assertEquals("errors.inventory.field.linkTargetNotFound", ex.getErrorCode());
     verify(linkDao, never()).save(any());
   }
 
@@ -134,7 +134,7 @@ class InventoryLinkManagerImplValidationTest {
             ApiRuntimeException.class,
             () -> manager.createLink(apiLink("References", "SD404"), user));
 
-    assertEquals("errors.inventory.field.link.targetNotFound", ex.getErrorCode());
+    assertEquals("errors.inventory.field.linkTargetNotFound", ex.getErrorCode());
     verify(linkDao, never()).save(any(InventoryLink.class));
   }
 

@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.model.ApiSortEnum;
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,13 +24,10 @@ public abstract class ApiPaginationCriteria {
   public static final String PAGE_SIZE_REQ_PARAM = "pageSize";
   public static final String ORDERBY_REQ_PARAM = "orderBy";
 
-  @Min(value = 0, message = "Page number must be 0 or greater.")
+  @Min(value = 0, message = "{validation.pagination.pageNumberNonNegative}")
   Integer pageNumber = 0;
 
-  @Range(
-      min = 1,
-      max = MAX_PAGE_SIZE,
-      message = "Page size must be between 1 and " + MAX_PAGE_SIZE + ".")
+  @Range(min = 1, max = MAX_PAGE_SIZE, message = "{validation.pagination.pageSizeRange}")
   Integer pageSize = DEFAULT_PAGE_SIZE;
 
   String orderBy;
@@ -60,4 +57,29 @@ public abstract class ApiPaginationCriteria {
   }
 
   abstract void addOrderByToMap(LinkedMultiValueMap<String, String> rc);
+
+  int previousPageNumber() {
+    if (pageNumber == 0) {
+      throw new IllegalStateException();
+    }
+    return pageNumber - 1;
+  }
+
+  static class InvalidSortParameterException extends IllegalArgumentException {
+    private final String orderBy;
+    private final String[] validParams;
+
+    InvalidSortParameterException(String orderBy, String[] validParams) {
+      this.orderBy = orderBy;
+      this.validParams = validParams;
+    }
+
+    String getOrderBy() {
+      return orderBy;
+    }
+
+    String[] getValidParams() {
+      return validParams;
+    }
+  }
 }

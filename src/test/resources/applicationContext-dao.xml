@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!--  used to apply liquibase DB schema changes -->
+    <bean depends-on="appContextRetriever, loggingInitializer" id="liquibase" class="liquibase.integration.spring.SpringLiquibase">
+        <property name="dataSource" ref="dataSource" />
+        <property name="changeLog" value="classpath:sqlUpdates/liquibase-master.xml" />
+        <!-- contexts specifies the runtime contexts to use. variable is substituted 
+            by Maven at build time. -->
+        <property name="contexts" value="${liquibase.context}" />
+    </bean>
+
+    <bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor" />
+		
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+    	<property name="dataSource" ref="dataSource" />
+    	<property name="configLocations" value="classpath:hibernate.cfg.xml" />
+    	<property name="hibernateProperties">
+    		<value>
+    			hibernate.dialect=${hibernate.dialect}
+    			hibernate.search.backend.type=lucene
+    			hibernate.search.backend.directory.type=local-heap
+    			hibernate.cache.use_second_level_cache=false
+    			hibernate.cache.region.factory_class=org.hibernate.cache.internal.NoCachingRegionFactory
+			hibernate.search.indexing.plan.synchronization.strategy=sync
+    		</value>
+    		<!-- Turn batching off for better error messages under PostgreSQL -->
+    		<!-- hibernate.jdbc.batch_size=0 -->
+    		<!--
+    		  Test-specific overrides vs. the production applicationContext-dao.xml:
+    		
+    		  1. local-heap (in-memory) Lucene backend instead of local-filesystem.
+    		     Avoids Lucene write.lock conflicts when multiple Spring Test contexts run in
+    		     the same JVM. Different MVCIT test classes that use @TestPropertySource produce
+    		     distinct Spring context configurations, each with its own Hibernate Search
+    		     backend. With local-filesystem, they all try to acquire the same write.lock file.
+    		     With local-heap, each context gets an isolated in-memory index; search tests
+    		     still work correctly within a single context (indexing strategy=sync).
+    		
+    		  2. second-level cache disabled (use_second_level_cache=false).
+    		     The JCache CacheManager (Ehcache 3 via JCache/JSR-107) is a JVM singleton.
+    		     When Hibernate closes a SessionFactory it calls cacheManager.close(), which
+    		     closes ALL caches globally. Subsequent Spring Test contexts then fail with
+    		     "Cache[...] is closed". Disabling the second-level cache for tests avoids
+    		     this cross-context contamination entirely.
+    		-->
+    	</property>
+    </bean>
+
+</beans>

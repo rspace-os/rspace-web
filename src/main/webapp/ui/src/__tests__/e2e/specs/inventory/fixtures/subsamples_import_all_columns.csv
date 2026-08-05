@@ -1,0 +1,6 @@
+Name,Alternative name,Parent container,Parent Sample Import ID,Parent sample global ID,Tags
+Subsample1,Protein phosphatase 1,1,1,SA7,Tag1
+Subsample2,"very long alternative name - the one that should trigger text field column mapping, if everything works fine",2,1,SA7,Tag2
+Subsample3,Sub3,3,1,SA7,"Tag1, Tag2"
+Subsample4,Sub4,1,2,SA7,
+Subsample5,Sub5,2,2,SA7,

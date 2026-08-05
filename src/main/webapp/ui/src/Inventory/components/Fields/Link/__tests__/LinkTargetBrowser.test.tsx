@@ -1,7 +1,8 @@
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/__tests__/customQueries";
+
 import LinkTargetBrowser from "../LinkTargetBrowser";
 
 // Search pulls in the store/fetcher chain at construction; stub it out (this is a thin wrapper).
@@ -67,6 +68,24 @@ describe("LinkTargetBrowser", () => {
       uiConfig: { allowedTypeFilters: Set<string> };
     };
     expect([...args.uiConfig.allowedTypeFilters]).toContain("SAMPLE_TEMPLATE");
+  });
+
+  it("lets instruments be browsed as link targets", () => {
+    render(<LinkTargetBrowser open onPick={() => {}} onCancel={() => {}} />);
+
+    const args = searchConstructorArgs.at(-1) as {
+      uiConfig: { allowedTypeFilters: Set<string> };
+    };
+    expect([...args.uiConfig.allowedTypeFilters]).toContain("INSTRUMENT");
+  });
+
+  it("lets instrument templates be browsed as link targets", () => {
+    render(<LinkTargetBrowser open onPick={() => {}} onCancel={() => {}} />);
+
+    const args = searchConstructorArgs.at(-1) as {
+      uiConfig: { allowedTypeFilters: Set<string> };
+    };
+    expect([...args.uiConfig.allowedTypeFilters]).toContain("INSTRUMENT_TEMPLATE");
   });
 
   it("requires an explicit Choose click instead of confirming on row click", () => {

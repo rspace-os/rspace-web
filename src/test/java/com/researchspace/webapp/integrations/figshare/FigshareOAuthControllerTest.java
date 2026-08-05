@@ -10,13 +10,16 @@ import static org.mockito.Mockito.when;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.function.Supplier;
-import javax.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -82,6 +85,11 @@ class FigshareOAuthControllerTest {
 
   @InjectMocks FigshareOAuthControllerTSS figOauthCtrllerTSS;
   private static final String serverUrl = "https://myrspace.com";
+
+  @BeforeEach
+  void wireMessageSource() {
+    figOauthCtrllerTSS.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
+  }
 
   @Test
   void connect() throws UnsupportedEncodingException {

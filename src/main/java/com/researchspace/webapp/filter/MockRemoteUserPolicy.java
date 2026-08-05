@@ -1,8 +1,8 @@
 package com.researchspace.webapp.filter;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.TreeMap;
-import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 
 /**

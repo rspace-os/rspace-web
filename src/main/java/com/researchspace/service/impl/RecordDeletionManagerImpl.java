@@ -67,7 +67,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class RecordDeletionManagerImpl implements RecordDeletionManager {
 
-  static enum DeletionContext {
+  enum DeletionContext {
     FOLDER,
     DOCUMENT
   }

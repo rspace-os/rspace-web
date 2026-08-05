@@ -17,12 +17,14 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Abstract base class for implementations of IApplicationInitialisor. <br>
  * This class provides null implementations of the methods provide by the interface. Implementations
  * therefore need not implement all the methods.
  */
+@Transactional
 public class AbstractAppInitializor implements IApplicationInitialisor {
 
   public static final Logger log = LogManager.getLogger(AbstractAppInitializor.class);

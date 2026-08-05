@@ -3,10 +3,10 @@ package com.researchspace.archive;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * Read only methods of ExportRecordList. Standard implementation is expected to be

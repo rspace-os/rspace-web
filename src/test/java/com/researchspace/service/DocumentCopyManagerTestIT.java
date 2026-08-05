@@ -51,6 +51,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
   @Before
   public void setUp() throws IllegalAddChildOperation {
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
+    flushDatabaseState();
     initialiseContentWithExampleContent(user);
     assertTrue(user.isContentInitialized());
     logoutAndLoginAs(user);

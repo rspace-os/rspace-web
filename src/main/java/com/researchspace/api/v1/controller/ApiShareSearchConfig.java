@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
+import jakarta.validation.constraints.Size;
 import java.util.List;
-import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,9 +18,7 @@ public class ApiShareSearchConfig extends ApiGenericSearchConfig {
 
   private static final int MAX_SHARE_ITEM_IDS = 1000;
 
-  @Size(
-      max = MAX_SHARE_ITEM_IDS,
-      message = "Maximum number of ids in sharedItemIds is " + MAX_SHARE_ITEM_IDS + ".")
+  @Size(max = MAX_SHARE_ITEM_IDS, message = "{sharing.errors.sharedItemIdsLimit}")
   private List<Long> sharedItemIds;
 
   @Override

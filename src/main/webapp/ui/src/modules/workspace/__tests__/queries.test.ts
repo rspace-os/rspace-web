@@ -1,4 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { HttpResponse, http } from "msw";
+import { describe, expect, it } from "vitest";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
+import { server } from "@/__tests__/mswServer";
 import { getWorkspaceRecordInformationAjax } from "@/modules/workspace/queries";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
 
@@ -26,15 +29,10 @@ const mockRecordInformation: WorkspaceRecordInformation = {
   modificationDateWithClientTimezoneOffset: "2026-04-14 10:05 +0000",
 };
 
-beforeEach(() => {
-  fetchMock.resetMocks();
-  vi.clearAllMocks();
-});
-
 describe("getWorkspaceRecordInformationAjax", () => {
   it("fetches and unwraps detailed record information", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
+    const requests = captureRequests("get", `${WORKSPACE_API_BASE_URL}/getRecordInformation`, () =>
+      HttpResponse.json({
         data: mockRecordInformation,
         error: null,
         errorMsg: null,
@@ -49,32 +47,29 @@ describe("getWorkspaceRecordInformationAjax", () => {
     });
 
     expect(result).toEqual(mockRecordInformation);
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${WORKSPACE_API_BASE_URL}/getRecordInformation?recordId=21&revision=3&version=2`,
-      expect.objectContaining({
-        method: "GET",
-        headers: {
-          "X-Requested-With": "XMLHttpRequest",
-        },
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    const requestUrl = new URL(requests[0].url);
+    expect(Object.fromEntries(requestUrl.searchParams)).toEqual({ recordId: "21", revision: "3", version: "2" });
+    expect(requests[0].headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
   it("throws the endpoint error message when a successful response has no data", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
-        data: null,
-        error: {
-          errorMessages: [
-            {
-              defaultMessage: "Could not load record information",
-              errorCode: "workspace.getRecordInformation.failed",
-              field: "recordId",
-            },
-          ],
-        },
-        success: false,
-      }),
+    server.use(
+      http.get(`${WORKSPACE_API_BASE_URL}/getRecordInformation`, () =>
+        HttpResponse.json({
+          data: null,
+          error: {
+            errorMessages: [
+              {
+                defaultMessage: "Could not load record information",
+                errorCode: "workspace.getRecordInformation.failed",
+                field: "recordId",
+              },
+            ],
+          },
+          success: false,
+        }),
+      ),
     );
 
     await expect(getWorkspaceRecordInformationAjax({ recordId: 21 })).rejects.toThrow(
@@ -83,18 +78,22 @@ describe("getWorkspaceRecordInformationAjax", () => {
   });
 
   it("throws endpoint error details for non-OK responses", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
-        data: null,
-        error: {
-          errorMessages: ["Record not found"],
-        },
-        success: false,
-      }),
-      {
-        status: 404,
-        statusText: "Not Found",
-      },
+    server.use(
+      http.get(`${WORKSPACE_API_BASE_URL}/getRecordInformation`, () =>
+        HttpResponse.json(
+          {
+            data: null,
+            error: {
+              errorMessages: ["Record not found"],
+            },
+            success: false,
+          },
+          {
+            status: 404,
+            statusText: "Not Found",
+          },
+        ),
+      ),
     );
 
     await expect(getWorkspaceRecordInformationAjax({ recordId: 99 })).rejects.toThrow("Record not found");

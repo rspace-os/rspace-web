@@ -1,7 +1,7 @@
 package com.researchspace.model.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,7 +18,7 @@ public class ExportSelection {
     GROUP
   }
 
-  @NotNull(message = "type {errors.required.field}")
+  @NotNull(message = "{validation.errors.exportTypeRequired}")
   private ExportType type;
 
   // In case type = SELECTION, these must be filled.

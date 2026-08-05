@@ -15,6 +15,8 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import org.junit.After;
@@ -26,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class PdfWordExportManagerImplTest {
 
@@ -39,6 +42,8 @@ public class PdfWordExportManagerImplTest {
 
   @Before
   public void setUp() throws Exception {
+    ReflectionTestUtils.setField(
+        pdfExporter, "messageSource", new MessageSourceUtils(new JsonMessageSource()));
 
     anyUser = TestFactory.createAnyUser("any");
     otherUser = TestFactory.createAnyUser("any");

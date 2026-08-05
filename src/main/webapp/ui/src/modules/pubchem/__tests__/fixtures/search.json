@@ -1,0 +1,12 @@
+{
+  "PropertyTable": {
+    "Properties": [
+      {
+        "CID": 2244,
+        "MolecularFormula": "C9H8O4",
+        "SMILES": "CC(=O)OC1=CC=CC=C1C(=O)O",
+        "Title": "Aspirin"
+      }
+    ]
+  }
+}

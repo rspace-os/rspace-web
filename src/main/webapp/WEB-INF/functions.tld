@@ -15,4 +15,10 @@
         <function-class>org.apache.commons.text.StringEscapeUtils</function-class>
         <function-signature>java.lang.String unescapeXml(java.lang.String)</function-signature>
     </function>
+
+    <function>
+        <name>helpDocsUrl</name>
+        <function-class>com.researchspace.service.HelpDocsUrls</function-class>
+        <function-signature>java.lang.String urlFromSlug(java.lang.String)</function-signature>
+    </function>
 </taglib>

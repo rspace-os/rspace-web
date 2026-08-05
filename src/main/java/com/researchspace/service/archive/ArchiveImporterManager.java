@@ -28,7 +28,7 @@ public interface ArchiveImporterManager {
    * @throws ArchivalFileNotExistException if archive file not found
    * @throws ImportFailureException if processing of archive fails
    */
-  public ImportArchiveReport importArchive(
+  ImportArchiveReport importArchive(
       File zipFile,
       ArchivalImportConfig iconfig,
       ProgressMonitor monitor,

@@ -1,11 +1,13 @@
 package com.researchspace.api.v1.controller;
 
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import static org.junit.Assert.assertEquals;
+
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ApiPaginationCriteriaTest extends JavaxValidatorTest {
+public class ApiPaginationCriteriaTest extends JakartaValidatorTest {
 
   DocumentApiPaginationCriteria pgCrit;
 
@@ -47,5 +49,19 @@ public class ApiPaginationCriteriaTest extends JavaxValidatorTest {
     assertNErrors(pgCrit, 2);
     pgCrit.setPageSize(DocumentApiPaginationCriteria.MAX_PAGE_SIZE);
     assertNErrors(pgCrit, 1);
+  }
+
+  @Test
+  public void previousPageNumberIsCentralised() {
+    pgCrit.setPageNumber(2);
+
+    assertEquals(1, pgCrit.previousPageNumber());
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void firstPageHasNoPreviousPageNumber() {
+    pgCrit.setPageNumber(0);
+
+    pgCrit.previousPageNumber();
   }
 }

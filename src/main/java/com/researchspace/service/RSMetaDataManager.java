@@ -11,7 +11,7 @@ public interface RSMetaDataManager extends GenericManager<RSMetaData, Long> {
    *
    * @return
    */
-  public AppVersion getDatabaseVersion();
+  AppVersion getDatabaseVersion();
 
   /**
    * Boolean test for whether the specified version of the schema can be imported into the database.

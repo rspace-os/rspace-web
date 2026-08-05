@@ -1,6 +1,7 @@
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
-import { expectAccessible, render, screen } from "@/__tests__/customQueries";
+import { expectAccessible } from "@/__tests__/accessibility";
 
 import { SimplePageWithSidebarToggle } from "./SidebarToggle.story";
 

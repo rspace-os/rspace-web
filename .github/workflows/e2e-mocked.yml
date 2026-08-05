@@ -1,0 +1,16 @@
+name: e2e (mocked)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  mocked:
+    uses: ./.github/workflows/e2e.yml
+    with:
+      mode: mock
+    secrets: inherit

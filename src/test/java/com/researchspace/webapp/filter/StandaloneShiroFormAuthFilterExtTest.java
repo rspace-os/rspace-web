@@ -233,6 +233,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     initHttpReqAndResp(u.getUsername());
     // also if is initialised, if disabled fails too
     initialiseContentWithEmptyContent(u);
+    subject = SecurityUtils.getSubject();
     assertFalse(filter.onLoginSuccess(getTokenAndSetUsernameInRequest(u), subject, req, resp));
     assertTrue(getRedirectUrl().contains(AccountEnabledAuthorizer.REDIRECT_FOR_DISABLED));
     // should be logged out when redirected
@@ -244,7 +245,9 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     req.addHeader(RequestUtil.AJAX_REQUEST_HEADER_NAME, RequestUtil.AJAX_REQUEST_TYPE);
     req.setLocalAddr("");
     assertFalse(filter.onAccessDenied(req, resp));
-    assertEquals(getMsgFromResourceBundler("ajax.unauthenticated.msg"), resp.getContentAsString());
+    assertEquals(
+        getMsgFromResourceBundler("errors.ajax.unauthenticated.refreshRequired"),
+        resp.getContentAsString());
     assertTrue(resp.getStatus() == HttpStatus.FORBIDDEN.value());
   }
 

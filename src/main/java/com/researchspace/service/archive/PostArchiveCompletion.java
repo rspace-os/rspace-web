@@ -9,7 +9,7 @@ import com.researchspace.model.User;
 public interface PostArchiveCompletion {
 
   /** No-op */
-  public static final PostArchiveCompletion NULL = (a, b, c) -> {};
+  PostArchiveCompletion NULL = (a, b, c) -> {};
 
   /**
    * @param expCfg

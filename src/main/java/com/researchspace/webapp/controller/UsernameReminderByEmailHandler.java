@@ -1,24 +1,24 @@
 package com.researchspace.webapp.controller;
 
 import com.researchspace.core.util.RequestUtil;
-import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
+import com.researchspace.service.impl.EmailContentGenerator;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.slf4j.Logger;
@@ -30,25 +30,27 @@ import org.springframework.stereotype.Component;
 @Component
 public class UsernameReminderByEmailHandler {
   protected Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
-  private static final String EMAIL_SUBJECT = "RSpace username reminder";
   static final int MAX_REMINDERS_PER_EMAIL_PER_HOUR = 5;
 
   @Autowired IPropertyHolder properties;
   @Autowired UserManager userManager;
   @Autowired VelocityEngine velocity;
+  @Autowired MessageSourceUtils messages;
 
   @Autowired
   @Qualifier("emailBroadcast")
   EmailBroadcast emailer;
 
   Map<String, RateLimiter> perMinute = new ConcurrentHashMap<String, RateLimiter>();
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   void sendUsernameReminderEmail(HttpServletRequest request, String email) {
     String remoteIpAddress = RequestUtil.remoteAddr(request);
 
     if (StringUtils.isBlank(email)) {
-      throw new IllegalArgumentException("email cannot be empty!");
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "errors.emptyString.polite", new Object[] {messages.getMessage("label.email")}));
     }
 
     List<User> users = userManager.getUserByEmail(email);
@@ -69,16 +71,19 @@ public class UsernameReminderByEmailHandler {
               velocityModel.put("loginLink", properties.getServerUrl() + "/login");
 
               EmailContent emailContent =
-                  strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-                      "usernameReminderMessage.vm", velocityModel);
-              emailer.sendHtmlEmail(
-                  EMAIL_SUBJECT, emailContent, TransformerUtils.toList(email), null);
+                  emailContentGenerator.render(
+                      "email.account.usernameReminderMessage.subject",
+                      null,
+                      "usernameReminderMessage.vm",
+                      velocityModel);
+              emailer.sendEmail(emailContent, List.of(email), null);
             }
           });
     } catch (RequestNotPermitted e) {
       throw new IllegalStateException(
-          "You have exceeded the number of username reminder requests. Please contact ResearchSpace"
-              + " support for assistance");
+          messages.getMessage(
+              "errors.rateLimitExceeded",
+              new Object[] {messages.getMessage("requestType.usernameReminder")}));
     }
 
     SECURITY_LOG.info("Username reminder request from {} sent to [{}]", remoteIpAddress, email);

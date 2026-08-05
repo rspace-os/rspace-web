@@ -23,13 +23,13 @@ import com.researchspace.model.record.IconEntity;
 import com.researchspace.service.IconImageManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.NotFoundException;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -166,8 +166,7 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
 
   private void assertIsInstrumentTemplate(InstrumentTemplate template) {
     Validate.isTrue(
-        template.isTemplate(),
-        messages.getMessage("errors.inventory.instrument.template.required"));
+        template.isTemplate(), messages.getMessage("errors.inventory.instrument.templateRequired"));
   }
 
   @Override
@@ -214,13 +213,13 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
       throws BindException, IOException {
 
     InstrumentTemplate template =
-        instrumentApiMgr.assertUserCanReadInstrumentTemplate(templateId, user);
+        instrumentApiMgr.assertUserCanEditInstrumentTemplate(templateId, user);
     Optional<BufferedImage> img =
         getBufferedImageFromUploadedFile(new SpringMultipartFileAdapter(file));
     if (!img.isPresent()) {
       throw new IllegalArgumentException(
           getMessage(
-              "errors.inventory.icon.image.parse.failure",
+              "errors.inventory.icon.imageParseFailure",
               new Object[] {file.getOriginalFilename()}));
     }
     String suffix = getExtension(file.getOriginalFilename());

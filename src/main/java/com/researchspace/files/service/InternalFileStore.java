@@ -8,16 +8,16 @@ import java.io.IOException;
 public interface InternalFileStore extends FileStore {
 
   /** File store category for thumbnails for Thumbnail objects */
-  public static final String THUMBNAIL_THUMBNAIL_CATEGORY = "thumbnail";
+  String THUMBNAIL_THUMBNAIL_CATEGORY = "thumbnail";
 
   /** File store category for thumbnails for EcatDocumentFile */
-  public static final String DOC_THUMBNAIL_CATEGORY = "ecatDoc-thumbnail";
+  String DOC_THUMBNAIL_CATEGORY = "ecatDoc-thumbnail";
 
   /** File store category for working images for EcatImage */
-  public static final String IMG_WORKING_CATEGORY = "ecatImage-working";
+  String IMG_WORKING_CATEGORY = "ecatImage-working";
 
   /** File store category for thumbnails for EcatImage */
-  public static final String IMG_THUMBNAIL_CATEGORY = "ecatImage-thumbnail";
+  String IMG_THUMBNAIL_CATEGORY = "ecatImage-thumbnail";
 
   /**
    * Sets the root folder of the FileStore. In application usage, this should not be changed, but is

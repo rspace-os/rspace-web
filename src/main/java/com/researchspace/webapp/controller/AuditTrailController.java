@@ -15,9 +15,11 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.views.CommunityListResult;
 import com.researchspace.model.views.GroupListResult;
 import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.audit.search.AuditTrailHandler;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
+import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -25,7 +27,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.validation.Valid;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -197,7 +198,7 @@ public class AuditTrailController extends BaseController {
     Optional<ErrorList> validationErrors = validateAndConfigure(inputSearchConfig, errors, subject);
     if (validationErrors.isPresent()) {
       throw new IllegalArgumentException(
-          validationErrors.get().getAllErrorMessagesAsStringsSeparatedBy(","));
+          ListFormatUtils.formatList(validationErrors.get().getErrorMessages()));
     }
     pgCrit.setResultsPerPage(AuditTrailSearchResultCsvGenerator.MAX_RESULTS_PER_CSV);
     ISearchResults<AuditTrailSearchResult> res =
@@ -238,11 +239,11 @@ public class AuditTrailController extends BaseController {
   private void validatePermissions(User subject, AuditTrailUISearchConfig config) {
     if (subject.hasRole(Role.USER_ROLE)) { // covers PI and
       if (config.getCommunities() != null || config.getGroups() != null) {
-        throw new AuthorizationException("Unauthorized attempt to audit a group or community");
+        throw new AuthorizationException(getText("errors.authorization.audit.groupOrCommunity"));
       }
     } else if (subject.hasRole(Role.ADMIN_ROLE)) {
       if (config.getCommunities() != null) {
-        throw new AuthorizationException("Unauthorized attempt to audit a community");
+        throw new AuthorizationException(getText("errors.authorization.audit.community"));
       }
     }
   }

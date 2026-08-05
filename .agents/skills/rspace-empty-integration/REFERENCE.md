@@ -217,7 +217,7 @@ export default <Name>;
 ```tsx
 import { describe, it, expect } from "vitest";
 import React from "react";
-import { render } from "@/__tests__/customQueries";
+import { render } from "@testing-library/react";
 import <Name> from "../<Name>";
 
 describe("<Name> dialog body", () => {
@@ -553,6 +553,5 @@ Add a new entry to the JSON object, alongside the other `tinymce*` entries:
   `fileRepositoriesMenu += " opt<Name>"` in `tinymce5_configuration.js`.
 - Setting `localTinymcesetup.<name>_url` / `<name>_web_url` in
   `tinymce5_configuration.js`.
-
 
 

@@ -10,12 +10,12 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.ContainerLocation;
 import com.researchspace.model.inventory.field.ExtraField;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -78,11 +78,11 @@ public class ApiContainer extends ApiContainerInfo {
   @JsonProperty("locations")
   private List<ApiContainerLocationWithContent> locations = new ArrayList<>();
 
-  @Size(max = 10_000_000, message = "Container image cannot be larger than 10MB")
+  @Size(max = 10_000_000, message = "{errors.inventory.container.imageTooLarge}")
   @JsonProperty(value = "newBase64Image", access = Access.WRITE_ONLY)
   private String newBase64Image;
 
-  @Size(max = 10_000_000, message = "Container locations image cannot be larger than 10MB")
+  @Size(max = 10_000_000, message = "{errors.inventory.container.locationsImageTooLarge}")
   @JsonProperty(value = "newBase64LocationsImage", access = Access.WRITE_ONLY)
   private String newBase64LocationsImage;
 

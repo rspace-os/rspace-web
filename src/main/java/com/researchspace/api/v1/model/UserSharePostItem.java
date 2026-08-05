@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.model;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserSharePostItem {
 
-  @NotNull(message = "Must specify id of the user")
+  @NotNull(message = "{sharing.errors.userIdRequired}")
   private Long id;
 
   @Pattern(regexp = "(READ|EDIT|read|edit)")

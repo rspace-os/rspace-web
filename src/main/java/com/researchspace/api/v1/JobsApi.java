@@ -2,7 +2,7 @@ package com.researchspace.api.v1;
 
 import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.model.User;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,9 +1,9 @@
 import { chipClasses } from "@mui/material/Chip";
-import { screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { render } from "@/__tests__/customQueries";
+
 import axios from "@/common/axios";
 import UserDetails from "../UserDetails";
 

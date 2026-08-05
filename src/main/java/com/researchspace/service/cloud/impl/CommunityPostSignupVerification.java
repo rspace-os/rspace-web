@@ -7,13 +7,13 @@ import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
-import java.util.Arrays;
+import com.researchspace.service.impl.EmailContentGenerator;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +37,7 @@ public class CommunityPostSignupVerification implements IPostUserSignup {
 
   private @Autowired UserManager userMgr;
   private @Autowired IPropertyHolder properties;
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   @Autowired
   @Qualifier("emailBroadcast")
@@ -71,11 +71,10 @@ public class CommunityPostSignupVerification implements IPostUserSignup {
     model.put("verifyLink", createVerifyLink(upc.getToken()));
 
     EmailContent content =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-            SIGNUP_VERIFICATION_TEMPLATE, model);
+        emailContentGenerator.render(
+            "email.cloud.signupVerification.subject", SIGNUP_VERIFICATION_TEMPLATE, model);
     log.info("Sending mail to " + newUser.getUsername() + " at " + newUser.getEmail());
-    emailSender.sendHtmlEmail(
-        "Welcome to RSpace", content, Arrays.asList(new String[] {newUser.getEmail()}), null);
+    emailSender.sendEmail(content, List.of(newUser.getEmail()), null);
   }
 
   private String createVerifyLink(String token) {

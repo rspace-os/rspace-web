@@ -2,6 +2,11 @@ package com.axiope.webapp.taglib;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.JspWriter;
+import jakarta.servlet.jsp.tagext.TagSupport;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -11,11 +16,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.JspWriter;
-import javax.servlet.jsp.tagext.TagSupport;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -83,7 +83,7 @@ public class BundleTag extends TagSupport {
     }
 
     for (String scriptUrl : assets.getScripts()) {
-      renderModuleScriptTag(scriptUrl);
+      renderScriptTag(scriptUrl);
     }
   }
 
@@ -94,7 +94,19 @@ public class BundleTag extends TagSupport {
     }
 
     renderModuleScriptTag(toDevServerUrl(VITE_CLIENT_PATH));
-    renderModuleScriptTag(toDevServerUrl(entryPath));
+    renderScriptTag(toDevServerUrl(entryPath));
+  }
+
+  boolean usesModuleScripts() {
+    return true;
+  }
+
+  void renderScriptTag(String src) throws JspException {
+    if (usesModuleScripts()) {
+      renderModuleScriptTag(src);
+    } else {
+      renderClassicScriptTag(src);
+    }
   }
 
   boolean isHmrEnabled() {
@@ -174,6 +186,15 @@ public class BundleTag extends TagSupport {
     }
 
     writeTag("<script type=\"module\" src=\"" + escapeHtml(src) + "\"></script>");
+  }
+
+  void renderClassicScriptTag(String src) throws JspException {
+    String dedupeKey = "script:classic:" + src;
+    if (!getRenderedAssetKeys().add(dedupeKey)) {
+      return;
+    }
+
+    writeTag("<script src=\"" + escapeHtml(src) + "\"></script>");
   }
 
   void writeTag(String html) throws JspException {

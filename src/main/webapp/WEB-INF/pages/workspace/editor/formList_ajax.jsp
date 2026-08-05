@@ -1,21 +1,22 @@
 <%@ include file="/common/taglibs.jsp"%>
 
+<spring:message code="form.manage.formInfoLabel" var="formInfoLabel"/>
 <input type="hidden" id="noOfRows" value="${fn:length(templates)}">
 <c:forEach var="template" items="${templates}">
   <c:url var="editURL" value="/workspace/editor/form/edit/${template.id}" />
 	<tr data-formid="${template.id}">
 		<td>
-			<input data-formid="${template.id}" class="form_checkbox" type="checkbox" aria-label="Select form" />
+			<input data-formid="${template.id}" class="form_checkbox" type="checkbox" aria-label="<spring:message code='form.manage.selectFormAriaLabel'/>" />
 		</td>
 		<td class="icon${template.iconId}">
-			<img src="/image/getIconImage/${template.iconId}" alt="Icon Image" height="32" width="32" />
+			<img src="/image/getIconImage/${template.iconId}" alt="<spring:message code='dialogs.createFromForm.iconAlt'/>" height="32" width="32" />
 		</td>
 		<td>
 			<img class="infoImg"
 				 src="/images/info.svg"
 				 style="top:-1px"
-				 alt="Form Info"
-				 title="Form Info"
+				 alt="${formInfoLabel}"
+				 title="${formInfoLabel}"
 				 data-formid="${template.id}"
 				 tabindex="0">
 			&nbsp;

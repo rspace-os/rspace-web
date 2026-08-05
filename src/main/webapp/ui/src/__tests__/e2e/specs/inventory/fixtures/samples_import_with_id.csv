@@ -1,0 +1,4 @@
+Name,Quantity,Source,Tags,Type BA,Import Identifier,Parent Container Import ID,Parent Container Global ID
+BA 1,20.5 mg,Other,"TagA,TagB",Bacterie,1,1,IC11
+BA 2,300 mg,Other,"TagA,TagC",Bacterie,2,2,IC11
+BA 3,4 g,Other,"TagA,TagD",Bacterie,,,

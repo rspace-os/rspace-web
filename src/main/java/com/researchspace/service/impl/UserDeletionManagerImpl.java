@@ -16,6 +16,7 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.TransferService;
 import com.researchspace.service.UserDeletionManager;
 import com.researchspace.service.UserDeletionPolicy;
@@ -27,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
 @Service("userDeletionManager")
@@ -36,7 +36,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
   protected final Logger log = LoggerFactory.getLogger(getClass());
 
   private @Autowired UserDao userDao;
-  private @Autowired MessageSource msgSource;
+  private @Autowired MessageSourceUtils msgSource;
   private @Autowired GroupManager grpMgr;
   private @Autowired CommunityServiceManager communityMgr;
   private @Autowired CommunityServiceManager communityDao;
@@ -136,7 +136,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
   public ServiceOperationResult<Integer> deleteRemovedUserFilestoreResources(
       Long deletedUserId, boolean removeListingFile, User subject) {
     if (!subject.hasSysadminRole()) {
-      String errorMsg = "Only user with sysadmin role can delete filestore resources";
+      String errorMsg = msgSource.getMessage("userDeletion.errors.sysadminRequired");
       log.warn(errorMsg);
       return new ServiceOperationResult<>(-1, false, errorMsg);
     }
@@ -144,7 +144,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     Optional<List<File>> resourcesOpt =
         deletedUserResourcesHelper.retrieveUserResourcesList(deletedUserId);
     if (resourcesOpt.isEmpty()) {
-      String errorMsg = "Resource list file not readable";
+      String errorMsg = msgSource.getMessage("userDeletion.errors.resourceListUnreadable");
       log.warn(errorMsg);
       return new ServiceOperationResult<>(-1, false, errorMsg);
     }
@@ -152,7 +152,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     Optional<Integer> deletedResourcesCountOpt =
         fileStore.removeUserFilestoreFiles(resourcesOpt.get());
     if (deletedResourcesCountOpt.isEmpty()) {
-      String errorMsg = "Problem during filestore removal";
+      String errorMsg = msgSource.getMessage("userDeletion.errors.filestoreRemovalFailed");
       log.warn(errorMsg);
       return new ServiceOperationResult<>(-1, false, errorMsg);
     }
@@ -198,7 +198,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
     User toDelete = userDao.get(userToDeleteId);
     if (toDelete.equals(subject)) {
       log.warn("{} attempted to self-delete!", userToDeleteId);
-      return Optional.of(msgSource.getMessage("errors.deleteuser.nonself", null, null));
+      return Optional.of(msgSource.getMessage("errors.deleteUser.nonSelf"));
     }
     if (toDelete.hasRole(Role.ADMIN_ROLE)) {
       if (communityMgr.isUserUniqueAdminInAnyCommunity(toDelete)) {
@@ -206,13 +206,13 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
             "This user  [userid={}] is the only administrator of a Community. Please replace"
                 + " the administrator so this user can be deleted",
             userToDeleteId);
-        return Optional.of(msgSource.getMessage("errors.deleteadminuser", null, null));
+        return Optional.of(msgSource.getMessage("errors.deleteAdminUser"));
       }
     }
     if (toDelete.hasSysadminRole()) {
       if (!isValidSysadminDeletion(toDelete)) {
         log.warn(" invalid attempt to delete an sysadmin user! [userid={}]", userToDeleteId);
-        return Optional.of(msgSource.getMessage("errors.deletesysadminuser", null, null));
+        return Optional.of(msgSource.getMessage("errors.deleteSysadminUser"));
       }
     }
     if (policy.isForceDelete()) {
@@ -230,11 +230,11 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
       User toDelete, Group group, UserDeletionPolicy policy) {
     String failureMsg = null;
     if (group.isOnlyGroupPi(toDelete.getUsername())) {
-      failureMsg = msgSource.getMessage("group.edit.mustbe1.admin.error.msg", null, null);
+      failureMsg = msgSource.getMessage("groups.edit.errors.cannotRemoveLastAdminOrPi");
     } else if (group.getOwner().equals(toDelete)) {
-      failureMsg = msgSource.getMessage("group.edit.nogroupownerdelete.error.msg", null, null);
+      failureMsg = msgSource.getMessage("groups.edit.errors.noGroupOwnerDelete");
     } else if (!isAllGroupCapableOfDeletion(policy, group)) {
-      failureMsg = msgSource.getMessage("group.edit.emptygrouprequired.error.msg", null, null);
+      failureMsg = msgSource.getMessage("groups.userDeletion.errors.activeMembersPreventDeletion");
     }
     return failureMsg;
   }
@@ -269,7 +269,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
   /*
    *  for testing
    */
-  void setMessageSource(MessageSource msgSource) {
+  void setMessageSource(MessageSourceUtils msgSource) {
     this.msgSource = msgSource;
   }
 }

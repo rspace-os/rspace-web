@@ -15,7 +15,7 @@ import com.researchspace.api.v1.model.ApiLinkItem;
 import com.researchspace.api.v1.model.ApiTargetLocation;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -121,7 +121,7 @@ public class InstrumentsApiControllerTest extends SpringTransactionalTest {
     assertEquals(1, bindException.getErrorCount());
     assertNotNull(bindException.getFieldError());
     assertEquals("name", bindException.getFieldError().getField());
-    assertEquals("errors.maxlength", bindException.getFieldError().getCode());
+    assertEquals("errors.maxLength", bindException.getFieldError().getCode());
   }
 
   @Test

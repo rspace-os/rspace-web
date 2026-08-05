@@ -1,6 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.model.views.ServiceOperationResult.convertToStringEntity;
 import static java.lang.Boolean.TRUE;
 
@@ -49,6 +48,7 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.SysadminUserCreationHandler;
@@ -61,9 +61,10 @@ import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserRoleHandler;
 import com.researchspace.service.UserStatisticsManager;
 import com.researchspace.service.UserTagManager;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
+import com.researchspace.service.impl.EmailContentGenerator;
 import com.researchspace.webapp.filter.IUserAccountLockoutPolicy;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import java.net.URI;
 import java.security.Principal;
 import java.security.SecureRandom;
@@ -73,8 +74,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
-import javax.servlet.http.HttpSession;
-import javax.validation.Valid;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -84,6 +83,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -132,7 +132,7 @@ public class SysAdminController extends BaseController {
   private @Autowired SysadminCreateUserFormConfigurer createUserFormConfigurer;
   private @Autowired SysadminUserCreationHandler sysadminUserCreationHandler;
   private @Autowired IUserAccountLockoutPolicy lockoutPolicy;
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   @Autowired
   @Qualifier("emailBroadcast")
@@ -202,7 +202,7 @@ public class SysAdminController extends BaseController {
     User admin = userManager.getAuthenticatedUserInSession();
     User userToAmend = userManager.get(userId);
     userPermissionUtils.assertHasPermissionsOnTargetUser(
-        admin, userToAmend, "Changing enablement state of user");
+        admin, userToAmend, "errors.authorization.failure.changeUserEnabledState");
     if (enabled && !userToAmend.isEnabled()) {
       userEnablementUtils.checkLicenseForUserInRole(1, userToAmend.getRoles().iterator().next());
     }
@@ -230,12 +230,13 @@ public class SysAdminController extends BaseController {
     // the account might no longer be locked by the time the sysadmin makes this call
     if (userToUnlock.isAccountLocked()) {
       userPermissionUtils.assertHasPermissionsOnTargetUser(
-          admin, userToUnlock, "Unlocking user account");
+          admin, userToUnlock, "errors.authorization.failure.unlockUserAccount");
       lockoutPolicy.forceUnlock(userToUnlock);
       userManager.save(userToUnlock);
       return ResponseEntity.status(HttpStatus.OK).build();
     }
-    return getAjaxMessageResponseEntity(HttpStatus.BAD_REQUEST, "Account is already unlocked");
+    return getAjaxMessageResponseEntity(
+        HttpStatus.BAD_REQUEST, getText("templates.users.accountAlreadyUnlocked"));
   }
 
   @PostMapping("/ajax/removeUserAccount")
@@ -243,7 +244,7 @@ public class SysAdminController extends BaseController {
   public ResponseEntity<Object> removeUserAccount(@RequestParam("userId") Long userId) {
 
     if (!(TRUE.toString()).equalsIgnoreCase(properties.getDeleteUser())) {
-      throw new IllegalStateException("Delete user is disabled!");
+      throw new IllegalStateException(getText("errors.deleteUser.disabled"));
     }
 
     User sysadmin = userManager.getAuthenticatedUserInSession();
@@ -432,7 +433,8 @@ public class SysAdminController extends BaseController {
     assertUserIsSysAdmin(currentUser);
 
     if (!userManager.exists(incomingData.getUserId())) {
-      throw new IllegalArgumentException("No user found for id: " + incomingData.getUserId());
+      throw new IllegalArgumentException(
+          getText("errors.user.notFound", new Object[] {incomingData.getUserId()}));
     }
 
     try {
@@ -628,7 +630,7 @@ public class SysAdminController extends BaseController {
   private void assertSubjectIsSysAdminOrAdmin(User subject) {
     if (!subject.hasRole(Role.SYSTEM_ROLE) && !subject.hasRole(Role.ADMIN_ROLE)) {
       throw new AuthorizationException(
-          getText("system.unauthorized.userrole", new Object[] {subject.getFullName()}));
+          getText("system.unauthorized.userRole", new Object[] {subject.getFullName()}));
     }
   }
 
@@ -748,7 +750,10 @@ public class SysAdminController extends BaseController {
 
     } catch (DataAccessException dae) {
       // probably because not unique?
-      errors.reject("errors.notUnique", new Object[] {"Unique name"}, null);
+      errors.reject(
+          "errors.notUnique",
+          new Object[] {new DefaultMessageSourceResolvable("label.uniqueName")},
+          null);
       return getCreateCommunityValidationErrorView(model, community);
     }
 
@@ -785,12 +790,18 @@ public class SysAdminController extends BaseController {
 
     User adminUser = userManager.getAuthenticatedUserInSession();
     ValidationUtils.rejectIfEmpty(
-        errors, "sysadminPassword", "errors.required", new Object[] {"password"});
+        errors,
+        "sysadminPassword",
+        "errors.required",
+        new Object[] {new DefaultMessageSourceResolvable("label.password")});
     ValidationUtils.rejectIfEmpty(
-        errors, "runAsUsername", "errors.required", new Object[] {"username"});
+        errors,
+        "runAsUsername",
+        "errors.required",
+        new Object[] {new DefaultMessageSourceResolvable("label.username")});
     String[] users = User.getUsernamesFromMultiUser(runAsUserCmnd.getRunAsUsername());
     if (ArrayUtils.isEmpty(users)) {
-      errors.rejectValue("runAsUsername", "system.runAs.invalidusernameformat.msg", null);
+      errors.rejectValue("runAsUsername", "system.runAs.errors.invalidUsernameFormat");
     }
     rejectIfNotReauthenticated(runAsUserCmnd.getSysadminPassword(), errors, adminUser);
     if (errors.hasErrors()) {
@@ -798,7 +809,7 @@ public class SysAdminController extends BaseController {
     }
     String targetUsername = users[0];
     if (getCurrentActiveUsers().getActiveUsers().contains(targetUsername)) {
-      errors.reject("system.user2pi.userIsActive", new Object[] {targetUsername}, null);
+      errors.reject("errors.user.activeSession", new Object[] {targetUsername}, null);
     }
     if (errors.hasErrors()) {
       return "system/runAsUserDlg";
@@ -811,7 +822,7 @@ public class SysAdminController extends BaseController {
     try {
       targetUser = userManager.getUserByUsername(targetUsername);
     } catch (DataAccessException dae) {
-      errors.reject("errors.username", null, null);
+      errors.reject("errors.username");
     }
     if (errors.hasErrors()) {
       return "system/runAsUserDlg";
@@ -888,11 +899,12 @@ public class SysAdminController extends BaseController {
     Map<String, Object> velocityModel = new HashMap<String, Object>();
     velocityModel.put("runAs", runAs);
     velocityModel.put("systemUser", admin);
-    velocityModel.put("htmlPrefix", properties.getServerUrl());
     EmailContent content =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-            "adminRunningAsUserNotification.vm", velocityModel);
-    emailer.sendHtmlEmail(
-        "RSpace admin is using your account", content, toList(runAs.getEmail()), null);
+        emailContentGenerator.render(
+            "email.admin.adminRunningAsUserNotification.subject",
+            null,
+            "adminRunningAsUserNotification.vm",
+            velocityModel);
+    emailer.sendEmail(content, List.of(runAs.getEmail()), null);
   }
 }

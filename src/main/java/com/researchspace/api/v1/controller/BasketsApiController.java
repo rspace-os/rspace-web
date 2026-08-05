@@ -8,9 +8,9 @@ import com.researchspace.api.v1.model.ApiGlobalIdsRequest;
 import com.researchspace.model.User;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.inventory.BasketApiManager;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import java.util.List;
-import javax.validation.Valid;
-import javax.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -33,7 +33,7 @@ public class BasketsApiController extends BaseApiInventoryController implements 
 
     @Size(
         max = BaseRecord.DEFAULT_VARCHAR_LENGTH,
-        message = "Name cannot be longer than 255 characters")
+        message = "{errors.inventory.name.validationTooLong}")
     @JsonProperty("name")
     private String name;
   }

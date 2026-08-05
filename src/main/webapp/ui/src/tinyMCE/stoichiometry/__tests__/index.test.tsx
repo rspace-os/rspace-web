@@ -296,7 +296,6 @@ function getLastRenderedDialogProps(): DialogProps | null {
 
 describe("TinyMCE stoichiometry plugin", () => {
   beforeEach(() => {
-    fetchMock.resetMocks();
     vi.resetModules();
     vi.clearAllMocks();
     rootRenderCalls.length = 0;
@@ -408,6 +407,7 @@ describe("TinyMCE stoichiometry plugin", () => {
   });
 
   it("reopens the selected stoichiometry table from the toolbar button instead of inserting a new one", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
     const registeredPlugins = registerTinymcePlugins();
     const editorDocument = document.implementation.createHTMLDocument("editor");
     const tableOnlyNode = createTableOnlyNode(editorDocument, {
@@ -442,7 +442,8 @@ describe("TinyMCE stoichiometry plugin", () => {
     });
 
     expect(editorDocument.querySelectorAll('[data-stoichiometry-table-only="true"]')).toHaveLength(1);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
   });
 
   it("removes a newly inserted tableOnly div when its stoichiometry table is deleted", async () => {

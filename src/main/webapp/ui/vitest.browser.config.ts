@@ -98,6 +98,7 @@ const firefoxCiSkippedFiles =
         "**/eln/gallery/components/CallableImagePreview.spec.tsx",
         "**/eln/gallery/components/MainPanel.spec.tsx",
         "**/tinyMCE/pubchem/ImportDialog.spec.tsx",
+        "**/tinyMCE/pyrat/PyratDialog.spec.tsx",
         "**/Inventory/components/FieldmarkImportDialog.spec.tsx",
         "**/Inventory/Identifiers/IGSN/IgsnTable.spec.tsx",
         "**/components/Tags/__tests__/TagsCombobox.spec.tsx",
@@ -136,6 +137,8 @@ export default defineConfig({
       // Pulled in by Inventory/Identifiers/IGSN/IgsnTable at runtime; pre-bundling
       // prevents a mid-run optimizer reload that causes duplicate React/emotion instances.
       "@mui/material/utils",
+      // Imported by SidebarPage to inspect the MUI modal stacking root.
+      "@mui/material/Modal",
       // TinyMCE React wrapper: discovered lazily the first time a component
       // mounts a TinyMCE editor, causing a mid-run optimizer reload that
       // makes the Vitest runner warn and can cause flakiness.
@@ -147,7 +150,7 @@ export default defineConfig({
     // Exclude the heavy suites that time out on CI Firefox (see above); empty on
     // every other run so they execute normally. `configDefaults.exclude` keeps
     // node_modules/dist/etc. excluded since setting `exclude` overrides it.
-    exclude: [...configDefaults.exclude, ...firefoxCiSkippedFiles],
+    exclude: [...configDefaults.exclude, ...firefoxCiSkippedFiles, "src/__tests__/e2e/**"],
     setupFiles: ["./src/__tests__/browserSetup.ts"],
     testTimeout: 20000,
     // Real-browser component tests carry inherent timing flakiness, especially

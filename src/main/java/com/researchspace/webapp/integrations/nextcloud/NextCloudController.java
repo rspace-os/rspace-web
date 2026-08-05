@@ -127,7 +127,7 @@ public class NextCloudController extends BaseOAuth2Controller {
     if (params.containsKey(ERROR)) {
       OauthAuthorizationError error =
           getAuthErrorBuilder()
-              .errorMsg("Error connecting to NextCloud")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"Nextcloud"}))
               .errorDetails(params.get(ERROR))
               .build();
 
@@ -139,7 +139,7 @@ public class NextCloudController extends BaseOAuth2Controller {
     if (userManager.getAuthenticatedUserInSession() == null) {
       OauthAuthorizationError error =
           getAuthErrorBuilder()
-              .errorMsg("Error connecting to NextCloud")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"Nextcloud"}))
               .errorDetails(params.get(ERROR))
               .build();
 
@@ -285,7 +285,7 @@ public class NextCloudController extends BaseOAuth2Controller {
       path = path.split("__&&__")[0];
     }
     String decodedPath = URLDecoder.decode(path, UTF_8);
-    String parentPath = decodedPath.substring(0, decodedPath.lastIndexOf("/"));
+    String parentPath = decodedPath.substring(0, decodedPath.lastIndexOf('/'));
     if (StringUtils.isBlank(parentPath)) {
       parentPath = "/";
     }

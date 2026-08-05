@@ -24,13 +24,13 @@ import com.researchspace.model.record.IconEntity;
 import com.researchspace.service.IconImageManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.NotFoundException;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import javax.ws.rs.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -205,12 +205,14 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
       @PathVariable Long templateId, MultipartFile file, @RequestAttribute(name = "user") User user)
       throws BindException, IOException {
 
-    SampleEntity template = sampleApiMgr.assertUserCanReadSampleTemplate(templateId, user);
+    SampleEntity template = sampleApiMgr.assertUserCanEditSampleTemplate(templateId, user);
     Optional<BufferedImage> img =
         getBufferedImageFromUploadedFile(new SpringMultipartFileAdapter(file));
     if (!img.isPresent()) {
       throw new IllegalArgumentException(
-          String.format("Couldn't parse file [%s] as an image.", file.getOriginalFilename()));
+          getMessage(
+              "errors.inventory.icon.imageParseFailure",
+              new Object[] {file.getOriginalFilename()}));
     }
     String suffix = getExtension(file.getOriginalFilename());
     IconEntity ice = IconEntity.createIconEntityFromImage(templateId, img.get(), suffix);

@@ -1,13 +1,17 @@
 package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.controller.API_MVC_InventoryTestBase;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItems;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.record.StructuredDocument;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,6 +69,51 @@ public class ReferencingInventoryItemsControllerMVCIT extends API_MVC_InventoryT
         mockMvc
             .perform(
                 get("/workspace/getReferencingInventoryItems/" + target.getOid().getIdString())
+                    .principal(user::getUsername))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    ApiInventoryReferencingItems body =
+        getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
+    assertEquals(0, body.getReferencingItems().size());
+  }
+
+  @Test
+  public void sessionAttachmentsEndpointReturnsItemsAttachingGalleryFile() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
+
+    // attach a gallery file to the sample; the returned attachment carries the gallery file's id
+    InventoryFile galleryAttachment =
+        addGalleryFileToInventoryItem(new GlobalIdentifier(sample.getGlobalId()), user);
+    String galleryFileGlobalId = galleryAttachment.getMediaFileGlobalIdentifier();
+
+    // read it back through the SESSION endpoint (no API key), as the gallery info panel does
+    MvcResult result =
+        mockMvc
+            .perform(
+                get("/workspace/getAttachingInventoryItems/" + galleryFileGlobalId)
+                    .principal(user::getUsername))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    ApiInventoryReferencingItems body =
+        getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
+    assertEquals(1, body.getReferencingItems().size());
+    assertEquals(sample.getGlobalId(), body.getReferencingItems().get(0).getSourceGlobalId());
+    // attachments carry no DataCite relation type; the client supplies the "Attachment" label
+    assertNull(body.getReferencingItems().get(0).getRelationType());
+  }
+
+  @Test
+  public void sessionAttachmentsEndpointReturnsEmptyForUnattachedGalleryFile() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    EcatImage image = addImageToGallery(user);
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                get("/workspace/getAttachingInventoryItems/" + image.getOid().getIdString())
                     .principal(user::getUsername))
             .andExpect(status().isOk())
             .andReturn();

@@ -1,15 +1,15 @@
 package com.researchspace.api.v1.auth;
 
-import static org.apache.commons.lang3.StringUtils.abbreviate;
+import static com.researchspace.core.util.StringAbbreviationUtils.abbreviate;
 
 import com.researchspace.auth.ApiKeyAuthenticationToken;
 import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.permissions.IUserPermissionUtils;
 import com.researchspace.session.SessionAttributeUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import java.util.function.Function;
-import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.UnavailableSecurityManagerException;
@@ -42,8 +42,7 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
 
     if (!userOpt.isPresent()) {
       throw new ApiAuthenticationException(
-          String.format(
-              "User could not be authenticated for token %s...", abbreviate(accessToken, 4)));
+          "api.errors.authentication.tokenUnknown", abbreviate(accessToken, 4));
     }
 
     User targetUser = userOpt.get();
@@ -106,10 +105,7 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
   private void assertLoginAllowed(User user) {
     if (user.isLoginDisabled()) {
       throw new ApiAuthenticationException(
-          String.format(
-              "Api access denied as account for user '%s', who is associated with provided "
-                  + "authentication token, is locked or disabled",
-              user.getUsername()));
+          "api.errors.authentication.accountDisabled", user.getUsername());
     }
   }
 }

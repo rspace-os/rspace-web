@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, test } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
+import { render, screen } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-import { render, screen } from "@/__tests__/customQueries";
+
 import axios from "@/common/axios";
 import { MoveDialogStory } from "./MoveDialog.story";
 

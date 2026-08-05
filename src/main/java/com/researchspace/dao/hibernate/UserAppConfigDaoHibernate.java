@@ -49,7 +49,7 @@ public class UserAppConfigDaoHibernate extends GenericDaoHibernate<UserAppConfig
 
   @Override
   public void saveAppConfigElement(AppConfigElementSet saved) {
-    getSession().merge(saved);
+    persistOrMerge(saved);
   }
 
   @Override

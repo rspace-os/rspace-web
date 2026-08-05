@@ -25,6 +25,7 @@ import com.researchspace.service.InitializedContent;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserFolderCreator;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.service.archive.ExportImport;
 import com.researchspace.service.archive.ImportStrategy;
 import com.researchspace.service.inventory.ContainerApiManager;
@@ -35,6 +36,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase {
 
@@ -56,6 +58,8 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
     initializer.setRecordDao(getBeanOfClass(RecordDao.class));
     initializer.setUserDao(getBeanOfClass(UserDao.class));
     initializer.setRecordFactory(getBeanOfClass(RecordFactory.class));
+    ReflectionTestUtils.setField(
+        initializer, "userLocaleService", getBeanOfClass(UserLocaleService.class));
 
     initializer.setApplicationContext(applicationContext);
     initializer.setIconMgr(getBeanOfClass(IconImageManager.class));
@@ -87,7 +91,15 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
 
     user = createAndSaveUser(getRandomAlphabeticString("any"));
     logoutAndLoginAs(user);
-    InitializedContent content = doInTransaction(() -> initializer.init(user.getId()));
+    // The initializer is constructed manually (not a Spring proxy), so init() joins the
+    // test-managed transaction. Assert in a SEPARATE transaction so the test verifies the
+    // initialized content was genuinely committed and is visible to a fresh session.
+    long mediaImgExamplesId =
+        doInTransaction(
+            () -> {
+              InitializedContent content = initializer.init(user.getId());
+              return content.getFolder().getMediaImgExamples().getId();
+            });
     doInTransaction(
         () -> {
           assertEquals(
@@ -98,8 +110,7 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
                   .size()); // shared + templates + examples + media
           // 3 + 4 in chem images
           assertEquals(
-              EXPECTED_EXAMPLE_IMG_COUNT,
-              getRecordCountInFolderForUser(content.getFolder().getMediaImgExamples().getId()));
+              EXPECTED_EXAMPLE_IMG_COUNT, getRecordCountInFolderForUser(mediaImgExamplesId));
         });
   }
 
@@ -109,7 +120,6 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
     user = createAndSaveUser(getRandomAlphabeticString("any"));
     logoutAndLoginAs(user);
     doInTransaction(() -> initializer.init(user.getId()));
-
     doInTransaction(
         () -> {
           Folder imagesFolder =

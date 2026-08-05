@@ -1,7 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/__tests__/customQueries";
+
 import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mocking";
 import materialTheme from "../../../../theme";
 import DefaultValueField from "../DefaultValueField";
@@ -9,6 +10,42 @@ import DefaultValueField from "../DefaultValueField";
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 
 describe("DefaultValueField", () => {
+  describe("link fields' allowed relationship types explanation text", () => {
+    it("shows the sample explanation by default", () => {
+      const field = makeMockField({ type: "link", allowedRelationTypes: [] });
+
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <DefaultValueField field={field} editing />
+        </ThemeProvider>,
+      );
+
+      expect(
+        screen.getByRole("group", {
+          name: "inventory:fields.templateFields.defaultValue.allowedRelationshipTypes",
+        }),
+      ).toHaveAccessibleDescription("inventory:fields.templateFields.defaultValue.allowedRelationshipTypesExplanation");
+    });
+
+    it("shows the instrument explanation when recordTypeName is instrument", () => {
+      const field = makeMockField({ type: "link", allowedRelationTypes: [] });
+
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <DefaultValueField field={field} editing recordTypeName="instrument" />
+        </ThemeProvider>,
+      );
+
+      expect(
+        screen.getByRole("group", {
+          name: "inventory:fields.templateFields.defaultValue.allowedRelationshipTypes",
+        }),
+      ).toHaveAccessibleDescription(
+        "inventory:fields.templateFields.defaultValue.allowedRelationshipTypesExplanationInstrument",
+      );
+    });
+  });
+
   describe("link fields' allowed relationship types", () => {
     it("greys out already-selected relation types in the dropdown instead of letting them toggle off", async () => {
       const user = userEvent.setup();

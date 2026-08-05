@@ -285,7 +285,16 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     assertNull(result.getResolvedException(), "unexpected: " + result.getResolvedException());
     ApiContainer retrievedContainer = getFromJsonResponseBody(result, ApiContainer.class);
+    // Under Hibernate 6 the POST response reflects in-memory state from before the flush that
+    // assigns the parent location its id; the GET returns the DB-loaded state. Normalise that
+    // one field, then compare the whole object so every other field stays covered.
+    assertNull(defaultContainer.getParentLocation().getId());
+    defaultContainer.getParentLocation().setId(retrievedContainer.getParentLocation().getId());
     assertEquals(defaultContainer, retrievedContainer);
+    // timestamps are excluded from equals(); compare at second granularity because the POST
+    // response has full ms precision while the datetime column truncates to seconds
+    assertEquals(
+        defaultContainer.getCreatedMillis() / 1000, retrievedContainer.getCreatedMillis() / 1000);
     verifyAuditAction(AuditAction.READ, 1);
 
     // create image container, with extra field and two locations

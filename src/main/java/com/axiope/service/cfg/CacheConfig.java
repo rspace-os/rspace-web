@@ -1,11 +1,16 @@
 package com.axiope.service.cfg;
 
+import java.io.IOException;
+import java.net.URI;
+import javax.cache.Caching;
+import javax.cache.spi.CachingProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.ehcache.EhCacheCacheManager;
-import org.springframework.cache.ehcache.EhCacheManagerFactoryBean;
+import org.springframework.cache.jcache.JCacheCacheManager;
 import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,8 +31,9 @@ import org.springframework.core.io.ClassPathResource;
  * Runtime cache sizes can be viewed in JavaMelody Monitoring page
  */
 @Configuration
-@EnableCaching()
+@EnableCaching
 public class CacheConfig {
+  private static final Logger log = LoggerFactory.getLogger(CacheConfig.class);
 
   @Value("${cache.apply:true}")
   private String useCacheStr = "true";
@@ -42,18 +48,12 @@ public class CacheConfig {
   public CacheManager cacheManager(@Autowired EhCacheConfigurer configurer) {
     Boolean useCache = Boolean.parseBoolean(useCacheStr);
     if (useCache) {
-      EhCacheCacheManager rc = new EhCacheCacheManager();
-      net.sf.ehcache.CacheManager mgr = createNativeCacheManager();
-      configurer.configure(mgr);
-      rc.setCacheManager(mgr);
-      return rc;
+      javax.cache.CacheManager jCacheManager = jCacheManager();
+      configurer.configure(jCacheManager);
+      return new JCacheCacheManager(jCacheManager);
     } else {
       return new NoOpCacheManager();
     }
-  }
-
-  net.sf.ehcache.CacheManager createNativeCacheManager() {
-    return (net.sf.ehcache.CacheManager) ehCacheManagerFactoryBean().getObject();
   }
 
   @Bean
@@ -61,12 +61,29 @@ public class CacheConfig {
     return new EhCacheConfigurer();
   }
 
-  @Bean(name = "ehCache")
-  EhCacheManagerFactoryBean ehCacheManagerFactoryBean() {
-    EhCacheManagerFactoryBean rc =
-        new org.springframework.cache.ehcache.EhCacheManagerFactoryBean();
-    rc.setShared(true);
-    rc.setConfigLocation(new ClassPathResource("ehcache.xml"));
-    return rc;
+  // Empty destroyMethod stops Spring calling close() on context shutdown: the Ehcache provider
+  // returns one shared CacheManager per (classloader, config URI), and Hibernate's L2 cache uses
+  // the same instance (see applicationContext-dao.xml), so the provider owns its lifecycle.
+  @Bean(destroyMethod = "")
+  javax.cache.CacheManager jCacheManager() {
+    CachingProvider provider = Caching.getCachingProvider();
+    URI configUri = getEhcacheConfigUri();
+    if (configUri != null) {
+      try {
+        return provider.getCacheManager(configUri, getClass().getClassLoader());
+      } catch (RuntimeException e) {
+        log.warn("Unable to load ehcache.xml; falling back to default JCache manager", e);
+      }
+    }
+    return provider.getCacheManager();
+  }
+
+  private URI getEhcacheConfigUri() {
+    try {
+      return new ClassPathResource("ehcache.xml").getURI();
+    } catch (IOException e) {
+      log.warn("Unable to locate ehcache.xml; using default JCache manager", e);
+      return null;
+    }
   }
 }

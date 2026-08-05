@@ -5,6 +5,7 @@ import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
 import com.researchspace.model.dtos.chemistry.ChemicalExportType;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchResultsDTO;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,22 +14,20 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
-@Service
 public class ChemistryClient {
 
   @Value("${chemistry.service.url}")
@@ -36,7 +35,6 @@ public class ChemistryClient {
 
   private final RestTemplate restTemplate;
 
-  @Autowired
   public ChemistryClient(RestTemplate restTemplate) {
     this.restTemplate = restTemplate;
   }
@@ -53,20 +51,18 @@ public class ChemistryClient {
     String url = chemistryServiceUrl + "/chemistry/convert";
     try {
       ResponseEntity<String> response = restTemplate.postForEntity(url, httpEntity, String.class);
-      HttpStatus responseStatus = response.getStatusCode();
+      HttpStatusCode responseStatus = response.getStatusCode();
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful conversion with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
-            String.format(
-                "Unsuccessful conversion request to the chemistry service, status code: %d.",
-                responseStatus.value()));
+            "errors.chemistry.conversionRequestFailed", new Object[] {responseStatus.value()});
       }
       return response.getBody();
 
     } catch (RestClientException e) {
       log.warn(
           "Problem with chemistry service converting the chemical at {}: {}", url, e.getMessage());
-      throw new ChemistryClientException("Chemistry service couldn't convert the chemical.", e);
+      throw new ChemistryClientException("errors.chemistry.convertFailed", e);
     }
   }
 
@@ -89,7 +85,7 @@ public class ChemistryClient {
       return Optional.ofNullable(response.getBody());
     } catch (HttpStatusCodeException e) {
       String errorReason = e.getResponseBodyAsString();
-      HttpStatus status = e.getStatusCode();
+      HttpStatus status = toHttpStatus(e.getStatusCode());
       log.error(
           "Chemistry error response from request to {}. Status: {}, Reason: {}",
           url,
@@ -97,10 +93,10 @@ public class ChemistryClient {
           errorReason,
           e);
 
-      throw new ChemistryClientException(errorReason, status, e);
+      throw new ChemistryClientException("errors.chemistry.requestRejected", status, e);
     } catch (RestClientException e) {
       log.error("Error calling chemistry service at url={} requestBody={}", url, body, e);
-      throw new ChemistryClientException("Chemistry service call failed");
+      throw new ChemistryClientException("errors.chemistry.serviceCallFailed");
     }
   }
 
@@ -140,20 +136,17 @@ public class ChemistryClient {
     HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(body, headers);
     try {
       ResponseEntity<byte[]> response = restTemplate.postForEntity(url, httpEntity, byte[].class);
-      HttpStatus responseStatus = response.getStatusCode();
+      HttpStatusCode responseStatus = response.getStatusCode();
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful image export with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
-            String.format(
-                "Unsuccessful image export request to the chemistry service, status code: %d.",
-                responseStatus.value()));
+            "errors.chemistry.imageExportRequestFailed", new Object[] {responseStatus.value()});
       }
       return response.getBody();
 
     } catch (RestClientException e) {
       log.warn("Problem with chemistry service exporting image at {}: {}", url, e.getMessage());
-      throw new ChemistryClientException(
-          "Chemistry service couldn't generate the image for the chemical.", e);
+      throw new ChemistryClientException("errors.chemistry.imageExportFailed", e);
     }
   }
 
@@ -171,13 +164,11 @@ public class ChemistryClient {
     String url = chemistryServiceUrl + "/chemistry/save";
     try {
       ResponseEntity<String> response = restTemplate.postForEntity(url, httpEntity, String.class);
-      HttpStatus responseStatus = response.getStatusCode();
+      HttpStatusCode responseStatus = response.getStatusCode();
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful saving with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
-            String.format(
-                "Unsuccessful save request to the chemistry service, status code: %d.",
-                responseStatus.value()));
+            "errors.chemistry.saveRequestFailed", new Object[] {responseStatus.value()});
       }
     } catch (RestClientException e) {
       log.warn(
@@ -185,7 +176,7 @@ public class ChemistryClient {
           chemicalId,
           url,
           e.getMessage());
-      throw new ChemistryClientException("Chemistry service couldn't save the chemical.", e);
+      throw new ChemistryClientException("errors.chemistry.saveFailed", e);
     }
   }
 
@@ -202,17 +193,17 @@ public class ChemistryClient {
       ResponseEntity<List<String>> response =
           restTemplate.exchange(
               url, HttpMethod.POST, request, new ParameterizedTypeReference<>() {});
-      HttpStatus responseStatus = response.getStatusCode();
+      HttpStatusCode responseStatus = response.getStatusCode();
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful searching with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
-            String.format(
-                "Unsuccessful search request to the chemistry service, status code: %d.",
-                responseStatus.value()));
+            "errors.chemistry.searchRequestFailed", new Object[] {responseStatus.value()});
       }
+      List<String> responseBody =
+          Optional.ofNullable(response.getBody()).orElseGet(Collections::emptyList);
       return ChemicalSearchResultsDTO.builder()
           .chemicalHits(
-              response.getBody().stream()
+              responseBody.stream()
                   .map(
                       str -> {
                         try {
@@ -223,7 +214,7 @@ public class ChemistryClient {
                       })
                   .filter(Objects::nonNull)
                   .collect(Collectors.toList()))
-          .totalHits(response.getBody() == null ? 0 : response.getBody().size())
+          .totalHits(responseBody.size())
           .build();
 
     } catch (RestClientException e) {
@@ -231,7 +222,7 @@ public class ChemistryClient {
           "Problem with chemistry service searching for the chemical at {}: {}",
           url,
           e.getMessage());
-      throw new ChemistryClientException("Chemistry service unable to search for the chemical.", e);
+      throw new ChemistryClientException("errors.chemistry.searchFailed", e);
     }
   }
 
@@ -240,19 +231,16 @@ public class ChemistryClient {
     try {
       ResponseEntity<String> response =
           restTemplate.exchange(url, HttpMethod.DELETE, HttpEntity.EMPTY, String.class);
-      HttpStatus responseStatus = response.getStatusCode();
+      HttpStatusCode responseStatus = response.getStatusCode();
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful call with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
-            String.format(
-                "Unsuccessful clearSearchIndexes request to the chemistry service, status code:"
-                    + " %d.",
-                responseStatus.value()));
+            "errors.chemistry.clearIndexesRequestFailed", new Object[] {responseStatus.value()});
       }
     } catch (RestClientException e) {
       log.warn(
           "Problem with chemistry service clearing search indexes at {}: {} ", url, e.getMessage());
-      throw new ChemistryClientException("Chemistry service couldn't clear search indexes.", e);
+      throw new ChemistryClientException("errors.chemistry.clearIndexesFailed", e);
     }
   }
 
@@ -261,19 +249,21 @@ public class ChemistryClient {
     try {
       ResponseEntity<String> response =
           restTemplate.exchange(url, HttpMethod.POST, HttpEntity.EMPTY, String.class);
-      HttpStatus responseStatus = response.getStatusCode();
+      HttpStatusCode responseStatus = response.getStatusCode();
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful call with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
-            String.format(
-                "Unsuccessful callFastSearchIndexing request to the chemistry service, status code:"
-                    + " %d.",
-                responseStatus.value()));
+            "errors.chemistry.indexingRequestFailed", new Object[] {responseStatus.value()});
       }
     } catch (RestClientException e) {
       log.warn(
           "Problem with chemistry service  fast search indexing at {}: {} ", url, e.getMessage());
-      throw new ChemistryClientException("Chemistry service couldn't clear search indexes.", e);
+      throw new ChemistryClientException("errors.chemistry.indexingFailed", e);
     }
+  }
+
+  private HttpStatus toHttpStatus(HttpStatusCode statusCode) {
+    HttpStatus status = HttpStatus.resolve(statusCode.value());
+    return status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR;
   }
 }

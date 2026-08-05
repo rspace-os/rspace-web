@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -170,29 +171,31 @@ public class PubchemSearcher implements ChemicalSearcher {
       ResponseEntity<PubchemResponse> response =
           restTemplate.getForEntity(url, PubchemResponse.class);
 
-      if (!response.getStatusCode().is2xxSuccessful()) {
+      HttpStatusCode responseStatus = response.getStatusCode();
+      if (!responseStatus.is2xxSuccessful()) {
         throw new ChemicalImportException(
-            String.format("PubChem API returned status: %s", response.getStatusCode()),
-            response.getStatusCode());
+            String.format("PubChem API returned status: %s", responseStatus),
+            toHttpStatus(responseStatus));
       }
 
       return parseResponseToResults(response.getBody());
 
     } catch (HttpClientErrorException e) {
-      if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+      HttpStatus status = toHttpStatus(e.getStatusCode());
+      if (status == HttpStatus.NOT_FOUND) {
         log.info("No results found for search term: {}", searchTerm);
         return new ArrayList<>();
-      } else if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+      } else if (status == HttpStatus.TOO_MANY_REQUESTS) {
         throw new ChemicalImportException(
             "Rate limit exceeded. Please try again later.", HttpStatus.TOO_MANY_REQUESTS);
-      } else if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
+      } else if (status == HttpStatus.BAD_REQUEST) {
         throw new ChemicalImportException(
             String.format("Invalid request to PubChem API: %s", e.getMessage()),
             e,
             HttpStatus.BAD_REQUEST);
       }
       throw new ChemicalImportException(
-          String.format("PubChem API error: %s", e.getMessage()), e, e.getStatusCode());
+          String.format("PubChem API error: %s", e.getMessage()), e, status);
     } catch (RestClientException e) {
       throw new ChemicalImportException(
           "Error communicating with PubChem API", e, HttpStatus.BAD_GATEWAY);
@@ -200,5 +203,10 @@ public class PubchemSearcher implements ChemicalSearcher {
       throw new ChemicalImportException(
           "Unexpected error during chemical import", e, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  private HttpStatus toHttpStatus(HttpStatusCode statusCode) {
+    HttpStatus status = HttpStatus.resolve(statusCode.value());
+    return status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR;
   }
 }

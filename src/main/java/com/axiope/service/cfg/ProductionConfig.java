@@ -36,6 +36,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
@@ -45,11 +46,13 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /** Configuration for deployment/production */
 @Configuration
 @Profile({"prod", "prod-test"})
 @EnableAsync
+@EnableScheduling
 @Import(value = DataverseSpringConfig.class)
 public class ProductionConfig extends BaseConfig {
   @Value("${deployment.sso.type}")
@@ -147,7 +150,8 @@ public class ProductionConfig extends BaseConfig {
   /** The real production config that should be run in production */
   @Bean
   @Profile("!prod-test")
-  public GlobalInitManager globalInitManager() {
+  public GlobalInitManager globalInitManager(
+      @Qualifier("dBDataIntegrityChecker") IApplicationInitialisor dBDataIntegrityChecker) {
     GlobalInitManagerImpl mgr = new GlobalInitManagerImpl();
     List<IApplicationInitialisor> inits = new ArrayList<>();
     inits.add(licenseServerChecker());
@@ -159,7 +163,7 @@ public class ProductionConfig extends BaseConfig {
     inits.add(sampleTemplateAppInitialiser());
     inits.add(customForms());
     // should be last
-    inits.add(dBDataIntegrityChecker());
+    inits.add(dBDataIntegrityChecker);
     inits.add(systemConfigurationUpdater());
     inits.add(sharedSnippetsFolderCreator());
     inits.add(sanityChecker());

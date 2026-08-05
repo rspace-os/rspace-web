@@ -84,7 +84,6 @@ import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.DocumentHTMLPreviewHandler;
 import com.researchspace.service.DocumentSharedStateCalculator;
 import com.researchspace.service.EmailBroadcast;
-import com.researchspace.service.ExternalMessageSenderFactory;
 import com.researchspace.service.FolderDeletionOrderPolicy;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IAsyncArchiveDepositor;
@@ -96,6 +95,7 @@ import com.researchspace.service.IRepositoryConfigFactory;
 import com.researchspace.service.ISignupHandlerPolicy;
 import com.researchspace.service.ImageProcessor;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.PiChangeHandler;
 import com.researchspace.service.PostAnyLoginAction;
@@ -131,8 +131,6 @@ import com.researchspace.service.archive.TimeLimitedExportRemovalPolicy;
 import com.researchspace.service.archive.UserImporter;
 import com.researchspace.service.archive.UserImporterImpl;
 import com.researchspace.service.archive.export.ArchiveDataHandler;
-import com.researchspace.service.archive.export.ArchiveExportPlanner;
-import com.researchspace.service.archive.export.ArchiveExportPlannerImpl;
 import com.researchspace.service.archive.export.ArchiveNamingStrategy;
 import com.researchspace.service.archive.export.ArchiveRemover;
 import com.researchspace.service.archive.export.ExportObjectGenerator;
@@ -169,9 +167,9 @@ import com.researchspace.service.impl.ChemistryImageUpdateInitialisor;
 import com.researchspace.service.impl.ChemistrySearchIndexInitialisor;
 import com.researchspace.service.impl.CollabGroupShareRequestCreateHandler;
 import com.researchspace.service.impl.CollabGroupShareRequestUpdateHandler;
+import com.researchspace.service.impl.CommunicationEmailBroadcaster;
 import com.researchspace.service.impl.ContentInitialiserUtilsImpl;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
-import com.researchspace.service.impl.DBDataIntegrityChecker;
 import com.researchspace.service.impl.DMPUpdateHandler;
 import com.researchspace.service.impl.DefaultUserFolderCreator;
 import com.researchspace.service.impl.DefaultUserSignupPolicy;
@@ -181,12 +179,12 @@ import com.researchspace.service.impl.DetailedRecordInformationProviderImpl;
 import com.researchspace.service.impl.DevBroadCaster;
 import com.researchspace.service.impl.DevEmailSenderImpl;
 import com.researchspace.service.impl.DocumentHTMLPreviewHandlerImpl;
-import com.researchspace.service.impl.EmailBroadcastImp;
+import com.researchspace.service.impl.EmailBroadcastImpl;
+import com.researchspace.service.impl.EmailContentGenerator;
 import com.researchspace.service.impl.ExampleContentAction;
 import com.researchspace.service.impl.ExportImportImpl;
 import com.researchspace.service.impl.ExportUtils;
 import com.researchspace.service.impl.ExternalMessageHandlerImpl;
-import com.researchspace.service.impl.ExternalMessageSenderFactoryImpl;
 import com.researchspace.service.impl.ExternalOauthUserSignupPolicy;
 import com.researchspace.service.impl.FieldLinksEntitySyncImpl;
 import com.researchspace.service.impl.FileStoreRootDetector;
@@ -194,7 +192,6 @@ import com.researchspace.service.impl.GroupSharedSnippetsFolderAppInitialiser;
 import com.researchspace.service.impl.ImageProcessorImpl;
 import com.researchspace.service.impl.IntegrationsHandlerImpl;
 import com.researchspace.service.impl.IntegrationsHandlerInitialisor;
-import com.researchspace.service.impl.InternalFileStoreImpl;
 import com.researchspace.service.impl.JoinExistingCollGroupRequestUpdateHandler;
 import com.researchspace.service.impl.JoinGroupRequestUpdateHandler;
 import com.researchspace.service.impl.LoadUsersFromCSVOnStartUpInitialisor;
@@ -214,12 +211,9 @@ import com.researchspace.service.impl.RepositoryDepositHandlerImpl;
 import com.researchspace.service.impl.SampleTemplateAppInitialiser;
 import com.researchspace.service.impl.SanityChecker;
 import com.researchspace.service.impl.SharingHandlerImpl;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
 import com.researchspace.service.impl.SysadminUserCreationHandlerImpl;
 import com.researchspace.service.impl.SystemConfigurationInitialisor;
 import com.researchspace.service.impl.SystemPropertyPermissionManagerImpl;
-import com.researchspace.service.impl.UserContentUpdater;
-import com.researchspace.service.impl.UserContentUpdaterImpl;
 import com.researchspace.service.impl.UserExternalIdResolverImpl;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import com.researchspace.service.inventory.impl.RspaceToExternalProviderAdapterImpl;
@@ -280,27 +274,27 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
+import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.retry.annotation.EnableRetry;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.annotation.SessionScope;
 import org.springframework.web.multipart.MultipartResolver;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
 /**
  * Base class with configuration for all Spring profiles - gradually using this for new beans
  * /services rather than XML configuration.
+ *
+ * <p>Spring 6: NOT using @EnableTransactionManagement here because it conflicts when loaded via
+ * component-scan in combination with other @Enable* annotations. Transaction management configured
+ * via XML <tx:annotation-driven/> instead. @EnableAsync and @EnableScheduling live on the concrete
+ * profile configs (ProductionConfig, TestAppConfig), and @EnableRetry on ClustermarketConfig.
  */
 @Configuration
-@EnableScheduling
-@EnableTransactionManagement
-@EnableRetry
 public abstract class BaseConfig {
 
   @Autowired ApplicationContext context;
@@ -311,11 +305,11 @@ public abstract class BaseConfig {
   @Value("${authorised.signup}")
   private String authorizedSignup;
 
-  @Value("${files.maxUploadSize}")
-  private String maxUploadSize;
-
   @Value("${email.enabled}")
   private String emailEnabled;
+
+  @Value("${server.urls.prefix}")
+  private String htmlDomainPrefix;
 
   // optional folder for velocity templates
   @Value("${velocity.ext.dir}")
@@ -559,11 +553,6 @@ public abstract class BaseConfig {
     return new SampleTemplateAppInitialiser();
   }
 
-  @Bean
-  public IApplicationInitialisor dBDataIntegrityChecker() {
-    return new DBDataIntegrityChecker();
-  }
-
   @Bean(name = "sharedSnippetsFolderCreator")
   public IApplicationInitialisor sharedSnippetsFolderCreator() {
     return new GroupSharedSnippetsFolderAppInitialiser();
@@ -774,9 +763,9 @@ public abstract class BaseConfig {
   }
 
   @Bean("compositeFileStore")
-  public FileStore compositeFileStore() throws IOException {
+  public FileStore compositeFileStore(InternalFileStore internalFileStore) throws IOException {
     FileStoreImpl impl =
-        new FileStoreImpl(internalFileStore(), externalFileStoreLocator(), externalFileService());
+        new FileStoreImpl(internalFileStore, externalFileStoreLocator(), externalFileService());
     return impl;
   }
 
@@ -788,11 +777,6 @@ public abstract class BaseConfig {
       log.info("Creating real external file service");
       return new ExternalFileServiceImpl();
     }
-  }
-
-  @Bean
-  public InternalFileStore internalFileStore() throws IOException {
-    return new InternalFileStoreImpl();
   }
 
   @Bean
@@ -887,19 +871,7 @@ public abstract class BaseConfig {
 
   @Bean
   public MultipartResolver multipartResolver() {
-    CommonsMultipartResolver rc = new CommonsMultipartResolver();
-    Long defaultLimit = 10_000_000l; // 10Mb default default
-    try {
-      long maxSize = Long.parseLong(maxUploadSize);
-      rc.setMaxUploadSize(maxSize);
-    } catch (NumberFormatException nfe) {
-      log.warn(
-          "Couldn't set max file upload size [{}], using default [{}]",
-          maxUploadSize,
-          defaultLimit);
-      rc.setMaxUploadSize(defaultLimit);
-    }
-    return rc;
+    return new StandardServletMultipartResolver();
   }
 
   @Bean
@@ -935,11 +907,6 @@ public abstract class BaseConfig {
   @Bean(name = "customFormAppInitialiser")
   public IApplicationInitialisor customForms() {
     return new CustomFormAppInitialiser();
-  }
-
-  @Bean
-  public UserContentUpdater userContentUpdater() {
-    return new UserContentUpdaterImpl();
   }
 
   @Bean()
@@ -998,16 +965,6 @@ public abstract class BaseConfig {
   @Bean
   ExternalMessageSender msteamsExternalMessageSender() {
     return new MsTeamsMessageSender();
-  }
-
-  @Bean
-  ExternalMessageSenderFactory externalMessageSenderFactory() {
-    ExternalMessageSenderFactoryImpl fac = new ExternalMessageSenderFactoryImpl();
-    List<ExternalMessageSender> senders = new ArrayList<>();
-    senders.add(slackExternalMessageSender());
-    senders.add(msteamsExternalMessageSender());
-    fac.setMessageSenders(senders);
-    return fac;
   }
 
   /**
@@ -1130,7 +1087,7 @@ public abstract class BaseConfig {
   @Bean
   public EmailBroadcast emailBroadcast() {
     if (Boolean.parseBoolean(emailEnabled)) {
-      return new EmailBroadcastImp(getMaxEmailsPerSecond(), getEmailAddressChunkSize());
+      return new EmailBroadcastImpl(getMaxEmailsPerSecond(), getEmailAddressChunkSize());
     }
     return new DevEmailSenderImpl();
   }
@@ -1138,10 +1095,10 @@ public abstract class BaseConfig {
   @Bean
   public Broadcaster broadcaster() {
     if (Boolean.parseBoolean(emailEnabled)) {
-      return new EmailBroadcastImp(getMaxEmailsPerSecond(), getEmailAddressChunkSize());
-    } else {
-      return new DevBroadCaster();
+      return new CommunicationEmailBroadcaster(
+          emailBroadcast(), emailContentGenerator(), htmlDomainPrefix);
     }
+    return new DevBroadCaster();
   }
 
   private Integer getMaxEmailsPerSecond() {
@@ -1154,7 +1111,16 @@ public abstract class BaseConfig {
 
   @Bean("validator")
   LocalValidatorFactoryBean localValidatorFactoryBean() {
-    return new LocalValidatorFactoryBean();
+    LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+    // Inventory constraint messages are ported to the JSON catalogues, the generic templates
+    // stay in ValidationMessages.properties, so chain both. Templates are left unformatted for
+    // the validator to interpolate {max} and ${validatedValue}.
+    ReloadableResourceBundleMessageSource fallback = new ReloadableResourceBundleMessageSource();
+    fallback.setBasename("classpath:ValidationMessages");
+    JsonMessageSource constraintMessages = new JsonMessageSource();
+    constraintMessages.setParentMessageSource(fallback);
+    validator.setValidationMessageSource(constraintMessages);
+    return validator;
   }
 
   @Bean
@@ -1286,8 +1252,8 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  StrictEmailContentGenerator strictEmailContentGenerator() {
-    return new StrictEmailContentGenerator();
+  EmailContentGenerator emailContentGenerator() {
+    return new EmailContentGenerator();
   }
 
   @Bean
@@ -1298,11 +1264,6 @@ public abstract class BaseConfig {
   @Bean
   OriginRefererChecker originRefererChecker() {
     return new OriginRefererCheckerImpl();
-  }
-
-  @Bean
-  ArchiveExportPlanner ArchiveExportPlannerImpl() {
-    return new ArchiveExportPlannerImpl();
   }
 
   @Bean
@@ -1365,7 +1326,7 @@ public abstract class BaseConfig {
 
   @Bean(name = "rspaceToExternalProviderAdapter")
   public RspaceToExternalProviderAdapter getRspaceToExternalProviderAdapter() {
-    return new RspaceToExternalProviderAdapterImpl();
+    return new RspaceToExternalProviderAdapterImpl(propertyHolder());
   }
 
   @Bean(name = "pyrat")

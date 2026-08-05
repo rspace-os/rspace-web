@@ -13,8 +13,9 @@
 <%@ attribute name="user" required="true"
 			  type="com.researchspace.model.User"%>
 
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core"%>
+<%@ taglib uri="jakarta.tags.functions" prefix="fn"%>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
 
 <c:catch var="highlightNotFoundException">
     <c:set var="visibleRecordName" value="${wrapped.getHighlightedField(\"name\")}" />
@@ -39,7 +40,7 @@
                    ${visibleRecordName}
                 </a>
                 <c:if test="${record.type eq 'NORMAL:TEMPLATE'}">
-                    <span class="templateSpan" style="padding: 2px 6px" title="Template">T</span>
+                    <span class="templateSpan" style="padding: 2px 6px" title="<spring:message code='dialogs.recordEditorLink.templateBadgeTitle'/>"><spring:message code="dialogs.recordEditorLink.templateBadgeLabel"/></span>
                 </c:if>
 			</c:when>
 			<c:otherwise>
@@ -109,6 +110,6 @@
 	</c:when>
 
 	<c:otherwise>
-      	${name} not supported
+	<spring:message code="dialogs.recordEditorLink.formatNotSupported" arguments="${name}"/>
     </c:otherwise>
 </c:choose>

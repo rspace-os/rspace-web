@@ -8,8 +8,10 @@ import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.model.*;
+import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dtos.GalleryFilterCriteria;
+import com.researchspace.model.dtos.GalleryVersionHistory;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
@@ -32,9 +34,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -110,7 +115,7 @@ public class GalleryController extends BaseController {
     try {
       folder = folderManager.getFolder(folderId, user);
     } catch (ObjectRetrievalFailureException | AuthorizationException ex) {
-      throw new IllegalArgumentException("access denied");
+      throw new IllegalArgumentException(getText("gallery.errors.accessDenied"));
     }
 
     Folder galleryRootFolder = folderManager.getGalleryRootFolderForUser(user);
@@ -118,7 +123,7 @@ public class GalleryController extends BaseController {
 
     int numberOfParents = pathToFolder.size();
     if (numberOfParents == 0) {
-      throw new IllegalArgumentException("provided folderId doesn't point to Gallery folder");
+      throw new IllegalArgumentException(getText("gallery.errors.folderNotInGallery"));
     }
 
     if (numberOfParents > 1) {
@@ -291,7 +296,8 @@ public class GalleryController extends BaseController {
       throws IOException {
 
     if (selectedMediaId != null && fieldId != null) {
-      throw new IllegalArgumentException("selectedMediaId and fieldId shouldn't be both provided");
+      throw new IllegalArgumentException(
+          getText("gallery.errors.selectedMediaIdAndFieldIdBothProvided"));
     }
 
     User subject = userManager.getAuthenticatedUserInSession();
@@ -334,7 +340,8 @@ public class GalleryController extends BaseController {
       return new AjaxReturnObject<>(media.toRecordInfo(), null);
 
     } catch (IllegalStateException e) {
-      ErrorList errorList = ErrorList.of("Save action failed [" + e.getMessage() + "]");
+      ErrorList errorList =
+          ErrorList.of(getText("gallery.errors.saveFailed", new Object[] {e.getMessage()}));
       return new AjaxReturnObject<>(null, errorList);
     }
   }
@@ -465,7 +472,8 @@ public class GalleryController extends BaseController {
 
   private AjaxReturnObject<Boolean> generateTooManyItemsFailureMsg() {
     return new AjaxReturnObject<>(
-        null, ErrorList.of(getText("errors.too.manyitems", MAX_IDS_TO_PROCESS + "")));
+        null,
+        ErrorList.of(getText("errors.valueCount.tooMany", new Object[] {MAX_IDS_TO_PROCESS})));
   }
 
   private void doMove(User user, Folder target, Long id) {
@@ -619,6 +627,85 @@ public class GalleryController extends BaseController {
   }
 
   /**
+   * Lists every audit revision of a Gallery item, for the version-history dialog.
+   *
+   * <p>This is deliberately restricted to logged-in users. The class-level mapping also answers on
+   * {@code /public/publicView/gallery}, which Shiro treats as {@code anon}, and viewing a published
+   * document logs a real session in as the anonymous guest. That account genuinely holds read
+   * permission on media linked from the published document, so the permission check below would
+   * pass for it. An edit history is not part of what publishing a document shares: it would
+   * disclose every past filename and description, plus the full name of every user who edited the
+   * item. So the guest is refused outright rather than left to the permission check.
+   *
+   * @param mediaFileId the id of a Gallery item
+   * @return every revision of the item; callers group these by version for display
+   * @throws AuthorizationException if there is no logged-in user, if the caller is the anonymous
+   *     guest, or if the item is not readable by the current user
+   */
+  @GetMapping("/ajax/versionHistory/{mediaFileId}")
+  @ResponseBody
+  public AjaxReturnObject<GalleryVersionHistory> getVersionHistory(
+      @PathVariable("mediaFileId") Long mediaFileId) {
+
+    User user = userManager.getAuthenticatedUserInSession();
+    if (user == null || user.isAnonymousGuestAccount()) {
+      // reaches the user through the error view, so the wording lives in the bundle
+      throw new AuthorizationException(
+          getText("errors.authorization.versionHistory.loginRequired"));
+    }
+    // throws AuthorizationException unless the item exists and is readable by this user
+    EcatMediaFile mediaFile = baseRecordManager.retrieveMediaFile(user, mediaFileId);
+
+    /*
+     * Sorted here rather than in the query: the Envers query behind getRevisionsForEntity adds no
+     * addOrder, so its order is incidental, but this response documents "newest revision id last"
+     * and callers group on that. Sorting locally keeps that contract without changing a DAO method
+     * other endpoints share.
+     */
+    List<AuditedEntity<EcatMediaFile>> revisions =
+        new ArrayList<>(auditManager.getRevisionsForEntity(EcatMediaFile.class, mediaFile.getId()));
+    revisions.sort(Comparator.comparing(revision -> revision.getRevision().longValue()));
+
+    /*
+     * A Gallery item edited many times by the same user resolves that user's full name once.
+     * computeIfAbsent is deliberately not used: getFullNameByUsername returns null for a user who
+     * no longer exists, and computeIfAbsent does not store a null, so the memo would keep asking
+     * for exactly the username it was added to resolve once.
+     */
+    Map<String, String> fullNameByUsername = new HashMap<>();
+    List<GalleryVersionHistory.Revision> apiRevisions = new ArrayList<>();
+    for (AuditedEntity<EcatMediaFile> revision : revisions) {
+      EcatMediaFile audited = revision.getEntity();
+      String modifiedBy = audited.getModifiedBy();
+      apiRevisions.add(
+          new GalleryVersionHistory.Revision(
+              revision.getRevision().longValue(),
+              revision.getRevisionTypeString(),
+              new GalleryVersionHistory.Item(
+                  audited.getVersion(),
+                  toIsoInstant(audited.getModificationDateAsDate()),
+                  modifiedBy == null ? null : fullNameOf(modifiedBy, fullNameByUsername),
+                  audited.getSize(),
+                  audited.getName(),
+                  audited.getDescription())));
+    }
+    return new AjaxReturnObject<>(
+        new GalleryVersionHistory(apiRevisions, apiRevisions.size()), null);
+  }
+
+  /** Resolves a username's full name at most once per request, caching a null result too. */
+  private String fullNameOf(String username, Map<String, String> memo) {
+    if (!memo.containsKey(username)) {
+      memo.put(username, userManager.getFullNameByUsername(username));
+    }
+    return memo.get(username);
+  }
+
+  private String toIsoInstant(Date date) {
+    return date == null ? null : DateTimeFormatter.ISO_INSTANT.format(date.toInstant());
+  }
+
+  /**
    * Gets record information for a list of IDs (and revision numbers) of EcatMediaFiles
    *
    * @return a map with keys in "$id-$revision" format
@@ -637,7 +724,7 @@ public class GalleryController extends BaseController {
       if (revisions.length == 0 && ids.length == 1) {
         revisions = new Long[] {null};
       } else {
-        throw new IllegalArgumentException("Revisions and ids must be same length");
+        throw new IllegalArgumentException(getText("gallery.errors.revisionsIdsMismatch"));
       }
     }
 

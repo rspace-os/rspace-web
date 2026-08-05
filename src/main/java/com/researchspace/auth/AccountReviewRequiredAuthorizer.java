@@ -1,9 +1,9 @@
 package com.researchspace.auth;
 
 import com.researchspace.model.User;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import java.io.IOException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import org.apache.shiro.web.util.WebUtils;
 
 /** Prevents login if account requires authorisation after signup. */

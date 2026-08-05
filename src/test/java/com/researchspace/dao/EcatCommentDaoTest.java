@@ -52,7 +52,7 @@ public class EcatCommentDaoTest extends BaseDaoTestCase {
     assertTrue(lst.size() > 0);
 
     String flds[] = {
-      "comName", "author", "items.itemName", "items.fields.fieldData", "items.owner.username"
+      "comName", "author", "items.itemName", "items.fields_fieldData", "items.owner_username"
     };
     String match = "comment";
     List rst = textSearchDao.searchText(flds, match, EcatComment.class);

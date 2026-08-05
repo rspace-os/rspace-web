@@ -12,6 +12,8 @@ import com.researchspace.netfiles.NfsExportPlan;
 import com.researchspace.service.NfsExportManager;
 import com.researchspace.service.archive.ExportImport;
 import com.researchspace.service.archive.export.ArchiveExportPlanner;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.Principal;
@@ -19,8 +21,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -94,7 +94,9 @@ public class NfsExportController extends BaseController {
 
     Map<String, NfsExportPlan> plansFromSession = getNfsExportPlansFromSession(request);
     if (!plansFromSession.containsKey(quickPlanId)) {
-      throw new IllegalArgumentException("No plan for id " + quickPlanId);
+      throw new IllegalArgumentException(
+          messages.getResourceNotFoundMessage(
+              messages.getMessage("resourceType.exportPlan"), quickPlanId));
     }
     NfsExportPlan plan = plansFromSession.get(quickPlanId);
 

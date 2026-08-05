@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "eventContext": {
+    "userId": 1,
+    "userName": "mock-omero-username",
+    "sessionUuid": "mock-session-uuid"
+  }
+}

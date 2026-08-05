@@ -36,9 +36,9 @@ public abstract class SampleTemplateValidator extends SampleApiPostValidator {
     if (!RSUnitDef.exists(incomingDefaultUnitId)) {
       errors.rejectValue(
           "defaultUnitId",
-          "errors.inventory.template.invalid.unitId",
+          "errors.inventory.template.invalidUnitIdDefault",
           new Object[] {incomingDefaultUnitId},
-          "Invalid unit id");
+          null);
       return;
     }
     // RSDEV-1067: only mass / volume / dimensionless units are valid for a sample template,
@@ -46,9 +46,9 @@ public abstract class SampleTemplateValidator extends SampleApiPostValidator {
     if (!RSUnitDef.getUnitById(incomingDefaultUnitId).isAmount()) {
       errors.rejectValue(
           "defaultUnitId",
-          "errors.inventory.template.invalid.unitId.notAmount",
+          "errors.inventory.template.invalidUnitIdNotAmount",
           new Object[] {incomingDefaultUnitId},
-          "Default unit must be mass, volume, or dimensionless");
+          null);
     }
   }
 

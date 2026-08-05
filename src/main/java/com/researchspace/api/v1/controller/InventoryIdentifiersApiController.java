@@ -14,10 +14,10 @@ import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import javax.naming.InvalidNameException;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotFoundException;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.jsoup.helper.Validate;
@@ -84,11 +84,11 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
     Validate.isTrue(
         count > 0,
         messages.getMessage(
-            "errors.inventory.identifier.bulk.positive.required", new Object[] {count}));
+            "errors.inventory.identifier.bulkPositiveRequired", new Object[] {count}));
     Validate.isTrue(
         count <= MAX_BULK_IGSN_ALLOCATION,
         messages.getMessage(
-            "errors.inventory.identifier.bulk.max.exceeded",
+            "errors.inventory.identifier.bulkMaxExceeded",
             new Object[] {MAX_BULK_IGSN_ALLOCATION}));
     List<ApiInventoryDOI> result = identifierMgr.registerBulkIdentifiers(count, user);
     if (!count.equals(result.size())) {
@@ -175,6 +175,11 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
       return b2instConnector.testConnection();
     }
     return dataCiteConnector.testDataCiteConnection(InventorySettingType.PIDINST);
+  }
+
+  @Override
+  public boolean pidinstEnabled(@RequestAttribute(name = "user") User user) {
+    return apiHandler.isInventoryAndIdentifierTypeEnabled(user, InventorySettingType.PIDINST);
   }
 
   private InventoryRecord retrieveInvRecByIdentifierId(Long identifierId, User user) {

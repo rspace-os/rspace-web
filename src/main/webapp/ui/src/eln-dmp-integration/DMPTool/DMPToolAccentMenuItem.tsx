@@ -36,7 +36,7 @@ export default function DMPToolAccentMenuItem({ onDialogClose }: DMPToolAccentMe
           open={showDMPDialog}
           setOpen={(b) => {
             setShowDMPDialog(b);
-            onDialogClose();
+            if (!b) onDialogClose();
           }}
         />
       </EventBoundary>

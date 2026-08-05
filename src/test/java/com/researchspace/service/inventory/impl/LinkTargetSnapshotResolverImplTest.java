@@ -15,6 +15,8 @@ import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.Folder;
@@ -96,6 +98,38 @@ class LinkTargetSnapshotResolverImplTest {
     Long rev = resolver.resolveRevisionForVersion(GlobalIdPrefix.IT, 20L, 2L);
 
     assertEquals(Long.valueOf(33), rev);
+  }
+
+  @Test
+  void resolvesRevisionForPinnedInstrumentVersionViaInstrumentClass() {
+    when(auditManager.getRevisionNumberForInventoryRecordVersion(Instrument.class, 15L, 2L))
+        .thenReturn(88);
+
+    Long rev = resolver.resolveRevisionForVersion(GlobalIdPrefix.IN, 15L, 2L);
+
+    assertEquals(Long.valueOf(88), rev);
+  }
+
+  @Test
+  void summaryForInstrumentDegradesToGlobalIdOnlyWhenNoAuditSnapshotExists() {
+    when(auditManager.getNewestRevisionForEntity(Instrument.class, 15L)).thenReturn(null);
+
+    ApiInventoryLinkTargetSummary summary =
+        resolver.resolveSummary(GlobalIdPrefix.IN, 15L, null, null, user);
+
+    assertEquals("IN15", summary.getGlobalId());
+  }
+
+  @Test
+  void resolvesRevisionForInstrumentTemplateViaInstrumentTemplateClass() {
+    // instrument templates are a distinct single-table subtype (DTYPE='InstrumentTemplate');
+    // querying Instrument.class would filter them out, mirroring the IT/SampleTemplate case
+    when(auditManager.getRevisionNumberForInventoryRecordVersion(InstrumentTemplate.class, 20L, 2L))
+        .thenReturn(44);
+
+    Long rev = resolver.resolveRevisionForVersion(GlobalIdPrefix.NT, 20L, 2L);
+
+    assertEquals(Long.valueOf(44), rev);
   }
 
   @Test

@@ -51,8 +51,6 @@
   </Appenders>
 
   <Loggers>
-    <Logger name="net.sf.ehcache" level="ERROR"/>
-
     <Logger name="org.apache" level="WARN"/>
 
     <Logger name="org.hibernate" level="${hibernate.logLevel}"/>
@@ -84,9 +82,6 @@
     <Logger name="com.researchspace.webapp.controller.PerformanceLoggingInterceptor" level="INFO">
       <AppenderRef ref="SlowRequestsLogAppender"/>
     </Logger>
-
-    <!-- for debugging some performance issues, will log request time on filter level (RSDEV-760) -->
-    <!--<Logger name="com.researchspace.webapp.filter.LocaleFilter" level="DEBUG"/>-->
 
     <Logger name="com.researchspace.service.impl.FailedEmailLogger" level="INFO">
       <AppenderRef ref="FailedEmailLogAppender"/>

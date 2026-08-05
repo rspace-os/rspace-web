@@ -11,6 +11,8 @@ import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.model.User;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.Test;
@@ -36,8 +38,11 @@ class InventoryBulkOperationHandlerGuardTest {
   }
 
   private ApiInventoryBulkOperationResult run(BulkApiOperationType operationType) {
+    InventoryBulkOperationHandler handler = new InventoryBulkOperationHandler();
+    ReflectionTestUtils.setField(
+        handler, "messages", new MessageSourceUtils(new JsonMessageSource()));
     return ReflectionTestUtils.invokeMethod(
-        new InventoryBulkOperationHandler(),
+        handler,
         "runOperationForEachRecordFromBulkList",
         configFor(operationType),
         returnsUndeletable);

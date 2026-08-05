@@ -18,6 +18,7 @@ import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FieldManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.StoichiometryManager;
@@ -26,15 +27,16 @@ import com.researchspace.service.archive.StoichiometryImporter.IdAndRevision;
 import com.researchspace.service.archive.export.StoichiometryReader;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import com.researchspace.service.chemistry.StoichiometryException;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import javax.transaction.Transactional;
-import javax.ws.rs.NotFoundException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -50,16 +52,18 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   private final RecordManager recordManager;
   private final FieldManager fieldManager;
   private final StoichiometryReader stoichiometryReader;
+  private final MessageSourceUtils messages;
 
   @Autowired
   public StoichiometryServiceImpl(
       ChemistryService chemistryService,
       StoichiometryManager stoichiometryManager,
       IPermissionUtils permissionUtils,
-      ChemistryProvider chemistryProvider,
+      @Qualifier("chemistryProvider") ChemistryProvider chemistryProvider,
       RSChemElementManager rsChemElementManager,
       RecordManager recordManager,
-      FieldManager fieldManager) {
+      FieldManager fieldManager,
+      MessageSourceUtils messages) {
     this.chemistryService = chemistryService;
     this.stoichiometryManager = stoichiometryManager;
     this.permissionUtils = permissionUtils;
@@ -67,6 +71,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
     this.rsChemElementManager = rsChemElementManager;
     this.recordManager = recordManager;
     this.fieldManager = fieldManager;
+    this.messages = messages;
     this.stoichiometryReader = new StoichiometryReader();
   }
 
@@ -169,14 +174,16 @@ public class StoichiometryServiceImpl implements StoichiometryService {
       stoichiometryManager.remove(stoichiometryId);
     } catch (Exception e) {
       throw new StoichiometryException(
-          "Error deleting stoichiometry with id " + stoichiometryId, e);
+          messages.getMessage("errors.stoichiometry.deleteFailed", new Object[] {stoichiometryId}),
+          e);
     }
   }
 
   @Override
   public StoichiometryMolecule getMoleculeInfo(String smiles) {
     if (smiles == null || smiles.isBlank()) {
-      throw new StoichiometryException("Couldn't retrieve molecule info for provided structure");
+      throw new StoichiometryException(
+          messages.getMessage("errors.stoichiometry.moleculeInfoUnavailable"));
     }
     Optional<ElementalAnalysisDTO> analysis = rsChemElementManager.getInfo(smiles);
     if (analysisExists(analysis)) {
@@ -189,7 +196,8 @@ public class StoichiometryServiceImpl implements StoichiometryService {
           .limitingReagent(false)
           .build();
     }
-    throw new NotFoundException("Couldn't retrieve molecule info for provided structure");
+    throw new NotFoundException(
+        messages.getMessage("errors.stoichiometry.moleculeInfoUnavailable"));
   }
 
   @Override

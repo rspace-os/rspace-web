@@ -9,7 +9,6 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.subject.support.SubjectThreadState;
-import org.apache.shiro.util.LifecycleUtils;
 import org.apache.shiro.util.ThreadState;
 import org.junit.AfterClass;
 
@@ -59,13 +58,9 @@ public class ShiroTestUtils {
   public static void tearDownShiro() {
     doClearSubject();
     try {
-      SecurityManager securityManager = getSecurityManager();
-      LifecycleUtils.destroy(securityManager);
+      getSecurityManager();
     } catch (UnavailableSecurityManagerException e) {
-      // we don't care about this when cleaning up the test environment
-      // (for example, maybe the subclass is a unit test and it didn't
-      // need a SecurityManager instance because it was using only
-      // mock Subject instances)
+      // no-op: tests may not initialize a SecurityManager
     }
   }
 

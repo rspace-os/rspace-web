@@ -5,7 +5,7 @@ import com.researchspace.api.v1.controller.ExportApiController.ExportRetrievalCo
 import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.model.User;
 import com.researchspace.service.archive.export.ExportFailureException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -30,8 +30,7 @@ public interface ExportApi {
    */
   @PostMapping("/{format}/{scope}")
   @ResponseStatus(HttpStatus.ACCEPTED)
-  public ApiJob export(ExportApiConfig config, BindingResult errors, User user)
-      throws BindException;
+  ApiJob export(ExportApiConfig config, BindingResult errors, User user) throws BindException;
 
   /**
    * Supports export to HTML or XML for given user or group id
@@ -45,11 +44,9 @@ public interface ExportApi {
    */
   @PostMapping("/{format}/{scope}/{id}")
   @ResponseStatus(HttpStatus.ACCEPTED)
-  public ApiJob exportById(ExportApiConfig config, BindingResult errors, User user)
-      throws BindException;
+  ApiJob exportById(ExportApiConfig config, BindingResult errors, User user) throws BindException;
 
   @GetMapping("/{resource}")
-  public void getExport(
-      ExportRetrievalConfig params, BindingResult errors, HttpServletResponse response)
+  void getExport(ExportRetrievalConfig params, BindingResult errors, HttpServletResponse response)
       throws BindException;
 }

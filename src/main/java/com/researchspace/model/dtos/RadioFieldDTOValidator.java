@@ -17,14 +17,15 @@ public class RadioFieldDTOValidator extends AbstractFieldFormValidator implement
   @Override
   public void validate(Object target, Errors errors) {
     RadioFieldDTO<RadioFieldForm> dto = (RadioFieldDTO) target;
-    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fieldName", "no.name");
-    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "radioValues", "no.multiplechoice");
+    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fieldName", "errors.noValue.name");
+    ValidationUtils.rejectIfEmptyOrWhitespace(
+        errors, "radioValues", "errors.noValue.multipleChoice");
     if (isNameTooLong(dto.getFieldName())) {
       rejectTooLong(errors);
     }
     String vals = dto.getRadioValues();
     if (!FieldUtils.isValidRadioOrChoiceString(vals)) {
-      errors.rejectValue("radioValues", "choiceoptions.invalidformat");
+      errors.rejectValue("radioValues", "form.choiceOptions.invalidFormat");
     }
   }
 }

@@ -21,11 +21,11 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.JournalEntry;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
-import javax.servlet.http.HttpSession;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -108,7 +108,7 @@ public class JournalController extends BaseController {
 
     // this is returned if user is unauthorised but not sure why?
     // mk: this is used for new notebook too
-    if (readableRecords == null || readableRecords.size() == 0) {
+    if (readableRecords == null || readableRecords.isEmpty()) {
       return new JournalEntry("EMPTY", "");
     }
 

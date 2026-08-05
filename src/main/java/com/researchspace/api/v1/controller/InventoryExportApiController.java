@@ -18,6 +18,8 @@ import com.researchspace.service.inventory.csvexport.CsvContentToExport;
 import com.researchspace.service.inventory.csvexport.CsvExportMode;
 import com.researchspace.service.inventory.csvexport.InventoryExportFileCreator;
 import com.researchspace.webapp.config.WebConfig;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.Pattern;
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
@@ -25,8 +27,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -65,14 +65,14 @@ public class InventoryExportApiController extends BaseApiInventoryController
     @Pattern(
         regexp = "(FULL)|(COMPACT)",
         flags = {Pattern.Flag.CASE_INSENSITIVE},
-        message = "exportMode should be either 'FULL' or 'COMPACT'")
+        message = "{errors.inventory.export.exportMode.invalid}")
     @JsonProperty("exportMode")
     private String exportMode;
 
     @Pattern(
         regexp = "(ZIP)|(SINGLE_CSV)",
         flags = {Pattern.Flag.CASE_INSENSITIVE},
-        message = "resultFileType should be either 'ZIP' or 'SINGLE_CSV'")
+        message = "{errors.inventory.export.resultFileType.invalid}")
     @JsonProperty("resultFileType")
     private String resultFileType;
 

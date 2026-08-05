@@ -11,9 +11,9 @@ import org.springframework.validation.Errors;
 /**
  * Validates an incoming {@link ApiInventoryLink} payload independent of database state. Checks
  * relationType against the DataCite vocabulary, syntactic GlobalID parse, that the target prefix is
- * a supported link target (Inventory items including sample templates, or ELN documents, notebooks
- * and gallery files), and forbids self-links. Existence and read-permission checks live in the
- * manager layer, where the acting user is available.
+ * a supported link target (Inventory items including sample and instrument templates, or ELN
+ * documents, notebooks and gallery files), and forbids self-links. Existence and read-permission
+ * checks live in the manager layer, where the acting user is available.
  */
 public class InventoryLinkValidator {
 
@@ -45,6 +45,7 @@ public class InventoryLinkValidator {
           GlobalIdPrefix.IC,
           GlobalIdPrefix.IN,
           GlobalIdPrefix.IT,
+          GlobalIdPrefix.NT,
           GlobalIdPrefix.SD,
           GlobalIdPrefix.NB,
           GlobalIdPrefix.GL);
@@ -69,9 +70,9 @@ public class InventoryLinkValidator {
     if (!DataCiteRelationType.isValid(link.getRelationType())) {
       errors.rejectValue(
           "relationType",
-          "errors.inventory.field.link.relationTypeInvalid",
+          "errors.inventory.field.linkRelationTypeInvalid",
           new Object[] {link.getRelationType()},
-          "relationType not in DataCite vocabulary");
+          null);
     }
   }
 
@@ -80,9 +81,9 @@ public class InventoryLinkValidator {
     if (StringUtils.isBlank(target)) {
       errors.rejectValue(
           "targetGlobalId",
-          "errors.inventory.field.link.targetNotFound",
+          "errors.inventory.field.linkTargetNotFound",
           new Object[] {target},
-          "targetGlobalId is required");
+          null);
       return;
     }
     GlobalIdentifier parsed;
@@ -91,17 +92,17 @@ public class InventoryLinkValidator {
     } catch (IllegalArgumentException ex) {
       errors.rejectValue(
           "targetGlobalId",
-          "errors.inventory.field.link.targetNotFound",
+          "errors.inventory.field.linkTargetNotFound",
           new Object[] {target},
-          "targetGlobalId is not a valid GlobalID");
+          null);
       return;
     }
     if (!ALLOWED_TARGET_PREFIXES.contains(parsed.getPrefix())) {
       errors.rejectValue(
           "targetGlobalId",
-          "errors.inventory.field.link.targetKindUnsupported",
+          "errors.inventory.field.linkTargetKindUnsupported",
           new Object[] {parsed.getPrefix().name()},
-          "target kind not supported");
+          null);
       return;
     }
     if (isSelfLink(parsed, sourceGlobalId)) {
@@ -109,7 +110,7 @@ public class InventoryLinkValidator {
           "targetGlobalId",
           "errors.inventory.field.link.selfLinkForbidden",
           new Object[] {target},
-          "link target cannot equal its source item");
+          null);
     }
   }
 }

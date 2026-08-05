@@ -27,7 +27,7 @@ import com.researchspace.api.v1.model.ApiUserGroupInfo;
 import com.researchspace.api.v1.model.ApiUserPost;
 import com.researchspace.archive.ArchiveResult;
 import com.researchspace.auth.WhiteListIPChecker;
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import com.researchspace.core.util.DateUtil;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -43,6 +43,8 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserDeletionManager;
 import com.researchspace.service.UserDeletionPolicy;
 import com.researchspace.service.UserEnablementUtils;
@@ -75,7 +77,7 @@ import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 
-public class SysadminApiControllerTest extends JavaxValidatorTest {
+public class SysadminApiControllerTest extends JakartaValidatorTest {
 
   @Rule public MockitoRule rule = MockitoJUnit.rule();
   @Mock UserManager userMgr;
@@ -101,6 +103,7 @@ public class SysadminApiControllerTest extends JavaxValidatorTest {
   public void setUp() throws Exception {
     response = new MockHttpServletResponse();
     sysadmin.addRole(Role.SYSTEM_ROLE);
+    controller.messages = new MessageSourceUtils(new JsonMessageSource());
   }
 
   @After
@@ -375,7 +378,7 @@ public class SysadminApiControllerTest extends JavaxValidatorTest {
 
     assertExceptionThrown(
         () -> controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, 999L, sysadmin),
-        javax.ws.rs.NotFoundException.class);
+        jakarta.ws.rs.NotFoundException.class);
     verify(auditService, never()).notify(Mockito.any(GenericEvent.class));
   }
 

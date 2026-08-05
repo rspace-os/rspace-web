@@ -20,8 +20,6 @@ class CommentFieldExporter extends AbstractFieldExporter<EcatComment> {
     super(support);
   }
 
-  CommentFieldExporter() {}
-
   void createFieldArchiveObject(EcatComment item, String newLink, FieldExportContext context) {
     ArchivalField archiveField = context.getArchiveField();
     if (context.getRevision() != null) {

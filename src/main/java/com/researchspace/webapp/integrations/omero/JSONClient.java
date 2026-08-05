@@ -1,5 +1,12 @@
 package com.researchspace.webapp.integrations.omero;
 
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonString;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonValue;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,13 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonString;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
 import lombok.SneakyThrows;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHeaders;
@@ -50,7 +50,7 @@ import org.springframework.util.StringUtils;
  * --omero.servername=[SERVER_NAME] --omero.user=[USERNAME] --omero.pass=[PASSWORD]
  *
  * <p>This example client needs additional dependencies: Java API for JSON Processing
- * (https://javaee.github.io/jsonp/): <dependency org="org.glassfish" name="javax.json"
+ * (https://javaee.github.io/jsonp/): <dependency org="org.glassfish" name="jakarta.json"
  * rev="1.0.4"/> Apache HTTPComponents (https://hc.apache.org/index.html): <dependency
  * org="org.apache.httpcomponents" name="httpcore" rev="4.4.6"> <dependency
  * org="org.apache.httpcomponents" name="httpclient" rev="4.5.3"/> <dependency

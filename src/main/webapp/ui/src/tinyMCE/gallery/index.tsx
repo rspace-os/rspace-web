@@ -43,7 +43,14 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
           const recordId = file.id;
 
           if (recordId === null) {
-            addAlert?.(mkAlert({ message: `Could not insert file "${file.name}"`, variant: "error" }));
+            addAlert?.(
+              mkAlert({
+                message: i18n.t("gallery:insertFileFailed", {
+                  fileName: file.name,
+                }),
+                variant: "error",
+              }),
+            );
             return;
           }
 
@@ -55,7 +62,14 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
               addFromGallery(recordInformation);
             } catch (e) {
               console.error(e);
-              addAlert?.(mkAlert({ message: `Could not insert file "${file.name}"`, variant: "error" }));
+              addAlert?.(
+                mkAlert({
+                  message: i18n.t("gallery:insertFileFailed", {
+                    fileName: file.name,
+                  }),
+                  variant: "error",
+                }),
+              );
             }
           })();
         });

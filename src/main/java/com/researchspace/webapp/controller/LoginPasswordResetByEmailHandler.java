@@ -8,20 +8,21 @@ import org.springframework.stereotype.Component;
 public class LoginPasswordResetByEmailHandler extends PasswordResetByEmailHandlerBase {
   private static final String resetLinkFormat = "%s/signup/passwordResetReply?token=%s";
   private static final String passwordType = PasswordType.LOGIN_PASSWORD.toString();
-  private static final String completionEmailSubject = "RSpace password changed ";
-  private static final String emailSubject = "RSpace password change request";
+  private static final String completionEmailSubjectKey =
+      "email.account.passwordResetComplete.subject";
+  private static final String emailSubjectKey = "email.account.passwordResetMessage.subject";
 
   @Override
   TokenBasedVerification applyPasswordChange(PasswordResetCommand cmd) {
     return userManager.applyLoginPasswordChange(cmd.getPassword(), cmd.getToken());
   }
 
-  String getEmailSubject() {
-    return emailSubject;
+  String getEmailSubjectKey() {
+    return emailSubjectKey;
   }
 
-  String getCompletionEmailSubject() {
-    return completionEmailSubject;
+  String getCompletionEmailSubjectKey() {
+    return completionEmailSubjectKey;
   }
 
   String getPasswordType() {

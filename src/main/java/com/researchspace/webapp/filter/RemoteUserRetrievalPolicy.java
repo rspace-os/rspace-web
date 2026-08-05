@@ -1,7 +1,7 @@
 package com.researchspace.webapp.filter;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Policy for getting a remote User. Typically, this interface will be used in SSO environments
@@ -15,7 +15,7 @@ public interface RemoteUserRetrievalPolicy {
    */
   String SSO_DUMMY_PASSWORD = "user1234";
 
-  public enum RemoteUserAttribute {
+  enum RemoteUserAttribute {
     FIRST_NAME,
     LAST_NAME,
     EMAIL,

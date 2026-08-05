@@ -5,6 +5,7 @@ import static com.researchspace.model.comms.NotificationType.NOTIFICATION_DOCUME
 import static com.researchspace.service.CommunicationNotifyPolicy.ALWAYS_NOTIFY;
 import static java.util.stream.Collectors.toSet;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.CommunicationDao;
@@ -59,6 +60,8 @@ import com.researchspace.service.DocumentSharedStateCalculator;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.ShareRecordMessageOrRequestDTO;
@@ -80,8 +83,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service("recordSharing")
+@Transactional
 public class RecordSharingManagerImpl implements RecordSharingManager {
 
   private static Logger log = LoggerFactory.getLogger(RecordSharingManagerImpl.class);
@@ -118,6 +123,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   private @Autowired UserManager userManager;
   private @Autowired DocumentSharedStateCalculator docSharedStatusCalculator;
   private @Autowired IPropertyHolder properties;
+  private @Autowired MessageSourceUtils messages;
   private PermissionFactory permFac = new DefaultPermissionFactory();
 
   @Override
@@ -292,12 +298,22 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     BaseRecord recordOrNotebook = getRecordOrNotebook(recordToShareId);
     if (recordOrNotebook.isMediaRecord()) {
       throw new AuthorizationException(
-          String.format(
-              "Can't share  record %s, can only share notebooks or documents or snippets",
-              recordOrNotebook.getGlobalIdentifier()));
+          messages.getMessage(
+              "sharing.errors.unsupportedRecordType",
+              new Object[] {
+                recordOrNotebook.getGlobalIdentifier(),
+                ListFormatUtils.formatList(
+                    List.of(
+                        messages.getMessage("record.types.notebooks"),
+                        messages.getMessage("record.types.documents"),
+                        messages.getMessage("record.types.snippets")),
+                    ListFormatter.Type.OR)
+              }));
     }
     if (recordOrNotebook.isFolder() && !recordOrNotebook.isNotebook()) {
-      throw new AuthorizationException("Cannot share a folder :" + recordOrNotebook.getName());
+      throw new AuthorizationException(
+          messages.getMessage(
+              "sharing.errors.folderUnsupported", new Object[] {recordOrNotebook.getName()}));
     }
     boolean piSharingOnlyWithAnyonymous = false;
     // we dont mix sharing and publishing in the same 'share' action
@@ -334,7 +350,9 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   }
 
   private String createSharingMessage(User subject, BaseRecord recordOrNotebook) {
-    return String.format("%s shared by %s", recordOrNotebook.getName(), subject.getUsername());
+    return messages.getMessage(
+        "sharing.notification.sharedByUser",
+        new Object[] {recordOrNotebook.getName(), subject.getUsername()});
   }
 
   // looks at 1st config element to see if it is autoshare context.
@@ -480,7 +498,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       return null;
     } else {
       ErrorList el = new ErrorList();
-      el.addErrorMsg("Could not update permission");
+      el.addErrorMsg(messages.getMessage("groups.sharing.errors.updatePermission"));
       return el;
     }
   }
@@ -684,9 +702,13 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       if (selectedTargetFolder.isNotebook()) {
         aclPolicy = ACLPropagationPolicy.SHARE_INTO_NOTEBOOK_POLICY;
       }
+      // Use skipAddingToChildren=false so the new RecordToFolder is added to
+      // selectedTargetFolder.children (a tracked PersistentSet). We then call
+      // folderDao.save() to cascade-persist the new RTF. The prior true relied on
+      // Hibernate 5's SAVE_UPDATE reachability which no longer exists in Hibernate 6 JPA.
       selectedTargetFolder.addChild(
-          docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy, true);
-      saveRecordOrFolder(docOrNotebook);
+          docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy, false);
+      folderDao.save(selectedTargetFolder);
       selectedTargetFolder = folderDao.get(selectedTargetFolder.getId());
       log.info(
           "Added RTF for doc [{}] and folder [{}]",

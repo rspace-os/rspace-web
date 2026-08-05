@@ -56,9 +56,8 @@ public class CommunityPostSignupVerificationTest extends SpringTransactionalTest
     Mockito.verify(log, times(1))
         .info(
             Mockito.anyString(),
-            Mockito.anyBoolean(),
             Mockito.contains("Welcome"),
-            Mockito.contains(tempUser.getEmail()),
+            Mockito.eq(List.of(tempUser.getEmail())),
             Mockito.contains("/verifysignup?token="));
     assertTrue(tokenCreated(tempUser));
   }

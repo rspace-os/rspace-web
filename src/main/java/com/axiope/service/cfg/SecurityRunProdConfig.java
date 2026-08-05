@@ -3,10 +3,15 @@ package com.axiope.service.cfg;
 import static org.apache.commons.lang3.ArrayUtils.contains;
 
 import com.researchspace.auth.FirstSuccessOrExceptionAuthStrategy;
+import com.researchspace.auth.JCacheShiroCacheManager;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import javax.cache.Caching;
+import javax.cache.spi.CachingProvider;
 import org.apache.shiro.authc.pam.ModularRealmAuthenticator;
-import org.apache.shiro.cache.ehcache.EhCacheManager;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
@@ -37,6 +42,11 @@ public class SecurityRunProdConfig extends SecurityBaseConfig {
     }
     realms.add(apiRealm());
     realms.add(slackRealm());
+    // Startup/content initialisers log in with GlobalInitSysadminAuthenticationToken, and that
+    // login can now happen while this security manager is active (not only against the private
+    // one GlobalInitManagerImpl builds). The token is only constructible in-process, so this
+    // realm adds no remotely reachable authentication path.
+    realms.add(globalInitSysadminRealm());
 
     if (deploymentPropertyConfig.isCloud()) {
       realms.add(externalOAuthRealm());
@@ -49,24 +59,30 @@ public class SecurityRunProdConfig extends SecurityBaseConfig {
     ModularRealmAuthenticator authenticator = (ModularRealmAuthenticator) rc.getAuthenticator();
     authenticator.setAuthenticationStrategy(new FirstSuccessOrExceptionAuthStrategy());
 
-    /* configuring ehcache in java config is still problematic in test
-     * environment, loading from XML config for now */
-    // security-realm-config test since upgrading to Spring 5 has issues loading multiple instances
-    // of the cache
-    // since the cache is not needed in test environment( but in tests, we want to test this
-    // production configuration)
-    // we have this conditional
+    // The security-realm-config tests load this production configuration; avoid extra cache
+    // manager wiring during those tests.
     if (!contains(context.getEnvironment().getActiveProfiles(), "securitytest")) {
-      rc.setCacheManager(shiroEhCacheMgr());
+      rc.setCacheManager(shiroCacheManager());
     }
 
     return rc;
   }
 
   @Bean(name = "ehcacheManager")
-  public EhCacheManager shiroEhCacheMgr() {
-    EhCacheManager mgr = new EhCacheManager();
-    mgr.setCacheManagerConfigFile("classpath:ehcache-shiro.xml");
-    return mgr;
+  public JCacheShiroCacheManager shiroCacheManager() {
+    CachingProvider provider = Caching.getCachingProvider();
+    javax.cache.CacheManager jCacheManager =
+        provider.getCacheManager(
+            provider.getDefaultURI(), getClass().getClassLoader(), provider.getDefaultProperties());
+
+    Map<String, Duration> ttls = new HashMap<>();
+    ttls.put("com.researchspace.model.Role", null);
+    ttls.put("com.researchspace.model.Role.permissions", null);
+    ttls.put("com.researchspace.model.User", Duration.ofSeconds(3600));
+    ttls.put("com.researchspace.model.User.roles", Duration.ofSeconds(3600));
+    ttls.put("com.researchspace.model.UserApiKey", Duration.ofSeconds(3600));
+    ttls.put("API.authenticationCache", Duration.ofSeconds(3600));
+
+    return new JCacheShiroCacheManager(jCacheManager, ttls, Duration.ofSeconds(121));
   }
 }

@@ -32,16 +32,16 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.AbstractForm;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.FormType;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.validation.Valid;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -68,7 +68,7 @@ public class FormTemplatesCommon {
   }
 
   /** Common methods needed to create links */
-  public static interface ApiFormTemplateLinkSource extends IdentifiableObject {
+  public interface ApiFormTemplateLinkSource extends IdentifiableObject {
 
     Long getIconId();
 
@@ -103,9 +103,7 @@ public class FormTemplatesCommon {
     @Pattern(
         regexp =
             "(Text)|(String)|(Number)|(Radio)|(Choice)|(Date)|(Time)|(Reference)|(Uri)|(Attachment)",
-        message =
-            "Please supply a supported 'type' property: was '${validatedValue}' but must match"
-                + " {regexp} ")
+        message = "{form.validation.typeUnsupported}")
     @NotNull
     private String type;
 
@@ -141,7 +139,7 @@ public class FormTemplatesCommon {
 
     private boolean multipleChoice;
 
-    @Size(min = 1, message = "Please provide at least one option")
+    @Size(min = 1, message = "{form.validation.optionRequired}")
     private List<String> options = new ArrayList<>();
 
     private List<String> defaultOptions = new ArrayList<>();
@@ -176,7 +174,7 @@ public class FormTemplatesCommon {
       super(FieldType.RADIO_TYPE);
     }
 
-    @Size(min = 1, message = "Please provide at least one option")
+    @Size(min = 1, message = "{form.validation.optionRequired}")
     private List<String> options = new ArrayList<>();
 
     private boolean showAsPickList;
@@ -236,10 +234,7 @@ public class FormTemplatesCommon {
       super(FieldType.STRING_TYPE);
     }
 
-    @Size(
-        max = BaseRecord.DEFAULT_VARCHAR_LENGTH,
-        message =
-            "String fields must be less than " + BaseRecord.DEFAULT_VARCHAR_LENGTH + " characters")
+    @Size(max = BaseRecord.DEFAULT_VARCHAR_LENGTH, message = "{form.validation.stringTooLong}")
     private String defaultValue = "";
 
     @Override

@@ -1,13 +1,13 @@
 <div id='provenance'>
   <br>
-  <h4>Provenance Information</h4>
+  <h4>$msg.getMessage("export.pdf.provenance.title")</h4>
   <table id='provenance-table' class='docExtrasTable'>
     <thead>
     <tr>
-      <th>Version</th>
-      <th>Date</th>
-      <th>Name</th>
-      <th>Modification Type</th>
+      <th>$msg.getMessage("common:versionLockPicker.columns.version")</th>
+      <th>$msg.getMessage("export.pdf.provenance.headerDate")</th>
+      <th>$msg.getMessage("export.pdf.provenance.headerName")</th>
+      <th>$msg.getMessage("export.pdf.provenance.headerModificationType")</th>
     </tr>
     </thead>
     <tbody>

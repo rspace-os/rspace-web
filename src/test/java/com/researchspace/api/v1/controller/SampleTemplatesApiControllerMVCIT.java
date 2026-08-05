@@ -168,7 +168,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertEquals("Errors detected : 2", error.getMessage());
+    assertEquals("Errors detected: 2", error.getMessage());
     assertEquals(
         "subSampleAlias.alias: subSampleAlias.alias cannot be greater than 30 characters.",
         error.getErrors().get(0));
@@ -201,7 +201,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andExpect(status().is4xxClientError())
             .andReturn();
     error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertEquals("Errors detected : 2", error.getMessage());
+    assertEquals("Errors detected: 2", error.getMessage());
     assertEquals(
         "subSampleAlias.alias: subSampleAlias.alias cannot be less than 2 characters.",
         error.getErrors().get(0));
@@ -352,6 +352,27 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andReturn();
     int thumbnailSize = iconImageResp.getResponse().getContentAsByteArray().length;
     assertTrue(thumbnailSize == 1377 || thumbnailSize == 1410); // java 8 and 11 values
+  }
+
+  @Test
+  public void iconUploadByReaderButNotEditorIsRefused() throws Exception {
+    // A sysadmin can READ any record via the admin override but is not the owner and has no
+    // sharing-based edit right, so it is a reader that is not an editor. Changing a template's
+    // icon is a mutation and must require EDIT, not just READ (RSDEV-1219 Part J). Before the fix
+    // the icon endpoint asserted only READ, so any non-editor reader could overwrite the icon.
+    ApiSampleTemplate created = postValidSampleTemplate(createValidSampleTemplatePostNoFields());
+
+    String sysadminApiKey = createNewApiKeyForUser(getSysAdminUser());
+    MockMultipartFile iconFile =
+        new MockMultipartFile(
+            "file", "Picture1.png", "image/png", getTestResourceFileStream("Picture1.png"));
+
+    mockMvc
+        .perform(
+            multipart(createUrl(API_VERSION.ONE, "/sampleTemplates/" + created.getId() + "/icon"))
+                .file(iconFile)
+                .header("apiKey", sysadminApiKey))
+        .andExpect(status().is4xxClientError());
   }
 
   @Test

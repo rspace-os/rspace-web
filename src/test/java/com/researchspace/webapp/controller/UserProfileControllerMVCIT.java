@@ -15,8 +15,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -209,7 +209,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     // now, let's access another user's profile - their profile should load OK (RSPAC-208)
     mockMvc
         .perform(
-            get("/userform/")
+            get("/userform")
                 .param("userId", user.getId() + "")
                 .principal(new MockPrincipal(user2.getUniqueName())))
         .andExpect(status().isOk())
@@ -227,7 +227,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     long size = mf.getSize();
     mockMvc
         .perform(
-            fileUpload("/userform/profileImage/upload")
+            multipart("/userform/profileImage/upload")
                 .file(mf)
                 .principal(new MockPrincipal(user.getUsername())))
         .andExpect(status().isOk())
@@ -283,7 +283,8 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     String result2Response = result2.getResponse().getContentAsString();
     assertTrue(
         "unexpected: " + result2Response,
-        result2Response.contains(getMsgFromResourceBundler("errors.invalidpwd").substring(0, 10)));
+        result2Response.contains(
+            getMsgFromResourceBundler("errors.invalidPassword").substring(0, 10)));
 
     String newPassword3 = RandomStringUtils.randomAlphanumeric(10);
     MvcResult result3 =
@@ -421,7 +422,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     MvcResult result3 =
         mockMvc
             .perform(
-                get("/userform/")
+                get("/userform")
                     .param("userId", user.getId() + "")
                     .principal(new MockPrincipal(user.getUsername())))
             .andReturn();
@@ -458,7 +459,8 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
 
     assertThat(
         result.getResponse().getContentAsString(),
-        containsString(getMsgFromResourceBundler("userProfile.messageSettingsChanged.msg")));
+        containsString(
+            getMsgFromResourceBundler("userProfile.messageSettingsChanged.confirmation")));
 
     Set<UserPreference> prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
 
@@ -1055,7 +1057,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     ErrorList errorList = getErrorListFromAjaxReturnObject(result);
     assertNotNull(errorList);
     assertEquals(
-        "Self-declaring PI not enabled", errorList.getAllErrorMessagesAsStringsSeparatedBy(";"));
+        "Self-declaring PI not enabled.", errorList.getAllErrorMessagesAsStringsSeparatedBy(";"));
 
     // enable deployment property & try again
     propertyHolder.setSSOSelfDeclarePiEnabled(true);

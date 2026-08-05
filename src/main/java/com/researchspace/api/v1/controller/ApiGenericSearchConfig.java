@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,7 +18,7 @@ public class ApiGenericSearchConfig extends ApiSearchConfig {
 
   private static final int MAX_QUERY_LENGTH = 2000;
 
-  @Size(max = MAX_QUERY_LENGTH, message = "Max query length is " + MAX_QUERY_LENGTH + ".")
+  @Size(max = MAX_QUERY_LENGTH, message = "{validation.search.maxQueryLength}")
   private String query;
 
   @Override

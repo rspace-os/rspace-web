@@ -6,7 +6,7 @@ import com.researchspace.api.v1.model.ApiUserPost;
 import com.researchspace.model.User;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
@@ -37,7 +37,7 @@ public class UserApiController extends BaseApiController implements UserApi {
       throw new BindException(errors);
     }
     if (!sysadmin.hasSysadminRole()) {
-      throw new AuthorizationException("Creating user accounts requires a sysadmin role");
+      throw new AuthorizationException(getMessage("errors.authorization.userCreationSysadminOnly"));
     }
 
     // generate API key if requested, return this in the returned User representation.

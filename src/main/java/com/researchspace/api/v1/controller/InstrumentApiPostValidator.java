@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentEntityInfo;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -27,7 +28,11 @@ public class InstrumentApiPostValidator extends InstrumentApiValidator implement
       Object target, Errors errors) {
     ApiInstrumentEntityInfo apiInstrumentPost = (ApiInstrumentEntityInfo) target;
     ValidationUtils.rejectIfEmptyOrWhitespace(
-        errors, "name", "errors.required", new Object[] {"name"}, "name is required");
+        errors,
+        "name",
+        "errors.required",
+        new Object[] {new DefaultMessageSourceResolvable("label.nameLowercase")},
+        null);
     validateNameTooLong(apiInstrumentPost.getName(), errors);
     validateDescriptionTooLong(apiInstrumentPost.getDescription(), errors);
     validateTags(apiInstrumentPost.getTags(), errors);

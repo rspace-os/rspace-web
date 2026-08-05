@@ -15,9 +15,9 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.chemistry.StoichiometryException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
@@ -43,10 +43,13 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   // 401
   @ExceptionHandler({AuthorizationException.class, ApiAuthenticationException.class})
   public ResponseEntity<Object> handleAuth(final Exception ex, final WebRequest request) {
-    final String error = "Authorisation error";
+    final String error = messages.getMessage("errors.authorization.apiError");
+    final String message =
+        ex instanceof ApiAuthenticationException authException
+            ? messages.getMessage(authException.getMessageKey(), authException.getArgs())
+            : ex.getLocalizedMessage();
     final ApiError apiError =
-        new ApiError(
-            HttpStatus.UNAUTHORIZED, ApiErrorCodes.AUTH.getCode(), ex.getLocalizedMessage(), error);
+        new ApiError(HttpStatus.UNAUTHORIZED, ApiErrorCodes.AUTH.getCode(), message, error);
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
@@ -160,7 +163,8 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   @ExceptionHandler({ExportFailureException.class})
   public ResponseEntity<Object> handleUnsupported(
       final ExportFailureException ex, final WebRequest request) {
-    return handle500Error(ex, ApiErrorCodes.BATCH_LAUNCH, "Export batch job launch failure");
+    return handle500Error(
+        ex, ApiErrorCodes.BATCH_LAUNCH, messages.getMessage("export.errors.batchLaunchFailure"));
   }
 
   @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -181,20 +185,19 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleChemistryClientException(
       ChemistryClientException ex, WebRequest request) {
     HttpStatus status = ex.getStatus() != null ? ex.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-    ApiError apiError = new ApiError(status, 50001, ex.getMessage(), "");
+    String resolvedMessage = messages.getMessage(ex.getMessageKey(), ex.getArgs());
+    ApiError apiError = new ApiError(status, 50001, resolvedMessage, "");
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
   @Override
+  @ExceptionHandler(BindException.class)
   protected ResponseEntity<Object> handleBindException(
-      final BindException ex,
-      final HttpHeaders headers,
-      final HttpStatus status,
-      final WebRequest request) {
+      final BindException ex, final WebRequest request) {
 
     logException(ex);
     final ApiError apiError = getApiErrorFromBindException(ex);
-    return handleExceptionInternal(ex, apiError, headers, apiError.getStatus(), request);
+    return handleExceptionInternal(ex, apiError, new HttpHeaders(), apiError.getStatus(), request);
   }
 
   public ApiError getApiErrorFromBindException(final BindException ex) {
@@ -208,7 +211,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
 
     for (ObjectError error : ex.getBindingResult().getGlobalErrors()) {
       String resolvedMessage = messages.getMessage(error);
-      errors.add(error.getObjectName() + ": " + messages.getMessage(error));
+      errors.add(error.getObjectName() + ": " + resolvedMessage);
       bindErrors.add(new BindError(error, () -> resolvedMessage));
     }
     BindErrorList errorList = new BindErrorList(bindErrors);
@@ -217,7 +220,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
         new ApiError(
             HttpStatus.BAD_REQUEST,
             ApiErrorCodes.INVALID_FIELD.getCode(),
-            "Errors detected : " + ex.getErrorCount(),
+            messages.getMessage("api.errors.detected", new Object[] {ex.getErrorCount()}),
             errors,
             errorList);
     return apiError;

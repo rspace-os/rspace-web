@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.Assert.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.User;
@@ -33,7 +33,7 @@ public class ImportApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload(createUrl(API_VERSION.ONE, "/import/word"))
+                multipart(createUrl(API_VERSION.ONE, "/import/word"))
                     .file(mf)
                     .header("apiKey", apiKey))
             .andReturn();
@@ -44,7 +44,7 @@ public class ImportApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result2 =
         mockMvc
             .perform(
-                fileUpload(createUrl(API_VERSION.ONE, "/import/word"))
+                multipart(createUrl(API_VERSION.ONE, "/import/word"))
                     .file(mf)
                     .param("folderId", rspaceDocTarget.getId() + "")
                     .param("imageFolderId", imgTarget.getId() + "")
@@ -61,7 +61,7 @@ public class ImportApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result3 =
         mockMvc
             .perform(
-                fileUpload(createUrl(API_VERSION.ONE, "/import/word"))
+                multipart(createUrl(API_VERSION.ONE, "/import/word"))
                     .file(mf)
                     .param("folderId", rspaceDocTarget.getId() + "")
                     .header("apiKey", apiKey))
@@ -86,7 +86,7 @@ public class ImportApiControllerMVCIT extends API_MVC_TestBase {
     MvcResult result =
         mockMvc
             .perform(
-                fileUpload(createUrl(API_VERSION.ONE, "/import/evernote"))
+                multipart(createUrl(API_VERSION.ONE, "/import/evernote"))
                     .file(mf)
                     .param("imageFolderId", imgTarget.getId() + "")
                     .header("apiKey", apiKey))

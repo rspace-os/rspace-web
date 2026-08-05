@@ -38,7 +38,7 @@ public abstract class ContainerApiValidator extends InventoryRecordValidator imp
       Integer rowsNumber = gridLayout.getRowsNumber();
       Integer columnsNumber = gridLayout.getColumnsNumber();
       if (rowsNumber == null || columnsNumber == null) {
-        errors.rejectValue("gridLayout", "errors.inventory.container.gridLayout.missingOptions");
+        errors.rejectValue("gridLayout", "errors.inventory.container.gridLayoutMissingOptions");
         return;
       }
       if (columnsNumber < 0
@@ -47,9 +47,9 @@ public abstract class ContainerApiValidator extends InventoryRecordValidator imp
           || rowsNumber > GRID_MAX_DIMENSION) {
         errors.rejectValue(
             "gridLayout",
-            "errors.inventory.container.gridLayout.invalidSize",
+            "errors.inventory.container.gridLayoutInvalidSize",
             new Object[] {columnsNumber, rowsNumber},
-            "wrongSize");
+            null);
       }
       // check incoming locations match grid layout config
       List<ApiContainerLocationWithContent> incomingLocations = incomingContainer.getLocations();
@@ -62,7 +62,7 @@ public abstract class ContainerApiValidator extends InventoryRecordValidator imp
                 "locations",
                 "errors.inventory.location.outsideGridDimensions",
                 new Object[] {coordX, coordY, columnsNumber, rowsNumber},
-                "outsideGrid");
+                null);
           }
         }
       }

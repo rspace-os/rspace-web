@@ -1,7 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@/__tests__/customQueries";
+
 import materialTheme from "../../../../../theme";
 
 vi.mock("../../Link/LinkTargetBrowser", () => ({
@@ -556,9 +557,16 @@ describe("UpdateField — version pin is edited in the editor and committed on U
   });
 
   it("greys the clock for targets that cannot be version-pinned", () => {
-    renderExistingLinkField("GL5");
+    // NB is the remaining unversionable target kind: GL became pinnable in RSDEV-1188
+    renderExistingLinkField("NB5");
 
     expect(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" })).toBeDisabled();
+  });
+
+  it("enables the clock for a gallery (GL) target", () => {
+    renderExistingLinkField("GL5");
+
+    expect(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" })).toBeEnabled();
   });
 
   it("greys the clock while editing a no-access committed target", () => {

@@ -231,7 +231,7 @@ public class RecordEditorTracker {
     synchronized (viewlock) {
       Set<String> viewers = recordViewing.get(r.getId());
       viewers.remove(username);
-      if (viewers.size() == 0) {
+      if (viewers.isEmpty()) {
         recordViewing.remove(r.getId());
       }
     }

@@ -21,7 +21,7 @@
 
 <div class="buttonsBelowTopBar">
     <a href="#" class="topSectionTextIconBtn" id="whitelistLink" style="padding-left:46px;background-image:url('/images/icons/whitelistIcon.png');"><spring:message code="system.config.button.whitelist" /></a>
-    <a href="#" class="topSectionTextIconBtn" id="netFileSystemLink" style="padding-left:47px; background-image:url('/images/icons/fileSystemIcon.png');"><spring:message code="system.config.button.netfilesystem" /></a>
+    <a href="#" class="topSectionTextIconBtn" id="netFileSystemLink" style="padding-left:47px; background-image:url('/images/icons/fileSystemIcon.png');"><spring:message code="system.config.button.netFileSystem" /></a>
     <rst:hasDeploymentProperty name="rorEnabled" value="true">
     <a href="#" class="topSectionTextIconBtn" id="rorRegistryLink" style="padding-left:47px;background-size: 25%;background-position: 5px 5px; background-image:url('/images/icons/ROR_logo.svg');"><spring:message code="system.config.button.ror" /></a>
     </rst:hasDeploymentProperty>

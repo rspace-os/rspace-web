@@ -33,8 +33,8 @@
     const documentName = "${documentName}"
   </script>
 
-  <title>Published Documents</title>
-  <meta name="heading" content="<fmt:message key='groups.shared.title'/>"/>
+  <title><spring:message code="groups.sharing.publishedDocumentsTitle"/></title>
+  <meta name="heading" content="<spring:message code='groups.shared.title'/>"/>
   <meta name="robots" content="noarchive, nosnippet"/>
   <meta name="menu" content="MainMenu"/>
   <link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" />
@@ -48,10 +48,10 @@
   <jsp:include page="/common/externalPagesNavbar.jsp" />
 
   <div class="tabularViewTop">
-    <h2 class="title">RSpace Users' Published Documents</h2>
-    
+    <h2 class="title"><spring:message code="groups.sharing.rspaceUsersPublishedDocuments"/></h2>
+
     <div class="base-search"
-        data-placeholder="By document or user"
+        data-placeholder="<spring:message code='groups.sharing.searchPlaceholder'/>"
         data-onsubmit="handleSearchShared"
         data-variant="outlined"
         data-elid="searchSharedListInput">
@@ -61,12 +61,12 @@
   <c:set var="isLoggedAsNonAnonymousUser" value="${sessionScope.userInfo.username != null}"/>
   <c:if test="${isLoggedAsNonAnonymousUser}">
         <p><img src="/images/notice.png" style="height: 14px; vertical-align: text-top;"/>
-            <a href="/record/share/published/manage" target="_blank" style="font-size:12px;cursor: pointer;">View your own published documents</a></p>
+            <a href="/record/share/published/manage" target="_blank" style="font-size:12px;cursor: pointer;"><spring:message code="groups.sharing.viewOwnPublishedDocuments"/></a></p>
   </c:if>
 
   <div id="searchModePanel" style="display: none;">
     <c:if test="${empty sharedRecords}">
-        <p style="padding: 10px;">You have no published documents to manage.</p>
+        <p style="padding: 10px;"><spring:message code="groups.sharing.noPublishedDocuments"/></p>
     </c:if>
   </div>
 

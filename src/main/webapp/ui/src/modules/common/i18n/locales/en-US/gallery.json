@@ -90,6 +90,46 @@
     "renamePrompt": "Please give a new name for {name}.",
     "saveAsNewImage": "Save as new image",
     "uploadNewVersion": "Upload New Version",
+    "validation": {
+      "cannotDownloadFolders": "Cannot download folders.",
+      "cannotDownloadSnippets": "Cannot download snippets.",
+      "cannotEdit": "Cannot edit this item.",
+      "cannotLogOut": "Cannot log out of this item.",
+      "currentFolderUnknown": "Current folder is not known.",
+      "deleteLimit": "Cannot delete more than 50 items at once.",
+      "duplicateLimit": "Cannot duplicate more than 50 items at once.",
+      "exportLimit": "Cannot export more than 100 items at once.",
+      "loadingUser": "Loading user information...",
+      "missingGlobalId": "Cannot share snippets that are missing global IDs.",
+      "moveLimit": "Cannot move more than 50 items at once.",
+      "noFilesSelected": "No files selected.",
+      "nothingSelected": "Nothing selected.",
+      "onlyOneLogout": "Only one item may be logged out of at once.",
+      "onlyOneNewVersion": "Only one item may be updated with a new version at once.",
+      "onlyOneRename": "Only one item may be renamed at once.",
+      "onlyOwnerCanShare": "Only owners of the snippet can change its share settings.",
+      "onlySnippetsShareable": "Only snippets can be shared.",
+      "selectSnippet": "At least one snippet must be selected.",
+      "tooManyItems": "Too many items selected.",
+      "userLoadFailed": "Unable to load user information. Sharing is temporarily unavailable."
+    },
+    "versionHistory": {
+      "columns": {
+        "by": "Modified By",
+        "modified": "Modification Date",
+        "name": "Name",
+        "size": "Size",
+        "version": "Version"
+      },
+      "loadFailed": "Could not load version history.",
+      "menuItem": "View Version History",
+      "none": "No version history is available for this item yet.",
+      "tableLabel": "Version history",
+      "title": "Version history: {name}",
+      "versionCurrent": "v{version} (current)",
+      "versionShort": "v{version}",
+      "versionViewing": "v{version} (viewing)"
+    },
     "view": "View"
   },
   "addFilestoreDialog": {
@@ -183,6 +223,7 @@
       "unknown": "Unknown"
     }
   },
+  "insertFileFailed": "Could not insert file \"{fileName}\"",
   "irods": {
     "errors": {
       "authenticationFailed": "Authentication failed",
@@ -244,6 +285,7 @@
     "gridView": "Grid",
     "gridViewDesc": "Browse by thumbnail previews.",
     "gridViewLabel": "grid view of files",
+    "historicalVersionLabel": "version {version}, an old version",
     "infoPanelLabel": "info panel",
     "linkCopied": "Link copied to clipboard successfully.",
     "linkCopyFailed": "Failed to copy link to clipboard. Please try again.",
@@ -283,7 +325,6 @@
   },
   "moveToIrods": {
     "description": "You have selected {count} {count, plural, one {item} other {items}} to move to the iRODS server",
-    "descriptionSuffix": ". By default, the items will be added to iRODS and removed from RSpace. You will be able to link to the iRODS items inside of RSpace documents and include them into any exports through our iRODS integration.",
     "destination": {
       "explanation": "The available folders are configured in the Gallery's filestore section.",
       "label": "Destination in iRODS",
@@ -351,6 +392,13 @@
   },
   "pageTitle": "RSpace Gallery",
   "pageTitleWithContext": "{pageContext} | RSpace Gallery",
+  "pinnedVersion": {
+    "invalid": "\"{version}\" is not a valid version number.",
+    "notFound": "This item has no version {version}.",
+    "notice": "Displaying version {version} of this item - this is locked for editing.",
+    "referencesAreItemLevel": "The linked documents and related inventory items below reference this item as a whole, not the version shown. RSpace does not record which version each reference was made against.",
+    "viewLatest": "View the latest version"
+  },
   "referencingInventoryItems": {
     "loadFailed": "Error loading related inventory items."
   },
@@ -424,5 +472,6 @@
     "shiftSelectionUnsupportedMessage": "Either use command/ctrl to select each in turn, or use grid view.",
     "shiftSelectionUnsupportedTitle": "Shift selection is not supported in tree view."
   },
+  "unknownError": "",
   "unknownOwner": "Unknown owner"
 }

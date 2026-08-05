@@ -98,6 +98,11 @@ services:
       # entrypoint passes the chemistry.* properties to the app.
       RSPACE_CHEMISTRY: ${RSPACE_CHEMISTRY:-false}
       CHEMISTRY_SERVICE_URL: http://chemistry:8090
+      # Optional E2E integration mocks. The mock server runs in the frontend's
+      # network namespace, which this container shares, so localhost reaches it
+      # from both the Java backend and the host Playwright process.
+      RSPACE_E2E_MOCKS: ${RSPACE_E2E_MOCKS:-false}
+      E2E_MOCK_PORT: ${E2E_MOCK_PORT:-9099}
     volumes:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
       - m2-repo:/root/.m2
@@ -147,6 +152,9 @@ services:
       VITE_HMR_HOST: ${VITE_HMR_HOST:-localhost}
       VITE_HMR_CLIENT_PORT: ${VITE_PORT:-5173}
       VITE_USE_POLLING: ${VITE_USE_POLLING:-true}
+      RSPACE_E2E_MOCKS: ${RSPACE_E2E_MOCKS:-false}
+      E2E_MOCK_PORT: ${E2E_MOCK_PORT:-9099}
+      E2E_MOCK_HOST: 0.0.0.0
       # Shared, content-addressed pnpm store (mounted volume) to avoid
       # re-downloading packages across worktrees.
       npm_config_store_dir: /pnpm-store
@@ -160,6 +168,7 @@ services:
       - "127.0.0.1:${APP_PORT:-8080}:8080"
       - "127.0.0.1:${VITE_PORT:-5173}:5173"
       - "127.0.0.1:${DEBUG_PORT:-5005}:5005"
+      - "127.0.0.1:${E2E_MOCK_PORT:-9099}:${E2E_MOCK_PORT:-9099}"
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------

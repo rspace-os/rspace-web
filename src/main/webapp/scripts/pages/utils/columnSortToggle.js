@@ -32,7 +32,7 @@ RS.toggle = function toggle(settings) {
 			RS.webResultCache.put(url, data, 30 * 1000);
 		});
 		jxqr.fail(function() {
-			RS.ajaxFailed("Getting user  information", false, jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.columnSort.actionGettingUserInformation"), false, jxqr);
 		});
 	}
 };

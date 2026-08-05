@@ -21,6 +21,7 @@ import com.researchspace.service.AppNotAuthorisedException;
 import com.researchspace.service.IAsyncArchiveDepositor;
 import com.researchspace.service.IRepositoryConfigFactory;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.RepositoryFactory;
 import com.researchspace.service.UserAppConfigManager;
@@ -49,6 +50,7 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
 
   @Autowired private IPropertyHolder propertyHolder;
   @Autowired private DigitalCommonsDataController digitalCommonsDataController;
+  @Autowired private MessageSourceUtils messages;
 
   private @Autowired UserManager userManager;
   private @Autowired RepositoryFactory repoFactory;
@@ -129,14 +131,20 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
       uiConnectionConfig = new FigshareUIConnectionConfig(userConnectionManager, subject);
     } else if (app.getName().equalsIgnoreCase(App.APP_DRYAD)) {
       uiConnectionConfig =
-          new DryadUIConnectionConfig(userConnectionManager, subject, this.propertyHolder);
+          new DryadUIConnectionConfig(
+              userConnectionManager, subject, this.propertyHolder, messages);
     } else if (app.getName().equalsIgnoreCase(App.APP_ZENODO)) {
       uiConnectionConfig =
-          new ZenodoUIConnectionConfig(userConnectionManager, subject, this.propertyHolder);
+          new ZenodoUIConnectionConfig(
+              userConnectionManager, subject, this.propertyHolder, messages);
     } else if (app.getName().equalsIgnoreCase(App.APP_DIGITAL_COMMONS_DATA)) {
       uiConnectionConfig =
           new DigitalCommonsDataUIConnectionConfig(
-              digitalCommonsDataController, userConnectionManager, subject, this.propertyHolder);
+              digitalCommonsDataController,
+              userConnectionManager,
+              subject,
+              this.propertyHolder,
+              messages);
     } else {
       throw new IllegalArgumentException("Unknown or unconfigured repository: " + app.getName());
     }
@@ -214,7 +222,7 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
             getAppNameFromIntegrationName(IntegrationsHandler.DRYAD_APP_NAME), user);
     checkConnectionState(appCfg.getApp(), userManager.getAuthenticatedUserInSession());
     DryadUIConnectionConfig cfg =
-        new DryadUIConnectionConfig(userConnectionManager, user, propertyHolder);
+        new DryadUIConnectionConfig(userConnectionManager, user, propertyHolder, messages);
     RepositoryConfig repoConnectionInfo =
         repoCfgFactory.createRepositoryConfigFromAppCfg(cfg, user);
     return getRepositoryConfiguration(appCfg.getApp(), repoConnectionInfo);
@@ -227,7 +235,7 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
             getAppNameFromIntegrationName(IntegrationsHandler.ZENODO_APP_NAME), user);
     checkConnectionState(appCfg.getApp(), userManager.getAuthenticatedUserInSession());
     ZenodoUIConnectionConfig cfg =
-        new ZenodoUIConnectionConfig(userConnectionManager, user, propertyHolder);
+        new ZenodoUIConnectionConfig(userConnectionManager, user, propertyHolder, messages);
     RepositoryConfig repoConnectionInfo =
         repoCfgFactory.createRepositoryConfigFromAppCfg(cfg, user);
     return getRepositoryConfiguration(appCfg.getApp(), repoConnectionInfo);
@@ -242,7 +250,7 @@ public class RepositoryDepositHandlerImpl implements RepositoryDepositHandler {
     checkConnectionState(appCfg.getApp(), userManager.getAuthenticatedUserInSession());
     DigitalCommonsDataUIConnectionConfig cfg =
         new DigitalCommonsDataUIConnectionConfig(
-            digitalCommonsDataController, userConnectionManager, user, propertyHolder);
+            digitalCommonsDataController, userConnectionManager, user, propertyHolder, messages);
     RepositoryConfig repoConnectionInfo =
         repoCfgFactory.createRepositoryConfigFromAppCfg(cfg, user);
     return getRepositoryConfiguration(appCfg.getApp(), repoConnectionInfo);

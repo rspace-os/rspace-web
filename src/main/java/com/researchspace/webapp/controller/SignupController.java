@@ -19,8 +19,8 @@ import com.researchspace.service.UserExistsException;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.RemoteUserAttribute;
 import com.researchspace.webapp.filter.SSOShiroFormAuthFilterExt;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
-import javax.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
@@ -259,22 +259,16 @@ public class SignupController extends BaseController {
       // if that's username problem we may give user better message
       if (e.isExistingUsername()) {
         errors.rejectValue(
-            "username",
-            "errors.existing.username",
-            new Object[] {user.getUsername()},
-            "duplicate username");
+            "username", "errors.existing.username", new Object[] {user.getUsername()}, null);
       } else if (e.isExistingUsernameAlias()) {
         errors.rejectValue(
-            "username",
-            "errors.existing.usernameAlias",
-            new Object[] {user.getUsername()},
-            "duplicate username alias");
+            "username", "errors.existing.usernameAlias", new Object[] {user.getUsername()}, null);
       } else {
         errors.rejectValue(
             "username",
             "errors.existing.user",
             new Object[] {user.getUsername(), user.getEmail()},
-            "duplicate user");
+            null);
       }
       return returnToSignupPage(user);
     }

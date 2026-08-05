@@ -1,6 +1,5 @@
-import { screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
-import { render } from "@/__tests__/customQueries";
 
 /*
  * The real Scalar component boots an embedded Vue app that depends on browser

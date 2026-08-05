@@ -6,8 +6,8 @@ import com.researchspace.model.dtos.chemistry.ChemicalImportSearchResult;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequest;
 import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalSearcher;
+import jakarta.validation.Valid;
 import java.util.List;
-import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -48,7 +48,7 @@ public class PubchemSearchApiController extends BaseApiController implements Pub
     } catch (Exception e) {
       log.error("Unexpected error during chemical import", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body("An unexpected error occurred.");
+          .body(messages.getMessage("api.pubchem.errors.unexpected"));
     }
   }
 }

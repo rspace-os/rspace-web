@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.controller;
 
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,10 +18,7 @@ public class ApiFormSearchConfig extends ApiSearchConfig {
 
   public static final int MAX_QUERY_LENGTH = 2000;
 
-  @Size(
-      min = 2,
-      max = MAX_QUERY_LENGTH,
-      message = "Min query length is 2, max query length is " + MAX_QUERY_LENGTH + ".")
+  @Size(min = 2, max = MAX_QUERY_LENGTH, message = "{validation.search.queryLengthRange}")
   // at least 2 continuous letter characters
   @Pattern(regexp = ".*\\w{2}.*")
   private String query;

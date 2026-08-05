@@ -53,9 +53,9 @@ import { GLOBAL_ID_PATTERN, INVENTORY_PREFIX_TO_API_PATH } from "@/Inventory/com
 function referencingItemsEndpoint(globalId: string): string | null {
   const match = GLOBAL_ID_PATTERN.exec(globalId);
   if (!match) return null;
-  // sample templates have no typed referencingItems endpoint; use the
-  // generic by-Global-ID route instead
-  if (match[1] === "IT") return `referencingItems/${globalId}`;
+  // sample and instrument templates have no typed referencingItems endpoint;
+  // use the generic by-Global-ID route instead
+  if (match[1] === "IT" || match[1] === "NT") return `referencingItems/${globalId}`;
   const segment = INVENTORY_PREFIX_TO_API_PATH[match[1]];
   if (segment) return `${segment}/${match[2]}/referencingItems`;
   return null;

@@ -21,7 +21,7 @@ class InventoryLinkValidatorTest {
 
     assertTrue(errors.hasFieldErrors("targetGlobalId"));
     assertEquals(
-        "errors.inventory.field.link.targetNotFound",
+        "errors.inventory.field.linkTargetNotFound",
         errors.getFieldError("targetGlobalId").getCode());
   }
 
@@ -33,7 +33,7 @@ class InventoryLinkValidatorTest {
 
     assertTrue(errors.hasFieldErrors("relationType"));
     assertEquals(
-        "errors.inventory.field.link.relationTypeInvalid",
+        "errors.inventory.field.linkRelationTypeInvalid",
         errors.getFieldError("relationType").getCode());
   }
 
@@ -45,7 +45,7 @@ class InventoryLinkValidatorTest {
 
     assertTrue(errors.hasFieldErrors("targetGlobalId"));
     assertEquals(
-        "errors.inventory.field.link.targetKindUnsupported",
+        "errors.inventory.field.linkTargetKindUnsupported",
         errors.getFieldError("targetGlobalId").getCode());
   }
 
@@ -108,6 +108,36 @@ class InventoryLinkValidatorTest {
     validator.validate(link, "SA42", errors);
 
     assertFalse(errors.hasErrors(), "expected IT (sample template) prefix to be accepted");
+  }
+
+  @Test
+  void acceptsInstrumentTarget() {
+    ApiInventoryLink link = buildLink("References", "IN7");
+    Errors errors = errorsFor(link);
+    validator.validate(link, "SA42", errors);
+
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  void acceptsInstrumentTemplateTarget() {
+    ApiInventoryLink link = buildLink("References", "NT7");
+    Errors errors = errorsFor(link);
+    validator.validate(link, "SA42", errors);
+
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  void rejectsInstrumentSelfLinkIgnoringVersionSuffix() {
+    ApiInventoryLink link = buildLink("References", "IN42v2");
+    Errors errors = errorsFor(link);
+    validator.validate(link, "IN42", errors);
+
+    assertTrue(errors.hasFieldErrors("targetGlobalId"));
+    assertEquals(
+        "errors.inventory.field.link.selfLinkForbidden",
+        errors.getFieldError("targetGlobalId").getCode());
   }
 
   @Test

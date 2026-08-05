@@ -75,7 +75,7 @@ export default class UiStore {
       infoVisible: observable,
       dialogVisiblePanel: observable,
       confirmPageNavigation: observable,
-      confirmationDialogProps: observable,
+      confirmationDialogProps: observable.ref,
       viewportSize: observable,
       dirty: observable,
       updateViewportSize: action,
@@ -225,7 +225,8 @@ export default class UiStore {
               resolve(true);
             });
             if (onConfirm) {
-              if (this.confirmationDialogProps) this.confirmationDialogProps.confirmationSpinner = true;
+              if (this.confirmationDialogProps)
+                this.confirmationDialogProps = { ...this.confirmationDialogProps, confirmationSpinner: true };
               void onConfirm().then(returnYes);
             } else {
               returnYes();

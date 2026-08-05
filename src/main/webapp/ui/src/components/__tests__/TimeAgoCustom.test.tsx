@@ -1,5 +1,6 @@
+import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { render, screen } from "@/__tests__/customQueries";
+
 import { isoToLocale } from "@/util/Util";
 import TimeAgoCustom from "../TimeAgoCustom";
 

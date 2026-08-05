@@ -1,6 +1,6 @@
 import "@/__tests__/__mocks__/muiTransitions";
 import { beforeEach, describe, expect, test } from "vitest";
-import { expectAccessible } from "@/__tests__/customQueries";
+import { expectAccessible } from "@/__tests__/accessibility";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
 import { render, screen, waitFor } from "@testing-library/react";

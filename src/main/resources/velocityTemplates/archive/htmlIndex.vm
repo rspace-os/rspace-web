@@ -8,7 +8,7 @@ manifest   - an optional ArchiveManifest object that can be passed in to the top
                 index.html
 *#
 <!DOCTYPE HTML>
-<html>
+<html lang="$msg.languageTag">
 <head>
 <title>$folderName </title>
 <link href="resources/index.css" rel="stylesheet" />
@@ -16,12 +16,12 @@ manifest   - an optional ArchiveManifest object that can be passed in to the top
 </head>
 <body>
 <div class="navigationSection">
-<a href="index.html">Top</a></div>
+<a href="index.html">$msg.getMessage("export.archive.top")</a></div>
 #if($manifest)
 	<div class="navigationSection">
-  <a href="./a-zIndex.html">Full A-Z index of all exported items </a></div>
+  <a href="./a-zIndex.html">$msg.getMessage("export.archive.htmlIndex.fullAzIndexLink") </a></div>
   <div id="headerSection">
-  <h2> Manifest </h2>
+  <h2> $msg.getMessage("export.archive.htmlIndex.manifest") </h2>
  <table>
  #foreach($item in $manifest.items)
      <tr>
@@ -32,23 +32,23 @@ manifest   - an optional ArchiveManifest object that can be passed in to the top
  </table>
  </div>
 #end ## end manifest conditional
-<h3>Listing of $folderName</h3>
+<h3>$msg.format("export.archive.htmlIndex.listingOf", [$folderName])</h3>
 #if($indexItems.isEmpty())
- <p> There are no items in this folder.
+ <p> $msg.getMessage("export.archive.htmlIndex.noItems")
 #end
 #foreach ($indexItem in $indexItems)
  #if ($indexItem.record)
-  #indexRow($indexItem.url, $indexItem.name,"./resources/document.png")
+<img src="./resources/document.png" width=32 height=32/><a href = "$indexItem.url">$indexItem.name</a><br/>
  #elseif ($indexItem.notebook)
- 	#indexRow($indexItem.url, $indexItem.name "./resources/notebook.png")
+<img src="./resources/notebook.png" width=32 height=32/><a href = "$indexItem.url">$indexItem.name</a><br/>
  #else
-  #indexRow($indexItem.url, $indexItem.name "./resources/folder.png")
+<img src="./resources/folder.png" width=32 height=32/><a href = "$indexItem.url">$indexItem.name</a><br/>
  #end
 #end ## end indexItem loop
 
 #if($includeLinkToNfsEports)
 <div id ="footer" style="margin-top:30px">
-<a href="nfs-Links.html"> Summary of links to external files </a>
+<a href="nfs-Links.html"> $msg.getMessage("export.archive.htmlIndex.nfsSummaryLink") </a>
 </div>
 #end
 </body>

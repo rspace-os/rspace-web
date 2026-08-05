@@ -28,6 +28,7 @@ const INVENTORY_PREFIX_TO_ROUTE: Record<string, string> = {
   SS: "subsample",
   IC: "container",
   IN: "instrument",
+  NT: "instrumenttemplate",
 };
 
 /**

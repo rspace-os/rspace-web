@@ -1,12 +1,12 @@
 package com.researchspace.api.v1.controller;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.HandlerInterceptor;
 
 /** Sets permissive CORS headers to allow cross-origin usage. */
-public class ApiPermissiveCorsInterceptor extends HandlerInterceptorAdapter {
+public class ApiPermissiveCorsInterceptor implements HandlerInterceptor {
 
   @Override
   public boolean preHandle(

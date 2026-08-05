@@ -31,15 +31,15 @@ import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.metadata.GeneratedSidecar;
 import com.researchspace.service.metadata.S3SidecarService;
 import com.researchspace.webapp.controller.DeploymentProperty;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import javax.ws.rs.NotFoundException;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -141,7 +141,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     assertFilestoresApiEnabled(user);
     if (StringUtils.isBlank(remotePath) && remoteId == null) {
-      throw new IllegalArgumentException("Neither 'remotePath' nor 'remoteId' param is provided");
+      throw new IllegalArgumentException(getMessage("netFileStores.errors.missingRemotePathOrId"));
     }
 
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
@@ -177,9 +177,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     boolean filestoreNameUnique = nfsManager.verifyFileStoreNameUniqueForUser(filestoreName, user);
     if (!filestoreNameUnique) {
       throw new IllegalArgumentException(
-          "User already has a filestore named '"
-              + filestoreName
-              + "' - filestore name must be unique");
+          getMessage("netFileStores.errors.filestoreNameNotUnique", new Object[] {filestoreName}));
     }
 
     NfsFileStore userStore =

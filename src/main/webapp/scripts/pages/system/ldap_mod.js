@@ -3,7 +3,7 @@ var sidRetrievalStopped = false;
 
 function displayLdapSettings() {
     $('#mainArea').empty();
-    $('#mainArea').text("loading LDAP settings...");
+    $('#mainArea').text(RS.msg("legacyjs.system.ldap.loadingSettings"));
 
     var jqxhr = $.get('/system/ldap/ajax/ldapSettingsView');
     
@@ -27,7 +27,7 @@ function displayLdapSettings() {
 function findUsersForSidRetrieval() {
     $('#sidRetrievalResults').empty();
     
-    $('#sidRetrievalResults').append("Finding users who authenticate through LDAP but don't have SID saved in RSpace yet... ");
+    $('#sidRetrievalResults').append(RS.msg("legacyjs.system.ldap.findingUsers"));
     var jqxhr = $.get('/system/ldap/ajax/ldapUsersWithoutSID');
     
     jqxhr.done(function(result) {
@@ -35,45 +35,45 @@ function findUsersForSidRetrieval() {
             usersWithoutSid = result.data;
             $('#runSidRetrieval').attr("disabled", true);
             if (usersWithoutSid.length == 0) {
-                $('#sidRetrievalResults').append('all users have non-empty SID assigned.');
+                $('#sidRetrievalResults').append(RS.msg("legacyjs.system.ldap.allUsersHaveSid"));
             } else {
                 $('#stopSidRetrieval').show();
-                $('#sidRetrievalResults').append('found ' + usersWithoutSid.length + ' user(s). <br/><br/> ');
+                $('#sidRetrievalResults').append(RS.msg("legacyjs.system.ldap.foundUsers", usersWithoutSid.length) + ' <br/><br/> ');
                 runSidRetrievalForNextUser();
             }
         }
     });
     jqxhr.fail(function () {
-        RS.ajaxFailed("Users query failed", false, jqxhr);
+        RS.ajaxFailed(RS.msg("legacyjs.system.ldap.usersQueryAction"), false, jqxhr);
    });
 }
 
 function runSidRetrievalForNextUser() {
     if (usersWithoutSid.length == 0) {
         $('#stopSidRetrieval').hide();
-        $('#sidRetrievalResults').append("SID retrieval complete. <br/>");
+        $('#sidRetrievalResults').append(RS.msg("legacyjs.system.ldap.sidRetrievalComplete") + " <br/>");
         return;
     }
     if (sidRetrievalStopped) {
-        $('#sidRetrievalResults').append("... SID retrieval stopped. <br/>");
+        $('#sidRetrievalResults').append("... " + RS.msg("legacyjs.system.ldap.sidRetrievalStopped") + " <br/>");
         return;
     }
     
     var nextUsername = usersWithoutSid.shift(); 
     var data = { username : nextUsername };
-    $('#sidRetrievalResults').append("Processing user '" + RS.escapeHtml(nextUsername) + "': ");
+    $('#sidRetrievalResults').append(RS.msg("legacyjs.system.ldap.processingUser", RS.escapeHtml(nextUsername)));
     
     var jqxhr = $.post('/system/ldap/retrieveSidForLdapUser', data);
     
     jqxhr.done(function(result) {
         if (result.data) {
-            $('#sidRetrievalResults').append("SID found and saved in RSpace (" + RS.escapeHtml(result.data) + "). <br/>");
+            $('#sidRetrievalResults').append(RS.msg("legacyjs.system.ldap.sidFoundAndSaved", RS.escapeHtml(result.data)) + " <br/>");
         } else {
-            $('#sidRetrievalResults').append("<strong>user not found in LDAP, or found but their SID in LDAP is empty.</strong><br/>");
+            $('#sidRetrievalResults').append("<strong>" + RS.msg("legacyjs.system.ldap.userNotFoundOrSidEmpty") + "</strong><br/>");
         }
     });
     jqxhr.fail(function () {
-        $('#sidRetrievalResults').append("<strong>SID retrieval request failed.</strong><br/>");
+        $('#sidRetrievalResults').append("<strong>" + RS.msg("legacyjs.system.ldap.sidRetrievalRequestFailed") + "</strong><br/>");
     });
     jqxhr.always(function () {
         runSidRetrievalForNextUser();

@@ -26,6 +26,7 @@ import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.DiskSpaceLimitException;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
@@ -36,13 +37,11 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.context.support.StaticMessageSource;
 
 public class NfsExportContextTest {
 
@@ -144,7 +143,7 @@ public class NfsExportContextTest {
     exportConfig.setExporter(new User("testUser"));
     nfsContext = new NfsExportContext(exportConfig);
     nfsContext.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
-    nfsContext.setMessages(messageSourceWithExportBundleKeys());
+    nfsContext.setMessages(new MessageSourceUtils(new JsonMessageSource()));
 
     // support object returning mock managers
     when(support.getNfsManager()).thenReturn(mockNfsManager);
@@ -152,27 +151,6 @@ public class NfsExportContextTest {
 
     diskSpaceChecker = new DiskSpaceCheckerImpl();
     when(support.getDiskSpaceChecker()).thenReturn(diskSpaceChecker);
-  }
-
-  private static MessageSourceUtils messageSourceWithExportBundleKeys() {
-    StaticMessageSource source = new StaticMessageSource();
-    Locale loc = Locale.getDefault();
-    source.addMessage(
-        "archive.export.nfs.user.not.logged.in", loc, "user not logged into ''{0}'' File System");
-    source.addMessage(
-        "archive.export.nfs.no.read.access", loc, "no read access to ''{0}'' File System");
-    source.addMessage("archive.export.nfs.file.skipped", loc, "file skipped ({0})");
-    source.addMessage("archive.export.nfs.download.error", loc, "download error: {0}");
-    source.addMessage(
-        "archive.export.nfs.file.too.large", loc, "file larger than provided size limit");
-    source.addMessage(
-        "archive.export.nfs.file.extension.excluded", loc, "file extension ''{0}'' excluded");
-    source.addMessage("archive.export.nfs.folder.empty", loc, "empty folder");
-    source.addMessage(
-        "archive.export.nfs.folder.skipped.as.subfolder", loc, "skipped as subfolder");
-    source.addMessage("archive.export.nfs.folder.included.label", loc, "Included");
-    source.addMessage("archive.export.nfs.folder.skipped.label", loc, "Skipped");
-    return new MessageSourceUtils(source);
   }
 
   @Test
@@ -243,7 +221,7 @@ public class NfsExportContextTest {
     // printout message
     String downloadSummaryMessage = nfsContext.getDownloadSummaryMsgForNfsFolder(archivalNfsFolder);
     assertEquals(
-        "Included: test.txt; Skipped: not_downloadable.txt (download error: test error), "
+        "Included: test.txt; Skipped: not_downloadable.txt (download error: test error) and "
             + "otherFolder (skipped as subfolder);",
         downloadSummaryMessage);
   }

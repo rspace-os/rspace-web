@@ -47,6 +47,12 @@ public class InstrumentTemplateDaoHibernateImpl
     List<String> userGroupsUniqueNames =
         user.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
     List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
+    // every user can also see templates owned by the default-templates owner (the seeded locked
+    // template). Guarded because, unlike samples, a default instrument template may not exist yet.
+    String defaultOwner = getDefaultTemplatesOwner();
+    if (defaultOwner != null) {
+      visibleOwners.add(defaultOwner);
+    }
     String permittedFragment =
         getOwnedByAndPermittedItemsSqlQueryFragment(
             ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
@@ -67,7 +73,7 @@ public class InstrumentTemplateDaoHibernateImpl
             .createQuery(
                 "select count(t) from InstrumentTemplate t where "
                     + connectSqlConditionsWithAnd(
-                        deletedFragment, " DTYPE='InstrumentTemplate' ", nameFragment)
+                        deletedFragment, " type(t) = InstrumentTemplate ", nameFragment)
                     + permittedFragment,
                 Long.class);
     Query<Long> countQueryWithParams =
@@ -85,9 +91,9 @@ public class InstrumentTemplateDaoHibernateImpl
         sessionFactory
             .getCurrentSession()
             .createQuery(
-                "from InstrumentTemplate where "
+                "from InstrumentTemplate t where "
                     + connectSqlConditionsWithAnd(
-                        deletedFragment, " DTYPE='InstrumentTemplate' ", nameFragment)
+                        deletedFragment, " type(t) = InstrumentTemplate ", nameFragment)
                     + permittedFragment
                     + orderByFragment,
                 InstrumentTemplate.class)
@@ -104,11 +110,33 @@ public class InstrumentTemplateDaoHibernateImpl
   }
 
   @Override
+  public String getDefaultTemplatesOwner() {
+    if (defaultTemplateOwner == null) {
+      // The default owner is bound to the actual seeded locked template rather than the "oldest
+      // row" heuristic used for samples: instrument templates are already live on customer
+      // instances, so the oldest row may belong to an ordinary user. `editable` is the JavaBeans
+      // property name for the `isEditable` column. uniqueResult() (not getSingleResult()) keeps
+      // this null-safe before the default template has been seeded.
+      defaultTemplateOwner =
+          sessionFactory
+              .getCurrentSession()
+              .createQuery(
+                  "select t.owner.username from InstrumentTemplate t"
+                      + " where t.editable = false order by t.id asc",
+                  String.class)
+              .setMaxResults(1)
+              .uniqueResult();
+    }
+    return defaultTemplateOwner;
+  }
+
+  @Override
   public List<InstrumentTemplate> findInstrumentTemplatesByName(String name, User user) {
     return sessionFactory
         .getCurrentSession()
         .createQuery(
-            "from InstrumentTemplate where name=:name and owner=:owner", InstrumentTemplate.class)
+            "from InstrumentTemplate where editInfo.name=:name and owner=:owner",
+            InstrumentTemplate.class)
         .setParameter("name", name)
         .setParameter("owner", user)
         .list();

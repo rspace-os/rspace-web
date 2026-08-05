@@ -28,10 +28,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component("ChemistryImageUpdateInitialisor")
 @NoArgsConstructor
 @Slf4j
+@Transactional
 public class ChemistryImageUpdateInitialisor implements IApplicationInitialisor {
 
   @Value("${chemistry.service.reGenerateOpenSourceImages}")

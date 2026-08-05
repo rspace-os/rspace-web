@@ -26,7 +26,7 @@ public interface FolderManager {
    * Calls to any method which could create an API_INBOX, should be inside a synchronized block
    * which locks on this object.
    */
-  static final Object API_INBOX_LOCK = new Object();
+  Object API_INBOX_LOCK = new Object();
 
   /**
    * @param folderid

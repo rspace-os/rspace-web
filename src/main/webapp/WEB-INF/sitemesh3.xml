@@ -6,7 +6,7 @@
       appended it), so query-string-based excludes (e.g. the old "/*ajax=true*") no longer apply
       and have been dropped; use a path-based exclude instead where needed.
       Also note the matched path is the ORIGINAL request path: for forwarded or error-dispatched
-      requests SiteMesh reads javax.servlet.forward.servlet_path (the pre-forward URL), NOT the
+      requests SiteMesh reads jakarta.servlet.forward.servlet_path (the pre-forward URL), NOT the
       forward/error target. So write excludes against the incoming URL (e.g. /gallery), not the
       JSP the request is ultimately forwarded to (e.g. /eln/gallery.jsp).
       Decorator names are resolved relative to SiteMesh's default decorator prefix

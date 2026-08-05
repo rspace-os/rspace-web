@@ -9,7 +9,7 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import java.util.List;
 import liquibase.database.Database;
-import org.hibernate.type.LongType;
+import org.hibernate.type.StandardBasicTypes;
 
 /**
  * With RSINV-30 we introduce workbench as a default location for subsamples.
@@ -79,11 +79,11 @@ public class CreateWorkbenchAndMoveSubSamples_1_70 extends AbstractCustomLiquiba
     List<Long> userIds =
         sessionFactory
             .getCurrentSession()
-            .createSQLQuery(
+            .createNativeQuery(
                 "select distinct s.owner_id as ownerId from SubSample ss join Sample s on"
                     + " ss.sample_id = s.id  where s.template = false and ss.parentLocation_id is"
                     + " null")
-            .addScalar("ownerId", LongType.INSTANCE)
+            .addScalar("ownerId", StandardBasicTypes.LONG)
             .list();
 
     List<User> users =

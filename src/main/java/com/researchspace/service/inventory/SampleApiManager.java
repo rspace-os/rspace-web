@@ -17,8 +17,8 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleTemplate;
+import jakarta.ws.rs.NotFoundException;
 import java.util.List;
-import javax.ws.rs.NotFoundException;
 
 /** Handles API actions around Inventory Sample. */
 public interface SampleApiManager extends InventoryApiManager<SampleEntity> {

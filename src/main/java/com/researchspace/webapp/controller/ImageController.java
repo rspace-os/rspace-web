@@ -27,6 +27,7 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.IconImageManager;
 import com.researchspace.service.MediaManager;
+import jakarta.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -41,7 +42,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -260,11 +260,11 @@ public class ImageController extends BaseController {
 
   private void validateComposedId(String idComposed) {
     if (StringUtils.isEmpty(idComposed)) {
-      throw new IllegalArgumentException(" no id to retrieve");
+      throw new IllegalArgumentException(getText("errors.composedId.missing"));
     }
     if (!idComposed.matches("\\d+\\-\\d+")) {
       throw new IllegalArgumentException(
-          "Incorrect id format - should be '\\d+\\-\\d+' but was '" + idComposed + "'");
+          getText("errors.composedId.invalidFormat", new Object[] {idComposed}));
     }
   }
 

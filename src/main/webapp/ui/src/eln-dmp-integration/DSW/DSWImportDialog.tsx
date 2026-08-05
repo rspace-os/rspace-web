@@ -5,7 +5,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
-import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type { GridRowId } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
@@ -15,7 +14,6 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
-import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dsw";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
@@ -25,6 +23,7 @@ import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { DataGridColumn } from "../../util/table";
+import DMPDialogThemeProvider from "../DMPDialogThemeProvider";
 
 function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
   return (
@@ -361,7 +360,7 @@ function DSWImportDialog({ open, setOpen, connection }: DSWImportDialogArgs): Re
    */
 
   return (
-    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+    <DMPDialogThemeProvider accentColor={ACCENT_COLOR}>
       <Portal>
         <DialogBoundary>
           <CustomDialog
@@ -377,7 +376,7 @@ function DSWImportDialog({ open, setOpen, connection }: DSWImportDialogArgs): Re
           </CustomDialog>
         </DialogBoundary>
       </Portal>
-    </ThemeProvider>
+    </DMPDialogThemeProvider>
   );
 }
 

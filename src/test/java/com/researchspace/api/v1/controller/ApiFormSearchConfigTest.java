@@ -1,9 +1,9 @@
 package com.researchspace.api.v1.controller;
 
-import com.researchspace.core.testutil.JavaxValidatorTest;
+import com.researchspace.core.testutil.JakartaValidatorTest;
 import org.junit.Test;
 
-public class ApiFormSearchConfigTest extends JavaxValidatorTest {
+public class ApiFormSearchConfigTest extends JakartaValidatorTest {
 
   @Test
   public void searchConfig() {

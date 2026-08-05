@@ -6,7 +6,6 @@ import static com.researchspace.service.impl.DocumentTagManagerImpl.RSPACTAGS_FO
 import static com.researchspace.service.impl.DocumentTagManagerImpl.allGroupsAllowBioOntologies;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.anyGroupEnforcesOntologies;
 import static com.researchspace.session.SessionAttributeUtils.BATCH_WORDIMPORT_PROGRESS;
-import static java.lang.String.format;
 import static org.apache.commons.io.FilenameUtils.getExtension;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -17,7 +16,6 @@ import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
 import com.researchspace.model.EditStatus;
-import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Signature;
 import com.researchspace.model.SignatureInfo;
@@ -65,6 +63,7 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.impl.RecordEditorTracker;
 import com.researchspace.session.UserSessionTracker;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -73,7 +72,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import javax.servlet.http.HttpSession;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -183,7 +181,7 @@ public class StructuredDocumentController extends BaseController {
 
     ErrorList el = new ErrorList();
     if (!isFileUploaded(mswordOrEvernoteFile)) {
-      el.addErrorMsg(getText("workspace.word.import.nofiles.error.msg"));
+      el.addErrorMsg(getText("workspace.word.import.noFilesError"));
       return new AjaxReturnObject<List<RecordInformation>>(null, el);
     }
 
@@ -200,7 +198,9 @@ public class StructuredDocumentController extends BaseController {
         if (!importer.isPresent()) {
           log.warn("No importer for file type '{}' ", getExtension(mf.getOriginalFilename()));
           String error =
-              String.format("No importer for file type %s", getExtension(mf.getOriginalFilename()));
+              getText(
+                  "workspace.word.import.noImporterForFileType",
+                  new Object[] {getExtension(mf.getOriginalFilename())});
           el.addErrorMsg(error);
           log.warn(error);
           continue;
@@ -224,22 +224,24 @@ public class StructuredDocumentController extends BaseController {
           publisher.publishEvent(createGenericEvent(user, createdOrUpdated, AuditAction.CREATE));
         } else {
           String error =
-              String.format("Could not create document from %s ", mf.getOriginalFilename());
+              getText(
+                  "workspace.word.import.createFailed", new Object[] {mf.getOriginalFilename()});
           el.addErrorMsg(error);
           log.error(error);
         }
       } catch (Exception e) {
         String error =
-            String.format(
-                "Could not create document from %s - %s", mf.getOriginalFilename(), e.getMessage());
+            getText(
+                "workspace.word.import.createFailedWithReason",
+                new Object[] {mf.getOriginalFilename(), e.getMessage()});
         el.addErrorMsg(error);
         log.error(error);
       }
       progress.worked(10);
       progress.setDescription(
-          String.format(
-              "Processed file '%s'. Import is  %d%% complete.",
-              mf.getOriginalFilename(), (int) progress.getPercentComplete()));
+          getText(
+              "workspace.word.import.progressDescription",
+              new Object[] {mf.getOriginalFilename(), (int) progress.getPercentComplete()}));
     }
     progress.done();
     return new AjaxReturnObject<List<RecordInformation>>(rc, el);
@@ -438,7 +440,8 @@ public class StructuredDocumentController extends BaseController {
     } catch (AuthorizationException ae) {
       return new AjaxReturnObject<String>(
           null,
-          getErrorListFromMessageCode("error.authorization.failure.polite", "rename this record."));
+          getErrorListFromMessageCode(
+              "errors.authorization.failure.polite", getText("label.renameRecordAction")));
     }
     if (recordRenamed) {
       // the audit event snapshots the audited object's current name, so it must carry the new one
@@ -446,7 +449,7 @@ public class StructuredDocumentController extends BaseController {
       auditService.notify(new RenameAuditEvent(subject, record, oldName, newname));
     } else {
       return new AjaxReturnObject<String>(
-          null, getErrorListFromMessageCode("rename.failed.msg", new Object[] {}));
+          null, getErrorListFromMessageCode("document.rename.errors.notEditable"));
     }
     return new AjaxReturnObject<String>("Success", null);
   }
@@ -458,9 +461,9 @@ public class StructuredDocumentController extends BaseController {
   public String validateNewRecordName(String newName) {
     String message = null;
     if (StringUtils.isBlank(newName)) {
-      message = getText("errors.required", "Name");
+      message = getText("errors.required", getText("label.name"));
     } else if (newName.contains("/")) {
-      message = getText("errors.invalidchars", new Object[] {"/", "name"});
+      message = getText("errors.invalidChars", new Object[] {"/", getText("label.nameLowercase")});
     }
     return message;
   }
@@ -482,14 +485,19 @@ public class StructuredDocumentController extends BaseController {
       Principal principal) {
 
     if (StringUtils.length(desc) > EditInfo.DESCRIPTION_LENGTH) {
-      throw new IllegalArgumentException("description too long, should be max 250 chars");
+      throw new IllegalArgumentException(
+          getText(
+              "errors.maxLength",
+              new Object[] {getText("label.description"), EditInfo.DESCRIPTION_LENGTH}));
     }
     User u = getUserByUsername(principal.getName());
     BaseRecord recordOrFolder = baseRecordManager.get(recordId, u);
 
     if (!permissionUtils.isPermitted(recordOrFolder, PermissionType.WRITE, u)) {
       throw new AuthorizationException(
-          getText("error.authorization.failure.polite", new String[] {"edit description"}));
+          getText(
+              "errors.authorization.failure.polite",
+              new String[] {getText("label.editDescriptionAction")}));
     }
     recordOrFolder.setDescription(desc);
     baseRecordManager.save(recordOrFolder, u);
@@ -575,7 +583,9 @@ public class StructuredDocumentController extends BaseController {
       model.addAttribute("settingsKey", settingsKey);
     }
     model.addAttribute("extMessaging", getExternalMessagingIntegrationInfos(user));
-    addGroupAttributes(model, user);
+    // structuredDocument.jsp gates the Share action on this being non-empty in non-cloud
+    // deployments, so the React share dialog is unreachable without it
+    model.addAttribute("groups", groupManager.listGroupsForUser());
     model.addAttribute(
         "clientUISettingsPref", getUserPreferenceValue(user, Preference.UI_CLIENT_SETTINGS));
     auditService.notify(new GenericEvent(user, structuredDocument, AuditAction.READ));
@@ -647,13 +657,6 @@ public class StructuredDocumentController extends BaseController {
     createBreadcrumb(model, document, rootRecord, parent);
   }
 
-  private void addGroupAttributes(Model model, User usr) {
-    Set<Group> groups = groupManager.listGroupsForUser();
-    model.addAttribute("groups", groups);
-    List<User> users = Group.getUniqueUsersInGroups(groups, User.LAST_NAME_COMPARATOR, usr);
-    model.addAttribute("uniqueUsers", users);
-  }
-
   private void prepareDocumentForView(Model model, StructuredDocument doc) {
     Record tempRecord = doc == null ? null : doc.getTempRecord();
     boolean hasAutosave = tempRecord != null;
@@ -705,8 +708,6 @@ public class StructuredDocumentController extends BaseController {
 
   private void disconnectField(Field field) {
     field.setStructuredDocument(null);
-    field.getFieldForm().setForm(null);
-    field.getFieldForm().setTempFieldForm(null); // RSPAC-1656
     if (field.getTempField() != null) {
       disconnectField(field.getTempField());
     }
@@ -761,9 +762,6 @@ public class StructuredDocumentController extends BaseController {
       for (Field field : fields) {
         field.setStructuredDocument(null);
         field.setTempField(null);
-        // setting field form to null doesn't work, it is ignored in setter.
-        field.getFieldForm().setForm(null);
-        field.getFieldForm().setTempFieldForm(null);
         result.add(field);
       }
     }
@@ -854,7 +852,7 @@ public class StructuredDocumentController extends BaseController {
             sd.getParent().getId(), sd.getForm().getId(), user);
     publisher.publishEvent(createGenericEvent(user, newInstanceRecord, AuditAction.CREATE));
     if (newInstanceRecord == null) {
-      ErrorList el = ErrorList.of("Could not create new document");
+      ErrorList el = ErrorList.of(getText("document.create.errors.failed"));
       return new AjaxReturnObject<String>(null, el);
     }
     String urlToReturn = getDocumentEditorUrlForRecord(newInstanceRecord);
@@ -948,7 +946,7 @@ public class StructuredDocumentController extends BaseController {
 
     // subject is not owner; only owner can delete from here.
     if (parent == null) {
-      throw new IllegalStateException(getText("document.deletebyuseronly.msg"));
+      throw new IllegalStateException(getText("document.delete.errors.ownerRequired"));
     }
     Long parentid = parent.getId();
 
@@ -972,13 +970,14 @@ public class StructuredDocumentController extends BaseController {
         return new AjaxReturnObject<String>(
             null,
             getErrorListFromMessageCode(
-                "error.authorization.failure.polite", new Object[] {" delete this document."}));
+                "errors.authorization.failure.polite",
+                new Object[] {getText("label.deleteDocumentAction")}));
       }
       String editor = tracker.getEditingUserForRecord(recordId);
       return new AjaxReturnObject<String>(
           null,
           getErrorListFromMessageCode(
-              "document.delete.failure.msg", new Object[] {recordId, editor}));
+              "document.delete.errors.editedByOtherUser", new Object[] {recordId, editor}));
     }
     String urlToReturn = "/workspace/" + parentid;
     return new AjaxReturnObject<String>(urlToReturn, null);
@@ -1060,10 +1059,10 @@ public class StructuredDocumentController extends BaseController {
 
   private ErrorList validateComment(String comment) {
     if (StringUtils.isEmpty(comment)) {
-      return getErrorListFromMessageCode("errors.emptyString.polite", "your comment");
+      return getErrorListFromMessageCode("errors.emptyString.polite", getText("label.yourComment"));
     } else if (!EcatComment.validateLength(comment)) {
       return getErrorListFromMessageCode(
-          "errors.maxlength", "Comment", EcatComment.MAX_COMMENT_LENGTH);
+          "errors.maxLength", getText("label.comment"), EcatComment.MAX_COMMENT_LENGTH);
     }
     return null;
   }
@@ -1136,8 +1135,7 @@ public class StructuredDocumentController extends BaseController {
     User user = getUserByUsername(principal.getName());
     Record record = assertAccessToRecord(recordId, PermissionType.READ, user);
     if (!record.isStructuredDocument()) {
-      throw new IllegalStateException(
-          "Viewing record's audit history only works with StructuredDocuments!");
+      throw new IllegalStateException(getText("document.audit.errors.notStructuredDocument"));
     }
 
     StructuredDocument currentDoc = (StructuredDocument) record;
@@ -1198,12 +1196,13 @@ public class StructuredDocumentController extends BaseController {
       @RequestParam("globalId") String oidString, Principal principal) {
 
     if (!GlobalIdentifier.isValid(oidString)) {
-      throw new IllegalArgumentException(format("Invalid syntax of oid [%s]", oidString));
+      throw new IllegalArgumentException(
+          getText("document.audit.errors.invalidGlobalId", new Object[] {oidString}));
     }
     GlobalIdentifier oid = new GlobalIdentifier(oidString);
     if (!oid.hasVersionId()) {
       throw new IllegalArgumentException(
-          format("Unexpected call to audit view without document version [%s]", oidString));
+          getText("document.audit.errors.missingVersion", new Object[] {oidString}));
     }
 
     User user = getUserByUsername(principal.getName());
@@ -1212,8 +1211,7 @@ public class StructuredDocumentController extends BaseController {
 
     Record record = assertAccessToRecord(recordId, PermissionType.READ, user);
     if (!record.isStructuredDocument()) {
-      throw new IllegalArgumentException(
-          "Viewing record's audit history only works with StructuredDocuments!");
+      throw new IllegalArgumentException(getText("document.audit.errors.notStructuredDocument"));
     }
 
     // Resolve the audit revision for the requested version. Envers retains the full version
@@ -1285,7 +1283,7 @@ public class StructuredDocumentController extends BaseController {
     if (!isBlank(tagFilter)) {
       Validate.isTrue(
           tagFilter.length() <= MAX_TAG_LENGTH,
-          getText("errors.maxlength", new String[] {"tagFilter", MAX_TAG_LENGTH + ""}));
+          getText("errors.maxLength", new Object[] {getText("label.tagFilter"), MAX_TAG_LENGTH}));
     }
     User user = userManager.getAuthenticatedUserInSession();
     return new AjaxReturnObject<>(
@@ -1301,7 +1299,7 @@ public class StructuredDocumentController extends BaseController {
     if (!isBlank(tagFilter)) {
       Validate.isTrue(
           tagFilter.length() <= MAX_TAG_LENGTH,
-          getText("errors.maxlength", new String[] {"tagFilter", MAX_TAG_LENGTH + ""}));
+          getText("errors.maxLength", new Object[] {getText("label.tagFilter"), MAX_TAG_LENGTH}));
     }
     User user =
         userManager.getUserByUsername(
@@ -1333,7 +1331,7 @@ public class StructuredDocumentController extends BaseController {
 
     User user = getUserByUsername(principal.getName());
     if (fieldCompositeIds.length < 1) {
-      return getText("template.creation.nofields.msg");
+      return getText("template.creation.errors.noFields");
     }
     List<Long> fieldIds = new ArrayList<Long>();
     for (int i = 0; i < fieldCompositeIds.length; i++) {
@@ -1344,11 +1342,11 @@ public class StructuredDocumentController extends BaseController {
     StructuredDocument template =
         recordManager.createTemplateFromDocument(recordId, fieldIds, user, templateName);
     if (template == null) {
-      return getText("template.creation.failure.msg");
+      return getText("template.creation.errors.failed");
     }
     publisher.publishEvent(createGenericEvent(user, template, AuditAction.CREATE));
 
-    return getText("template.creation.success.msg");
+    return getText("template.creation.success.confirmation");
   }
 
   @ResponseBody
@@ -1377,11 +1375,11 @@ public class StructuredDocumentController extends BaseController {
 
     String errorMsg = null;
     if (!record.getOwner().equals(signerOrOperateAsSysadmin)) {
-      errorMsg = "error.authorization.signing";
+      errorMsg = "errors.authorization.signing";
     } else if (!signingManager.isReauthenticated(signer, password)) {
       errorMsg = "errors.password.invalid";
     } else if (signingManager.isSigned(recordId)) {
-      errorMsg = "authorisation.document.signed";
+      errorMsg = "errors.authorization.document.signed";
     }
     if (errorMsg != null) {
       return new AjaxReturnObject<SignatureInfo>(null, getErrorListFromMessageCode(errorMsg));
@@ -1391,7 +1389,8 @@ public class StructuredDocumentController extends BaseController {
     SigningResult result = signingManager.signRecord(recordId, signer, witnesses, statement);
     Optional<Signature> sig = result.getSignature();
     if (!sig.isPresent()) {
-      return new AjaxReturnObject<SignatureInfo>(null, ErrorList.of("Signing failed"));
+      return new AjaxReturnObject<SignatureInfo>(
+          null, ErrorList.of(getText("errors.signing.failed")));
     }
     return new AjaxReturnObject<SignatureInfo>(sig.get().toSignatureInfo(), null);
   }

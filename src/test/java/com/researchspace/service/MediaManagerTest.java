@@ -195,6 +195,17 @@ public class MediaManagerTest extends SpringTransactionalTest {
     assertNotNull(image.getId());
     assertEquals(1, image.getVersion());
 
+    // Capture state before the update. In Hibernate 6 with persist()-based save(), the entity
+    // returned from saveNewImage is the same managed 1st-level-cache instance that
+    // updateMediaFile will later modify in-place, so comparing image.getXxx() after the update
+    // would see new values.
+    String imageNameBefore = image.getName();
+    java.util.Date imageModDateBefore = image.getEditInfo().getModificationDate();
+    Long imageSizeBefore = image.getSize();
+    String imageFileNameBefore = image.getFileName();
+    Long imageWorkingFPIdBefore = image.getWorkingImageFP().getId();
+    Long imageThumbnailFPIdBefore = image.getThumbnailImageFP().getId();
+
     EcatImage updatedImage = updateImageInGallery(image.getId(), user);
     assertNotNull(updatedImage.getId());
     assertEquals(2, updatedImage.getVersion());
@@ -202,15 +213,14 @@ public class MediaManagerTest extends SpringTransactionalTest {
     // check that media file details are updated
     assertEquals(image.getId(), updatedImage.getId());
     assertEquals(image.getCreationDate(), updatedImage.getCreationDate());
-    assertNotEquals(image.getName(), updatedImage.getName());
-    assertNotEquals(image.getModificationDate(), updatedImage.getModificationDate());
-    assertNotEquals(image.getSize(), updatedImage.getSize());
+    assertNotEquals(imageNameBefore, updatedImage.getName());
+    assertNotEquals(imageModDateBefore, updatedImage.getEditInfo().getModificationDate());
+    assertNotEquals(imageSizeBefore, (Object) updatedImage.getSize());
 
     // check that image details are updated
-    assertNotEquals(image.getFileName(), updatedImage.getFileName());
-    assertNotEquals(image.getWorkingImageFP().getId(), updatedImage.getWorkingImageFP().getId());
-    assertNotEquals(
-        image.getThumbnailImageFP().getId(), updatedImage.getThumbnailImageFP().getId());
+    assertNotEquals(imageFileNameBefore, updatedImage.getFileName());
+    assertNotEquals(imageWorkingFPIdBefore, updatedImage.getWorkingImageFP().getId());
+    assertNotEquals(imageThumbnailFPIdBefore, updatedImage.getThumbnailImageFP().getId());
   }
 
   @Test

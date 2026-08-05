@@ -3,12 +3,12 @@ package com.researchspace.model.repository;
 import com.researchspace.model.User;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IDepositor;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
-import javax.validation.constraints.Size;
-import org.hibernate.validator.constraints.Email;
-import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  * Adapter to adapt a {@link User} to the {@link IDepositor} interface required for archive
@@ -16,12 +16,12 @@ import org.hibernate.validator.constraints.NotEmpty;
  */
 public class UserDepositorAdapter implements IDepositor {
 
-  @NotEmpty(message = "Email {errors.required.field}")
-  @Email(message = "{errors.email.format}")
+  @NotEmpty(message = "{validation.errors.emailRequired}")
+  @Email(message = "{validation.errors.invalidEmail}")
   private String email;
 
-  @NotBlank(message = "Name {errors.required.field}")
-  @Size(max = 200, message = "Name {errors.string.range}")
+  @NotBlank(message = "{validation.errors.nameRequired}")
+  @Size(max = 200, message = "{validation.errors.nameRange}")
   private String uniqueName;
 
   private String institutionalAffiliation;

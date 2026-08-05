@@ -61,7 +61,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     result =
         this.mockMvc
             .perform(
-                createBuilderForPostWithJSONBody(apiKey, "/listOfMaterials/", anyUser, newListJson))
+                createBuilderForPostWithJSONBody(apiKey, "/listOfMaterials", anyUser, newListJson))
             .andExpect(status().isCreated())
             .andReturn();
     assertNull(result.getResolvedException());
@@ -217,7 +217,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
         this.mockMvc
             .perform(
                 createBuilderForPostWithJSONBody(
-                    apiKey, "/listOfMaterials/", anyUser, lomWithouNameJson))
+                    apiKey, "/listOfMaterials", anyUser, lomWithouNameJson))
             .andExpect(status().isBadRequest())
             .andReturn();
     assertNotNull(result.getResolvedException());
@@ -237,7 +237,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
         this.mockMvc
             .perform(
                 createBuilderForPostWithJSONBody(
-                    apiKey, "/listOfMaterials/", anyUser, lomWithTooLongNameJson))
+                    apiKey, "/listOfMaterials", anyUser, lomWithTooLongNameJson))
             .andExpect(status().isBadRequest())
             .andReturn();
     assertNotNull(result.getResolvedException());
@@ -260,7 +260,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
         this.mockMvc
             .perform(
                 createBuilderForPostWithJSONBody(
-                    apiKey, "/listOfMaterials/", anyUser, lomWithLongNameJson))
+                    apiKey, "/listOfMaterials", anyUser, lomWithLongNameJson))
             .andExpect(status().isCreated())
             .andReturn();
     ApiListOfMaterials savedList =

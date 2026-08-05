@@ -17,15 +17,17 @@ public class ChoiceFieldDTOValidator extends AbstractFieldFormValidator implemen
   @Override
   public void validate(Object target, Errors errors) {
     ChoiceFieldDTO<ChoiceFieldForm> dto = (ChoiceFieldDTO<ChoiceFieldForm>) target;
-    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fieldName", "no.name");
-    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "multipleChoice", "no.multiplechoice");
-    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "choiceValues", "no.multiplechoice");
+    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fieldName", "errors.noValue.name");
+    ValidationUtils.rejectIfEmptyOrWhitespace(
+        errors, "multipleChoice", "errors.noValue.multipleChoice");
+    ValidationUtils.rejectIfEmptyOrWhitespace(
+        errors, "choiceValues", "errors.noValue.multipleChoice");
     if (isNameTooLong(dto.getFieldName())) {
       rejectTooLong(errors);
     }
     String vals = dto.getChoiceValues();
     if (!FieldUtils.isValidRadioOrChoiceString(vals)) {
-      errors.rejectValue("choiceValues", "choiceoptions.invalidformat");
+      errors.rejectValue("choiceValues", "form.choiceOptions.invalidFormat");
     }
   }
 }

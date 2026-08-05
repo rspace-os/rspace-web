@@ -10,10 +10,10 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.inventory.ListOfMaterialsApiManager;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Optional;
-import javax.validation.Valid;
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,10 +87,20 @@ public class ListOfMaterialsApiController extends BaseApiInventoryController
       throws BindException {
 
     if (newLom.getElnFieldId() == null) {
-      errors.addError(new ObjectError("List of materials", "elnFieldId cannot be null"));
+      errors.addError(
+          new ObjectError(
+              getMessage("inventory.listOfMaterials.label", null),
+              new String[] {"errors.inventory.listOfMaterials.elnFieldIdRequired"},
+              null,
+              null));
     }
     if (StringUtils.isEmpty(newLom.getName())) {
-      errors.addError(new ObjectError("List of materials", "name cannot be empty"));
+      errors.addError(
+          new ObjectError(
+              getMessage("inventory.listOfMaterials.label", null),
+              new String[] {"errors.inventory.listOfMaterials.nameRequired"},
+              null,
+              null));
     }
     throwBindExceptionIfErrors(errors);
 

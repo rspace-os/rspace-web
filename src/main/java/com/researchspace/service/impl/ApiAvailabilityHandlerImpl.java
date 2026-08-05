@@ -9,7 +9,7 @@ import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
@@ -107,14 +107,13 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
       String integrationName = InventorySettingType.IGSN.equals(settingType) ? "IGSN" : "PIDINST";
       throw new UnsupportedOperationException(
           messages.getMessage(
-              "errors.inventory.identifier.integration.not.enabled",
-              new Object[] {integrationName}));
+              "errors.inventory.identifier.integrationNotEnabled", new Object[] {integrationName}));
     }
   }
 
   private void assertInventoryAvailable(User user) {
     if (!isInventoryAvailable(user)) {
-      throw new UnsupportedOperationException("Inventory is not enabled on this RSpace instance.");
+      throw new UnsupportedOperationException(messages.getMessage("errors.inventory.notEnabled"));
     }
   }
 

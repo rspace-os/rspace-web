@@ -23,6 +23,10 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RSChemElementManager;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.NotFoundException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,10 +34,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import javax.ws.rs.NotFoundException;
 import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -181,7 +181,9 @@ public class FilesApiController extends BaseApiController implements FilesApi {
   private void validateCaptionMaxLength(String caption) {
     Validate.isTrue(
         caption.length() <= EditInfo.DESCRIPTION_LENGTH,
-        getMessage("errors.maxlength", new Object[] {"caption", EditInfo.DESCRIPTION_LENGTH}));
+        getMessage(
+            "errors.maxLength",
+            new Object[] {getMessage("label.caption", null), EditInfo.DESCRIPTION_LENGTH}));
   }
 
   @Override

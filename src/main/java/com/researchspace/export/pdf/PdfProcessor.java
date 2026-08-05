@@ -12,7 +12,9 @@ import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExternalIdResolver;
+import com.researchspace.service.UserLocaleService;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -35,17 +37,23 @@ public class PdfProcessor extends AbstractExportProcessor implements ExportProce
   private final HTMLUnicodeFontProcesser htmlUnicodeFontProcesser;
   private final HtmlImageResolver imageResolver;
   private final PdfHtmlGenerator pdfHtmlGenerator;
+  private final MessageSourceUtils messages;
+  private final UserLocaleService userLocaleService;
 
   @Autowired
   public PdfProcessor(
       UserExternalIdResolver idResolver,
       HTMLUnicodeFontProcesser fontProcessor,
       HtmlImageResolver imageResolver,
-      PdfHtmlGenerator pdfHtmlGenerator) {
+      PdfHtmlGenerator pdfHtmlGenerator,
+      MessageSourceUtils messages,
+      UserLocaleService userLocaleService) {
     this.externalIdResolver = idResolver;
     this.htmlUnicodeFontProcesser = fontProcessor;
     this.imageResolver = imageResolver;
     this.pdfHtmlGenerator = pdfHtmlGenerator;
+    this.messages = messages;
+    this.userLocaleService = userLocaleService;
     // suppress verbose logging from the flying saucer PDF library where INFO level
     // org.xhtmlrenderer log statements show in our logs as WARNING due to mismatch between
     // java.util.logging and log4j
@@ -246,7 +254,11 @@ public class PdfProcessor extends AbstractExportProcessor implements ExportProce
         externalIdResolver.getExternalIdForUser(config.getExporter(), IdentifierScheme.ORCID);
     String exporterName = config.getExporter().getDisplayName();
     if (extId.isPresent()) {
-      exporterName = String.format("%s - Orcid ID %s", exporterName, extId.get().getIdentifier());
+      exporterName =
+          messages.getMessage(
+              "export.pdf.exporterNameWithOrcid",
+              new Object[] {exporterName, extId.get().getIdentifier()},
+              userLocaleService.getLocaleFor(config.getExporter()));
     }
     pdfDocument.addAuthor(exporterName);
     pdfDocument.addCreationDate();

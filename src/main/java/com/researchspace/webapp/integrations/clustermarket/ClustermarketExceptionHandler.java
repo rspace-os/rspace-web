@@ -2,14 +2,22 @@ package com.researchspace.webapp.integrations.clustermarket;
 
 import static org.springframework.core.annotation.AnnotatedElementUtils.findMergedAnnotation;
 
+import com.researchspace.service.MessageSourceUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.client.HttpClientErrorException;
 
 @Slf4j
 public class ClustermarketExceptionHandler {
+
+  private final MessageSourceUtils messages;
+
+  public ClustermarketExceptionHandler(MessageSourceUtils messages) {
+    this.messages = messages;
+  }
 
   public ResponseEntity<String> handle(Exception exception) {
     HttpStatus responseStatus = resolveAnnotatedResponseStatus(exception);
@@ -24,7 +32,7 @@ public class ClustermarketExceptionHandler {
     if (responseStatus == HttpStatus.INTERNAL_SERVER_ERROR
         || responseStatus == HttpStatus.NOT_FOUND) {
       log.error(makeMessage(exception), exception);
-      userErrorMessage = "There is a problem with your request, please contact support.";
+      userErrorMessage = messages.getMessage("apps.errors.requestSupport");
     } else {
       log.warn(makeMessage(exception));
       log.debug(makeMessage(exception), exception);
@@ -35,10 +43,15 @@ public class ClustermarketExceptionHandler {
 
   private HttpStatus determineClientErrorException(Exception exception) {
     if (exception instanceof HttpClientErrorException) {
-      return ((HttpClientErrorException) exception).getStatusCode();
+      return toHttpStatus(((HttpClientErrorException) exception).getStatusCode());
     } else {
       return null;
     }
+  }
+
+  private HttpStatus toHttpStatus(HttpStatusCode statusCode) {
+    HttpStatus status = HttpStatus.resolve(statusCode.value());
+    return status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR;
   }
 
   private String makeMessage(Exception exception) {

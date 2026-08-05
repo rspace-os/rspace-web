@@ -1,16 +1,16 @@
 package com.researchspace.webapp.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.httpclient.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 /**
  * Manipulates response headers to advise browser on whether to cache the returned page or not, and
@@ -24,7 +24,7 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
  * headers should be manipulated directly, for example using {@link ResponseUtil}.
  */
 @Component
-public class BrowserCacheAdviceInterceptor extends HandlerInterceptorAdapter {
+public class BrowserCacheAdviceInterceptor implements HandlerInterceptor {
 
   private Set<String> urls = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 

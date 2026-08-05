@@ -1,12 +1,12 @@
 package com.researchspace.core.util;
 
-import static javax.xml.bind.DatatypeConverter.printBase64Binary;
+import static jakarta.xml.bind.DatatypeConverter.printBase64Binary;
 
 import com.google.common.io.BaseEncoding;
 import org.apache.shiro.crypto.RandomNumberGenerator;
 import org.apache.shiro.crypto.SecureRandomNumberGenerator;
 import org.apache.shiro.crypto.hash.Sha256Hash;
-import org.apache.shiro.util.ByteSource;
+import org.apache.shiro.lang.util.ByteSource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class CryptoUtils {

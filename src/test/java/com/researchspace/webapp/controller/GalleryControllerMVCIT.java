@@ -4,13 +4,14 @@ import static com.researchspace.core.util.MediaUtils.CHEMISTRY_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.DOCUMENT_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
 import static com.researchspace.testutils.RSpaceTestUtils.getAnyPdf;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.fileUpload;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,7 +44,6 @@ import java.net.URISyntaxException;
 import java.util.List;
 import javax.imageio.ImageIO;
 import org.apache.http.entity.ContentType;
-import org.hibernate.criterion.Order;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -157,7 +157,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     Exception unexistingException = unexistingResult.getResolvedException();
     assertNotNull(unexistingException);
-    assertEquals("access denied", unexistingException.getMessage());
+    assertEquals("Access denied", unexistingException.getMessage());
 
     // other user's images folder
     User other = createAndSaveUser(getRandomAlphabeticString("other"));
@@ -172,7 +172,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
 
     Exception otherUsersFolderException = otherUsersFolderResult.getResolvedException();
     assertNotNull(otherUsersFolderException);
-    assertEquals("access denied", otherUsersFolderException.getMessage());
+    assertEquals("Access denied", otherUsersFolderException.getMessage());
 
     // folder outside othe Gallery
     Folder usersRootFolder = getRootFolderForUser(owner);
@@ -184,7 +184,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     Exception notInGalleryException = notInGalleryResult.getResolvedException();
     assertNotNull(notInGalleryException);
     assertEquals(
-        "provided folderId doesn't point to Gallery folder", notInGalleryException.getMessage());
+        "Provided folder id doesn't point to a Gallery folder", notInGalleryException.getMessage());
   }
 
   @Test
@@ -348,7 +348,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
             "xfile", "Picture1.png", "png", getTestResourceFileStream("Picture1.png"));
     MvcResult result =
         mockMvc
-            .perform(fileUpload("/gallery/ajax/uploadFile").file(mf).principal(mockPrincipal))
+            .perform(multipart("/gallery/ajax/uploadFile").file(mf).principal(mockPrincipal))
             .andExpect(status().isOk())
             .andReturn();
 
@@ -363,7 +363,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     MvcResult result2 =
         mockMvc
             .perform(
-                fileUpload("/gallery/ajax/uploadFile")
+                multipart("/gallery/ajax/uploadFile")
                     .file(mf2)
                     .param("selectedMediaId", "" + imageInfo.getId())
                     .principal(mockPrincipal))
@@ -411,7 +411,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
             getTestResourceFileStream("Amfetamine.mol"));
     MvcResult result =
         mockMvc
-            .perform(fileUpload("/gallery/ajax/uploadFile").file(mf).principal(mockPrincipal))
+            .perform(multipart("/gallery/ajax/uploadFile").file(mf).principal(mockPrincipal))
             .andExpect(status().isOk())
             .andReturn();
 
@@ -433,7 +433,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     MvcResult result2 =
         mockMvc
             .perform(
-                fileUpload("/gallery/ajax/uploadFile")
+                multipart("/gallery/ajax/uploadFile")
                     .file(mf2)
                     .param("selectedMediaId", "" + chemInfo.getId())
                     .principal(mockPrincipal))
@@ -614,7 +614,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     MvcResult res =
         mockMvc
             .perform(
-                get("/gallery/getMediaFileSummaryInfo/")
+                get("/gallery/getMediaFileSummaryInfo")
                     .param("id[]", attachment.getId() + "")
                     .param("revision[]", ""))
             .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
@@ -625,7 +625,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     res =
         mockMvc
             .perform(
-                get("/gallery/getMediaFileSummaryInfo/")
+                get("/gallery/getMediaFileSummaryInfo")
                     .param("id[]", attachment.getId() + "," + attachment2.getId())
                     .param("revision[]", ","))
             .andExpect(jsonPath("$.data").exists())
@@ -637,7 +637,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     res =
         mockMvc
             .perform(
-                get("/gallery/getMediaFileSummaryInfo/").param("id[]", "").param("revision[]", ""))
+                get("/gallery/getMediaFileSummaryInfo").param("id[]", "").param("revision[]", ""))
             .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
             .andExpect(jsonPath("$.data").exists())
             .andReturn();
@@ -645,7 +645,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     res =
         mockMvc
             .perform(
-                get("/gallery/getMediaFileSummaryInfo/")
+                get("/gallery/getMediaFileSummaryInfo")
                     .param("id[]", attachment.getId() + "," + attachment2.getId())
                     .param("revision[]", ",,,,"))
             .andReturn();
@@ -655,7 +655,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     res =
         mockMvc
             .perform(
-                get("/gallery/getMediaFileSummaryInfo/")
+                get("/gallery/getMediaFileSummaryInfo")
                     .param("id[]", -2L + "," + attachment2.getId())
                     .param("revision[]", ","))
             .andExpect(jsonPath("$.data").exists())
@@ -722,10 +722,91 @@ public class GalleryControllerMVCIT extends MVCTestBase {
             (Snippet)
                 sessionFactory
                     .getCurrentSession()
-                    .createCriteria(Snippet.class)
-                    .addOrder(Order.desc("editInfo.creationDate"))
+                    .createQuery(
+                        "from Snippet s order by s.editInfo.creationDate desc", Snippet.class)
                     .setMaxResults(1)
                     .uniqueResult());
+  }
+
+  private MockHttpServletRequestBuilder getVersionHistory(Long mediaFileId) {
+    return get("/gallery/ajax/versionHistory/{mediaFileId}", mediaFileId + "");
+  }
+
+  /*
+   * The pure unit test GalleryVersionHistoryTest mocks AuditManager, so it proves only that the
+   * controller copies fields off an AuditedEntity. These exercise the parts it cannot reach: that
+   * Envers records a revision per new version at all, and that it audits the name and description.
+   */
+  @Test
+  public void versionHistoryListsEveryVersionOfAGalleryItem() throws Exception {
+    EcatImage image = addImageToGallery(owner);
+    updateImageInGallery(image.getId(), owner);
+
+    mockMvc
+        .perform(getVersionHistory(image.getId()).principal(owner::getUsername))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.revisionsCount").value(2))
+        .andExpect(jsonPath("$.data.revisions[0].record.version").value(1))
+        .andExpect(jsonPath("$.data.revisions[1].record.version").value(2))
+        // the size differs between the two fixture images, so this shows each row is its own state
+        .andExpect(jsonPath("$.data.revisions[0].record.size").exists())
+        .andExpect(
+            jsonPath("$.data.revisions[0].record.modifiedByFullName").value(owner.getFullName()));
+  }
+
+  @Test
+  public void versionHistoryReportsTheNameAndDescriptionEachRevisionCarried() throws Exception {
+    /*
+     * The pinned-version view takes both from the audit row. If EditInfo were not audited per
+     * revision, every existing test would still pass while the UI silently showed today's name and
+     * description beside an older version's bytes: the original reported bug.
+     */
+    EcatImage image = addImageToGallery(owner);
+    recordMgr.renameRecord("second-name.png", image.getId(), owner);
+    BaseRecord withDescription = baseRecordMgr.get(image.getId(), owner);
+    withDescription.setDescription("the second description");
+    baseRecordMgr.save(withDescription, owner);
+
+    mockMvc
+        .perform(getVersionHistory(image.getId()).principal(owner::getUsername))
+        .andExpect(status().isOk())
+        /*
+         * The oldest revision must still carry the original values. Were EditInfo not audited, every
+         * revision would report the live name and description and these two would fail, which is
+         * what makes this test worth having.
+         */
+        .andExpect(jsonPath("$.data.revisions[0].record.name").value("Picture1.png"))
+        .andExpect(jsonPath("$.data.revisions[0].record.description").doesNotExist())
+        // and the rename and description edit are recorded as later revisions of the same version
+        .andExpect(jsonPath("$.data.revisions[*].record.name", hasItem("second-name.png")))
+        .andExpect(
+            jsonPath("$.data.revisions[*].record.description", hasItem("the second description")));
+  }
+
+  @Test
+  public void versionHistoryIsDeniedForAnotherUsersGalleryItem() throws Exception {
+    EcatImage image = addImageToGallery(owner);
+    User other = createInitAndLoginAnyUser();
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                getVersionHistory(image.getId()).principal(new MockPrincipal(other.getUsername())))
+            .andReturn();
+
+    assertAuthorizationException(result);
+  }
+
+  @Test
+  public void versionHistoryOfAnUnknownIdIsReportedRatherThanReturnedEmpty() throws Exception {
+    /*
+     * The frontend distinguishes "no history yet" from "failed to load", so an unknown id must not
+     * masquerade as an item with an empty history.
+     */
+    MvcResult result =
+        mockMvc.perform(getVersionHistory(-2L).principal(owner::getUsername)).andReturn();
+
+    assertNotNull(result.getResolvedException());
   }
 
   private MockHttpServletRequestBuilder getViewThumbnail(RecordInformation imageInfo) {
@@ -733,7 +814,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   private MockHttpServletRequestBuilder getViewerImage(RecordInformation imageInfo) {
-    return get("/gallery/getViewerImage/{id}/", imageInfo.getId() + "", "12334");
+    return get("/gallery/getViewerImage/{id}", imageInfo.getId() + "", "12334");
   }
 
   private BufferedImage getImageFromBytes(byte[] fullImageBytes) throws IOException {

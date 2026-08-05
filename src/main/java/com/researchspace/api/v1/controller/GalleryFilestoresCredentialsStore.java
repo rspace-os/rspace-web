@@ -67,7 +67,9 @@ public class GalleryFilestoresCredentialsStore {
 
     NfsClient nfsClient = getNfsClientWithStoredCredentials(user, currentFileSystem);
     if (!nfsClient.isUserLoggedIn()) {
-      errors.addError(new ObjectError("nfsClient", "User is not logged in"));
+      errors.addError(
+          new ObjectError(
+              "nfsClient", new String[] {"netFileStores.errors.userNotLoggedIn"}, null, null));
       throwBindExceptionIfErrors(errors);
     }
     return nfsClient;

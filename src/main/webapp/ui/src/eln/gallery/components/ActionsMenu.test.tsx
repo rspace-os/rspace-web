@@ -1,13 +1,16 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import { waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import type React from "react";
-import { cleanup, expectAccessible, render, screen, within } from "@/__tests__/customQueries";
+import { expectAccessible } from "@/__tests__/accessibility";
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
+import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
+import { emptyShareListingHandler, raidIntegrationInfoHandler } from "../__tests__/mocks/raidIntegrationMocks";
 import {
   ActionsMenuInWritableS3Filestore,
   ActionsMenuWithFolder,
@@ -162,6 +165,7 @@ function stubCommonEndpoints({
 beforeEach(() => {
   mockAxios.reset();
   stubCommonEndpoints();
+  server.use(oauthTokenHandler(), raidIntegrationInfoHandler(), emptyShareListingHandler());
 });
 
 afterEach(() => {
@@ -231,6 +235,37 @@ describe("ActionsMenu", () => {
       expectMenuItemDisabled(await screen.findByRole("menuitem", { name: /common:actions\.download/i }));
     });
 
+    /* the dialog is a React child of the Menu, which closes on Tab and so used to unmount it */
+    test("Tab inside the version history dialog moves focus rather than closing it", async () => {
+      const user = userEvent.setup();
+      renderStory(<ActionsMenuWithNonFolder />);
+      await openMenu(user);
+      await user.click(await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.versionHistory\.menuItem/i }));
+      const dialog = await screen.findByRole("dialog");
+      await user.tab();
+      expect(dialog).toBeInTheDocument();
+    });
+
+    /* the Tab fix stops propagation, so this pins that dismissal still works */
+    test("Escape still closes the version history dialog", async () => {
+      const user = userEvent.setup();
+      renderStory(<ActionsMenuWithNonFolder />);
+      await openMenu(user);
+      await user.click(await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.versionHistory\.menuItem/i }));
+      await screen.findByRole("dialog");
+      await user.keyboard("{Escape}");
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    });
+
+    test("When the selected file is a snippet, view version history should be disabled", async () => {
+      const user = userEvent.setup();
+      renderStory(<ActionsMenuWithSnippet />);
+      await openMenu(user);
+      expectMenuItemDisabled(
+        await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.versionHistory\.menuItem/i }),
+      );
+    });
+
     test("Share should always be visible and enabled when only snippets are selected", async () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippet />);
@@ -282,7 +317,7 @@ describe("ActionsMenu", () => {
       await openMenu(user);
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       await waitFor(() => expectMenuItemDisabled(share));
-      expect(share).toHaveTextContent("Cannot share snippets that are missing global IDs.");
+      expect(share).toHaveTextContent("gallery:actionsMenu.validation.missingGlobalId");
     });
 
     test("Share should be enabled when the current user owns a snippet in a shared folder", async () => {
@@ -301,7 +336,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       await waitFor(() => expectMenuItemDisabled(share));
-      expect(share).toHaveTextContent("Only owners of the snippet can change its share settings.");
+      expect(share).toHaveTextContent("gallery:actionsMenu.validation.onlyOwnerCanShare");
     });
 
     test("Share should not be enabled for a snippet in a system shared folder", async () => {
@@ -311,7 +346,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       await waitFor(() => expectMenuItemDisabled(share));
-      expect(share).toHaveTextContent("Only owners of the snippet can change its share settings.");
+      expect(share).toHaveTextContent("gallery:actionsMenu.validation.onlyOwnerCanShare");
     });
 
     test("Share should be disabled while the current user details are still loading", async () => {
@@ -329,7 +364,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       expectMenuItemDisabled(share);
-      expect(share).toHaveTextContent("Loading user information...");
+      expect(share).toHaveTextContent("gallery:actionsMenu.validation.loadingUser");
     });
 
     test("Saving a gallery share should show success alert and close dialog", async () => {

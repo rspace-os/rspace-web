@@ -19,7 +19,6 @@ import org.springframework.validation.Validator;
 public class InstrumentApiPostFullValidator implements Validator {
 
   @Autowired private ApiFieldsHelper fieldHelper;
-  private static final String INSTRUMENT_ENTITY_NAME_TYPE = "instrument";
 
   @Override
   public boolean supports(Class<?> clazz) {
@@ -34,7 +33,7 @@ public class InstrumentApiPostFullValidator implements Validator {
     @Override
     public void accept(String errorMessage) {
       if (!StringUtils.isEmpty(errorMessage)) {
-        errors.reject("", errorMessage);
+        errors.reject("errors.inventory.field.validation", new Object[] {errorMessage}, null);
       }
     }
   }
@@ -61,8 +60,7 @@ public class InstrumentApiPostFullValidator implements Validator {
             new ErrorAggregator(errors));
       }
 
-      fieldHelper.validateMandatoryFieldsForEntityPost(
-          INSTRUMENT_ENTITY_NAME_TYPE, incomingApiFields, templateFields, errors);
+      fieldHelper.validateMandatoryFieldsForEntityPost(incomingApiFields, templateFields, errors);
     }
   }
 }

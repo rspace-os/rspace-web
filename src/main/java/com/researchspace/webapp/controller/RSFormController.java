@@ -83,13 +83,16 @@ import org.springframework.web.servlet.ModelAndView;
 @SessionAttributes("formSharingCommand")
 public class RSFormController extends BaseController {
 
+  private static final List<String> FIELD_KEYS =
+      List.of("Number", "String", "Text", "Radio", "Choice", "Date", "Time");
+
   private static final String ANY_FIELD_NAME = "Field";
 
   private @Autowired FormManager formManager;
   private @Autowired RSFormApiHandler formHandler;
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
 
-  @PostMapping("/")
+  @PostMapping
   // permissions checking handled in service methos
   public ModelAndView createForm(Model model) throws IOException {
     final int height = 32;
@@ -110,7 +113,7 @@ public class RSFormController extends BaseController {
     }
     form.setIconId(icon.getId());
     model.addAttribute("template", form);
-    model.addAttribute("fieldKeys", SDocHelper.popoulateFieldTypeList());
+    model.addAttribute("fieldKeys", FIELD_KEYS);
     model.addAttribute("editStatus", form.getEditStatus());
     model.addAttribute("templateOperation", FormOperation.CREATE);
     model.addAttribute(
@@ -150,7 +153,8 @@ public class RSFormController extends BaseController {
     User u = userManager.getUserByUsername(user.getName());
     RSForm toSave = formManager.get(formId, u);
     if (!permissionUtils.isPermitted(toSave, PermissionType.WRITE, u)) {
-      throw new AuthorizationException(authGenerator.getFailedMessage(u, "rename form"));
+      throw new AuthorizationException(
+          getText("errors.authorization.failure.renameForm", new Object[] {u.getUsername()}));
     }
     toSave.setName(newname);
     formManager.save(toSave, u);
@@ -167,7 +171,9 @@ public class RSFormController extends BaseController {
     User u = userManager.getUserByUsername(user.getName());
     RSForm toSave = formManager.get(recordId, u);
     if (!permissionUtils.isPermitted(toSave, PermissionType.WRITE, u)) {
-      throw new AuthorizationException(authGenerator.getFailedMessage(u, "Set form description"));
+      throw new AuthorizationException(
+          getText(
+              "errors.authorization.failure.editFormDescription", new Object[] {u.getUsername()}));
     }
     toSave.setDescription(desc);
     formManager.save(toSave, u);
@@ -185,7 +191,6 @@ public class RSFormController extends BaseController {
       return new AjaxReturnObject<DateFieldForm>(null, el);
     }
     DateFieldForm dft = formManager.createFieldForm(dto, formId, subject);
-    dft.setForm(null);
     return new AjaxReturnObject<DateFieldForm>(dft, null);
   }
 
@@ -208,7 +213,6 @@ public class RSFormController extends BaseController {
     }
 
     StringFieldForm stringField = formManager.createFieldForm(dto, formId, subject);
-    stringField.setForm(null);
 
     return new AjaxReturnObject<StringFieldForm>(stringField, null);
   }
@@ -278,7 +282,6 @@ public class RSFormController extends BaseController {
       return new AjaxReturnObject<StringFieldForm>(null, eo);
     }
     StringFieldForm updated = formManager.updateFieldForm(dto, fieldId, subject);
-    updated.setForm(null);
     return new AjaxReturnObject<StringFieldForm>(updated, null);
   }
 
@@ -292,7 +295,6 @@ public class RSFormController extends BaseController {
       return new AjaxReturnObject<TextFieldForm>(null, errors);
     }
     TextFieldForm updated = formManager.updateFieldForm(dto, fieldId, subject);
-    updated.setForm(null);
     return new AjaxReturnObject<TextFieldForm>(updated, null);
   }
 
@@ -307,7 +309,6 @@ public class RSFormController extends BaseController {
     }
 
     DateFieldForm dft = formManager.updateFieldForm(dto, fieldId, subject);
-    dft.setForm(null);
     return new AjaxReturnObject<DateFieldForm>(dft, null);
   }
 
@@ -352,7 +353,7 @@ public class RSFormController extends BaseController {
 
     } catch (Exception e) {
       ErrorList el = new ErrorList();
-      el.addErrorMsg("Exception deleting form. This has been logged.");
+      el.addErrorMsg(getText("form.errors.deleteFailed"));
       return new AjaxReturnObject<String>(null, el);
     }
     return new AjaxReturnObject<String>("Success", null);
@@ -410,7 +411,7 @@ public class RSFormController extends BaseController {
 
   private void populateModelForEditing(Model model, RSForm form) {
     model.addAttribute("template", form);
-    model.addAttribute("fieldKeys", SDocHelper.popoulateFieldTypeList());
+    model.addAttribute("fieldKeys", FIELD_KEYS);
     model.addAttribute("editStatus", form.getEditStatus());
     model.addAttribute("templateOperation", FormOperation.EDIT);
   }
@@ -596,7 +597,8 @@ public class RSFormController extends BaseController {
 
     FieldType ft = FieldType.getFieldTypeForString(fieldtype);
     if (ft == null) {
-      throw new IllegalArgumentException("Unknown field type [" + fieldtype + "]");
+      throw new IllegalArgumentException(
+          getText("form.errors.unknownFieldType", new Object[] {fieldtype}));
     }
 
     Object viewModel = null;
@@ -633,7 +635,6 @@ public class RSFormController extends BaseController {
 
     NumberFieldForm numFT =
         formManager.createFieldForm(dto, Long.parseLong(dto.getParentId()), subject);
-    numFT.setForm(null);
     return new AjaxReturnObject<NumberFieldForm>(numFT, null);
   }
 
@@ -656,7 +657,6 @@ public class RSFormController extends BaseController {
 
     NumberFieldForm nft =
         formManager.updateFieldForm(dto, Long.parseLong(dto.getParentId()), subject);
-    nft.setForm(null);
     return new AjaxReturnObject<>(nft, null);
   }
 
@@ -672,7 +672,6 @@ public class RSFormController extends BaseController {
     }
 
     TextFieldForm textField = formManager.createFieldForm(dto, formId, subject);
-    textField.setForm(null);
     return new AjaxReturnObject<TextFieldForm>(textField, null);
   }
 
@@ -693,7 +692,6 @@ public class RSFormController extends BaseController {
       return new AjaxReturnObject<TimeFieldForm>(null, el);
     }
     TimeFieldForm templateField = formManager.createFieldForm(dto, formId, subject);
-    templateField.setForm(null);
     return new AjaxReturnObject<TimeFieldForm>(templateField, null);
   }
 
@@ -708,7 +706,6 @@ public class RSFormController extends BaseController {
     }
 
     TimeFieldForm temp = formManager.updateFieldForm(dto, fieldId, subject);
-    temp.setForm(null);
     return new AjaxReturnObject<TimeFieldForm>(temp, null);
   }
 
@@ -731,7 +728,6 @@ public class RSFormController extends BaseController {
     }
 
     ChoiceFieldForm cft = formManager.createFieldForm(dto, formId, subject);
-    cft.setForm(null);
     return new AjaxReturnObject<ChoiceFieldForm>(cft, null);
   }
 
@@ -754,7 +750,6 @@ public class RSFormController extends BaseController {
 
     User subject = userManager.getAuthenticatedUserInSession();
     ChoiceFieldForm updated = formManager.updateFieldForm(dto, fieldId, subject);
-    updated.setForm(null);
     return new AjaxReturnObject<ChoiceFieldForm>(updated, null);
   }
 
@@ -779,7 +774,6 @@ public class RSFormController extends BaseController {
 
     User subject = userManager.getAuthenticatedUserInSession();
     RadioFieldForm radioField = formManager.updateFieldForm(dto, fieldId, subject);
-    radioField.setForm(null);
     return new AjaxReturnObject<RadioFieldForm>(radioField, null);
   }
 
@@ -804,7 +798,6 @@ public class RSFormController extends BaseController {
 
     User subject = userManager.getAuthenticatedUserInSession();
     RadioFieldForm radioField = formManager.createFieldForm(dto, formId, subject);
-    radioField.setForm(null);
     return new AjaxReturnObject<RadioFieldForm>(radioField, null);
   }
 
@@ -888,7 +881,7 @@ public class RSFormController extends BaseController {
     // Check if the user has READ permissions for the form
     if (!permissionUtils.isPermitted(form, PermissionType.READ, user)) {
       return new AjaxReturnObject<DetailedRecordInformation>(
-          null, ErrorList.of("Unauthorized attempt to get form info"));
+          null, ErrorList.of(getText("form.errors.infoUnauthorized")));
     }
 
     DetailedRecordInformation info = new DetailedRecordInformation(form);

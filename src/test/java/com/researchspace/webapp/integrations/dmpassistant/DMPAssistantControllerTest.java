@@ -26,6 +26,7 @@ import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DMPManager;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserConnectionManager;
@@ -85,7 +86,7 @@ class DMPAssistantControllerTest {
     }
 
     @Override
-    protected void verifyStateParameter(javax.servlet.http.HttpServletRequest request) {
+    protected void verifyStateParameter(jakarta.servlet.http.HttpServletRequest request) {
       stateVerifier.run();
     }
   }
@@ -95,11 +96,11 @@ class DMPAssistantControllerTest {
   @Mock private UserConnection userConnection;
   @Mock private IPropertyHolder properties;
   @Mock private DMPAssistantProvider dmpAssistantProvider;
-  @Mock private MessageSourceUtils messages;
   @Mock private UserManager userManager;
   @Mock private MediaManager mediaManager;
   @Mock private DMPManager dmpManager;
 
+  private final MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
   private RestTemplate restTemplate;
   private MockRestServiceServer mockServer;
   private final Principal principal = () -> USERNAME;
@@ -118,25 +119,7 @@ class DMPAssistantControllerTest {
     when(properties.getServerUrl()).thenReturn(SERVER_URL);
     controller.init();
     mockServer = MockRestServiceServer.createServer(restTemplate);
-    // BaseController.messages is @Autowired in production; inject it explicitly here so the
-    // bundle-resolving error branches in proxy() can run. The mock echoes the key + args so
-    // any HTML or other content passed by the controller would surface in the resulting
-    // message — tests asserting "no HTML in the user-facing string" remain meaningful.
     controller.setMessageSource(messages);
-    when(messages.getMessage(anyString(), any()))
-        .thenAnswer(
-            invocation -> {
-              String key = invocation.getArgument(0);
-              Object[] args = invocation.getArgument(1);
-              StringBuilder sb = new StringBuilder(key);
-              if (args != null) {
-                for (Object arg : args) {
-                  sb.append(":").append(arg);
-                }
-              }
-              return sb.toString();
-            });
-    when(messages.getMessage(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
   }
 
   @Test
@@ -348,7 +331,10 @@ class DMPAssistantControllerTest {
     assertNull(result.getData());
     assertNotNull(result.getError());
     String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
-    assertEquals("apps.dmpassistant.error.refresh", surfaced);
+    assertEquals(
+        "Your DMP Assistant connection has expired and could not be refreshed. Please reconnect "
+            + "to DMP Assistant from the Apps page.",
+        surfaced);
   }
 
   @Test
@@ -452,7 +438,7 @@ class DMPAssistantControllerTest {
     assertNull(result.getData());
     assertNotNull(result.getError());
     String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
-    assertEquals("apps.dmpassistant.error.upstream:404 Not Found", surfaced);
+    assertEquals("DMP Assistant returned an error: 404 Not Found.", surfaced);
   }
 
   @Test
@@ -466,7 +452,7 @@ class DMPAssistantControllerTest {
     assertNull(result.getData());
     assertNotNull(result.getError());
     String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
-    assertEquals("apps.dmpassistant.error.upstream:404 Not Found", surfaced);
+    assertEquals("DMP Assistant returned an error: 404 Not Found.", surfaced);
   }
 
   @Test
@@ -507,7 +493,7 @@ class DMPAssistantControllerTest {
     assertNull(result.getData());
     assertNotNull(result.getError());
     String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
-    assertEquals("apps.dmpassistant.error.import.batch.too.large:50", surfaced);
+    assertEquals("A maximum of 50 plans can be imported in one request.", surfaced);
     verifyNoInteractions(dmpAssistantProvider);
   }
 

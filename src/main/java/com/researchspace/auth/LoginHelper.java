@@ -1,8 +1,8 @@
 package com.researchspace.auth;
 
 import com.researchspace.model.User;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 /** Central class for performing manual login operations */
 public interface LoginHelper {

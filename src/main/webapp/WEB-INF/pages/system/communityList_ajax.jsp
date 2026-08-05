@@ -2,11 +2,11 @@
 <%--ajax-loaded table content for lists of communities --%>
 <table cellspacing="0" class="systemList">
     <tr class="table_headRow">
-      <th width="5%">Option</th>
+      <th width="5%"><spring:message code="system.communityList.optionColumnLabel"/></th>
       <th width="15%"><spring:message code="system.communityList.name.label"/></th>
       <th width="20%"><spring:message code="system.communityList.uniqueName.label"/></th>
       <th><spring:message code="system.communityList.admins.label"/></th>
-      <th>Created</th>
+      <th><spring:message code="workspace.list.creationDate.header"/></th>
      </tr>
      <c:forEach items="${communities.results}" var="comm">
       <tr class="commRow table_listRow">

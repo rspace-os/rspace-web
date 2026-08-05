@@ -1,4 +1,3 @@
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib uri="http://researchspace.com/tags" prefix="rst" %>
 
 <script src="<rst:assetUrl value='/scripts/tags/export.js'/>"></script>

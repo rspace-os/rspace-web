@@ -1,0 +1,28 @@
+{
+  "outputs": [
+    {
+      "id": "d1e2a3t4a5s6e7t8",
+      "hda_ldda": "hda",
+      "uuid": "11111111-2222-3333-4444-555555555555",
+      "hid": 1,
+      "file_ext": "txt",
+      "model_class": "HistoryDatasetAssociation",
+      "name": "galaxy-attachment.txt",
+      "deleted": false,
+      "purged": false,
+      "visible": true,
+      "state": "ok",
+      "history_content_type": "dataset",
+      "file_size": 13,
+      "create_time": "2026-01-01T00:00:00.000000",
+      "update_time": "2026-01-01T00:00:00.000000",
+      "data_type": "galaxy.datatypes.data.Text",
+      "genome_build": "?",
+      "history_id": "a1b2c3d4e5f6a1b2"
+    }
+  ],
+  "output_collections": [],
+  "jobs": [],
+  "implicit_collections": [],
+  "produces_entry_points": false
+}

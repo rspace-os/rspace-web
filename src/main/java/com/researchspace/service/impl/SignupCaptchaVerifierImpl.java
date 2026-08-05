@@ -2,10 +2,10 @@ package com.researchspace.service.impl;
 
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.SignupCaptchaVerifier;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +48,7 @@ public class SignupCaptchaVerifierImpl implements SignupCaptchaVerifier {
 
     String captchaResponse = request.getParameter("g-recaptcha-response");
     if (StringUtils.isEmpty(captchaResponse)) {
-      return ERROR_NO_CAPTCHA_IN_REQUEST;
+      return ERROR_CAPTCHA_RESPONSE_MISSING;
     }
 
     String captchaSiteKey = properties.getSignupCaptchaSiteKey();

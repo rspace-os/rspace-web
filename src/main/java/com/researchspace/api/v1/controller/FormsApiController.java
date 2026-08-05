@@ -23,15 +23,15 @@ import com.researchspace.model.views.FormSearchCriteria;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.IconImageManager;
 import com.researchspace.session.UserSessionTracker;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import javax.ws.rs.NotFoundException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -199,7 +199,7 @@ public class FormsApiController extends BaseApiController implements FormsApi {
       }
     }
     if (!isSysadmin) {
-      throw new AuthorizationException("Only sysadmin can use this API");
+      throw new AuthorizationException(getMessage("errors.authorization.sysadminApiOnly"));
     }
     FormSharingCommand shareingCommand = new FormSharingCommand();
     shareingCommand.setGroupOptions(Arrays.asList(new String[] {"READ"}));

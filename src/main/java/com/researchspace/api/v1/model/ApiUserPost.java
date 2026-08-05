@@ -1,14 +1,14 @@
 package com.researchspace.api.v1.model;
 
 import com.researchspace.model.User;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
-import org.hibernate.validator.constraints.Email;
-import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  * Data required to create new user account. Basic validation for mandatory fields.
@@ -61,9 +61,7 @@ public class ApiUserPost {
   private String password;
 
   /** Default is user role if not set */
-  @Pattern(
-      regexp = "(ROLE_USER)|(ROLE_PI)",
-      message = "Unknown role - must be one of 'ROLE_USER' or 'ROLE_PI'")
+  @Pattern(regexp = "(ROLE_USER)|(ROLE_PI)", message = "{errors.user.role.invalid}")
   @NotNull
   @Builder.Default
   private String role = "ROLE_USER";

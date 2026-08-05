@@ -73,6 +73,7 @@ jobs:
       matrix:
         java-version: [17]
     if: |
+      (github.event_name == 'push' && github.ref_name == 'main') ||
       github.event_name == 'pull_request' ||
       inputs.fast_java_tests ||
       needs.changed-files.outputs.java == 'true'
@@ -101,17 +102,6 @@ jobs:
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
-      # check_run: false everywhere this action is used in this file — GitHub's
-      # Checks API has no way to tell it which workflow run created the check
-      # (EnricoMi/publish-unit-test-result-action#12, open upstream, GitHub's
-      # to fix), so it lands the check under whichever workflow happens to
-      # "win" a race for the commit — in this repo, consistently CLA Assistant
-      # (a `pull_request_target` workflow that finishes almost instantly).
-      # Renaming/reordering workflows to influence that race is documented as
-      # unreliable even by people who've tried it. Disabling the check run
-      # loses nothing load-bearing: the job's own pass/fail (already grouped
-      # correctly under Lint and Test) and the job summary are unaffected, and
-      # main's branch protection has no required status checks configured.
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2.24.0
         if: |
@@ -121,7 +111,6 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
-          check_run: false
           comment_mode: off
           files: target/surefire-reports/*.xml
 
@@ -129,6 +118,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: changed-files
     if: |
+      (github.event_name == 'push' && github.ref_name == 'main') ||
       github.event_name == 'pull_request' ||
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
@@ -187,6 +177,7 @@ jobs:
       matrix:
         java-version: [17]
     if: |
+      (github.event_name == 'push' && github.ref_name == 'main') ||
       github.event_name == 'pull_request' ||
       inputs.fast_java_tests ||
       needs.changed-files.outputs.java == 'true'
@@ -207,9 +198,11 @@ jobs:
       # independent job from frontend-checks, so it runs in parallel and a
       # Spotless failure here fails the overall CI run without stopping the
       # frontend checks (and vice versa).
+      # -DspotlessStrict adds the CleanThat checks. Plain spotless:apply will not
+      # fix those; use `./mvnw -DspotlessStrict spotless:apply`.
       - name: Spotless check
         run: |
-          ./mvnw -q spotless:check \
+          ./mvnw -q spotless:check -DspotlessStrict \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
@@ -223,12 +216,13 @@ jobs:
     env:
       # ponytail: shard count is a plain number, not a matrix-generating step;
       # bump both this and the matrix.shard list below together to rescale.
-      VITEST_SHARD_COUNT: 5
+      VITEST_SHARD_COUNT: 2
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
+        shard: [1, 2]
     if: |
+      (github.event_name == 'push' && github.ref_name == 'main') ||
       github.event_name == 'pull_request' ||
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
@@ -283,7 +277,6 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
-          check_run: false
           check_name: Vitest Tests (shard ${{ matrix.shard }})
           comment_mode: off
           files: src/main/webapp/ui/junit.xml
@@ -300,6 +293,7 @@ jobs:
     if: |
       !cancelled() &&
       (
+        (github.event_name == 'push' && github.ref_name == 'main') ||
         github.event_name == 'pull_request' ||
         inputs.frontend_tests ||
         needs.changed-files.outputs.frontend == 'true'
@@ -357,6 +351,7 @@ jobs:
       matrix:
         browser: [ chromium, firefox, webkit ]
     if: |
+      (github.event_name == 'push' && github.ref_name == 'main') ||
       github.event_name == 'pull_request' ||
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
@@ -400,7 +395,6 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
-          check_run: false
           check_name: Browser Tests (${{ matrix.browser }})
           comment_mode: off
           files: src/main/webapp/ui/browser-junit-${{ matrix.browser }}.xml
@@ -570,7 +564,7 @@ jobs:
         java-version: [17]
         mariadb-version: ['10.11', '12.3']
     if: |
-      (github.event_name == 'push' && github.ref_name == 'main' && needs.changed-files.outputs.java == 'true') ||
+      (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
       inputs.full_java_tests
     services:
@@ -640,7 +634,6 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
-          check_run: false
           check_name: Spring Tests (MariaDB ${{ matrix.mariadb-version }})
           comment_mode: off
           files: target/surefire-reports/*.xml
@@ -658,7 +651,7 @@ jobs:
         java-version: [17]
         mariadb-version: ['10.11', '12.3']
     if: |
-      (github.event_name == 'push' && github.ref_name == 'main' && needs.changed-files.outputs.java == 'true') ||
+      (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
       inputs.full_java_tests
     services:
@@ -729,7 +722,6 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
-          check_run: false
           check_name: Integration Tests (MariaDB ${{ matrix.mariadb-version }})
           comment_mode: off
           files: target/surefire-reports/*.xml

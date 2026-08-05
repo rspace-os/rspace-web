@@ -1,0 +1,9 @@
+{
+  "key": "export.pdf",
+  "size": 12345,
+  "mimetype": "application/pdf",
+  "checksum": "md5:d41d8cd98f00b204e9800998ecf8427e",
+  "links": {
+    "self": "http://localhost:9099/api/files/8f3f2b3c-0000-4000-8000-000000000000/export.pdf"
+  }
+}

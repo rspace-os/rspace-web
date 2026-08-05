@@ -65,7 +65,7 @@ public class RSChemElementDaoHibernate extends GenericDaoHibernate<RSChemElement
         getSession()
             .createQuery(
                 " from RSChemElement chem where chem.ecatChemFileId = :ecatChemFileId and"
-                    + " chem.parentId = null",
+                    + " chem.parentId is null",
                 RSChemElement.class);
     sq.setParameter("ecatChemFileId", ecatChemFileId);
     return sq.uniqueResult();

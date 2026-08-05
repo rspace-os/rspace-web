@@ -40,8 +40,7 @@ describe("Component", () => {
 });
 ```
 
-- `render`/`cleanup` come from `@testing-library/react` directly here (browser
-  specs do not use the `@/__tests__/customQueries` wrapper, which is jsdom-only).
+- `render`/`cleanup` come from `@testing-library/react` directly.
 - Read a POSTed body in a handler with `await request.json()`.
 - App-shell endpoints (whoami, nav data, analytics, livechat) are answered by
   the worker defaults already; do not re-mock them unless asserting failure.

@@ -1,6 +1,7 @@
 package com.researchspace.service.aws.impl;
 
 import com.researchspace.service.archive.export.ExportFailureException;
+import jakarta.ws.rs.core.EntityTag;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -8,7 +9,6 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
-import javax.ws.rs.core.EntityTag;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;

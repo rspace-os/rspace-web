@@ -46,6 +46,10 @@ window.addEventListener("load", () => {
           <Analytics>
             <ErrorBoundary>
               <CssBaseline />
+              <meta
+                name="theme-color"
+                content={`hsl(${pageColor.background.hue}, ${pageColor.background.saturation}%, ${pageColor.background.lightness}%)`}
+              />
               <ThemeProvider theme={createAccentedTheme(pageColor)}>
                 <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
                   {/*
@@ -63,9 +67,4 @@ window.addEventListener("load", () => {
       </CacheProvider>
     </React.StrictMode>,
   );
-
-  const meta = document.createElement("meta");
-  meta.name = "theme-color";
-  meta.content = `hsl(${pageColor.background.hue}, ${pageColor.background.saturation}%, ${pageColor.background.lightness}%)`;
-  document.head?.appendChild(meta);
 });

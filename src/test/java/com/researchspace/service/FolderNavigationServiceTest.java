@@ -23,7 +23,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -31,13 +30,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class FolderNavigationServiceTest {
 
   @Mock private PermissionUtils permissionUtils;
-  @InjectMocks private FolderNavigationServiceImpl service;
+  private FolderNavigationServiceImpl service;
 
   private User subject;
 
   @BeforeEach
   public void setUp() {
     subject = TestFactory.createAnyUser("testUser");
+    service =
+        new FolderNavigationServiceImpl(
+            null, permissionUtils, new MessageSourceUtils(new JsonMessageSource()));
   }
 
   @Test
@@ -160,10 +162,13 @@ public class FolderNavigationServiceTest {
   @Test
   public void whenParentIdIsInvalidThenThrowsException() {
     Folder actualParent = TestFactory.createAFolder("actualParent", subject);
+    // Assign non-null ids — this is a unit test (no DB), TestFactory no longer pre-assigns them.
+    actualParent.setId(1L);
     Folder childFolder = TestFactory.createAFolder("child", subject);
     actualParent.addChild(childFolder, subject);
 
     Folder wrongParent = TestFactory.createAFolder("wrongParent", subject);
+    wrongParent.setId(999L);
 
     assertThrows(
         IllegalArgumentException.class,

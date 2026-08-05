@@ -10,8 +10,8 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.controller.BaseController;
+import jakarta.servlet.http.HttpServletRequest;
 import java.security.Principal;
-import javax.servlet.http.HttpServletRequest;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -54,7 +54,7 @@ public class BaseOAuth2Controller extends BaseController {
     String state = request.getParameter("state");
     String originalState = extractCachedOAuth2State();
     if (originalState != null && (state == null || !state.equals(originalState))) {
-      throw new IllegalStateException("The OAuth2 'state' parameter is missing or doesn't match.");
+      throw new IllegalStateException(getText("connect.authorizationError.stateMismatch"));
     }
   }
 

@@ -2,6 +2,7 @@ package com.researchspace.webapp.integrations.wopi;
 
 import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
 
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
@@ -13,6 +14,11 @@ import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.service.MediaManager;
 import com.researchspace.webapp.controller.BaseController;
 import com.researchspace.webapp.controller.StructuredDocumentController;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -25,11 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
-import javax.annotation.PostConstruct;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -380,7 +381,7 @@ public class WopiController extends BaseController {
       // if suggestedTargetHeader begins with a dot (.) then it means a file extension, and original
       // name should be used
       String currentName = currentMediaFile.getName();
-      proposedName = currentName.substring(0, currentName.lastIndexOf(".")) + suggestedTargetHeader;
+      proposedName = currentName.substring(0, currentName.lastIndexOf('.')) + suggestedTargetHeader;
     } else {
       // use the provided name
       proposedName = suggestedTargetHeader;
@@ -389,7 +390,7 @@ public class WopiController extends BaseController {
     if (proposedName.length() > BaseRecord.DEFAULT_VARCHAR_LENGTH) {
       String extension = FilenameUtils.getExtension(proposedName);
       proposedName =
-          StringUtils.abbreviate(
+          StringAbbreviationUtils.abbreviate(
               proposedName, BaseRecord.DEFAULT_VARCHAR_LENGTH - extension.length() - 1);
       proposedName += "." + extension;
     }
@@ -418,7 +419,9 @@ public class WopiController extends BaseController {
    */
   private String validateNewRecordName(String newName) {
     if (!StringUtils.isBlank(newName) && newName.length() > DEFAULT_VARCHAR_LENGTH) {
-      return getText("errors.maxlength", new String[] {"name", DEFAULT_VARCHAR_LENGTH + ""});
+      return getText(
+          "errors.maxLength",
+          new Object[] {getText("label.nameLowercase"), DEFAULT_VARCHAR_LENGTH});
     }
     return sdocController.validateNewRecordName(newName);
   }

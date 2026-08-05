@@ -75,7 +75,14 @@ reuse the running instance.
 ./docker/dev/rspace-dev up                # reuse existing DB (fast)
 ./docker/dev/rspace-dev up --fresh        # rebuild DB from scratch
 ./docker/dev/rspace-dev up --chemistry    # also start the chemistry microservice
+./docker/dev/rspace-dev up --e2e          # run third-party integration mocks
 ```
+
+`--e2e` runs the Playwright integration mock server inside the stack's shared
+frontend/backend network namespace and points the backend integrations at it.
+The per-worktree mock URL is printed by `up` and `ps`; pass that port as
+`E2E_MOCK_PORT` when invoking Playwright. The choice persists until
+`up --no-e2e`.
 
 **Always boot the full stack — never the frontend alone.** RSpace is a SPA: the
 React UI is useless without the Java backend and database serving its API,

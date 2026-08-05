@@ -51,7 +51,7 @@ public class UserNameFromFirstLastNameStrategy implements UserNameCreationStrate
       String padding =
           RandomStringUtils.random(User.MIN_UNAME_LENGTH - uname.length(), true, true)
               .toLowerCase();
-      uname = uname + padding;
+      uname += padding;
     }
     // uname=uname+RandomStringUtils.randomNumeric(3);
     return uname;
@@ -60,7 +60,7 @@ public class UserNameFromFirstLastNameStrategy implements UserNameCreationStrate
   void generateUniqueNameFromCandidate(
       UserRegistrationInfo u, String candidateUname, Set<String> unamess) {
     if (unamess.contains(candidateUname)) {
-      candidateUname = candidateUname + RandomStringUtils.randomNumeric(4);
+      candidateUname += RandomStringUtils.randomNumeric(4);
     }
     u.setUsername(candidateUname);
     unamess.add(candidateUname);

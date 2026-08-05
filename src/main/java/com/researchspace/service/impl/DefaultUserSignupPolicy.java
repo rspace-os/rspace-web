@@ -4,7 +4,7 @@ import com.researchspace.model.User;
 import com.researchspace.service.ISignupHandlerPolicy;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * For use in non-cloud environment - simply delegates through to underlying {@link UserManager}

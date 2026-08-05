@@ -34,6 +34,7 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserConnectionManager;
+import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,7 +46,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.PostConstruct;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -260,7 +260,7 @@ public class GalaxyService {
       List<WorkflowInvocationResponse> allInvocations = new ArrayList<>();
       for (String alias : keyByAlias.keySet()) {
         String baseUrl = getGalaxyUrlFrom(aliasServerPairs, alias);
-        if (baseUrl.equals("")) {
+        if (baseUrl.isEmpty()) {
           // an alias exists in the DB that does not match the values in the property file  for
           // 'galaxy.server.config'
           throw new RuntimeException(

@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import com.researchspace.core.util.EscapeReplacement;
 import com.researchspace.core.util.FileOperator;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.core.util.UnhandledUTF8FileFilter;
 import com.researchspace.dao.FileMetadataDao;
 import com.researchspace.files.service.InternalFileStore;
@@ -30,9 +31,11 @@ import org.joda.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** FileStore implementation for storing files locally on RSpace server */
+@Service
 @Transactional
 public class InternalFileStoreImpl implements InternalFileStore {
 
@@ -390,7 +393,7 @@ public class InternalFileStoreImpl implements InternalFileStore {
       } else {
         // normal extension, must be basename that is long, abbreviate it
         baseName =
-            StringUtils.abbreviate(
+            StringAbbreviationUtils.abbreviate(
                 baseName, BaseRecord.DEFAULT_VARCHAR_LENGTH - newSuffix.length());
       }
     }

@@ -1,0 +1,17 @@
+[
+  {
+    "eartag_or_id": "MOCK-001",
+    "sex": "f",
+    "age_days": 42,
+    "strain_name": "Mock Strain",
+    "mutations": [{ "mutationname": "MockGene", "mutationgrade": "het" }],
+    "dateborn": "2026-01-01",
+    "datesacrificed": null,
+    "classification": "experimental",
+    "licence_number": "MOCK-LIC-1",
+    "labid": "LAB-1",
+    "building_name": "Mock Building A",
+    "projects": [{ "project_label": "Mock Project" }],
+    "responsible_fullname": "Mock User"
+  }
+]

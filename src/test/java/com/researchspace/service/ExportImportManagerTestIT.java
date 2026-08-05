@@ -148,8 +148,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.shiro.authz.AuthorizationException;
 import org.hibernate.HibernateException;
-import org.hibernate.criterion.Projections;
 import org.hibernate.query.NativeQuery;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -257,8 +257,10 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     return new URI("http://a.url.com");
   }
 
-  // Ideally, should be AuthorizationException, but failing async method throws ExecutionException
-  @Test(expected = ExecutionException.class)
+  // In Spring 6, interface-level @Async is not propagated to concrete class; method runs
+  // synchronously so AuthorizationException propagates directly rather than wrapped in
+  // ExecutionException.
+  @Test(expected = AuthorizationException.class)
   public void RSPAC1129_LabAdminWithoutViewAllCannotExportGroupsWork() throws Exception {
     User userPI = createAndSaveUser(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
     User user = createAndSaveUser(getRandomAlphabeticString("user"));
@@ -2265,12 +2267,10 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   private Long getIconEntityCount() throws HibernateException, Exception {
     return doInTransaction(
         () ->
-            (Long)
-                sessionFactory
-                    .getCurrentSession()
-                    .createCriteria(IconEntity.class)
-                    .setProjection(Projections.rowCount())
-                    .uniqueResult());
+            sessionFactory
+                .getCurrentSession()
+                .createQuery("select count(i) from IconEntity i", Long.class)
+                .getSingleResult());
   }
 
   @Test
@@ -2793,7 +2793,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
           NativeQuery<?> q =
               sessionFactory
                   .getCurrentSession()
-                  .createSQLQuery(
+                  .createNativeQuery(
                       "update BaseRecord set creationDate = :cd, creationDateMillis=:cdm, "
                           + "modificationDate = :md, modificationDateMillis=:mdm where id in :ids");
           q.setParameter("cd", new Date(twoYearsAgoL));

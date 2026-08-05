@@ -118,13 +118,11 @@ public class SampleTemplatesApiControllerTest extends SpringTransactionalTest {
                 templatesApi.createNewSampleTemplate(sampleTemplatePost, bindingResult, testUser));
     assertEquals(5, be.getErrorCount());
     assertEquals(
-        "errors.inventory.template.invalid.field.content", be.getAllErrors().get(0).getCode());
-    assertEquals("errors.inventory.template.empty.field.name", be.getAllErrors().get(1).getCode());
-    assertEquals(
-        "errors.inventory.template.reserved.field.name", be.getAllErrors().get(2).getCode());
-    assertEquals(
-        "errors.inventory.template.field.name.too.long", be.getAllErrors().get(3).getCode());
-    assertEquals("errors.inventory.template.empty.field.type", be.getAllErrors().get(4).getCode());
+        "errors.inventory.template.invalidFieldContent", be.getAllErrors().get(0).getCode());
+    assertEquals("errors.inventory.template.emptyFieldName", be.getAllErrors().get(1).getCode());
+    assertEquals("errors.inventory.template.reservedFieldName", be.getAllErrors().get(2).getCode());
+    assertEquals("errors.inventory.template.fieldNameTooLong", be.getAllErrors().get(3).getCode());
+    assertEquals("errors.inventory.template.emptyFieldType", be.getAllErrors().get(4).getCode());
   }
 
   @Test
@@ -182,13 +180,11 @@ public class SampleTemplatesApiControllerTest extends SpringTransactionalTest {
                 templatesApi.updateSampleTemplate(
                     createdTemplateId, templateUpdate, putBindingResult, testUser));
     assertEquals(4, be.getErrorCount());
+    assertEquals("errors.inventory.template.reservedFieldName", be.getAllErrors().get(0).getCode());
+    assertEquals("errors.inventory.template.fieldNameTooLong", be.getAllErrors().get(1).getCode());
     assertEquals(
-        "errors.inventory.template.reserved.field.name", be.getAllErrors().get(0).getCode());
-    assertEquals(
-        "errors.inventory.template.field.name.too.long", be.getAllErrors().get(1).getCode());
-    assertEquals(
-        "errors.inventory.template.invalid.field.content", be.getAllErrors().get(2).getCode());
-    assertEquals("errors.inventory.template.empty.field.name", be.getAllErrors().get(3).getCode());
+        "errors.inventory.template.invalidFieldContent", be.getAllErrors().get(2).getCode());
+    assertEquals("errors.inventory.template.emptyFieldName", be.getAllErrors().get(3).getCode());
   }
 
   @Test

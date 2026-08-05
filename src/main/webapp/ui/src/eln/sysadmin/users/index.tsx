@@ -1398,7 +1398,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
           }}
         >
           {t("usersPage.export.visibleRows", {
-            scope: selectedCount > 0 ? t("usersPage.export.selected") : t("usersPage.export.thisPageOf"),
+            scope: selectedCount > 0 ? "selected" : "page",
           })}
         </ExportMenuItem>
       </GridToolbarExportContainer>

@@ -24,10 +24,10 @@ import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -157,7 +157,7 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
 
   @JsonIgnore private FileProperty thumbnailFileProperty;
 
-  @Size(max = 10_000_000, message = "Image cannot be larger than 10MB")
+  @Size(max = 10_000_000, message = "{errors.inventory.imageTooLarge}")
   @JsonProperty(value = "newBase64Image", access = Access.WRITE_ONLY)
   private String newBase64Image;
 

@@ -17,9 +17,9 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.List;
-import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -81,6 +81,26 @@ class LinkTargetResolverImplTest {
         .thenReturn(true);
 
     assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA42"), user));
+  }
+
+  @Test
+  void instrumentTargetResolvesThroughInventoryReadabilityCheck() {
+    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
+        .thenReturn(true);
+
+    assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("IN42"), user));
+
+    ArgumentCaptor<GlobalIdentifier> gid = ArgumentCaptor.forClass(GlobalIdentifier.class);
+    verify(inventoryPermissionUtils).canUserReadInventoryRecord(gid.capture(), eq(user));
+    assertEquals(GlobalIdPrefix.IN, gid.getValue().getPrefix());
+  }
+
+  @Test
+  void instrumentTemplateTargetResolvesThroughInventoryReadabilityCheck() {
+    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
+        .thenReturn(true);
+
+    assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("NT42"), user));
   }
 
   @Test

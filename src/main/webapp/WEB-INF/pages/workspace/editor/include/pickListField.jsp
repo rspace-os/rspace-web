@@ -16,10 +16,10 @@
 						<div class="fieldHeaderName">${field.name}</div>
 						<span class="fieldNotification"></span>
 						<div class="fieldHeaderEditButton bootstrap-custom-flat">
-							<button id="edit_${field.id}" title="Edit" class="btn btn-primary btn-sm editButton" onclick="editFieldByClassRadio(${field.id})">
+							<button id="edit_${field.id}" title="<spring:message code='common:actions.edit'/>" class="btn btn-primary btn-sm editButton" onclick="editFieldByClassRadio(${field.id})">
 								<span class="glyphicon glyphicon-pencil"></span>
 							</button>
-							<button id="stopEdit_${field.id}" title="Save and View" class="btn btn-info btn-sm stopEditButton" style="display: none">
+							<button id="stopEdit_${field.id}" title="<spring:message code='form.field.saveAndViewTitle'/>" class="btn btn-info btn-sm stopEditButton" style="display: none">
 								<span class="glyphicon glyphicon-floppy-disk"></span>
 							</button>
 						</div>
@@ -41,7 +41,7 @@
 						<p class="checkboxText singleLineFieldInDocViewMode" id="radioText_${field.id}">
 							${field.fieldData}
 						</p>
-						<p class="lastModified">Last modified: <span>${field.modificationDateAsDate}</span></p>
+						<p class="lastModified"><spring:message code="form.field.lastModifiedLabel"/> <span>${field.modificationDateAsDate}</span></p>
 					</td>
 				</tr>
 			</table>

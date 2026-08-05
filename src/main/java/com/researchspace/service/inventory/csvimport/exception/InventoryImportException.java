@@ -1,5 +1,7 @@
 package com.researchspace.service.inventory.csvimport.exception;
 
+import static com.researchspace.service.ListFormatUtils.formatList;
+
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.apiutils.ApiError;
 import lombok.Getter;
@@ -15,6 +17,6 @@ public class InventoryImportException extends RuntimeException {
   }
 
   public InventoryImportException(ApiError apiError, ApiInventoryImportResult result) {
-    this(org.apache.commons.lang3.StringUtils.join(apiError.getErrors(), "; "), result);
+    this(formatList(apiError.getErrors()), result);
   }
 }

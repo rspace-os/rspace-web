@@ -45,7 +45,7 @@ public class DirectoryControllerMVCIT extends MVCTestBase {
     MockPrincipal adminPrincipal = new MockPrincipal(user.getUsername());
     MvcResult result =
         this.mockMvc
-            .perform(get("/directory/").principal(adminPrincipal))
+            .perform(get("/directory").principal(adminPrincipal))
             .andExpect(status().isOk())
             .andExpect(model().attributeExists("pageReload"))
             .andReturn();
@@ -63,7 +63,7 @@ public class DirectoryControllerMVCIT extends MVCTestBase {
     Principal principal = piUser::getUsername;
     MvcResult result =
         this.mockMvc
-            .perform(get("/directory/").principal(principal))
+            .perform(get("/directory").principal(principal))
             .andExpect(status().isOk())
             .andReturn();
     ISearchResults<PublicUserList> uui = getUserListFromModel(result);
@@ -75,7 +75,7 @@ public class DirectoryControllerMVCIT extends MVCTestBase {
 
     MvcResult result2 =
         this.mockMvc
-            .perform(get("/directory/").principal(principal))
+            .perform(get("/directory").principal(principal))
             .andExpect(status().isOk())
             .andReturn();
     ISearchResults<PublicUserList> uui2 = getUserListFromModel(result2);

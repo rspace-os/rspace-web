@@ -11,6 +11,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.JspWriter;
+import jakarta.servlet.jsp.PageContext;
+import jakarta.servlet.jsp.tagext.TagSupport;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -19,12 +25,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.JspWriter;
-import javax.servlet.jsp.PageContext;
-import javax.servlet.jsp.tagext.TagSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -158,6 +158,85 @@ public class BundleTagTest {
     assertTrue(
         output.toString().contains("rel=\"modulepreload\" href=\"/ui/dist/chunks/shared.js\""));
     assertTrue(output.toString().contains("type=\"module\" src=\"/ui/dist/appBar-abc123.js\""));
+  }
+
+  @Test
+  public void i18nMessagesTagRendersClassicViteBundle() throws JspException {
+    manifest =
+        BundleTag.ChunkManifest.fromBundles(
+            Collections.singletonMap(
+                "legacyI18n",
+                new BundleTag.ChunkManifest.BundleAssets(
+                    List.of(), List.of(), List.of("/ui/dist/legacyI18n-abc123.js"))));
+    I18nMessagesTag i18nTag =
+        new I18nMessagesTag() {
+          @Override
+          ChunkManifest getManifestCache() {
+            return manifest;
+          }
+
+          @Override
+          Set<String> getRenderedAssetKeys() {
+            return renderedAssets;
+          }
+        };
+    i18nTag.setPageContext(pageContext);
+
+    assertEquals(TagSupport.SKIP_BODY, i18nTag.doStartTag());
+    // The catalogue comes first only because it is written first; RS.msg reads both at call time.
+    assertEquals(
+        "<script src=\"/ui/dist/legacyMessages.en-US.js\"></script>"
+            + "<script src=\"/ui/dist/legacyI18n-abc123.js\"></script>",
+        output.toString());
+  }
+
+  @Test
+  public void i18nMessagesTagCacheBustsTheCatalogueUrl() throws JspException {
+    servletContext.setAttribute(FrontendCacheVersion.CACHE_VERSION_ATTR, "1.2.3");
+    I18nMessagesTag i18nTag =
+        new I18nMessagesTag() {
+          @Override
+          ChunkManifest getManifestCache() {
+            return manifest;
+          }
+
+          @Override
+          Set<String> getRenderedAssetKeys() {
+            return renderedAssets;
+          }
+        };
+    i18nTag.setPageContext(pageContext);
+
+    assertEquals("/ui/dist/legacyMessages.en-US.js?v=1.2.3", i18nTag.catalogueUrl());
+  }
+
+  @Test
+  public void i18nMessagesTagRendersClassicEntrypointInHmrMode() throws JspException {
+    I18nMessagesTag i18nTag =
+        new I18nMessagesTag() {
+          @Override
+          boolean isReactDevMode() {
+            return true;
+          }
+
+          @Override
+          Map<String, String> getEntrypoints() {
+            return Collections.singletonMap("legacyI18n", "src/modules/common/i18n/legacyI18n.ts");
+          }
+
+          @Override
+          Set<String> getRenderedAssetKeys() {
+            return renderedAssets;
+          }
+        };
+    i18nTag.setPageContext(pageContext);
+
+    assertEquals(TagSupport.SKIP_BODY, i18nTag.doStartTag());
+    assertTrue(output.toString().contains("type=\"module\" src=\"/ui/dist/@vite/client\""));
+    assertTrue(
+        output
+            .toString()
+            .contains("<script src=\"/ui/dist/src/modules/common/i18n/legacyI18n.ts\"></script>"));
   }
 
   @Test

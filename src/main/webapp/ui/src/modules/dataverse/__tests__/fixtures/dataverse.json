@@ -1,0 +1,14 @@
+{
+  "status": "OK",
+  "data": {
+    "id": "1",
+    "alias": "mock",
+    "name": "Mock Dataverse",
+    "affiliation": "RSpace",
+    "permissionRoot": "true",
+    "description": "Mock dataverse for e2e tests",
+    "ownerId": "1",
+    "creationDate": "2026-01-01T00:00:00.000Z",
+    "dataverseContacts": [{ "displayOrder": 0, "contactEmail": "mock@example.com" }]
+  }
+}

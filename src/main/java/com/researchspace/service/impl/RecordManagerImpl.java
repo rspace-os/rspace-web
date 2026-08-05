@@ -2,15 +2,15 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.MediaUtils.DMP_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.MISC_MEDIA_FLDER_NAME;
+import static com.researchspace.core.util.StringAbbreviationUtils.abbreviate;
 import static com.researchspace.model.comms.NotificationType.NOTIFICATION_DOCUMENT_EDITED;
 import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
 import static com.researchspace.model.record.Folder.EXPORTS_FOLDER_NAME;
-import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.abbreviate;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import com.axiope.search.SearchUtils;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -83,8 +83,9 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.DocumentCopyManager;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
-import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RequiresActiveLicense;
@@ -108,6 +109,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.shiro.authz.AuthorizationException;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,6 +137,7 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired RecordEditorTracker tracker;
   private @Autowired FieldLinksEntitiesSynchronizer fieldContentSynchroniser;
   private @Autowired FormDao formDao;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired RecordGroupSharingDao recordGroupSharingDao;
   private @Autowired RecordUserFavoritesDao recordUserFavoritesDao;
   private @Autowired IRecordFactory recordFactory;
@@ -151,7 +154,6 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired RichTextUpdater updater;
   private @Autowired DocumentCopyManager copyMgr;
   private @Autowired ApplicationEventPublisher publisher;
-  private @Autowired OperationFailedMessageGenerator authMsgGenerator;
 
   @Override
   public Record get(long id) {
@@ -580,8 +582,19 @@ public class RecordManagerImpl implements RecordManager {
 
   @Override
   public BaseRecord getRecordWithFields(long recordId, User user) {
-    return getRecordWithLazyLoadedProperties(
-        recordId, user, new DocumentFieldInitializationPolicy(), false);
+    BaseRecord rec =
+        getRecordWithLazyLoadedProperties(
+            recordId, user, new DocumentFieldInitializationPolicy(), false);
+    // Under Hibernate 6, getTempRecord() is a lazy proxy. Initialise it inside this
+    // transactional method so callers (e.g. StructuredDocumentController.
+    // prepareDocumentForView) can read its properties after the session closes.
+    if (rec instanceof StructuredDocument) {
+      Record temp = ((StructuredDocument) rec).getTempRecord();
+      if (temp != null) {
+        Hibernate.initialize(temp);
+      }
+    }
+    return rec;
   }
 
   @Override
@@ -633,9 +646,19 @@ public class RecordManagerImpl implements RecordManager {
     return structuredDocument;
   }
 
+  /**
+   * Under Hibernate 6, {@link Record#getTempRecord()} returns a lazy {@code Record} proxy, so
+   * casting it directly to {@link StructuredDocument} throws {@code ClassCastException}. Unproxy
+   * first to reach the real subclass. Null-safe: returns {@code null} when the document has no temp
+   * record.
+   */
+  private static StructuredDocument tempRecordOf(StructuredDocument doc) {
+    return (StructuredDocument) Hibernate.unproxy(doc.getTempRecord());
+  }
+
   private StructuredDocument saveTempRecord(Long recordId, User user) {
     StructuredDocument record = (StructuredDocument) getRecordWithFields(recordId, user);
-    StructuredDocument tempRecord = (StructuredDocument) record.getTempRecord();
+    StructuredDocument tempRecord = tempRecordOf(record);
     if (tempRecord == null) {
       tempRecord = record.copyNoFields();
       tempRecord.setTemporaryDoc(true);
@@ -733,7 +756,7 @@ public class RecordManagerImpl implements RecordManager {
       warningList.addErrorMsg("content.not.changed");
     }
 
-    StructuredDocument temp = (StructuredDocument) structuredDocument.getTempRecord();
+    StructuredDocument temp = tempRecordOf(structuredDocument);
     if (temp != null) {
       structuredDocument.setModificationDate(temp.getModificationDate());
       structuredDocument.setModifiedBy(temp.getModifiedBy(), IActiveUserStrategy.CHECK_OPERATE_AS);
@@ -794,7 +817,7 @@ public class RecordManagerImpl implements RecordManager {
     }
     fieldContentSynchroniser.revertSyncDocumentWithEntitiesOnCancel(
         structuredDocument, fieldChanges);
-    StructuredDocument temp = (StructuredDocument) structuredDocument.getTempRecord();
+    StructuredDocument temp = tempRecordOf(structuredDocument);
     if (temp != null) {
       structuredDocument.setTempRecord(null);
     }
@@ -812,7 +835,9 @@ public class RecordManagerImpl implements RecordManager {
       throws DocumentAlreadyEditedException {
     Optional<String> isEditing = tracker.isEditing(structuredDocument);
     if (isEditing.isPresent() && !isEditing.get().equals(userEditor.getUsername())) {
-      throw new DocumentAlreadyEditedException("Already edited by " + isEditing);
+      throw new DocumentAlreadyEditedException(
+          messages.getMessage(
+              "document.edit.errors.alreadyEditedBy", new Object[] {isEditing.get()}));
     }
   }
 
@@ -957,7 +982,15 @@ public class RecordManagerImpl implements RecordManager {
     if (!permissnUtils.isPermitted(parentFolder, PermissionType.CREATE, user)
         && !isSharedFolderOrSharedNotebookWithoutCreatePermission(user, parentFolder)) {
       throw new AuthorizationException(
-          "User is not authorized to created in this folder or notebook");
+          messages.getMessage(
+              "record.errors.createLocationForbidden",
+              new Object[] {
+                ListFormatUtils.formatList(
+                    List.of(
+                        messages.getMessage("record.types.folder"),
+                        messages.getMessage("common:recordTypes.notebook.lower")),
+                    ListFormatter.Type.OR)
+              }));
     }
   }
 
@@ -989,7 +1022,7 @@ public class RecordManagerImpl implements RecordManager {
   public boolean renameRecord(String newname, Long toRenameId, User user) {
     if (StringUtils.isBlank(newname)) {
       throw new IllegalArgumentException(
-          String.format("New name cannot be empty but was [%s]", newname));
+          messages.getMessage("document.rename.errors.nameRequired", new Object[] {newname}));
     }
     newname = sanitizeNewRecordName(newname);
     boolean isRecord = isRecord(toRenameId);
@@ -1010,8 +1043,9 @@ public class RecordManagerImpl implements RecordManager {
     }
     if (!permissnUtils.isPermitted(toSave, PermissionType.RENAME, user)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(
-              user, format(" attempted rename of %s [id=%d]", toSave.getName(), toSave.getId())));
+          messages.getMessage(
+              "errors.authorization.failure.renameRecord",
+              new Object[] {user.getUsername(), toSave.getName(), toSave.getId()}));
     }
     // only get here if name OK, has permission, and is not a system folder.
     toSave.setName(newname);
@@ -1051,7 +1085,7 @@ public class RecordManagerImpl implements RecordManager {
   @Override
   public List<RSpaceDocView> getAllFrom(Set<Long> dbids) {
     if (CollectionUtils.isEmpty(dbids)) {
-      throw new IllegalArgumentException("List of ids to retrieve is empty!");
+      throw new IllegalArgumentException(messages.getMessage("record.errors.idsRequired"));
     }
     return recordDao.getRecordViewsById(dbids);
   }

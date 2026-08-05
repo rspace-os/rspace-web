@@ -5,8 +5,8 @@ import com.researchspace.api.v1.model.ApiJob;
 import com.researchspace.archive.ArchiveUtils;
 import com.researchspace.model.User;
 import com.researchspace.service.aws.S3ExportUtilities;
+import jakarta.servlet.http.HttpServletResponse;
 import java.net.URL;
-import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,7 +47,8 @@ public class JobsApiController extends BaseApiController implements JobsApi {
       if (s3Link != null) job.addEnclosureLink(s3Link.toString());
       else {
         throw new IllegalStateException(
-            "Couldn't find export on S3 for " + job.getResourceLocation());
+            getMessage(
+                "export.jobs.errors.s3ExportNotFound", new Object[] {job.getResourceLocation()}));
       }
     }
   }

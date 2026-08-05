@@ -19,9 +19,9 @@ $(document).ready(function (){
 	if (noOfRows <= 0) {
 		const containsPublicLinks = $("#containsPublicLinks").length > 0;
 		if(containsPublicLinks){
-			$("#searchModePanel #message").text("There are no published records to manage.");
+			$("#searchModePanel #message").text(RS.msg("legacyjs.sharedRecords.noPublishedRecordsToManage"));
 		} else {
-			$("#searchModePanel #message").text("There are no shared records to manage.");
+			$("#searchModePanel #message").text(RS.msg("legacyjs.sharedRecords.noSharedRecordsToManage"));
 		}
 		$("#searchModePanel").addClass("searchError").slideDown(fadeTime).find("#resetSearch").hide();
 		$("#sharedRecordsListContainer").find(".panel, .tabularViewBottom").hide();
@@ -50,7 +50,7 @@ $(document).ready(function (){
 
 	$('body').on("click",'.unshare', function (e) {
 		e.preventDefault();
-		RS.blockPage("Unsharing document...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.sharedRecords.unsharingDocument"), false, $(tableElement));
 
 		var id = $(this).attr('id');
 		/* originally, unsharing was done with page reload
@@ -64,16 +64,16 @@ $(document).ready(function (){
 
 		RS.webResultCache.clearAll();
 		var jxqr = $.post(createURL('/record/share/unshare'), {grpShareId : id}, function(data) {
-			let message = "Unshared";
+			let message = RS.msg("legacyjs.sharedRecords.unshared");
 			if(e.target.textContent === 'Unpublish'){
-				message = "Unpublished"
+				message = RS.msg("legacyjs.sharedRecords.unpublished");
 			}
 			RS.confirm(message, "success", 3000);
 			settings.urlParams.pageNumber = 0;
 		}).always(function() {
 			displayData(settings.searchTerm);
 		}).fail(function() {
-			RS.ajaxFailed("Unsharing shared document", false, jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.sharedRecords.actionUnsharingDocument"), false, jxqr);
 		});
 	});
 
@@ -91,14 +91,14 @@ $(document).ready(function (){
  	$(document).on("click", "#resetSearch", function(e) {
 		if (!settings.searchMode) return;
 		document.dispatchEvent(new Event('reset-search-input'));
-		RS.blockPage("Abandoning search...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.common.abandoningSearch"), false, $(tableElement));
 		displayData("");
 	});
 
 	var currSelection;
 
 	$('body').on("change", 'select.update', function(e) {
-		RS.blockPage("Updating permissions...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.sharedRecords.updatingPermissions"), false, $(tableElement));
 		currSelection = $(this).val();
 		var id = getIdFromRow($(this));
 		var jxqr = $.post(createURL('/record/share/permissions'),
@@ -109,12 +109,12 @@ $(document).ready(function (){
 			function (data) {
 		    	if (currSelection === 'WRITE') { currSelection = 'EDIT'};
 		    	$(this).closest('td').html(generateSelectionView(currSelection));
-		    	RS.confirm("Updated permissions", "success", 3000);
+			RS.confirm(RS.msg("legacyjs.sharedRecords.permissionsUpdated"), "success", 3000);
 		    }
 		).always(function(){
 			RS.unblockPage($(tableElement));
 		}).fail(function(){
-			RS.ajaxFailed("Updating permissions of the shared document", false, jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.sharedRecords.actionUpdatingPermissions"), false, jxqr);
 		});
 	});
 
@@ -157,7 +157,7 @@ $(document).ready(function (){
 	});
 
 	var paginationEventHandler = function(source, e) {
-		RS.blockPage("Loading the chosen page...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.common.loadingChosenPage"), false, $(tableElement));
 		var url = source.attr('id').split("_")[1];
 		var params = RS.getJsonParamsFromUrl(url);
 		settings.urlParams.pageNumber = params.pageNumber;
@@ -186,7 +186,7 @@ $(document).ready(function (){
 	// Changes the number of records per page
   $(document).on('click', '#applyNumberRecords', function(e){
 		e.preventDefault();
-		RS.blockPage("Changing the number of records per page...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.common.changingRecordsPerPage"), false, $(tableElement));
 		settings.urlParams.pageNumber = 0;
 		settings.urlParams.resultsPerPage = $('#numberRecordsId').val();
 		displayData(settings.searchTerm);
@@ -203,7 +203,7 @@ var handleSearchShared = function(e) {
 	var searchTerm = $('#searchSharedListInput').val().trim();
 	if (!settings.searchMode && searchTerm == "") return;
 
-	RS.blockPage("Searching shared items...", false, $(tableElement));
+	RS.blockPage(RS.msg("legacyjs.sharedRecords.searchingSharedItems"), false, $(tableElement));
 	searchTerm = searchTerm.replace(/,\s*$/,"");
 	settings.urlParams.pageNumber = 0;
 	settings.searchTerm = searchTerm;
@@ -218,9 +218,9 @@ function getIdFromRow(selectBox$) {
 
 function generateSelectionView(currSelection) {
 	var localSelection = currSelection;
-	if (localSelection === 'READ'){localSelection='Read';}
-	else if(localSelection === 'WRITE'){localSelection='Edit';}
-	return "<span class='permType'>" + localSelection + "</span><a href='#' class='alterPermissions'><span style='font-size:70%'>Alter</span></a>"
+	if (localSelection === 'READ'){localSelection=RS.msg("legacyjs.sharedRecords.permissionRead");}
+	else if(localSelection === 'WRITE'){localSelection=RS.msg("legacyjs.sharedRecords.permissionEdit");}
+	return "<span class='permType'>" + localSelection + "</span><a href='#' class='alterPermissions'><span style='font-size:70%'>" + RS.msg("legacyjs.sharedRecords.alter") + "</span></a>"
 }
 
 function insertData(html) {
@@ -229,7 +229,7 @@ function insertData(html) {
 	if (noOfRows > 0) {
 		$("#searchModePanel").removeClass("searchError").addClass("searchSuccess");
 		if (settings.searchMode) {
-			var message = "Showing shared documents for search term '" + settings.searchTerm + "'.";
+			var message = RS.msg("legacyjs.sharedRecords.showingForSearchTerm", settings.searchTerm);
 			$("#searchModePanel #message").text(message);
 			$("#resetSearch").show();
 			$("#searchModePanel").slideDown(fadeTime);
@@ -268,12 +268,11 @@ function insertData(html) {
 	} else {
 		$("#searchModePanel").removeClass("searchSuccess").addClass("searchError");
 		if (settings.searchMode) {
-			$("#searchModePanel #message").text("Your search for '" + settings.searchTerm +
-				"' returned no results. Please search again or");
+			$("#searchModePanel #message").text(RS.msg("legacyjs.common.noResultsForSearchTerm", settings.searchTerm));
 			$("#resetSearch").show();
 			$("#searchModePanel").slideDown(fadeTime);
 		} else {
-			$("#searchModePanel #message").text("There are no shared documents to view.");
+			$("#searchModePanel #message").text(RS.msg("legacyjs.sharedRecords.noSharedDocumentsToView"));
 			$("#resetSearch").hide();
 			$("#searchModePanel").slideDown(fadeTime);
 		}
@@ -304,7 +303,7 @@ function insertData(html) {
 		if (settings.searchMode) {
 			if (searchTerm.length < 3) {
 				RS.unblockPage($(tableElement));
-				apprise("Please enter at least three characters.");
+				apprise(RS.msg("legacyjs.common.searchTermTooShort"));
 				return;
 			} else {
 				requestData.allFields = searchTerm;
@@ -326,7 +325,7 @@ function insertData(html) {
 			}).always(function(){
 				RS.unblockPage($(tableElement));
 			}).fail(function() {
-				RS.ajaxFailed("Getting shared documents", false, jxqr);
+				RS.ajaxFailed(RS.msg("legacyjs.sharedRecords.actionGettingSharedDocuments"), false, jxqr);
 			});
 		}
 		return jxqr;

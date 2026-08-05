@@ -75,7 +75,11 @@ const PublicPreviewDialog = ({ open, onClose, id, record }: PreviewDialogArgs): 
           </Grid>
           <Grid>
             <HelpLinkIcon
-              link={helpDocsArticleUrl("igsnIdentifiers")}
+              link={helpDocsArticleUrl(
+                record.recordType === "instrument" || record.recordType === "instrumentTemplate"
+                  ? "pidinstIdentifiers"
+                  : "igsnIdentifiers",
+              )}
               title={t("fields.identifiers.publicPreviewDialog.helpTitle")}
             />
           </Grid>

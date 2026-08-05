@@ -202,6 +202,7 @@ function makeFilestore(filesystemType: string, canWrite = true): Filestore {
     filesystemName: "My S3 Filesystem",
     filesystemType,
     canWrite,
+    ownerName: "gallery:unknownOwner",
   });
 }
 
@@ -215,6 +216,7 @@ function makeRemoteFile({ folder, path }: { folder: boolean; path: ReadonlyArray
     path,
     logicPath: "42:/test.jpg",
     token: "",
+    ownerName: "gallery:unknownOwner",
   });
 }
 
@@ -229,6 +231,7 @@ describe("RemoteFile owner fields", () => {
       path: [],
       logicPath: "1:folder",
       token: "token",
+      ownerName: "gallery:unknownOwner",
     });
 
     // Filestore items have no RSpace owner; write provenance is shown separately
@@ -367,6 +370,26 @@ describe("LocalGalleryFile.canMoveToIrods", () => {
     expect(file.canMoveToIrods.isOk).toBe(false);
     expect(file.canMoveToIrods.orElseGet(([e]) => e)).toMatchObject({
       message: expect.stringContaining("folder"),
+    });
+  });
+});
+
+describe("LocalGalleryFile.canViewVersionHistory", () => {
+  test("returns Ok for a non-folder file", () => {
+    const file = makeLocalGalleryFile();
+    expect(file.canViewVersionHistory.isOk).toBe(true);
+  });
+
+  /*
+   * A snippet is a Record, not an EcatMediaFile, so nothing ever gives it a new
+   * version and the endpoint cannot audit it. Without this the menu item would
+   * be enabled on an item whose history can only ever fail to load.
+   */
+  test("returns Error for a snippet", () => {
+    const file = makeLocalGalleryFile({ type: "Snippet" });
+    expect(file.canViewVersionHistory.isOk).toBe(false);
+    expect(file.canViewVersionHistory.orElseGet(([e]) => e)).toMatchObject({
+      message: "Snippets do not have a version history.",
     });
   });
 });

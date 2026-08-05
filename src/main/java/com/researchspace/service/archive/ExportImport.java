@@ -12,6 +12,7 @@ import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.archive.export.ExportFileResult;
 import com.researchspace.service.archive.export.ExportRemovalPolicy;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -19,7 +20,6 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
@@ -246,7 +246,7 @@ public interface ExportImport {
    * <p>This method is scheduled; see applicationContext-service.xml for its configuration using
    * Spring Quartz scheduler.
    */
-  public void removeOldArchives();
+  void removeOldArchives();
 
   /**
    * Exports a PDF of all the user's records.
@@ -291,7 +291,7 @@ public interface ExportImport {
    * @param zipname
    * @param response
    */
-  public void streamArchiveDownload(String zipname, HttpServletResponse response);
+  void streamArchiveDownload(String zipname, HttpServletResponse response);
 
   /**
    * Gets {@link ArchivalCheckSum} for archives that are not deleted, i.e that are still available

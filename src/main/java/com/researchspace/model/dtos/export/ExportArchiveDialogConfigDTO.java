@@ -3,11 +3,11 @@ package com.researchspace.model.dtos.export;
 import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.model.dtos.NfsExportConfig;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.HashSet;
 import java.util.Set;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.io.FileUtils;
@@ -20,17 +20,17 @@ public class ExportArchiveDialogConfigDTO extends AbstractExportDialog {
   @Data
   @NoArgsConstructor
   public static class ArchiveDialogConfig {
-    @NotNull(message = "maxLinkLevel {errors.required.field}")
+    @NotNull(message = "{validation.errors.maxLinkLevelRequired}")
     Integer maxLinkLevel;
 
-    @NotNull(message = "archiveType {errors.required.field}")
+    @NotNull(message = "{validation.errors.archiveTypeRequired}")
     String archiveType;
 
-    @Size(max = 500, message = "{description} {errors.string.max}")
-    @NotNull(message = "description {errors.required.field}")
+    @Size(max = 500, message = "{validation.errors.descriptionStringMax}")
+    @NotNull(message = "{validation.errors.descriptionRequired}")
     String description;
 
-    @NotNull(message = "allVersions {errors.required.field}")
+    @NotNull(message = "{validation.errors.allVersionsRequired}")
     Boolean allVersions;
   }
 

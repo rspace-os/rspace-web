@@ -59,7 +59,7 @@ public class NumberFieldDTOValidator extends AbstractFieldFormValidator implemen
       Double max = Double.parseDouble(dto.getMaxNumberValue());
 
       if (min > max) {
-        errors.reject("errors.min_gt_max");
+        errors.reject("errors.minGtMax");
       }
       if (hasDef) {
         Double defaultVal = Double.parseDouble(dto.getDefaultNumberValue());

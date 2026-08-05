@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.record.BaseRecord;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -26,7 +26,7 @@ public abstract class IdentifiableNameableApiObject extends LinkableApiObject
   @JsonProperty("name")
   @Size(
       max = BaseRecord.DEFAULT_VARCHAR_LENGTH,
-      message = "Name cannot be longer than 255 characters")
+      message = "{errors.inventory.name.validationTooLong}")
   private String name = null;
 
   /**
