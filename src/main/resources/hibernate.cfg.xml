@@ -12,10 +12,6 @@
         
         <!-- Hibernate Search 6 Lucene analyzer configuration -->
         <property name="hibernate.search.backend.analysis.configurer">com.researchspace.search.impl.RSpaceLuceneAnalysisConfigurer</property>
-
-        <!-- Programmatic Hibernate Search mapping additions, e.g. keeping temporary
-             autosave document copies out of the index -->
-        <property name="hibernate.search.mapping.configurer">com.researchspace.search.impl.RSpaceSearchMappingConfigurer</property>
         
         <!-- RSPAC-22 -->
         <property name="hibernate.envers.autoRegisterListeners">false</property>
