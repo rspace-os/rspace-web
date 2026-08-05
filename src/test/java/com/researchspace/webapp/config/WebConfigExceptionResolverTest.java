@@ -3,6 +3,7 @@ package com.researchspace.webapp.config;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
 import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
 import com.researchspace.service.MessageSourceUtils;
@@ -27,6 +28,7 @@ class WebConfigExceptionResolverTest {
         config,
         "apiV2ControllerAdvice",
         new ApiV2ControllerAdvice(new MessageSourceUtils(new StaticMessageSource())));
+    ReflectionTestUtils.setField(config, "objectMapper", new ObjectMapper());
     HandlerExceptionResolver springDefault = new DefaultHandlerExceptionResolver();
     List<HandlerExceptionResolver> resolvers = new ArrayList<>(List.of(springDefault));
 
