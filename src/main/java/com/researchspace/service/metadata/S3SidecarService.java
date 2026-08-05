@@ -4,6 +4,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
+import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.properties.IPropertyHolder;
@@ -13,6 +14,7 @@ import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
+import jakarta.ws.rs.NotFoundException;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,6 +46,7 @@ public class S3SidecarService {
   /** Composes and returns a sidecar for the folder without writing anything. */
   public GeneratedSidecar preview(Long filestoreId, String folderPath, User user) {
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
+    assertS3Filestore(filestore);
     aclChecker.assertCanRead(user, filestore.getFileSystem());
     S3Utilities s3 = s3UtilitiesFactory.createS3UtilitiesForNfsConnector(filestore.getFileSystem());
     return compose(s3, prefixFor(filestore, folderPath), user);
@@ -52,6 +55,7 @@ public class S3SidecarService {
   /** Composes a sidecar, writes it into the folder, and records the action in the audit trail. */
   public GeneratedSidecar save(Long filestoreId, String folderPath, User user) {
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
+    assertS3Filestore(filestore);
     aclChecker.assertCanWrite(user, filestore.getFileSystem());
     S3Utilities s3 = s3UtilitiesFactory.createS3UtilitiesForNfsConnector(filestore.getFileSystem());
     String prefix = prefixFor(filestore, folderPath);
@@ -106,6 +110,13 @@ public class S3SidecarService {
                     item.getEtag(),
                     item.getStorageClass()))
         .toList();
+  }
+
+  // The sidecar endpoints are S3-only; a non-S3 filestore is a 404, not a 500 from a bad S3 client.
+  private void assertS3Filestore(NfsFileStore filestore) {
+    if (!NfsClientType.S3.equals(filestore.getFileSystem().getClientType())) {
+      throw new NotFoundException("Sidecar generation is only supported for S3 filestores.");
+    }
   }
 
   private static String joinKey(String prefix, String name) {

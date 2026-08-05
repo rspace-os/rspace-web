@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 public class ApiGalleryFilestoreSidecarRequest {
 
   /** Folder the sidecar describes, relative to the filestore root. Empty/"/" means the root. */
-  @NotNull(message = "path is mandatory")
+  @NotNull(message = "{errors.gallery.filestore.validation.pathRequired}")
   private String path;
 }

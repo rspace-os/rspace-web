@@ -1,6 +1,7 @@
 package com.researchspace.service.metadata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -16,6 +17,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
+import com.researchspace.model.netfiles.NfsClientType;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.netfiles.WriteAttribution;
@@ -27,6 +29,7 @@ import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import com.researchspace.service.aws.impl.S3UtilitiesImpl.S3FolderContentItem;
+import jakarta.ws.rs.NotFoundException;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +68,7 @@ class S3SidecarServiceTest {
 
     NfsFileSystem filesystem = new NfsFileSystem();
     filesystem.setName("lrz-filestore");
+    filesystem.setClientType(NfsClientType.S3);
     NfsFileStore filestore = new NfsFileStore();
     filestore.setFileSystem(filesystem);
     when(nfsManager.getNfsFileStore(1L)).thenReturn(filestore);
@@ -154,6 +158,19 @@ class S3SidecarServiceTest {
     assertEquals(1, related.size());
     assertEquals(
         "XRD-Experiments/xrd_run_041.dat", related.path(0).path("s3Location").path("key").asText());
+  }
+
+  @Test
+  void nonS3FilestoreIsNotFound() {
+    NfsFileSystem sftp = new NfsFileSystem();
+    sftp.setName("sftp-store");
+    sftp.setClientType(NfsClientType.SFTP);
+    NfsFileStore store = new NfsFileStore();
+    store.setFileSystem(sftp);
+    when(nfsManager.getNfsFileStore(2L)).thenReturn(store);
+
+    assertThrows(NotFoundException.class, () -> service.preview(2L, "folder", user));
+    assertThrows(NotFoundException.class, () -> service.save(2L, "folder", user));
   }
 
   @Test

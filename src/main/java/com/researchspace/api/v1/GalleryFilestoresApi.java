@@ -167,8 +167,7 @@ public interface GalleryFilestoresApi {
   /**
    * Composes a metadata sidecar for the folder at {@code path} in the request and returns it
    * without writing anything. Auto-populated from the S3 file listing, the current user, and the
-   * RSpace instance configuration. An unknown {@code format} produces 400; non-S3 backends produce
-   * 404.
+   * RSpace instance configuration. Non-S3 backends produce 404.
    */
   @PostMapping(
       value = "/filestores/{filestoreId}/sidecar/preview",
@@ -181,7 +180,7 @@ public interface GalleryFilestoresApi {
   /**
    * Composes a metadata sidecar for the folder at {@code path} and writes it into that folder as
    * {@code <folder>.sidecar.yaml} (overwriting any existing one), recording a {@code CREATE} audit
-   * event. An unknown {@code format} produces 400; non-S3 backends produce 404.
+   * event. Non-S3 backends produce 404.
    */
   @PostMapping(
       value = "/filestores/{filestoreId}/sidecar",
