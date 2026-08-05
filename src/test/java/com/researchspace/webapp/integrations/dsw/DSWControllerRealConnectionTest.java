@@ -24,6 +24,7 @@ import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.preference.SettingsType;
 import com.researchspace.service.DMPManager;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
@@ -91,9 +92,8 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
     dswClient = new DSWClient(source, userManager, mediaManager, dmpManager);
     dswController = new DSWController(dswClient, userManager, userAppConfigMgr);
 
-    MessageSourceUtils messages = Mockito.mock(MessageSourceUtils.class);
-    when(messages.getMessage("apps.dsw.errors.project")).thenReturn(MSG_PROJECT_ERROR);
-    ReflectionTestUtils.setField(dswController, "messages", messages);
+    ReflectionTestUtils.setField(
+        dswController, "messages", new MessageSourceUtils(new JsonMessageSource()));
     
     u = new User();
     u.setId(1701l);
