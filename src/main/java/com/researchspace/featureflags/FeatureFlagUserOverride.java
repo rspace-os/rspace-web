@@ -13,6 +13,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(
@@ -37,9 +39,12 @@ public class FeatureFlagUserOverride implements Serializable {
   private User user;
 
   @Column(name = "flag_name", length = FeatureFlagDefinition.MAX_NAME_LENGTH, nullable = false)
+  @Getter
   private String flagName;
 
   @Column(name = "enabled", nullable = false)
+  @Getter
+  @Setter
   private boolean enabled;
 
   protected FeatureFlagUserOverride() {}
@@ -47,26 +52,6 @@ public class FeatureFlagUserOverride implements Serializable {
   public FeatureFlagUserOverride(User user, String flagName, boolean enabled) {
     this.user = user;
     this.flagName = flagName;
-    this.enabled = enabled;
-  }
-
-  public Long getId() {
-    return id;
-  }
-
-  public User getUser() {
-    return user;
-  }
-
-  public String getFlagName() {
-    return flagName;
-  }
-
-  public boolean isEnabled() {
-    return enabled;
-  }
-
-  public void setEnabled(boolean enabled) {
     this.enabled = enabled;
   }
 }

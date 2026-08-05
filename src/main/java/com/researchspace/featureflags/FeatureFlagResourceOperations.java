@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 
-/** Adapts REST v2 feature flag documents to the feature flag manager. */
+/** Adapts REST API v2 feature flag operations to the feature flag manager. */
 @Configuration(proxyBeanMethods = false)
 public class FeatureFlagResourceOperations
     implements ResourceOperations<FeatureFlagResource, String> {
