@@ -15,7 +15,7 @@ public interface APIRequestThrottler extends Throttler {
    * @return an int
    * @apiNote Returns 0 by default, i.e., there is no minimum interval unless this is overridden.
    */
-  public default int getMinIntervalMillis() {
+  default int getMinIntervalMillis() {
     return 0;
   }
 
@@ -38,7 +38,7 @@ public interface APIRequestThrottler extends Throttler {
    *     deviates from v1; see the "Deviations from REST API v1" table in {@code
    *     DevDocs/DeveloperNotes/RestApiV2Collections.md}.
    */
-  public static final APIRequestThrottler PASS_THRU =
+  APIRequestThrottler PASS_THRU =
       new APIRequestThrottler() {
 
         @Override
@@ -57,7 +57,7 @@ public interface APIRequestThrottler extends Throttler {
       };
 
   /** Rejects all requests, always throwing a {@link TooManyRequestsException} */
-  public static final APIRequestThrottler ALWAYS_BLOCK =
+  APIRequestThrottler ALWAYS_BLOCK =
       new APIRequestThrottler() {
 
         @Override

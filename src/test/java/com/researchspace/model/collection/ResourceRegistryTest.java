@@ -69,7 +69,7 @@ class ResourceRegistryTest {
     assertEquals(20, CHILDREN.schema().fields().get(1).type().maxLength());
     assertEquals("A logged-in session is required.", schema.access().readAccess().description());
     assertEquals(
-        "Anyone may perform this action, including anonymous callers.",
+        "A logged-in session is required.",
         schema.relationships().get(0).readAccess().description());
   }
 

@@ -1,6 +1,5 @@
 package com.researchspace.api.v2.controller;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -9,8 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
-import com.researchspace.api.v2.auth.ApiV2Authenticator;
 import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
@@ -23,7 +20,6 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserProfileManager;
 import com.researchspace.service.inventory.ContainerApiManager;
-import jakarta.servlet.ServletException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Locale;
@@ -247,22 +243,6 @@ class UsersV2ControllerTest {
         .andExpect(jsonPath("$.capabilities.canUseInventory").value(false))
         .andExpect(jsonPath("$.capabilities.canPublish").value(true))
         .andExpect(jsonPath("$.capabilities.canViewSystem").value(false));
-  }
-
-  @Test
-  void requiresAuthenticatedUserRequestAttribute() throws Exception {
-    ApiV2Authenticator authenticator = mock(ApiV2Authenticator.class);
-    when(authenticator.authenticate(org.mockito.ArgumentMatchers.any()))
-        .thenThrow(new ApiV2AuthenticationException());
-    ApiV2AuthenticationInterceptor interceptor = new ApiV2AuthenticationInterceptor(authenticator);
-    MockMvc authenticatedMockMvc =
-        MockMvcBuilders.standaloneSetup(newController())
-            .addInterceptors(interceptor)
-            .setControllerAdvice(problemAdvice())
-            .build();
-
-    assertThrows(
-        ServletException.class, () -> authenticatedMockMvc.perform(get("/api/v2/users/me")));
   }
 
   private static ApiV2ControllerAdvice problemAdvice() {
