@@ -25,6 +25,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.preference.SettingsType;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
@@ -47,6 +48,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(ConditionalTestRunner.class)
 public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
@@ -54,6 +56,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   private static String TEST_PROJECT_NAME = "RSpace Nightly Test Project";
   private static String TEST_PROJECT_DESCRIPTION = "Project for confirming endpoint functionality";
   private static String DSW_SERVER_ALIAS = "TestAlias";
+  private static String MSG_PROJECT_ERROR = "Error retrieving DSW project";
 
   @Autowired protected SystemPropertyManager sysPropMgr;
 
@@ -88,6 +91,10 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
     dswClient = new DSWClient(source, userManager, mediaManager, dmpManager);
     dswController = new DSWController(dswClient, userManager, userAppConfigMgr);
 
+    MessageSourceUtils messages = Mockito.mock(MessageSourceUtils.class);
+    when(messages.getMessage("apps.dsw.errors.project")).thenReturn(MSG_PROJECT_ERROR);
+    ReflectionTestUtils.setField(dswController, "messages", messages);
+    
     u = new User();
     u.setId(1701l);
     u.setUsername("Test user");
@@ -197,7 +204,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
       assertNotNull(project);
       assertNull(project.getData());
       assertEquals(project.getError().getErrorMessages().size(), 1);
-      assertTrue(project.getError().getErrorMessages().get(0).contains(invalidUuid));
+      assertEquals(MSG_PROJECT_ERROR, project.getError().getErrorMessages().get(0));
 
     } catch (Exception e) {
       fail(e.getMessage());
@@ -233,8 +240,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
       assertNotNull(project);
       assertNull(project.getData());
       assertEquals(project.getError().getErrorMessages().size(), 1);
-      assertTrue(
-          project.getError().getErrorMessages().get(0).contains(projectForRetrieval.getUuid()));
+      assertEquals(MSG_PROJECT_ERROR, project.getError().getErrorMessages().get(0));
 
     } catch (Exception e) {
       fail(e.getMessage());
