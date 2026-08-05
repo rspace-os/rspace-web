@@ -16,9 +16,17 @@ type PolygonDialogArgs = {
   editable: boolean;
   geoLocation: GeoLocation;
   doUpdateIdentifiers: () => void;
+  recordTypeName?: "sample" | "instrument";
 };
 
-function PolygonDialog({ open, setOpen, editable, geoLocation, doUpdateIdentifiers }: PolygonDialogArgs): ReactNode {
+function PolygonDialog({
+  open,
+  setOpen,
+  editable,
+  geoLocation,
+  doUpdateIdentifiers,
+  recordTypeName,
+}: PolygonDialogArgs): ReactNode {
   const { t } = useTranslation(["inventory", "common"]);
   const handleClose = () => {
     setOpen(false);
@@ -29,7 +37,12 @@ function PolygonDialog({ open, setOpen, editable, geoLocation, doUpdateIdentifie
       <DialogTitle>{t("fields.identifiers.polygonDialog.title")}</DialogTitle>
       <DialogContent>
         <FormControl component="fieldset" fullWidth>
-          <PolygonCard editable={editable} geoLocation={geoLocation} doUpdateIdentifiers={doUpdateIdentifiers} />
+          <PolygonCard
+            editable={editable}
+            geoLocation={geoLocation}
+            doUpdateIdentifiers={doUpdateIdentifiers}
+            recordTypeName={recordTypeName}
+          />
         </FormControl>
       </DialogContent>
       <DialogActions>

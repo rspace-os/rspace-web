@@ -294,6 +294,7 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
                 editable={editable}
                 handleUpdateValue={handleUpdateValue}
                 doUpdateIdentifiers={doUpdateIdentifiers}
+                recordTypeName={activeResult.recordType === "instrument" ? "instrument" : "sample"}
               />
             ) : (
               // @ts-expect-error - v is a field

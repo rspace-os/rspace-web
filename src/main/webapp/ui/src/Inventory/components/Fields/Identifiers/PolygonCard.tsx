@@ -179,9 +179,15 @@ type PolygonCardArgs = {
   editable: boolean;
   geoLocation: GeoLocation;
   doUpdateIdentifiers: () => void;
+  recordTypeName?: "sample" | "instrument";
 };
 
-function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCardArgs): ReactNode {
+function PolygonCard({
+  editable,
+  geoLocation,
+  doUpdateIdentifiers,
+  recordTypeName = "sample",
+}: PolygonCardArgs): ReactNode {
   const { t } = useTranslation("inventory");
   const polygonCardMessages: PolygonMessages = {
     empty: t("fields.identifiers.polygonCard.state.empty"),
@@ -300,12 +306,16 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
               ? t("fields.identifiers.polygonCard.editorTitle")
               : t("fields.identifiers.polygonCard.configurationTitle")}
             <HelpLinkIcon
-              link={helpDocsArticleUrl("igsnIdentifiers")}
+              link={helpDocsArticleUrl(recordTypeName === "instrument" ? "pidinstIdentifiers" : "igsnIdentifiers")}
               title={t("fields.identifiers.polygonCard.helpTitle")}
             />
           </FormLabel>
           <FormHelperText component="div" sx={{ mx: 0, mt: 1 }}>
-            {t("fields.identifiers.polygonCard.polygonDescription")}
+            {t(
+              recordTypeName === "instrument"
+                ? "fields.identifiers.polygonCard.polygonDescriptionPidinst"
+                : "fields.identifiers.polygonCard.polygonDescription",
+            )}
           </FormHelperText>
           <Box sx={{ my: 1 }}>
             <PolygonStateAlert
