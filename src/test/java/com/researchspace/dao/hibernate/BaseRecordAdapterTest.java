@@ -11,7 +11,6 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecordAdaptable;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
 import org.junit.Before;
@@ -31,7 +30,7 @@ public class BaseRecordAdapterTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testGetAsBaseRecordCacheStategy() throws IOException, MediaContentMismatchException {
+  public void testGetAsBaseRecordCacheStategy() throws IOException {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "any");
     assertEquals(doc, adapter.getAsBaseRecord(doc).get());
     // returns itself

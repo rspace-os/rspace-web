@@ -38,7 +38,7 @@ public interface MediaManager {
    */
   EcatImage saveNewImage(
       String originalFileName, InputStream inputStream, User user, Folder targetFolder)
-      throws IOException, MediaContentMismatchException;
+      throws IOException;
 
   /**
    * For importing from archives, preserving original information
@@ -57,7 +57,7 @@ public interface MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException, MediaContentMismatchException;
+      throws IOException;
 
   /**
    * Saves provided pngBase64Image as a new Gallery image linked to the original image.
@@ -69,7 +69,7 @@ public interface MediaManager {
    * @throws IOException
    */
   EcatImage saveEditedImage(EcatImage sourceImage, String uiBase64Image, User user)
-      throws IOException, MediaContentMismatchException;
+      throws IOException;
 
   EcatImage saveOriginalImageLink(EcatImage image, Long originalImageId, User user);
 
@@ -92,7 +92,7 @@ public interface MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException, MediaContentMismatchException;
+      throws IOException;
 
   /**
    * Saves a file to File Store and creates a new EcatAudio entity for it. <br>
@@ -113,11 +113,11 @@ public interface MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException, MediaContentMismatchException;
+      throws IOException;
 
   EcatDocumentFile saveNewDMP(
       String originalFileName, InputStream inputStream, User user, ImportOverride override)
-      throws IOException, MediaContentMismatchException;
+      throws IOException;
 
   EcatDocumentFile saveNewDMPWithDescription(
       String originalFileName,
@@ -125,7 +125,7 @@ public interface MediaManager {
       User user,
       ImportOverride override,
       String description)
-      throws IOException, MediaContentMismatchException;
+      throws IOException;
 
   /**
    * Saves a file to File Store and creates a new EcatChemistry entity for it. <br>
@@ -145,7 +145,7 @@ public interface MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException, MediaContentMismatchException;
+      throws IOException;
 
   /**
    * Saves a file to File Store and creates a new EcatDocumentFile entity for it. <br>
@@ -165,12 +165,12 @@ public interface MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException, MediaContentMismatchException;
+      throws IOException;
 
   /**
    * Saves input stream as a file in File Store Gallery, and creates (or updates) EcatMediaFile
    * entity. When creating new entity the type is decided based on file extension. <br>
-   * The method normally closes the input stream passed in.
+   * The method owns and closes the input stream on every outcome.
    *
    * @param mediaFileId (optional) id of EcatMediaFile this upload should update. If provided,
    *     method will call {@link #updateMediaFile(Long, InputStream, String, User, String)}.
@@ -196,7 +196,7 @@ public interface MediaManager {
       Folder targetFolder,
       String caption,
       User user)
-      throws IOException, MediaContentMismatchException;
+      throws IOException;
 
   /**
    * Saves input stream as a new version of existing EcatMediaFile.
@@ -209,10 +209,11 @@ public interface MediaManager {
    * @return
    * @throws IOException
    * @throws MediaContentMismatchException if the content is not the type the file extension claims
+   *     The input stream is closed before this is thrown, as it is on a normal return.
    */
   EcatMediaFile updateMediaFile(
       Long mediaFileId, InputStream inputStream, String updatedFileName, User user, String lockId)
-      throws IOException, MediaContentMismatchException;
+      throws IOException;
 
   /**
    * Method to insert a new comment.
@@ -382,5 +383,5 @@ public interface MediaManager {
       String caption,
       User user,
       ImportOverride override)
-      throws IOException, MediaContentMismatchException;
+      throws IOException;
 }

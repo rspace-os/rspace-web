@@ -384,8 +384,7 @@ public class FileDownloadController extends BaseController {
    * @return
    */
   private void setContentInfo(String name, String contentType, HttpServletResponse response) {
-    response.setContentType(contentType);
+    ResponseHeaders.setContentTypeAndPreventSniffing(response, contentType);
     response.setHeader("Content-Disposition", "attachment; filename=\"" + name + "\"");
-    ResponseHeaders.preventContentSniffing(response);
   }
 }

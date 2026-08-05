@@ -9,7 +9,6 @@ import com.researchspace.dao.FileMetadataDao;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.service.FileDuplicateStrategy;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.testutils.EgnyteTestConfig;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -45,8 +44,7 @@ public class FileStoreConfiguredForExternalFS extends SpringTransactionalTest {
   File someFile;
 
   @Before
-  public void before()
-      throws IOException, URISyntaxException, InterruptedException, MediaContentMismatchException {
+  public void before() throws IOException, URISyntaxException, InterruptedException {
     anyUser = createInitAndLoginAnyUser();
     mediaFile = addDocumentToGallery(anyUser);
     someFile = RSpaceTestUtils.getAnyAttachment();

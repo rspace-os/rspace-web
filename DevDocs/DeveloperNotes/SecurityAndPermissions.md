@@ -152,19 +152,20 @@ content of uploads whose extension claims an image against the type that
 extension implies, and `MediaManagerImpl` calls it on both the new-upload and
 the new-version path, which every upload passes through.
 
-A rejection is a checked `MediaContentMismatchException`, so the compiler makes
-each caller decide what to do with it. Nothing has been written at that point,
-which is why the exception is checked rather than unchecked: a caller inside a
-transaction can catch it, report the file and carry on. An unchecked exception
-could not offer that, because Spring's default rule would mark the surrounding
-transaction for rollback at the boundary it passed through, and no catching
-further up can undo that.
+A rejection is a checked `MediaContentMismatchException`, implemented as a
+subclass of `IOException`. Existing file-handling callers can treat it as an I/O
+failure, while callers that need to report a precise validation error can catch
+the subtype. Nothing has been written at that point, so a caller inside a
+transaction can catch it, report the file and carry on without marking the
+transaction rollback-only. `MediaManagerImpl` owns and closes the supplied
+stream on success, rejection, and detection failure.
 
 Detection reads the leading bytes only, so a valid image with content appended
 after it still passes. Treat stored files as untrusted bytes regardless.
 
 Endpoints that serve stored file content should send
-`X-Content-Type-Options: nosniff` via `ResponseHeaders.preventContentSniffing`,
-so a browser honours the declared type rather than guessing one from the bytes.
-This matters most where bytes are returned inline, without a
-`Content-Disposition` header.
+`Content-Type` and `X-Content-Type-Options: nosniff` together via
+`ResponseHeaders.setContentTypeAndPreventSniffing`, so a response cannot opt out
+of sniffing without also declaring the type the browser should honour. This
+matters most where bytes are returned inline, without a `Content-Disposition`
+header.

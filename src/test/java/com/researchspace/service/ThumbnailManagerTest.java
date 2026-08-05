@@ -30,10 +30,7 @@ public class ThumbnailManagerTest extends SpringTransactionalTest {
 
   @Test
   public void testThumbnailRegeneration()
-      throws IOException,
-          IllegalArgumentException,
-          URISyntaxException,
-          MediaContentMismatchException {
+      throws IOException, IllegalArgumentException, URISyntaxException {
 
     // upload two images
     EcatImage image1 = addImageToGallery(user, "Picture1.png");

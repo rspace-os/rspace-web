@@ -180,8 +180,7 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void deleteDMPPdfDeletesDMP()
-      throws IOException, DocumentAlreadyEditedException, MediaContentMismatchException {
+  public void deleteDMPPdfDeletesDMP() throws IOException, DocumentAlreadyEditedException {
     InputStream inputStream =
         RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("smartscotland3.pdf");
     var ecatDocumentFile = mediaMgr.saveNewDMP("smartscotland3.pdf", inputStream, user, null);

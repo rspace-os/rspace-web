@@ -16,7 +16,6 @@ import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.rda.model.DMP;
 import com.researchspace.rda.model.extras.DMPList;
 import com.researchspace.service.DMPManager;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
@@ -255,7 +254,7 @@ public class DMPOnlineController extends BaseOAuth2Controller {
       @RequestParam(name = "filename") String filename,
       Model model,
       Principal principal)
-      throws URISyntaxException, IOException, MediaContentMismatchException {
+      throws URISyntaxException, IOException {
 
     User user = userManager.getAuthenticatedUserInSession();
     String accessToken = getExistingAccessToken(model, principal);

@@ -113,7 +113,6 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.LicenseService;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.MessageSourceUtils;
@@ -598,8 +597,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @return the saved EcatImage
    * @throws IOException
    */
-  protected EcatImage addImageToGallery(User user)
-      throws IOException, MediaContentMismatchException {
+  protected EcatImage addImageToGallery(User user) throws IOException {
     return addImageToGallery(user, "Picture1.png");
   }
 
@@ -611,15 +609,13 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @return
    * @throws IOException
    */
-  protected EcatImage addImageToGallery(User user, String filename)
-      throws IOException, MediaContentMismatchException {
+  protected EcatImage addImageToGallery(User user, String filename) throws IOException {
     return mediaMgr.saveNewImage(
         filename, RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder(filename), user, null);
   }
 
   /** Upload "Picture2.png" file as a new version of an image with given id */
-  protected EcatImage updateImageInGallery(Long imageId, User user)
-      throws IOException, MediaContentMismatchException {
+  protected EcatImage updateImageInGallery(Long imageId, User user) throws IOException {
     InputStream picture2InputStream =
         RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture2.png");
     EcatMediaFile updatedImg =
@@ -628,8 +624,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   }
 
   /** Upload "base64Image.txt" content as an edited version of an image with given id */
-  protected EcatImage editImageInGallery(Long imageId, User user)
-      throws IOException, MediaContentMismatchException {
+  protected EcatImage editImageInGallery(Long imageId, User user) throws IOException {
     EcatImage sourceImage = recordMgr.getEcatImage(imageId, false);
     String base64png =
         "image/png,"
@@ -644,8 +639,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     return folderMgr.createNewFolder(imgGallery.getId(), subfolderName, user);
   }
 
-  protected EcatImage addImageToGalleryFolder(Folder folder, User user)
-      throws IOException, MediaContentMismatchException {
+  protected EcatImage addImageToGalleryFolder(Folder folder, User user) throws IOException {
     return mediaMgr.saveNewImage(
         "Picture1.png",
         RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png"),
@@ -654,12 +648,12 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   }
 
   protected EcatDocumentFile addFileAttachmentToField(Field field, User user)
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+      throws IOException, URISyntaxException {
     return addAttachmentDocumentToField(RSpaceTestUtils.getAnyAttachment(), field, user);
   }
 
   protected EcatDocumentFile updateFileAttachmentInGallery(Long attachmentId, User user)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     EcatMediaFile updatedAttachment =
         mediaMgr.updateMediaFile(
             attachmentId,
@@ -682,7 +676,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @throws IOException
    */
   protected EcatDocumentFile addAttachmentDocumentToField(File afile, Field field, User user)
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+      throws IOException, URISyntaxException {
     EcatDocumentFile docFile =
         mediaMgr.saveNewDocument(afile.getName(), new FileInputStream(afile), user, null, null);
 
@@ -719,7 +713,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @throws URISyntaxException
    */
   protected EcatDocumentFile addDocumentToGallery(User user)
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+      throws IOException, URISyntaxException {
     File afile = RSpaceTestUtils.getAnyAttachment();
     return addToGallery(afile, user);
   }
@@ -733,12 +727,12 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @throws URISyntaxException
    */
   protected EcatDocumentFile addToGallery(File file, User user)
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+      throws IOException, URISyntaxException {
     return mediaMgr.saveNewDocument(file.getName(), new FileInputStream(file), user, null, null);
   }
 
   protected EcatDocumentFile addDocumentFromTestResourcesToGallery(String fileName, User user)
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+      throws IOException, URISyntaxException {
     File afile = RSpaceTestUtils.getResource(fileName);
     return mediaMgr.saveNewDocument(afile.getName(), new FileInputStream(afile), user, null, null);
   }
@@ -750,8 +744,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @return the saved ECatImage
    * @throws IOException
    */
-  protected EcatImage addTiffImageToGallery(User user)
-      throws IOException, MediaContentMismatchException {
+  protected EcatImage addTiffImageToGallery(User user) throws IOException {
     return mediaMgr.saveNewImage(
         "Picture1.tiff",
         RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.tiff"),
@@ -760,8 +753,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   }
 
   /** Adds an image to the gallery, and creates a link in the text field */
-  protected EcatImage addImageToField(Field field, User user)
-      throws IOException, MediaContentMismatchException {
+  protected EcatImage addImageToField(Field field, User user) throws IOException {
     return addImageToField(field, user, null);
   }
 
@@ -772,8 +764,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @param user
    * @param img optional image to use, if null new one will be added to Gallery
    */
-  protected EcatImage addImageToField(Field field, User user, EcatImage img)
-      throws IOException, MediaContentMismatchException {
+  protected EcatImage addImageToField(Field field, User user, EcatImage img) throws IOException {
     EcatImage addedImg = addImageToFieldButNoFieldAttachment(field, user, img);
     fieldMgr.addMediaFileLink(addedImg.getId(), user, field.getId(), false);
     return addedImg;
@@ -785,7 +776,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @param img optional image to use, if null new one will be added to Gallery
    */
   protected EcatImage addImageToFieldButNoFieldAttachment(Field field, User user, EcatImage img)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     if (img == null) {
       img = addImageToGallery(user);
     }
@@ -806,7 +797,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @throws IOException
    */
   protected String appendContentToField(Field field, String htmlContent, User user)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     String fData = field.getFieldData();
     fData += htmlContent;
     setDataAndSave(field, user, fData);
@@ -827,14 +818,12 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @return
    * @throws IOException
    */
-  protected EcatAudio addAudioFileToField(Field field, User user)
-      throws IOException, MediaContentMismatchException {
+  protected EcatAudio addAudioFileToField(Field field, User user) throws IOException {
     File afile = RSpaceTestUtils.getResource("mpthreetest.mp3");
     return (EcatAudio) addAudioVideoFileToGalleryAndField(field, user, afile);
   }
 
-  protected EcatAudio updateAudioInGallery(Long audioId, User user)
-      throws IOException, MediaContentMismatchException {
+  protected EcatAudio updateAudioInGallery(Long audioId, User user) throws IOException {
     InputStream mp3InputStream =
         RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("mpthreetest.mp3");
     EcatMediaFile updatedImg =
@@ -842,14 +831,12 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     return (EcatAudio) updatedImg;
   }
 
-  protected EcatVideo addVideoFileToField(Field field, User user)
-      throws IOException, MediaContentMismatchException {
+  protected EcatVideo addVideoFileToField(Field field, User user) throws IOException {
     File afile = RSpaceTestUtils.getResource("small.mp4");
     return (EcatVideo) addAudioVideoFileToGalleryAndField(field, user, afile);
   }
 
-  protected EcatVideo updateVideoInGallery(Long videoId, User user)
-      throws IOException, MediaContentMismatchException {
+  protected EcatVideo updateVideoInGallery(Long videoId, User user) throws IOException {
     InputStream mp4InputStream =
         RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("small.mp4");
     EcatMediaFile updatedVideo =
@@ -858,7 +845,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   }
 
   private EcatMediaFile addAudioVideoFileToGalleryAndField(Field field, User user, File afile)
-      throws IOException, FileNotFoundException, MediaContentMismatchException {
+      throws IOException, FileNotFoundException {
     if (!MediaUtils.isAVFile(afile)) {
       throw new IllegalArgumentException("file is not an av file");
     }
@@ -880,20 +867,18 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     return addedMedia;
   }
 
-  protected EcatAudio addAudioFileToGallery(User user)
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  protected EcatAudio addAudioFileToGallery(User user) throws IOException, URISyntaxException {
     File afile = RSpaceTestUtils.getResource("mpthreetest.mp3");
     return mediaMgr.saveNewAudio(afile.getName(), new FileInputStream(afile), user, null, null);
   }
 
   protected EcatChemistryFile addChemistryFileToGallery(String fileName, User user)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     return addChemistryFileToGallery(fileName, null, user);
   }
 
   protected EcatChemistryFile addChemistryFileToGallery(
-      String fileName, String smilesString, User user)
-      throws IOException, MediaContentMismatchException {
+      String fileName, String smilesString, User user) throws IOException {
     File chemFile = RSpaceTestUtils.getResource(fileName);
     EcatChemistryFile chemistryFile =
         mediaMgr.saveNewChemFile(
@@ -929,7 +914,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @throws IOException
    */
   protected EcatImageAnnotation addImageAnnotationToField(Field textField, User user)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
 
     String base64Image = getBase64Image();
     EcatImage img = addImageToGallery(user);
@@ -2135,8 +2120,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   }
 
   protected InventoryFile addGalleryFileToInventoryItem(
-      GlobalIdentifier globalIdToAttachTo, User user)
-      throws IOException, MediaContentMismatchException {
+      GlobalIdentifier globalIdToAttachTo, User user) throws IOException {
     EcatImage ecatImage = addImageToGallery(user);
     return inventoryFileApiMgr.attachGalleryFileToInventoryRecord(
         globalIdToAttachTo, ecatImage.getOid(), user);

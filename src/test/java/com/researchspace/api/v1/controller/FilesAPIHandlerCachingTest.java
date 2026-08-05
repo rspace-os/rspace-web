@@ -7,7 +7,6 @@ import static org.junit.Assert.assertThat;
 import com.researchspace.api.v1.model.ApiFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.testutils.DatabaseCleaner;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestRunnerController;
@@ -37,7 +36,7 @@ public class FilesAPIHandlerCachingTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void fileRenameTriggersCacheEviction() throws IOException, MediaContentMismatchException {
+  public void fileRenameTriggersCacheEviction() throws IOException {
     User anyUser = createAndSaveRandomUser();
     initialiseContentWithEmptyContent(anyUser);
     logoutAndLoginAs(anyUser); // simulate

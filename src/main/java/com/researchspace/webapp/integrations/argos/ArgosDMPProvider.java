@@ -15,7 +15,6 @@ import com.researchspace.model.dmps.DMPSource;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.service.DMPManager;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserManager;
 import java.io.ByteArrayInputStream;
@@ -79,11 +78,7 @@ public class ArgosDMPProvider {
   }
 
   public Boolean importDmp(String id)
-      throws URISyntaxException,
-          MalformedURLException,
-          JsonProcessingException,
-          IOException,
-          MediaContentMismatchException {
+      throws URISyntaxException, MalformedURLException, JsonProcessingException, IOException {
     User user = userManager.getAuthenticatedUserInSession();
     ArgosDMP dmpDetails = getPlanById(id);
     log.info("Importing DMP: " + id + ", " + dmpDetails.getLabel());

@@ -12,7 +12,6 @@ import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.DMPManager;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
@@ -300,7 +299,7 @@ public class DMPAssistantController extends BaseOAuth2Controller {
   }
 
   private JsonNode importSinglePlan(String id, String filename, String accessToken, User user)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     JsonNode plan = dmpAssistantProvider.getPlanById(id, true, accessToken);
     byte[] bytes = OBJECT_MAPPER.writeValueAsBytes(plan);
     String effectiveFilename =

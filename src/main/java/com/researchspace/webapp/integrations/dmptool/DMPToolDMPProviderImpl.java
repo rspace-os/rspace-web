@@ -184,7 +184,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
 
   @Override
   public DMPUser doJsonDownload(DMPToolDMP dmp, String title, String accessToken)
-      throws URISyntaxException, IOException, MediaContentMismatchException {
+      throws URISyntaxException, IOException {
     User user = userManager.getAuthenticatedUserInSession();
     if (!assertIsNewDMP(dmp, user)) {
       return null;
@@ -194,7 +194,7 @@ public class DMPToolDMPProviderImpl extends AbstractDMPToolDMPProvider
 
   @Override
   public ServiceOperationResult<DMPUser> doJsonDownload(DMPToolDMP dmp, String title, User user)
-      throws URISyntaxException, IOException, MediaContentMismatchException {
+      throws URISyntaxException, IOException {
     Optional<UserConnection> optConn = getUserConnection(user.getUsername());
     if (!optConn.isPresent()) {
       return noAccessTokenFailure(DMPUser.class);

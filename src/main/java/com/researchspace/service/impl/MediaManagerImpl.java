@@ -52,7 +52,6 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.ImageProcessor;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaFileContentValidator;
 import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.service.MediaManager;
@@ -62,6 +61,7 @@ import com.researchspace.service.RecordManager;
 import com.researchspace.service.ThumbnailManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -127,7 +127,7 @@ public class MediaManagerImpl implements MediaManager {
   @Override
   public EcatImage saveNewImage(
       String originalFileName, InputStream inputStream, User user, Folder targetFolder)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     return saveNewImage(originalFileName, inputStream, user, targetFolder, null);
   }
 
@@ -138,7 +138,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     return (EcatImage)
         saveMediaFile(
             inputStream,
@@ -154,7 +154,7 @@ public class MediaManagerImpl implements MediaManager {
 
   @Override
   public EcatImage saveEditedImage(EcatImage sourceImage, String uiBase64Image, User user)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
 
     String newExtension = ImageUtils.getExtensionFromBase64DataImage(uiBase64Image);
     String newName =
@@ -199,7 +199,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     return (EcatVideo)
         saveMediaFile(
             inputStream,
@@ -220,7 +220,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     return (EcatAudio)
         saveMediaFile(
             inputStream,
@@ -237,7 +237,7 @@ public class MediaManagerImpl implements MediaManager {
   @Override
   public EcatDocumentFile saveNewDMP(
       String originalFileName, InputStream inputStream, User user, ImportOverride override)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     return (EcatDocumentFile)
         doSaveMediaFile(
             inputStream,
@@ -259,7 +259,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       ImportOverride override,
       String description)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     return (EcatDocumentFile)
         doSaveMediaFile(
             inputStream,
@@ -281,7 +281,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     return (EcatChemistryFile)
         saveMediaFile(
             inputStream,
@@ -302,7 +302,7 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       Folder targetFolder,
       ImportOverride override)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     return (EcatDocumentFile)
         saveMediaFile(
             inputStream,
@@ -327,9 +327,8 @@ public class MediaManagerImpl implements MediaManager {
       String caption,
       User user,
       ImportOverride override)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
 
-    String mediaFolderType = extractFileTypeFromPath(originalFileName);
     return doSaveMediaFile(
         inputStream,
         mediaFileId,
@@ -340,7 +339,7 @@ public class MediaManagerImpl implements MediaManager {
         caption,
         user,
         override,
-        mediaFolderType);
+        null);
   }
 
   private EcatMediaFile doSaveMediaFile(
@@ -354,11 +353,39 @@ public class MediaManagerImpl implements MediaManager {
       User user,
       ImportOverride override,
       String mediaFolderType)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     // are we making new revision of file
     if (mediaFileId != null) {
       return updateMediaFile(mediaFileId, inputStream, originalFileName, user, null);
     }
+
+    try (InputStream ownedInputStream = new BufferedInputStream(inputStream)) {
+      String resolvedMediaFolderType =
+          mediaFolderType != null ? mediaFolderType : extractFileTypeFromPath(originalFileName);
+      return saveNewMediaFile(
+          ownedInputStream,
+          displayName,
+          originalFileName,
+          fieldId,
+          targetFolder,
+          caption,
+          user,
+          override,
+          resolvedMediaFolderType);
+    }
+  }
+
+  private EcatMediaFile saveNewMediaFile(
+      InputStream inputStream,
+      String displayName,
+      String originalFileName,
+      Long fieldId,
+      Folder targetFolder,
+      String caption,
+      User user,
+      ImportOverride override,
+      String mediaFolderType)
+      throws IOException {
     inputStream =
         MediaFileContentValidator.verifyContentMatchesExtension(inputStream, originalFileName);
 
@@ -378,41 +405,35 @@ public class MediaManagerImpl implements MediaManager {
 
     String extension = getExtension(originalFileName);
     EcatMediaFile media = null;
-    try (InputStream autoCloseableInputStream = inputStream) {
-      if (mediaFolderType.equals(IMAGES_MEDIA_FLDER_NAME)) {
-        File secureTmpDir = IoUtils.createOrGetSecureTempDirectory().toFile();
-        File tempFile =
-            File.createTempFile(
-                "tmp_file_upload_" + originalFileName, "." + extension, secureTmpDir);
-        try (FileOutputStream fos = new FileOutputStream(tempFile); ) {
-          IOUtils.copy(inputStream, fos);
-          FileProperty fp =
-              fileStore.createAndSaveFileProperty(
-                  mediaFolderType, user, originalFileName, new FileInputStream(tempFile));
-          media =
-              mediaFactory.generateEcatImage(
-                  user, fp, tempFile, extension, originalFileName, override);
-          imageProcessor.transformImageBlobToFileProperty(
-              originalFileName, user, (EcatImage) media);
-        }
-      } else {
+    if (mediaFolderType.equals(IMAGES_MEDIA_FLDER_NAME)) {
+      File secureTmpDir = IoUtils.createOrGetSecureTempDirectory().toFile();
+      File tempFile =
+          File.createTempFile("tmp_file_upload_" + originalFileName, "." + extension, secureTmpDir);
+      try (FileOutputStream fos = new FileOutputStream(tempFile); ) {
+        IOUtils.copy(inputStream, fos);
         FileProperty fp =
             fileStore.createAndSaveFileProperty(
-                mediaFolderType, user, originalFileName, inputStream);
-        if (mediaFolderType.equals(VIDEO_MEDIA_FLDER_NAME)) {
-          media = mediaFactory.generateEcatVideo(user, fp, extension, originalFileName, override);
-        } else if (mediaFolderType.equals(AUDIO_MEDIA_FLDER_NAME)) {
-          media = mediaFactory.generateEcatAudio(user, fp, extension, originalFileName, override);
-        } else if (mediaFolderType.equals(CHEMISTRY_MEDIA_FLDER_NAME)) {
-          media =
-              mediaFactory.generateEcatChemistryFile(
-                  user, fp, extension, originalFileName, override);
-        } else {
-          // this will also include DMPs, which are always added to the top-level folder.
-          media =
-              mediaFactory.generateEcatDocument(
-                  user, fp, extension, mediaFolderType, originalFileName, override);
-        }
+                mediaFolderType, user, originalFileName, new FileInputStream(tempFile));
+        media =
+            mediaFactory.generateEcatImage(
+                user, fp, tempFile, extension, originalFileName, override);
+        imageProcessor.transformImageBlobToFileProperty(originalFileName, user, (EcatImage) media);
+      }
+    } else {
+      FileProperty fp =
+          fileStore.createAndSaveFileProperty(mediaFolderType, user, originalFileName, inputStream);
+      if (mediaFolderType.equals(VIDEO_MEDIA_FLDER_NAME)) {
+        media = mediaFactory.generateEcatVideo(user, fp, extension, originalFileName, override);
+      } else if (mediaFolderType.equals(AUDIO_MEDIA_FLDER_NAME)) {
+        media = mediaFactory.generateEcatAudio(user, fp, extension, originalFileName, override);
+      } else if (mediaFolderType.equals(CHEMISTRY_MEDIA_FLDER_NAME)) {
+        media =
+            mediaFactory.generateEcatChemistryFile(user, fp, extension, originalFileName, override);
+      } else {
+        // this will also include DMPs, which are always added to the top-level folder.
+        media =
+            mediaFactory.generateEcatDocument(
+                user, fp, extension, mediaFolderType, originalFileName, override);
       }
     }
     if (media == null) {
@@ -450,7 +471,7 @@ public class MediaManagerImpl implements MediaManager {
       Folder targetFolder,
       String caption,
       User user)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     return saveMediaFile(
         inputStream,
         mediaFileId,
@@ -466,7 +487,17 @@ public class MediaManagerImpl implements MediaManager {
   @Override
   public EcatMediaFile updateMediaFile(
       Long mediaFileId, InputStream inputStream, String updatedFileName, User user, String lockId)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
+
+    try (InputStream ownedInputStream = new BufferedInputStream(inputStream)) {
+      return updateMediaFileWithOwnedStream(
+          mediaFileId, ownedInputStream, updatedFileName, user, lockId);
+    }
+  }
+
+  private EcatMediaFile updateMediaFileWithOwnedStream(
+      Long mediaFileId, InputStream inputStream, String updatedFileName, User user, String lockId)
+      throws IOException {
 
     BaseRecord recToUpdate =
         recordManager.getRecordWithLazyLoadedProperties(

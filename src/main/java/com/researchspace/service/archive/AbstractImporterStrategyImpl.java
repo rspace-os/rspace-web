@@ -312,7 +312,7 @@ abstract class AbstractImporterStrategyImpl {
       RecordContext context,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem,
       ArchivalImportConfig iconfig)
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+      throws IOException, URISyntaxException {
 
     ArchivalForm archiveForm = ref.getArchivalForm();
     Long olderId = archiveForm.getFormId();
@@ -412,7 +412,7 @@ abstract class AbstractImporterStrategyImpl {
       File pth,
       ArchivalLinkRecord linkRecord,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+      throws IOException, URISyntaxException {
 
     strucDoc.setName(archivalDoc.getName());
     strucDoc.addType(RecordType.NORMAL);
@@ -467,7 +467,7 @@ abstract class AbstractImporterStrategyImpl {
       File pth,
       ArchivalLinkRecord linkRecord,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+      throws IOException, URISyntaxException {
     try {
       fld.setName(archivalField.getFieldName());
       fld.setModificationDate(
@@ -495,7 +495,7 @@ abstract class AbstractImporterStrategyImpl {
       File recordFolder,
       ArchivalLinkRecord linkRecord,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+      throws IOException, URISyntaxException {
 
     fld = importComments(fld, archiveFld);
 
@@ -553,7 +553,7 @@ abstract class AbstractImporterStrategyImpl {
       User user,
       File recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws FileNotFoundException, IOException, MediaContentMismatchException {
+      throws FileNotFoundException, IOException {
     List<ArchivalGalleryMetadata> imgMeta = archiveFld.getImgMeta();
 
     if (imgMeta != null && imgMeta.size() > 0) {
@@ -599,7 +599,7 @@ abstract class AbstractImporterStrategyImpl {
       User user,
       File recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws FileNotFoundException, IOException, MediaContentMismatchException {
+      throws FileNotFoundException, IOException {
     List<ArchivalGalleryMetadata> audioMeta = archiveFld.getAudioMeta();
     int count = 0;
     if (audioMeta != null && audioMeta.size() > 0) {
@@ -634,7 +634,7 @@ abstract class AbstractImporterStrategyImpl {
       User user,
       File recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     List<ArchivalGalleryMetadata> videoMeta = archiveFld.getVideoMeta();
     int count = 0;
     if (videoMeta != null && !videoMeta.isEmpty()) {
@@ -669,7 +669,7 @@ abstract class AbstractImporterStrategyImpl {
       User user,
       File recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     List<ArchivalGalleryMetadata> attachMeta = archiveFld.getAttachMeta();
     if (attachMeta != null && !attachMeta.isEmpty()) {
       int cnt = 0;
@@ -951,7 +951,7 @@ abstract class AbstractImporterStrategyImpl {
       User user,
       File recordFolder,
       Map<String, EcatMediaFile> oldIdToNewGalleryItem)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     List<ArchivalGalleryMetadata> attachMeta = archiveFld.getChemFileMeta();
     if (attachMeta != null && !attachMeta.isEmpty()) {
       int cnt = 0;

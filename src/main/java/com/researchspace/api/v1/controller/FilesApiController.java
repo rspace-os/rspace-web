@@ -21,7 +21,6 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.EditInfo;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.webapp.controller.ResponseHeaders;
@@ -118,10 +117,9 @@ public class FilesApiController extends BaseApiController implements FilesApi {
     }
     FileProperty fileProp = mediaFile.getFileProperty();
 
-    response.setContentType(mediaFile.getContentType());
+    ResponseHeaders.setContentTypeAndPreventSniffing(response, mediaFile.getContentType());
     response.setHeader(
         "Content-Disposition", "attachment; filename=\"" + mediaFile.getFileName() + "\"");
-    ResponseHeaders.preventContentSniffing(response);
     Optional<FileInputStream> fis = fileStore.retrieve(fileProp);
     if (fis.isPresent()) {
       try (InputStream is = fis.get();
@@ -140,7 +138,7 @@ public class FilesApiController extends BaseApiController implements FilesApi {
       @RequestParam(value = "originalImageId", required = false) Long originalImageId,
       @RequestParam("file") MultipartFile file,
       @RequestAttribute(name = "user") User user)
-      throws BindException, IOException, MediaContentMismatchException {
+      throws BindException, IOException {
     caption = StringUtils.trimToEmpty(caption);
     validateCaptionMaxLength(caption);
     InputStream inputStream = file.getInputStream();
@@ -206,7 +204,7 @@ public class FilesApiController extends BaseApiController implements FilesApi {
     return updated;
   }
 
-  @SneakyThrows({IOException.class, MediaContentMismatchException.class})
+  @SneakyThrows(IOException.class)
   private ApiFile doUpload(Long id, MultipartFile file, User user) {
     InputStream inputStream = file.getInputStream();
     String originalFileName = file.getOriginalFilename();

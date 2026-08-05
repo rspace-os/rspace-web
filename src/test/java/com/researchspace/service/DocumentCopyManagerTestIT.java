@@ -333,7 +333,7 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
   }
 
   @Test
-  public void testCopyFolderWithMediaFiles() throws IOException, MediaContentMismatchException {
+  public void testCopyFolderWithMediaFiles() throws IOException {
     // Create sub folder in gallery folder
     Folder originalFolder = createImgGallerySubfolder("images-folder-test", user);
     Folder imageGalleryFolder =

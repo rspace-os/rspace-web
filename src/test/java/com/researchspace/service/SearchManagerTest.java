@@ -295,8 +295,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
   }
 
   @Test
-  public void testSearchDescriptionInMediaSubclasses()
-      throws IOException, MediaContentMismatchException {
+  public void testSearchDescriptionInMediaSubclasses() throws IOException {
 
     setupRandomPIUser();
     StructuredDocument sd = createBasicDocumentInRootFolderWithText(user, "<p> any text</p>");

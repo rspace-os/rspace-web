@@ -58,7 +58,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.EcatImageAnnotationManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.IContentInitializer;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.RoleManager;
@@ -186,12 +185,12 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
     /** A list of added content in the order that items were added. */
     private List<IFieldLinkableElement> content = new ArrayList<>();
 
-    public ContentBuilder addImageAnnotation() throws IOException, MediaContentMismatchException {
+    public ContentBuilder addImageAnnotation() throws IOException {
       content.add(addImageAnnotationToField(field, owner));
       return this;
     }
 
-    public ContentBuilder addImage() throws IOException, MediaContentMismatchException {
+    public ContentBuilder addImage() throws IOException {
       content.add(addImageToField(field, owner));
       return this;
     }
@@ -466,7 +465,7 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
   }
 
   protected EcatChemistryFile updateChemistryFileInGallery(Long chemFileId, User user)
-      throws IOException, MediaContentMismatchException {
+      throws IOException {
     InputStream chem2InputStream =
         RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Aminoglutethimide.mol");
     EcatMediaFile updatedImg =

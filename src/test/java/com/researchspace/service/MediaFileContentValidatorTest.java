@@ -1,9 +1,9 @@
 package com.researchspace.service;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
@@ -71,8 +71,7 @@ class MediaFileContentValidatorTest {
     "Picture1.tiff, scan.tif",
     "Picture2.tif, scan.tiff"
   })
-  void acceptsEquivalentExtensionSpellings(String fixture, String claimedName)
-      throws IOException, MediaContentMismatchException {
+  void acceptsEquivalentExtensionSpellings(String fixture, String claimedName) throws IOException {
     byte[] realImage = RSpaceTestUtils.getResourceAsByteArray(fixture);
     InputStream validated =
         MediaFileContentValidator.verifyContentMatchesExtension(
@@ -82,8 +81,7 @@ class MediaFileContentValidatorTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"IS1.jpg", "Picture1.png", "Picture1.tiff", "commentIcon.gif"})
-  void acceptsRealImagesAndPreservesStreamContent(String fileName)
-      throws IOException, MediaContentMismatchException {
+  void acceptsRealImagesAndPreservesStreamContent(String fileName) throws IOException {
     byte[] expected = RSpaceTestUtils.getResourceAsByteArray(fileName);
     // a non-markable stream, so validation must wrap and rewind it
     try (InputStream validated =
@@ -93,9 +91,9 @@ class MediaFileContentValidatorTest {
     }
   }
 
-  /** A rejected upload is never read, so the validator hands back a closed stream. */
+  /** The caller owns the stream, including when validation rejects it. */
   @Test
-  void closesTheStreamOfARejectedUpload() {
+  void doesNotCloseTheStreamOfARejectedUpload() {
     AtomicBoolean closed = new AtomicBoolean();
     InputStream tracked =
         new ByteArrayInputStream(JSP_CONTENT) {
@@ -108,12 +106,12 @@ class MediaFileContentValidatorTest {
     assertThrows(
         MediaContentMismatchException.class,
         () -> MediaFileContentValidator.verifyContentMatchesExtension(tracked, "image.jpg"));
-    assertTrue(closed.get());
+    assertFalse(closed.get());
   }
 
   /** bmp is an accepted image extension with no fixture in the test resources. */
   @Test
-  void acceptsBmp() throws IOException, MediaContentMismatchException {
+  void acceptsBmp() throws IOException {
     ByteArrayOutputStream bmp = new ByteArrayOutputStream();
     ImageIO.write(new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB), "bmp", bmp);
     InputStream validated =
@@ -124,8 +122,7 @@ class MediaFileContentValidatorTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"notes.txt", "page.jsp", "noExtension", ""})
-  void ignoresNonImageExtensions(String fileName)
-      throws IOException, MediaContentMismatchException {
+  void ignoresNonImageExtensions(String fileName) throws IOException {
     InputStream original = new ByteArrayInputStream(JSP_CONTENT);
     InputStream validated =
         MediaFileContentValidator.verifyContentMatchesExtension(original, fileName);
@@ -133,7 +130,7 @@ class MediaFileContentValidatorTest {
   }
 
   @Test
-  void ignoresNullFileName() throws IOException, MediaContentMismatchException {
+  void ignoresNullFileName() throws IOException {
     InputStream original = new ByteArrayInputStream(JSP_CONTENT);
     InputStream validated = MediaFileContentValidator.verifyContentMatchesExtension(original, null);
     assertSame(original, validated);

@@ -25,7 +25,6 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.preference.SettingsType;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
@@ -67,7 +66,6 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   UserConnectionManager source;
   MediaManager mediaManager;
   DMPManager dmpManager;
-  MessageSourceUtils messages;
 
   private ObjectMapper mapper = new ObjectMapper();
 
@@ -86,10 +84,9 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
     source = Mockito.mock(UserConnectionManager.class);
     mediaManager = Mockito.mock(MediaManager.class);
     dmpManager = Mockito.mock(DMPManager.class);
-    messages = Mockito.mock(MessageSourceUtils.class);
 
     dswClient = new DSWClient(source, userManager, mediaManager, dmpManager);
-    dswController = new DSWController(dswClient, userManager, userAppConfigMgr, messages);
+    dswController = new DSWController(dswClient, userManager, userAppConfigMgr);
 
     u = new User();
     u.setId(1701l);

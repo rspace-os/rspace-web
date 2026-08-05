@@ -8,7 +8,6 @@ import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSigningManager;
 import java.io.IOException;
@@ -35,7 +34,7 @@ public class UpdateMediaLinksInSignedDocumentsIT extends AbstractDBHelpers {
 
   @Test
   public void checkOnlySignedDocumentsWithMediaAttachmentsAreUpdated()
-      throws IOException, SetupException, CustomChangeException, MediaContentMismatchException {
+      throws IOException, SetupException, CustomChangeException {
     user = createInitAndLoginAnyUser();
 
     // create four records

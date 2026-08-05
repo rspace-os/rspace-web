@@ -17,7 +17,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.record.Snippet;
 import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.EcatImageAnnotationManager;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -53,8 +52,7 @@ public class UpdateReferencesInSnippetAttachments0_29IT extends AbstractDBHelper
   }
 
   @Test
-  public void check()
-      throws IOException, SetupException, CustomChangeException, MediaContentMismatchException {
+  public void check() throws IOException, SetupException, CustomChangeException {
 
     updater = new UpdateReferencesInSnippetAttachments();
     updater.setUp();

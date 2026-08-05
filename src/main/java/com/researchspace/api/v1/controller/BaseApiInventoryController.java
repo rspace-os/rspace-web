@@ -124,8 +124,7 @@ public class BaseApiInventoryController extends BaseApiController {
     } catch (InvalidMediaTypeException e) {
       mt = MediaType.IMAGE_PNG;
     }
-    headers.setContentType(mt);
-    ResponseHeaders.preventContentSniffing(headers);
+    ResponseHeaders.setContentTypeAndPreventSniffing(headers, mt);
     headers.setCacheControl("max-age=" + ResponseUtil.YEAR);
     if (fileProp.getUpdateDate() != null) {
       headers.setLastModified(fileProp.getUpdateDate().getTime());

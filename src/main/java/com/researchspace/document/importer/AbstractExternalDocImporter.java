@@ -12,7 +12,6 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FolderManager;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RecordManager;
 import java.io.File;
@@ -93,7 +92,7 @@ public abstract class AbstractExternalDocImporter {
           ecatMedia = seenMap.get(attachmentFile);
         }
         replaceCurrImageTagWithRSpaceImgTag(textField, resourceEl, ecatMedia);
-      } catch (IOException | MediaContentMismatchException e) {
+      } catch (IOException e) {
         log.warn("File referenced by {} could not be saved to RSpace, skipping", htmlFileRef, e);
       }
     }

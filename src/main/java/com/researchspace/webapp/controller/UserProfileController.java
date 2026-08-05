@@ -636,8 +636,7 @@ public class UserProfileController extends BaseController {
     }
 
     final HttpHeaders headers = new HttpHeaders();
-    ResponseHeaders.preventContentSniffing(headers);
-    headers.setContentType(MediaType.IMAGE_PNG);
+    ResponseHeaders.setContentTypeAndPreventSniffing(headers, MediaType.IMAGE_PNG);
     setCacheTimeInBrowser(ResponseUtil.YEAR, null, headers);
 
     return new ResponseEntity<>(pictureBytes, headers, HttpStatus.OK);

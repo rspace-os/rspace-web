@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.impl.ShiroTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.io.IOException;
@@ -57,8 +56,7 @@ public class WopiAuthorisationInterceptorTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testAccessTokenValidation()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testAccessTokenValidation() throws IOException, URISyntaxException {
     // upload doc
     EcatDocumentFile msDoc = addDocumentFromTestResourcesToGallery("MSattachment.doc", testUser);
     String docFileId = msDoc.getGlobalIdentifier().toString();

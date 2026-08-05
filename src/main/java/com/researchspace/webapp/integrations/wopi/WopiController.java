@@ -10,7 +10,6 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.properties.IPropertyHolder;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.service.MediaManager;
 import com.researchspace.webapp.controller.BaseController;
@@ -158,7 +157,8 @@ public class WopiController extends BaseController {
     EcatMediaFile mediaRecord = getMediaRecordFromFileId(fileId, user);
     resp.addHeader(X_WOPI_ITEMVERSION_HEADER, "" + mediaRecord.getVersion());
 
-    ResponseHeaders.preventContentSniffing(resp);
+    ResponseHeaders.setContentTypeAndPreventSniffing(
+        resp, MediaType.APPLICATION_OCTET_STREAM_VALUE);
 
     FileProperty fileProp = mediaRecord.getFileProperty();
     Optional<FileInputStream> fisOpt = fileStore.retrieve(fileProp);
@@ -349,7 +349,7 @@ public class WopiController extends BaseController {
               mediaFileToUpdate.getId(), inputStream, proposedName, user, null);
       log.info("saved new version of gallery file {}", resultMediaFile.getId());
 
-    } catch (IOException | MediaContentMismatchException ioe) {
+    } catch (IOException ioe) {
       log.warn("couldn't save incoming input stream", ioe);
       resp.setStatus(500);
       return Collections.emptyMap();
@@ -487,7 +487,7 @@ public class WopiController extends BaseController {
       // Optional header for Collabora
       resp.addHeader("LastModifiedTime", getIsoDate(mediaFile.getModificationDateAsDate()));
 
-    } catch (IOException | MediaContentMismatchException ioe) {
+    } catch (IOException ioe) {
       log.warn("couldn't save incoming input stream", ioe);
       resp.setStatus(500);
     }

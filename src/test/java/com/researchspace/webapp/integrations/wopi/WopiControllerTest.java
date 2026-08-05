@@ -18,7 +18,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -72,8 +71,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testCheckFileInfoOperation()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testCheckFileInfoOperation() throws IOException, URISyntaxException {
 
     // upload doc
     EcatDocumentFile msDoc = addDocumentFromTestResourcesToGallery("MSattachment.doc", testUser);
@@ -104,7 +102,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
 
   @Test
   public void testCheckFileInfoReturningProperPermissionsForSharedFile()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+      throws IOException, URISyntaxException {
 
     // create a group
     User owner = createAndSaveAPi();
@@ -170,8 +168,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testGetFileOperation()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testGetFileOperation() throws IOException, URISyntaxException {
 
     // upload doc
     EcatDocumentFile msExcel = addDocumentFromTestResourcesToGallery("simpleExcel.xlsx", testUser);
@@ -180,6 +177,8 @@ public class WopiControllerTest extends SpringTransactionalTest {
     wopiController.getFile(fileId, testUser, req, resp);
     assertEquals(200, resp.getStatus());
     assertEquals("1", resp.getHeader(WopiController.X_WOPI_ITEMVERSION_HEADER));
+    assertEquals("application/octet-stream", resp.getContentType());
+    assertEquals("nosniff", resp.getHeader("X-Content-Type-Options"));
 
     byte[] responseBytes = resp.getContentAsByteArray();
     assertNotNull(responseBytes);
@@ -187,8 +186,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testLockOperation()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testLockOperation() throws IOException, URISyntaxException {
 
     EcatDocumentFile msExcel = addDocumentFromTestResourcesToGallery("simpleExcel.xlsx", testUser);
     String fileId = msExcel.getGlobalIdentifier();
@@ -224,8 +222,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testGetLockOperation()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testGetLockOperation() throws IOException, URISyntaxException {
 
     EcatDocumentFile msExcel = addDocumentFromTestResourcesToGallery("simpleExcel.xlsx", testUser);
     String fileId = msExcel.getGlobalIdentifier();
@@ -259,8 +256,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testRefreshLockOperation()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testRefreshLockOperation() throws IOException, URISyntaxException {
 
     // upload doc
     EcatDocumentFile msExcel = addDocumentFromTestResourcesToGallery("simpleExcel.xlsx", testUser);
@@ -312,8 +308,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testUnlockOperation()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testUnlockOperation() throws IOException, URISyntaxException {
 
     // upload doc
     EcatDocumentFile msExcel = addDocumentFromTestResourcesToGallery("simpleExcel.xlsx", testUser);
@@ -365,8 +360,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testUnlockAndRelockOperation()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testUnlockAndRelockOperation() throws IOException, URISyntaxException {
 
     // upload doc
     EcatDocumentFile msExcel = addDocumentFromTestResourcesToGallery("simpleExcel.xlsx", testUser);
@@ -419,8 +413,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testLocksEndpointGeneralErrors()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testLocksEndpointGeneralErrors() throws IOException, URISyntaxException {
 
     // upload doc
     EcatDocumentFile msExcel = addDocumentFromTestResourcesToGallery("simpleExcel.xlsx", testUser);
@@ -442,8 +435,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testPutFileOperation()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testPutFileOperation() throws IOException, URISyntaxException {
 
     EcatDocumentFile emptyFile = addDocumentFromTestResourcesToGallery("empty.txt", testUser);
     String emptyFileId = emptyFile.getGlobalIdentifier();
@@ -514,8 +506,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testPutRelativeErrors()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testPutRelativeErrors() throws IOException, URISyntaxException {
 
     EcatDocumentFile csvFile = addDocumentFromTestResourcesToGallery("csv.csv", testUser);
     WopiAccessToken requestToken =
@@ -550,8 +541,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testPutRelativeSuggestedModeNameGeneration()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testPutRelativeSuggestedModeNameGeneration() throws IOException, URISyntaxException {
     EcatDocumentFile docFile = addDocumentFromTestResourcesToGallery("letterlegal5.doc", testUser);
 
     String nameFromCorrectSuggestion =
@@ -570,8 +560,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testPutRelativeForConversionFlow()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testPutRelativeForConversionFlow() throws IOException, URISyntaxException {
 
     EcatDocumentFile docFile = addDocumentFromTestResourcesToGallery("letterlegal5.doc", testUser);
     String fileId = docFile.getGlobalIdentifier();
@@ -640,8 +629,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testPutRelativeForSaveAsFlow()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testPutRelativeForSaveAsFlow() throws IOException, URISyntaxException {
 
     EcatDocumentFile docFile = addDocumentFromTestResourcesToGallery("letterlegal5.doc", testUser);
     String fileId = docFile.getGlobalIdentifier();
@@ -689,8 +677,7 @@ public class WopiControllerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testDeleteFile()
-      throws IOException, URISyntaxException, MediaContentMismatchException {
+  public void testDeleteFile() throws IOException, URISyntaxException {
 
     // upload doc
     EcatDocumentFile msExcel = addDocumentFromTestResourcesToGallery("simpleExcel.xlsx", testUser);

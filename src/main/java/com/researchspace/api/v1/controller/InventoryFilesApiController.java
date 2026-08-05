@@ -148,10 +148,9 @@ public class InventoryFilesApiController extends BaseApiInventoryController
       throws IOException {
 
     InventoryFile invFile = doGetInventoryFile(id, user);
-    response.setContentType(invFile.getContentMimeType());
+    ResponseHeaders.setContentTypeAndPreventSniffing(response, invFile.getContentMimeType());
     response.setHeader(
         "Content-Disposition", "attachment; filename=\"" + invFile.getFileName() + "\"");
-    ResponseHeaders.preventContentSniffing(response);
     InputStream resourceStream = fileStore.retrieve(invFile.getFileProperty()).get();
     try (InputStream is = resourceStream;
         ServletOutputStream out = response.getOutputStream()) {
@@ -172,10 +171,9 @@ public class InventoryFilesApiController extends BaseApiInventoryController
       inventoryFile.setFileType(InventoryFile.InventoryFileType.CHEMICAL);
     }
     if (isChemicalFile(inventoryFile)) {
-      response.setContentType(MediaType.IMAGE_PNG_VALUE);
+      ResponseHeaders.setContentTypeAndPreventSniffing(response, MediaType.IMAGE_PNG_VALUE);
       response.setHeader(
           "Content-Disposition", "attachment; filename=\"" + inventoryFile.getFileName() + "\"");
-      ResponseHeaders.preventContentSniffing(response);
       try (InputStream is = getChemicalImage(inventoryFile, imageParams);
           ServletOutputStream out = response.getOutputStream()) {
         IOUtils.copy(is, out);

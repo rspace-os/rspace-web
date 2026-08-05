@@ -184,10 +184,9 @@ public class BoxController {
 
     byte[] byteArray = stream.toByteArray();
     try (ByteArrayInputStream in = new ByteArrayInputStream(byteArray)) {
-      response.setContentType("application/octet-stream");
+      ResponseHeaders.setContentTypeAndPreventSniffing(response, "application/octet-stream");
       response.setContentLength((int) byteArray.length);
       response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", name));
-      ResponseHeaders.preventContentSniffing(response);
       OutputStream outStream = response.getOutputStream();
       outStream.write(byteArray);
     }

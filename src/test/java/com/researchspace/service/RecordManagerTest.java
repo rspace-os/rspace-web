@@ -393,8 +393,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void mediaFilesCopiedProperlyWithSnippets()
-      throws IOException, MediaContentMismatchException {
+  public void mediaFilesCopiedProperlyWithSnippets() throws IOException {
 
     // create document being a source for a snippet
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "text1");
@@ -488,8 +487,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void annotationsCopiedProperlyWithSnippets()
-      throws IOException, MediaContentMismatchException {
+  public void annotationsCopiedProperlyWithSnippets() throws IOException {
 
     // create document being a source for a snippet
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "text1");
@@ -784,7 +782,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void recursiveFolderCopy() throws IOException, MediaContentMismatchException {
+  public void recursiveFolderCopy() throws IOException {
     Folder root = folderMgr.getRootFolderForUser(user);
 
     Folder t1 = TestFactory.createAFolder("level1", user);
@@ -1523,7 +1521,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void filterGalleryItems() throws IOException, MediaContentMismatchException {
+  public void filterGalleryItems() throws IOException {
     // add 3 images with defined name to Gallery
     final int TOTAL_NUM_IMAGES = 3;
     final int IMAGES_PER_PAGE = 2;
@@ -1627,7 +1625,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void filteringMediaFiles() throws IOException, MediaContentMismatchException {
+  public void filteringMediaFiles() throws IOException {
 
     User newUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("any"));
     initialiseContentWithEmptyContent(newUser);
@@ -1727,7 +1725,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void getAuthorisedRecordsById() throws IOException, MediaContentMismatchException {
+  public void getAuthorisedRecordsById() throws IOException {
     User any = createInitAndLoginAnyUser();
     StructuredDocument basic1 = recordMgr.createBasicDocument(any.getRootFolder().getId(), any);
     EcatMediaFile emf = addImageToGallery(any);

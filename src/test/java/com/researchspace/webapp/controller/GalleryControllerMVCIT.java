@@ -33,7 +33,6 @@ import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
-import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -685,8 +684,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void testFoldersOnlyShouldOnlyContainFolders()
-      throws IOException, MediaContentMismatchException {
+  public void testFoldersOnlyShouldOnlyContainFolders() throws IOException {
     User user = createInitAndLoginAnyUser();
     create5FolderAnd5DocsInGalleryDocFolder(user);
     AjaxReturnObject<GalleryData> data =
@@ -698,8 +696,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void testFoldersOnlyFalseShouldShowAllItems()
-      throws IOException, MediaContentMismatchException {
+  public void testFoldersOnlyFalseShouldShowAllItems() throws IOException {
     User user = createInitAndLoginAnyUser();
     create5FolderAnd5DocsInGalleryDocFolder(user);
     AjaxReturnObject<GalleryData> data =
@@ -707,8 +704,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     assertEquals(10, data.getData().getItems().getHits().intValue());
   }
 
-  private void create5FolderAnd5DocsInGalleryDocFolder(User user)
-      throws IOException, MediaContentMismatchException {
+  private void create5FolderAnd5DocsInGalleryDocFolder(User user) throws IOException {
     Folder parentFolder =
         recordManager.getGalleryMediaFolderForUser(DOCUMENT_MEDIA_FLDER_NAME, user);
     int i = 0;
