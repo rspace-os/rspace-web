@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { freeze } from "immer";
 import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 
@@ -18,15 +19,15 @@ const AppConfigResponseSchema = v.object({
 
 export type AppConfig = v.InferOutput<typeof AppConfigResponseSchema>;
 
-const defaultAppConfig: AppConfig = {
-  branding: { bannerImageUrl: "" },
-  helpLinks: [],
-  deploymentDescription: null,
-  deploymentHelpEmail: null,
-};
-Object.freeze(defaultAppConfig.branding);
-Object.freeze(defaultAppConfig.helpLinks);
-export const DEFAULT_APP_CONFIG: AppConfig = Object.freeze(defaultAppConfig);
+export const DEFAULT_APP_CONFIG: AppConfig = freeze(
+  {
+    branding: { bannerImageUrl: "" },
+    helpLinks: [],
+    deploymentDescription: null,
+    deploymentHelpEmail: null,
+  },
+  true,
+);
 
 export const appConfigQueryKeys = {
   all: ["rspace.api.v2.config"] as const,

@@ -36,11 +36,13 @@ vi.mock("@/modules/common/ui/avatar", () => ({
 
 type TestLinkProps = Omit<ComponentProps<"a">, "href"> & {
   to: string;
+  reloadDocument?: boolean;
   viewTransition?: boolean;
 };
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ to, viewTransition, ...props }: TestLinkProps) => {
+  Link: ({ to, reloadDocument, viewTransition, ...props }: TestLinkProps) => {
+    void reloadDocument;
     void viewTransition;
     return <a href={to} {...props} />;
   },
