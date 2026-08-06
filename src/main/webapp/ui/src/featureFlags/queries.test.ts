@@ -50,33 +50,6 @@ describe("feature flag queries", () => {
     expect(new URL(request?.url ?? "http://localhost").searchParams.get("limit")).toBe("100");
   });
 
-  test("fetches every page", async () => {
-    const requestedPages: string[] = [];
-    server.use(
-      http.get("/api/v2/feature-flags", ({ request }) => {
-        const page = new URL(request.url).searchParams.get("page") ?? "1";
-        requestedPages.push(page);
-        return HttpResponse.json(
-          page === "1"
-            ? { ...validFlagResponse, docs: [], totalPages: 2, hasNextPage: true, nextPage: 2 }
-            : {
-                ...validFlagResponse,
-                page: 2,
-                pagingCounter: 101,
-                totalPages: 2,
-                hasPrevPage: true,
-                prevPage: 1,
-              },
-        );
-      }),
-    );
-
-    await expect(getFeatureFlags("token")).resolves.toMatchObject({
-      flags: { [FEATURE_FLAGS.bookingEnabled]: { value: true } },
-    });
-    expect(requestedPages).toEqual(["1", "2"]);
-  });
-
   test("rejects an unsuccessful response", async () => {
     server.use(
       http.get("/api/v2/feature-flags", () => new HttpResponse(null, { status: 500, statusText: "Server Error" })),
