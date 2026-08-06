@@ -55,10 +55,12 @@ class CollectionQueryExecutorTest {
   void pagesWithTranslatedFiltersAndMappedSortProperties() {
     PaginatedCriteriaBuilder<Widget> paginated = mock(PaginatedCriteriaBuilder.class);
     PagedList<Widget> page = mock(PagedList.class);
+    Widget third = new Widget(3L, "Grace");
+    Widget fourth = new Widget(4L, "Linus");
     when(query.page(2, 2)).thenReturn(paginated);
     when(paginated.getResultList()).thenReturn(page);
     when(page.getTotalSize()).thenReturn(5L);
-    when(page.toArray()).thenReturn(new Object[0]);
+    when(page.toArray()).thenReturn(new Object[] {third, fourth});
 
     ResourcePage<Widget> result =
         executor.page(
@@ -72,6 +74,7 @@ class CollectionQueryExecutorTest {
                 2));
 
     assertEquals(5L, result.total());
+    assertEquals(List.of(third, fourth), result.resources());
     verify(query).whereExpression("item.name = :rsql0");
     verify(query).setParameter("rsql0", "Ada");
     verify(query).orderBy("item.name", false);

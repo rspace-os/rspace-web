@@ -68,9 +68,11 @@ class ApiV2AuditLogTest {
                 + "\"internal\":\"Private\"}");
     HistoricData event =
         new HistoricData(AuditDomain.RECORD, AuditAction.WRITE, "A User", data, "user1");
-    AuditTrailSearchResult result = new AuditTrailSearchResult(event, 1_700_000_000_000L);
+    Instant eventTime =
+        Instant.ofEpochMilli(Instant.now().minus(Duration.ofDays(1)).toEpochMilli());
+    AuditTrailSearchResult result = new AuditTrailSearchResult(event, eventTime.toEpochMilli());
     when(handler.searchAuditTrail(any(), any(), eq(actor)))
-        .thenReturn(new SearchResultsImpl<>(List.of(result), 0, 3, 20));
+        .thenReturn(new SearchResultsImpl<>(List.of(result), 1, 21, 20));
 
     ApiV2AuditQuery query = new ApiV2AuditQuery();
     query.setPage(2);
@@ -81,10 +83,10 @@ class ApiV2AuditLogTest {
 
     var page = auditLog.search(resource, "7", query, actor);
 
-    assertEquals(3, page.totalDocs());
+    assertEquals(21, page.totalDocs());
     assertEquals(2, page.page());
     assertEquals(Map.of("name", "Visible"), page.docs().get(0).payload());
-    assertEquals("2023-11-14T22:13:20Z", page.docs().get(0).timestamp());
+    assertEquals(eventTime.toString(), page.docs().get(0).timestamp());
     ArgumentCaptor<IAuditTrailSearchConfig> config =
         ArgumentCaptor.forClass(IAuditTrailSearchConfig.class);
     @SuppressWarnings("unchecked")

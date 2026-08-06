@@ -22,6 +22,9 @@ import com.researchspace.model.audittrail.HistoricData;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.service.audit.search.AuditTrailHandler;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,9 +67,12 @@ class ApiV2AuditControllerTest {
             "Audit User",
             AuditData.fromJson("{\"id\":\"US7\"}"),
             "auditor");
-    AuditTrailSearchResult result = new AuditTrailSearchResult(event, 1_700_000_000_000L);
+    AuditTrailSearchResult result =
+        new AuditTrailSearchResult(event, Instant.now().minus(Duration.ofDays(1)).toEpochMilli());
     when(handler.searchAuditTrail(any(), any(), eq(actor)))
-        .thenReturn(new SearchResultsImpl<>(List.of(result), 0, 4, 20));
+        .thenReturn(
+            new SearchResultsImpl<>(Collections.nCopies(4, result), 0, 4, 20),
+            new SearchResultsImpl<>(List.of(result), 0, 4, 1));
 
     mockMvc
         .perform(get("/api/v2/users/7/audit").requestAttr("user", actor))
