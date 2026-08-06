@@ -61,7 +61,9 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
       throw new IllegalArgumentException(
           "REST API v2 resource description is not registered: " + description.resourceName());
     }
-    crud = new ApiV2CrudDispatcher<>(description, registry, operations, relationshipResolver);
+    crud =
+        new ApiV2CrudDispatcher<>(
+            description, registry, operations, relationshipResolver, spec::translate);
   }
 
   public String resourceName() {
@@ -85,8 +87,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   }
 
   public OpenApiOperationDocumentation operationDocumentation(ResourceOperation operation) {
-    return spec.operationDocumentation()
-        .getOrDefault(operation, OpenApiOperationDocumentation.EMPTY);
+    return spec.documentationFor(operation);
   }
 
   public ApiV2ListResult<Map<String, Object>> list(ResourceRequest request, User caller) {
