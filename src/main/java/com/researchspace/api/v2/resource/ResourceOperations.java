@@ -10,43 +10,27 @@ import java.util.Optional;
 /**
  * Collection-specific domain adapter used by the generic REST v2 CRUD dispatcher.
  *
- * <p>Only the three read methods are abstract. A read-only collection pairs these defaults with
- * {@link com.researchspace.model.collection.AccessPolicy#readOnly}, which refuses every mutation
- * before dispatch reaches the adapter, so the throws below are unreachable defence rather than the
+ * <p>A read-only collection pairs the three read methods with {@link
+ * com.researchspace.model.collection.AccessPolicy#readOnly}, which refuses every mutation before
+ * dispatch reaches the adapter, so the throws below are unreachable defence rather than the
  * mechanism that makes a collection read-only.
  */
 public interface ResourceOperations<T, ID> {
 
-  ResourcePage<T> find(ResourceRequest request);
-
-  /**
-   * Finds one page for a caller when the resource representation depends on that caller.
-   *
-   * <p>The default keeps caller-independent collections on the smaller interface.
-   */
-  default ResourcePage<T> find(ResourceRequest request, User actor) {
-    return find(request);
-  }
-
-  long count(ResourceRequest request);
+  /** Finds one page, resolving any caller-specific values for {@code actor}. */
+  ResourcePage<T> find(ResourceRequest request, User actor);
 
   /** Counts matching resources after caller-specific values are resolved. */
-  default long count(ResourceRequest request, User actor) {
-    return count(request);
-  }
-
-  Optional<T> findById(ID id);
+  long count(ResourceRequest request, User actor);
 
   /**
-   * Finds one resource with collection-specific read authorization.
+   * Finds one resource with caller-specific values and collection-specific read authorization.
    *
    * <p>The collection access policy remains the normal authorization mechanism. Collections whose
-   * existing permission model cannot be represented as a query constraint can override this method.
-   * Relationship resolution uses this overload, so it cannot bypass those permissions.
+   * existing permission model cannot be represented as a query constraint can implement that check
+   * here. Relationship resolution uses this method, so it cannot bypass those permissions.
    */
-  default Optional<T> findById(ID id, User actor) {
-    return findById(id);
-  }
+  Optional<T> findById(ID id, User actor);
 
   default T create(ParsedDocument document, User actor) {
     throw readOnly("create");

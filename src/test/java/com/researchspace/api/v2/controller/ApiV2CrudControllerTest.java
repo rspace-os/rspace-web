@@ -37,6 +37,7 @@ import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.Calendar;
 import java.util.Collections;
@@ -56,6 +57,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -64,6 +66,7 @@ class ApiV2CrudControllerTest {
   private static final String ENDPOINT = "/api/v2/maintenances";
   private final MaintenanceManager maintenanceManager = mock(MaintenanceManager.class);
   private final User user = mock(User.class);
+  private final LocalValidatorFactoryBean validator = jsonValidator();
   private ApiV2ResourceSpec<ScheduledMaintenance, Long> maintenance;
   private MockMvc mockMvc;
 
@@ -80,7 +83,10 @@ class ApiV2CrudControllerTest {
     ApiV2CrudController controller =
         new ApiV2CrudController(new ApiV2ResourceCatalog(List.of(maintenance)));
     mockMvc =
-        MockMvcBuilders.standaloneSetup(controller).setControllerAdvice(problemAdvice()).build();
+        MockMvcBuilders.standaloneSetup(controller)
+            .setControllerAdvice(problemAdvice())
+            .setValidator(validator)
+            .build();
   }
 
   @Test
@@ -117,6 +123,7 @@ class ApiV2CrudControllerTest {
         MockMvcBuilders.standaloneSetup(
                 new ApiV2CrudController(new ApiV2ResourceCatalog(List.of(readOnly))))
             .setControllerAdvice(problemAdvice())
+            .setValidator(validator)
             .build();
 
     readOnlyMvc
@@ -178,8 +185,13 @@ class ApiV2CrudControllerTest {
   @Test
   void rejectsInvalidOrNonNumericPaginationWithProblemDetails() throws Exception {
     mockMvc
-        .perform(get(ENDPOINT).param("page", "0").param("limit", "101"))
-        .andExpect(status().isBadRequest());
+        .perform(get(ENDPOINT).param("limit", "0"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.detail").value("Limit must be 1 or greater."));
+    mockMvc
+        .perform(get(ENDPOINT).param("limit", "101"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.detail").value("Limit must not exceed 100."));
     mockMvc.perform(get(ENDPOINT).param("page", "not-a-number")).andExpect(status().isBadRequest());
   }
 
@@ -295,6 +307,7 @@ class ApiV2CrudControllerTest {
                 new ApiV2CrudController(new ApiV2ResourceCatalog(List.of(maintenance))),
                 new MaintenanceOverrideController())
             .setControllerAdvice(problemAdvice())
+            .setValidator(validator)
             .build();
 
     mockMvcWithOverride
@@ -328,7 +341,13 @@ class ApiV2CrudControllerTest {
     mockMvc
         .perform(get(ENDPOINT).param("depth", "11"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"))
+        .andExpect(jsonPath("$.detail").value("Depth must not exceed 10."));
+
+    mockMvc
+        .perform(get(ENDPOINT).param("depth", "-1"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.detail").value("Depth must be 0 or greater."));
 
     // .param() leaves getQueryString() null, so the controller's raw-where advice cannot see this
     // and the parser's decoded check rejects it from inside the handler instead. In production a
@@ -544,6 +563,13 @@ class ApiV2CrudControllerTest {
     source.addMessage(
         "errors.api.v2.bulk.filter.required", Locale.ENGLISH, "Bulk operations require a filter.");
     return new ApiV2ControllerAdvice(new MessageSourceUtils(source));
+  }
+
+  private static LocalValidatorFactoryBean jsonValidator() {
+    LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+    validator.setValidationMessageSource(new JsonMessageSource());
+    validator.afterPropertiesSet();
+    return validator;
   }
 
   private static ScheduledMaintenance futureMaintenance(int hoursFromNow, String message) {
