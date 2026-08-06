@@ -6,10 +6,10 @@
 
   <!-- MARK_RAN preserves dev databases created by the former runtime schema path. -->
   <changeSet id="2026-06-30a" context="run" author="tchoi">
-    <comment>Creates persistent instance baseline values for feature flags.</comment>
     <preConditions onFail="MARK_RAN">
       <not><tableExists tableName="FeatureFlagBaseline"/></not>
     </preConditions>
+    <comment>Creates persistent instance baseline values for feature flags.</comment>
     <createTable tableName="FeatureFlagBaseline">
       <column name="flag_name" type="VARCHAR(128)">
         <constraints primaryKey="true" nullable="false"/>
@@ -22,10 +22,10 @@
   </changeSet>
 
   <changeSet id="2026-06-30b" context="run" author="tchoi">
-    <comment>Creates per-user feature flag overrides.</comment>
     <preConditions onFail="MARK_RAN">
       <not><tableExists tableName="FeatureFlagUserOverride"/></not>
     </preConditions>
+    <comment>Creates per-user feature flag overrides.</comment>
     <createTable tableName="FeatureFlagUserOverride">
       <column name="id" type="BIGINT" autoIncrement="true">
         <constraints primaryKey="true" nullable="false"/>
