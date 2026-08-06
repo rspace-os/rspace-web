@@ -112,7 +112,6 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
                   value={v.value}
                   disabled={false}
                   onChange={({ target: { value } }) => {
-                    console.log("MIH New Dates value: ", value);
                     if (value) handleUpdateValue(i, "value", value);
                   }}
                   disableWidthLimit
