@@ -2,6 +2,7 @@ package com.researchspace.booking.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,6 +39,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -50,7 +52,7 @@ class BookingConfigurationManagerTest {
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   private final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
   private final BookingConfigurationManager manager =
-      new BookingConfigurationManager(dao, validatorFactory.getValidator(), events);
+      new BookingConfigurationManagerImpl(dao, validatorFactory.getValidator(), events);
 
   @BeforeEach
   void setUp() {
@@ -61,6 +63,14 @@ class BookingConfigurationManagerTest {
   @AfterEach
   void closeValidatorFactory() {
     validatorFactory.close();
+  }
+
+  @Test
+  void exposesTheServiceContractThroughAJdkProxy() {
+    ProxyFactory proxyFactory = new ProxyFactory(manager);
+    proxyFactory.setProxyTargetClass(false);
+
+    assertInstanceOf(BookingConfigurationManager.class, proxyFactory.getProxy());
   }
 
   @Test
