@@ -81,7 +81,7 @@ import MoveToS3, { type S3TransferSource } from "./MoveToS3";
 import MoveWithinFilestoreDialog from "./MoveWithinFilestoreDialog";
 import { useFolderOpen } from "./OpenFolderProvider";
 import S3Logo from "./S3Logo.svg";
-import SidecarDialog from "./SidecarDialog";
+import SidecarFileDialog from "./SidecarFileDialog";
 import VersionHistoryDialog from "./VersionHistoryDialog";
 
 /**
@@ -316,7 +316,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
   const { openSnippetPreview } = useSnippetPreview();
   const fetchedCurrentUser = useWhoAmI();
   const netfilestoresEnabled = useDeploymentProperty("netfilestores.enabled");
-  const metadataSidecarEnabled = useDeploymentProperty("gallery.actions.metadata.sidecar.enabled");
+  const metadataSidecarFileEnabled = useDeploymentProperty("gallery.actions.metadata.sidecarFile.enabled");
 
   const currentUser = FetchingData.getSuccessValue(fetchedCurrentUser).orElse(null);
 
@@ -325,7 +325,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
     .flatMap(Parsers.isTrue)
     .orElse(false);
 
-  const showGenerateDataRecord = FetchingData.getSuccessValue(metadataSidecarEnabled)
+  const showGenerateDataRecord = FetchingData.getSuccessValue(metadataSidecarFileEnabled)
     .flatMap(Parsers.isBoolean)
     .flatMap(Parsers.isTrue)
     .orElse(false);
@@ -343,7 +343,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
   const [s3Open, setS3Open] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
   const [shareOpen, setShareOpen] = React.useState(false);
-  const [sidecarOpen, setSidecarOpen] = React.useState(false);
+  const [sidecarFileOpen, setSidecarFileOpen] = React.useState(false);
   const [versionHistoryOpen, setVersionHistoryOpen] = React.useState(false);
   const [imageEditorBlob, setImageEditorBlob] = React.useState<null | Blob>(null);
   const openAllowed = computed(() => {
@@ -1001,7 +1001,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               subheader={sidecarFilestore ? "" : t("actionsMenu.generateDataRecordNotS3")}
               avatar={<NoteAddIcon />}
               onClick={() => {
-                setSidecarOpen(true);
+                setSidecarFileOpen(true);
                 setActionsMenuAnchorEl(null);
               }}
               compact
@@ -1178,9 +1178,9 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
         />
       )}
       {sidecarFilestore !== null && sidecarFilestore.id !== null && (
-        <SidecarDialog
-          open={sidecarOpen}
-          onClose={() => setSidecarOpen(false)}
+        <SidecarFileDialog
+          open={sidecarFileOpen}
+          onClose={() => setSidecarFileOpen(false)}
           filestoreId={sidecarFilestore.id}
           folderPath={sidecarFolderPath}
           refreshListing={refreshListing}

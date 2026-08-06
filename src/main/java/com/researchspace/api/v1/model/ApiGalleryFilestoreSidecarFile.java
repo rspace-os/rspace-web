@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ApiGalleryFilestoreSidecar {
+public class ApiGalleryFilestoreSidecarFile {
   private String filename;
   private String content;
 }

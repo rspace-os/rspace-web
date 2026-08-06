@@ -2155,7 +2155,7 @@ paths:
         "501":
           description: Unsupported source/destination combination, or filestore does not
             support writes.
-  "/gallery/filestores/{filestoreId}/sidecar/preview":
+  "/gallery/filestores/{filestoreId}/sidecarFile/preview":
     post:
       summary: Preview a metadata sidecar for a folder
       description: >
@@ -2178,7 +2178,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/GalleryFilestoreSidecarRequest"
+              $ref: "#/components/schemas/GalleryFilestoreSidecarFileRequest"
         required: true
       responses:
         "200":
@@ -2186,10 +2186,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GalleryFilestoreSidecar"
+                $ref: "#/components/schemas/GalleryFilestoreSidecarFile"
         "404":
           description: Filestore does not support sidecar generation.
-  "/gallery/filestores/{filestoreId}/sidecar":
+  "/gallery/filestores/{filestoreId}/sidecarFile":
     post:
       summary: Generate and save a metadata sidecar for a folder
       description: >
@@ -2212,7 +2212,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/GalleryFilestoreSidecarRequest"
+              $ref: "#/components/schemas/GalleryFilestoreSidecarFileRequest"
         required: true
       responses:
         "201":
@@ -2220,7 +2220,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GalleryFilestoreSidecar"
+                $ref: "#/components/schemas/GalleryFilestoreSidecarFile"
         "404":
           description: Filestore does not support sidecar generation.
   /gallery/filesystems:
@@ -4867,9 +4867,9 @@ components:
         destFilestoreId: 42
         destPath: archive/2026/report.pdf
         deleteSource: false
-    GalleryFilestoreSidecarRequest:
+    GalleryFilestoreSidecarFileRequest:
       description: Body for the sidecar endpoints (`POST
-        /gallery/filestores/{filestoreId}/sidecar/preview` and `.../sidecar`; S3 only).
+        /gallery/filestores/{filestoreId}/sidecarFile/preview` and `.../sidecarFile`; S3 only).
       required:
         - path
       properties:
@@ -4879,13 +4879,13 @@ components:
             the root).
       example:
         path: XRD-Experiments
-    GalleryFilestoreSidecar:
+    GalleryFilestoreSidecarFile:
       description: A composed DataCite (`ltds-datacite4.3`) metadata sidecar returned by the
         sidecar endpoints.
       properties:
         filename:
           type: string
-          description: Sidecar filename, e.g. `XRD-Experiments.sidecar.yaml`.
+          description: SidecarFile filename, e.g. `XRD-Experiments.sidecar.yaml`.
         content:
           type: string
           description: The serialized sidecar content (YAML).

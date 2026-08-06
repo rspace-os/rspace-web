@@ -6,12 +6,12 @@ import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import type { Filestore } from "./useGalleryListing";
 
 /** A composed metadata sidecar: the target filename and its serialized (YAML) content. */
-export type Sidecar = { filename: string; content: string };
+export type SidecarFile = { filename: string; content: string };
 
 export default function useFilestoresEndpoint(): {
   logout: (filestore: Filestore) => Promise<void>;
-  previewSidecar: (filestoreId: number, folderPath: string) => Promise<Sidecar>;
-  saveSidecar: (filestoreId: number, folderPath: string) => Promise<Sidecar>;
+  previewSidecarFile: (filestoreId: number, folderPath: string) => Promise<SidecarFile>;
+  saveSidecarFile: (filestoreId: number, folderPath: string) => Promise<SidecarFile>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -19,18 +19,18 @@ export default function useFilestoresEndpoint(): {
 
   const authHeader = async () => ({ Authorization: `Bearer ${await getToken()}` });
 
-  const previewSidecar = async (filestoreId: number, folderPath: string): Promise<Sidecar> => {
-    const { data } = await axios.post<Sidecar>(
-      `/api/v1/gallery/filestores/${filestoreId}/sidecar/preview`,
+  const previewSidecarFile = async (filestoreId: number, folderPath: string): Promise<SidecarFile> => {
+    const { data } = await axios.post<SidecarFile>(
+      `/api/v1/gallery/filestores/${filestoreId}/sidecarFile/preview`,
       { path: folderPath },
       { headers: await authHeader() },
     );
     return data;
   };
 
-  const saveSidecar = async (filestoreId: number, folderPath: string): Promise<Sidecar> => {
-    const { data } = await axios.post<Sidecar>(
-      `/api/v1/gallery/filestores/${filestoreId}/sidecar`,
+  const saveSidecarFile = async (filestoreId: number, folderPath: string): Promise<SidecarFile> => {
+    const { data } = await axios.post<SidecarFile>(
+      `/api/v1/gallery/filestores/${filestoreId}/sidecarFile`,
       { path: folderPath },
       { headers: await authHeader() },
     );
@@ -67,7 +67,7 @@ export default function useFilestoresEndpoint(): {
 
   return {
     logout,
-    previewSidecar,
-    saveSidecar,
+    previewSidecarFile,
+    saveSidecarFile,
   };
 }

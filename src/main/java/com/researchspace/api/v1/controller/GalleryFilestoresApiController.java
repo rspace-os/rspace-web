@@ -8,8 +8,8 @@ import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
-import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecar;
-import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFile;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFileRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.User;
@@ -28,8 +28,8 @@ import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.FilestoreWriteManager;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.RecordDeletionManager;
-import com.researchspace.service.metadata.GeneratedSidecar;
-import com.researchspace.service.metadata.S3SidecarService;
+import com.researchspace.service.metadata.GeneratedSidecarFile;
+import com.researchspace.service.metadata.S3SidecarFileService;
 import com.researchspace.webapp.controller.DeploymentProperty;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
@@ -67,10 +67,10 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   @Autowired @Setter NfsFactory nfsFactory;
   @Autowired RecordDeletionManager deletionManager;
   @Autowired FilestoreWriteManager filestoreWriteManager;
-  @Autowired S3SidecarService s3SidecarService;
+  @Autowired S3SidecarFileService s3SidecarFileService;
 
-  @Value("${gallery.actions.metadata.sidecar.enabled}")
-  boolean metadataSidecarEnabled;
+  @Value("${gallery.actions.metadata.sidecarFile.enabled}")
+  boolean metadataSidecarFileEnabled;
 
   @Override
   public List<NfsFileStoreInfo> getUserFilestores(@RequestAttribute(name = "user") User user) {
@@ -362,36 +362,36 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   }
 
   @Override
-  public ApiGalleryFilestoreSidecar previewSidecar(
+  public ApiGalleryFilestoreSidecarFile previewSidecarFile(
       @PathVariable Long filestoreId,
-      @RequestBody @Valid ApiGalleryFilestoreSidecarRequest request,
+      @RequestBody @Valid ApiGalleryFilestoreSidecarFileRequest request,
       @RequestAttribute(name = "user") User user) {
 
     assertFilestoresApiEnabled(user);
-    assertSidecarEnabled();
-    return toApiSidecar(s3SidecarService.preview(filestoreId, request.getPath(), user));
+    assertSidecarFileEnabled();
+    return toApiSidecarFile(s3SidecarFileService.preview(filestoreId, request.getPath(), user));
   }
 
   @Override
-  public ApiGalleryFilestoreSidecar saveSidecar(
+  public ApiGalleryFilestoreSidecarFile saveSidecarFile(
       @PathVariable Long filestoreId,
-      @RequestBody @Valid ApiGalleryFilestoreSidecarRequest request,
+      @RequestBody @Valid ApiGalleryFilestoreSidecarFileRequest request,
       @RequestAttribute(name = "user") User user) {
 
     assertFilestoresApiEnabled(user);
-    assertSidecarEnabled();
-    return toApiSidecar(s3SidecarService.save(filestoreId, request.getPath(), user));
+    assertSidecarFileEnabled();
+    return toApiSidecarFile(s3SidecarFileService.save(filestoreId, request.getPath(), user));
   }
 
   // Honour the feature flag on the backend too, so a disabled sidecar feature is off end to end.
-  private void assertSidecarEnabled() {
-    if (!metadataSidecarEnabled) {
+  private void assertSidecarFileEnabled() {
+    if (!metadataSidecarFileEnabled) {
       throw new UnsupportedOperationException(
-          getMessage("netFileStores.sidecar.errors.notEnabled"));
+          getMessage("netFileStores.sidecarFile.errors.notEnabled"));
     }
   }
 
-  private static ApiGalleryFilestoreSidecar toApiSidecar(GeneratedSidecar sidecar) {
-    return new ApiGalleryFilestoreSidecar(sidecar.getFilename(), sidecar.getContent());
+  private static ApiGalleryFilestoreSidecarFile toApiSidecarFile(GeneratedSidecarFile sidecarFile) {
+    return new ApiGalleryFilestoreSidecarFile(sidecarFile.getFilename(), sidecarFile.getContent());
   }
 }

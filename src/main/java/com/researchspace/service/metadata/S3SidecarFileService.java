@@ -36,7 +36,7 @@ import org.springframework.stereotype.Service;
 @Service
 @AllArgsConstructor
 @Slf4j
-public class S3SidecarService {
+public class S3SidecarFileService {
 
   private static final String SIDECAR_SUFFIX = ".sidecar.yaml";
 
@@ -45,13 +45,13 @@ public class S3SidecarService {
   private final FilestoreAclChecker aclChecker;
   private final UserExternalIdResolver orcidResolver;
   private final IPropertyHolder propertyHolder;
-  private final DataCiteYamlSidecarGenerator sidecarGenerator;
+  private final DataCiteYamlSidecarFileGenerator sidecarFileGenerator;
   private final AuditTrailService auditService;
   private final MessageSourceUtils messages;
   private final RoRService rorService;
 
   /** Composes and returns a sidecar for the folder without writing anything. */
-  public GeneratedSidecar preview(Long filestoreId, String folderPath, User user) {
+  public GeneratedSidecarFile preview(Long filestoreId, String folderPath, User user) {
     NfsFileStore filestore = loadS3Filestore(filestoreId);
     aclChecker.assertCanRead(user, filestore.getFileSystem());
     S3Utilities s3 = s3UtilitiesFactory.createS3UtilitiesForNfsConnector(filestore.getFileSystem());
@@ -59,22 +59,22 @@ public class S3SidecarService {
   }
 
   /** Composes a sidecar, writes it into the folder, and records the action in the audit trail. */
-  public GeneratedSidecar save(Long filestoreId, String folderPath, User user) {
+  public GeneratedSidecarFile save(Long filestoreId, String folderPath, User user) {
     NfsFileStore filestore = loadS3Filestore(filestoreId);
     aclChecker.assertCanWrite(user, filestore.getFileSystem());
     S3Utilities s3 = s3UtilitiesFactory.createS3UtilitiesForNfsConnector(filestore.getFileSystem());
     String prefix = prefixFor(filestore, folderPath);
-    GeneratedSidecar sidecar = compose(s3, prefix, user);
-    writeToS3(s3, prefix, sidecar, user);
+    GeneratedSidecarFile sidecarFile = compose(s3, prefix, user);
+    writeToS3(s3, prefix, sidecarFile, user);
     String filestoreName = filestore.getFileSystem().getName();
     auditService.notify(
         new GenericEvent(
             user,
-            new SidecarAuditEvent(filestoreName, prefix, sidecar.getFilename()),
+            new SidecarFileAuditEvent(filestoreName, prefix, sidecarFile.getFilename()),
             AuditAction.CREATE,
             "Generated metadata sidecar '%s' for folder '%s' on filestore '%s'"
-                .formatted(sidecar.getFilename(), prefix, filestoreName)));
-    return sidecar;
+                .formatted(sidecarFile.getFilename(), prefix, filestoreName)));
+    return sidecarFile;
   }
 
   /**
@@ -85,9 +85,9 @@ public class S3SidecarService {
     return normalizeKeyPrefix(filestore.getAbsolutePath(folderPath));
   }
 
-  private GeneratedSidecar compose(S3Utilities s3, String prefix, User user) {
-    SidecarGenerationContext ctx =
-        SidecarGenerationContext.builder()
+  private GeneratedSidecarFile compose(S3Utilities s3, String prefix, User user) {
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
             .user(user)
             .orcidId(
                 orcidResolver
@@ -100,7 +100,7 @@ public class S3SidecarService {
             .folderPath(prefix)
             .files(listFiles(s3, prefix))
             .build();
-    return sidecarGenerator.generate(ctx);
+    return sidecarFileGenerator.generate(ctx);
   }
 
   /** Files in the folder, skipping subfolders and any existing sidecar, with full S3 keys. */
@@ -127,7 +127,7 @@ public class S3SidecarService {
               "netFileStores.errors.fileStoreNotFound", new Object[] {filestoreId}));
     }
     if (!NfsClientType.S3.equals(filestore.getFileSystem().getClientType())) {
-      throw new NotFoundException(messages.getMessage("netFileStores.sidecar.errors.notS3"));
+      throw new NotFoundException(messages.getMessage("netFileStores.sidecarFile.errors.notS3"));
     }
     return filestore;
   }
@@ -137,11 +137,12 @@ public class S3SidecarService {
   }
 
   @SneakyThrows
-  private void writeToS3(S3Utilities s3, String prefix, GeneratedSidecar sidecar, User user) {
+  private void writeToS3(
+      S3Utilities s3, String prefix, GeneratedSidecarFile sidecarFile, User user) {
     Path dir = Files.createTempDirectory("rspace-sidecar");
-    File file = dir.resolve(sidecar.getFilename()).toFile();
+    File file = dir.resolve(sidecarFile.getFilename()).toFile();
     try {
-      Files.writeString(file.toPath(), sidecar.getContent());
+      Files.writeString(file.toPath(), sidecarFile.getContent());
       var attribution =
           new WriteAttribution(user.getUsername(), null, Instant.now()).metadataForRecord(null);
       s3.uploadToS3(prefix, file, attribution);

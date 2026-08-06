@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  * seam can be reintroduced when a second format (e.g. RO-Crate) is added.
  */
 @Component
-public class DataCiteYamlSidecarGenerator {
+public class DataCiteYamlSidecarFileGenerator {
 
   private static final String SCHEMA_VERSION = "ltds-datacite4.3";
 
@@ -24,7 +24,7 @@ public class DataCiteYamlSidecarGenerator {
       (YAMLMapper) new YAMLMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
   @SneakyThrows
-  public GeneratedSidecar generate(SidecarGenerationContext ctx) {
+  public GeneratedSidecarFile generate(SidecarFileGenerationContext ctx) {
     DataCiteMetadata model =
         new DataCiteMetadata(
             new Valued<>(SCHEMA_VERSION),
@@ -34,10 +34,10 @@ public class DataCiteYamlSidecarGenerator {
             new Valued<>(String.valueOf(Year.now().getValue())),
             relatedItemsFor(ctx));
     String content = yamlMapper.writeValueAsString(model);
-    return new GeneratedSidecar(filenameFor(ctx), content);
+    return new GeneratedSidecarFile(filenameFor(ctx), content);
   }
 
-  private Creator creatorFor(SidecarGenerationContext ctx) {
+  private Creator creatorFor(SidecarFileGenerationContext ctx) {
     User user = ctx.getUser();
     return new Creator(
         new Valued<>("Personal"),
@@ -51,7 +51,7 @@ public class DataCiteYamlSidecarGenerator {
   /**
    * Instance organisation as the affiliation, carrying the system ROR id when one is configured.
    */
-  private Affiliation affiliationFor(SidecarGenerationContext ctx) {
+  private Affiliation affiliationFor(SidecarFileGenerationContext ctx) {
     Valued<String> name = new Valued<>(ctx.getInstitutionName());
     String ror = ctx.getRorId();
     if (ror == null || ror.isBlank()) {
@@ -72,7 +72,7 @@ public class DataCiteYamlSidecarGenerator {
   }
 
   /** One {@code relatedItem} per S3 object, or null (omitted) when the folder is empty. */
-  private List<RelatedItem> relatedItemsFor(SidecarGenerationContext ctx) {
+  private List<RelatedItem> relatedItemsFor(SidecarFileGenerationContext ctx) {
     if (ctx.getFiles() == null || ctx.getFiles().isEmpty()) {
       return null;
     }
@@ -87,7 +87,7 @@ public class DataCiteYamlSidecarGenerator {
   }
 
   /** {@code <folder leaf>.sidecar.yaml}, falling back to the bucket name at the root. */
-  private String filenameFor(SidecarGenerationContext ctx) {
+  private String filenameFor(SidecarFileGenerationContext ctx) {
     String trimmed = ctx.getFolderPath() == null ? "" : ctx.getFolderPath().replaceAll("/+$", "");
     int slash = trimmed.lastIndexOf('/');
     String leaf = slash >= 0 ? trimmed.substring(slash + 1) : trimmed;

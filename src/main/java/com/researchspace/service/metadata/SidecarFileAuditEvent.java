@@ -6,7 +6,7 @@ import com.researchspace.model.audittrail.AuditTrailProperty;
 
 /** Audit-trail payload for a sidecar generation: the filestore, folder and resulting filename. */
 @AuditTrailData(auditDomain = AuditDomain.MEDIA)
-public record SidecarAuditEvent(
+public record SidecarFileAuditEvent(
     @AuditTrailProperty(name = "filestore") String filestore,
     @AuditTrailProperty(name = "path") String path,
     @AuditTrailProperty(name = "filename") String filename) {}

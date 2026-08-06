@@ -50,10 +50,10 @@ const whoAmIResponse = {
 
 function stubCommonEndpoints({
   netfilestoresEnabled = false,
-  metadataSidecarEnabled = false,
+  metadataSidecarFileEnabled = false,
 }: {
   netfilestoresEnabled?: boolean;
-  metadataSidecarEnabled?: boolean;
+  metadataSidecarFileEnabled?: boolean;
 } = {}) {
   // Bootstrap calls made on mount by the component tree.
   mockAxios.onGet("/collaboraOnline/supportedExts").reply(200, {});
@@ -64,7 +64,7 @@ function stubCommonEndpoints({
     const params = config.params as URLSearchParams | undefined;
     const name = params?.get?.("name");
     if (name === "netfilestores.enabled") return [200, netfilestoresEnabled];
-    if (name === "gallery.actions.metadata.sidecar.enabled") return [200, metadataSidecarEnabled];
+    if (name === "gallery.actions.metadata.sidecarFile.enabled") return [200, metadataSidecarFileEnabled];
     return [200, false];
   });
 
@@ -151,8 +151,8 @@ function stubCommonEndpoints({
   });
   mockAxios.onDelete(/\/api\/v1\/share\/.*/).reply(204);
 
-  // Sidecar preview (registered before the catch-all so it wins).
-  mockAxios.onPost(/\/sidecar\/preview$/).reply(200, {
+  // SidecarFile preview (registered before the catch-all so it wins).
+  mockAxios.onPost(/\/sidecarFile\/preview$/).reply(200, {
     filename: "folder.sidecar.yaml",
     content: "schemaVersion: ltds-datacite4.3",
   });
@@ -438,7 +438,7 @@ describe("ActionsMenu", () => {
   });
 
   describe("Generate Data Record action", () => {
-    test("is hidden when gallery.actions.metadata.sidecar.enabled is false", async () => {
+    test("is hidden when gallery.actions.metadata.sidecarFile.enabled is false", async () => {
       // A selection is present so the menu opens even with the property off.
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithFolder />);
@@ -451,7 +451,7 @@ describe("ActionsMenu", () => {
 
     test("is shown but disabled when enabled and not in an S3 filestore", async () => {
       mockAxios.reset();
-      stubCommonEndpoints({ metadataSidecarEnabled: true });
+      stubCommonEndpoints({ metadataSidecarFileEnabled: true });
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithFolder />);
       await openMenu(user);
@@ -463,7 +463,7 @@ describe("ActionsMenu", () => {
 
     test("opens with no selection and is enabled inside a writable S3 filestore", async () => {
       mockAxios.reset();
-      stubCommonEndpoints({ metadataSidecarEnabled: true });
+      stubCommonEndpoints({ metadataSidecarFileEnabled: true });
       const user = userEvent.setup();
       renderStory(<ActionsMenuInWritableS3Filestore />);
       // The no-selection open depends on the async deployment-property fetch, so wait for
@@ -480,7 +480,7 @@ describe("ActionsMenu", () => {
       // Generate Data Record is the only action that works without a selection; the
       // rest must not become clickable just because the menu can now open empty.
       mockAxios.reset();
-      stubCommonEndpoints({ metadataSidecarEnabled: true });
+      stubCommonEndpoints({ metadataSidecarFileEnabled: true });
       const user = userEvent.setup();
       renderStory(<ActionsMenuInWritableS3Filestore />);
       await waitFor(() => expect(screen.getByRole("button", { name: "gallery:actionsMenu.actions" })).toBeEnabled());
@@ -501,7 +501,7 @@ describe("ActionsMenu", () => {
 
     test("clicking Generate Data Record opens the sidecar preview dialog", async () => {
       mockAxios.reset();
-      stubCommonEndpoints({ metadataSidecarEnabled: true });
+      stubCommonEndpoints({ metadataSidecarFileEnabled: true });
       const user = userEvent.setup();
       renderStory(<ActionsMenuInWritableS3Filestore />);
       await waitFor(() => expect(screen.getByRole("button", { name: "gallery:actionsMenu.actions" })).toBeEnabled());
@@ -518,7 +518,7 @@ describe("ActionsMenu", () => {
       // The no-selection open is scoped to writable S3 + the property; elsewhere the
       // Actions button keeps its existing selection requirement.
       mockAxios.reset();
-      stubCommonEndpoints({ metadataSidecarEnabled: true });
+      stubCommonEndpoints({ metadataSidecarFileEnabled: true });
       renderStory(<ActionsMenuWithNoSelection />);
       expect(await screen.findByRole("button", { name: "gallery:actionsMenu.actions" })).toBeDisabled();
     });

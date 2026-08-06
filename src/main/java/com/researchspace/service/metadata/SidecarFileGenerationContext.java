@@ -6,11 +6,12 @@ import lombok.Builder;
 import lombok.Value;
 
 /**
- * Everything a {@link DataCiteYamlSidecarGenerator} needs to compose a sidecar, gathered upstream.
+ * Everything a {@link DataCiteYamlSidecarFileGenerator} needs to compose a sidecar, gathered
+ * upstream.
  */
 @Value
 @Builder
-public class SidecarGenerationContext {
+public class SidecarFileGenerationContext {
   User user;
 
   /** Null when the user has no ORCID. */

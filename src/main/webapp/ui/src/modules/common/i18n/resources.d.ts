@@ -2157,7 +2157,7 @@ export default interface Resources {
       "sectionsDrawerLabel": "gallery sections drawer",
       "uploadFiles": "Upload Files"
     },
-    "sidecar": {
+    "sidecarFile": {
       "contentLabel": "Metadata record preview",
       "description": "Preview the metadata record composed for this folder, then save it to the filestore.",
       "loading": "Composing metadata record...",
@@ -6386,9 +6386,9 @@ export default interface Resources {
           "deniedTooOld": "{0, plural, one {Filestore items can only be deleted within # minute of their creation} other {Filestore items can only be deleted within # minutes of their creation}}"
         }
       },
-      "sidecar": {
+      "sidecarFile": {
         "errors": {
-          "notEnabled": "Metadata sidecar generation is not enabled on this RSpace instance (gallery.actions.metadata.sidecar.enabled=false)",
+          "notEnabled": "Metadata sidecar generation is not enabled on this RSpace instance (gallery.actions.metadata.sidecarFile.enabled=false)",
           "notS3": "Metadata sidecar generation is only supported for S3 filestores"
         }
       },

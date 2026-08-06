@@ -10,9 +10,9 @@ import java.time.Year;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class DataCiteYamlSidecarGeneratorTest {
+class DataCiteYamlSidecarFileGeneratorTest {
 
-  private final DataCiteYamlSidecarGenerator generator = new DataCiteYamlSidecarGenerator();
+  private final DataCiteYamlSidecarFileGenerator generator = new DataCiteYamlSidecarFileGenerator();
   private final YAMLMapper yaml = new YAMLMapper();
 
   private User user() {
@@ -24,8 +24,8 @@ class DataCiteYamlSidecarGeneratorTest {
 
   @Test
   void generatesLtdsDataCiteYamlWithCurrentUserAsCreator() throws Exception {
-    SidecarGenerationContext ctx =
-        SidecarGenerationContext.builder()
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
             .user(user())
             .institutionName("Leibniz Supercomputing Centre")
             .bucketName("lrz-rs-experiments")
@@ -33,7 +33,7 @@ class DataCiteYamlSidecarGeneratorTest {
             .files(List.of())
             .build();
 
-    GeneratedSidecar result = generator.generate(ctx);
+    GeneratedSidecarFile result = generator.generate(ctx);
 
     assertTrue(
         result.getFilename().endsWith(".sidecar.yaml"),
@@ -49,8 +49,8 @@ class DataCiteYamlSidecarGeneratorTest {
 
   @Test
   void populatesTypesPublisherAndYearFromInstanceConfig() throws Exception {
-    SidecarGenerationContext ctx =
-        SidecarGenerationContext.builder()
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
             .user(user())
             .institutionName("Leibniz Supercomputing Centre")
             .bucketName("lrz-rs-experiments")
@@ -77,8 +77,8 @@ class DataCiteYamlSidecarGeneratorTest {
 
   @Test
   void creatorCarriesGivenFamilyNameAndInstanceAffiliation() throws Exception {
-    SidecarGenerationContext ctx =
-        SidecarGenerationContext.builder()
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
             .user(user())
             .institutionName("Leibniz Supercomputing Centre")
             .bucketName("lrz-rs-experiments")
@@ -98,8 +98,8 @@ class DataCiteYamlSidecarGeneratorTest {
 
   @Test
   void includesRorAffiliationIdentifierWhenConfigured() throws Exception {
-    SidecarGenerationContext ctx =
-        SidecarGenerationContext.builder()
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
             .user(user())
             .institutionName("Leibniz Supercomputing Centre")
             .rorId("https://ror.org/00t3r8h32")
@@ -125,8 +125,8 @@ class DataCiteYamlSidecarGeneratorTest {
 
   @Test
   void includesOrcidNameIdentifierWhenUserHasOne() throws Exception {
-    SidecarGenerationContext ctx =
-        SidecarGenerationContext.builder()
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
             .user(user())
             .orcidId("https://orcid.org/0000-0002-1825-0097")
             .institutionName("Leibniz Supercomputing Centre")
@@ -151,8 +151,8 @@ class DataCiteYamlSidecarGeneratorTest {
 
   @Test
   void omitsNameIdentifiersWhenUserHasNoOrcid() throws Exception {
-    SidecarGenerationContext ctx =
-        SidecarGenerationContext.builder()
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
             .user(user())
             .institutionName("Leibniz Supercomputing Centre")
             .bucketName("lrz-rs-experiments")
@@ -169,8 +169,8 @@ class DataCiteYamlSidecarGeneratorTest {
 
   @Test
   void mapsEachS3FileToRelatedItemWithS3Location() throws Exception {
-    SidecarGenerationContext ctx =
-        SidecarGenerationContext.builder()
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
             .user(user())
             .institutionName("Leibniz Supercomputing Centre")
             .bucketName("lrz-rs-experiments")

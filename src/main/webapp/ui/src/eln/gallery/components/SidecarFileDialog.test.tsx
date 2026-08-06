@@ -10,7 +10,7 @@ import axios from "@/common/axios";
 import Alerts from "@/components/Alerts/Alerts";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import SidecarDialog from "./SidecarDialog";
+import SidecarFileDialog from "./SidecarFileDialog";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -19,16 +19,16 @@ const PREVIEW = {
   filename: "experiments.sidecar.yaml",
   content: "schemaVersion: ltds-datacite4.3\ntitle:\n  value: experiments\n",
 };
-const previewUrl = `/api/v1/gallery/filestores/${FILESTORE_ID}/sidecar/preview`;
-const saveUrl = `/api/v1/gallery/filestores/${FILESTORE_ID}/sidecar`;
+const previewUrl = `/api/v1/gallery/filestores/${FILESTORE_ID}/sidecarFile/preview`;
+const saveUrl = `/api/v1/gallery/filestores/${FILESTORE_ID}/sidecarFile`;
 
-function renderDialog(props?: Partial<React.ComponentProps<typeof SidecarDialog>>) {
+function renderDialog(props?: Partial<React.ComponentProps<typeof SidecarFileDialog>>) {
   const onClose = vi.fn();
   const refreshListing = vi.fn(() => Promise.resolve());
   render(
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Alerts>
-        <SidecarDialog
+        <SidecarFileDialog
           open
           onClose={onClose}
           filestoreId={FILESTORE_ID}
@@ -50,7 +50,7 @@ afterEach(() => {
   mockAxios.reset();
 });
 
-describe("SidecarDialog", () => {
+describe("SidecarFileDialog", () => {
   test("composes and shows the metadata preview on open, writing nothing", async () => {
     mockAxios.onPost(previewUrl).reply(200, PREVIEW);
     renderDialog();
@@ -71,7 +71,7 @@ describe("SidecarDialog", () => {
     const { onClose, refreshListing } = renderDialog();
 
     await screen.findByText(PREVIEW.filename);
-    await user.click(screen.getByRole("button", { name: /gallery:sidecar\.save/i }));
+    await user.click(screen.getByRole("button", { name: /gallery:sidecarFile\.save/i }));
 
     await waitFor(() => {
       const saveCalls = mockAxios.history.post.filter((r) => r.url === saveUrl);
@@ -81,7 +81,7 @@ describe("SidecarDialog", () => {
     expect(refreshListing).toHaveBeenCalled();
     // The success toast portals to the body; while the (test-controlled) dialog stays open the
     // modal marks it aria-hidden, so assert by text rather than the alert role.
-    expect(await screen.findByText("gallery:sidecar.saveSuccess")).toBeInTheDocument();
+    expect(await screen.findByText("gallery:sidecarFile.saveSuccess")).toBeInTheDocument();
     await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 
@@ -89,8 +89,8 @@ describe("SidecarDialog", () => {
     mockAxios.onPost(previewUrl).reply(500);
     renderDialog();
 
-    expect(await screen.findByText(/gallery:sidecar\.previewFailed/)).toBeVisible();
-    expect(screen.getByRole("button", { name: /gallery:sidecar\.save/i })).toBeDisabled();
+    expect(await screen.findByText(/gallery:sidecarFile\.previewFailed/)).toBeVisible();
+    expect(screen.getByRole("button", { name: /gallery:sidecarFile\.save/i })).toBeDisabled();
     expect(mockAxios.history.post.map((r) => r.url)).not.toContain(saveUrl);
   });
 });

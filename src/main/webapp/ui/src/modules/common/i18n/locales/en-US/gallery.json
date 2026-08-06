@@ -450,7 +450,7 @@
     "sectionsDrawerLabel": "gallery sections drawer",
     "uploadFiles": "Upload Files"
   },
-  "sidecar": {
+  "sidecarFile": {
     "contentLabel": "Metadata record preview",
     "description": "Preview the metadata record composed for this folder, then save it to the filestore.",
     "loading": "Composing metadata record...",

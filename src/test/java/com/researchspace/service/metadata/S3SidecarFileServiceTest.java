@@ -40,7 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-class S3SidecarServiceTest {
+class S3SidecarFileServiceTest {
 
   private final YAMLMapper yaml = new YAMLMapper();
 
@@ -53,7 +53,7 @@ class S3SidecarServiceTest {
   private AuditTrailService auditService;
   private MessageSourceUtils messages;
   private RoRService rorService;
-  private S3SidecarService service;
+  private S3SidecarFileService service;
 
   private final User user = new User("jmuller");
 
@@ -86,13 +86,13 @@ class S3SidecarServiceTest {
         .thenReturn(Optional.empty());
 
     service =
-        new S3SidecarService(
+        new S3SidecarFileService(
             nfsManager,
             s3UtilitiesFactory,
             aclChecker,
             orcidResolver,
             propertyHolder,
-            new DataCiteYamlSidecarGenerator(),
+            new DataCiteYamlSidecarFileGenerator(),
             auditService,
             messages,
             rorService);
@@ -107,7 +107,7 @@ class S3SidecarServiceTest {
     when(s3Utilities.listFolderContents("XRD-Experiments"))
         .thenReturn(List.of(file("xrd_run_041.dat", 2202009L, "\"b2c3\"", "STANDARD")));
 
-    GeneratedSidecar result = service.preview(1L, "XRD-Experiments", user);
+    GeneratedSidecarFile result = service.preview(1L, "XRD-Experiments", user);
 
     JsonNode loc =
         yaml.readTree(result.getContent()).path("relatedItems").path(0).path("s3Location");
@@ -127,7 +127,7 @@ class S3SidecarServiceTest {
   }
 
   @Test
-  void saveWritesSidecarWithAttributionAndAuditsCreate() {
+  void saveWritesSidecarFileWithAttributionAndAuditsCreate() {
     when(s3Utilities.listFolderContents("XRD-Experiments"))
         .thenReturn(List.of(file("xrd_run_041.dat", 2202009L, "\"b2c3\"", "STANDARD")));
 
@@ -147,7 +147,7 @@ class S3SidecarServiceTest {
     GenericEvent event = eventCaptor.getValue();
     assertEquals(AuditAction.CREATE, event.getAuditAction());
 
-    SidecarAuditEvent payload = (SidecarAuditEvent) event.getAuditedObject();
+    SidecarFileAuditEvent payload = (SidecarFileAuditEvent) event.getAuditedObject();
     assertEquals("lrz-filestore", payload.filestore());
     assertEquals("XRD-Experiments", payload.path());
     assertEquals("XRD-Experiments.sidecar.yaml", payload.filename());
@@ -159,7 +159,7 @@ class S3SidecarServiceTest {
   }
 
   @Test
-  void skipsSubfoldersAndExistingSidecarWhenListingFiles() throws Exception {
+  void skipsSubfoldersAndExistingSidecarFileWhenListingFiles() throws Exception {
     S3FolderContentItem subfolder = new S3FolderContentItem("nested", true, null, null);
     when(s3Utilities.listFolderContents("XRD-Experiments"))
         .thenReturn(
@@ -168,7 +168,7 @@ class S3SidecarServiceTest {
                 subfolder,
                 file("XRD-Experiments.sidecar.yaml", 4096L, "\"aaaa\"", "STANDARD")));
 
-    GeneratedSidecar result = service.preview(1L, "XRD-Experiments", user);
+    GeneratedSidecarFile result = service.preview(1L, "XRD-Experiments", user);
 
     JsonNode related = yaml.readTree(result.getContent()).path("relatedItems");
     assertEquals(1, related.size());
@@ -203,7 +203,7 @@ class S3SidecarServiceTest {
     when(s3Utilities.listFolderContents("dev-folder"))
         .thenReturn(List.of(file("run.dat", 5L, "\"c\"", "STANDARD")));
 
-    GeneratedSidecar result = service.preview(1L, "/dev-folder", user);
+    GeneratedSidecarFile result = service.preview(1L, "/dev-folder", user);
 
     JsonNode loc =
         yaml.readTree(result.getContent()).path("relatedItems").path(0).path("s3Location");
@@ -211,11 +211,11 @@ class S3SidecarServiceTest {
   }
 
   @Test
-  void bucketRootFolderYieldsKeysWithoutLeadingSlashAndBucketNamedSidecar() throws Exception {
+  void bucketRootFolderYieldsKeysWithoutLeadingSlashAndBucketNamedSidecarFile() throws Exception {
     when(s3Utilities.listFolderContents(""))
         .thenReturn(List.of(file("top.dat", 10L, "\"e\"", "STANDARD")));
 
-    GeneratedSidecar result = service.preview(1L, "", user);
+    GeneratedSidecarFile result = service.preview(1L, "", user);
 
     assertEquals("lrz-rs-experiments.sidecar.yaml", result.getFilename());
     JsonNode loc =

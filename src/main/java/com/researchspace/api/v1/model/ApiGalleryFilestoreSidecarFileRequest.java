@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ApiGalleryFilestoreSidecarRequest {
+public class ApiGalleryFilestoreSidecarFileRequest {
 
   /** Folder the sidecar describes, relative to the filestore root. Empty/"/" means the root. */
   @NotNull(message = "{errors.gallery.filestore.validation.pathRequired}")

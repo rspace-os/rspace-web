@@ -12,10 +12,10 @@ import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as FetchingData from "../../../util/fetchingData";
-import useFilestoresEndpoint, { type Sidecar } from "../useFilestoresEndpoint";
+import useFilestoresEndpoint, { type SidecarFile } from "../useFilestoresEndpoint";
 import PlaceholderLabel from "./PlaceholderLabel";
 
-type SidecarDialogArgs = {
+type SidecarFileDialogArgs = {
   open: boolean;
   onClose: () => void;
   /** The writable S3 filestore the folder lives in. */
@@ -30,34 +30,34 @@ type SidecarDialogArgs = {
  * Previews the auto-composed metadata sidecar for a folder in an S3 filestore, then optionally
  * writes it to the filestore. The preview is read-only in this phase; editing is deferred.
  */
-export default function SidecarDialog({
+export default function SidecarFileDialog({
   open,
   onClose,
   filestoreId,
   folderPath,
   refreshListing,
-}: SidecarDialogArgs): React.ReactNode {
+}: SidecarFileDialogArgs): React.ReactNode {
   const { t } = useTranslation(["gallery", "common"]);
   const { isViewportVerySmall } = useViewportDimensions();
   const { addAlert } = React.useContext(AlertContext);
-  const { previewSidecar, saveSidecar } = useFilestoresEndpoint();
-  const [preview, setPreview] = React.useState<FetchingData.Fetched<Sidecar>>({ tag: "loading" });
+  const { previewSidecarFile, saveSidecarFile } = useFilestoresEndpoint();
+  const [preview, setPreview] = React.useState<FetchingData.Fetched<SidecarFile>>({ tag: "loading" });
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setPreview({ tag: "loading" });
-    previewSidecar(filestoreId, folderPath)
-      .then((sidecar) => !cancelled && setPreview({ tag: "success", value: sidecar }))
+    previewSidecarFile(filestoreId, folderPath)
+      .then((sidecarFile) => !cancelled && setPreview({ tag: "success", value: sidecarFile }))
       .catch((e) => {
-        console.error("Sidecar preview failed", e);
-        if (!cancelled) setPreview({ tag: "error", error: t("sidecar.previewFailed") });
+        console.error("SidecarFile preview failed", e);
+        if (!cancelled) setPreview({ tag: "error", error: t("sidecarFile.previewFailed") });
       });
     return () => {
       cancelled = true;
     };
-    // Deps exclude the per-render previewSidecar/t: refetch only when the target changes.
+    // Deps exclude the per-render previewSidecarFile/t: refetch only when the target changes.
   }, [open, filestoreId, folderPath]);
 
   const composed = FetchingData.getSuccessValue(preview).orElse(null);
@@ -66,13 +66,13 @@ export default function SidecarDialog({
     if (!composed) return;
     setSaving(true);
     try {
-      const saved = await saveSidecar(filestoreId, folderPath);
-      addAlert(mkAlert({ variant: "success", message: t("sidecar.saveSuccess", { filename: saved.filename }) }));
+      const saved = await saveSidecarFile(filestoreId, folderPath);
+      addAlert(mkAlert({ variant: "success", message: t("sidecarFile.saveSuccess", { filename: saved.filename }) }));
       void refreshListing();
       onClose();
     } catch (e) {
-      console.error("Sidecar save failed", e);
-      addAlert(mkAlert({ variant: "error", message: t("sidecar.saveFailed") }));
+      console.error("SidecarFile save failed", e);
+      addAlert(mkAlert({ variant: "error", message: t("sidecarFile.saveFailed") }));
     } finally {
       setSaving(false);
     }
@@ -91,19 +91,19 @@ export default function SidecarDialog({
       <DialogTitle>{t("actionsMenu.generateDataRecord")}</DialogTitle>
       <DialogContent>
         <DialogContentText variant="body2" sx={{ mb: 2 }}>
-          {t("sidecar.description")}
+          {t("sidecarFile.description")}
         </DialogContentText>
         {FetchingData.match(preview, {
-          loading: () => <PlaceholderLabel>{t("sidecar.loading")}</PlaceholderLabel>,
+          loading: () => <PlaceholderLabel>{t("sidecarFile.loading")}</PlaceholderLabel>,
           error: (error) => <PlaceholderLabel>{error}</PlaceholderLabel>,
-          success: (sidecar) => (
+          success: (sidecarFile) => (
             <>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                {sidecar.filename}
+                {sidecarFile.filename}
               </Typography>
               <TextField
-                aria-label={t("sidecar.contentLabel")}
-                value={sidecar.content}
+                aria-label={t("sidecarFile.contentLabel")}
+                value={sidecarFile.content}
                 multiline
                 minRows={8}
                 maxRows={20}
@@ -120,7 +120,7 @@ export default function SidecarDialog({
           onClick={() => void save()}
           disabled={composed === null || saving}
           loading={saving}
-          label={t("sidecar.save")}
+          label={t("sidecarFile.save")}
         />
       </DialogActions>
     </Dialog>
