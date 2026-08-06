@@ -27,6 +27,7 @@ import com.researchspace.service.FilestoreWriteManager;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.webapp.controller.DeploymentProperty;
+import com.researchspace.webapp.controller.ResponseHeaders;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -149,7 +150,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     File downloadedFile = nfsFileDetails.getLocalFile();
     log.info("downloaded to: " + downloadedFile.getCanonicalPath());
 
-    response.setContentType("application/octet-stream");
+    ResponseHeaders.setContentTypeAndPreventSniffing(response, "application/octet-stream");
     response.setContentLength((int) downloadedFile.length());
     response.setHeader(
         "Content-Disposition", "attachment; filename=\"" + downloadedFile.getName() + "\"");

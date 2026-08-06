@@ -54,6 +54,7 @@ import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.ExternalWorkFlowDataManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
@@ -229,6 +230,12 @@ abstract class AbstractImporterStrategyImpl {
               .addErrorMsg(
                   messages.getMessage(
                       "archiveImport.info.importingGalleryItem", new Object[] {e.getMessage()}));
+        } catch (MediaContentMismatchException e) {
+          log.warn(
+              "Rejected Gallery item {} during import: {} - continuing with import",
+              galleryMetaFileName,
+              e.getMessage());
+          report.getInfoList().addErrorMsg(messages.getMessage(e.getErrorCode(), e.getArgs()));
         }
       }
       monitor.worked((monitor.getTotalWorkUnits() / numElements));

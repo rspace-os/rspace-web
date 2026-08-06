@@ -533,7 +533,8 @@ public class WorkspaceController extends BaseController {
 
   private void display(EcatMediaFile mediaFile, HttpServletResponse res) throws IOException {
 
-    res.setContentType(getContentTypeForFileExtension(getExtension(mediaFile.getExtension())));
+    ResponseHeaders.setContentTypeAndPreventSniffing(
+        res, getContentTypeForFileExtension(getExtension(mediaFile.getExtension())));
     res.setHeader("Content-Disposition", "attachment; filename=" + mediaFile.getFileName());
     ServletOutputStream outStream = res.getOutputStream();
     Optional<FileInputStream> fisOpt = getFileFromFileStore(mediaFile);

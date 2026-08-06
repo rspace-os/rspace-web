@@ -237,7 +237,7 @@ public abstract class AbstractContentInitializer
     try {
       image = mediaMgr.saveNewImage(name, resource.getInputStream(), user, target);
     } catch (IOException e) {
-      log.warn("img from path [{}] could not be saved into {}", path, target);
+      log.warn("img from path [{}] could not be saved into {}: {}", path, target, e.getMessage());
     }
     return image;
   }
