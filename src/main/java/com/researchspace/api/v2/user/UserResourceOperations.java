@@ -39,12 +39,12 @@ public final class UserResourceOperations implements ResourceOperations<User, Lo
   }
 
   @Override
-  public ResourcePage<User> find(ResourceRequest request) {
+  public ResourcePage<User> find(ResourceRequest request, User actor) {
     return manager.getUsers(request);
   }
 
   @Override
-  public long count(ResourceRequest request) {
+  public long count(ResourceRequest request, User actor) {
     return manager.countUsers(request);
   }
 
@@ -54,7 +54,7 @@ public final class UserResourceOperations implements ResourceOperations<User, Lo
    * reaches this path.
    */
   @Override
-  public Optional<User> findById(Long id) {
+  public Optional<User> findById(Long id, User actor) {
     return manager.getOptional(id);
   }
 

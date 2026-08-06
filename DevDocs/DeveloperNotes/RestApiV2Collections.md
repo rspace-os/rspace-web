@@ -126,17 +126,17 @@ public class WidgetResourceOperations implements ResourceOperations<Widget, Long
   }
 
   @Override
-  public ResourcePage<Widget> find(ResourceRequest request) {
+  public ResourcePage<Widget> find(ResourceRequest request, User actor) {
     return manager.getWidgets(request);
   }
 
   @Override
-  public long count(ResourceRequest request) {
+  public long count(ResourceRequest request, User actor) {
     return manager.countWidgets(request);
   }
 
   @Override
-  public Optional<Widget> findById(Long id) {
+  public Optional<Widget> findById(Long id, User actor) {
     return manager.getWidget(id);
   }
 
@@ -216,12 +216,9 @@ Keep domain authorization, validation, transactions, audit events, and lifecycle
 manager. Override the default manager hooks for these rules. Do not copy the standard collection
 pipeline into a resource-specific service.
 
-Most collections return the same values to each permitted caller. Implement `find(ResourceRequest)`
-and `count(ResourceRequest)` for these collections.
-
-Some collections calculate values for the current caller. Override `find(ResourceRequest, User)`
-and `count(ResourceRequest, User)` for these collections. Use the supplied user. Do not read a
-browser session or an implicit security context.
+Every read operation receives the caller. Caller-independent collections can ignore it. Collections
+that calculate caller-specific values must use the supplied user rather than reading a browser
+session or an implicit security context.
 
 Use `InMemoryCollectionQuery` for a bounded collection that does not use database queries. This
 adapter applies the standard filter, sort, page, and count rules to a resource snapshot.

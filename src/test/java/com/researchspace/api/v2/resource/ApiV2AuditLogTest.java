@@ -110,7 +110,7 @@ class ApiV2AuditLogTest {
         ApiV2AuthenticationException.class,
         () -> auditLog.search(resource, "7", new ApiV2AuditQuery(), null));
 
-    verify(operations, never()).findById(any());
+    verify(operations, never()).findById(any(), any());
     verify(handler, never()).searchAuditTrail(any(), any(), any());
   }
 

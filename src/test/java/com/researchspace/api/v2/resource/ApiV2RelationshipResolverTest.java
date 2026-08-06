@@ -239,18 +239,13 @@ class ApiV2RelationshipResolverTest {
     private int readableLookupCalls;
 
     @Override
-    public ResourcePage<Node> find(ResourceRequest request) {
+    public ResourcePage<Node> find(ResourceRequest request, User actor) {
       return new ResourcePage<>(List.copyOf(nodes.values()), nodes.size());
     }
 
     @Override
-    public long count(ResourceRequest request) {
+    public long count(ResourceRequest request, User actor) {
       return nodes.size();
-    }
-
-    @Override
-    public Optional<Node> findById(Long id) {
-      return Optional.ofNullable(nodes.get(id));
     }
 
     @Override
@@ -259,7 +254,7 @@ class ApiV2RelationshipResolverTest {
       if (deniedIds.contains(id)) {
         throw new AuthorizationException();
       }
-      return findById(id);
+      return Optional.ofNullable(nodes.get(id));
     }
 
     @Override

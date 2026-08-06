@@ -90,17 +90,17 @@ public final class BookingConfigurationResourceOperations
   }
 
   @Override
-  public ResourcePage<BookingConfiguration> find(ResourceRequest request) {
+  public ResourcePage<BookingConfiguration> find(ResourceRequest request, User actor) {
     return manager.getConfigurations(request);
   }
 
   @Override
-  public long count(ResourceRequest request) {
+  public long count(ResourceRequest request, User actor) {
     return manager.countConfigurations(request);
   }
 
   @Override
-  public Optional<BookingConfiguration> findById(Long id) {
+  public Optional<BookingConfiguration> findById(Long id, User actor) {
     return manager.getConfiguration(id);
   }
 

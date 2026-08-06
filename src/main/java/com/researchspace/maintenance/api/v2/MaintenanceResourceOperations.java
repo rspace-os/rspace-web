@@ -57,17 +57,17 @@ public final class MaintenanceResourceOperations
   }
 
   @Override
-  public ResourcePage<ScheduledMaintenance> find(ResourceRequest request) {
+  public ResourcePage<ScheduledMaintenance> find(ResourceRequest request, User actor) {
     return manager.getResources(request);
   }
 
   @Override
-  public long count(ResourceRequest request) {
+  public long count(ResourceRequest request, User actor) {
     return manager.countResources(request);
   }
 
   @Override
-  public Optional<ScheduledMaintenance> findById(Long id) {
+  public Optional<ScheduledMaintenance> findById(Long id, User actor) {
     return manager.getResource(id);
   }
 

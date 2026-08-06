@@ -210,7 +210,7 @@ class ApiV2ResourceAccessTest {
         () -> widgets.get("9", request(null, List.of()), user(false)));
 
     // findById would have ignored the constraint entirely and handed back row 9.
-    verify(operations, org.mockito.Mockito.never()).findById(any());
+    verify(operations, org.mockito.Mockito.never()).findById(any(), any());
     ArgumentCaptor<ResourceRequest> captor = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(operations).find(captor.capture(), org.mockito.ArgumentMatchers.any(User.class));
     assertEquals(
