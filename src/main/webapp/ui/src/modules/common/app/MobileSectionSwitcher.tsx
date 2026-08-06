@@ -43,27 +43,22 @@ export default function MobileSectionSwitcher({
           <ChevronDownIcon />
         </MenuTrigger>
         <MenuContent align="start" aria-label={t("appBar.switchSection")}>
-          {visibleItems.map((item) =>
-            item.routerTo ? (
-              <MenuLinkItem
-                key={item.id}
-                render={<Link to={item.routerTo} viewTransition />}
-                aria-current={currentPage === item.id ? "page" : undefined}
-                className={itemClasses}
-              >
-                <SectionItemContent item={item} isCurrent={currentPage === item.id} />
-              </MenuLinkItem>
-            ) : (
-              <MenuLinkItem
-                key={item.id}
-                href={item.href}
-                aria-current={currentPage === item.id ? "page" : undefined}
-                className={itemClasses}
-              >
-                <SectionItemContent item={item} isCurrent={currentPage === item.id} />
-              </MenuLinkItem>
-            ),
-          )}
+          {visibleItems.map((item) => (
+            <MenuLinkItem
+              key={item.id}
+              render={
+                <Link
+                  to={item.routerTo ?? item.href}
+                  reloadDocument={!item.routerTo}
+                  viewTransition={Boolean(item.routerTo)}
+                />
+              }
+              aria-current={currentPage === item.id ? "page" : undefined}
+              className={itemClasses}
+            >
+              <SectionItemContent item={item} isCurrent={currentPage === item.id} />
+            </MenuLinkItem>
+          ))}
         </MenuContent>
       </Menu>
     </div>
