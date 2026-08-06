@@ -53,6 +53,14 @@
         <version>5.14.4</version>
         <scope>test</scope>
       </dependency>
+      <!-- The JUnit 6 parent predates the Spring BOM import in rspace-parent 3.0.1. -->
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-framework-bom</artifactId>
+        <version>${spring.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>javax.cache</groupId>
         <artifactId>cache-api</artifactId>
@@ -2744,6 +2752,7 @@
 
   <properties>
     <blaze-persistence.version>1.6.18</blaze-persistence.version>
+    <spring.version>6.2.19</spring.version>
     <!-- jetty -->
     <jetty.version>12.1.11</jetty.version>
     <slf4j.version>2.0.2</slf4j.version>
