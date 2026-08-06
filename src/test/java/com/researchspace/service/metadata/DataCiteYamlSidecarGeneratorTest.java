@@ -58,15 +58,21 @@ class DataCiteYamlSidecarGeneratorTest {
             .files(List.of())
             .build();
 
+    int yearBefore = Year.now().getValue();
     JsonNode root = yaml.readTree(generator.generate(ctx).getContent());
+    int yearAfter = Year.now().getValue();
 
     assertEquals("Dataset", root.path("types").path("resourceTypeGeneral").path("value").asText());
     assertEquals("", root.path("types").path("resourceType").path("value").asText());
     assertEquals(
         "Leibniz Supercomputing Centre",
         root.path("publisher").path("name").path("value").asText());
-    assertEquals(
-        String.valueOf(Year.now().getValue()), root.path("publicationYear").path("value").asText());
+    // Accept either side of a year rollover between the two Year.now() reads.
+    String publicationYear = root.path("publicationYear").path("value").asText();
+    assertTrue(
+        publicationYear.equals(String.valueOf(yearBefore))
+            || publicationYear.equals(String.valueOf(yearAfter)),
+        "publicationYear should be the generation year, was: " + publicationYear);
   }
 
   @Test
