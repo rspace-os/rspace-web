@@ -11,9 +11,10 @@ The `users` collection has standard collection routes. Its policy gives a system
 access to all users. Another authenticated user can read only their own row.
 
 The `/api/v2/users/me` route is a concrete controller route. It returns the current API user.
+The `/api/v2/users/me/profile-image` route returns the current profile image as a PNG file.
 
-User write operations exist in the standard route set. They do not change data. This temporary
-behavior lets clients use one route shape while the team defines user write rules.
+User write routes exist in the standard route set. The read-only access policy refuses every user
+mutation. The operations class contains non-persistent placeholders that the policy does not call.
 
 ## Configuration
 
@@ -21,6 +22,25 @@ The `/api/v2/config` route returns a public allowlist of deployment properties. 
 does not reflect over all properties. It does not expose credentials or secret paths.
 
 This route is not a registered collection. Its controller supplies its OpenAPI documentation.
+
+## OpenAPI
+
+The public `/api/v2/openapi.json` route returns the generated OpenAPI 3.1 document. The document
+contains registered collections, relationship targets, and annotated concrete routes.
+
+Production caches the document privately for one hour. Production also supports conditional
+requests through `ETag` and `If-None-Match`.
+
+## Common request behavior
+
+REST API v2 accepts an API key or an OAuth bearer token. It does not use browser cookies or servlet
+sessions.
+
+Public routes do not require credentials. Collection routes apply their resource policy. Other
+routes require authentication by default.
+
+Errors use RFC 9457 problem details. Responses identify the selected language through
+`Content-Language` and `Vary: Accept-Language`.
 
 ## Maintenance
 
