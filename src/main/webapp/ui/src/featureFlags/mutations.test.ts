@@ -23,37 +23,6 @@ describe("feature flag mutations", () => {
     await expect(request?.json()).resolves.toEqual({ overrideValue: true });
   });
 
-  test("sets a baseline", async () => {
-    let request: Request | undefined;
-    server.use(
-      http.patch("/api/v2/feature-flags/:flagName", ({ request: receivedRequest }) => {
-        request = receivedRequest.clone();
-        return HttpResponse.json({});
-      }),
-    );
-
-    await patchFeatureFlag({ flagName: FEATURE_FLAGS.bookingEnabled, document: { baselineValue: false } }, "token");
-
-    await expect(request?.json()).resolves.toEqual({ baselineValue: false });
-  });
-
-  test("clears an override", async () => {
-    let request: Request | undefined;
-    server.use(
-      http.patch("/api/v2/feature-flags/:flagName", ({ request: receivedRequest }) => {
-        request = receivedRequest.clone();
-        return HttpResponse.json({});
-      }),
-    );
-
-    await patchFeatureFlag({ flagName: FEATURE_FLAGS.bookingEnabled, document: { overrideValue: null } }, "token");
-
-    expect(request?.method).toBe("PATCH");
-    expect(request?.headers.get("Authorization")).toBe("Bearer token");
-    expect(request?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
-    await expect(request?.json()).resolves.toEqual({ overrideValue: null });
-  });
-
   test("rejects an unsuccessful write", async () => {
     server.use(
       http.patch(

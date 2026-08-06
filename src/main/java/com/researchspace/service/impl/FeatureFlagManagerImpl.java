@@ -11,9 +11,8 @@ import com.researchspace.featureflags.FeatureFlagReadOnlyException;
 import com.researchspace.featureflags.FeatureFlagResource;
 import com.researchspace.featureflags.FeatureFlagSource;
 import com.researchspace.model.User;
-import com.researchspace.model.collection.CollectionDescription.WriteOperation;
-import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.FeatureFlagManager.Patch;
 import com.researchspace.service.UserManager;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -89,7 +88,7 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
   }
 
   @Override
-  public List<FeatureFlagResource> getResources(User actor) {
+  public List<FeatureFlagResource> getFeatureFlags(User actor) {
     RuntimeFeatureFlags snapshot = requireRuntime();
     Map<String, Boolean> overrides = getUserOverrides(actor);
     boolean canOverride = canOverrideFeatureFlags(actor);
@@ -99,7 +98,7 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
   }
 
   @Override
-  public Optional<FeatureFlagResource> getResource(String flagName, User actor) {
+  public Optional<FeatureFlagResource> getFeatureFlag(String flagName, User actor) {
     RuntimeFeatureFlags snapshot = requireRuntime();
     FeatureFlagDefinition definition = snapshot.definitions().get(flagName);
     if (definition == null) {
@@ -111,18 +110,15 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
   }
 
   @Override
-  public synchronized Optional<FeatureFlagResource> updateResource(
-      String flagName, ParsedDocument patch, User actor) {
+  public synchronized Optional<FeatureFlagResource> updateFeatureFlag(
+      String flagName, Patch patch, User actor) {
     RuntimeFeatureFlags snapshot = requireRuntime();
     if (!snapshot.definitions().containsKey(flagName)) {
       return Optional.empty();
     }
-    if (patch.operation() != WriteOperation.UPDATE) {
-      throw new IllegalArgumentException("Feature flag change requires an update document");
-    }
     assertWritable(flagName, snapshot);
-    boolean changesBaseline = patch.values().containsKey("baselineValue");
-    boolean changesOverride = patch.values().containsKey("overrideValue");
+    boolean changesBaseline = patch.baselineValue() != null;
+    boolean changesOverride = patch.updateOverride();
     if (changesBaseline && !canChangeFeatureFlagBaselines(actor)) {
       throw new FeatureFlagPermissionException();
     }
@@ -134,14 +130,14 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     RuntimeFeatureFlags responseSnapshot = snapshot;
     if (changesBaseline) {
       Optional<RuntimeFeatureFlags> updatedSnapshot =
-          setBaselineValue(snapshot, flagName, (boolean) patch.values().get("baselineValue"));
+          setBaselineValue(snapshot, flagName, patch.baselineValue());
       if (updatedSnapshot.isPresent()) {
         responseSnapshot = updatedSnapshot.orElseThrow();
         changed = true;
       }
     }
     if (changesOverride) {
-      Boolean value = (Boolean) patch.values().get("overrideValue");
+      Boolean value = patch.overrideValue();
       Map<String, Boolean> currentOverrides = getUserOverrides(actor);
       boolean hasOverride = currentOverrides.containsKey(flagName);
       if (value == null && hasOverride) {

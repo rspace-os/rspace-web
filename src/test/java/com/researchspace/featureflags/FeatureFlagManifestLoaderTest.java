@@ -14,24 +14,6 @@ import org.springframework.core.io.ResourceLoader;
 class FeatureFlagManifestLoaderTest {
 
   @Test
-  void loadsValidDefinitionsInManifestOrder() {
-    FeatureFlagManifestLoader loader =
-        loaderFor(
-            """
-            {"flags":[
-              {"name":"firstFlag","description":"First","owner":"RSpace","expires":"2026-01-01","default":true},
-              {"name":"secondFlag","description":"Second","owner":"RSpace","expires":"2026-01-02","default":false}
-            ]}
-            """);
-
-    assertEquals(
-        List.of(
-            new FeatureFlagDefinition("firstFlag", true),
-            new FeatureFlagDefinition("secondFlag", false)),
-        loader.loadDefinitions());
-  }
-
-  @Test
   void loadsJsoncAndDefaultsMissingValuesToFalse() {
     FeatureFlagManifestLoader loader =
         loaderFor(

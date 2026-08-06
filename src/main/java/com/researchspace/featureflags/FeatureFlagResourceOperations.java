@@ -11,6 +11,7 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.FeatureFlagManager.Patch;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -70,37 +71,29 @@ public class FeatureFlagResourceOperations
   }
 
   @Override
-  public ResourcePage<FeatureFlagResource> find(ResourceRequest request) {
-    return find(request, null);
-  }
-
-  @Override
   public ResourcePage<FeatureFlagResource> find(ResourceRequest request, User actor) {
-    return resourceQuery.page(manager.getResources(actor), request);
-  }
-
-  @Override
-  public long count(ResourceRequest request) {
-    return count(request, null);
+    return resourceQuery.page(manager.getFeatureFlags(actor), request);
   }
 
   @Override
   public long count(ResourceRequest request, User actor) {
-    return resourceQuery.count(manager.getResources(actor), request);
-  }
-
-  @Override
-  public Optional<FeatureFlagResource> findById(String id) {
-    return manager.getResource(id, null);
+    return resourceQuery.count(manager.getFeatureFlags(actor), request);
   }
 
   @Override
   public Optional<FeatureFlagResource> findById(String id, User actor) {
-    return manager.getResource(id, actor);
+    return manager.getFeatureFlag(id, actor);
   }
 
   @Override
   public Optional<FeatureFlagResource> update(String id, ParsedDocument document, User actor) {
-    return manager.updateResource(id, document, actor);
+    Map<String, Object> values = document.values();
+    return manager.updateFeatureFlag(
+        id,
+        new Patch(
+            (Boolean) values.get("baselineValue"),
+            values.containsKey("overrideValue"),
+            (Boolean) values.get("overrideValue")),
+        actor);
   }
 }

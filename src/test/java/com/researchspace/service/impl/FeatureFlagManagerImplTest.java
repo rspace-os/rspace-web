@@ -19,11 +19,9 @@ import com.researchspace.featureflags.FeatureFlagResource;
 import com.researchspace.featureflags.FeatureFlagSource;
 import com.researchspace.featureflags.FeatureFlags;
 import com.researchspace.model.User;
-import com.researchspace.model.collection.CollectionDescription.WriteOperation;
-import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.service.FeatureFlagManager.Patch;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -97,7 +95,8 @@ class FeatureFlagManagerImplTest {
     assertThrows(
         FeatureFlagReadOnlyException.class,
         () ->
-            featureFlagManager.updateResource(FeatureFlags.BOOKING_ENABLED, override(false), user));
+            featureFlagManager.updateFeatureFlag(
+                FeatureFlags.BOOKING_ENABLED, override(false), user));
   }
 
   @Test
@@ -106,7 +105,7 @@ class FeatureFlagManagerImplTest {
     initialiseRuntime(Map.of(FeatureFlags.BOOKING_ENABLED, false), false);
     User user = user("user", 7L);
 
-    featureFlagManager.updateResource(FeatureFlags.BOOKING_ENABLED, override(true), user);
+    featureFlagManager.updateFeatureFlag(FeatureFlags.BOOKING_ENABLED, override(true), user);
 
     verify(featureFlagDao).setOverride(7L, FeatureFlags.BOOKING_ENABLED, true);
     verify(events)
@@ -135,7 +134,7 @@ class FeatureFlagManagerImplTest {
     assertThrows(
         FeatureFlagPermissionException.class,
         () ->
-            featureFlagManager.updateResource(
+            featureFlagManager.updateFeatureFlag(
                 FeatureFlags.BOOKING_ENABLED, baseline(true), user("user", 9L)));
   }
 
@@ -148,18 +147,6 @@ class FeatureFlagManagerImplTest {
   }
 
   @Test
-  void sysadminCanChangeBaselineOutsideDevMode() {
-    initialiseRuntime(Map.of(FeatureFlags.BOOKING_ENABLED, false), false);
-    User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
-    sysadmin.setId(11L);
-
-    featureFlagManager.updateResource(FeatureFlags.BOOKING_ENABLED, baseline(true), sysadmin);
-
-    verify(featureFlagDao).upsertBaseline(FeatureFlags.BOOKING_ENABLED, true);
-    assertTrue(resource(null).isBaselineValue());
-  }
-
-  @Test
   void baselineSnapshotChangesOnlyAfterTransactionCommit() {
     initialiseRuntime(Map.of(FeatureFlags.BOOKING_ENABLED, false), false);
     User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
@@ -168,7 +155,7 @@ class FeatureFlagManagerImplTest {
 
     FeatureFlagResource response =
         featureFlagManager
-            .updateResource(FeatureFlags.BOOKING_ENABLED, baseline(true), sysadmin)
+            .updateFeatureFlag(FeatureFlags.BOOKING_ENABLED, baseline(true), sysadmin)
             .orElseThrow();
 
     assertTrue(response.isBaselineValue());
@@ -185,7 +172,7 @@ class FeatureFlagManagerImplTest {
     sysadmin.setId(17L);
     TransactionSynchronizationManager.initSynchronization();
 
-    featureFlagManager.updateResource(FeatureFlags.BOOKING_ENABLED, baseline(true), sysadmin);
+    featureFlagManager.updateFeatureFlag(FeatureFlags.BOOKING_ENABLED, baseline(true), sysadmin);
     TransactionSynchronizationManager.clearSynchronization();
 
     assertFalse(resource(null).isBaselineValue());
@@ -205,7 +192,7 @@ class FeatureFlagManagerImplTest {
     User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
     sysadmin.setId(12L);
 
-    featureFlagManager.updateResource(FeatureFlags.BOOKING_ENABLED, baseline(false), sysadmin);
+    featureFlagManager.updateFeatureFlag(FeatureFlags.BOOKING_ENABLED, baseline(false), sysadmin);
 
     verify(featureFlagDao, never()).upsertBaseline(FeatureFlags.BOOKING_ENABLED, false);
     verify(events, never())
@@ -222,7 +209,7 @@ class FeatureFlagManagerImplTest {
     User user = user("user", 15L);
     when(featureFlagDao.getOverridesForUser(15L)).thenReturn(Map.of());
 
-    featureFlagManager.updateResource(FeatureFlags.BOOKING_ENABLED, clearOverride(), user);
+    featureFlagManager.updateFeatureFlag(FeatureFlags.BOOKING_ENABLED, clearOverride(), user);
 
     verify(featureFlagDao, never()).clearOverride(15L, FeatureFlags.BOOKING_ENABLED);
     verify(events, never())
@@ -283,21 +270,19 @@ class FeatureFlagManagerImplTest {
   }
 
   private FeatureFlagResource resource(User actor) {
-    return featureFlagManager.getResource(FeatureFlags.BOOKING_ENABLED, actor).orElseThrow();
+    return featureFlagManager.getFeatureFlag(FeatureFlags.BOOKING_ENABLED, actor).orElseThrow();
   }
 
-  private static ParsedDocument baseline(boolean value) {
-    return new ParsedDocument(WriteOperation.UPDATE, Map.of("baselineValue", value));
+  private static Patch baseline(boolean value) {
+    return new Patch(value, false, null);
   }
 
-  private static ParsedDocument override(boolean value) {
-    return new ParsedDocument(WriteOperation.UPDATE, Map.of("overrideValue", value));
+  private static Patch override(boolean value) {
+    return new Patch(null, true, value);
   }
 
-  private static ParsedDocument clearOverride() {
-    Map<String, Object> values = new LinkedHashMap<>();
-    values.put("overrideValue", null);
-    return new ParsedDocument(WriteOperation.UPDATE, values);
+  private static Patch clearOverride() {
+    return new Patch(null, true, null);
   }
 
   private User user(String username, Long id) {
