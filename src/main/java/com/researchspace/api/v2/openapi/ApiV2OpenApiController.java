@@ -2,7 +2,6 @@ package com.researchspace.api.v2.openapi;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.researchspace.api.v2.controller.ApiV2Access;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,7 +25,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@ApiV2Access(ApiV2Access.Mode.PUBLIC)
 public final class ApiV2OpenApiController implements ApplicationListener<ContextRefreshedEvent> {
 
   private final ApiV2OpenApiDocumentService documents;

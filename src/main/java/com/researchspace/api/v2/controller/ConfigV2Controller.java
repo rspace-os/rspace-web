@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@ApiV2Access(ApiV2Access.Mode.PUBLIC)
 @RequiredArgsConstructor
 @RequestMapping("/api/v2/config")
 public class ConfigV2Controller {

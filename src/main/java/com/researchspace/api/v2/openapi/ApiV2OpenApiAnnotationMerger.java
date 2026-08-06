@@ -1,7 +1,6 @@
 package com.researchspace.api.v2.openapi;
 
-import com.researchspace.api.v2.controller.ApiV2Access;
-import com.researchspace.api.v2.controller.ApiV2AccessResolver;
+import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import io.swagger.v3.core.util.AnnotationsUtils;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,7 +28,9 @@ final class ApiV2OpenApiAnnotationMerger {
   private ApiV2OpenApiAnnotationMerger() {}
 
   static void merge(
-      Map<String, Object> document, Map<RequestMappingInfo, HandlerMethod> handlerMethods) {
+      Map<String, Object> document,
+      Map<RequestMappingInfo, HandlerMethod> handlerMethods,
+      ApiV2EndpointCatalog endpoints) {
     Map<String, Object> paths = objectMap(document.get("paths"));
     Map<String, Object> components = objectMap(document.get("components"));
     Map<String, Object> schemas = objectMap(components.get("schemas"));
@@ -45,7 +46,8 @@ final class ApiV2OpenApiAnnotationMerger {
           continue;
         }
         for (RequestMethod method : entry.getKey().getMethodsCondition().getMethods()) {
-          Map<String, Object> generated = operation(handler, metadata, schemas, entry.getKey());
+          Map<String, Object> generated =
+              operation(handler, metadata, schemas, entry.getKey(), endpoints);
           objectMap(paths.computeIfAbsent(path, ignored -> new LinkedHashMap<>()))
               .put(method.name().toLowerCase(java.util.Locale.ROOT), generated);
           ensureTags(document, generated);
@@ -73,7 +75,8 @@ final class ApiV2OpenApiAnnotationMerger {
       HandlerMethod handler,
       Operation metadata,
       Map<String, Object> schemas,
-      RequestMappingInfo mapping) {
+      RequestMappingInfo mapping,
+      ApiV2EndpointCatalog endpoints) {
     Map<String, Object> operation = new LinkedHashMap<>();
     operation.put("operationId", metadata.operationId());
     operation.put("summary", metadata.summary());
@@ -96,7 +99,7 @@ final class ApiV2OpenApiAnnotationMerger {
                 operation.put(
                     "servers", Json31.mapper().convertValue(value, java.util.ArrayList.class)));
     operation.putAll(AnnotationsUtils.getExtensions(metadata.extensions()));
-    boolean publicEndpoint = ApiV2AccessResolver.mode(handler) == ApiV2Access.Mode.PUBLIC;
+    boolean publicEndpoint = endpoints.isPublic(handler);
     if (metadata.security().length > 0) {
       operation.put(
           "security",

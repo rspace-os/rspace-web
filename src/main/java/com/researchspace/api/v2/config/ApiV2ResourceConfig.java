@@ -1,10 +1,16 @@
 package com.researchspace.api.v2.config;
 
+import com.researchspace.api.v2.controller.ApiV2CrudController;
+import com.researchspace.api.v2.controller.ConfigV2Controller;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiController;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiDocumentService;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator;
+import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
+import com.researchspace.api.v2.resource.ApiV2EndpointSpec;
 import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
+import com.researchspace.model.collection.AccessFunction;
 import jakarta.servlet.ServletContext;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
@@ -13,7 +19,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 /**
- * Registers collections whose standard CRUD routes are provided automatically.
+ * Registers REST API v2 resource and endpoint specs.
  *
  * <p>Contributions are aggregated flatly rather than nested. A module exposes a collection by
  * declaring one {@link ApiV2ResourceSpec} bean in any scanned {@code @Configuration} and needs no
@@ -47,6 +53,26 @@ public class ApiV2ResourceConfig {
   }
 
   @Bean
+  ApiV2EndpointCatalog apiV2EndpointCatalog(List<ApiV2EndpointSpec> specs) {
+    return new ApiV2EndpointCatalog(specs);
+  }
+
+  @Bean
+  ApiV2EndpointSpec apiV2CrudEndpointSpec() {
+    return new ApiV2EndpointSpec(ApiV2CrudController.class, AccessFunction.anyone());
+  }
+
+  @Bean
+  ApiV2EndpointSpec configV2EndpointSpec() {
+    return new ApiV2EndpointSpec(ConfigV2Controller.class, AccessFunction.anyone());
+  }
+
+  @Bean
+  ApiV2EndpointSpec apiV2OpenApiEndpointSpec() {
+    return new ApiV2EndpointSpec(ApiV2OpenApiController.class, AccessFunction.anyone());
+  }
+
+  @Bean
   ApiV2OpenApiGenerator apiV2OpenApiGenerator(
       ApiV2ResourceCatalog catalog, ObjectProvider<ServletContext> servletContext) {
     String contextPath =
@@ -61,7 +87,8 @@ public class ApiV2ResourceConfig {
   @Bean
   ApiV2OpenApiDocumentService apiV2OpenApiDocumentService(
       ApiV2OpenApiGenerator generator,
+      ApiV2EndpointCatalog endpoints,
       ObjectProvider<RequestMappingHandlerMapping> handlerMappings) {
-    return new ApiV2OpenApiDocumentService(generator, handlerMappings::orderedStream);
+    return new ApiV2OpenApiDocumentService(generator, endpoints, handlerMappings::orderedStream);
   }
 }

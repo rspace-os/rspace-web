@@ -20,15 +20,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class ApiV2AbstractThrottleInterceptor implements HandlerInterceptor {
 
   String assertApiAccess(HttpServletRequest request) {
-    return assertApiAccess(request, null);
-  }
-
-  String assertApiAccess(HttpServletRequest request, Object handler) {
-    if (ApiV2AccessResolver.mode(handler) == ApiV2Access.Mode.PUBLIC) {
-      // RequestUtil.remoteAddr honours X-Forwarded-For, so deployments must accept that header only
-      // from trusted proxies. The value is hashed to avoid retaining client addresses in memory.
-      return clientFingerprint("publicApiUser", request);
-    }
     String identifier = request.getHeader("apiKey");
     if (!isEmpty(identifier)) {
       return fingerprint("apiKey", identifier);
@@ -37,6 +28,8 @@ public class ApiV2AbstractThrottleInterceptor implements HandlerInterceptor {
     if (!isEmpty(identifier)) {
       return fingerprint("authorization", normalizeAuthorization(identifier));
     }
+    // RequestUtil.remoteAddr honours X-Forwarded-For, so deployments must accept that header only
+    // from trusted proxies. The value is hashed to avoid retaining client addresses in memory.
     return clientFingerprint("anonymousApiUser", request);
   }
 

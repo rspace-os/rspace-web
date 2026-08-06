@@ -1,21 +1,26 @@
 package com.researchspace.api.v2.controller;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Authenticator;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiController;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiDocumentService;
+import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
+import com.researchspace.api.v2.resource.ApiV2EndpointSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessFunction;
 import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
@@ -26,29 +31,25 @@ import org.springframework.web.method.HandlerMethod;
 class ApiV2AuthenticationInterceptorTest {
 
   private final ApiV2Authenticator authenticator = mock(ApiV2Authenticator.class);
+  private final ApiV2EndpointCatalog endpoints =
+      new ApiV2EndpointCatalog(
+          List.of(
+              new ApiV2EndpointSpec(PublicController.class, AccessFunction.anyone()),
+              new ApiV2EndpointSpec(ApiV2CrudController.class, AccessFunction.anyone()),
+              new ApiV2EndpointSpec(ApiV2OpenApiController.class, AccessFunction.anyone())));
   private final ApiV2AuthenticationInterceptor interceptor =
-      new ApiV2AuthenticationInterceptor(authenticator);
+      new ApiV2AuthenticationInterceptor(authenticator, endpoints);
   private final MockHttpServletRequest request = new MockHttpServletRequest();
   private final MockHttpServletResponse response = new MockHttpServletResponse();
 
   @Test
-  void skipsAuthenticationForPublicHandlers() throws Exception {
+  void allowsAnAnonymousCallerWhenTheEndpointSpecIsPublic() throws Exception {
+    when(authenticator.authenticateIfPresent(request)).thenReturn(Optional.empty());
     HandlerMethod handler =
         new HandlerMethod(new PublicController(), PublicController.class.getMethod("read"));
 
     assertTrue(interceptor.preHandle(request, response, handler));
-    verify(authenticator, never()).authenticate(request);
-  }
-
-  @Test
-  void skipsAuthenticationForMethodLevelPublicHandlers() throws Exception {
-    HandlerMethod handler =
-        new HandlerMethod(
-            new MethodPublicController(), MethodPublicController.class.getMethod("read"));
-
-    assertTrue(interceptor.preHandle(request, response, handler));
-
-    verify(authenticator, never()).authenticate(request);
+    verify(authenticator).authenticateIfPresent(request);
   }
 
   @Test
@@ -63,14 +64,22 @@ class ApiV2AuthenticationInterceptorTest {
 
     assertTrue(interceptor.preHandle(request, response, handler));
 
-    verify(authenticator, never()).authenticate(request);
-    verify(authenticator, never()).authenticateIfPresent(request);
+    verify(authenticator).authenticateIfPresent(request);
   }
 
   @Test
-  void authenticatesProtectedHandlers() throws Exception {
+  void rejectsAnAnonymousCallerUsingTheDefaultEndpointPolicy() throws Exception {
+    when(authenticator.authenticateIfPresent(request)).thenReturn(Optional.empty());
+
+    assertThrows(
+        ApiV2AuthenticationException.class,
+        () -> interceptor.preHandle(request, response, protectedHandler()));
+  }
+
+  @Test
+  void attachesAnAuthenticatedCallerBeforeApplyingTheDefaultPolicy() throws Exception {
     User user = mock(User.class);
-    when(authenticator.authenticate(request)).thenReturn(user);
+    when(authenticator.authenticateIfPresent(request)).thenReturn(Optional.of(user));
     HandlerMethod handler = protectedHandler();
 
     assertTrue(interceptor.preHandle(request, response, handler));
@@ -84,7 +93,6 @@ class ApiV2AuthenticationInterceptorTest {
     assertTrue(interceptor.preHandle(request, response, crudHandler("list")));
 
     verify(authenticator).authenticateIfPresent(request);
-    verify(authenticator, never()).authenticate(request);
   }
 
   @Test
@@ -111,17 +119,11 @@ class ApiV2AuthenticationInterceptorTest {
     return new HandlerMethod(new ApiV2CrudController(mock(ApiV2ResourceCatalog.class)), method);
   }
 
-  @ApiV2Access(ApiV2Access.Mode.PUBLIC)
   static class PublicController {
     public void read() {}
   }
 
   static class ProtectedController {
-    public void read() {}
-  }
-
-  static class MethodPublicController {
-    @ApiV2Access(ApiV2Access.Mode.PUBLIC)
     public void read() {}
   }
 }

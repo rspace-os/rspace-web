@@ -601,6 +601,13 @@ The default policy requires authentication. Configure anonymous reads explicitly
 accepts an `apiKey` header or an OAuth bearer token. REST API v2 ignores browser cookies. A request
 with only a session cookie is anonymous.
 
+The authentication interceptor always resolves supplied credentials and passes the caller, or an
+anonymous caller, to an access function. `ApiV2EndpointSpec` supplies the coarse controller policy;
+a handler with no contributed spec defaults to authenticated access. Public controllers contribute
+`AccessFunction.anyone()`. The generic CRUD controller also contributes `anyone()` at this seam so
+that its selected `ApiV2ResourceSpec` operation can make the final decision from the collection
+policy. Invalid supplied credentials are rejected even when the endpoint is public.
+
 These policy fields are independent:
 
 | Policy field | Operation |
