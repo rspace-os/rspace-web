@@ -1814,6 +1814,7 @@ export default interface Resources {
         "onlyOneLogout": "Only one item may be logged out of at once.",
         "onlyOneNewVersion": "Only one item may be updated with a new version at once.",
         "onlyOneRename": "Only one item may be renamed at once.",
+        "onlyOneVersionHistory": "Only one item's version history may be viewed at once.",
         "onlyOwnerCanShare": "Only owners of the snippet can change its share settings.",
         "onlySnippetsShareable": "Only snippets can be shared.",
         "selectSnippet": "At least one snippet must be selected.",

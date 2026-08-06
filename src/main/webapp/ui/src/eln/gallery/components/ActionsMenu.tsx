@@ -483,7 +483,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
     if (selection.isEmpty) return nothingSelected;
     return selection
       .asSet()
-      .only.toResult(() => new Error("Only one item's version history may be viewed at once."))
+      .only.toResult(() => new Error(t("actionsMenu.validation.onlyOneVersionHistory")))
       .flatMap((file) => file.canViewVersionHistory);
   });
   const moveToIrodsAllowed = computed((): Result<null> => {

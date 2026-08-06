@@ -16,12 +16,14 @@ import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
 import jakarta.ws.rs.NotFoundException;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
@@ -31,6 +33,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @AllArgsConstructor
+@Slf4j
 public class S3SidecarService {
 
   private static final String SIDECAR_SUFFIX = ".sidecar.yaml";
@@ -133,8 +136,13 @@ public class S3SidecarService {
           new WriteAttribution(user.getUsername(), null, Instant.now()).metadataForRecord(null);
       s3.uploadToS3(prefix, file, attribution);
     } finally {
-      Files.deleteIfExists(file.toPath());
-      Files.deleteIfExists(dir);
+      // Best-effort cleanup: a temp-file deletion failure must not mask a successful S3 write.
+      try {
+        Files.deleteIfExists(file.toPath());
+        Files.deleteIfExists(dir);
+      } catch (IOException e) {
+        log.warn("Could not clean up temp sidecar files in {}", dir, e);
+      }
     }
   }
 
