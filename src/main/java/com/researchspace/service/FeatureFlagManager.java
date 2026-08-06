@@ -2,23 +2,28 @@ package com.researchspace.service;
 
 import com.researchspace.featureflags.FeatureFlagResource;
 import com.researchspace.model.User;
-import com.researchspace.model.collection.ParsedDocument;
 import java.util.List;
 import java.util.Optional;
 
 public interface FeatureFlagManager {
 
+  /**
+   * Values accepted when changing a feature flag. A null baseline is unchanged; an override is
+   * unchanged when {@code updateOverride} is false and cleared when it is true with a null value.
+   */
+  record Patch(Boolean baselineValue, boolean updateOverride, Boolean overrideValue) {}
+
   /** Reconciles persisted feature flag state with the manifest. */
   void reconcileOnStartup();
 
-  /** Returns all caller-specific feature flag resources for the REST adapter to query. */
-  List<FeatureFlagResource> getResources(User actor);
+  /** Returns all feature flags with caller-specific values resolved. */
+  List<FeatureFlagResource> getFeatureFlags(User actor);
 
-  /** Returns one caller-specific resource when the flag exists. */
-  Optional<FeatureFlagResource> getResource(String flagName, User actor);
+  /** Returns one feature flag with caller-specific values when it exists. */
+  Optional<FeatureFlagResource> getFeatureFlag(String flagName, User actor);
 
-  /** Applies a validated patch and returns the updated caller-specific resource. */
-  Optional<FeatureFlagResource> updateResource(String flagName, ParsedDocument patch, User actor);
+  /** Applies a patch and returns the updated caller-specific feature flag when it exists. */
+  Optional<FeatureFlagResource> updateFeatureFlag(String flagName, Patch patch, User actor);
 
   /** Returns whether a flag is enabled for the current user, or its unauthenticated baseline. */
   boolean isFeatureFlagEnabled(String flagName);

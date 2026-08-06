@@ -6,7 +6,7 @@ import com.researchspace.model.audittrail.AuditTrailProperty;
 import lombok.Getter;
 import lombok.Setter;
 
-/** Caller-specific REST v2 state for one feature flag. */
+/** Caller-specific state for one feature flag. */
 @AuditTrailData
 public final class FeatureFlagResource {
 

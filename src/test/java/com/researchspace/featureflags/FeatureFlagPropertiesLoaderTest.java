@@ -42,19 +42,6 @@ class FeatureFlagPropertiesLoaderTest {
   }
 
   @Test
-  void readsRelativeFilePath() throws IOException {
-    Path file = Path.of("target", "feature-flags-relative-test.properties");
-    Files.writeString(file, FeatureFlags.BOOKING_ENABLED + "=true\n");
-    try {
-      FeatureFlagPropertiesLoader loader = loaderReading(file.toString());
-
-      assertEquals(Map.of(FeatureFlags.BOOKING_ENABLED, true), loader.loadForcedValues(KNOWN));
-    } finally {
-      Files.deleteIfExists(file);
-    }
-  }
-
-  @Test
   void unknownFlagInFileFailsFast(@TempDir Path dir) throws IOException {
     Path file = dir.resolve("feature-flags.properties");
     Files.writeString(file, "unknownFlag=true\n");

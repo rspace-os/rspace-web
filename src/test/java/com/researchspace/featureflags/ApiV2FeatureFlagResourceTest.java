@@ -12,6 +12,8 @@ import com.researchspace.model.collection.CollectionDescription.FieldSchema;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.FeatureFlagManager.Patch;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -65,19 +67,23 @@ class ApiV2FeatureFlagResourceTest {
   void passesTheCallerAndValidatedPatchToTheManager() {
     ResourceRequest request = ResourceRequest.unpaged(null);
     User actor = Mockito.mock(User.class);
-    ParsedDocument patch = Mockito.mock(ParsedDocument.class);
+    Map<String, Object> values = new LinkedHashMap<>();
+    values.put("baselineValue", true);
+    values.put("overrideValue", null);
+    ParsedDocument document = ParsedDocument.update(values);
     FeatureFlagResource state =
         new FeatureFlagResource(
             "bookingEnabled", true, false, true, FeatureFlagSource.USER_OVERRIDE, true);
-    Mockito.when(manager.getResources(actor)).thenReturn(List.of(state));
-    Mockito.when(manager.updateResource("bookingEnabled", patch, actor))
+    Mockito.when(manager.getFeatureFlags(actor)).thenReturn(List.of(state));
+    Mockito.when(manager.updateFeatureFlag("bookingEnabled", new Patch(true, true, null), actor))
         .thenReturn(Optional.of(state));
 
     assertEquals(List.of(state), operations.find(request, actor).resources());
-    assertEquals(state, operations.update("bookingEnabled", patch, actor).orElseThrow());
+    assertEquals(state, operations.update("bookingEnabled", document, actor).orElseThrow());
 
     ArgumentCaptor<User> caller = ArgumentCaptor.forClass(User.class);
-    Mockito.verify(manager).getResources(caller.capture());
+    Mockito.verify(manager).getFeatureFlags(caller.capture());
     assertEquals(actor, caller.getValue());
+    Mockito.verify(manager).updateFeatureFlag("bookingEnabled", new Patch(true, true, null), actor);
   }
 }
