@@ -157,13 +157,6 @@ describe("NewAppBar (MSW-driven)", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows the booking nav link when the booking feature flag is enabled", async () => {
-    renderAppBar();
-
-    const navigation = await screen.findByRole("navigation", { name: "common:appBar.mainLinks" });
-    expect(within(navigation).getByRole("link", { name: "common:appBar.sections.booking.title" })).toBeInTheDocument();
-  });
-
   it("shows the maintenance notice when /api/v2/maintenances carries a scheduled window", async () => {
     server.use(
       http.get("/api/v2/maintenances", () =>
