@@ -1,5 +1,6 @@
 package com.researchspace.booking.api.v2;
 
+import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
@@ -7,6 +8,8 @@ import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
+import com.researchspace.booking.service.BookingConfigurationTargetConflictException;
+import com.researchspace.booking.service.InvalidBookableTargetException;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -26,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 
 /** Adapts REST v2 booking-configuration documents to the shared booking manager. */
 @Configuration(proxyBeanMethods = false)
@@ -40,13 +44,18 @@ public final class BookingConfigurationResourceOperations
 
   @Bean
   ApiV2ResourceSpec<BookingConfiguration, Long> bookingConfigurationApiV2Resource() {
-    OpenApiOperationDocumentation conflict =
-        OpenApiOperationDocumentation.builder()
-            .errorResponse(
-                409,
+    List<ApiV2ErrorMapping> writeErrors =
+        List.of(
+            ApiV2ErrorMapping.of(
+                InvalidBookableTargetException.class,
+                HttpStatus.BAD_REQUEST,
+                "errors.api.v2.bookingConfiguration.target.invalid",
+                "The target is not an eligible instrument."),
+            ApiV2ErrorMapping.of(
+                BookingConfigurationTargetConflictException.class,
+                HttpStatus.CONFLICT,
                 "errors.api.v2.bookingConfiguration.target.conflict",
-                "The instrument already has a booking configuration.")
-            .build();
+                "The instrument already has a booking configuration."));
     return new ApiV2ResourceSpec<>(
         ApiV2BookingConfigurationResource.DESCRIPTION,
         this,
@@ -68,17 +77,16 @@ public final class BookingConfigurationResourceOperations
                         "Europe/Berlin",
                         "target",
                         Map.of("relationTo", "instruments", "value", 123)))
-                .errorResponse(
-                    409,
-                    "errors.api.v2.bookingConfiguration.target.conflict",
-                    "The instrument already has a booking configuration.")
-                .build(),
+                .build()),
+        Map.of(
+            ResourceOperation.CREATE,
+            writeErrors,
             ResourceOperation.BULK_CREATE,
-            conflict,
+            writeErrors,
             ResourceOperation.UPDATE,
-            conflict,
+            writeErrors,
             ResourceOperation.BULK_UPDATE,
-            conflict));
+            writeErrors));
   }
 
   @Override

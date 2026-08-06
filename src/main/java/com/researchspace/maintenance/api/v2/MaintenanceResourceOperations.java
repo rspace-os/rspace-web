@@ -1,18 +1,23 @@
 package com.researchspace.maintenance.api.v2;
 
+import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
+import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
+import com.researchspace.maintenance.service.MaintenanceOperationException;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 
 /** Maintenance manager adapter for the generic REST v2 CRUD dispatcher. */
 @Configuration(proxyBeanMethods = false)
@@ -27,12 +32,28 @@ public final class MaintenanceResourceOperations
 
   @Bean
   ApiV2ResourceSpec<ScheduledMaintenance, Long> maintenanceApiV2Resource() {
+    List<ApiV2ErrorMapping> invalidWindow =
+        List.of(
+            ApiV2ErrorMapping.of(
+                MaintenanceOperationException.class,
+                HttpStatus.BAD_REQUEST,
+                "errors.api.v2.maintenance.window",
+                "The maintenance window is invalid."));
     return new ApiV2ResourceSpec<>(
         ApiV2MaintenanceResource.DESCRIPTION,
         this,
         Long::valueOf,
         "errors.api.v2.invalidRequest",
-        "errors.api.v2.maintenance.patch");
+        "errors.api.v2.maintenance.patch",
+        Map.of(
+            ResourceOperation.CREATE,
+            invalidWindow,
+            ResourceOperation.BULK_CREATE,
+            invalidWindow,
+            ResourceOperation.UPDATE,
+            invalidWindow,
+            ResourceOperation.BULK_UPDATE,
+            invalidWindow));
   }
 
   @Override

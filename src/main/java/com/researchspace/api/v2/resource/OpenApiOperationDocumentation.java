@@ -55,6 +55,30 @@ public record OpenApiOperationDocumentation(
     }
   }
 
+  OpenApiOperationDocumentation withResponses(Map<Integer, Response> additionalResponses) {
+    if (additionalResponses.isEmpty()) {
+      return this;
+    }
+    Map<Integer, Response> combined = new LinkedHashMap<>(responses);
+    additionalResponses.forEach(
+        (status, response) -> {
+          Response existing = combined.putIfAbsent(status, response);
+          if (existing != null && !existing.equals(response)) {
+            throw new IllegalArgumentException(
+                "Conflicting REST API v2 response definitions for status " + status);
+          }
+        });
+    return new OpenApiOperationDocumentation(
+        summary,
+        description,
+        tags,
+        deprecated,
+        requestExample,
+        responseExample,
+        combined,
+        extensions);
+  }
+
   private static String blankToNull(String value) {
     return value == null || value.isBlank() ? null : value;
   }

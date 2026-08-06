@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
 class ApiV2OpenApiGeneratorTest {
 
@@ -57,11 +59,15 @@ class ApiV2OpenApiGeneratorTest {
                     .tag("Operations")
                     .responseDescription(200, "Documented maintenance page.")
                     .extension("x-rspace-audience", "operators")
-                    .build(),
+                    .build()),
+            Map.of(
                 ResourceOperation.CREATE,
-                OpenApiOperationDocumentation.builder()
-                    .errorResponse(409, "errors.example.conflict", "The resource conflicts.")
-                    .build()));
+                List.of(
+                    ApiV2ErrorMapping.of(
+                        ExampleConflictException.class,
+                        HttpStatus.CONFLICT,
+                        "errors.example.conflict",
+                        "The resource conflicts."))));
     ApiV2ResourceSpec<User, Long> users =
         new ApiV2ResourceSpec<>(
             ApiV2UserResource.DESCRIPTION,
@@ -85,6 +91,8 @@ class ApiV2OpenApiGeneratorTest {
             "Test API",
             "2.0.0");
   }
+
+  private static final class ExampleConflictException extends RuntimeException {}
 
   @Test
   void generatesConcretePathsAndKeepsTargetOnlyResourcesSchemaOnly() {

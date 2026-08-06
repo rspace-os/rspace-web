@@ -18,7 +18,10 @@ import jakarta.ws.rs.NotFoundException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 /** Shared CRUD mechanics for Payload-shaped REST v2 collection endpoints. */
 public final class ApiV2CrudDispatcher<T, ID> {
@@ -27,46 +30,62 @@ public final class ApiV2CrudDispatcher<T, ID> {
   private final ResourceOperations<T, ID> operations;
   private final ResourceRenderer renderer;
   private final ApiV2RelationshipResolver relationshipResolver;
+  private final BiFunction<ResourceOperation, RuntimeException, RuntimeException> errorTranslator;
 
   public ApiV2CrudDispatcher(
       CollectionDescription<T> description,
       ResourceRegistry registry,
       ResourceOperations<T, ID> operations) {
-    this(description, registry, operations, ApiV2RelationshipResolver.unavailable());
+    this(
+        description,
+        registry,
+        operations,
+        ApiV2RelationshipResolver.unavailable(),
+        (operation, exception) -> exception);
   }
 
   ApiV2CrudDispatcher(
       CollectionDescription<T> description,
       ResourceRegistry registry,
       ResourceOperations<T, ID> operations,
-      ApiV2RelationshipResolver relationshipResolver) {
+      ApiV2RelationshipResolver relationshipResolver,
+      BiFunction<ResourceOperation, RuntimeException, RuntimeException> errorTranslator) {
     this.description = description;
     this.operations = operations;
     this.relationshipResolver = relationshipResolver;
+    this.errorTranslator = Objects.requireNonNull(errorTranslator, "Resource error translator");
     renderer = new ResourceRenderer(registry);
   }
 
   public ApiV2ListResult<Map<String, Object>> list(ResourceRequest request, User actor) {
-    ResourcePage<T> page = operations.find(request, actor);
-    TargetResolver targetResolver = targetResolver(actor);
-    return ApiV2ListResult.of(
-        page.resources().stream()
-            .map(resource -> document(resource, request, targetResolver))
-            .toList(),
-        page.total(),
-        request.page().size(),
-        request.page().number());
+    return invoke(
+        ResourceOperation.LIST,
+        () -> {
+          ResourcePage<T> page = operations.find(request, actor);
+          TargetResolver targetResolver = targetResolver(actor);
+          return ApiV2ListResult.of(
+              page.resources().stream()
+                  .map(resource -> document(resource, request, targetResolver))
+                  .toList(),
+              page.total(),
+              request.page().size(),
+              request.page().number());
+        });
   }
 
   public ApiV2CountResult count(ResourceRequest request, User actor) {
-    return new ApiV2CountResult(operations.count(request, actor));
+    return invoke(
+        ResourceOperation.COUNT, () -> new ApiV2CountResult(operations.count(request, actor)));
   }
 
   public Map<String, Object> get(ID id, ResourceRequest request, User actor) {
-    return operations
-        .findById(id, actor)
-        .map(resource -> document(resource, request, targetResolver(actor)))
-        .orElseThrow(NotFoundException::new);
+    return invoke(
+        ResourceOperation.READ,
+        () ->
+            operations
+                .findById(id, actor)
+                .map(resource -> document(resource, request, targetResolver(actor)))
+                .orElseThrow(NotFoundException::new));
   }
 
   /**
@@ -80,46 +99,75 @@ public final class ApiV2CrudDispatcher<T, ID> {
    * checks close.
    */
   public Map<String, Object> getMatching(ResourceRequest request, User actor) {
-    return operations.find(request, actor).resources().stream()
-        .findFirst()
-        .map(resource -> document(resource, request, targetResolver(actor)))
-        .orElseThrow(NotFoundException::new);
+    return invoke(
+        ResourceOperation.READ,
+        () ->
+            operations.find(request, actor).resources().stream()
+                .findFirst()
+                .map(resource -> document(resource, request, targetResolver(actor)))
+                .orElseThrow(NotFoundException::new));
   }
 
   public Map<String, Object> create(ParsedDocument document, User actor, FieldSelection selection) {
-    return document(operations.create(document, actor), selection, targetResolver(actor));
+    return invoke(
+        ResourceOperation.CREATE,
+        () -> document(operations.create(document, actor), selection, targetResolver(actor)));
   }
 
   public ApiV2BulkResult<Map<String, Object>> createMany(
       List<ParsedDocument> documents, User actor, FieldSelection selection) {
-    return ApiV2BulkResult.success(
-        renderMany(operations.createMany(documents, actor), selection, actor));
+    return invoke(
+        ResourceOperation.BULK_CREATE,
+        () ->
+            ApiV2BulkResult.success(
+                renderMany(operations.createMany(documents, actor), selection, actor)));
   }
 
   public Map<String, Object> update(
       ID id, ParsedDocument document, User actor, FieldSelection selection) {
-    return operations
-        .update(id, document, actor)
-        .map(resource -> document(resource, selection, targetResolver(actor)))
-        .orElseThrow(NotFoundException::new);
+    return invoke(
+        ResourceOperation.UPDATE,
+        () ->
+            operations
+                .update(id, document, actor)
+                .map(resource -> document(resource, selection, targetResolver(actor)))
+                .orElseThrow(NotFoundException::new));
   }
 
   public ApiV2BulkResult<Map<String, Object>> updateMany(
       ResourceRequest request, ParsedDocument document, User actor) {
-    return ApiV2BulkResult.success(
-        renderMany(operations.updateMany(request, document, actor), request.fields(), actor));
+    return invoke(
+        ResourceOperation.BULK_UPDATE,
+        () ->
+            ApiV2BulkResult.success(
+                renderMany(
+                    operations.updateMany(request, document, actor), request.fields(), actor)));
   }
 
   public Map<String, Object> delete(ID id, User actor, FieldSelection selection) {
-    return operations
-        .delete(id, actor)
-        .map(resource -> document(resource, selection, targetResolver(actor)))
-        .orElseThrow(NotFoundException::new);
+    return invoke(
+        ResourceOperation.DELETE,
+        () ->
+            operations
+                .delete(id, actor)
+                .map(resource -> document(resource, selection, targetResolver(actor)))
+                .orElseThrow(NotFoundException::new));
   }
 
   public ApiV2BulkResult<Map<String, Object>> deleteMany(ResourceRequest request, User actor) {
-    return ApiV2BulkResult.success(
-        renderMany(operations.deleteMany(request, actor), request.fields(), actor));
+    return invoke(
+        ResourceOperation.BULK_DELETE,
+        () ->
+            ApiV2BulkResult.success(
+                renderMany(operations.deleteMany(request, actor), request.fields(), actor)));
+  }
+
+  private <R> R invoke(ResourceOperation operation, Supplier<R> action) {
+    try {
+      return action.get();
+    } catch (RuntimeException exception) {
+      throw errorTranslator.apply(operation, exception);
+    }
   }
 
   private Map<String, Object> document(

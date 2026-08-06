@@ -10,7 +10,7 @@ A resource definition specifies these items:
 - The default sort.
 
 A resource operations class connects the definition to a domain manager. An
-`ApiV2ResourceSpec` bean registers the resource. Registration adds the standard routes and the
+`ApiV2ResourceSpec` bean registers the resource. Registration adds the routes, error mappings, and
 resource schemas to OpenAPI.
 
 Use a concrete controller for an operation that is not collection CRUD. Concrete routes, such as
@@ -81,7 +81,9 @@ The ID field makes the sort result stable.
 package com.researchspace.widgets.api.v2;
 
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
+import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ResourceOperations;
+import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
@@ -90,9 +92,11 @@ import com.researchspace.widgets.model.ApiV2WidgetResource;
 import com.researchspace.widgets.model.Widget;
 import com.researchspace.widgets.service.WidgetManager;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 
 @Configuration(proxyBeanMethods = false)
 public class WidgetResourceOperations implements ResourceOperations<Widget, Long> {
@@ -110,7 +114,15 @@ public class WidgetResourceOperations implements ResourceOperations<Widget, Long
         this,
         Long::valueOf,
         "errors.api.v2.widget.create",
-        "errors.api.v2.widget.update");
+        "errors.api.v2.widget.update",
+        Map.of(
+            ResourceOperation.CREATE,
+            List.of(
+                ApiV2ErrorMapping.of(
+                    WidgetNameConflictException.class,
+                    HttpStatus.CONFLICT,
+                    "errors.api.v2.widget.name.conflict",
+                    "A widget with this name already exists."))));
   }
 
   @Override
@@ -688,7 +700,7 @@ target without a global ID, such as a user, does not include this field.
 The catalog publishes OpenAPI 3.1 at `/api/v2/openapi.json`. A routed resource spec adds its paths
 and its schemas.
 
-Use `OpenApiOperationDocumentation` for resource-specific examples and responses:
+Use `OpenApiOperationDocumentation` for resource-specific descriptions and examples:
 
 ```java
 Map.of(
@@ -696,15 +708,18 @@ Map.of(
     OpenApiOperationDocumentation.builder()
         .description("Creates one widget in the selected workspace.")
         .requestExample(Map.of("name", "Centrifuge rotor", "enabled", true))
-        .errorResponse(
-            409,
-            "errors.api.v2.widget.name.conflict",
-            "A widget with this name already exists.")
         .build())
 ```
 
-Declare each non-standard error in its operation documentation. Use a stable message-bundle key.
-Startup fails if documentation refers to an operation that the resource does not expose.
+Declare each non-standard error in the resource spec. An error mapping has these effects:
+
+- It converts the mapped domain exception to the specified HTTP response for that operation.
+- It resolves the response detail from the stable message-bundle key.
+- It adds the error response to OpenAPI.
+
+When exception classes overlap, the most specific matching class applies. An unmapped exception
+continues through the normal controller-advice chain. Startup fails if a mapping refers to an
+operation that the resource does not expose.
 
 For a concrete controller, use the standard Swagger annotations. These include `@Operation`,
 `@Parameter`, `@RequestBody`, `@ApiResponse`, and `@Schema`.

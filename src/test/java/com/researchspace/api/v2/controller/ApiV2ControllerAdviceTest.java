@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v2.model.ApiV2PaginationCriteria;
+import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
@@ -57,6 +58,8 @@ class ApiV2ControllerAdviceTest {
     source.addMessage("errors.api.v2.notFound", Locale.getDefault(), "Not found detail");
     source.addMessage("errors.api.v2.query.field", Locale.getDefault(), "Invalid field detail");
     source.addMessage("errors.api.v2.select.mode", Locale.getDefault(), "Invalid select detail");
+    source.addMessage(
+        "errors.api.v2.resource.conflict", Locale.getDefault(), "Resource conflict: {0}");
     source.addMessage("errors.api.v2.bulk.limit", Locale.getDefault(), "Bulk limit detail");
     source.addMessage("errors.api.v2.tooManyRequests", Locale.getDefault(), "Throttle detail");
     source.addMessage("errors.api.v2.unexpected", Locale.getDefault(), "Unexpected detail");
@@ -162,6 +165,25 @@ class ApiV2ControllerAdviceTest {
         HttpStatus.UNPROCESSABLE_ENTITY,
         "errors.api.v2.bulk.limit",
         "Bulk limit detail");
+  }
+
+  @Test
+  void mapsResourceSpecErrorsToProblemDetails() {
+    RuntimeException cause = new IllegalStateException("internal");
+    var exception =
+        ApiV2ErrorMapping.of(
+                IllegalStateException.class,
+                HttpStatus.CONFLICT,
+                "errors.api.v2.resource.conflict",
+                "The resource conflicts.",
+                ignored -> new Object[] {"some-resource"})
+            .translate(cause);
+
+    assertProblem(
+        advice.handleResourceException(exception),
+        HttpStatus.CONFLICT,
+        "errors.api.v2.resource.conflict",
+        "Resource conflict: some-resource");
   }
 
   @Test
@@ -283,8 +305,7 @@ class ApiV2ControllerAdviceTest {
 
     assertTrue(adviceBean.isApplicableToBeanType(UsersV2Controller.class));
     assertEquals(
-        Ordered.HIGHEST_PRECEDENCE + 1,
-        ApiV2ControllerAdvice.class.getAnnotation(Order.class).value());
+        Ordered.HIGHEST_PRECEDENCE, ApiV2ControllerAdvice.class.getAnnotation(Order.class).value());
   }
 
   private static void assertProblem(
