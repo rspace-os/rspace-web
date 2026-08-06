@@ -19,6 +19,9 @@ public class SidecarGenerationContext {
   /** Deployment organisation name, used for creator affiliation and publisher. */
   String institutionName;
 
+  /** System-configured ROR id for the organisation, or null when the sysadmin has not set one. */
+  String rorId;
+
   String bucketName;
 
   /** Absolute prefix within the bucket; no leading or trailing slash. */

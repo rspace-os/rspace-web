@@ -12,6 +12,7 @@ import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsManager;
+import com.researchspace.service.RoRService;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
@@ -47,6 +48,7 @@ public class S3SidecarService {
   private final DataCiteYamlSidecarGenerator sidecarGenerator;
   private final AuditTrailService auditService;
   private final MessageSourceUtils messages;
+  private final RoRService rorService;
 
   /** Composes and returns a sidecar for the folder without writing anything. */
   public GeneratedSidecar preview(Long filestoreId, String folderPath, User user) {
@@ -93,6 +95,7 @@ public class S3SidecarService {
                     .map(id -> id.getIdentifier())
                     .orElse(null))
             .institutionName(propertyHolder.getCustomerName())
+            .rorId(rorService.getSystemRoRValue())
             .bucketName(s3.getBucketName())
             .folderPath(prefix)
             .files(listFiles(s3, prefix))

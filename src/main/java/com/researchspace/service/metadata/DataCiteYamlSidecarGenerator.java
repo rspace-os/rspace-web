@@ -45,7 +45,20 @@ public class DataCiteYamlSidecarGenerator {
         new Valued<>(user.getFirstName()),
         new Valued<>(user.getLastName()),
         orcidIdentifiers(ctx.getOrcidId()),
-        List.of(new Affiliation(new Valued<>(ctx.getInstitutionName()))));
+        List.of(affiliationFor(ctx)));
+  }
+
+  /**
+   * Instance organisation as the affiliation, carrying the system ROR id when one is configured.
+   */
+  private Affiliation affiliationFor(SidecarGenerationContext ctx) {
+    Valued<String> name = new Valued<>(ctx.getInstitutionName());
+    String ror = ctx.getRorId();
+    if (ror == null || ror.isBlank()) {
+      return new Affiliation(name, null, null, null);
+    }
+    return new Affiliation(
+        name, new Valued<>(ror), new Valued<>("https://ror.org"), new Valued<>("ROR"));
   }
 
   /** ORCID as a DataCite nameIdentifier, or null (omitted) when the user has none. */
@@ -144,8 +157,12 @@ public class DataCiteYamlSidecarGenerator {
   }
 
   @Value
+  @JsonPropertyOrder({"name", "affiliationIdentifier", "schemeURI", "affiliationIdentifierScheme"})
   static class Affiliation {
     Valued<String> name;
+    Valued<String> affiliationIdentifier;
+    Valued<String> schemeURI;
+    Valued<String> affiliationIdentifierScheme;
   }
 
   @Value

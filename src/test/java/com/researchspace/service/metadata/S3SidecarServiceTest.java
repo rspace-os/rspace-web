@@ -26,6 +26,7 @@ import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.FilestoreAclChecker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsManager;
+import com.researchspace.service.RoRService;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.aws.S3Utilities;
 import com.researchspace.service.aws.impl.S3UtilitiesFactory;
@@ -51,6 +52,7 @@ class S3SidecarServiceTest {
   private IPropertyHolder propertyHolder;
   private AuditTrailService auditService;
   private MessageSourceUtils messages;
+  private RoRService rorService;
   private S3SidecarService service;
 
   private final User user = new User("jmuller");
@@ -65,6 +67,8 @@ class S3SidecarServiceTest {
     propertyHolder = mock(IPropertyHolder.class);
     auditService = mock(AuditTrailService.class);
     messages = mock(MessageSourceUtils.class);
+    rorService = mock(RoRService.class);
+    when(rorService.getSystemRoRValue()).thenReturn("https://ror.org/00t3r8h32");
 
     user.setFirstName("Jana");
     user.setLastName("Müller");
@@ -90,7 +94,8 @@ class S3SidecarServiceTest {
             propertyHolder,
             new DataCiteYamlSidecarGenerator(),
             auditService,
-            messages);
+            messages,
+            rorService);
   }
 
   private S3FolderContentItem file(String name, long size, String etag, String storageClass) {
@@ -109,6 +114,13 @@ class S3SidecarServiceTest {
     assertEquals("lrz-rs-experiments", loc.path("bucket").asText());
     assertEquals("XRD-Experiments/xrd_run_041.dat", loc.path("key").asText());
     assertEquals("STANDARD", loc.path("storageClass").asText());
+
+    // The system ROR flows through to the creator's affiliation identifier.
+    JsonNode affiliation =
+        yaml.readTree(result.getContent()).path("creators").path(0).path("affiliations").path(0);
+    assertEquals(
+        "https://ror.org/00t3r8h32",
+        affiliation.path("affiliationIdentifier").path("value").asText());
 
     verify(aclChecker).assertCanRead(eq(user), any(NfsFileSystem.class));
     verify(s3Utilities, never()).uploadToS3(anyString(), any(File.class), any());

@@ -84,9 +84,37 @@ class DataCiteYamlSidecarGeneratorTest {
 
     assertEquals("Jana", creator.path("givenName").path("value").asText());
     assertEquals("Müller", creator.path("familyName").path("value").asText());
+    JsonNode affiliation = creator.path("affiliations").path(0);
+    assertEquals("Leibniz Supercomputing Centre", affiliation.path("name").path("value").asText());
+    // No ROR configured -> no affiliation identifier emitted.
+    assertTrue(affiliation.path("affiliationIdentifier").isMissingNode());
+  }
+
+  @Test
+  void includesRorAffiliationIdentifierWhenConfigured() throws Exception {
+    SidecarGenerationContext ctx =
+        SidecarGenerationContext.builder()
+            .user(user())
+            .institutionName("Leibniz Supercomputing Centre")
+            .rorId("https://ror.org/00t3r8h32")
+            .bucketName("lrz-rs-experiments")
+            .folderPath("XRD-Experiments/")
+            .files(List.of())
+            .build();
+
+    JsonNode affiliation =
+        yaml.readTree(generator.generate(ctx).getContent())
+            .path("creators")
+            .path(0)
+            .path("affiliations")
+            .path(0);
+
+    assertEquals("Leibniz Supercomputing Centre", affiliation.path("name").path("value").asText());
     assertEquals(
-        "Leibniz Supercomputing Centre",
-        creator.path("affiliations").path(0).path("name").path("value").asText());
+        "https://ror.org/00t3r8h32",
+        affiliation.path("affiliationIdentifier").path("value").asText());
+    assertEquals("https://ror.org", affiliation.path("schemeURI").path("value").asText());
+    assertEquals("ROR", affiliation.path("affiliationIdentifierScheme").path("value").asText());
   }
 
   @Test
