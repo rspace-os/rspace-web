@@ -27,7 +27,7 @@ describe("getNextMaintenance", () => {
           envelope([
             {
               id: 1,
-              startDate: "2026-07-01T09:00:00.000Z",
+              startDate: "2999-07-01T09:00:00.000Z",
             },
           ]),
         );
@@ -36,7 +36,7 @@ describe("getNextMaintenance", () => {
 
     const result = await getNextMaintenance();
 
-    expect(result).toEqual({ startDate: new Date("2026-07-01T09:00:00.000Z") });
+    expect(result).toEqual({ startDate: new Date("2999-07-01T09:00:00.000Z") });
     // Keep this filter if the caller adds authentication later.
     const requestUrl = new URL(capturedRequest?.url ?? "");
     expect(requestUrl.pathname).toBe("/api/v2/maintenances");

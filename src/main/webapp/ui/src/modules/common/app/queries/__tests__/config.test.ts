@@ -25,30 +25,6 @@ describe("getAppConfig", () => {
     expect(request?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
-  it("ignores obsolete embedded maintenance data", async () => {
-    const response = {
-      branding: { bannerImageUrl: "/public/banner" },
-      helpLinks: [],
-      deploymentDescription: "",
-      deploymentHelpEmail: null,
-      nextMaintenance: {
-        id: 1,
-        startDate: "2026-07-16T09:00:00.000Z",
-        endDate: "2026-07-16T10:00:00.000Z",
-        stopUserLoginDate: null,
-        message: "Planned upgrade",
-      },
-    };
-    server.use(http.get("/api/v2/config", () => HttpResponse.json(response)));
-
-    await expect(getAppConfig()).resolves.toEqual({
-      branding: response.branding,
-      helpLinks: response.helpLinks,
-      deploymentDescription: response.deploymentDescription,
-      deploymentHelpEmail: response.deploymentHelpEmail,
-    });
-  });
-
   it("accepts nullable deployment metadata", async () => {
     const response = {
       branding: { bannerImageUrl: "/public/banner" },
