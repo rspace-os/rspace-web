@@ -2195,8 +2195,9 @@ paths:
       description: >
         Composes a DataCite (`ltds-datacite4.3`) metadata sidecar for the folder
         at `path` and writes it into that folder as `<folder>.sidecar.yaml`
-        (overwriting any existing one), recording a `CREATE` audit event. S3
-        only; non-S3 backends return **404**.
+        (or `<bucketName>.sidecar.yaml` at the filestore root), overwriting any
+        existing one, recording a `CREATE` audit event. S3 only; non-S3 backends
+        return **404**.
       tags:
         - Gallery Filestores
       parameters:

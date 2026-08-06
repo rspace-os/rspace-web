@@ -24,6 +24,7 @@ import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.FilestoreAclChecker;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.aws.S3Utilities;
@@ -49,6 +50,7 @@ class S3SidecarServiceTest {
   private UserExternalIdResolver orcidResolver;
   private IPropertyHolder propertyHolder;
   private AuditTrailService auditService;
+  private MessageSourceUtils messages;
   private S3SidecarService service;
 
   private final User user = new User("jmuller");
@@ -62,6 +64,7 @@ class S3SidecarServiceTest {
     orcidResolver = mock(UserExternalIdResolver.class);
     propertyHolder = mock(IPropertyHolder.class);
     auditService = mock(AuditTrailService.class);
+    messages = mock(MessageSourceUtils.class);
 
     user.setFirstName("Jana");
     user.setLastName("Müller");
@@ -86,7 +89,8 @@ class S3SidecarServiceTest {
             orcidResolver,
             propertyHolder,
             new DataCiteYamlSidecarGenerator(),
-            auditService);
+            auditService,
+            messages);
   }
 
   private S3FolderContentItem file(String name, long size, String etag, String storageClass) {
@@ -158,6 +162,13 @@ class S3SidecarServiceTest {
     assertEquals(1, related.size());
     assertEquals(
         "XRD-Experiments/xrd_run_041.dat", related.path(0).path("s3Location").path("key").asText());
+  }
+
+  @Test
+  void unknownFilestoreIsNotFound() {
+    // getNfsFileStore returns null for an unknown id; expect a clean 404, not an NPE/500.
+    assertThrows(NotFoundException.class, () -> service.preview(999L, "folder", user));
+    assertThrows(NotFoundException.class, () -> service.save(999L, "folder", user));
   }
 
   @Test

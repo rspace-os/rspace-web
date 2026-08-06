@@ -6386,6 +6386,12 @@ export default interface Resources {
           "deniedTooOld": "{0, plural, one {Filestore items can only be deleted within # minute of their creation} other {Filestore items can only be deleted within # minutes of their creation}}"
         }
       },
+      "sidecar": {
+        "errors": {
+          "notEnabled": "Metadata sidecar generation is not enabled on this RSpace instance (gallery.actions.metadata.sidecar.enabled=false)",
+          "notS3": "Metadata sidecar generation is only supported for S3 filestores"
+        }
+      },
       "validation": {
         "noKey": "Please generate ssh key first",
         "noPassword": "Please provide the password",

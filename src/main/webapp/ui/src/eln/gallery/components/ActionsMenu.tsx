@@ -333,7 +333,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
   // Generate Data Record is folder-level, so its context opens the Actions menu with no selection.
   const canOpenActionsWithoutSelection = showGenerateDataRecord && sidecarFilestore !== null;
   // The sidecar describes the current browse folder; its path is relative to the filestore root.
-  const currentFolder = path?.[path.length - 1];
+  const currentFolder = path?.at(-1);
   const sidecarFolderPath = currentFolder instanceof RemoteFile ? currentFolder.remotePath : "";
 
   const [renameOpen, setRenameOpen] = React.useState(false);

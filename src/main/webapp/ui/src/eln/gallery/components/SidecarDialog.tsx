@@ -50,7 +50,10 @@ export default function SidecarDialog({
     setPreview({ tag: "loading" });
     previewSidecar(filestoreId, folderPath)
       .then((sidecar) => !cancelled && setPreview({ tag: "success", value: sidecar }))
-      .catch(() => !cancelled && setPreview({ tag: "error", error: t("sidecar.previewFailed") }));
+      .catch((e) => {
+        console.error("Sidecar preview failed", e);
+        if (!cancelled) setPreview({ tag: "error", error: t("sidecar.previewFailed") });
+      });
     return () => {
       cancelled = true;
     };
@@ -67,7 +70,8 @@ export default function SidecarDialog({
       addAlert(mkAlert({ variant: "success", message: t("sidecar.saveSuccess", { filename: saved.filename }) }));
       void refreshListing();
       onClose();
-    } catch {
+    } catch (e) {
+      console.error("Sidecar save failed", e);
       addAlert(mkAlert({ variant: "error", message: t("sidecar.saveFailed") }));
     } finally {
       setSaving(false);

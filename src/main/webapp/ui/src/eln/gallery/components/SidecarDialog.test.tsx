@@ -1,5 +1,4 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
@@ -24,25 +23,21 @@ const previewUrl = `/api/v1/gallery/filestores/${FILESTORE_ID}/sidecar/preview`;
 const saveUrl = `/api/v1/gallery/filestores/${FILESTORE_ID}/sidecar`;
 
 function renderDialog(props?: Partial<React.ComponentProps<typeof SidecarDialog>>) {
-  // Fresh client per render so React Query cache never leaks between tests.
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const onClose = vi.fn();
   const refreshListing = vi.fn(() => Promise.resolve());
   render(
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-        <Alerts>
-          <SidecarDialog
-            open
-            onClose={onClose}
-            filestoreId={FILESTORE_ID}
-            folderPath="experiments"
-            refreshListing={refreshListing}
-            {...props}
-          />
-        </Alerts>
-      </ThemeProvider>
-    </QueryClientProvider>,
+    <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+      <Alerts>
+        <SidecarDialog
+          open
+          onClose={onClose}
+          filestoreId={FILESTORE_ID}
+          folderPath="experiments"
+          refreshListing={refreshListing}
+          {...props}
+        />
+      </Alerts>
+    </ThemeProvider>,
   );
   return { onClose, refreshListing };
 }

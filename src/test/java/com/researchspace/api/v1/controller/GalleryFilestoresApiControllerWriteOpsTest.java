@@ -117,6 +117,8 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     controller.setNfsFactory(nfsFactory);
     controller.properties = propertyHolder;
     controller.s3SidecarService = s3SidecarService;
+    controller.metadataSidecarEnabled = true;
+    controller.messages = mock(com.researchspace.service.MessageSourceUtils.class);
 
     when(propertyHolder.isNetFileStoresEnabled()).thenReturn(true);
     when(nfsManager.getNfsFileStore(validFilestorePathId))
@@ -790,5 +792,15 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     controller.saveSidecar(1L, new ApiGalleryFilestoreSidecarRequest("XRD-Experiments"), user);
 
     verify(s3SidecarService).save(1L, "XRD-Experiments", user);
+  }
+
+  @Test
+  void sidecarEndpointsRejectedWhenFeatureDisabled() {
+    controller.metadataSidecarEnabled = false;
+    ApiGalleryFilestoreSidecarRequest req =
+        new ApiGalleryFilestoreSidecarRequest("XRD-Experiments");
+    assertThrows(
+        UnsupportedOperationException.class, () -> controller.previewSidecar(1L, req, user));
+    assertThrows(UnsupportedOperationException.class, () -> controller.saveSidecar(1L, req, user));
   }
 }

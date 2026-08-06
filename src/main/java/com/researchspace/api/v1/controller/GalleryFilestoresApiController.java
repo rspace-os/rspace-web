@@ -47,6 +47,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -67,6 +68,9 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   @Autowired RecordDeletionManager deletionManager;
   @Autowired FilestoreWriteManager filestoreWriteManager;
   @Autowired S3SidecarService s3SidecarService;
+
+  @Value("${gallery.actions.metadata.sidecar.enabled}")
+  boolean metadataSidecarEnabled;
 
   @Override
   public List<NfsFileStoreInfo> getUserFilestores(@RequestAttribute(name = "user") User user) {
@@ -364,6 +368,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
       @RequestAttribute(name = "user") User user) {
 
     assertFilestoresApiEnabled(user);
+    assertSidecarEnabled();
     return toApiSidecar(s3SidecarService.preview(filestoreId, request.getPath(), user));
   }
 
@@ -374,7 +379,16 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
       @RequestAttribute(name = "user") User user) {
 
     assertFilestoresApiEnabled(user);
+    assertSidecarEnabled();
     return toApiSidecar(s3SidecarService.save(filestoreId, request.getPath(), user));
+  }
+
+  // Honour the feature flag on the backend too, so a disabled sidecar feature is off end to end.
+  private void assertSidecarEnabled() {
+    if (!metadataSidecarEnabled) {
+      throw new UnsupportedOperationException(
+          getMessage("netFileStores.sidecar.errors.notEnabled"));
+    }
   }
 
   private static ApiGalleryFilestoreSidecar toApiSidecar(GeneratedSidecar sidecar) {

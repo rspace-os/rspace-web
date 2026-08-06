@@ -179,8 +179,9 @@ public interface GalleryFilestoresApi {
 
   /**
    * Composes a metadata sidecar for the folder at {@code path} and writes it into that folder as
-   * {@code <folder>.sidecar.yaml} (overwriting any existing one), recording a {@code CREATE} audit
-   * event. Non-S3 backends produce 404.
+   * {@code <folder>.sidecar.yaml} (or {@code <bucketName>.sidecar.yaml} at the filestore root),
+   * overwriting any existing one, recording a {@code CREATE} audit event. Non-S3 backends produce
+   * 404.
    */
   @PostMapping(
       value = "/filestores/{filestoreId}/sidecar",
