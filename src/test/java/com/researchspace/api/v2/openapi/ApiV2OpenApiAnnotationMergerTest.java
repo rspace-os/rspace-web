@@ -6,7 +6,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v2.controller.ConfigV2Controller;
+import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
+import com.researchspace.api.v2.resource.ApiV2EndpointSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
+import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.properties.IPropertyHolder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -40,7 +43,12 @@ class ApiV2OpenApiAnnotationMergerTest {
     when(handlerMapping.getHandlerMethods())
         .thenReturn(Map.of(mapping, new HandlerMethod(controller, method)));
     Map<String, Object> document =
-        new ApiV2OpenApiDocumentService(generator, () -> java.util.stream.Stream.of(handlerMapping))
+        new ApiV2OpenApiDocumentService(
+                generator,
+                new ApiV2EndpointCatalog(
+                    List.of(
+                        new ApiV2EndpointSpec(ConfigV2Controller.class, AccessFunction.anyone()))),
+                () -> java.util.stream.Stream.of(handlerMapping))
             .generate();
 
     Map<String, Object> paths = objectMap(document.get("paths"));
@@ -72,7 +80,10 @@ class ApiV2OpenApiAnnotationMergerTest {
         .thenReturn(Map.of(mapping, new HandlerMethod(controller, method)));
 
     Map<String, Object> document =
-        new ApiV2OpenApiDocumentService(generator, () -> java.util.stream.Stream.of(handlerMapping))
+        new ApiV2OpenApiDocumentService(
+                generator,
+                new ApiV2EndpointCatalog(List.of()),
+                () -> java.util.stream.Stream.of(handlerMapping))
             .generate();
     Map<String, Object> operation =
         objectMap(
@@ -84,6 +95,9 @@ class ApiV2OpenApiAnnotationMergerTest {
         List.of("id", "mode"), parameters.stream().map(value -> value.get("name")).toList());
     assertEquals(true, parameters.get(0).get("required"));
     assertTrue(objectMap(operation.get("requestBody")).containsKey("content"));
+    assertEquals(
+        List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())),
+        operation.get("security"));
     assertTrue(schemas(document).containsKey("CustomInput"));
     assertTrue(schemas(document).containsKey("CustomOutput"));
   }

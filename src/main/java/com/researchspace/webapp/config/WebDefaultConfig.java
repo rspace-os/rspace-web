@@ -5,6 +5,7 @@ import com.researchspace.api.v1.controller.*;
 import com.researchspace.api.v2.auth.ApiV2Authenticator;
 import com.researchspace.api.v2.controller.ApiV2AuthenticationInterceptor;
 import com.researchspace.api.v2.controller.ApiV2PermissiveCorsInterceptor;
+import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.auth.TimezoneAdjuster;
 import com.researchspace.auth.TimezoneAdjusterImpl;
 import com.researchspace.properties.PropertyHolder;
@@ -51,8 +52,8 @@ public class WebDefaultConfig {
 
   @Bean
   ApiV2AuthenticationInterceptor apiV2AuthenticationInterceptor(
-      ApiV2Authenticator apiV2Authenticator) {
-    return new ApiV2AuthenticationInterceptor(apiV2Authenticator);
+      ApiV2Authenticator apiV2Authenticator, ApiV2EndpointCatalog endpoints) {
+    return new ApiV2AuthenticationInterceptor(apiV2Authenticator, endpoints);
   }
 
   @Bean

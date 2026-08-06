@@ -39,7 +39,7 @@ public class ApiV2RequestThrottlingInterceptor extends ApiV2AbstractThrottleInte
 
   public boolean preHandle(
       HttpServletRequest request, HttpServletResponse response, Object handler) {
-    String identifier = assertApiAccess(request, handler);
+    String identifier = assertApiAccess(request);
     // Preserve v1 semantics: these headers describe the allowance before this request is consumed.
     setUsageHeaderStats(request, response, identifier);
     return userThrottler.proceed(identifier) && globalThrottler.proceed(GLOBAL_ALLOWANCE_KEY);
