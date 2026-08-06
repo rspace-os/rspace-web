@@ -16,6 +16,20 @@ resource schemas to OpenAPI.
 Use a concrete controller for an operation that is not collection CRUD. Concrete routes, such as
 `/api/v2/users/me`, can exist with registered resources.
 
+## Current concrete routes
+
+The current implementation supplies these routes outside the collection controller:
+
+| Route | Access | Result |
+| --- | --- | --- |
+| `GET /api/v2/config` | Public | Deployment branding, help links, description, and support email. |
+| `GET /api/v2/openapi.json` | Public | The generated OpenAPI 3.1 document. |
+| `GET /api/v2/users/me` | Authenticated | Identity, roles, capabilities, external identifiers, and API session state. |
+| `GET /api/v2/users/me/profile-image` | Authenticated | The current profile image as a non-cached PNG file. |
+
+Do not add a resource spec for one of these routes. Use a concrete controller for a similar
+non-CRUD operation.
+
 ## Add a resource
 
 A resource has these parts:
@@ -180,9 +194,9 @@ fails if a definition is invalid.
 
 The ID parser converts one URL segment to the ID type. It must reject an invalid ID.
 
-The create and update error keys are message-bundle keys. The parser uses these keys for invalid
-request bodies. Put user-facing messages in the correct bundle below
-`src/main/resources/bundles/`.
+The create and update error keys are message keys. The parser uses these keys for invalid request
+bodies. Put REST API v2 messages in the applicable `server.*.json` catalog below
+`src/main/webapp/ui/src/modules/common/i18n/locales/`.
 
 ### 3. Keep domain work in the manager
 
@@ -216,9 +230,9 @@ Keep domain authorization, validation, transactions, audit events, and lifecycle
 manager. Override the default manager hooks for these rules. Do not copy the standard collection
 pipeline into a resource-specific service.
 
-Every read operation receives the caller. Caller-independent collections can ignore it. Collections
-that calculate caller-specific values must use the supplied user rather than reading a browser
-session or an implicit security context.
+Every read operation receives the caller. Caller-independent collections can ignore it.
+Collections that calculate caller-specific values must use the supplied user. They must not read a
+browser session or an implicit security context.
 
 Use `InMemoryCollectionQuery` for a bounded collection that does not use database queries. This
 adapter applies the standard filter, sort, page, and count rules to a resource snapshot.
@@ -607,6 +621,7 @@ a handler with no contributed spec defaults to authenticated access. Public cont
 `AccessFunction.anyone()`. The generic CRUD controller also contributes `anyone()` at this seam so
 that its selected `ApiV2ResourceSpec` operation can make the final decision from the collection
 policy. Invalid supplied credentials are rejected even when the endpoint is public.
+The server uses the API key when both credential headers are present.
 
 These policy fields are independent:
 
@@ -655,6 +670,64 @@ Create access cannot return a row constraint because a row does not exist. For b
 `inputs()`. Do not use `requireInput()`. A custom field function uses `Field.creatableBy(...)`. It
 receives one document through `requireInput()`.
 
+### Stateless requests
+
+The servlet filter removes cookie headers before Shiro processes a REST API v2 request. The filter
+also prevents servlet-session reads and writes.
+
+The authentication interceptor does not log in to Shiro. It does not log out of Shiro after the
+request. These rules prevent a browser session from changing API authorization.
+
+### Rate limits
+
+REST API v2 has separate throttle beans from REST API v1. Both versions use the same deployment
+properties.
+
+The REST API v2 throttle uses these properties:
+
+| Property | Purpose |
+| --- | --- |
+| `api.throttling.enabled` | Enables all request throttles. |
+| `api.user.limit.15s` | Sets the limit for one caller during 15 seconds. |
+| `api.user.limit.hour` | Sets the limit for one caller during one hour. |
+| `api.user.limit.day` | Sets the limit for one caller during one day. |
+| `api.global.limit.15s` | Sets the total limit during 15 seconds. |
+| `api.global.minInterval` | Sets the minimum interval between all requests. |
+
+When throttling is enabled, responses contain `X-Rate-Limit-*` usage headers. A rejected request
+returns 429 and an API problem body.
+
+Credential buckets use a SHA-256 fingerprint of the credential. Public and anonymous buckets use a
+fingerprint of the client address. The server does not retain credentials or client addresses in
+the bucket key.
+
+The address resolver accepts `X-Forwarded-For`. Configure each trusted proxy to replace an
+untrusted `X-Forwarded-For` header.
+
+The caller bucket store keeps at most 10,000 keys. The separate global bucket supplies the hard
+limit when caller buckets are removed.
+
+### Cross-origin requests
+
+Set `api.permissiveCors.enabled=true` to enable permissive cross-origin resource sharing (CORS).
+REST API v2 then permits all origins.
+
+An `OPTIONS` response permits `POST`, `PATCH`, `GET`, `OPTIONS`, and `DELETE`. It permits the
+`apiKey`, `Authorization`, and `Content-Type` request headers.
+
+### Deviations from REST API v1
+
+These differences are intentional:
+
+| Area | REST API v1 | REST API v2 |
+| --- | --- | --- |
+| Browser state | Authentication can use Shiro request state. | The stateless filter removes cookies and blocks servlet-session access. |
+| Authentication lifecycle | The interceptor logs in to Shiro and logs out after the request. | The interceptor validates credentials without changing Shiro state. |
+| External OAuth controls | External OAuth does not apply all API availability settings. | External OAuth applies deployment, user, and OAuth availability settings. |
+| Disabled throttling | Responses contain fabricated rate-limit statistics. | Responses do not contain rate-limit statistics. |
+| Throttle keys | The bucket store retains raw credentials and has no size limit. | The bucket store retains fingerprints and keeps at most 10,000 caller keys. |
+| Concurrent requests | A caller can overspend one allowance through concurrent requests. | A per-key lock makes each allowance update atomic. |
+
 ## Relationships
 
 Declare relationships separately from scalar record components. A relationship specifies these
@@ -699,10 +772,51 @@ A response includes `globalId` when the target has a global-ID prefix. For examp
 reference includes `"globalId": "IN123"`. The response keeps `globalId` when `value` is expanded. A
 target without a global ID, such as a user, does not include this field.
 
+## Errors and locale
+
+REST API v2 returns errors as RFC 9457 problem details. The response content type is
+`application/problem+json`.
+
+```json
+{
+  "title": "The request contains an invalid value.",
+  "status": 400,
+  "code": "errors.api.v2.invalidRequest",
+  "detail": "The request contains an invalid value.",
+  "invalidParams": [
+    {"name": "docs[1].name", "reason": "required"}
+  ]
+}
+```
+
+`title`, `status`, and `code` are always present. `detail` and `invalidParams` are present when the
+error has that information.
+
+The `code` value is stable. The server resolves `title` and `detail` from the message catalog.
+Authentication errors also contain `WWW-Authenticate: Bearer`.
+
+The same problem format applies when Spring rejects a request before it selects a handler. For
+example, an unsupported method does not return an HTML error page.
+
+The server uses the deployment locale. It does not select an unavailable locale from
+`Accept-Language`.
+
+Each REST API v2 response contains `Content-Language`. Each response also adds `Accept-Language` to
+the `Vary` header.
+
 ## OpenAPI
 
 The catalog publishes OpenAPI 3.1 at `/api/v2/openapi.json`. A routed resource spec adds its paths
-and its schemas.
+and its schemas. A target-only spec adds schemas without paths.
+
+The document service also merges Swagger annotations from concrete controllers. It validates the
+complete document before it returns the document.
+
+Production creates the document after a context refresh. Production caches the document privately
+for one hour and supplies an `ETag`. A matching `If-None-Match` request returns 304.
+
+Development creates and validates the document for each request. Development responses use
+`Cache-Control: no-store`.
 
 Use `OpenApiOperationDocumentation` for resource-specific descriptions and examples:
 
@@ -718,7 +832,7 @@ Map.of(
 Declare each non-standard error in the resource spec. An error mapping has these effects:
 
 - It converts the mapped domain exception to the specified HTTP response for that operation.
-- It resolves the response detail from the stable message-bundle key.
+- It resolves the response detail from the stable message key.
 - It adds the error response to OpenAPI.
 
 When exception classes overlap, the most specific matching class applies. An unmapped exception
@@ -768,7 +882,8 @@ boundary explicitly.
 - [ ] The exposed operations match the HTTP contract.
 - [ ] The operations class calls a manager and does not call a DAO.
 - [ ] The manager controls domain authorization, validation, transactions, and bulk rules.
-- [ ] All user-facing errors are in message bundles.
+- [ ] All user-facing errors are in message catalogs.
+- [ ] Each public concrete controller contributes an `ApiV2EndpointSpec`.
 - [ ] Each relationship verifies target read access.
 - [ ] Each relationship target is registered.
 - [ ] OpenAPI shows examples and resource-specific errors.
