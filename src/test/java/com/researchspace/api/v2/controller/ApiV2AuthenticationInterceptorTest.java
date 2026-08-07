@@ -10,8 +10,10 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Authenticator;
+import com.researchspace.api.v2.auth.ApiV2BrowserSessionAuthenticator;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiController;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiDocumentService;
+import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.api.v2.resource.ApiV2EndpointSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
@@ -31,14 +33,20 @@ import org.springframework.web.method.HandlerMethod;
 class ApiV2AuthenticationInterceptorTest {
 
   private final ApiV2Authenticator authenticator = mock(ApiV2Authenticator.class);
+  private final ApiV2BrowserSessionAuthenticator browserSessionAuthenticator =
+      mock(ApiV2BrowserSessionAuthenticator.class);
   private final ApiV2EndpointCatalog endpoints =
       new ApiV2EndpointCatalog(
           List.of(
               new ApiV2EndpointSpec(PublicController.class, AccessFunction.anyone()),
+              new ApiV2EndpointSpec(
+                  BrowserSessionController.class,
+                  AccessFunction.authenticated(),
+                  ApiV2AuthenticationMode.BROWSER_SESSION),
               new ApiV2EndpointSpec(ApiV2CrudController.class, AccessFunction.anyone()),
               new ApiV2EndpointSpec(ApiV2OpenApiController.class, AccessFunction.anyone())));
   private final ApiV2AuthenticationInterceptor interceptor =
-      new ApiV2AuthenticationInterceptor(authenticator, endpoints);
+      new ApiV2AuthenticationInterceptor(authenticator, browserSessionAuthenticator, endpoints);
   private final MockHttpServletRequest request = new MockHttpServletRequest();
   private final MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -105,6 +113,21 @@ class ApiV2AuthenticationInterceptorTest {
     assertSame(user, request.getAttribute("user"));
   }
 
+  @Test
+  void usesOnlyBrowserSessionAuthenticationForTheTokenEndpoint() throws Exception {
+    User user = mock(User.class);
+    when(browserSessionAuthenticator.authenticateIfPresent(request)).thenReturn(Optional.of(user));
+    HandlerMethod handler =
+        new HandlerMethod(
+            new BrowserSessionController(), BrowserSessionController.class.getMethod("create"));
+
+    assertTrue(interceptor.preHandle(request, response, handler));
+
+    assertSame(user, request.getAttribute("user"));
+    verify(browserSessionAuthenticator).authenticateIfPresent(request);
+    org.mockito.Mockito.verifyNoInteractions(authenticator);
+  }
+
   private static HandlerMethod protectedHandler() throws Exception {
     return new HandlerMethod(
         new ProtectedController(), ProtectedController.class.getMethod("read"));
@@ -125,5 +148,9 @@ class ApiV2AuthenticationInterceptorTest {
 
   static class ProtectedController {
     public void read() {}
+  }
+
+  static class BrowserSessionController {
+    public void create() {}
   }
 }

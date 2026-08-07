@@ -111,7 +111,7 @@ class ApiV2OpenApiGeneratorTest {
 
     Map<String, Object> securitySchemes =
         objectMap(objectMap(document.get("components")).get("securitySchemes"));
-    assertEquals(Set.of("apiKey", "bearerAuth"), securitySchemes.keySet());
+    assertEquals(Set.of("apiKey", "bearerAuth", "browserSession"), securitySchemes.keySet());
 
     Map<String, Object> users = objectMap(paths.get("/api/v2/users"));
     assertTrue(users.containsKey("get"));
@@ -174,6 +174,7 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(50, filter.get("maximumComparisons"));
     assertEquals(10, filter.get("maximumLikeComparisons"));
     assertTrue(objectMap(filter.get("selectors")).containsKey("message"));
+    assertFalse(objectMap(filter.get("selectors")).containsKey("canUserLoginNow"));
     Map<String, Object> messageFilter =
         objectMap(objectMap(filter.get("selectors")).get("message"));
     assertTrue(((List<?>) messageFilter.get("operators")).contains("=like="));
@@ -185,6 +186,8 @@ class ApiV2OpenApiGeneratorTest {
             .findFirst()
             .orElseThrow();
     assertEquals(List.of("startDate", "id"), objectMap(sort.get("x-rspace-sort")).get("default"));
+    assertFalse(
+        ((List<?>) objectMap(sort.get("x-rspace-sort")).get("fields")).contains("canUserLoginNow"));
     assertEquals(
         1, parameters.stream().filter(parameter -> parameter.get("name").equals("fields")).count());
 
@@ -194,7 +197,9 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> createProperties =
         objectMap(objectMap(schemas.get("MaintenancesCreate")).get("properties"));
     assertTrue(readProperties.containsKey("id"));
+    assertTrue(readProperties.containsKey("canUserLoginNow"));
     assertFalse(createProperties.containsKey("id"));
+    assertFalse(createProperties.containsKey("canUserLoginNow"));
     assertFalse(readProperties.containsKey("property"));
     assertTrue(schemas.containsKey("ApiV2Problem"));
     assertTrue(schemas.containsKey("ApiV2BulkError"));

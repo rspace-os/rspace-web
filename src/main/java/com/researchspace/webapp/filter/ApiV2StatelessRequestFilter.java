@@ -24,6 +24,11 @@ public final class ApiV2StatelessRequestFilter implements Filter {
       filterChain.doFilter(request, response);
       return;
     }
+    String tokenPath = httpRequest.getContextPath() + "/api/v2/oauth/tokens";
+    if ("POST".equals(httpRequest.getMethod()) && tokenPath.equals(httpRequest.getRequestURI())) {
+      filterChain.doFilter(request, response);
+      return;
+    }
     filterChain.doFilter(new StatelessRequest(httpRequest), response);
   }
 

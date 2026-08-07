@@ -44,7 +44,12 @@ public record ApiV2MaintenanceResource(
             nullable = true,
             maxLength = User.DEFAULT_MAXFIELD_LEN,
             description = "User-facing maintenance message.")
-        String message) {
+        String message,
+    @ApiV2ResourceField(
+            filterable = false,
+            sortable = false,
+            description = "Whether ordinary users can log in at the current server time.")
+        boolean canUserLoginNow) {
 
   /**
    * Authenticated callers see all rows. Anonymous callers see only windows that have not ended;

@@ -6,11 +6,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v2.controller.ConfigV2Controller;
+import com.researchspace.api.v2.controller.OAuthTokensV2Controller;
+import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.api.v2.resource.ApiV2EndpointSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
+import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.OAuthTokenManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -100,6 +104,36 @@ class ApiV2OpenApiAnnotationMergerTest {
         operation.get("security"));
     assertTrue(schemas(document).containsKey("CustomInput"));
     assertTrue(schemas(document).containsKey("CustomOutput"));
+  }
+
+  @Test
+  void documentsBrowserSessionAuthenticationOnlyForTheUiTokenEndpoint() throws Exception {
+    ApiV2OpenApiGenerator generator =
+        new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "Test API", "2.0.0");
+    OAuthTokensV2Controller controller = new OAuthTokensV2Controller(mock(OAuthTokenManager.class));
+    Method method = OAuthTokensV2Controller.class.getMethod("createToken", User.class);
+    RequestMappingInfo mapping =
+        RequestMappingInfo.paths("/api/v2/oauth/tokens").methods(RequestMethod.POST).build();
+    RequestMappingHandlerMapping handlerMapping = mock(RequestMappingHandlerMapping.class);
+    when(handlerMapping.getHandlerMethods())
+        .thenReturn(Map.of(mapping, new HandlerMethod(controller, method)));
+
+    Map<String, Object> document =
+        new ApiV2OpenApiDocumentService(
+                generator,
+                new ApiV2EndpointCatalog(
+                    List.of(
+                        new ApiV2EndpointSpec(
+                            OAuthTokensV2Controller.class,
+                            AccessFunction.authenticated(),
+                            ApiV2AuthenticationMode.BROWSER_SESSION))),
+                () -> java.util.stream.Stream.of(handlerMapping))
+            .generate();
+
+    Map<String, Object> operation =
+        objectMap(
+            objectMap(objectMap(document.get("paths")).get("/api/v2/oauth/tokens")).get("post"));
+    assertEquals(List.of(Map.of("browserSession", List.of())), operation.get("security"));
   }
 
   private static final class CustomController {

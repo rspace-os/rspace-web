@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
       "profileImageApiUrl",
       "orcid",
       "capabilities",
+      "livechat",
       "session"
     })
 public record ApiV2CurrentUser(
@@ -42,6 +43,7 @@ public record ApiV2CurrentUser(
         String profileImageApiUrl,
     @Schema(description = "ORCID availability and connection state.") Orcid orcid,
     @Schema(description = "Capabilities enabled for the current user.") Capabilities capabilities,
+    @Schema(description = "Live-chat configuration for the current user.") LiveChat livechat,
     @Schema(description = "State of the current authenticated session.") Session session) {
 
   @Schema(requiredProperties = {"available", "id"})
@@ -60,6 +62,12 @@ public record ApiV2CurrentUser(
       @Schema(description = "Whether public sharing is available.") boolean canPublish,
       @Schema(description = "Whether system-administration views are available.")
           boolean canViewSystem) {}
+
+  @Schema(requiredProperties = {"enabled", "serverKey"})
+  public record LiveChat(
+      @Schema(description = "Whether live chat is enabled.") boolean enabled,
+      @Schema(description = "Browser live-chat application key.", nullable = true)
+          String serverKey) {}
 
   @Schema(requiredProperties = {"operatedAs", "lastSession"})
   public record Session(

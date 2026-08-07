@@ -26,6 +26,7 @@ class ConfigV2ControllerTest {
     ConfigV2Controller controller = new ConfigV2Controller(properties);
     when(properties.getDeploymentDescription()).thenReturn("");
     when(properties.getDeploymentHelpEmail()).thenReturn("");
+    when(properties.getWebappVersion()).thenReturn("v2.25.0");
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
   }
 
@@ -39,6 +40,7 @@ class ConfigV2ControllerTest {
     mockMvc
         .perform(get("/api/v2/config"))
         .andExpect(status().isOk())
+        .andExpect(jsonPath("$.version").value("v2.25.0"))
         .andExpect(jsonPath("$.branding.bannerImageUrl").value("/public/banner"))
         .andExpect(jsonPath("$.helpLinks.length()").value(2))
         .andExpect(jsonPath("$.helpLinks[0].label").value("Support"))

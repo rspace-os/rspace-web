@@ -34,6 +34,7 @@ public class ConfigV2Controller {
             .map(entry -> new HelpLink(entry.getKey(), entry.getValue()))
             .toList();
     return new ApiV2Config(
+        properties.getWebappVersion(),
         new Branding("/public/banner"),
         helpLinks,
         properties.getDeploymentDescription(),

@@ -118,6 +118,13 @@ class CollectionDescriptionTest {
     assertEquals(10, schemaFields.get("value").type().maxLength());
     assertTrue(schemaFields.get("id").readOnly());
     assertTrue(schemaFields.get("serverManaged").readOnly());
+    assertFalse(schemaFields.get("value").sortable());
+    assertFalse(schemaFields.get("value").filterOperators().isEmpty());
+    assertTrue(schemaFields.get("serverManaged").sortable());
+    assertTrue(schemaFields.get("serverManaged").filterOperators().isEmpty());
+    assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("value"));
+    assertThrows(
+        CollectionQueryException.class, () -> description.requireFilterSelector("serverManaged"));
     assertEquals(
         description.schema().access().readAccess(), schemaFields.get("value").readAccess());
     Map<String, Object> expected = new LinkedHashMap<>();
@@ -327,8 +334,8 @@ class CollectionDescriptionTest {
   @ApiV2ResourceDefinition(name = "annotatedEntities", entity = AnnotatedEntity.class, id = "id")
   private record ApiV2AnnotatedResource(
       @ApiV2ResourceField Long id,
-      @ApiV2ResourceField(maxLength = 10) String value,
-      @ApiV2ResourceField String serverManaged) {}
+      @ApiV2ResourceField(maxLength = 10, sortable = false) String value,
+      @ApiV2ResourceField(filterable = false) String serverManaged) {}
 
   public static final class AnnotatedEntity {
 

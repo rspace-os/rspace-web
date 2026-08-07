@@ -18,24 +18,26 @@ import org.springframework.web.method.HandlerMethod;
 /** Resolves and enforces the access function for REST API v2 controller handlers. */
 public final class ApiV2EndpointCatalog {
 
-  private static final AccessFunction DEFAULT_ACCESS = AccessFunction.authenticated();
+  private static final ApiV2EndpointSpec DEFAULT_SPEC =
+      new ApiV2EndpointSpec(Object.class, AccessFunction.authenticated());
 
-  private final Map<Class<?>, AccessFunction> accessByHandlerType;
+  private final Map<Class<?>, ApiV2EndpointSpec> specsByHandlerType;
 
   public ApiV2EndpointCatalog(List<ApiV2EndpointSpec> specs) {
-    Map<Class<?>, AccessFunction> access = new LinkedHashMap<>();
+    Map<Class<?>, ApiV2EndpointSpec> registered = new LinkedHashMap<>();
     for (ApiV2EndpointSpec spec : specs) {
-      if (access.putIfAbsent(spec.handlerType(), spec.access()) != null) {
+      if (registered.putIfAbsent(spec.handlerType(), spec) != null) {
         throw new IllegalArgumentException(
             "Duplicate REST API v2 endpoint spec for " + spec.handlerType().getName());
       }
     }
-    accessByHandlerType = Map.copyOf(access);
+    specsByHandlerType = Map.copyOf(registered);
   }
 
   public void authorize(HttpServletRequest request, Object handler, User caller) {
     AccessResult result =
-        access(handler)
+        spec(handler)
+            .access()
             .check(
                 new AccessContext(caller, operation(request.getMethod()), request.getRequestURI()));
     if (result instanceof AccessResult.Denied denied) {
@@ -50,15 +52,19 @@ public final class ApiV2EndpointCatalog {
   }
 
   public boolean isPublic(Object handler) {
-    return access(handler).documentation().orElseThrow().authenticationRequirement()
+    return spec(handler).access().documentation().orElseThrow().authenticationRequirement()
         == AuthenticationRequirement.PUBLIC;
   }
 
-  private AccessFunction access(Object handler) {
+  public ApiV2AuthenticationMode authenticationMode(Object handler) {
+    return spec(handler).authenticationMode();
+  }
+
+  private ApiV2EndpointSpec spec(Object handler) {
     if (!(handler instanceof HandlerMethod handlerMethod)) {
-      return DEFAULT_ACCESS;
+      return DEFAULT_SPEC;
     }
-    return accessByHandlerType.getOrDefault(handlerMethod.getBeanType(), DEFAULT_ACCESS);
+    return specsByHandlerType.getOrDefault(handlerMethod.getBeanType(), DEFAULT_SPEC);
   }
 
   private static Operation operation(String method) {
