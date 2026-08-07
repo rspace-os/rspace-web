@@ -319,7 +319,7 @@ public class S3UtilitiesImpl implements S3Utilities {
     private final Long sizeInBytes;
     private final Instant lastModified;
 
-    /** S3 object ETag (quoted MD5/opaque hash), from a listing. Null for folders. */
+    /** S3 object ETag (MD5/opaque hash, surrounding quotes stripped), from a listing. Null for folders. */
     private final String etag;
 
     /**

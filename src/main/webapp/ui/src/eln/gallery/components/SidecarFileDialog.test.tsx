@@ -34,7 +34,7 @@ function handlePreview(status: number) {
 function handleSave(status: number) {
   return http.post(saveUrl, async ({ request }) => {
     saveBodies.push(await request.json());
-    return new HttpResponse(JSON.stringify(PREVIEW), { status });
+    return HttpResponse.json(PREVIEW, { status });
   });
 }
 
