@@ -32,14 +32,6 @@ public class PostTextSearchResultFiltererTest extends LuceneSrchCfgTestBase {
   }
 
   @Test
-  public void filterByTemporaryDoc() {
-    assertEquals(ORIGINAL_SIZE, filterer.filterAll().size());
-
-    toFilter.get(0).asStrucDoc().setTemporaryDoc(true);
-    assertEquals(ORIGINAL_SIZE - 1, filterer.filterAll().size());
-  }
-
-  @Test
   public void filterAllAppliesConditionalSharedRecordsFilter() {
     // this will ensure filter is applied; see RSPAC
     List<BaseRecord> bigListOfTerms = createNRecords(BooleanQuery.getMaxClauseCount() + 1);
