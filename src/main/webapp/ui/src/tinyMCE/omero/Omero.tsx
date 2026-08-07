@@ -30,18 +30,13 @@ import {
   OMERO_DATA_TYPE_SCREENS,
 } from "./OmeroClient";
 import { $PropertyExists, type OmeroArgs, type OmeroItem } from "./OmeroTypes";
-import ResultsTable from "./ResultsTable";
+import ResultsTable, { omeroSort } from "./ResultsTable";
 
 const makeTableHeaderCells = (t: TFunction<"workspace">): Array<Cell<string>> => [
   { id: "path", numeric: false, label: t("tinymce.omero.columns.path") },
   { id: "description", numeric: false, label: t("tinymce.omero.columns.description") },
 ];
 
-let SELECTED_ITEMS: Array<OmeroItem> = [];
-let VISIBLE_HEADER_CELLS: Array<Cell<string>> = [];
-
-export const getSelectedItems = (): Array<OmeroItem> => SELECTED_ITEMS;
-export const getHeaders = (): Array<Cell<string>> => VISIBLE_HEADER_CELLS;
 const ORDER_KEY = "omeroSearchOrder";
 const ORDER_BY_KEY = "omeroSearchOrderBy";
 const DEFAULT_ORDER = Order.asc;
@@ -50,7 +45,7 @@ export const getOrder = (): string => (localStorage.getItem(ORDER_KEY) || DEFAUL
 export const getOrderBy = (): string => (localStorage.getItem(ORDER_BY_KEY) || DEFAULT_ORDERBY).replace(/['"]+/g, "");
 function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   const { t } = useTranslation("workspace");
-  VISIBLE_HEADER_CELLS = makeTableHeaderCells(t);
+  const visibleHeaderCells = useMemo(() => makeTableHeaderCells(t), [t]);
   const [items, setItems] = useState<Array<OmeroItem>>([]);
   const [fetchDone, setFetchDone] = useState(false);
   const [errorReason, setErrorReason] = useState<ErrorReasonType>(ErrorReason.None);
@@ -621,18 +616,35 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     void fetchOmeroData();
   }, [dataTypeChoice]);
 
-  SELECTED_ITEMS = useMemo(() => {
-    const selected_items = items.filter((item) => selectedItemIds.includes(`${item.type}_${item.id}`));
+  const selectedItems = useMemo(
+    () => items.filter((item) => selectedItemIds.includes(`${item.type}_${item.id}`)),
+    [selectedItemIds],
+  );
 
+  useEffect(() => {
     window.parent.postMessage(
       {
-        mceAction: selected_items.length > 0 ? "enable" : "disable",
+        mceAction: selectedItems.length > 0 ? "enable" : "disable",
       },
       "*",
     );
+  }, [selectedItems]);
 
-    return selected_items;
-  }, [selectedItemIds]);
+  useEffect(() => {
+    const editor = window.parent.tinymce?.activeEditor;
+    if (!editor) return;
+    const insertSelectedItems = () => {
+      if (selectedItems.length > 0) {
+        const omeroTable = createTinyMceTable(selectedItems, visibleHeaderCells, order, orderBy, t);
+        editor.execCommand("mceInsertContent", false, omeroTable.outerHTML);
+      }
+      editor.windowManager.close();
+    };
+    editor.on("omero-insert", insertSelectedItems);
+    return () => {
+      editor.off("omero-insert", insertSelectedItems);
+    };
+  }, [selectedItems, visibleHeaderCells, order, orderBy, t]);
 
   if (errorReason !== ErrorReason.None) {
     return <ErrorView errorReason={errorReason} errorMessage={errorMessage} />;
@@ -679,7 +691,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
               hideChildren={hideChildren}
               onRowClick={onRowClick}
               omero_web_url={omero_web_url}
-              visibleHeaderCells={VISIBLE_HEADER_CELLS}
+              visibleHeaderCells={visibleHeaderCells}
               results={items}
               selectedItemIds={selectedItemIds}
               setSelectedItemIds={setSelectedItemIds}
@@ -724,5 +736,108 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     </StyledEngineProvider>
   );
 }
+
+function createTinyMceTable(
+  selectedItems: Array<OmeroItem>,
+  visibleHeaderCells: Array<Cell<string>>,
+  order: "asc" | "desc",
+  orderBy: string,
+  t: TFunction<"workspace">,
+) {
+  const omeroTable = document.createElement("table");
+  omeroTable.setAttribute("data-tableSource", "omero");
+
+  const tableHeader = document.createElement("tr");
+  const headersWithNotes = visibleHeaderCells
+    .slice(0, 4)
+    .concat([{ id: "notes", numeric: false, label: t("tinymce.omero.columns.notes") }], visibleHeaderCells.slice(4));
+  headersWithNotes.forEach((cell) => {
+    const columnName = document.createElement("th");
+    columnName.textContent = cell.label;
+    tableHeader.appendChild(columnName);
+  });
+  omeroTable.appendChild(tableHeader);
+  omeroSort(selectedItems, order, orderBy).forEach((item) => {
+    const row = document.createElement("tr");
+
+    headersWithNotes.forEach((headerCell) => {
+      const cell = document.createElement("td");
+
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      const textContent = (item as any)[headerCell.id];
+      if (headerCell.id === "path") {
+        setCellContents(cell, "path", item);
+      } else if (headerCell.id === "description") {
+        setCellContents(cell, "description", item);
+      } else if (textContent) {
+        cell.textContent = textContent;
+      }
+
+      row.appendChild(cell);
+    });
+
+    omeroTable.appendChild(row);
+  });
+  return omeroTable;
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+const setCellContents = (cell: HTMLTableCellElement, type: string, item: any) => {
+  hideUnwantedLinks(item);
+  if (type === "description") {
+    const dtRestToFormat = document.querySelector(`[id=${item.type}_rest_description_${item.id}]`);
+    if (dtRestToFormat) {
+      dtRestToFormat.outerHTML = dtRestToFormat.outerHTML.replace(
+        /class.+?restOfDescription/,
+        'style="font-weight:lighter;font-size:0.9em;font-family:Verdana"',
+      );
+    }
+    const dtFirstToFormat = document.querySelector(`[id=${item.type}_first_description_${item.id}]`);
+    if (dtFirstToFormat) {
+      dtFirstToFormat.outerHTML = dtFirstToFormat.outerHTML.replace(
+        /class.+?firstDescription/,
+        'style="font-weight:bold;font-style:italic;font-size:1em;font-family:Times"',
+      );
+    }
+  } else if (type === "path") {
+    const dtNameToFormat = document.querySelector(`[id=${item.type}_name_display_${item.id}]`);
+    if (dtNameToFormat) {
+      dtNameToFormat.outerHTML = dtNameToFormat.outerHTML.replace(
+        /class.+?nameText/,
+        'style="font-weight:bold;font-size:1.3em;font-family:Times"',
+      );
+    }
+  }
+  const path = document.querySelector(
+    `[id=${CSS.escape(type)}_tablecell_${CSS.escape(item.type)}${CSS.escape(item.id)}]`,
+  );
+  if (path?.innerHTML) {
+    cell.innerHTML = path.innerHTML;
+    if (item.wellDetails) {
+      cell.style.whiteSpace = "nowrap";
+    }
+  }
+};
+
+// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+const hideUnwantedLinks = (item: any) => {
+  const ids = [
+    "_fetch_children_",
+    "_fetch_details_",
+    "_details_fetched_",
+    "_hide_grid_",
+    "_show_grid_",
+    "_link_parent_",
+    "_change_thumbnail_label_",
+  ];
+  // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+  ids.map((id) => {
+    const idElement = document.querySelector(`[id=${CSS.escape(item.type)}${id}${CSS.escape(item.id)}]`);
+    if (idElement?.innerHTML) {
+      idElement.innerHTML = "";
+      idElement.outerHTML = "";
+    }
+  });
+};
 
 export default Omero;

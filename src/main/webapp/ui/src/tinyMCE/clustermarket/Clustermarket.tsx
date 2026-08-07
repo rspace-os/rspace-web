@@ -7,11 +7,13 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import type { TFunction } from "i18next";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
+import { getSorting } from "../../util/table";
 import type { UseState } from "../../util/types";
 import { getAllBookingDetails, getAllEquipmentDetails, getBookings } from "./ClustermarketClient";
 import {
@@ -36,11 +38,102 @@ type HeaderCell = {
   numeric: boolean;
   label: string;
 };
-let VISIBLE_HEADER_CELLS: Array<HeaderCell> = [];
-let SELECTED_BOOKINGS: ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> = [];
-export const getSelectedBookings = (): ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> =>
-  SELECTED_BOOKINGS;
-export const getHeaders = (): typeof VISIBLE_HEADER_CELLS => VISIBLE_HEADER_CELLS;
+const makeBookingHeaderCells = (t: TFunction<"workspace">): Array<HeaderCell> => [
+  {
+    id: "bookingID",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.bookingId"),
+  },
+  {
+    id: "equipmentName",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.equipmentName"),
+  },
+  {
+    id: "manufacturer",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.manufacturer"),
+  },
+  {
+    id: "model",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.model"),
+  },
+  {
+    id: "requesterName",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.bookedBy"),
+  },
+  {
+    id: "start_time",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.startTime"),
+  },
+  {
+    id: "duration",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.durationMins"),
+  },
+  {
+    id: "bookingType",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.bookingType"),
+  },
+  {
+    id: "status",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.status"),
+  },
+];
+const makeEquipmentHeaderCells = (t: TFunction<"workspace">): Array<HeaderCell> => [
+  {
+    id: "equipmentID",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.equipmentId"),
+  },
+  {
+    id: "equipmentName",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.equipmentName"),
+  },
+  {
+    id: "manufacturer",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.manufacturer"),
+  },
+  {
+    id: "model",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.model"),
+  },
+  {
+    id: "bookingType",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.bookingType"),
+  },
+  {
+    id: "bookingID",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.lastUse"),
+  },
+  {
+    id: "start_time",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.onDate"),
+  },
+  {
+    id: "requesterName",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.bookedBy"),
+  },
+];
+// Notes CAN be edited for bookings, however, only 3% of people ever add an additional note
+// therefore its OK to just cache notes in the DB along with the other booking details
+const makeMaintenanceNotesCell = (t: TFunction<"workspace">): HeaderCell => ({
+  id: "maintenance_notes",
+  numeric: false,
+  label: t("tinymce.clustermarket.columns.maintenanceNotes"),
+});
 const ORDER_KEY = "clustermarketSearchOrder";
 const ORDER_BY_KEY = "clustermarketSearchOrderBy";
 const DEFAULT_ORDER = Order.asc;
@@ -53,102 +146,6 @@ function Clustermarket({
 }: ClustermarketArgs): React.ReactNode {
   const { t } = useTranslation("workspace");
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const bookingHeaderCells = [
-    {
-      id: "bookingID",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.bookingId"),
-    },
-    {
-      id: "equipmentName",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.equipmentName"),
-    },
-    {
-      id: "manufacturer",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.manufacturer"),
-    },
-    {
-      id: "model",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.model"),
-    },
-    {
-      id: "requesterName",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.bookedBy"),
-    },
-    {
-      id: "start_time",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.startTime"),
-    },
-    {
-      id: "duration",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.durationMins"),
-    },
-    {
-      id: "bookingType",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.bookingType"),
-    },
-    {
-      id: "status",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.status"),
-    },
-  ];
-  const equipmentHeaderCells = [
-    {
-      id: "equipmentID",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.equipmentId"),
-    },
-    {
-      id: "equipmentName",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.equipmentName"),
-    },
-    {
-      id: "manufacturer",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.manufacturer"),
-    },
-    {
-      id: "model",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.model"),
-    },
-    {
-      id: "bookingType",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.bookingType"),
-    },
-    {
-      id: "bookingID",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.lastUse"),
-    },
-    {
-      id: "start_time",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.onDate"),
-    },
-    {
-      id: "requesterName",
-      numeric: false,
-      label: t("tinymce.clustermarket.columns.bookedBy"),
-    },
-  ];
-  // Notes CAN be edited for bookings, however, only 3% of people ever add an additional note
-  // therefore its OK to just cache notes in the DB along with the other booking details
-  const maintenanceNotes = {
-    id: "maintenance_notes",
-    numeric: false,
-    label: t("tinymce.clustermarket.columns.maintenanceNotes"),
-  };
   const [bookings, setBookings]: UseState<Array<BookingAndEquipmentDetails>> = useState(
     [] as Array<BookingAndEquipmentDetails>,
   );
@@ -163,30 +160,13 @@ function Clustermarket({
   const [bookingType, setBookingType] = useLocalStorage("clustermarketBookingType", defaultBookingType);
   const [isMaintenance, setIsMaintenance] = useLocalStorage("clustermarketIsMaintenance", false);
   const [orderBy, setOrderBy] = useLocalStorage(ORDER_BY_KEY, DEFAULT_ORDERBY);
-  VISIBLE_HEADER_CELLS = bookingType === BookingType.EQUIPMENT ? equipmentHeaderCells : bookingHeaderCells;
-  const addMaintanceNotesToHeaders = (headers: typeof VISIBLE_HEADER_CELLS) => {
-    if (!headers.find((header) => header.id === maintenanceNotes.id)) {
-      headers.splice(4, 0, maintenanceNotes);
+  const visibleHeaderCells = useMemo(() => {
+    const headers = bookingType === BookingType.EQUIPMENT ? makeEquipmentHeaderCells(t) : makeBookingHeaderCells(t);
+    if (isMaintenance) {
+      headers.splice(4, 0, makeMaintenanceNotesCell(t));
     }
     return headers;
-  };
-  const removeMaintanceNotesFromHeaders = (headers: typeof VISIBLE_HEADER_CELLS) => {
-    if (headers.find((header) => header.id === maintenanceNotes.id)) {
-      headers.splice(4, 1);
-    }
-    return headers;
-  };
-  const setHeadersByBookingType = (newBookingType: BOOKING_TYPE[keyof BOOKING_TYPE], newIsMaintenance: boolean) => {
-    if (newBookingType === BookingType.EQUIPMENT) {
-      VISIBLE_HEADER_CELLS = newIsMaintenance
-        ? addMaintanceNotesToHeaders(equipmentHeaderCells)
-        : removeMaintanceNotesFromHeaders(equipmentHeaderCells);
-    } else {
-      VISIBLE_HEADER_CELLS = newIsMaintenance
-        ? addMaintanceNotesToHeaders(bookingHeaderCells)
-        : removeMaintanceNotesFromHeaders(bookingHeaderCells);
-    }
-  };
+  }, [bookingType, isMaintenance, t]);
   function handleRequestError(error: {
     message: string;
     response: {
@@ -213,7 +193,6 @@ function Clustermarket({
   }
   const fetchBookings = async () => {
     setSelectedBookingIds([]);
-    setHeadersByBookingType(bookingType, isMaintenance);
     setFetchDone(false);
     setBookings([]);
     setEquipment([]);
@@ -257,9 +236,7 @@ function Clustermarket({
     }
   };
   const handleBookingTypeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newBookingType = event.target.value;
-    setBookingType(newBookingType);
-    setHeadersByBookingType(newBookingType, isMaintenance);
+    setBookingType(event.target.value);
   };
   const handleMaintenanceChange = (checked: boolean) => {
     setIsMaintenance(checked);
@@ -267,19 +244,45 @@ function Clustermarket({
   useEffect(() => {
     void fetchBookings();
   }, [bookingType, isMaintenance]);
-  SELECTED_BOOKINGS = useMemo(() => {
-    const selected_bookings: ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> =
+  const selectedBookings: ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> = useMemo(
+    () =>
       bookingType === BookingType.EQUIPMENT
         ? equipment.filter((item) => selectedBookingIds.includes(item.equipmentID))
-        : bookings.filter((booking) => selectedBookingIds.includes(booking.bookingID));
+        : bookings.filter((booking) => selectedBookingIds.includes(booking.bookingID)),
+    [selectedBookingIds],
+  );
+
+  useEffect(() => {
     window.parent.postMessage(
       {
-        mceAction: selected_bookings.length > 0 ? "enable" : "disable",
+        mceAction: selectedBookings.length > 0 ? "enable" : "disable",
       },
       "*",
     );
-    return selected_bookings;
-  }, [selectedBookingIds]);
+  }, [selectedBookings]);
+
+  useEffect(() => {
+    const editor = window.parent.tinymce?.activeEditor;
+    if (!editor) return;
+    const insertSelectedBookings = () => {
+      if (selectedBookings.length > 0) {
+        const clustermarketTable = createTinyMceTable(
+          selectedBookings,
+          visibleHeaderCells,
+          order,
+          orderBy,
+          clustermarket_web_url,
+          t,
+        );
+        editor.execCommand("mceInsertContent", false, clustermarketTable.outerHTML);
+      }
+      editor.windowManager.close();
+    };
+    editor.on("clustermarket-insert", insertSelectedBookings);
+    return () => {
+      editor.off("clustermarket-insert", insertSelectedBookings);
+    };
+  }, [selectedBookings, visibleHeaderCells, order, orderBy, clustermarket_web_url, t]);
   if (errorReason !== ErrorReason.None) {
     return <ErrorView errorReason={errorReason} errorMessage={errorMessage} />;
   }
@@ -328,7 +331,7 @@ function Clustermarket({
             <ResultsTable
               clustermarket_web_url={clustermarket_web_url}
               // @ts-expect-error type mismatch
-              visibleHeaderCells={VISIBLE_HEADER_CELLS}
+              visibleHeaderCells={visibleHeaderCells}
               // @ts-expect-error type mismatch
               results={bookingType === BookingType.EQUIPMENT ? equipment : bookings}
               selectedBookingIds={selectedBookingIds}
@@ -353,4 +356,62 @@ function Clustermarket({
     </StyledEngineProvider>
   );
 }
+function createTinyMceTable(
+  selectedBookings: ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails>,
+  visibleHeaderCells: Array<HeaderCell>,
+  order: (typeof Order)[keyof typeof Order],
+  orderBy: string,
+  clustermarketWebUrl: string,
+  t: TFunction<"workspace">,
+) {
+  const clustermarketTable = document.createElement("table");
+  clustermarketTable.setAttribute("data-tableSource", "clustermarket");
+
+  const tableHeader = document.createElement("tr");
+  const headersWithNotes = visibleHeaderCells
+    .slice(0, 4)
+    .concat(
+      [{ id: "notes", numeric: false, label: t("tinymce.clustermarket.columns.notes") }],
+      visibleHeaderCells.slice(4),
+    );
+  headersWithNotes.forEach((cell) => {
+    const columnName = document.createElement("th");
+    columnName.textContent = cell.label;
+    tableHeader.appendChild(columnName);
+  });
+  clustermarketTable.appendChild(tableHeader);
+  selectedBookings
+    .toSorted(getSorting(order, orderBy))
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+    .forEach((booking: any) => {
+      const row = document.createElement("tr");
+
+      headersWithNotes.forEach((headerCell) => {
+        const cell = document.createElement("td");
+
+        const textContent = booking[headerCell.id];
+        if (headerCell.id === "bookingID") {
+          const link = document.createElement("a");
+          link.href = `${clustermarketWebUrl}accounts/${booking.labID}/my_bookings/${booking[headerCell.id]}`;
+          link.target = "_blank";
+          link.rel = "noreferrer";
+          link.text = booking[headerCell.id];
+          cell.appendChild(link);
+        } else if (headerCell.id === "equipmentName") {
+          const link = document.createElement("a");
+          link.href = `${clustermarketWebUrl}accounts/${booking.labID}/equipment/${booking.equipmentID}`;
+          link.target = "_blank";
+          link.rel = "noreferrer";
+          link.text = booking[headerCell.id];
+          cell.appendChild(link);
+        } else if (textContent) cell.textContent = textContent;
+
+        row.appendChild(cell);
+      });
+
+      clustermarketTable.appendChild(row);
+    });
+  return clustermarketTable;
+}
+
 export default Clustermarket;
