@@ -8,7 +8,6 @@ import com.researchspace.model.collection.CollectionDescription.Relationship;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionFieldType.InputKind;
 import com.researchspace.model.collection.CollectionMutationLimits;
-import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
@@ -124,22 +123,24 @@ public final class ApiV2DocumentParser {
 
     Map<String, Object> values = new LinkedHashMap<>();
     List<Violation> violations = new ArrayList<>();
-    body.fieldNames()
+    body.fields()
         .forEachRemaining(
-            name -> {
-              Field<T, ?> field;
-              try {
-                field = description.requireField(name);
-              } catch (CollectionQueryException ex) {
-                relationshipValue(body.get(name), description, name, operation, values, violations);
+            entry -> {
+              String name = entry.getKey();
+              var field = description.findField(name);
+              if (field.isEmpty()) {
+                relationshipValue(
+                    entry.getValue(), description, name, operation, values, violations);
                 return;
               }
-              if (!field.writableOn(operation)) {
+              Field<T, ?> describedField = field.orElseThrow();
+              if (!describedField.writableOn(operation)) {
                 violations.add(new Violation(name, Reason.READ_ONLY));
                 return;
               }
-              Object value = value(body.get(name), field, violations);
-              if (violations.stream().noneMatch(violation -> name.equals(violation.field()))) {
+              int violationCount = violations.size();
+              Object value = value(entry.getValue(), describedField, violations);
+              if (violations.size() == violationCount) {
                 values.put(name, value);
               }
             });
@@ -184,24 +185,26 @@ public final class ApiV2DocumentParser {
       String errorKey,
       AccessContext inputContext) {
     List<Violation> violations = new ArrayList<>();
-    body.fieldNames()
+    body.fields()
         .forEachRemaining(
-            name -> {
-              try {
-                Field<T, ?> field = description.requireField(name);
-                if (!field.writableOn(operation, inputContext)) {
+            entry -> {
+              String name = entry.getKey();
+              var field = description.findField(name);
+              if (field.isPresent()) {
+                if (!field.orElseThrow().writableOn(operation, inputContext)) {
                   violations.add(new Violation(name, Reason.READ_ONLY));
                 }
-              } catch (CollectionQueryException ex) {
-                try {
-                  Relationship<T> relationship = description.requireRelationship(name);
-                  if (!relationship.writableOn(operation, inputContext)) {
-                    violations.add(new Violation(name, Reason.READ_ONLY));
-                  }
-                } catch (CollectionQueryException ignored) {
-                  // The structural pass already recorded UNKNOWN_FIELD.
-                }
+                return;
               }
+              description
+                  .findRelationship(name)
+                  .ifPresent(
+                      relationship -> {
+                        if (!relationship.writableOn(operation, inputContext)) {
+                          violations.add(new Violation(name, Reason.READ_ONLY));
+                        }
+                      });
+              // The structural pass already recorded an unknown field.
             });
     if (!violations.isEmpty()) {
       throw new DocumentValidationException(errorKey, violations);
@@ -235,19 +238,19 @@ public final class ApiV2DocumentParser {
       WriteOperation operation,
       Map<String, Object> values,
       List<Violation> violations) {
-    Relationship<T> relationship;
-    try {
-      relationship = description.requireRelationship(name);
-    } catch (CollectionQueryException ex) {
+    var relationship = description.findRelationship(name);
+    if (relationship.isEmpty()) {
       violations.add(new Violation(name, Reason.UNKNOWN_FIELD));
       return;
     }
-    if (!relationship.writableOn(operation)) {
+    Relationship<T> describedRelationship = relationship.orElseThrow();
+    if (!describedRelationship.writableOn(operation)) {
       violations.add(new Violation(name, Reason.READ_ONLY));
       return;
     }
-    Object value = relationshipValue(node, relationship, operation, violations);
-    if (violations.stream().noneMatch(violation -> name.equals(violation.field()))) {
+    int violationCount = violations.size();
+    Object value = relationshipValue(node, describedRelationship, operation, violations);
+    if (violations.size() == violationCount) {
       values.put(name, value);
     }
   }

@@ -1,19 +1,35 @@
 package com.researchspace.api.v2.openapi;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import io.swagger.v3.core.util.AnnotationsUtils;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.Explode;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.enums.ParameterStyle;
 import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.media.Schema;
+import java.io.IOException;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -25,6 +41,9 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 final class ApiV2OpenApiAnnotationMerger {
+
+  private static final TypeReference<LinkedHashMap<String, Object>> OBJECT_MAP =
+      new TypeReference<>() {};
 
   private ApiV2OpenApiAnnotationMerger() {}
 
@@ -50,19 +69,16 @@ final class ApiV2OpenApiAnnotationMerger {
           Map<String, Object> generated =
               operation(handler, metadata, schemas, entry.getKey(), endpoints);
           objectMap(paths.computeIfAbsent(path, ignored -> new LinkedHashMap<>()))
-              .put(method.name().toLowerCase(java.util.Locale.ROOT), generated);
+              .put(method.name().toLowerCase(Locale.ROOT), generated);
           ensureTags(document, generated);
         }
       }
     }
   }
 
-  @SuppressWarnings("unchecked")
   private static void ensureTags(Map<String, Object> document, Map<String, Object> operation) {
-    List<Map<String, Object>> documentedTags =
-        (List<Map<String, Object>>) document.computeIfAbsent("tags", ignored -> new ArrayList<>());
-    @SuppressWarnings("unchecked")
-    List<String> operationTags = (List<String>) operation.getOrDefault("tags", List.of());
+    List<Map<String, Object>> documentedTags = mapList(document, "tags");
+    List<String> operationTags = stringList(operation.getOrDefault("tags", List.of()));
     for (String tag : operationTags) {
       boolean present = documentedTags.stream().anyMatch(value -> tag.equals(value.get("name")));
       if (!present) {
@@ -97,13 +113,12 @@ final class ApiV2OpenApiAnnotationMerger {
     AnnotationsUtils.getServers(metadata.servers())
         .ifPresent(
             value ->
-                operation.put(
-                    "servers", Json31.mapper().convertValue(value, java.util.ArrayList.class)));
+                operation.put("servers", Json31.mapper().convertValue(value, ArrayList.class)));
     operation.putAll(AnnotationsUtils.getExtensions(metadata.extensions()));
     if (metadata.security().length > 0) {
       operation.put(
           "security",
-          java.util.Arrays.stream(metadata.security())
+          Arrays.stream(metadata.security())
               .map(requirement -> Map.of(requirement.name(), List.of(requirement.scopes())))
               .toList());
     } else {
@@ -184,16 +199,14 @@ final class ApiV2OpenApiAnnotationMerger {
   private static List<Map<String, Object>> parameters(
       HandlerMethod handler, Operation metadata, Map<String, Object> schemas) {
     List<Map<String, Object>> result = new ArrayList<>();
-    for (io.swagger.v3.oas.annotations.Parameter documented : metadata.parameters()) {
+    for (Parameter documented : metadata.parameters()) {
       if (!documented.hidden()) {
         result.add(documentedParameter(documented, Object.class, schemas));
       }
     }
-    for (java.lang.reflect.Parameter parameter : handler.getMethod().getParameters()) {
-      io.swagger.v3.oas.annotations.Parameter documented =
-          AnnotatedElementUtils.findMergedAnnotation(
-              parameter, io.swagger.v3.oas.annotations.Parameter.class);
-      ParameterLocation location = parameterLocation(parameter, documented);
+    for (var parameter : handler.getMethod().getParameters()) {
+      Parameter documented = AnnotatedElementUtils.findMergedAnnotation(parameter, Parameter.class);
+      ParameterLocation location = parameterLocation(parameter, parameter.getName(), documented);
       if (location == null || (documented != null && documented.hidden())) {
         continue;
       }
@@ -220,16 +233,14 @@ final class ApiV2OpenApiAnnotationMerger {
   }
 
   private static Map<String, Object> documentedParameter(
-      io.swagger.v3.oas.annotations.Parameter documented,
-      Type fallbackType,
-      Map<String, Object> schemas) {
+      Parameter documented, Type fallbackType, Map<String, Object> schemas) {
     if (!documented.ref().isBlank()) {
       return Map.of("$ref", documented.ref());
     }
     Map<String, Object> result = new LinkedHashMap<>();
     putIfText(result, "name", documented.name());
-    if (documented.in() != io.swagger.v3.oas.annotations.enums.ParameterIn.DEFAULT) {
-      result.put("in", documented.in().toString().toLowerCase(java.util.Locale.ROOT));
+    if (documented.in() != ParameterIn.DEFAULT) {
+      result.put("in", documented.in().toString().toLowerCase(Locale.ROOT));
     }
     putIfText(result, "description", documented.description());
     if (documented.required()) {
@@ -244,12 +255,11 @@ final class ApiV2OpenApiAnnotationMerger {
     if (documented.allowReserved()) {
       result.put("allowReserved", true);
     }
-    if (documented.style() != io.swagger.v3.oas.annotations.enums.ParameterStyle.DEFAULT) {
-      result.put("style", documented.style().toString().toLowerCase(java.util.Locale.ROOT));
+    if (documented.style() != ParameterStyle.DEFAULT) {
+      result.put("style", documented.style().toString().toLowerCase(Locale.ROOT));
     }
-    if (documented.explode() != io.swagger.v3.oas.annotations.enums.Explode.DEFAULT) {
-      result.put(
-          "explode", documented.explode() == io.swagger.v3.oas.annotations.enums.Explode.TRUE);
+    if (documented.explode() != Explode.DEFAULT) {
+      result.put("explode", documented.explode() == Explode.TRUE);
     }
     if (!documented.example().isBlank()) {
       result.put("example", parseExample(documented.example()));
@@ -257,7 +267,7 @@ final class ApiV2OpenApiAnnotationMerger {
     if (documented.examples().length > 0) {
       Map<String, Object> examples = new LinkedHashMap<>();
       for (int index = 0; index < documented.examples().length; index++) {
-        io.swagger.v3.oas.annotations.media.ExampleObject example = documented.examples()[index];
+        ExampleObject example = documented.examples()[index];
         String exampleName = example.name().isBlank() ? "example" + (index + 1) : example.name();
         AnnotationsUtils.getExample(example, true)
             .ifPresent(value -> examples.put(exampleName, modelMap(value)));
@@ -278,13 +288,14 @@ final class ApiV2OpenApiAnnotationMerger {
     return result;
   }
 
+  @SuppressWarnings("rawtypes") // swagger-core exposes a raw Schema in this API.
   private static Map<String, Object> annotatedSchema(
       io.swagger.v3.oas.annotations.media.Schema schema,
-      io.swagger.v3.oas.annotations.media.ArraySchema array,
+      ArraySchema array,
       Type fallbackType,
       Map<String, Object> schemas) {
     Components components = new Components();
-    java.util.Optional<? extends io.swagger.v3.oas.models.media.Schema> documented =
+    Optional<? extends Schema> documented =
         AnnotationsUtils.getSchema(
             schema, array, false, rawClass(fallbackType), components, null, true);
     mergeSchemas(schemas, components);
@@ -293,35 +304,31 @@ final class ApiV2OpenApiAnnotationMerger {
         .orElseGet(() -> ApiV2OpenApiSchemas.schemaFor(fallbackType, schemas));
   }
 
-  private static java.util.Optional<Map<String, Object>> requestBody(
+  private static Optional<Map<String, Object>> requestBody(
       HandlerMethod handler,
       Operation metadata,
       RequestMappingInfo mapping,
       Map<String, Object> schemas) {
-    io.swagger.v3.oas.annotations.parameters.RequestBody operationBody = metadata.requestBody();
-    java.lang.reflect.Parameter javaBody = null;
-    for (java.lang.reflect.Parameter parameter : handler.getMethod().getParameters()) {
-      if (parameter.isAnnotationPresent(org.springframework.web.bind.annotation.RequestBody.class)
-          || parameter.isAnnotationPresent(
-              io.swagger.v3.oas.annotations.parameters.RequestBody.class)) {
-        javaBody = parameter;
-        break;
-      }
-    }
+    RequestBody operationBody = metadata.requestBody();
+    var javaBody =
+        Arrays.stream(handler.getMethod().getParameters())
+            .filter(
+                parameter ->
+                    parameter.isAnnotationPresent(
+                            org.springframework.web.bind.annotation.RequestBody.class)
+                        || parameter.isAnnotationPresent(RequestBody.class))
+            .findFirst()
+            .orElse(null);
     boolean explicitlyDocumented =
         !operationBody.description().isBlank()
             || operationBody.required()
             || operationBody.content().length > 0
             || !operationBody.ref().isBlank();
     if (javaBody == null && !explicitlyDocumented) {
-      return java.util.Optional.empty();
+      return Optional.empty();
     }
-    io.swagger.v3.oas.annotations.parameters.RequestBody parameterBody =
-        javaBody == null
-            ? null
-            : javaBody.getAnnotation(io.swagger.v3.oas.annotations.parameters.RequestBody.class);
-    io.swagger.v3.oas.annotations.parameters.RequestBody documented =
-        explicitlyDocumented ? operationBody : parameterBody;
+    RequestBody parameterBody = javaBody == null ? null : javaBody.getAnnotation(RequestBody.class);
+    RequestBody documented = explicitlyDocumented ? operationBody : parameterBody;
     Type type = javaBody == null ? Object.class : javaBody.getParameterizedType();
     Map<String, Object> schema = ApiV2OpenApiSchemas.schemaFor(type, schemas);
     List<String> mediaTypes =
@@ -334,7 +341,7 @@ final class ApiV2OpenApiAnnotationMerger {
     if (documented != null) {
       putIfText(result, "description", documented.description());
       if (!documented.ref().isBlank()) {
-        return java.util.Optional.of(Map.of("$ref", documented.ref()));
+        return Optional.of(Map.of("$ref", documented.ref()));
       }
     }
     result.put("required", documented != null ? documented.required() : true);
@@ -343,52 +350,54 @@ final class ApiV2OpenApiAnnotationMerger {
         documented != null && documented.content().length > 0
             ? annotatedContent(documented.content(), schema, schemas)
             : inferredContent(mediaTypes, schema));
-    return java.util.Optional.of(result);
+    return Optional.of(result);
   }
 
   private static ParameterLocation parameterLocation(
-      java.lang.reflect.Parameter parameter, io.swagger.v3.oas.annotations.Parameter documented) {
+      AnnotatedElement parameter, String parameterName, Parameter documented) {
     PathVariable path = parameter.getAnnotation(PathVariable.class);
     if (path != null) {
       return new ParameterLocation(
-          annotationName(path.name(), path.value(), parameter), "path", true);
+          annotationName(path.name(), path.value(), parameterName), "path", true);
     }
     RequestParam query = parameter.getAnnotation(RequestParam.class);
     if (query != null) {
       return new ParameterLocation(
-          annotationName(query.name(), query.value(), parameter), "query", query.required());
+          annotationName(query.name(), query.value(), parameterName), "query", query.required());
     }
     RequestHeader header = parameter.getAnnotation(RequestHeader.class);
     if (header != null) {
       return new ParameterLocation(
-          annotationName(header.name(), header.value(), parameter), "header", header.required());
+          annotationName(header.name(), header.value(), parameterName),
+          "header",
+          header.required());
     }
     CookieValue cookie = parameter.getAnnotation(CookieValue.class);
     if (cookie != null) {
       return new ParameterLocation(
-          annotationName(cookie.name(), cookie.value(), parameter), "cookie", cookie.required());
+          annotationName(cookie.name(), cookie.value(), parameterName),
+          "cookie",
+          cookie.required());
     }
-    if (documented != null
-        && documented.in() != io.swagger.v3.oas.annotations.enums.ParameterIn.DEFAULT) {
+    if (documented != null && documented.in() != ParameterIn.DEFAULT) {
       return new ParameterLocation(
           documented.name(),
-          documented.in().toString().toLowerCase(java.util.Locale.ROOT),
+          documented.in().toString().toLowerCase(Locale.ROOT),
           documented.required());
     }
     return null;
   }
 
-  private static String annotationName(
-      String name, String value, java.lang.reflect.Parameter parameter) {
-    return !name.isBlank() ? name : !value.isBlank() ? value : parameter.getName();
+  private static String annotationName(String name, String value, String parameterName) {
+    return !name.isBlank() ? name : !value.isBlank() ? value : parameterName;
   }
 
   private static void replaceParameter(
       List<Map<String, Object>> parameters, Map<String, Object> replacement) {
     parameters.removeIf(
         existing ->
-            java.util.Objects.equals(existing.get("name"), replacement.get("name"))
-                && java.util.Objects.equals(existing.get("in"), replacement.get("in")));
+            Objects.equals(existing.get("name"), replacement.get("name"))
+                && Objects.equals(existing.get("in"), replacement.get("in")));
     parameters.add(replacement);
   }
 
@@ -412,7 +421,7 @@ final class ApiV2OpenApiAnnotationMerger {
   private static Object parseExample(String value) {
     try {
       return Json31.mapper().readValue(value, Object.class);
-    } catch (java.io.IOException ex) {
+    } catch (IOException ex) {
       return value;
     }
   }
@@ -429,12 +438,9 @@ final class ApiV2OpenApiAnnotationMerger {
   }
 
   private static Map<String, Object> annotatedContent(
-      io.swagger.v3.oas.annotations.media.Content[] annotations,
-      Map<String, Object> fallbackSchema,
-      Map<String, Object> schemas) {
+      Content[] annotations, Map<String, Object> fallbackSchema, Map<String, Object> schemas) {
     Components components = new Components();
-    io.swagger.v3.oas.models.media.Schema<?> fallback =
-        Json31.mapper().convertValue(fallbackSchema, io.swagger.v3.oas.models.media.Schema.class);
+    Schema<?> fallback = Json31.mapper().convertValue(fallbackSchema, Schema.class);
     Map<String, Object> result =
         modelMap(
             AnnotationsUtils.getContent(
@@ -498,14 +504,35 @@ final class ApiV2OpenApiAnnotationMerger {
     return Map.of("$ref", "#/components/schemas/" + component);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings("unchecked") // Key types are checked immediately before the invariant cast.
   private static Map<String, Object> objectMap(Object value) {
-    return (Map<String, Object>) value;
+    if (!(value instanceof Map<?, ?> map)
+        || map.keySet().stream().anyMatch(key -> !(key instanceof String))) {
+      throw new IllegalArgumentException("Expected an object with string keys");
+    }
+    return (Map<String, Object>) map;
   }
 
-  @SuppressWarnings("unchecked")
   private static Map<String, Object> modelMap(Object value) {
-    return Json31.mapper().convertValue(value, LinkedHashMap.class);
+    return Json31.mapper().convertValue(value, OBJECT_MAP);
+  }
+
+  private static List<Map<String, Object>> mapList(Map<String, Object> parent, String key) {
+    Object value = parent.computeIfAbsent(key, ignored -> new ArrayList<>());
+    if (!(value instanceof List<?> list)) {
+      throw new IllegalArgumentException(key + " must be an array");
+    }
+    List<Map<String, Object>> checked = new ArrayList<>(list.size());
+    list.forEach(item -> checked.add(objectMap(item)));
+    parent.put(key, checked);
+    return checked;
+  }
+
+  private static List<String> stringList(Object value) {
+    if (!(value instanceof List<?> list)) {
+      throw new IllegalArgumentException("Expected an array of strings");
+    }
+    return list.stream().map(String.class::cast).toList();
   }
 
   private static Map<String, Object> map(Object... entries) {

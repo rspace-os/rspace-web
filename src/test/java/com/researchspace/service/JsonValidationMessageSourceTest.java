@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
@@ -46,9 +47,7 @@ class JsonValidationMessageSourceTest {
             "Format is a required field.",
             "must not be null",
             "Title"),
-        violations.stream()
-            .map(ConstraintViolation::getMessage)
-            .collect(java.util.stream.Collectors.toSet()));
+        violations.stream().map(ConstraintViolation::getMessage).collect(Collectors.toSet()));
     validator.close();
   }
 
@@ -66,7 +65,7 @@ class JsonValidationMessageSourceTest {
         Set.of("Limit must not exceed 100.", "Depth must not exceed 10."),
         validator.validate(query).stream()
             .map(ConstraintViolation::getMessage)
-            .collect(java.util.stream.Collectors.toSet()));
+            .collect(Collectors.toSet()));
 
     query.setLimit(0);
     query.setDepth(-1);
@@ -74,7 +73,7 @@ class JsonValidationMessageSourceTest {
         Set.of("Limit must be 1 or greater.", "Depth must be 0 or greater."),
         validator.validate(query).stream()
             .map(ConstraintViolation::getMessage)
-            .collect(java.util.stream.Collectors.toSet()));
+            .collect(Collectors.toSet()));
     validator.close();
   }
 }

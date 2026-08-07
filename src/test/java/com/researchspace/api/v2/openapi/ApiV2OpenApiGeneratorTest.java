@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
@@ -21,6 +22,9 @@ import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.inventory.Instrument;
+import io.swagger.v3.core.util.Json31;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,14 +39,9 @@ class ApiV2OpenApiGeneratorTest {
 
   @BeforeEach
   void setUp() {
-    @SuppressWarnings("unchecked")
-    ResourceOperations<ScheduledMaintenance, Long> maintenanceOperations =
-        mock(ResourceOperations.class);
-    @SuppressWarnings("unchecked")
-    ResourceOperations<User, Long> userOperations = mock(ResourceOperations.class);
-    @SuppressWarnings("unchecked")
-    ResourceOperations<BookingConfiguration, Long> bookingOperations =
-        mock(ResourceOperations.class);
+    ResourceOperations<ScheduledMaintenance, Long> maintenanceOperations = operationsMock();
+    ResourceOperations<User, Long> userOperations = operationsMock();
+    ResourceOperations<BookingConfiguration, Long> bookingOperations = operationsMock();
     ApiV2ResourceSpec<ScheduledMaintenance, Long> maintenance =
         new ApiV2ResourceSpec<>(
             ApiV2MaintenanceResource.DESCRIPTION,
@@ -50,7 +49,7 @@ class ApiV2OpenApiGeneratorTest {
             Long::valueOf,
             "create-error",
             "update-error",
-            java.util.EnumSet.allOf(ResourceOperation.class),
+            EnumSet.allOf(ResourceOperation.class),
             Map.of(
                 ResourceOperation.LIST,
                 OpenApiOperationDocumentation.builder()
@@ -84,7 +83,7 @@ class ApiV2OpenApiGeneratorTest {
             "update-error");
     ApiV2RelationshipTargetSpec<Instrument, Long> instruments =
         new ApiV2RelationshipTargetSpec<>(
-            ApiV2InstrumentResource.DESCRIPTION, (id, actor) -> Optional.empty());
+            ApiV2InstrumentResource.DESCRIPTION, Long.class, (id, actor) -> Optional.empty());
     generator =
         new ApiV2OpenApiGenerator(
             new ApiV2ResourceCatalog(List.of(maintenance, users, bookings), List.of(instruments)),
@@ -96,7 +95,7 @@ class ApiV2OpenApiGeneratorTest {
 
   @Test
   void generatesConcretePathsAndKeepsTargetOnlyResourcesSchemaOnly() {
-    Map<String, Object> document = generator.generate();
+    Map<String, Object> document = document();
     Map<String, Object> paths = objectMap(document.get("paths"));
 
     assertEquals("3.1.0", document.get("openapi"));
@@ -127,7 +126,7 @@ class ApiV2OpenApiGeneratorTest {
 
   @Test
   void generatesOperationSpecificSchemasSecurityAndQueryMetadata() {
-    Map<String, Object> document = generator.generate();
+    Map<String, Object> document = document();
     Map<String, Object> paths = objectMap(document.get("paths"));
     Map<String, Object> collection = objectMap(paths.get("/api/v2/maintenances"));
     Map<String, Object> list = objectMap(collection.get("get"));
@@ -163,8 +162,7 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(List.of("Operations"), list.get("tags"));
     assertEquals("operators", list.get("x-rspace-audience"));
 
-    @SuppressWarnings("unchecked")
-    List<Map<String, Object>> parameters = (List<Map<String, Object>>) list.get("parameters");
+    List<Map<String, Object>> parameters = objectMapList(list.get("parameters"));
     Map<String, Object> where =
         parameters.stream()
             .filter(parameter -> parameter.get("name").equals("where"))
@@ -273,8 +271,7 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals("listMaintenancesAuditEvents", audit.get("operationId"));
     assertEquals(2, ((List<?>) audit.get("security")).size());
     assertTrue(objectMap(audit.get("responses")).containsKey("404"));
-    @SuppressWarnings("unchecked")
-    List<Map<String, Object>> auditParameters = (List<Map<String, Object>>) audit.get("parameters");
+    List<Map<String, Object>> auditParameters = objectMapList(audit.get("parameters"));
     assertEquals(
         List.of("id", "dateFrom", "dateTo", "actions", "page", "limit"),
         auditParameters.stream().map(parameter -> parameter.get("name")).toList());
@@ -284,8 +281,29 @@ class ApiV2OpenApiGeneratorTest {
     return objectMap(objectMap(document.get("components")).get("schemas"));
   }
 
-  @SuppressWarnings("unchecked")
+  private Map<String, Object> document() {
+    return Json31.mapper()
+        .convertValue(generator.generate(), new TypeReference<LinkedHashMap<String, Object>>() {});
+  }
+
+  @SuppressWarnings("unchecked") // Keys are validated before exposing the map view.
   private static Map<String, Object> objectMap(Object value) {
-    return (Map<String, Object>) value;
+    if (!(value instanceof Map<?, ?> map)
+        || map.keySet().stream().anyMatch(key -> !(key instanceof String))) {
+      throw new AssertionError("Expected an object with string keys");
+    }
+    return (Map<String, Object>) map;
+  }
+
+  private static List<Map<String, Object>> objectMapList(Object value) {
+    if (!(value instanceof List<?> list)) {
+      throw new AssertionError("Expected an array");
+    }
+    return list.stream().map(ApiV2OpenApiGeneratorTest::objectMap).toList();
+  }
+
+  @SuppressWarnings("unchecked") // Mockito creates an erased interface mock; ID use is test-owned.
+  private static <T> ResourceOperations<T, Long> operationsMock() {
+    return (ResourceOperations<T, Long>) mock(ResourceOperations.class);
   }
 }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessFunction;
@@ -28,9 +29,11 @@ import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.Test;
 
@@ -111,7 +114,9 @@ class ApiV2RelationshipResolverTest {
             List.of(new ApiV2ResourceSpec<>(nodes, operations, Long::valueOf, "error", "error")),
             List.of(
                 new ApiV2RelationshipTargetSpec<>(
-                    targets, (Long id, User caller) -> Optional.of(new Target(id, "classified")))));
+                    targets,
+                    Long.class,
+                    (Long id, User caller) -> Optional.of(new Target(id, "classified")))));
 
     catalog
         .find("nodes")
@@ -170,7 +175,7 @@ class ApiV2RelationshipResolverTest {
     return catalog.find("nodes").orElseThrow();
   }
 
-  private com.fasterxml.jackson.databind.JsonNode referenceBody(long id) throws Exception {
+  private JsonNode referenceBody(long id) throws Exception {
     return mapper.readTree("{\"target\":{\"relationTo\":\"nodes\",\"value\":" + id + "}}");
   }
 
@@ -233,7 +238,7 @@ class ApiV2RelationshipResolverTest {
   private static final class RecordingNodeOperations implements ResourceOperations<Node, Long> {
 
     private final Map<Long, Node> nodes = new HashMap<>();
-    private final java.util.Set<Long> deniedIds = new java.util.HashSet<>();
+    private final Set<Long> deniedIds = new HashSet<>();
     private ParsedDocument lastDocument;
     private int writeCalls;
     private int readableLookupCalls;

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -125,7 +126,7 @@ class ApiV2AuthenticationInterceptorTest {
 
     assertSame(user, request.getAttribute("user"));
     verify(browserSessionAuthenticator).authenticateIfPresent(request);
-    org.mockito.Mockito.verifyNoInteractions(authenticator);
+    verifyNoInteractions(authenticator);
   }
 
   private static HandlerMethod protectedHandler() throws Exception {

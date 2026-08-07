@@ -131,9 +131,9 @@ public final class AccessContext {
   }
 
   /** Memoizes a derived value for the lifetime of this request. */
-  @SuppressWarnings("unchecked")
-  public <V> V computeOnce(String key, Supplier<V> supplier) {
+  public <V> V computeOnce(String key, Class<V> type, Supplier<? extends V> supplier) {
     Objects.requireNonNull(key, "Memo key");
-    return (V) memo.computeIfAbsent(key, ignored -> supplier.get());
+    Objects.requireNonNull(type, "Memo value type");
+    return type.cast(memo.computeIfAbsent(key, ignored -> supplier.get()));
   }
 }

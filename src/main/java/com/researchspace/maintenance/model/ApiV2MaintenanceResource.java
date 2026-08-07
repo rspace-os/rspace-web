@@ -80,6 +80,7 @@ public record ApiV2MaintenanceResource(
   public static final CollectionDescription<ScheduledMaintenance> DESCRIPTION =
       CollectionDescription.fromApiV2Resource(
           ApiV2MaintenanceResource.class,
+          ScheduledMaintenance.class,
           List.of(),
           List.of(new Sort("startDate", true), new Sort("id", true)),
           ACCESS);

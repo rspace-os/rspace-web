@@ -463,6 +463,11 @@ This setting prevents the query layer from sending the property to Hibernate.
 Use a programmatic `CollectionDescription` for another scalar type. Also use it for a custom
 writer or row-specific field access.
 
+A programmatic writable field can call `defaultValue(value)` to supply a fixed value when a create
+document omits that field. An explicit client value, including an allowed `null`, takes precedence.
+The framework applies this default only on create and publishes it in the create schema. Dynamic
+defaults are not supported yet; apply contextual values in the create operation.
+
 Most annotation options only change OpenAPI. They do not add domain validation. The runtime options
 in the table are exceptions. The manager must enforce all domain rules.
 
@@ -745,7 +750,7 @@ These differences are intentional:
 Declare relationships separately from scalar record components. A relationship specifies these
 items:
 
-- Public name and cardinality.
+- Public name. Relationships currently expose one typed resource reference.
 - Accepted target resource types.
 - Entity reference reader.
 - Accepted create and update forms.

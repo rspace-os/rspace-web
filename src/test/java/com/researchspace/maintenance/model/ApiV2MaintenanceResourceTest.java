@@ -17,6 +17,7 @@ import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
+import com.researchspace.model.collection.CollectionFieldType.InputKind;
 import com.researchspace.model.collection.FilterExpression;
 import java.time.Instant;
 import java.util.Date;
@@ -58,10 +59,10 @@ class ApiV2MaintenanceResourceTest {
   @Test
   void derivesWireAndQueryBehaviorFromFieldTypes() {
     assertEquals(
-        com.researchspace.model.collection.CollectionFieldType.InputKind.STRING,
+        InputKind.STRING,
         ApiV2MaintenanceResource.DESCRIPTION.requireField("startDate").type().inputKind());
     assertEquals(
-        com.researchspace.model.collection.CollectionFieldType.InputKind.NUMBER,
+        InputKind.NUMBER,
         ApiV2MaintenanceResource.DESCRIPTION.requireField("id").type().inputKind());
     assertTrue(
         ApiV2MaintenanceResource.DESCRIPTION

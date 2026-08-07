@@ -72,6 +72,7 @@ public record ApiV2BookingConfigurationResource(
   public static final CollectionDescription<BookingConfiguration> DESCRIPTION =
       CollectionDescription.fromApiV2Resource(
           ApiV2BookingConfigurationResource.class,
+          BookingConfiguration.class,
           List.of(TARGET),
           List.of(new Sort("id", true)),
           ACCESS);

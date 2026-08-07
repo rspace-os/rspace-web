@@ -55,15 +55,14 @@ public final class ResourceRegistry {
                                                 + " resource "
                                                 + target.resourceName());
                                       }
-                                      if (relationship.hasBinding()
-                                          && !relationship
-                                              .idType()
-                                              .javaType()
-                                              .equals(
-                                                  targetDescription
-                                                      .requireField(targetDescription.idField())
-                                                      .type()
-                                                      .javaType())) {
+                                      if (!relationship
+                                          .idType()
+                                          .javaType()
+                                          .equals(
+                                              targetDescription
+                                                  .requireField(targetDescription.idField())
+                                                  .type()
+                                                  .javaType())) {
                                         throw new IllegalArgumentException(
                                             "Relationship target ID type does not match resource "
                                                 + target.resourceName());

@@ -2,6 +2,7 @@ package com.researchspace.api.v2.controller;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
+import com.researchspace.api.v2.throttling.BoundedAllowanceTrackerSource;
 import com.researchspace.core.util.RequestUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
@@ -14,8 +15,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * Derives the throttle bucket key for a REST API v2 request.
  *
  * <p>This runs before authentication, so every key here is caller-supplied and untrusted. Retention
- * is bounded by {@link com.researchspace.api.v2.throttling.BoundedAllowanceTrackerSource} rather
- * than by trusting the key.
+ * is bounded by {@link BoundedAllowanceTrackerSource} rather than by trusting the key.
  */
 public class ApiV2AbstractThrottleInterceptor implements HandlerInterceptor {
 

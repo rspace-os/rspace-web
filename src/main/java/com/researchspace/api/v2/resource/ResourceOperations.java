@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.resource;
 
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
@@ -10,10 +11,9 @@ import java.util.Optional;
 /**
  * Collection-specific domain adapter used by the generic REST v2 CRUD dispatcher.
  *
- * <p>A read-only collection pairs the three read methods with {@link
- * com.researchspace.model.collection.AccessPolicy#readOnly}, which refuses every mutation before
- * dispatch reaches the adapter, so the throws below are unreachable defence rather than the
- * mechanism that makes a collection read-only.
+ * <p>A read-only collection pairs the three read methods with {@link AccessPolicy#readOnly}, which
+ * refuses every mutation before dispatch reaches the adapter, so the throws below are unreachable
+ * defence rather than the mechanism that makes a collection read-only.
  */
 public interface ResourceOperations<T, ID> {
 

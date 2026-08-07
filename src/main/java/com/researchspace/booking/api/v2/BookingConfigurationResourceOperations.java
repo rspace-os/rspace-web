@@ -136,13 +136,16 @@ public final class BookingConfigurationResourceOperations
   }
 
   private static Patch patch(ParsedDocument document) {
-    return new Patch(value(document, "enabled"), value(document, "timezone"), target(document));
+    return new Patch(
+        value(document, "enabled", Boolean.class),
+        value(document, "timezone", String.class),
+        target(document));
   }
 
   private Create create(ParsedDocument document) {
     return new Create(
         (boolean) document.values().getOrDefault("enabled", false),
-        value(document, "timezone"),
+        value(document, "timezone", String.class),
         target(document));
   }
 
@@ -164,8 +167,7 @@ public final class BookingConfigurationResourceOperations
     return new ResolvedBookableTarget(new BookableTargetReference(type, id), entity);
   }
 
-  @SuppressWarnings("unchecked")
-  private static <T> T value(ParsedDocument document, String field) {
-    return (T) document.values().get(field);
+  private static <T> T value(ParsedDocument document, String field, Class<T> type) {
+    return type.cast(document.values().get(field));
   }
 }

@@ -64,7 +64,7 @@ public class ApiRequestThrottlerImpl extends AbstractTokenBucketThrottler
   /*
    * (non-Javadoc)
    *
-   * @see com.researchspace.api.v2.throttling.APIThrottler#proceed()
+   * @see APIRequestThrottler#proceed(String)
    */
   @Override
   public boolean proceed(String userId, Double requestedResourceUnits) {

@@ -6,6 +6,7 @@ import com.researchspace.api.v2.model.ApiV2AuditQuery;
 import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.core.util.DateRangeRestrictor;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.SortOrder;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
@@ -24,6 +25,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -77,7 +79,7 @@ public final class ApiV2AuditLog {
     pagination.setPageNumber((long) query.getPage() - 1);
     pagination.setResultsPerPage(query.getLimit());
     pagination.setOrderBy("date");
-    pagination.setSortOrder(com.researchspace.core.util.SortOrder.DESC);
+    pagination.setSortOrder(SortOrder.DESC);
 
     AuditTarget selected = auditTarget.orElseThrow();
     ISearchResults<AuditTrailSearchResult> results =
@@ -115,7 +117,7 @@ public final class ApiV2AuditLog {
       return Optional.empty();
     }
     List<Method> identifiers =
-        java.util.Arrays.stream(entityType.getMethods())
+        Arrays.stream(entityType.getMethods())
             .filter(method -> method.getAnnotation(AuditTrailIdentifier.class) != null)
             .toList();
     if (identifiers.isEmpty()) {

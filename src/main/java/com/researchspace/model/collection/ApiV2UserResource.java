@@ -53,6 +53,7 @@ public record ApiV2UserResource(
   public static final CollectionDescription<User> DESCRIPTION =
       CollectionDescription.fromApiV2Resource(
           ApiV2UserResource.class,
+          User.class,
           List.of(),
           List.of(new Sort("username", true), new Sort("id", true)),
           AccessPolicy.readOnly(OWN_ROW_UNLESS_SYSADMIN));

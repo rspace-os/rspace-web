@@ -25,6 +25,7 @@ public record ApiV2InstrumentResource(
   public static final CollectionDescription<Instrument> DESCRIPTION =
       CollectionDescription.fromApiV2Resource(
           ApiV2InstrumentResource.class,
+          Instrument.class,
           List.of(),
           List.of(new Sort("id", true)),
           AccessPolicy.readOnly(AccessFunction.authenticated()));

@@ -85,7 +85,7 @@ class ApiV2DocumentParserTest {
   }
 
   @Test
-  void enforcesCreateRequirementsAndSuppliesFieldDefaults() throws Exception {
+  void enforcesCreateRequirementsAndSuppliesFixedFieldDefaults() throws Exception {
     CollectionDescription<TestDocument> description =
         new CollectionDescription<>(
             "testDocuments",
@@ -105,7 +105,7 @@ class ApiV2DocumentParserTest {
                         CollectionFieldTypes.text(10),
                         TestDocument::label,
                         TestDocument::setLabel)
-                    .defaultValue(() -> "default"),
+                    .defaultValue("default"),
                 Field.writable(
                     "active",
                     "active",

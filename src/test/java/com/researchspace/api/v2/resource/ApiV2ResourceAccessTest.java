@@ -5,10 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.core.testutil.CoreTestUtils;
@@ -32,9 +36,13 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.permissions.SecurityLogger;
+import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -94,8 +102,7 @@ class ApiV2ResourceAccessTest {
 
     assertThrows(
         ApiV2AuthenticationException.class, () -> widgets.list(request(null, List.of()), null));
-    verify(operations, org.mockito.Mockito.never())
-        .find(any(), org.mockito.ArgumentMatchers.nullable(User.class));
+    verify(operations, never()).find(any(), nullable(User.class));
   }
 
   @Test
@@ -106,8 +113,7 @@ class ApiV2ResourceAccessTest {
             describe(AccessPolicy.readOnly(AccessFunction.sysadmin()), AccessFunction.anyone()));
 
     assertThrows(
-        org.apache.shiro.authz.AuthorizationException.class,
-        () -> widgets.list(request(null, List.of()), user(false)));
+        AuthorizationException.class, () -> widgets.list(request(null, List.of()), user(false)));
   }
 
   @Test
@@ -121,13 +127,12 @@ class ApiV2ResourceAccessTest {
         describe(
             AccessPolicy.readOnly(documented(context -> AccessResult.allowedWhere(ownRows))),
             AccessFunction.anyone());
-    when(operations.find(any(), org.mockito.ArgumentMatchers.nullable(User.class)))
-        .thenReturn(new ResourcePage<>(List.of(), 0));
+    when(operations.find(any(), nullable(User.class))).thenReturn(new ResourcePage<>(List.of(), 0));
 
     register(widgets).list(request(callerFilter, List.of()), user(false));
 
     ArgumentCaptor<ResourceRequest> captor = ArgumentCaptor.forClass(ResourceRequest.class);
-    verify(operations).find(captor.capture(), org.mockito.ArgumentMatchers.any(User.class));
+    verify(operations).find(captor.capture(), any(User.class));
     FilterExpression applied = captor.getValue().filter();
     assertTrue(applied instanceof FilterExpression.And, "expected a conjunction, got " + applied);
     assertEquals(List.of(ownRows, callerFilter), ((FilterExpression.And) applied).children());
@@ -164,7 +169,7 @@ class ApiV2ResourceAccessTest {
   void unreadableFieldIsOmittedFromOutput() {
     CollectionDescription<Widget> widgets =
         describe(AccessPolicy.readOnly(AccessFunction.anyone()), AccessFunction.sysadmin());
-    when(operations.find(any(), org.mockito.ArgumentMatchers.nullable(User.class)))
+    when(operations.find(any(), nullable(User.class)))
         .thenReturn(new ResourcePage<>(List.of(new Widget(7L, "classified")), 1));
 
     ApiV2ListResult<Map<String, Object>> anonymous =
@@ -184,7 +189,7 @@ class ApiV2ResourceAccessTest {
         describe(
             AccessPolicy.readOnly(AccessFunction.anyone()),
             documented(context -> AccessResult.allowedWhere(constraint)));
-    when(operations.find(any(), org.mockito.ArgumentMatchers.nullable(User.class)))
+    when(operations.find(any(), nullable(User.class)))
         .thenReturn(new ResourcePage<>(List.of(new Widget(7L, "classified")), 1));
 
     assertThrows(
@@ -202,17 +207,15 @@ class ApiV2ResourceAccessTest {
             describe(
                 AccessPolicy.readOnly(documented(context -> AccessResult.allowedWhere(ownRows))),
                 AccessFunction.anyone()));
-    when(operations.find(any(), org.mockito.ArgumentMatchers.nullable(User.class)))
-        .thenReturn(new ResourcePage<>(List.of(), 0));
+    when(operations.find(any(), nullable(User.class))).thenReturn(new ResourcePage<>(List.of(), 0));
 
     assertThrows(
-        jakarta.ws.rs.NotFoundException.class,
-        () -> widgets.get("9", request(null, List.of()), user(false)));
+        NotFoundException.class, () -> widgets.get("9", request(null, List.of()), user(false)));
 
     // findById would have ignored the constraint entirely and handed back row 9.
-    verify(operations, org.mockito.Mockito.never()).findById(any(), any());
+    verify(operations, never()).findById(any(), any());
     ArgumentCaptor<ResourceRequest> captor = ArgumentCaptor.forClass(ResourceRequest.class);
-    verify(operations).find(captor.capture(), org.mockito.ArgumentMatchers.any(User.class));
+    verify(operations).find(captor.capture(), any(User.class));
     assertEquals(
         List.of(ownRows, new FilterExpression.Comparison("id", Operator.EQUAL, List.of(9L), false)),
         ((FilterExpression.And) captor.getValue().filter()).children());
@@ -223,8 +226,7 @@ class ApiV2ResourceAccessTest {
   void relationshipAuthorizationFailureIsAudited() {
     User actor = user(false);
     when(actor.getUsername()).thenReturn("ada");
-    when(operations.findById(7L, actor))
-        .thenThrow(new org.apache.shiro.authz.AuthorizationException("denied"));
+    when(operations.findById(7L, actor)).thenThrow(new AuthorizationException("denied"));
     ApiV2ResourceRegistration<Widget, Long> widgets =
         register(describe(AccessPolicy.readOnly(AccessFunction.anyone()), AccessFunction.anyone()));
     StringAppenderForTestLogging securityLog =
@@ -253,7 +255,7 @@ class ApiV2ResourceAccessTest {
                 AccessFunction.anyone()));
 
     assertThrows(IllegalStateException.class, () -> widgets.update("9", null, user(false)));
-    verify(operations, org.mockito.Mockito.never()).update(any(), any(), any());
+    verify(operations, never()).update(any(), any(), any());
   }
 
   /**
@@ -284,16 +286,12 @@ class ApiV2ResourceAccessTest {
             AccessPolicy.authenticated());
     Widget saved = new Widget(7L, "hunter2");
     when(operations.create(any(), any())).thenReturn(saved);
-    when(operations.delete(any(), any())).thenReturn(java.util.Optional.of(saved));
+    when(operations.delete(any(), any())).thenReturn(Optional.of(saved));
     ApiV2ResourceRegistration<Widget, Long> registration = register(widgets);
     User actor = user(true);
 
     Map<String, Object> created =
-        registration.create(
-            new com.fasterxml.jackson.databind.ObjectMapper()
-                .createObjectNode()
-                .put("secret", "hunter2"),
-            actor);
+        registration.create(new ObjectMapper().createObjectNode().put("secret", "hunter2"), actor);
     Map<String, Object> deleted = registration.delete("7", actor);
 
     // Even a sysadmin must not see it: never() ignores the caller entirely.
@@ -318,8 +316,7 @@ class ApiV2ResourceAccessTest {
                     && (context.user().hasRole(Role.SYSTEM_ROLE)
                         || context.targets(context.user().getId())));
     ApiV2ResourceRegistration<Widget, Long> widgets = register(secretWritableBy(sysadminOrSelf));
-    when(operations.update(any(), any(), any()))
-        .thenReturn(java.util.Optional.of(new Widget(7L, "changed")));
+    when(operations.update(any(), any(), any())).thenReturn(Optional.of(new Widget(7L, "changed")));
 
     User owner = user(false);
     when(owner.getId()).thenReturn(7L);
@@ -344,14 +341,12 @@ class ApiV2ResourceAccessTest {
     assertEquals(notWritable.getViolations(), refused.getViolations());
   }
 
-  private static com.fasterxml.jackson.databind.JsonNode secretBody() {
-    return new com.fasterxml.jackson.databind.ObjectMapper()
-        .createObjectNode()
-        .put("secret", "changed");
+  private static JsonNode secretBody() {
+    return new ObjectMapper().createObjectNode().put("secret", "changed");
   }
 
   private static AccessFunction documented(AccessFunction function) {
-    return AccessFunction.documented("Test access rule.", java.util.Set.of(), function);
+    return AccessFunction.documented("Test access rule.", Set.of(), function);
   }
 
   private CollectionDescription<Widget> secretWritableBy(AccessFunction writeAccess) {
@@ -410,9 +405,7 @@ class ApiV2ResourceAccessTest {
     when(operations.create(any(), any())).thenReturn(new Widget(7L, "allowed"));
 
     assertEquals(7L, widgets.create(secretBody("allowed"), actor).get("id"));
-    assertThrows(
-        org.apache.shiro.authz.AuthorizationException.class,
-        () -> widgets.create(secretBody("denied"), actor));
+    assertThrows(AuthorizationException.class, () -> widgets.create(secretBody("denied"), actor));
   }
 
   @Test
@@ -458,7 +451,7 @@ class ApiV2ResourceAccessTest {
         2,
         widgets
             .createMany(
-                new com.fasterxml.jackson.databind.ObjectMapper()
+                new ObjectMapper()
                     .readTree("{\"docs\":[{\"secret\":\"first\"},{\"secret\":\"second\"}]}"),
                 user(false))
             .docs()
@@ -500,10 +493,8 @@ class ApiV2ResourceAccessTest {
         DocumentValidationException.class, () -> widgets.create(secretBody("denied"), actor));
   }
 
-  private static com.fasterxml.jackson.databind.JsonNode secretBody(String value) {
-    return new com.fasterxml.jackson.databind.ObjectMapper()
-        .createObjectNode()
-        .put("secret", value);
+  private static JsonNode secretBody(String value) {
+    return new ObjectMapper().createObjectNode().put("secret", value);
   }
 
   @Test
@@ -511,7 +502,7 @@ class ApiV2ResourceAccessTest {
   void sysadminSeesTheRestrictedField() {
     CollectionDescription<Widget> widgets =
         describe(AccessPolicy.readOnly(AccessFunction.anyone()), AccessFunction.sysadmin());
-    when(operations.find(any(), org.mockito.ArgumentMatchers.nullable(User.class)))
+    when(operations.find(any(), nullable(User.class)))
         .thenReturn(new ResourcePage<>(List.of(new Widget(7L, "classified")), 1));
 
     Map<String, Object> document =

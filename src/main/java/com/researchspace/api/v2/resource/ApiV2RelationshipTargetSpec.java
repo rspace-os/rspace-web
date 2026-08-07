@@ -10,6 +10,7 @@ import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.model.permissions.SecurityLogger;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
@@ -17,13 +18,16 @@ import org.slf4j.LoggerFactory;
 
 /** A readable relationship target that does not expose generic CRUD routes. */
 public record ApiV2RelationshipTargetSpec<T, ID>(
-    CollectionDescription<T> description, BiFunction<ID, User, Optional<T>> findReadableById)
+    CollectionDescription<T> description,
+    Class<ID> idType,
+    BiFunction<ID, User, Optional<T>> findReadableById)
     implements ApiV2ReadableResourceTarget {
 
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
   public ApiV2RelationshipTargetSpec {
     Objects.requireNonNull(description, "Resource description");
+    Objects.requireNonNull(idType, "ID type");
     Objects.requireNonNull(findReadableById, "Readable resource lookup");
   }
 
@@ -55,14 +59,13 @@ public record ApiV2RelationshipTargetSpec<T, ID>(
   }
 
   private FieldSelection readableFields(AccessContext context) {
-    java.util.Set<String> unreadable = description.unreadableFields(context);
+    Set<String> unreadable = description.unreadableFields(context);
     return unreadable.isEmpty() ? FieldSelection.all() : FieldSelection.exclude(unreadable);
   }
 
-  @SuppressWarnings("unchecked")
   private ID castId(Object id) {
     try {
-      return (ID) description.requireField(description.idField()).type().javaType().cast(id);
+      return idType.cast(id);
     } catch (ClassCastException ex) {
       throw new IllegalArgumentException("Relationship target ID has the wrong type", ex);
     }

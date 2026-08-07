@@ -208,9 +208,8 @@ public class WebConfig extends WebMvcConfigurationSupport {
 
   /**
    * Puts the v2 problem resolver ahead of Spring's own resolvers. Needed because {@link
-   * com.researchspace.api.v2.controller.ApiV2ControllerAdvice} is package-selected and so is
-   * skipped for exceptions raised before a handler is chosen; see {@link
-   * ApiV2PreHandlerProblemResolver}.
+   * ApiV2ControllerAdvice} is package-selected and so is skipped for exceptions raised before a
+   * handler is chosen; see {@link ApiV2PreHandlerProblemResolver}.
    */
   @Override
   protected void extendHandlerExceptionResolvers(List<HandlerExceptionResolver> resolvers) {

@@ -1,18 +1,8 @@
 package com.researchspace.model.collection;
 
-import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -25,7 +15,8 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Getter;
 
 /**
@@ -63,11 +54,6 @@ public final class CollectionDescription<T> {
     EXISTS
   }
 
-  public enum RelationshipCardinality {
-    TO_ONE,
-    TO_MANY
-  }
-
   /** One typed scalar attribute exposed by a collection. */
   public static final class Field<T, V> {
 
@@ -81,7 +67,7 @@ public final class CollectionDescription<T> {
     private final Set<WriteOperation> writeOperations;
     @Getter private final boolean requiredOnCreate;
     private final boolean nullable;
-    private final Supplier<? extends V> defaultValue;
+    private final V defaultValue;
     private final AccessFunction readAccess;
     private final AccessFunction createAccess;
     private final AccessFunction updateAccess;
@@ -98,7 +84,7 @@ public final class CollectionDescription<T> {
         Set<WriteOperation> writeOperations,
         boolean requiredOnCreate,
         boolean nullable,
-        Supplier<? extends V> defaultValue,
+        V defaultValue,
         AccessFunction readAccess,
         AccessFunction createAccess,
         AccessFunction updateAccess,
@@ -170,22 +156,8 @@ public final class CollectionDescription<T> {
      * invalid as a {@code where}/{@code sort} target; it never narrows which rows are returned.
      */
     public Field<T, V> readableBy(AccessFunction access) {
-      return new Field<>(
-          name,
-          property,
-          type,
-          filterable,
-          sortable,
-          reader,
-          writer,
-          writeOperations,
-          requiredOnCreate,
-          nullable,
-          defaultValue,
-          Objects.requireNonNull(access, "Field read access"),
-          createAccess,
-          updateAccess,
-          openApi);
+      return copyAccess(
+          Objects.requireNonNull(access, "Field read access"), createAccess, updateAccess, openApi);
     }
 
     public AccessFunction readAccess() {
@@ -203,75 +175,22 @@ public final class CollectionDescription<T> {
      * <p>Prefer {@link #creatableBy} or {@link #updatableBy} when the operations differ.
      */
     public Field<T, V> writableBy(AccessFunction access) {
-      return new Field<>(
-          name,
-          property,
-          type,
-          filterable,
-          sortable,
-          reader,
-          writer,
-          writeOperations,
-          requiredOnCreate,
-          nullable,
-          defaultValue,
-          readAccess,
-          Objects.requireNonNull(access, "Field write access"),
-          access,
-          openApi);
+      return copyAccess(
+          readAccess, Objects.requireNonNull(access, "Field write access"), access, openApi);
     }
 
     public Field<T, V> creatableBy(AccessFunction access) {
-      return new Field<>(
-          name,
-          property,
-          type,
-          filterable,
-          sortable,
-          reader,
-          writer,
-          writeOperations,
-          requiredOnCreate,
-          nullable,
-          defaultValue,
-          readAccess,
-          Objects.requireNonNull(access, "Field create access"),
-          updateAccess,
-          openApi);
+      return copyAccess(
+          readAccess, Objects.requireNonNull(access, "Field create access"), updateAccess, openApi);
     }
 
     public Field<T, V> updatableBy(AccessFunction access) {
-      return new Field<>(
-          name,
-          property,
-          type,
-          filterable,
-          sortable,
-          reader,
-          writer,
-          writeOperations,
-          requiredOnCreate,
-          nullable,
-          defaultValue,
-          readAccess,
-          createAccess,
-          Objects.requireNonNull(access, "Field update access"),
-          openApi);
+      return copyAccess(
+          readAccess, createAccess, Objects.requireNonNull(access, "Field update access"), openApi);
     }
 
     public Field<T, V> documented(OpenApiSchemaDocumentation documentation) {
-      return new Field<>(
-          name,
-          property,
-          type,
-          filterable,
-          sortable,
-          reader,
-          writer,
-          writeOperations,
-          requiredOnCreate,
-          nullable,
-          defaultValue,
+      return copyAccess(
           readAccess,
           createAccess,
           updateAccess,
@@ -288,32 +207,31 @@ public final class CollectionDescription<T> {
     }
 
     public Field<T, V> required() {
-      return copy(writeOperations, true, nullable, defaultValue, filterable, sortable);
+      return copy(writeOperations, true, nullable, filterable, sortable);
     }
 
     public Field<T, V> allowNull() {
-      return copy(writeOperations, requiredOnCreate, true, defaultValue, filterable, sortable);
+      return copy(writeOperations, requiredOnCreate, true, filterable, sortable);
     }
 
-    public Field<T, V> defaultValue(Supplier<? extends V> value) {
-      return copy(
-          writeOperations,
-          requiredOnCreate,
-          nullable,
-          Objects.requireNonNull(value),
-          filterable,
-          sortable);
+    /**
+     * Supplies this fixed value when the field is omitted from a create document. Dynamic defaults
+     * are intentionally not supported yet.
+     */
+    public Field<T, V> defaultValue(V value) {
+      V checked = type.javaType().cast(Objects.requireNonNull(value, "Field default value"));
+      return copy(writeOperations, requiredOnCreate, nullable, filterable, sortable, checked);
     }
 
     public Field<T, V> writeOnlyOn(WriteOperation... operations) {
       Objects.requireNonNull(operations, "Write operations");
       Set<WriteOperation> selected = EnumSet.noneOf(WriteOperation.class);
       Collections.addAll(selected, operations);
-      return copy(selected, requiredOnCreate, nullable, defaultValue, filterable, sortable);
+      return copy(selected, requiredOnCreate, nullable, filterable, sortable);
     }
 
-    private Field<T, V> withQueryCapabilities(boolean filterable, boolean sortable) {
-      return copy(writeOperations, requiredOnCreate, nullable, defaultValue, filterable, sortable);
+    Field<T, V> withQueryCapabilities(boolean filterable, boolean sortable) {
+      return copy(writeOperations, requiredOnCreate, nullable, filterable, sortable);
     }
 
     public String name() {
@@ -337,7 +255,7 @@ public final class CollectionDescription<T> {
           nullable,
           writeOperations.isEmpty(),
           writeOperations,
-          hasDefaultValue(),
+          defaultValue == null ? null : type.serialize(defaultValue),
           operators(),
           supportsWildcards(),
           sortable(),
@@ -359,8 +277,8 @@ public final class CollectionDescription<T> {
       return sortable && type.sortable();
     }
 
-    public FilterSelector filterSelector() {
-      return new FilterSelector.Property(name, property, type);
+    public FilterSelector<T> filterSelector() {
+      return new FilterSelector.Property<>(name, property, type);
     }
 
     public boolean writableOn(WriteOperation operation) {
@@ -375,15 +293,8 @@ public final class CollectionDescription<T> {
       return defaultValue != null;
     }
 
-    public Object defaultValue() {
-      if (defaultValue == null) {
-        return null;
-      }
-      V value = defaultValue.get();
-      if (value == null && !nullable) {
-        throw new IllegalStateException("Non-nullable field default returned null");
-      }
-      return value == null ? null : type.javaType().cast(value);
+    public V defaultValue() {
+      return defaultValue;
     }
 
     public Object parse(String value) {
@@ -416,9 +327,18 @@ public final class CollectionDescription<T> {
         Set<WriteOperation> operations,
         boolean required,
         boolean acceptsNull,
-        Supplier<? extends V> suppliedDefault,
         boolean filterable,
         boolean sortable) {
+      return copy(operations, required, acceptsNull, filterable, sortable, defaultValue);
+    }
+
+    private Field<T, V> copy(
+        Set<WriteOperation> operations,
+        boolean required,
+        boolean acceptsNull,
+        boolean filterable,
+        boolean sortable,
+        V suppliedDefault) {
       return new Field<>(
           name,
           property,
@@ -435,6 +355,29 @@ public final class CollectionDescription<T> {
           createAccess,
           updateAccess,
           openApi);
+    }
+
+    private Field<T, V> copyAccess(
+        AccessFunction reads,
+        AccessFunction creates,
+        AccessFunction updates,
+        OpenApiSchemaDocumentation documentation) {
+      return new Field<>(
+          name,
+          property,
+          type,
+          filterable,
+          sortable,
+          reader,
+          writer,
+          writeOperations,
+          requiredOnCreate,
+          nullable,
+          defaultValue,
+          reads,
+          creates,
+          updates,
+          documentation);
     }
 
     private void validateConfiguration() {
@@ -482,7 +425,6 @@ public final class CollectionDescription<T> {
     private final String name;
     private final CollectionFieldType<?> idType;
     private final List<RelationshipTarget<?>> targets;
-    private final RelationshipCardinality cardinality;
     private final Function<T, ?> reader;
     private final SplitReferenceBinding<T, ?, ?> binding;
     private final Set<WriteOperation> writeOperations;
@@ -498,7 +440,6 @@ public final class CollectionDescription<T> {
         String name,
         CollectionFieldType<?> idType,
         List<RelationshipTarget<?>> targets,
-        RelationshipCardinality cardinality,
         Function<T, ?> reader,
         SplitReferenceBinding<T, ?, ?> binding,
         Set<WriteOperation> writeOperations,
@@ -510,11 +451,10 @@ public final class CollectionDescription<T> {
         boolean selfReferenceAllowed,
         OpenApiSchemaDocumentation openApi) {
       this.name = requireText(name, "Relationship name");
-      this.idType = idType;
+      this.idType = Objects.requireNonNull(idType, "Relationship ID type");
       this.targets = validateTargets(targets);
-      this.cardinality = Objects.requireNonNull(cardinality, "Relationship cardinality");
       this.reader = Objects.requireNonNull(reader, "Relationship reader");
-      this.binding = binding;
+      this.binding = Objects.requireNonNull(binding, "Reference binding");
       this.writeOperations = Field.immutableOperations(writeOperations);
       this.inputForms = immutableInputForms(inputForms);
       this.requiredOnCreate = requiredOnCreate;
@@ -524,16 +464,6 @@ public final class CollectionDescription<T> {
       this.selfReferenceAllowed = selfReferenceAllowed;
       this.openApi = Objects.requireNonNull(openApi, "OpenAPI relationship documentation");
       validateConfiguration();
-    }
-
-    public static <T, R> Relationship<T> toOne(
-        String name, String targetResource, Function<T, R> reader) {
-      return legacy(name, targetResource, RelationshipCardinality.TO_ONE, reader);
-    }
-
-    public static <T, R> Relationship<T> toMany(
-        String name, String targetResource, Function<T, ? extends Collection<R>> reader) {
-      return legacy(name, targetResource, RelationshipCardinality.TO_MANY, reader);
     }
 
     /** Creates a read-only to-one reference whose target collection is fixed. */
@@ -560,7 +490,6 @@ public final class CollectionDescription<T> {
           name,
           Objects.requireNonNull(idType, "Relationship ID type"),
           List.of(new RelationshipTarget<>(targetResource, targetResource, targetType)),
-          RelationshipCardinality.TO_ONE,
           binding::read,
           binding,
           Set.of(),
@@ -583,7 +512,6 @@ public final class CollectionDescription<T> {
           name,
           Objects.requireNonNull(idType, "Relationship ID type"),
           List.copyOf(targets),
-          RelationshipCardinality.TO_ONE,
           binding::read,
           binding,
           EnumSet.allOf(WriteOperation.class),
@@ -594,30 +522,6 @@ public final class CollectionDescription<T> {
               Set.of(RelationshipInputForm.OBJECT)),
           false,
           false,
-          AccessFunction.inherited(),
-          AccessFunction.inherited(),
-          false,
-          OpenApiSchemaDocumentation.EMPTY);
-    }
-
-    private static <T> Relationship<T> legacy(
-        String name,
-        String targetResource,
-        RelationshipCardinality cardinality,
-        Function<T, ?> reader) {
-      RelationshipTarget<String> target =
-          new RelationshipTarget<>(targetResource, targetResource, null, Object.class);
-      return new Relationship<>(
-          name,
-          null,
-          List.of(target),
-          cardinality,
-          reader,
-          null,
-          Set.of(),
-          Map.of(),
-          false,
-          true,
           AccessFunction.inherited(),
           AccessFunction.inherited(),
           false,
@@ -705,13 +609,7 @@ public final class CollectionDescription<T> {
     }
 
     public Relationship<T> documented(OpenApiSchemaDocumentation documentation) {
-      return new Relationship<>(
-          name,
-          idType,
-          targets,
-          cardinality,
-          reader,
-          binding,
+      return copy(
           writeOperations,
           inputForms,
           requiredOnCreate,
@@ -726,18 +624,7 @@ public final class CollectionDescription<T> {
       return name;
     }
 
-    /** Retained for monomorphic relationship callers. */
-    public String targetResource() {
-      if (targets.size() != 1) {
-        throw new IllegalStateException("Polymorphic relationship has more than one target");
-      }
-      return targets.get(0).resourceName();
-    }
-
     public CollectionFieldType<?> idType() {
-      if (idType == null) {
-        throw new IllegalStateException("Legacy relationship has no reference ID type");
-      }
       return idType;
     }
 
@@ -760,7 +647,7 @@ public final class CollectionDescription<T> {
     }
 
     public ResourceReference<?, ?> parseGlobalReference(String value) {
-      if (idType == null || value == null || !GlobalIdentifier.isValid(value)) {
+      if (value == null || !GlobalIdentifier.isValid(value)) {
         throw new IllegalArgumentException("Invalid relationship global ID");
       }
       GlobalIdentifier identifier = new GlobalIdentifier(value);
@@ -777,19 +664,8 @@ public final class CollectionDescription<T> {
           target.storedKind(), idType.parse(String.valueOf(identifier.getDbId())));
     }
 
-    public RelationshipCardinality cardinality() {
-      return cardinality;
-    }
-
     public SplitReferenceBinding<T, ?, ?> binding() {
-      if (binding == null) {
-        throw new IllegalStateException("Legacy relationship has no split reference binding");
-      }
       return binding;
-    }
-
-    public boolean hasBinding() {
-      return binding != null;
     }
 
     public boolean writableOn(WriteOperation operation) {
@@ -824,23 +700,20 @@ public final class CollectionDescription<T> {
       return selfReferenceAllowed;
     }
 
-    public List<FilterSelector> filterSelectors() {
-      if (binding == null) {
-        return List.of();
-      }
-      List<FilterSelector> selectors = new ArrayList<>();
+    public List<FilterSelector<T>> filterSelectors() {
+      List<FilterSelector<T>> selectors = new ArrayList<>();
       if (targets.stream().allMatch(target -> target.globalIdPrefix() != null)) {
         selectors.add(
-            new FilterSelector.RelationshipPart(
+            new FilterSelector.RelationshipPart<>(
                 name, this, FilterSelector.RelationshipComponent.ROOT));
       }
       if (binding.hasKindProperty()) {
         selectors.add(
-            new FilterSelector.RelationshipPart(
+            new FilterSelector.RelationshipPart<>(
                 name + ".relationTo", this, FilterSelector.RelationshipComponent.KIND));
       }
       selectors.add(
-          new FilterSelector.RelationshipPart(
+          new FilterSelector.RelationshipPart<>(
               name + ".value", this, FilterSelector.RelationshipComponent.ID));
       return List.copyOf(selectors);
     }
@@ -857,11 +730,22 @@ public final class CollectionDescription<T> {
         AccessFunction reads,
         AccessFunction writes,
         boolean permitsSelf) {
+      return copy(operations, forms, required, acceptsNull, reads, writes, permitsSelf, openApi);
+    }
+
+    private Relationship<T> copy(
+        Set<WriteOperation> operations,
+        Map<WriteOperation, Set<RelationshipInputForm>> forms,
+        boolean required,
+        boolean acceptsNull,
+        AccessFunction reads,
+        AccessFunction writes,
+        boolean permitsSelf,
+        OpenApiSchemaDocumentation documentation) {
       return new Relationship<>(
           name,
           idType,
           targets,
-          cardinality,
           reader,
           binding,
           operations,
@@ -871,19 +755,10 @@ public final class CollectionDescription<T> {
           reads,
           writes,
           permitsSelf,
-          openApi);
+          documentation);
     }
 
     private void validateConfiguration() {
-      if (binding == null) {
-        if (idType != null || !writeOperations.isEmpty() || !inputForms.isEmpty()) {
-          throw new IllegalArgumentException("Legacy relationship cannot accept reference input");
-        }
-        return;
-      }
-      if (cardinality != RelationshipCardinality.TO_ONE) {
-        throw new IllegalArgumentException("Writable polymorphic relationships must be to-one");
-      }
       Objects.requireNonNull(idType.javaType(), "Relationship ID Java type");
       if (requiredOnCreate && !writeOperations.contains(WriteOperation.CREATE)) {
         throw new IllegalArgumentException("Required relationship must be writable on create");
@@ -949,7 +824,7 @@ public final class CollectionDescription<T> {
       boolean nullable,
       boolean readOnly,
       Set<WriteOperation> writeOperations,
-      boolean hasDefaultValue,
+      Object defaultValue,
       Set<Operator> filterOperators,
       boolean supportsWildcards,
       boolean sortable,
@@ -964,7 +839,6 @@ public final class CollectionDescription<T> {
       String name,
       List<String> targetResources,
       Map<String, String> globalIdPrefixesByTarget,
-      RelationshipCardinality cardinality,
       boolean requiredOnCreate,
       boolean nullable,
       boolean readOnly,
@@ -999,7 +873,7 @@ public final class CollectionDescription<T> {
   private final Class<T> entityType;
   private final Map<String, Field<T, ?>> fields;
   private final Map<String, Relationship<T>> relationships;
-  private final Map<String, FilterSelector> filterSelectors;
+  private final Map<String, FilterSelector<T>> filterSelectors;
   private final String idField;
   private final List<Sort> defaultSort;
   private final AccessPolicy accessPolicy;
@@ -1065,7 +939,7 @@ public final class CollectionDescription<T> {
         });
     this.relationships = Collections.unmodifiableMap(relationshipsByName);
 
-    Map<String, FilterSelector> selectors = new LinkedHashMap<>();
+    Map<String, FilterSelector<T>> selectors = new LinkedHashMap<>();
     this.fields.values().stream()
         .filter(field -> !field.operators().isEmpty())
         .map(Field::filterSelector)
@@ -1106,36 +980,22 @@ public final class CollectionDescription<T> {
 
   /** Describes an annotated resource whose every operation requires an authenticated caller. */
   public static <T> CollectionDescription<T> fromApiV2Resource(
-      Class<?> resourceType, List<Relationship<T>> relationships, List<Sort> defaultSort) {
+      Class<?> resourceType,
+      Class<T> entityType,
+      List<Relationship<T>> relationships,
+      List<Sort> defaultSort) {
     return fromApiV2Resource(
-        resourceType, relationships, defaultSort, AccessPolicy.authenticated());
+        resourceType, entityType, relationships, defaultSort, AccessPolicy.authenticated());
   }
 
   public static <T> CollectionDescription<T> fromApiV2Resource(
       Class<?> resourceType,
+      Class<T> entityType,
       List<Relationship<T>> relationships,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy) {
-    ApiV2ResourceDefinition definition = resourceType.getAnnotation(ApiV2ResourceDefinition.class);
-    if (definition == null || !resourceType.isRecord()) {
-      throw new IllegalArgumentException(
-          "Resource definition must be an annotated record: " + resourceType.getName());
-    }
-    @SuppressWarnings("unchecked")
-    Class<T> entityType = (Class<T>) definition.entity();
-    Map<String, PropertyDescriptor> properties = properties(entityType);
-    List<Relationship<T>> describedRelationships = new ArrayList<>(relationships);
-    if (definition.auditFields()) {
-      describedRelationships.addAll(auditRelationships(properties));
-    }
-    return new CollectionDescription<>(
-        definition.name(),
-        entityType,
-        fieldsFrom(resourceType, entityType, definition, properties),
-        describedRelationships,
-        definition.id(),
-        defaultSort,
-        accessPolicy);
+    return AnnotatedCollectionDescriptionFactory.create(
+        resourceType, entityType, relationships, defaultSort, accessPolicy);
   }
 
   public String resourceName() {
@@ -1152,6 +1012,10 @@ public final class CollectionDescription<T> {
       throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
     }
     return field;
+  }
+
+  public Optional<Field<T, ?>> findField(String name) {
+    return Optional.ofNullable(fields.get(name));
   }
 
   public void requireSelectableField(String name) {
@@ -1193,12 +1057,12 @@ public final class CollectionDescription<T> {
     return relationship;
   }
 
-  public java.util.Optional<Relationship<T>> findRelationship(String name) {
-    return java.util.Optional.ofNullable(relationships.get(name));
+  public Optional<Relationship<T>> findRelationship(String name) {
+    return Optional.ofNullable(relationships.get(name));
   }
 
-  public FilterSelector requireFilterSelector(String name) {
-    FilterSelector selector = filterSelectors.get(name);
+  public FilterSelector<T> requireFilterSelector(String name) {
+    FilterSelector<T> selector = filterSelectors.get(name);
     if (selector == null) {
       throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
     }
@@ -1273,8 +1137,8 @@ public final class CollectionDescription<T> {
     if (relationship != null) {
       return relationship.readAccess().allowsField(context);
     }
-    FilterSelector selector = filterSelectors.get(field);
-    if (selector instanceof FilterSelector.RelationshipPart relationshipPart) {
+    FilterSelector<T> selector = filterSelectors.get(field);
+    if (selector instanceof FilterSelector.RelationshipPart<?> relationshipPart) {
       return relationshipPart.relationship().readAccess().allowsField(context);
     }
     return false;
@@ -1282,9 +1146,9 @@ public final class CollectionDescription<T> {
 
   /** Field names this request may not read, for narrowing a {@link FieldSelection}. */
   public Set<String> unreadableFields(AccessContext context) {
-    return java.util.stream.Stream.concat(fields.keySet().stream(), relationships.keySet().stream())
+    return Stream.concat(fields.keySet().stream(), relationships.keySet().stream())
         .filter(name -> !fieldReadable(name, context))
-        .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
   public ResourceSchema schema() {
@@ -1302,7 +1166,6 @@ public final class CollectionDescription<T> {
                             .map(RelationshipTarget::resourceName)
                             .toList(),
                         globalIdPrefixesByTarget(relationship.targets()),
-                        relationship.cardinality(),
                         relationship.isRequiredOnCreate(),
                         relationship.nullable(),
                         !relationship.writableOn(WriteOperation.CREATE)
@@ -1356,20 +1219,18 @@ public final class CollectionDescription<T> {
   }
 
   Object readFilterValue(T entity, String selectorName) {
-    FilterSelector selector = requireFilterSelector(selectorName);
-    if (selector instanceof FilterSelector.Property property) {
+    FilterSelector<T> selector = requireFilterSelector(selectorName);
+    if (selector instanceof FilterSelector.Property<?> property) {
       return fields.get(property.name()).reader.apply(entity);
     }
-    FilterSelector.RelationshipPart part = (FilterSelector.RelationshipPart) selector;
-    @SuppressWarnings("unchecked")
-    Relationship<T> relationship = (Relationship<T>) part.relationship();
-    Object value = readRelationship(entity, relationship);
+    Object value = selector.readRelationship(entity);
     if (value == null) {
       return null;
     }
     if (!(value instanceof ResourceReference<?, ?> reference)) {
       throw new IllegalStateException("Relationship filter requires a resource reference");
     }
+    FilterSelector.RelationshipPart<?> part = (FilterSelector.RelationshipPart<?>) selector;
     return switch (part.part()) {
       case ROOT -> reference;
       case KIND -> reference.kind();
@@ -1379,303 +1240,6 @@ public final class CollectionDescription<T> {
 
   Object readSortValue(T entity, String fieldName) {
     return requireField(fieldName).reader.apply(entity);
-  }
-
-  private static <T> List<Field<T, ?>> fieldsFrom(
-      Class<?> resourceType,
-      Class<T> entityType,
-      ApiV2ResourceDefinition definition,
-      Map<String, PropertyDescriptor> properties) {
-    List<Field<T, ?>> fields =
-        new ArrayList<>(
-            Arrays.stream(resourceType.getRecordComponents())
-                .<Field<T, ?>>map(
-                    component -> fieldFrom(resourceType, component, properties, definition.id()))
-                .toList());
-    if (definition.auditFields()) {
-      fields.addAll(auditFields(properties));
-    }
-    return List.copyOf(fields);
-  }
-
-  private static <T> List<Field<T, ?>> auditFields(Map<String, PropertyDescriptor> properties) {
-    List<Field<T, ?>> fields = new ArrayList<>();
-    CollectionDescription.<T, Date>auditProperty(
-            properties, Date.class, "createdAt", "creationDate")
-        .map(
-            source ->
-                auditDateField("createdAt", "Time at which the resource was created.", source))
-        .ifPresent(fields::add);
-    CollectionDescription.<T, Date>auditProperty(
-            properties, Date.class, "updatedAt", "modificationDate")
-        .map(
-            source ->
-                auditDateField("updatedAt", "Time at which the resource was last updated.", source))
-        .ifPresent(fields::add);
-    CollectionDescription.<T>legacyAuditUserField(
-            properties, "createdBy", "Username of the user who created the resource.", "createdBy")
-        .ifPresent(fields::add);
-    CollectionDescription.<T>legacyAuditUserField(
-            properties,
-            "updatedBy",
-            "Username of the user who last updated the resource.",
-            "updatedBy",
-            "lastUpdatedBy",
-            "modifiedBy")
-        .ifPresent(fields::add);
-    return List.copyOf(fields);
-  }
-
-  private static <T> List<Relationship<T>> auditRelationships(
-      Map<String, PropertyDescriptor> properties) {
-    List<Relationship<T>> relationships = new ArrayList<>();
-    CollectionDescription.<T>auditUserRelationship(properties, "createdBy", "createdBy")
-        .ifPresent(relationships::add);
-    CollectionDescription.<T>auditUserRelationship(
-            properties, "updatedBy", "updatedBy", "lastUpdatedBy", "modifiedBy")
-        .ifPresent(relationships::add);
-    return List.copyOf(relationships);
-  }
-
-  private static <T> Field<T, Date> auditDateField(
-      String name, String description, AuditProperty<T, Date> source) {
-    return Field.readOnly(name, source.property(), CollectionFieldTypes.instant(), source.reader())
-        .allowNull()
-        .documented(auditDocumentation(description));
-  }
-
-  private static <T> Optional<Field<T, ?>> legacyAuditUserField(
-      Map<String, PropertyDescriptor> properties,
-      String name,
-      String description,
-      String... candidates) {
-    Method reader = auditReadMethod(properties, candidates);
-    if (reader == null || User.class.isAssignableFrom(reader.getReturnType())) {
-      return Optional.empty();
-    }
-    if (reader.getReturnType() != String.class) {
-      throw new IllegalArgumentException(
-          "Audit property " + reader.getName() + " must return a username or User");
-    }
-    Function<T, String> valueReader = entity -> (String) invoke(reader, entity);
-    return Optional.of(
-        Field.readOnly(
-                name, readerProperty(properties, reader), CollectionFieldTypes.text(), valueReader)
-            .allowNull()
-            .documented(auditDocumentation(description)));
-  }
-
-  private static <T> Optional<Relationship<T>> auditUserRelationship(
-      Map<String, PropertyDescriptor> properties, String name, String... candidates) {
-    Method reader = auditReadMethod(properties, candidates);
-    if (reader == null || !User.class.isAssignableFrom(reader.getReturnType())) {
-      return Optional.empty();
-    }
-    String property = readerProperty(properties, reader);
-    Function<T, User> userReader = entity -> (User) invoke(reader, entity);
-    return Optional.of(
-        Relationship.referenceToOne(
-                name,
-                "users",
-                CollectionFieldTypes.longNumber(),
-                User.class,
-                userReader,
-                User::getId,
-                property + ".id")
-            .allowNull()
-            .documented(
-                auditDocumentation(
-                    name.equals("createdBy")
-                        ? "User who created the resource."
-                        : "User who last updated the resource.")));
-  }
-
-  private static String readerProperty(Map<String, PropertyDescriptor> properties, Method reader) {
-    return properties.entrySet().stream()
-        .filter(entry -> reader.equals(entry.getValue().getReadMethod()))
-        .map(Map.Entry::getKey)
-        .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException("Audit reader is not a bean property"));
-  }
-
-  private static OpenApiSchemaDocumentation auditDocumentation(String description) {
-    return new OpenApiSchemaDocumentation(
-        null, description, null, null, null, null, List.of(), false);
-  }
-
-  private static <T, V> Optional<AuditProperty<T, V>> auditProperty(
-      Map<String, PropertyDescriptor> properties, Class<V> type, String... candidates) {
-    Method reader = auditReadMethod(properties, candidates);
-    if (reader == null) {
-      return Optional.empty();
-    }
-    if (!type.isAssignableFrom(reader.getReturnType())) {
-      throw new IllegalArgumentException(
-          "Audit property " + reader.getName() + " must return " + type.getName());
-    }
-    return Optional.of(
-        new AuditProperty<>(
-            readerProperty(properties, reader), entity -> type.cast(invoke(reader, entity))));
-  }
-
-  private record AuditProperty<T, V>(String property, Function<T, V> reader) {}
-
-  private static Method auditReadMethod(
-      Map<String, PropertyDescriptor> properties, String... candidates) {
-    for (String candidate : candidates) {
-      PropertyDescriptor descriptor = properties.get(candidate);
-      if (descriptor != null && descriptor.getReadMethod() != null) {
-        return descriptor.getReadMethod();
-      }
-    }
-    return null;
-  }
-
-  private static Map<String, PropertyDescriptor> properties(Class<?> entityType) {
-    try {
-      Map<String, PropertyDescriptor> properties = new LinkedHashMap<>();
-      for (PropertyDescriptor property :
-          Introspector.getBeanInfo(entityType).getPropertyDescriptors()) {
-        properties.put(property.getName(), property);
-      }
-      return properties;
-    } catch (IntrospectionException ex) {
-      throw new IllegalArgumentException("Cannot inspect entity " + entityType.getName(), ex);
-    }
-  }
-
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private static <T> Field<T, ?> fieldFrom(
-      Class<?> resourceType,
-      RecordComponent component,
-      Map<String, PropertyDescriptor> properties,
-      String idField) {
-    ApiV2ResourceField definition = component.getAnnotation(ApiV2ResourceField.class);
-    if (definition == null) {
-      throw new IllegalArgumentException(
-          "Missing @ApiV2ResourceField on " + resourceType.getName() + "." + component.getName());
-    }
-    String property = definition.property().isBlank() ? component.getName() : definition.property();
-    PropertyDescriptor descriptor = properties.get(property);
-    Method reader = descriptor == null ? null : descriptor.getReadMethod();
-    if (reader == null) {
-      throw new IllegalArgumentException("Resource field requires a readable property " + property);
-    }
-    requireCompatibleType(component, reader.getReturnType(), "reader");
-
-    CollectionFieldType type = fieldType(component.getType(), definition.maxLength());
-    Function<T, Object> read = entity -> invoke(reader, entity);
-    Method writer = descriptor.getWriteMethod();
-    boolean createWritable =
-        !component.getName().equals(idField)
-            && writer != null
-            && definition.createAccess() != ApiV2ResourceField.AccessPreset.NEVER;
-    boolean updateWritable =
-        !component.getName().equals(idField)
-            && writer != null
-            && definition.updateAccess() != ApiV2ResourceField.AccessPreset.NEVER;
-    Field field;
-    if (!createWritable && !updateWritable) {
-      field = Field.readOnly(component.getName(), property, type, read);
-    } else {
-      requireCompatibleType(component, writer.getParameterTypes()[0], "writer");
-      BiConsumer<T, Object> write = (entity, value) -> invoke(writer, entity, value);
-      field = Field.writable(component.getName(), property, type, read, write);
-      if (createWritable && !updateWritable) {
-        field = field.writeOnlyOn(WriteOperation.CREATE);
-      } else if (!createWritable) {
-        field = field.writeOnlyOn(WriteOperation.UPDATE);
-      }
-    }
-    if (definition.requiredOnCreate()) {
-      field = field.required();
-    }
-    if (definition.nullable()) {
-      field = field.allowNull();
-    }
-    field =
-        field.documented(
-            new OpenApiSchemaDocumentation(
-                definition.title(),
-                definition.description(),
-                definition.example(),
-                definition.pattern(),
-                definition.minimum(),
-                definition.maximum(),
-                List.of(definition.enumValues()),
-                definition.deprecated(),
-                definition.format(),
-                definition.defaultValue(),
-                definition.minLength() < 0 ? null : definition.minLength(),
-                List.of(definition.additionalExamples()),
-                Map.of()));
-    return field
-        .readableBy(definition.readAccess().resolve())
-        .creatableBy(definition.createAccess().resolve())
-        .updatableBy(definition.updateAccess().resolve())
-        .withQueryCapabilities(definition.filterable(), definition.sortable());
-  }
-
-  private static CollectionFieldType<?> fieldType(Class<?> type, int maxLength) {
-    if (type == String.class) {
-      if (maxLength < -1) {
-        throw new IllegalArgumentException("Text maximum length must not be less than -1");
-      }
-      return maxLength == -1 ? CollectionFieldTypes.text() : CollectionFieldTypes.text(maxLength);
-    }
-    if (maxLength != -1) {
-      throw new IllegalArgumentException("Maximum length is only supported for text fields");
-    }
-    if (type == Long.class || type == long.class) {
-      return CollectionFieldTypes.longNumber();
-    }
-    if (type == java.util.Date.class) {
-      return CollectionFieldTypes.instant();
-    }
-    if (type == Boolean.class || type == boolean.class) {
-      return CollectionFieldTypes.bool();
-    }
-    throw new IllegalArgumentException("Unsupported resource field type " + type.getName());
-  }
-
-  private static void requireCompatibleType(
-      RecordComponent component, Class<?> accessorType, String accessor) {
-    if (!boxed(component.getType()).equals(boxed(accessorType))) {
-      throw new IllegalArgumentException(
-          "Resource field "
-              + component.getName()
-              + " does not match entity "
-              + accessor
-              + " type "
-              + accessorType.getName());
-    }
-  }
-
-  private static Class<?> boxed(Class<?> type) {
-    if (type == long.class) {
-      return Long.class;
-    }
-    if (type == boolean.class) {
-      return Boolean.class;
-    }
-    return type;
-  }
-
-  private static Object invoke(Method method, Object target, Object... arguments) {
-    try {
-      return method.invoke(target, arguments);
-    } catch (InvocationTargetException ex) {
-      Throwable cause = ex.getCause();
-      if (cause instanceof RuntimeException runtime) {
-        throw runtime;
-      }
-      if (cause instanceof Error error) {
-        throw error;
-      }
-      throw new IllegalStateException("Resource accessor failed", cause);
-    } catch (IllegalAccessException ex) {
-      throw new IllegalStateException("Cannot invoke resource accessor", ex);
-    }
   }
 
   private static String requireText(String value, String label) {

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.collection.CollectionDescription.Field;
 import com.researchspace.model.collection.CollectionDescription.Relationship;
-import com.researchspace.model.collection.CollectionDescription.RelationshipCardinality;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +32,14 @@ class ResourceRegistryTest {
           Parent.class,
           List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Parent::id)),
           List.of(
-              Relationship.toOne("primaryChild", "children", Parent::primaryChild),
-              Relationship.toMany("children", "children", Parent::children)),
+              Relationship.referenceToOne(
+                  "primaryChild",
+                  "children",
+                  CollectionFieldTypes.longNumber(),
+                  Child.class,
+                  Parent::primaryChild,
+                  Child::id,
+                  "primaryChild.id")),
           "id",
           List.of(new Sort("id", true)));
 
@@ -42,17 +47,13 @@ class ResourceRegistryTest {
   void validatesTheRelationshipGraphAndExpandsRegisteredResources() {
     ResourceRegistry registry = new ResourceRegistry(List.of(PARENTS, CHILDREN));
     Child first = new Child(10L, "first");
-    Parent parent = new Parent(1L, first, List.of(first, new Child(11L, "second")));
+    Parent parent = new Parent(1L, first);
 
     Map<String, Object> document =
         new ResourceRenderer(registry)
-            .render(
-                parent, PARENTS, FieldSelection.all(), IncludeTree.toDepth(PARENTS, registry, 1));
+            .render(parent, PARENTS, FieldSelection.all(), IncludeTree.empty());
 
-    assertEquals(Map.of("id", 10L, "name", "first"), document.get("primaryChild"));
-    assertEquals(
-        List.of(Map.of("id", 10L, "name", "first"), Map.of("id", 11L, "name", "second")),
-        document.get("children"));
+    assertEquals(Map.of("relationTo", "children", "value", 10L), document.get("primaryChild"));
     assertTrue(IncludeTree.toDepth(PARENTS, registry, 0).isEmpty());
     assertEquals(PARENTS, registry.requireEntityType(Parent.class));
   }
@@ -65,7 +66,6 @@ class ResourceRegistryTest {
     assertEquals(Parent.class, schema.entityType());
     assertEquals("integer", schema.fields().get(0).type().jsonType());
     assertEquals("int64", schema.fields().get(0).type().format());
-    assertEquals(RelationshipCardinality.TO_ONE, schema.relationships().get(0).cardinality());
     assertEquals(20, CHILDREN.schema().fields().get(1).type().maxLength());
     assertEquals("A logged-in session is required.", schema.access().readAccess().description());
     assertEquals(
@@ -195,7 +195,7 @@ class ResourceRegistryTest {
 
   private record Child(Long id, String name) {}
 
-  private record Parent(Long id, Child primaryChild, List<Child> children) {}
+  private record Parent(Long id, Child primaryChild) {}
 
   private record Node(Long id, Long targetId) {
     ResourceReference<NodeKind, Long> target() {

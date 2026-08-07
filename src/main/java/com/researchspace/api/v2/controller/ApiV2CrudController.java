@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 /** Supplies the standard Payload-shaped CRUD routes for every registered REST v2 collection. */
 @RestController
@@ -171,8 +172,7 @@ public class ApiV2CrudController {
       String name, ResourceOperation operation) {
     ApiV2ResourceRegistration<?, ?> registration = requireResource(name);
     if (!registration.supports(operation)) {
-      throw new org.springframework.web.server.ResponseStatusException(
-          HttpStatus.METHOD_NOT_ALLOWED);
+      throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
     }
     return registration;
   }
