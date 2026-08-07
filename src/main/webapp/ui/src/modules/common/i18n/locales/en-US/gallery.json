@@ -79,7 +79,7 @@
     },
     "downloadImageForEditingFailed": "Failed to download image for editing",
     "generateDataRecord": "Generate Data Record",
-    "generateDataRecordNotS3": "Only available inside an S3 filestore.",
+    "generateDataRecordNotS3": "Only available inside a writeable S3 filestore.",
     "label": "actions",
     "moveToIrods": "Move to iRODS",
     "moveToS3": "Move to S3",
