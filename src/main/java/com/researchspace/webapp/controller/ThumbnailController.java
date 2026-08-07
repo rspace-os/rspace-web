@@ -62,6 +62,7 @@ public class ThumbnailController extends BaseController {
 
     byte[] data = null;
     final HttpHeaders headers = new HttpHeaders();
+    MediaType contentType = null;
 
     if (SourceType.CHEM.equals(query.getSourceType())) {
       AuditedEntity<RSChemElement> auditedRSChemElement = null;
@@ -76,7 +77,7 @@ public class ThumbnailController extends BaseController {
       if (auditedRSChemElement != null) {
         RSChemElement rsChemElement = auditedRSChemElement.getEntity();
         data = rsChemElement.getDataImage();
-        headers.setContentType(MediaType.IMAGE_PNG);
+        contentType = MediaType.IMAGE_PNG;
       }
     }
 
@@ -89,14 +90,15 @@ public class ThumbnailController extends BaseController {
       try {
         ImageFormat format = Imaging.guessFormat(data);
         String extension = format.getExtension().toLowerCase();
-        if (extension.equals("unknown")) headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        else headers.setContentType(MediaType.valueOf("image/" + extension));
+        if (extension.equals("unknown")) contentType = MediaType.APPLICATION_OCTET_STREAM;
+        else contentType = MediaType.valueOf("image/" + extension);
       } catch (ImageReadException e) {
         // this gets thrown if Imaging.guessFormat tries to read a corrupted image file I guess,
         // but in reality it should just return a format with extension "unknown" if that happens
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        contentType = MediaType.APPLICATION_OCTET_STREAM;
       }
     }
+    ResponseHeaders.setContentTypeAndPreventSniffing(headers, contentType);
     return ResponseEntity.ok()
         .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).mustRevalidate())
         .headers(headers)

@@ -52,6 +52,7 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.ImageProcessor;
+import com.researchspace.service.MediaFileContentValidator;
 import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
@@ -60,6 +61,7 @@ import com.researchspace.service.RecordManager;
 import com.researchspace.service.ThumbnailManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -327,7 +329,6 @@ public class MediaManagerImpl implements MediaManager {
       ImportOverride override)
       throws IOException {
 
-    String mediaFolderType = extractFileTypeFromPath(originalFileName);
     return doSaveMediaFile(
         inputStream,
         mediaFileId,
@@ -338,7 +339,7 @@ public class MediaManagerImpl implements MediaManager {
         caption,
         user,
         override,
-        mediaFolderType);
+        null);
   }
 
   private EcatMediaFile doSaveMediaFile(
@@ -358,6 +359,36 @@ public class MediaManagerImpl implements MediaManager {
       return updateMediaFile(mediaFileId, inputStream, originalFileName, user, null);
     }
 
+    try (InputStream ownedInputStream = new BufferedInputStream(inputStream)) {
+      String resolvedMediaFolderType =
+          mediaFolderType != null ? mediaFolderType : extractFileTypeFromPath(originalFileName);
+      return saveNewMediaFile(
+          ownedInputStream,
+          displayName,
+          originalFileName,
+          fieldId,
+          targetFolder,
+          caption,
+          user,
+          override,
+          resolvedMediaFolderType);
+    }
+  }
+
+  private EcatMediaFile saveNewMediaFile(
+      InputStream inputStream,
+      String displayName,
+      String originalFileName,
+      Long fieldId,
+      Folder targetFolder,
+      String caption,
+      User user,
+      ImportOverride override,
+      String mediaFolderType)
+      throws IOException {
+    inputStream =
+        MediaFileContentValidator.verifyContentMatchesExtension(inputStream, originalFileName);
+
     log.info("Saving new media file {} into {} ", originalFileName, mediaFolderType);
     // if target folder is wrong type, we'll just put in top level folder, like we do if it;s not
     // specified
@@ -374,41 +405,38 @@ public class MediaManagerImpl implements MediaManager {
 
     String extension = getExtension(originalFileName);
     EcatMediaFile media = null;
-    try (InputStream autoCloseableInputStream = inputStream) {
-      if (mediaFolderType.equals(IMAGES_MEDIA_FLDER_NAME)) {
-        File secureTmpDir = IoUtils.createOrGetSecureTempDirectory().toFile();
-        File tempFile =
-            File.createTempFile(
-                "tmp_file_upload_" + originalFileName, "." + extension, secureTmpDir);
-        try (FileOutputStream fos = new FileOutputStream(tempFile); ) {
-          IOUtils.copy(inputStream, fos);
-          FileProperty fp =
+    if (mediaFolderType.equals(IMAGES_MEDIA_FLDER_NAME)) {
+      File secureTmpDir = IoUtils.createOrGetSecureTempDirectory().toFile();
+      File tempFile =
+          File.createTempFile("tmp_file_upload_" + originalFileName, "." + extension, secureTmpDir);
+      try (FileOutputStream fos = new FileOutputStream(tempFile); ) {
+        IOUtils.copy(inputStream, fos);
+        FileProperty fp;
+        try (FileInputStream tempFileStream = new FileInputStream(tempFile)) {
+          fp =
               fileStore.createAndSaveFileProperty(
-                  mediaFolderType, user, originalFileName, new FileInputStream(tempFile));
-          media =
-              mediaFactory.generateEcatImage(
-                  user, fp, tempFile, extension, originalFileName, override);
-          imageProcessor.transformImageBlobToFileProperty(
-              originalFileName, user, (EcatImage) media);
+                  mediaFolderType, user, originalFileName, tempFileStream);
         }
+        media =
+            mediaFactory.generateEcatImage(
+                user, fp, tempFile, extension, originalFileName, override);
+        imageProcessor.transformImageBlobToFileProperty(originalFileName, user, (EcatImage) media);
+      }
+    } else {
+      FileProperty fp =
+          fileStore.createAndSaveFileProperty(mediaFolderType, user, originalFileName, inputStream);
+      if (mediaFolderType.equals(VIDEO_MEDIA_FLDER_NAME)) {
+        media = mediaFactory.generateEcatVideo(user, fp, extension, originalFileName, override);
+      } else if (mediaFolderType.equals(AUDIO_MEDIA_FLDER_NAME)) {
+        media = mediaFactory.generateEcatAudio(user, fp, extension, originalFileName, override);
+      } else if (mediaFolderType.equals(CHEMISTRY_MEDIA_FLDER_NAME)) {
+        media =
+            mediaFactory.generateEcatChemistryFile(user, fp, extension, originalFileName, override);
       } else {
-        FileProperty fp =
-            fileStore.createAndSaveFileProperty(
-                mediaFolderType, user, originalFileName, inputStream);
-        if (mediaFolderType.equals(VIDEO_MEDIA_FLDER_NAME)) {
-          media = mediaFactory.generateEcatVideo(user, fp, extension, originalFileName, override);
-        } else if (mediaFolderType.equals(AUDIO_MEDIA_FLDER_NAME)) {
-          media = mediaFactory.generateEcatAudio(user, fp, extension, originalFileName, override);
-        } else if (mediaFolderType.equals(CHEMISTRY_MEDIA_FLDER_NAME)) {
-          media =
-              mediaFactory.generateEcatChemistryFile(
-                  user, fp, extension, originalFileName, override);
-        } else {
-          // this will also include DMPs, which are always added to the top-level folder.
-          media =
-              mediaFactory.generateEcatDocument(
-                  user, fp, extension, mediaFolderType, originalFileName, override);
-        }
+        // this will also include DMPs, which are always added to the top-level folder.
+        media =
+            mediaFactory.generateEcatDocument(
+                user, fp, extension, mediaFolderType, originalFileName, override);
       }
     }
     if (media == null) {
@@ -464,6 +492,16 @@ public class MediaManagerImpl implements MediaManager {
       Long mediaFileId, InputStream inputStream, String updatedFileName, User user, String lockId)
       throws IOException {
 
+    try (InputStream ownedInputStream = new BufferedInputStream(inputStream)) {
+      return updateMediaFileWithOwnedStream(
+          mediaFileId, ownedInputStream, updatedFileName, user, lockId);
+    }
+  }
+
+  private EcatMediaFile updateMediaFileWithOwnedStream(
+      Long mediaFileId, InputStream inputStream, String updatedFileName, User user, String lockId)
+      throws IOException {
+
     BaseRecord recToUpdate =
         recordManager.getRecordWithLazyLoadedProperties(
             mediaFileId, user, new LinkedFieldsToMediaRecordInitPolicy(), true);
@@ -489,6 +527,8 @@ public class MediaManagerImpl implements MediaManager {
               "gallery.errors.extensionChangeNotAllowed",
               new Object[] {oldExtension, newExtension}));
     }
+    inputStream =
+        MediaFileContentValidator.verifyContentMatchesExtension(inputStream, updatedFileName);
 
     log.debug("Updating existing media file {}", mediaFileId);
     String fileType = extractFileTypeFromPath(updatedFileName);
@@ -503,9 +543,10 @@ public class MediaManagerImpl implements MediaManager {
       try (FileOutputStream fos = new FileOutputStream(tempFile); ) {
         IOUtils.copy(inputStream, fos);
 
-        newFileProperty =
-            fileStore.createAndSaveFileProperty(
-                fileType, user, updatedFileName, new FileInputStream(tempFile));
+        try (FileInputStream tempFileStream = new FileInputStream(tempFile)) {
+          newFileProperty =
+              fileStore.createAndSaveFileProperty(fileType, user, updatedFileName, tempFileStream);
+        }
         EcatImage mediaAsImage = (EcatImage) media;
         mediaFactory.updateEcatImageWithUploadedFileDetails(
             mediaAsImage, tempFile, newFileProperty, media.getExtension());

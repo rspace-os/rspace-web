@@ -8,6 +8,7 @@ import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.controller.ResponseHeaders;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import jakarta.servlet.http.HttpServletResponse;
@@ -183,7 +184,7 @@ public class BoxController {
 
     byte[] byteArray = stream.toByteArray();
     try (ByteArrayInputStream in = new ByteArrayInputStream(byteArray)) {
-      response.setContentType("application/octet-stream");
+      ResponseHeaders.setContentTypeAndPreventSniffing(response, "application/octet-stream");
       response.setContentLength((int) byteArray.length);
       response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", name));
       OutputStream outStream = response.getOutputStream();

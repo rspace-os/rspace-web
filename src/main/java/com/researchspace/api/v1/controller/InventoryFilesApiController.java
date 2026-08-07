@@ -16,6 +16,7 @@ import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.webapp.config.WebConfig;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
+import com.researchspace.webapp.controller.ResponseHeaders;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.InternalServerErrorException;
@@ -147,7 +148,7 @@ public class InventoryFilesApiController extends BaseApiInventoryController
       throws IOException {
 
     InventoryFile invFile = doGetInventoryFile(id, user);
-    response.setContentType(invFile.getContentMimeType());
+    ResponseHeaders.setContentTypeAndPreventSniffing(response, invFile.getContentMimeType());
     response.setHeader(
         "Content-Disposition", "attachment; filename=\"" + invFile.getFileName() + "\"");
     InputStream resourceStream = fileStore.retrieve(invFile.getFileProperty()).get();
@@ -170,7 +171,7 @@ public class InventoryFilesApiController extends BaseApiInventoryController
       inventoryFile.setFileType(InventoryFile.InventoryFileType.CHEMICAL);
     }
     if (isChemicalFile(inventoryFile)) {
-      response.setContentType(MediaType.IMAGE_PNG_VALUE);
+      ResponseHeaders.setContentTypeAndPreventSniffing(response, MediaType.IMAGE_PNG_VALUE);
       response.setHeader(
           "Content-Disposition", "attachment; filename=\"" + inventoryFile.getFileName() + "\"");
       try (InputStream is = getChemicalImage(inventoryFile, imageParams);

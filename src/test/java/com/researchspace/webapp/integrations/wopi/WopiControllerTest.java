@@ -177,6 +177,8 @@ public class WopiControllerTest extends SpringTransactionalTest {
     wopiController.getFile(fileId, testUser, req, resp);
     assertEquals(200, resp.getStatus());
     assertEquals("1", resp.getHeader(WopiController.X_WOPI_ITEMVERSION_HEADER));
+    assertEquals("application/octet-stream", resp.getContentType());
+    assertEquals("nosniff", resp.getHeader("X-Content-Type-Options"));
 
     byte[] responseBytes = resp.getContentAsByteArray();
     assertNotNull(responseBytes);

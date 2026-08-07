@@ -13,6 +13,7 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.service.MediaManager;
 import com.researchspace.webapp.controller.BaseController;
+import com.researchspace.webapp.controller.ResponseHeaders;
 import com.researchspace.webapp.controller.StructuredDocumentController;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.ServletInputStream;
@@ -155,6 +156,9 @@ public class WopiController extends BaseController {
 
     EcatMediaFile mediaRecord = getMediaRecordFromFileId(fileId, user);
     resp.addHeader(X_WOPI_ITEMVERSION_HEADER, "" + mediaRecord.getVersion());
+
+    ResponseHeaders.setContentTypeAndPreventSniffing(
+        resp, MediaType.APPLICATION_OCTET_STREAM_VALUE);
 
     FileProperty fileProp = mediaRecord.getFileProperty();
     Optional<FileInputStream> fisOpt = fileStore.retrieve(fileProp);

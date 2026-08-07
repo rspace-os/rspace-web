@@ -27,12 +27,15 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -299,11 +302,61 @@ public class MediaManagerTest extends SpringTransactionalTest {
     assertEquals(doc.getId(), updatedDoc.getId());
     assertEquals(2, updatedDoc.getVersion());
 
-    // extension check should be case-insensitive
+    // extension check should be case-insensitive; the first update closed its stream
+    InputStream secondDocxInputStream =
+        RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("PowerPasteTesting_RSpace.docx");
     EcatMediaFile updatedAgainDoc =
-        mediaMgr.updateMediaFile(doc.getId(), docxInputStream, "NEW_NAME.DOCX", user, null);
+        mediaMgr.updateMediaFile(doc.getId(), secondDocxInputStream, "NEW_NAME.DOCX", user, null);
     assertEquals(doc.getId(), updatedAgainDoc.getId());
     assertEquals(3, updatedAgainDoc.getVersion());
+  }
+
+  @Test
+  public void uploadRejectsNonImageContentWithImageExtension() throws Exception {
+    User user = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(user);
+
+    byte[] jspContent = "<% out.println(\"jsp-probe\"); %>".getBytes(StandardCharsets.UTF_8);
+    AtomicBoolean rejectedStreamClosed = new AtomicBoolean();
+    InputStream rejectedStream =
+        new FilterInputStream(new ByteArrayInputStream(jspContent)) {
+          @Override
+          public void close() throws IOException {
+            rejectedStreamClosed.set(true);
+            super.close();
+          }
+        };
+    assertExceptionThrown(
+        () -> mediaMgr.saveNewImage("image.jpg", rejectedStream, user, null),
+        MediaContentMismatchException.class);
+    assertTrue(rejectedStreamClosed.get());
+
+    AtomicBoolean failingStreamClosed = new AtomicBoolean();
+    InputStream failingStream =
+        new FilterInputStream(new ByteArrayInputStream(jspContent)) {
+          @Override
+          public int read(byte[] bytes, int offset, int length) throws IOException {
+            throw new IOException("simulated upload read failure");
+          }
+
+          @Override
+          public void close() throws IOException {
+            failingStreamClosed.set(true);
+            super.close();
+          }
+        };
+    assertExceptionThrown(
+        () -> mediaMgr.saveNewImage("image.jpg", failingStream, user, null), IOException.class);
+    assertTrue(failingStreamClosed.get());
+
+    // updating an existing image with non-image content is also rejected
+    InputStream pictureIS = RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("Picture1.png");
+    EcatImage image = mediaMgr.saveNewImage("Picture1.png", pictureIS, user, null);
+    assertExceptionThrown(
+        () ->
+            mediaMgr.updateMediaFile(
+                image.getId(), new ByteArrayInputStream(jspContent), "Picture1.png", user, null),
+        MediaContentMismatchException.class);
   }
 
   @Test

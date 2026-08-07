@@ -318,7 +318,7 @@ public class NfsController extends BaseController {
     File parentDir = file.getParentFile();
 
     try (FileInputStream in = new FileInputStream(file)) {
-      response.setContentType("application/octet-stream");
+      ResponseHeaders.setContentTypeAndPreventSniffing(response, "application/octet-stream");
       response.setContentLength((int) file.length());
       response.setHeader(
           "Content-Disposition", String.format("attachment; filename=\"%s\"", file.getName()));
