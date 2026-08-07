@@ -535,7 +535,6 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
               .build());
     }
     metadata.setTerms(terms);
-    metadata.setOtherProperties(new HashMap<>());
     if (archiveConfig.getRaidAssociated() != null) {
       metadata
           .getOtherProperties()
