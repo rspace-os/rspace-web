@@ -70,6 +70,7 @@ describe("SidecarFileDialog", () => {
     renderDialog();
 
     expect(await screen.findByText(PREVIEW.filename)).toBeVisible();
+    // Regex: the field's value is the whole YAML document; match the schema line within it.
     expect(await screen.findByDisplayValue(/ltds-datacite4\.3/)).toBeVisible();
 
     // Preview only: the save endpoint must not be hit.
@@ -84,7 +85,7 @@ describe("SidecarFileDialog", () => {
     const { onClose, refreshListing } = renderDialog();
 
     await screen.findByText(PREVIEW.filename);
-    await user.click(screen.getByRole("button", { name: /gallery:sidecarFile\.save/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:sidecarFile.save" }));
 
     // Synchronize on the user-visible result, not on the request firing.
     // The success toast portals to the body; while the (test-controlled) dialog stays open the
@@ -107,8 +108,8 @@ describe("SidecarFileDialog", () => {
     server.use(handlePreview(500), handleSave(201));
     renderDialog();
 
-    expect(await screen.findByText(/gallery:sidecarFile\.previewFailed/)).toBeVisible();
-    expect(screen.getByRole("button", { name: /gallery:sidecarFile\.save/i })).toBeDisabled();
+    expect(await screen.findByText("gallery:sidecarFile.previewFailed")).toBeVisible();
+    expect(screen.getByRole("button", { name: "gallery:sidecarFile.save" })).toBeDisabled();
     expect(saveBodies).toHaveLength(0);
   });
 });
