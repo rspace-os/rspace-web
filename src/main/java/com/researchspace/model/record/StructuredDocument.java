@@ -35,6 +35,7 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmb
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.RoutingBinderRef;
 
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.model.Group;
@@ -52,7 +53,7 @@ import com.researchspace.model.field.FieldType;
  */
 @Entity
 @Audited
-@Indexed
+@Indexed(routingBinder = @RoutingBinderRef(type = TemporaryDocRoutingBinder.class))
 public class StructuredDocument extends Record implements TaggableElnRecord {
 
 	/** Default name when creating new Structured Document */
