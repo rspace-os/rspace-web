@@ -2159,7 +2159,8 @@ paths:
     post:
       summary: Preview a metadata sidecar for a folder
       description: >
-        Composes a DataCite (`ltds-datacite4.3`) metadata sidecar for the folder
+        Composes a DataCite 4.3 metadata sidecar, in LRZ's `ltds-datacite4.3` YAML
+        convention, for the folder
         at `path` (relative to the filestore root) and returns it without writing
         anything. Auto-populated from the S3 file listing, the current user, and
         the RSpace instance configuration. S3 only; non-S3 backends return
@@ -2193,7 +2194,8 @@ paths:
     post:
       summary: Generate and save a metadata sidecar for a folder
       description: >
-        Composes a DataCite (`ltds-datacite4.3`) metadata sidecar for the folder
+        Composes a DataCite 4.3 metadata sidecar, in LRZ's `ltds-datacite4.3` YAML
+        convention, for the folder
         at `path` and writes it into that folder as `<folder>.sidecar.yaml`
         (or `<bucketName>.sidecar.yaml` at the filestore root), overwriting any
         existing one, recording a `CREATE` audit event. S3 only; non-S3 backends
@@ -4880,8 +4882,8 @@ components:
       example:
         path: XRD-Experiments
     GalleryFilestoreSidecarFile:
-      description: A composed DataCite (`ltds-datacite4.3`) metadata sidecar returned by the
-        sidecar endpoints.
+      description: A composed DataCite 4.3 metadata sidecar (LRZ's `ltds-datacite4.3` YAML
+        convention) returned by the sidecar endpoints.
       properties:
         filename:
           type: string
