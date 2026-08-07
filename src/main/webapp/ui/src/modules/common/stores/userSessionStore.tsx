@@ -96,7 +96,7 @@ export function useActiveSession() {
 }
 
 export function UserSessionBootstrap() {
-  const { data: token } = useOauthTokenQuery();
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const { data: currentUser } = useCurrentUserQuery();
   const upsertSession = useUserSessionStore((state) => state.upsertSession);
 

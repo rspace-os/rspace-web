@@ -72,7 +72,7 @@ export async function getCurrentUser(token: string): Promise<CurrentUser> {
 }
 
 export function useCurrentUserQuery() {
-  const { data: token } = useOauthTokenQuery();
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   return useSuspenseQuery({
     queryKey: currentUserQueryKeys.me(),
     queryFn: () => getCurrentUser(token),
