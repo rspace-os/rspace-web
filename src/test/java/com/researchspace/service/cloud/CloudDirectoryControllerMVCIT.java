@@ -109,6 +109,7 @@ public class CloudDirectoryControllerMVCIT extends RealTransactionSpringTestBase
   }
 
   private ISearchResults<PublicUserList> getUserListFromModel(MvcResult result) {
+    @SuppressWarnings("unchecked")
     ISearchResults<PublicUserList> uui =
         (ISearchResults<PublicUserList>) result.getModelAndView().getModel().get("users");
     return uui;

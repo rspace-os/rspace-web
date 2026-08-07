@@ -78,6 +78,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
   }
 
   @Test
+  @SuppressWarnings({"unchecked"})
   public void testListForms() {
     docToShare = setUpLoginAsPIUserAndCreateADocument();
     // this is a basic document system form
@@ -117,6 +118,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
   private static final String TEST_SEARCH_TERM = "test";
 
   @Test
+  @SuppressWarnings("rawtypes")
   public void testSearchFormsBySearchTerm() {
 
     docToShare = setUpLoginAsPIUserAndCreateADocument();

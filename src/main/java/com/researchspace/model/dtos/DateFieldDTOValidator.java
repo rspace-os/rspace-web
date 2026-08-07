@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos;
 
+import com.researchspace.model.field.DateFieldForm;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -12,15 +13,14 @@ public class DateFieldDTOValidator extends AbstractFieldFormValidator implements
 
   @Override
   public boolean supports(Class<?> clazz) {
-    return DateFieldDTO.class.isAssignableFrom(clazz);
+    return clazz.isAssignableFrom(DateFieldDTO.class);
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
   public void validate(Object target, Errors errors) {
-    if (!(target instanceof DateFieldDTO<?> dto)) {
-      throw new IllegalArgumentException("Target must be a DateFieldDTO");
-    }
     super.validate(target, errors);
+    DateFieldDTO<DateFieldForm> dto = (DateFieldDTO) target;
     SimpleDateFormat df = null;
     try {
       df = new SimpleDateFormat(dto.getDateFormat());

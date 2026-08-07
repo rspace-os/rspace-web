@@ -12,7 +12,6 @@ import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -121,51 +120,23 @@ public class AuditTrailSearchResultCsvGenerator {
   private String generateDescription(AuditTrailSearchResult auditEntry, Map<String, Object> data) {
     String rc = "n/a";
     if (AuditAction.MOVE.equals(auditEntry.getEvent().getAction())) {
-      Map<String, Map<String, Object>> from = nestedObjectMap(data.get("from"));
-      Map<String, Map<String, Object>> to = nestedObjectMap(data.get("to"));
+      @SuppressWarnings({"unchecked", "rawtypes"})
+      Map<String, Map<String, Object>> from = (Map) data.get("from");
+      @SuppressWarnings({"unchecked", "rawtypes"})
+      Map<String, Map<String, Object>> to = (Map) data.get("to");
       if (from != null && to != null) {
         rc = generateMoveDetails(from, to);
       }
 
     } else if (AuditAction.EXPORT.equals(auditEntry.getEvent().getAction())) {
-      List<Map<String, Object>> exportedList = objectMapList(data.get("exported"));
+      @SuppressWarnings({"unchecked", "rawtypes"})
+      List<Map<String, Object>> exportedList = (List) data.get("exported");
       if (!CollectionUtils.isEmpty(exportedList)) {
         rc = generateExportDetails(exportedList);
       }
     }
 
     return rc;
-  }
-
-  private static Map<String, Map<String, Object>> nestedObjectMap(Object value) {
-    if (value == null) {
-      return null;
-    }
-    if (!(value instanceof Map<?, ?> map)) {
-      throw new IllegalArgumentException("Expected an object");
-    }
-    Map<String, Map<String, Object>> result = new LinkedHashMap<>();
-    map.forEach((key, nested) -> result.put(String.class.cast(key), objectMap(nested)));
-    return result;
-  }
-
-  private static List<Map<String, Object>> objectMapList(Object value) {
-    if (value == null) {
-      return null;
-    }
-    if (!(value instanceof List<?> list)) {
-      throw new IllegalArgumentException("Expected an array");
-    }
-    return list.stream().map(AuditTrailSearchResultCsvGenerator::objectMap).toList();
-  }
-
-  private static Map<String, Object> objectMap(Object value) {
-    if (!(value instanceof Map<?, ?> map)) {
-      throw new IllegalArgumentException("Expected an object");
-    }
-    Map<String, Object> result = new LinkedHashMap<>();
-    map.forEach((key, nested) -> result.put(String.class.cast(key), nested));
-    return result;
   }
 
   private String generateExportDetails(List<Map<String, Object>> exportedList) {

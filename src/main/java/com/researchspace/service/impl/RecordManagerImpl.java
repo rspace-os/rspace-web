@@ -207,8 +207,9 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   /** Convenience method to get a subclass of record already cast to the appropriate type. */
+  @SuppressWarnings("unchecked")
   public <T extends Record> T getAsSubclass(long id, Class<T> clazz) {
-    return clazz.cast(recordDao.get(id));
+    return (T) recordDao.get(id);
   }
 
   public Record save(Record record, User user) {

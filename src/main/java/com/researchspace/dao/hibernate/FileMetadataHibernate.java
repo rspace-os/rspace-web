@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
-import org.hibernate.transform.Transformers;
+import org.hibernate.transform.AliasToBeanResultTransformer;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Repository;
 
@@ -68,10 +68,10 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
                 "select sum(fileSize) as usage, fileOwner as username "
                     + "from  FileProperty "
                     + "where fileOwner in (:unames) group by fileOwner order by usage "
-                    + sortOrder,
-                Object[].class)
-            .setTupleTransformer(Transformers.aliasToBean(DatabaseUsageByUserGroupByResult.class))
-            .setParameterList("unames", unames);
+                    + sortOrder)
+            .setParameterList("unames", unames)
+            .setResultTransformer(
+                new AliasToBeanResultTransformer(DatabaseUsageByUserGroupByResult.class));
     return doQuery(pgCrit, query);
   }
 
@@ -128,6 +128,7 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
     return extractSizeFromResult(count);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   /** This is using SQL query so cannot be tested in regular DAO tests, needs real DB test */
   public ISearchResults<DatabaseUsageByGroupGroupByResult> getTotalFileUsageForLabGroups(
@@ -165,10 +166,11 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
 
     List<DatabaseUsageByGroupGroupByResult> results =
         session
-            .createNativeQuery(query, Object[].class)
-            .setTupleTransformer(Transformers.aliasToBean(DatabaseUsageByGroupGroupByResult.class))
+            .createNativeQuery(query)
             .setMaxResults(pgCrit.getResultsPerPage())
             .setFirstResult(pgCrit.getFirstResultIndex())
+            .setResultTransformer(
+                new AliasToBeanResultTransformer(DatabaseUsageByGroupGroupByResult.class))
             .list();
     return new SearchResultsImpl<>(results, pgCrit, count);
   }
@@ -215,8 +217,9 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
     String query = querySB.toString();
 
     return getSession()
-        .createNativeQuery(query, Object[].class)
-        .setTupleTransformer(Transformers.aliasToBean(DatabaseUsageByGroupGroupByResult.class))
+        .createNativeQuery(query)
+        .setResultTransformer(
+            new AliasToBeanResultTransformer(DatabaseUsageByGroupGroupByResult.class))
         .list();
   }
 
@@ -239,9 +242,9 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
                     + "where fileOwner is not null "
                     + "group by fileOwner"
                     + " order by usage "
-                    + sortOrder,
-                Object[].class)
-            .setTupleTransformer(Transformers.aliasToBean(DatabaseUsageByUserGroupByResult.class));
+                    + sortOrder)
+            .setResultTransformer(
+                new AliasToBeanResultTransformer(DatabaseUsageByUserGroupByResult.class));
     return doQuery(pgCrit, query);
   }
 

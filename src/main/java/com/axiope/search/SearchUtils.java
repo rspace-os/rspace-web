@@ -36,7 +36,7 @@ public class SearchUtils {
 
   /** Utility method to sort a specific list using the pagination criteria values. */
   public static <T extends BaseRecord> List<T> sortList(
-      List<T> list, PaginationCriteria<?> paginationCriteria) {
+      List<T> list, PaginationCriteria<BaseRecord> paginationCriteria) {
     if (paginationCriteria != null) {
       String orderBy = paginationCriteria.getOrderBy();
       SortOrder sortOrder = paginationCriteria.getSortOrder();
@@ -67,7 +67,7 @@ public class SearchUtils {
   }
 
   public static <T extends InventoryRecord> List<T> sortInventoryList(
-      List<T> list, PaginationCriteria<?> paginationCriteria) {
+      List<T> list, PaginationCriteria<InventoryRecord> paginationCriteria) {
 
     if (paginationCriteria != null) {
       String orderBy = paginationCriteria.getOrderBy();

@@ -32,17 +32,15 @@ public class StartupListener implements ServletContextListener {
   private static final Logger log = LoggerFactory.getLogger(StartupListener.class);
 
   /** {@inheritDoc} */
+  @SuppressWarnings("unchecked")
   public void contextInitialized(ServletContextEvent event) {
     log.debug("Initializing context...");
     ServletContext context = event.getServletContext();
     // check if the config
     // object already exists
-    Object existingConfig = context.getAttribute(Constants.CONFIG);
-    Map<String, Object> config = new HashMap<>();
-    if (existingConfig instanceof Map<?, ?> existingMap) {
-      existingMap.forEach((key, value) -> config.put(String.class.cast(key), value));
-    } else if (existingConfig != null) {
-      throw new IllegalStateException("Application config attribute must be a map");
+    Map<String, Object> config = (HashMap<String, Object>) context.getAttribute(Constants.CONFIG);
+    if (config == null) {
+      config = new HashMap<>();
     }
     if (context.getInitParameter(Constants.CSS_THEME) != null) {
       config.put(Constants.CSS_THEME, context.getInitParameter(Constants.CSS_THEME));

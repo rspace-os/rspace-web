@@ -43,6 +43,7 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     super.tearDown();
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void copyGalleriesTest() throws Exception {
 
@@ -101,6 +102,7 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
             galleryController.copyGalleries(ids, newNames, new MockPrincipal(other.getUsername())));
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void renameGalleriesTest() throws Exception {
     logoutAndLoginAs(user);
@@ -151,6 +153,7 @@ public class GalleriesCrudopsMVCIT extends MVCTestBase {
     assertFalse(name.equalsIgnoreCase("newname"));
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void deleteGalleriesTest() throws Exception {
     logoutAndLoginAs(user);

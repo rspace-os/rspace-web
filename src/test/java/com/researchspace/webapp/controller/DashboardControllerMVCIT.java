@@ -199,6 +199,7 @@ public class DashboardControllerMVCIT extends MVCTestBase {
     assertNResults(result, 0);
   }
 
+  @SuppressWarnings("unchecked")
   private void assertNResults(MvcResult result, int expectedResults) {
     List<MessageOrRequest> messagesList =
         (List<MessageOrRequest>) result.getModelAndView().getModelMap().get("messages");

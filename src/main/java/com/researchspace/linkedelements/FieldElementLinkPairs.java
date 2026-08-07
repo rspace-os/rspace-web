@@ -38,6 +38,6 @@ public class FieldElementLinkPairs<T extends IFieldLinkableElement> {
   }
 
   public boolean supportsClass(Class<?> clazz) {
-    return genericType.equals(clazz);
+    return genericType.isAssignableFrom(clazz);
   }
 }

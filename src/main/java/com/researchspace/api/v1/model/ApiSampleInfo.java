@@ -138,7 +138,7 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
     if (sample.isSample()) {
       // the cast still needs the real instance: lazy references (e.g. Envers revision reads)
       // are proxies typed to the abstract SampleEntity root
-      Sample nonTemplateSample = unproxy(sample, Sample.class);
+      Sample nonTemplateSample = (Sample) unproxy(sample);
       // may be null if the sample isn't created from a template.
       if (nonTemplateSample.getSTemplate() != null) {
         setTemplateId(nonTemplateSample.getSTemplate().getId());

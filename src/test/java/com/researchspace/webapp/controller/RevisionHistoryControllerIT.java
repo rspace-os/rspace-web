@@ -57,6 +57,7 @@ public class RevisionHistoryControllerIT extends RealTransactionSpringTestBase {
     return new RevisionSearchCriteria();
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @Test(expected = AuthorizationException.class)
   public void testExceptionThrownForUnauthorisedRevisionViewAccess() throws Exception {
 

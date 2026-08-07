@@ -349,19 +349,10 @@ public class NfsController extends BaseController {
   }
 
   /** Retrieves map of NfsClients users is logged into. */
-  @SuppressWarnings("unchecked") // Every entry is validated before exposing the session map.
+  @SuppressWarnings("unchecked")
   public Map<Long, NfsClient> retrieveNfsClientsMapFromSession(HttpServletRequest request) {
-    Object attribute = request.getSession().getAttribute(SESSION_NFS_CLIENTS);
-    if (attribute != null
-        && (!(attribute instanceof Map<?, ?> map)
-            || map.entrySet().stream()
-                .anyMatch(
-                    entry ->
-                        !(entry.getKey() instanceof Long)
-                            || !(entry.getValue() instanceof NfsClient)))) {
-      throw new IllegalStateException("Invalid NFS clients session attribute");
-    }
-    Map<Long, NfsClient> nfsClients = (Map<Long, NfsClient>) attribute;
+    Map<Long, NfsClient> nfsClients =
+        (Map<Long, NfsClient>) request.getSession().getAttribute(SESSION_NFS_CLIENTS);
     if (nfsClients == null) {
       nfsClients = new HashMap<>();
       request.getSession().setAttribute(SESSION_NFS_CLIENTS, nfsClients);

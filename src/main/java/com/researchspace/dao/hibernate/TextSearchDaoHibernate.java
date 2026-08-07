@@ -62,15 +62,16 @@ public class TextSearchDaoHibernate implements TextSearchDao {
   }
 
   @Override
-  public <T> List<T> searchText(String[] fields, String match, Class<T> persistentClass) {
+  @SuppressWarnings("rawtypes")
+  public List searchText(String flds[], String match, Class<?> persistentClass) {
     Session ssn = sessionFactory.getCurrentSession();
 
     SearchSession fullTxt = Search.session(ssn);
     log.debug("Transaction start");
-    List<T> results =
+    List results =
         fullTxt
             .search(persistentClass)
-            .where(f -> f.match().fields(fields).matching(match))
+            .where(f -> f.match().fields(flds).matching(match))
             .fetchAllHits();
 
     log.debug("Transaction commit");

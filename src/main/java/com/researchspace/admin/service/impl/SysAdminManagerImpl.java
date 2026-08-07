@@ -27,6 +27,7 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
   private @Autowired RecordDao recordDao;
   private @Autowired FormDao formDao;
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
   public ISearchResults<UserUsageInfo> getUserUsageInfo(
       User sysadmin, PaginationCriteria<User> pgCrit) {
@@ -137,7 +138,7 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
   }
 
   private ISearchResults<User> getAllUsersInCommunity(Community comm) {
-    PaginationCriteria<User> pgCritTemp = new PaginationCriteria<>();
+    PaginationCriteria pgCritTemp = new PaginationCriteria();
     pgCritTemp.setGetAllResults();
     ISearchResults<User> commUsers = userDao.listUsersInCommunity(comm.getId(), pgCritTemp);
     return commUsers;

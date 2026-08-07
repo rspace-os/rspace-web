@@ -122,14 +122,12 @@ public class BundleTag extends TagSupport {
     return toDevServerUrlStatic(relativePath);
   }
 
+  @SuppressWarnings("unchecked")
   Map<String, String> getEntrypoints() {
     ServletContext servletContext = pageContext.getServletContext();
     Object existing = servletContext.getAttribute(ENTRYPOINTS_CACHE_ATTR);
-    if (existing instanceof Map<?, ?> map) {
-      Map<String, String> cached = new LinkedHashMap<>();
-      map.forEach((key, value) -> cached.put(String.class.cast(key), String.class.cast(value)));
-      servletContext.setAttribute(ENTRYPOINTS_CACHE_ATTR, cached);
-      return cached;
+    if (existing instanceof Map) {
+      return (Map<String, String>) existing;
     }
 
     Map<String, String> loaded = loadEntrypoints(servletContext);
@@ -160,13 +158,11 @@ public class BundleTag extends TagSupport {
     }
   }
 
+  @SuppressWarnings("unchecked")
   Set<String> getRenderedAssetKeys() {
     Object existing = getRequest().getAttribute(RENDERED_ASSETS_ATTR);
-    if (existing instanceof Set<?> set) {
-      Set<String> renderedAssets = new LinkedHashSet<>();
-      set.forEach(value -> renderedAssets.add(String.class.cast(value)));
-      getRequest().setAttribute(RENDERED_ASSETS_ATTR, renderedAssets);
-      return renderedAssets;
+    if (existing instanceof Set) {
+      return (Set<String>) existing;
     }
 
     Set<String> renderedAssets = new LinkedHashSet<>();

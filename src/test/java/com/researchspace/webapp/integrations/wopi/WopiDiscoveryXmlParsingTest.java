@@ -68,11 +68,9 @@ public class WopiDiscoveryXmlParsingTest extends SpringTransactionalTest {
                 + "<wopisrc=WOPI_SOURCE&><IsLicensedUser=BUSINESS_USER&><actnavid=ACTIVITY_NAVIGATION_ID&>"));
     assertThat(viewAction.getRequires(), nullValue());
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     XmlAction editAction =
-        excel.getActions().stream()
-            .filter(act -> act.getName().equals("edit"))
-            .findFirst()
-            .orElseThrow();
+        excel.getActions().stream().filter(act -> act.getName().equals("edit")).findFirst().get();
     assertThat(editAction.getRequires(), is("update"));
 
     // Validate proof keys

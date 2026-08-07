@@ -167,6 +167,7 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
         .getResultList();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public List<Group> searchGroups(String term) {
     return getSession()
@@ -254,6 +255,7 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
     }
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public List<Group> getGroups(Collection<Long> groupIds) {
     if (groupIds.isEmpty()) {
@@ -261,8 +263,7 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
     }
     Session session = getSessionFactory().getCurrentSession();
     return session
-        .createQuery(
-            "from Group g left join fetch g.communities where g.id in :groupIds", Group.class)
+        .createQuery("from Group g left join fetch g.communities where g.id in :groupIds")
         .setParameterList("groupIds", groupIds)
         .list();
   }

@@ -20,6 +20,7 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.stereotype.Repository;
 
 @Repository(value = "folderDao")
+@SuppressWarnings({"unchecked"})
 public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> implements FolderDao {
 
   public FolderDaoHibernateImpl() {
@@ -108,9 +109,7 @@ public class FolderDaoHibernateImpl extends GenericDaoHibernate<Folder, Long> im
   public List<Long> getFolderChildrenIds(Folder fd) {
     Long pid = fd.getId();
     return getSession()
-        .createQuery(
-            "SELECT rtf.record.id FROM RecordToFolder rtf WHERE rtf.folder.id = :parentId",
-            Long.class)
+        .createQuery("SELECT rtf.record.id FROM RecordToFolder rtf WHERE rtf.folder.id = :parentId")
         .setParameter("parentId", pid)
         .list();
   }

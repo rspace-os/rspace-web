@@ -27,11 +27,12 @@ public class NfsDaoHibernate implements NfsDao {
   @Override
   public NfsFileStore getNfsFileStore(Long id) {
     NfsFileStore folder =
-        sessionFactory
-            .getCurrentSession()
-            .createQuery("from NfsFileStore where id=:fileStoreId", NfsFileStore.class)
-            .setParameter("fileStoreId", id)
-            .uniqueResult();
+        (NfsFileStore)
+            sessionFactory
+                .getCurrentSession()
+                .createQuery("from NfsFileStore where id=:fileStoreId")
+                .setParameter("fileStoreId", id)
+                .uniqueResult();
     return folder;
   }
 
@@ -52,21 +53,19 @@ public class NfsDaoHibernate implements NfsDao {
 
   @Override
   public List<NfsFileStore> getFileStores() {
+    @SuppressWarnings("unchecked")
     List<NfsFileStore> fileStores =
-        sessionFactory
-            .getCurrentSession()
-            .createQuery("from NfsFileStore", NfsFileStore.class)
-            .list();
+        sessionFactory.getCurrentSession().createQuery("from NfsFileStore").list();
     return fileStores;
   }
 
   @Override
   public List<NfsFileStore> getUserFileStores(Long userId) {
+    @SuppressWarnings("unchecked")
     List<NfsFileStore> fileStores =
         sessionFactory
             .getCurrentSession()
-            .createQuery(
-                "from NfsFileStore where user.id=:userId and deleted=false", NfsFileStore.class)
+            .createQuery("from NfsFileStore where user.id=:userId and deleted=false")
             .setParameter("userId", userId)
             .list();
     return fileStores;
@@ -74,27 +73,26 @@ public class NfsDaoHibernate implements NfsDao {
 
   @Override
   public List<NfsFileSystem> getFileSystems() {
+    @SuppressWarnings("unchecked")
     List<NfsFileSystem> fileSystems =
-        sessionFactory
-            .getCurrentSession()
-            .createQuery("from NfsFileSystem order by id", NfsFileSystem.class)
-            .list();
+        sessionFactory.getCurrentSession().createQuery("from NfsFileSystem order by id").list();
     return fileSystems;
   }
 
   @Override
   public List<NfsFileSystem> getActiveFileSystems() {
+    @SuppressWarnings("unchecked")
     List<NfsFileSystem> fileSystems =
         sessionFactory
             .getCurrentSession()
-            .createQuery("from NfsFileSystem where disabled=false order by id", NfsFileSystem.class)
+            .createQuery("from NfsFileSystem where disabled=false order by id")
             .list();
     return fileSystems;
   }
 
   @Override
   public NfsFileSystem getNfsFileSystem(Long id) {
-    return sessionFactory.getCurrentSession().get(NfsFileSystem.class, id);
+    return (NfsFileSystem) sessionFactory.getCurrentSession().get(NfsFileSystem.class, id);
   }
 
   @Override

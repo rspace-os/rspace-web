@@ -34,6 +34,7 @@ public class OrganisationDaoHibernate extends GenericDaoHibernate<Organisation, 
     super(Organisation.class);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public List<Organisation> getApprovedOrganisations(String term) {
     String likeTerm = term.toLowerCase();

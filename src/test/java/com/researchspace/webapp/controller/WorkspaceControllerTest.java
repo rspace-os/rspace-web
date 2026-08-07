@@ -345,6 +345,7 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
         .doUserContentUpdates(eq(userMgr.getUserByUsername(mockPrincipal.getName())));
   }
 
+  @SuppressWarnings("unchecked")
   private Long getAValidRecordId() throws Exception {
     setUpCommonMocks();
     workspaceController.listRootFolder(

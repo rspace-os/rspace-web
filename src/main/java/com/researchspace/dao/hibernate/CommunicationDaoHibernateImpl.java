@@ -34,6 +34,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
           CommunicationStatus.REJECTED,
           CommunicationStatus.COMPLETED);
 
+  @SuppressWarnings("unchecked")
   public ISearchResults<MessageOrRequest> getSentRequests(
       User user, PaginationCriteria<MessageOrRequest> pgCrit) {
 
@@ -58,6 +59,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     return findPageOfMessageOrRequestForIds(ids, pgCrit);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public ISearchResults<MessageOrRequest> getActiveRequestsAndMessagesForUser(
       User user, PaginationCriteria<CommunicationTarget> pgCrit, MessageTypeFilter filter) {
@@ -72,7 +74,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   }
 
   private ISearchResults<MessageOrRequest> findPageOfMessageOrRequestForIds(
-      List<Long> ids, PaginationCriteria<?> pgCrit) {
+      List<Long> ids, PaginationCriteria pgCrit) {
 
     // no need to search if there are no results
     if (ids.isEmpty()) {
@@ -83,7 +85,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     List<Long> pageOfIds = getPageFromIdList(ids, pgCrit);
     List<MessageOrRequest> pageOfMessageOrRequests =
         getSession()
-            .createQuery("from MessageOrRequest where id in :ids", MessageOrRequest.class)
+            .createQuery("from MessageOrRequest where id in :ids")
             .setParameterList("ids", pageOfIds)
             .list();
     // re-apply ids ordering
@@ -100,6 +102,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
         user, pgCrit, MessageTypeFilter.DEFAULT_MESSAGE_LISTING);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public ISearchResults<Notification> getNewNotificationsForUser(
       User user, PaginationCriteria<CommunicationTarget> pgCrit) {
@@ -116,7 +119,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     List<Long> pageOfIds = getPageFromIdList(ids, pgCrit);
     List<Notification> notifications =
         getSession()
-            .createQuery("from Notification where id in :ids", Notification.class)
+            .createQuery("from Notification where id in :ids")
             .setParameterList("ids", pageOfIds)
             .list();
     // re-apply ids ordering
@@ -138,6 +141,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     return new NotificationStatus(notificationCount, messageCount, specialMessageCount);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public CommunicationTarget updateStatus(
       Long userId, Long requestId, CommunicationStatus newStatus, String optionalMessage) {
@@ -146,12 +150,11 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
         getSession()
             .createQuery(
                 "from CommunicationTarget where recipient.id=:recipientId and"
-                    + " communication.id=:requestId",
-                CommunicationTarget.class);
+                    + " communication.id=:requestId");
     query.setParameter("recipientId", userId);
     query.setParameter("requestId", requestId);
 
-    CommunicationTarget ct = query.uniqueResult();
+    CommunicationTarget ct = (CommunicationTarget) query.uniqueResult();
     ct.setStatus(newStatus);
     ct.setLastStatusUpdate(new Date());
     // this just overwrites, may need to extend
@@ -159,10 +162,11 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
 
     // update request status anyway
     MessageOrRequest mor =
-        getSession()
-            .createQuery("from MessageOrRequest where id = :id", MessageOrRequest.class)
-            .setParameter("id", ct.getCommunication().getId())
-            .uniqueResult();
+        (MessageOrRequest)
+            getSession()
+                .createQuery("from MessageOrRequest where id = :id")
+                .setParameter("id", ct.getCommunication().getId())
+                .uniqueResult();
     if (mor != null) {
       if (newStatus.isTerminated()) {
         RequestCompletionVotingPolicy completionPolicy = getCompletionPolicy();
@@ -209,7 +213,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
             + " :notificationType)";
 
     return getSession()
-        .createQuery(jpql, Long.class)
+        .createQuery(jpql)
         .setParameter("status", CommunicationStatus.COMPLETED)
         .setParameter("lastStatusUpdate", new Date())
         .setParameter("subjectUserName", subjectUserName)
@@ -242,6 +246,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
         .executeUpdate();
   }
 
+  @SuppressWarnings("unchecked")
   private List<Long> findNotificationsForDeletion(Date olderThan) {
     // notifications can be deleted when all recipients (CommunicationTargets) have marked as read
     String jpql =
@@ -255,12 +260,13 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
             + "           AND ct.lastStatusUpdate < :olderThan)";
 
     return getSession()
-        .createQuery(jpql, Long.class)
+        .createQuery(jpql)
         .setParameter("completedStatus", CommunicationStatus.COMPLETED)
         .setParameter("olderThan", olderThan)
         .getResultList();
   }
 
+  @SuppressWarnings({"unchecked"})
   public ISearchResults<MessageOrRequest> getAllSentAndReceivedSimpleMessagesForUser(
       User user, PaginationCriteria<CommunicationTarget> pgCrit) {
 
@@ -290,9 +296,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     List<Long> pageIds = getPageFromIdList(ids, pgCrit);
     List<MessageOrRequest> allSimpleMessages =
         getSession()
-            .createQuery(
-                "from MessageOrRequest where messageType = :messageType and id in :ids",
-                MessageOrRequest.class)
+            .createQuery("from MessageOrRequest where messageType = :messageType and id in :ids")
             .setParameter("messageType", MessageType.SIMPLE_MESSAGE)
             .setParameterList("ids", pageIds)
             .list();
@@ -338,12 +342,12 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
 
   private Notification getNotificationWithTargets(Long commId) {
     Notification comm =
-        getSession()
-            .createQuery(
-                "from Notification comm left join fetch comm.recipients where comm.id=:id",
-                Notification.class)
-            .setParameter("id", commId)
-            .uniqueResult();
+        (Notification)
+            getSession()
+                .createQuery(
+                    "from Notification comm left join fetch comm.recipients where comm.id=:id")
+                .setParameter("id", commId)
+                .uniqueResult();
     return comm;
   }
 
@@ -352,8 +356,9 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
   }
 
   // Returns empty list so generics not needed
-  private static <T> ISearchResults<T> createEmptyResults(PaginationCriteria<?> pgCrit) {
-    return new SearchResultsImpl<>(Collections.emptyList(), pgCrit, 0);
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private ISearchResults createEmptyResults(PaginationCriteria<?> pgCrit) {
+    return new SearchResultsImpl<MessageOrRequest>(Collections.EMPTY_LIST, pgCrit, 0);
   }
 
   private void initMessageOrRequestProperties(List<MessageOrRequest> mors) {
@@ -369,6 +374,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     }
   }
 
+  @SuppressWarnings("unchecked")
   private List<Long> getNewNotificationDistinctCTIds(
       User user, PaginationCriteria<CommunicationTarget> pgCrit) {
 
@@ -387,6 +393,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
         .list();
   }
 
+  @SuppressWarnings("unchecked")
   private List<Long> getActiveMessageOrRequestDistinctCTIds(
       User user, MessageTypeFilter filter, PaginationCriteria<CommunicationTarget> pgCrit) {
 

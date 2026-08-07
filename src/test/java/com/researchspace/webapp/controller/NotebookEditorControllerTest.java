@@ -232,6 +232,7 @@ public class NotebookEditorControllerTest extends SpringTransactionalTest {
     Boolean canEdit = true;
 
     // override so we can test what happens when no records are returned
+    @SuppressWarnings("unused")
     public void makeEmpty(Boolean isEmpty) {
       this.isEmpty = isEmpty;
     }

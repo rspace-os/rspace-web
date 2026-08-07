@@ -1,5 +1,6 @@
 package com.researchspace.model.dtos;
 
+import com.researchspace.model.field.NumberFieldForm;
 import java.math.BigInteger;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.Errors;
@@ -13,15 +14,14 @@ public class NumberFieldDTOValidator extends AbstractFieldFormValidator implemen
 
   @Override
   public boolean supports(Class<?> clazz) {
-    return NumberFieldDTO.class.isAssignableFrom(clazz);
+    return clazz.isAssignableFrom(NumberFieldDTO.class);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void validate(Object target, Errors errors) {
-    if (!(target instanceof NumberFieldDTO<?> dto)) {
-      throw new IllegalArgumentException("Target must be a NumberFieldDTO");
-    }
     super.validate(target, errors);
+    NumberFieldDTO<NumberFieldForm> dto = (NumberFieldDTO<NumberFieldForm>) target;
 
     boolean decimalOK = true;
     if (!StringUtils.isEmpty(dto.getDecimalPlaces())) {
@@ -86,15 +86,15 @@ public class NumberFieldDTOValidator extends AbstractFieldFormValidator implemen
     }
   }
 
-  private boolean hasDefaultValue(NumberFieldDTO<?> dto) {
+  private boolean hasDefaultValue(NumberFieldDTO<NumberFieldForm> dto) {
     return !StringUtils.isEmpty(dto.getDefaultNumberValue());
   }
 
-  private boolean hasMinValue(NumberFieldDTO<?> dto) {
+  private boolean hasMinValue(NumberFieldDTO<NumberFieldForm> dto) {
     return !StringUtils.isEmpty(dto.getMinNumberValue());
   }
 
-  private boolean hasMaxValue(NumberFieldDTO<?> dto) {
+  private boolean hasMaxValue(NumberFieldDTO<NumberFieldForm> dto) {
     return !StringUtils.isEmpty(dto.getMaxNumberValue());
   }
 

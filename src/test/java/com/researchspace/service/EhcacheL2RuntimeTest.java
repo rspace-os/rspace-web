@@ -97,6 +97,7 @@ public class EhcacheL2RuntimeTest {
   }
 
   @Test
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public void cachedRegionsAcceptHibernateCompositeKeys() throws IOException {
     // The two regions that previously pinned key-type=Long. Putting a non-Long key must not
     // throw - proving Hibernate's BasicCacheKeyImplementation would be accepted at runtime.

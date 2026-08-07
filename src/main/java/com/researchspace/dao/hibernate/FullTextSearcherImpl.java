@@ -111,6 +111,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     this.baseRecordAdapter = baseRecordAdapter;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public ISearchResults<BaseRecord> getSearchedElnRecords(SearchConfig searchConfig)
       throws SearchQueryParseException {
@@ -126,9 +127,8 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
       throw new SearchQueryParseException(e);
     }
     if (hits.isEmpty()) {
-      PaginationCriteria<?> criteria = luceneSearchConfig.getPaginationCriteria();
-      return new SearchResultsImpl<>(
-          List.of(), criteria.getPageNumber().intValue(), 0L, criteria.getResultsPerPage());
+      return SearchResultsImpl.emptyResult(
+          (PaginationCriteria<BaseRecord>) luceneSearchConfig.getPaginationCriteria());
     }
 
     ISearchResults<BaseRecord> recordHits =
@@ -161,6 +161,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   }
 
   /** Does final filtering on results retrieved by Lucene */
+  @SuppressWarnings("unchecked")
   private List<BaseRecord> filterAndSortQueryList(
       List<IFieldLinkableElement> hits, LuceneSrchCfg srchConfig) throws IOException {
     List<BaseRecord> hibernateBaseRecordList = new ArrayList<>();
@@ -228,7 +229,9 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     // When we retrieve only results from LuceneFTsearchIndices.
     // We don't need order the results.
     if (!hibernateBaseRecordList.isEmpty()) {
-      SearchUtils.sortList(resultList, srchConfig.getPaginationCriteria());
+      PaginationCriteria<BaseRecord> baseRecPgCrit =
+          (PaginationCriteria<BaseRecord>) srchConfig.getPaginationCriteria();
+      SearchUtils.sortList(resultList, baseRecPgCrit);
     }
 
     return resultList;
@@ -266,6 +269,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
    *
    * @return List<IFieldLinkableElement> found elements
    */
+  @SuppressWarnings("unchecked")
   // All @Indexed entity types that participate in ELN full-text search.
   // Mirrors the original Hibernate Search 5 scope of BaseRecord subclasses + EcatCommentItem.
   private static final List<Class<? extends IFieldLinkableElement>> ELN_SEARCH_CLASSES =
@@ -308,18 +312,21 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     return getAttachmentList(config, term, false);
   }
 
+  @SuppressWarnings("unchecked")
   private List<BaseRecord> getAttachmentList(LuceneSrchCfg config, String term, boolean getAbsolute)
       throws IOException {
     if (term.startsWith(SearchConstants.NATIVE_LUCENE_PREFIX)) {
       term = term.substring(2);
     }
 
+    PaginationCriteria<BaseRecord> workspacePgCrit =
+        (PaginationCriteria<BaseRecord>) config.getPaginationCriteria();
     return fileSearcher
-        .searchContents(
-            term, baseRecordCriteria(config.getPaginationCriteria()), config.getAuthenticatedUser())
+        .searchContents(term, workspacePgCrit, config.getAuthenticatedUser())
         .getResults();
   }
 
+  @SuppressWarnings("unchecked")
   List<InventoryRecord> getLuceneInventoryQueryList(LuceneSrchCfg srchConfig) {
     SearchSession searchSession = getSearchSession();
     List<Class<? extends InventoryRecord>> resultClasses;
@@ -377,15 +384,12 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
                 .fetchHits(srchConfig.getMaxResults()));
 
     if (!result.isEmpty()) {
-      SearchUtils.sortInventoryList(result, srchConfig.getPaginationCriteria());
+      PaginationCriteria<InventoryRecord> baseRecPgCrit =
+          (PaginationCriteria<InventoryRecord>) srchConfig.getPaginationCriteria();
+      SearchUtils.sortInventoryList(result, baseRecPgCrit);
     }
 
     return result;
-  }
-
-  @SuppressWarnings("unchecked") // PaginationCriteria's T is a compile-time result marker only.
-  private static PaginationCriteria<BaseRecord> baseRecordCriteria(PaginationCriteria<?> criteria) {
-    return (PaginationCriteria<BaseRecord>) criteria;
   }
 
   @Override

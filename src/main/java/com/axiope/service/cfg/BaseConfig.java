@@ -588,10 +588,11 @@ public abstract class BaseConfig {
     return impl;
   }
 
+  @SuppressWarnings("rawtypes")
   @Bean
   @Scope(WebApplicationContext.SCOPE_REQUEST)
   public PaginationCriteria<?> paginationCriteria() {
-    return new PaginationCriteria<>();
+    return new PaginationCriteria();
   }
 
   @Bean

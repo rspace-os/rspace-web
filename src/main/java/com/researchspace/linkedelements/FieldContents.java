@@ -2,6 +2,7 @@ package com.researchspace.linkedelements;
 
 import static org.apache.commons.collections4.CollectionUtils.subtract;
 
+import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.EcatAudio;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatComment;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("unchecked")
 public class FieldContents {
 
   public static final List<Class<? extends IFieldLinkableElement>> FIELD_ELEMENT_CLASSES =
@@ -66,7 +68,7 @@ public class FieldContents {
   public FieldContents() {
     thumbnails = new HashSet<>();
     allLinks =
-        List.of(
+        TransformerUtils.toList(
             audios,
             videos,
             imageAnnotations,
@@ -183,12 +185,7 @@ public class FieldContents {
    * @return
    */
   public FieldElementLinkPairs<EcatMediaFile> getMediaElements(
-      Class<? extends EcatMediaFile> clazz) {
-    return getMediaElements(List.of(clazz));
-  }
-
-  public FieldElementLinkPairs<EcatMediaFile> getMediaElements(
-      Collection<Class<? extends EcatMediaFile>> clazzes) {
+      Class<? extends EcatMediaFile>... clazzes) {
     FieldElementLinkPairs<EcatMediaFile> mediaLinks =
         new FieldElementLinkPairs<>(EcatMediaFile.class);
     for (Class<? extends EcatMediaFile> clazz : clazzes) {
@@ -238,19 +235,8 @@ public class FieldContents {
   }
 
   public <T extends IFieldLinkableElement> FieldElementLinkPairs<T> getElements(Class<T> clazz) {
-    FieldElementLinkPairs<? extends IFieldLinkableElement> pairs =
-        allLinks.stream().filter(pair -> pair.supportsClass(clazz)).findFirst().orElseThrow();
-    return checkedPairs(clazz, pairs);
-  }
-
-  @SuppressWarnings("unchecked") // genericType is an exact runtime token for every stored pair set.
-  private static <T extends IFieldLinkableElement> FieldElementLinkPairs<T> checkedPairs(
-      Class<T> type, FieldElementLinkPairs<? extends IFieldLinkableElement> pairs) {
-    if (!pairs.getGenericType().equals(type)
-        || pairs.getElements().stream().anyMatch(element -> !type.isInstance(element))) {
-      throw new ClassCastException("Element set does not contain " + type.getName());
-    }
-    return (FieldElementLinkPairs<T>) pairs;
+    return (FieldElementLinkPairs<T>)
+        allLinks.stream().filter(pair -> pair.supportsClass(clazz)).findFirst().get();
   }
 
   public <T extends IFieldLinkableElement> boolean hasElements(Class<T> clazz) {
@@ -280,7 +266,9 @@ public class FieldContents {
 
   private void doCalculateDeltas(
       FieldContents newContents, FieldContents added, FieldContents removed) {
-    FIELD_ELEMENT_CLASSES.forEach(clazz -> getDeltas(newContents, added, removed, clazz));
+    for (Class clazz : FIELD_ELEMENT_CLASSES) {
+      getDeltas(newContents, added, removed, clazz);
+    }
     // these are separate as they are the same class so can't be distinguished by class type.
     getSketchAnnotationDeltas(newContents, added, removed);
     getImageAnnotationDeltas(newContents, added, removed);

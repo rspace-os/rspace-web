@@ -73,10 +73,9 @@ public class AssetUrlTag extends TagSupport {
   private Map<String, String> getProductionUrlCache() {
     ServletContext servletContext = pageContext.getServletContext();
     Object existing = servletContext.getAttribute(PRODUCTION_URL_CACHE_ATTR);
-    if (existing instanceof Map<?, ?> map) {
-      Map<String, String> cached = new ConcurrentHashMap<>();
-      map.forEach((key, value) -> cached.put(String.class.cast(key), String.class.cast(value)));
-      servletContext.setAttribute(PRODUCTION_URL_CACHE_ATTR, cached);
+    if (existing instanceof Map) {
+      @SuppressWarnings("unchecked")
+      Map<String, String> cached = (Map<String, String>) existing;
       return cached;
     }
     Map<String, String> created = new ConcurrentHashMap<>();

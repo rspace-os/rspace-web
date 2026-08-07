@@ -677,6 +677,7 @@ public class SDocController2IT extends RealTransactionSpringTestBase {
     return (EditStatus) modelTss.get("editStatus");
   }
 
+  @SuppressWarnings("unchecked")
   void updatePermissionsTo(String perm) throws Exception {
     rsc.list(modelTss, mockPrincipal, createDefaultForClass(RecordGroupSharing.class));
     List<RecordGroupSharing> sharedRecs =

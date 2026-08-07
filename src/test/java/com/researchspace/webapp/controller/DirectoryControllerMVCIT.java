@@ -324,18 +324,21 @@ public class DirectoryControllerMVCIT extends MVCTestBase {
   }
 
   private ISearchResults<PublicUserList> getUserListFromModel(MvcResult result) {
+    @SuppressWarnings("unchecked")
     ISearchResults<PublicUserList> uui =
         (ISearchResults<PublicUserList>) result.getModelAndView().getModel().get("users");
     return uui;
   }
 
   private ISearchResults<Group> getGroupListFromModel(MvcResult result) {
+    @SuppressWarnings("unchecked")
     ISearchResults<Group> groups =
         (ISearchResults<Group>) result.getModelAndView().getModel().get("groups");
     return groups;
   }
 
   private ISearchResults<Community> getCommunityListFromModel(MvcResult result) {
+    @SuppressWarnings("unchecked")
     ISearchResults<Community> communities =
         (ISearchResults<Community>) result.getModelAndView().getModel().get("communities");
     return communities;

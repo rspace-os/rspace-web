@@ -1389,7 +1389,8 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
       int delayMillisBetweenCreations)
       throws InterruptedException {
     Notebook nbook =
-        folderMgr.createNewNotebook(parentFlderId, nbookname, new DefaultRecordContext(), user);
+        (Notebook)
+            folderMgr.createNewNotebook(parentFlderId, nbookname, new DefaultRecordContext(), user);
     for (int i = 1; i <= numEntries; i++) {
       Thread.sleep(delayMillisBetweenCreations);
       StructuredDocument doc = recordMgr.createBasicDocument(nbook.getId(), user);
@@ -1553,11 +1554,12 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @return
    * @throws Exception
    */
+  @SuppressWarnings("unchecked")
   protected <T> T getTargetObject(Object proxy, Class<T> targetClass) throws Exception {
     while ((AopUtils.isJdkDynamicProxy(proxy))) {
-      return getTargetObject(((Advised) proxy).getTargetSource().getTarget(), targetClass);
+      return (T) getTargetObject(((Advised) proxy).getTargetSource().getTarget(), targetClass);
     }
-    return targetClass.cast(proxy);
+    return (T) proxy; // expected to be cglib proxy then, which is simply a specialized class
   }
 
   /**
@@ -1587,7 +1589,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
    * @return
    */
   protected <T> T getBeanOfClass(Class<T> clazz) {
-    return applicationContext.getBean(clazz);
+    return (T) applicationContext.getBean(clazz);
   }
 
   protected int getActiveRequestCountForUser(User u) {

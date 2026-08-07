@@ -426,6 +426,7 @@ public class GroupManagerImpl implements GroupManager {
   }
 
   @Override
+  @SuppressWarnings({"rawtypes", "unchecked"})
   public ISearchResults<Group> list(User subject, PaginationCriteria<Group> pgCrit) {
     FilterCriteria searchCrit = pgCrit.getSearchCriteria();
     if (searchCrit != null && !(searchCrit instanceof GroupSearchCriteria)) {
@@ -438,7 +439,7 @@ public class GroupManagerImpl implements GroupManager {
       List<Community> communities = communityDao.listCommunitiesForAdmin(subject.getId());
       // admin user is not in community, return empty list
       if (communities.isEmpty()) {
-        return new SearchResultsImpl<>(Collections.emptyList(), pgCrit, 0L);
+        return new SearchResultsImpl<Group>(Collections.EMPTY_LIST, pgCrit, 0L);
       } else {
         Community comm = communities.get(0);
         ((GroupSearchCriteria) searchCrit).setCommunityId(comm.getId());

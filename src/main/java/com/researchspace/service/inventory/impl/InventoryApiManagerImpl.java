@@ -368,11 +368,13 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     return result;
   }
 
+  @SuppressWarnings("unchecked")
   <T extends InventoryRecord> T doSaveImage(
       InventoryRecord record, String base64Image, User user, Class<T> type, UnaryOperator<T> dao)
       throws IOException {
     createImagesForRecord(record, base64Image, user);
-    return dao.apply(type.cast(record));
+    record = dao.apply((T) record);
+    return (T) record;
   }
 
   @Override

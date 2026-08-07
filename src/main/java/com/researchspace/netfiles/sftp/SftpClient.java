@@ -337,10 +337,11 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
     return channel;
   }
 
+  @SuppressWarnings("rawtypes")
   private List<LsEntry> getLsResult(String safePath) throws NfsException {
     log.debug("sftp ls on: {}", safePath);
 
-    Vector<LsEntry> lsVector;
+    Vector lsVector;
     try {
       synchronized (this) {
         lsVector = getSftpChannel().ls(safePath);
@@ -352,7 +353,12 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
 
     List<LsEntry> lsEntryList = new ArrayList<>();
     for (int i = 0; i < lsVector.size(); i++) {
-      lsEntryList.add(lsVector.elementAt(i));
+      Object lsElement = lsVector.elementAt(i);
+      if (lsElement instanceof LsEntry) {
+        lsEntryList.add((LsEntry) lsElement);
+      } else {
+        log.warn("got ls result of unknown type: {}", lsElement);
+      }
     }
 
     filterLsEntries(lsEntryList);

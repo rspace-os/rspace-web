@@ -68,6 +68,7 @@ public class SampleRadioChoiceFieldOptionsFormatChange_1_73 extends AbstractCust
     logger.info("Choice field definitions and selected options converted fine");
   }
 
+  @SuppressWarnings({"deprecation", "unchecked"})
   protected List<InventoryRadioField> getRadioFields() {
     return sessionFactory
         .getCurrentSession()
@@ -75,6 +76,7 @@ public class SampleRadioChoiceFieldOptionsFormatChange_1_73 extends AbstractCust
         .list();
   }
 
+  @SuppressWarnings({"deprecation", "unchecked"})
   protected List<InventoryChoiceField> getChoiceFields() {
     return sessionFactory
         .getCurrentSession()

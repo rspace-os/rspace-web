@@ -14,6 +14,7 @@ import org.hibernate.persister.entity.EntityPersister;
  * entity object to the entity identifier (id). Use {@code event.getEntity()} to get the actual
  * entity.
  */
+@SuppressWarnings({"serial", "rawtypes"})
 public class IdTransferringMergeEventListener extends DefaultMergeEventListener {
 
   /** Hibernate 6 compatible implementation of ID transferral. */

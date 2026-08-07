@@ -806,6 +806,7 @@ public class SamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertApiErrorContainsMessage(error, "unit of amount");
   }
 
+  @SuppressWarnings("rawtypes")
   @Test
   public void validateNameForNewSample() throws Exception {
     User anyUser = createInitAndLoginAnyUser();

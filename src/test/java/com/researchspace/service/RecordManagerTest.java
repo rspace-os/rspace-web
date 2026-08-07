@@ -1337,6 +1337,7 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  @SuppressWarnings("unused")
   public void folderMgerCopySetsOwners() throws Exception {
     Folder root = user.getRootFolder();
     Set<BaseRecord> children = root.getChildrens();

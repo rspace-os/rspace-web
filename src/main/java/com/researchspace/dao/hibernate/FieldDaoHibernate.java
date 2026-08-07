@@ -10,6 +10,7 @@ import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository("fieldDao")
+@SuppressWarnings({"unchecked"})
 public class FieldDaoHibernate extends GenericDaoHibernate<Field, Long> implements FieldDao {
 
   public FieldDaoHibernate() {
@@ -67,7 +68,7 @@ public class FieldDaoHibernate extends GenericDaoHibernate<Field, Long> implemen
   @Override
   public List<Field> findByTextContent(String text) {
     return getSession()
-        .createQuery("from Field where rtfData like :data", Field.class)
+        .createQuery("from Field where rtfData like :data")
         .setParameter("data", "%" + text + "%")
         .list();
   }

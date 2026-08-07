@@ -53,14 +53,12 @@ public class ViteClientTag extends TagSupport {
     return FrontendCacheVersion.isReactDevMode(pageContext.getServletContext());
   }
 
+  @SuppressWarnings("unchecked")
   Set<String> getRenderedAssetKeys() {
     HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
     Object existing = request.getAttribute(BundleTag.RENDERED_ASSETS_ATTR);
-    if (existing instanceof Set<?> set) {
-      Set<String> renderedAssets = new LinkedHashSet<>();
-      set.forEach(value -> renderedAssets.add(String.class.cast(value)));
-      request.setAttribute(BundleTag.RENDERED_ASSETS_ATTR, renderedAssets);
-      return renderedAssets;
+    if (existing instanceof Set) {
+      return (Set<String>) existing;
     }
     Set<String> renderedAssets = new LinkedHashSet<>();
     request.setAttribute(BundleTag.RENDERED_ASSETS_ATTR, renderedAssets);

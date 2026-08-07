@@ -92,7 +92,7 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
             .add(AuditEntity.property(DELETED).eq(true))
             .add(AuditEntity.property("owner").eq(user))
             .addProjection(AuditEntity.id());
-    List<Long> allDeletedFolderIDs = typedAuditResults(folderIdsQuery, Long.class);
+    List<Long> allDeletedFolderIDs = folderIdsQuery.getResultList();
     List<Long> deletedFolderContentsIDsToExclude =
         getContentsIDsFromDeletedFolders(allDeletedFolderIDs);
     if (searchTerm == null) {
@@ -184,6 +184,7 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
     return totalUpdated;
   }
 
+  @SuppressWarnings("unchecked")
   public List<AuditedRecord> getRevisionsForDocument(
       StructuredDocument doc, PaginationCriteria<AuditedRecord> pgCrit) {
     AuditReader auditReader = getAuditReader();
@@ -213,12 +214,12 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
       FilterCriteria searchCriteria = pgCrit.getSearchCriteria();
       try {
         AuditQuery withSearchCriteria = addSearchCriteria(searchCriteria, auditQuery);
-        revisions = typedAuditResults(withSearchCriteria, Number.class);
+        revisions = withSearchCriteria.getResultList();
       } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
         return logAndReturnEmptyList(e);
       }
     } else {
-      revisions = typedAuditResults(auditQuery, Number.class);
+      revisions = auditQuery.getResultList();
     }
 
     for (Number revisionNumber : revisions) {
@@ -275,7 +276,7 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
             .add(AuditEntity.id().eq(docId))
             .add(AuditEntity.property("userVersion").eq(new Version(userVersion)))
             .addOrder(AuditEntity.revisionNumber().desc());
-    return processGenericResults(q.getResultList(), StructuredDocument.class);
+    return processGenericResults(q.getResultList());
   }
 
   @Override
@@ -288,7 +289,7 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
             .add(AuditEntity.id().eq(mediaId))
             .add(AuditEntity.property("version").eq(version))
             .addOrder(AuditEntity.revisionNumber().desc());
-    return processGenericResults(q.getResultList(), EcatMediaFile.class);
+    return processGenericResults(q.getResultList());
   }
 
   @Override
@@ -301,7 +302,7 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
             .add(AuditEntity.id().eq(recordId))
             .add(AuditEntity.property("version").eq(version))
             .addOrder(AuditEntity.revisionNumber().desc());
-    return processGenericResults(q.getResultList(), cls);
+    return processGenericResults(q.getResultList());
   }
 
   private List<AuditedRecord> logAndReturnEmptyList(Exception e) {
@@ -346,30 +347,32 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
     return rc;
   }
 
-  private List<AuditedRecord> processRecordResults(List<?> results) {
+  @SuppressWarnings("rawtypes")
+  private List<AuditedRecord> processRecordResults(List results) {
     List<AuditedRecord> rc = new ArrayList<>();
 
     for (int i = 0; i < results.size(); i++) {
-      Object[] row = Object[].class.cast(results.get(i));
-      BaseRecord recordOrFolder = BaseRecord.class.cast(row[0]);
-      DefaultRevisionEntity dre = DefaultRevisionEntity.class.cast(row[1]);
+      Object[] row = (Object[]) results.get(i);
+      BaseRecord recordOrFolder = (BaseRecord) row[0];
+      DefaultRevisionEntity dre = (DefaultRevisionEntity) row[1];
 
-      RevisionType revType = RevisionType.class.cast(row[2]);
+      RevisionType revType = (RevisionType) row[2];
       rc.add(
           new AuditedRecord(recordOrFolder, dre.getId(), revType, recordOrFolder.getDeletedDate()));
     }
     return rc;
   }
 
-  private <T> List<AuditedEntity<T>> processGenericResults(List<?> results, Class<T> entityType) {
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private <T> List<AuditedEntity<T>> processGenericResults(List results) {
     List<AuditedEntity<T>> rc = new ArrayList<>();
 
     for (Object result : results) {
-      Object[] row = Object[].class.cast(result);
-      T entity = entityType.cast(row[0]);
-      DefaultRevisionEntity dre = DefaultRevisionEntity.class.cast(row[1]);
+      Object[] row = (Object[]) result;
+      T entity = (T) row[0];
+      DefaultRevisionEntity dre = (DefaultRevisionEntity) row[1];
 
-      RevisionType revType = RevisionType.class.cast(row[2]);
+      RevisionType revType = (RevisionType) row[2];
       rc.add(new AuditedEntity<>(entity, dre.getId(), revType));
     }
     return rc;
@@ -437,7 +440,7 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
         ar.createQuery()
             .forRevisionsOfEntity(cls, false, false)
             .add(AuditEntity.id().eq(primaryKey));
-    return processGenericResults(q.getResultList(), cls);
+    return processGenericResults(q.getResultList());
   }
 
   @Override
@@ -450,16 +453,17 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
     return new AuditedEntity<>(entity, revision);
   }
 
+  @SuppressWarnings({"rawtypes"})
   public <T> AuditedEntity<T> getNewestRevisionForEntity(Class<T> clazz, Long objectId) {
     AuditReader ar = getAuditReader();
-    List<?> results =
+    List results =
         ar.createQuery()
             .forRevisionsOfEntity(clazz, false, false)
             .add(AuditEntity.id().eq(objectId))
             .addOrder(AuditEntity.revisionNumber().desc())
             .getResultList();
 
-    List<AuditedEntity<T>> processed = processGenericResults(results, clazz);
+    List<AuditedEntity<T>> processed = processGenericResults(results);
     if (processed.isEmpty()) {
       return null; // should never happen except into tests
     } else {
@@ -467,23 +471,24 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
     }
   }
 
+  @SuppressWarnings({"unchecked"})
   @Override
   public List<EcatCommentItem> getCommentItemsForCommentAtDocumentRevision(
       Long commentId, Integer revision) {
     AuditReader ar = getAuditReader();
     /* all comment items at or before this revision */
-    AuditQuery query =
-        ar.createQuery()
-            .forRevisionsOfEntity(EcatCommentItem.class, true, false)
-            .add(AuditEntity.property("comId").eq(commentId))
-            .add(AuditEntity.revisionNumber().le(revision));
-    return typedAuditResults(query, EcatCommentItem.class);
+    return ar.createQuery()
+        .forRevisionsOfEntity(EcatCommentItem.class, true, false)
+        .add(AuditEntity.property("comId").eq(commentId))
+        .add(AuditEntity.revisionNumber().le(revision))
+        .getResultList();
   }
 
   /* ============================
    *  test helper methods below
    * ============================ */
 
+  @SuppressWarnings("rawtypes")
   public List<StructuredDocument> getEveryDocumentAndRevisionModifiedByUser(User user) {
     AuditReader ar = getAuditReader();
 
@@ -492,11 +497,11 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
             .forRevisionsOfEntity(StructuredDocument.class, false, true)
             .add(AuditEntity.property(EDIT_INFO_MODIFIED_BY).eq(user.getUsername()));
 
-    List<?> results = query.getResultList();
+    List results = query.getResultList();
     List<StructuredDocument> rc = new ArrayList<>();
     for (int i = 0; i < results.size(); i++) {
-      Object[] row = Object[].class.cast(results.get(i));
-      StructuredDocument sd = StructuredDocument.class.cast(row[0]);
+      Object[] row = (Object[]) results.get(i);
+      StructuredDocument sd = (StructuredDocument) row[0];
       rc.add(sd);
     }
     return rc;
@@ -538,28 +543,27 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
     return totalnumDeleted;
   }
 
+  @SuppressWarnings("rawtypes")
   private List<AuditedRecord> getRecordsToArchiveInternal(int maxToKeep) {
     List<AuditedRecord> allresults = new ArrayList<>();
     String distinctIdsQuery = "select distinct id from StructuredDocument_AUD";
-    NativeQuery<Number> getIds =
-        sessionFactory.getCurrentSession().createNativeQuery(distinctIdsQuery, Number.class);
-    NativeQuery<Object[]> getOld =
+    NativeQuery getIds = sessionFactory.getCurrentSession().createNativeQuery(distinctIdsQuery);
+    NativeQuery getOld =
         sessionFactory
             .getCurrentSession()
             .createNativeQuery(
-                "select REV, id  from StructuredDocument_AUD where id =? order by REV desc",
-                Object[].class);
-    List<Number> ids = getIds.list();
-    for (Number o : ids) {
+                "select REV, id  from StructuredDocument_AUD where id =? order by REV desc");
+    List ids = getIds.list();
+    for (Object o : ids) {
       // Hibernate 6: native SQL returns Long, not BigInteger
-      Long id = o.longValue();
+      Long id = ((Number) o).longValue();
       getOld.setParameter(1, id);
       getOld.setFirstResult(maxToKeep);
-      List<Object[]> res = getOld.list();
+      List res = getOld.list();
       if (!res.isEmpty()) {
-        Object[] toDelete0 = res.get(0);
+        Object[] toDelete0 = (Object[]) res.get(0);
 
-        List<?> res2 =
+        List res2 =
             getAuditReader()
                 .createQuery()
                 .forRevisionsOfEntity(StructuredDocument.class, false, false)
@@ -571,10 +575,5 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
       }
     }
     return allresults;
-  }
-
-  private static <T> List<T> typedAuditResults(AuditQuery query, Class<T> type) {
-    List<?> results = query.getResultList();
-    return results.stream().map(type::cast).toList();
   }
 }

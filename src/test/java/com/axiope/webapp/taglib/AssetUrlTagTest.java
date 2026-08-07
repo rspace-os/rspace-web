@@ -104,6 +104,7 @@ public class AssetUrlTagTest {
 
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
 
+    @SuppressWarnings("unchecked")
     Map<String, String> cache =
         (Map<String, String>) servletContextAttributes.get(AssetUrlTag.PRODUCTION_URL_CACHE_ATTR);
     assertEquals(1, cache.size());

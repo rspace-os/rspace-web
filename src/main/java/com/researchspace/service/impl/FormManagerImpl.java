@@ -55,7 +55,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   private @Autowired MessageSourceUtils messages;
 
   public FormManagerImpl(@Autowired FormDao formDao) {
-    super(formDao, RSForm.class);
+    super(formDao);
     this.formDao = formDao;
     formTracker = new RecordEditorTracker();
   }
@@ -106,6 +106,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     return form;
   }
 
+  @SuppressWarnings("unused")
   @RequiresPermissions("FORM:SHARE")
   @Override
   public RSForm updatePermissions(Long formid, FormSharingCommand config, User authUser) {
@@ -223,10 +224,10 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
   @RequiresPermissions("FORM:READ")
   // will shortcut DB access if no permission
   @Override
-  public RSForm copy(Long formID, final User user, final IFormCopyPolicy<RSForm> policy) {
+  public RSForm copy(Long formID, final User user, final IFormCopyPolicy policy) {
     log.info("Copying form with ID {}", formID);
     RSForm original = get(formID, user);
-    RSForm copy = original.copy(policy);
+    RSForm copy = (RSForm) original.copy(policy);
     copy.setIconId(original.getIconId());
     if (!policy.isKeepOriginalOwnerInCopy()) {
       copy.setOwner(user);

@@ -25,12 +25,10 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
   @Autowired FieldFormDao fieldFormDao;
   @Autowired protected RecordEditorTracker formTracker;
   @Autowired protected MessageSourceUtils messageSourceUtils;
-  private final Class<T> formType;
 
-  public AbstractFormManagerImpl(AbstractFormDao<T, Long> dao, Class<T> formType) {
+  public AbstractFormManagerImpl(AbstractFormDao<T, Long> dao) {
     super(dao);
     this.absFormdao = dao;
-    this.formType = formType;
     this.formTracker = new RecordEditorTracker();
   }
 
@@ -88,11 +86,12 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
     return form;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <F extends FieldForm, U extends FormFieldSource<F>> F updateFieldForm(
       U dto, Long fieldFormID, User subject) {
-    F fieldform = checkedFieldForm(dto, fieldFormDao.get(fieldFormID));
-    T form = formType.cast(fieldform.getForm());
+    F fieldform = (F) fieldFormDao.get(fieldFormID);
+    T form = (T) fieldform.getForm();
     if (!hasWritePermission(subject, form)) {
       throw new AuthorizationException(
           messageSourceUtils.getMessage("form.errors.fieldUpdateUnauthorized"));
@@ -107,16 +106,6 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
     return fieldform;
   }
 
-  @SuppressWarnings("unchecked") // The DTO-created form's concrete class is checked first.
-  private static <F extends FieldForm> F checkedFieldForm(
-      FormFieldSource<F> source, FieldForm stored) {
-    FieldForm expected = source.createFieldForm();
-    if (!expected.getClass().isInstance(stored)) {
-      throw new IllegalArgumentException("Field DTO does not match the stored field type");
-    }
-    return (F) stored;
-  }
-
   protected boolean hasWritePermission(User user, T rc) {
     return permissionUtils.isPermitted(rc, PermissionType.WRITE, user);
   }
@@ -125,7 +114,7 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
   public void deleteFieldFromForm(Long fieldId, User subject) {
 
     FieldForm fieldToRemove = getField(fieldId);
-    T form = formType.cast(fieldToRemove.getForm());
+    T form = (T) fieldToRemove.getForm();
     if (!permissionUtils.isPermitted(form, PermissionType.WRITE, subject)) {
       throw new AuthorizationException(
           messageSourceUtils.getMessage(

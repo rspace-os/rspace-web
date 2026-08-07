@@ -81,6 +81,7 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("unchecked")
   public List<T> getAll() {
     String hql = "select distinct e from " + persistentClass.getName() + " e";
     return getSession().createQuery(hql, persistentClass).list();
@@ -109,7 +110,7 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
 
   /** {@inheritDoc} */
   public boolean exists(PK id) {
-    T entity = getSession().get(this.persistentClass, id);
+    T entity = (T) getSession().get(this.persistentClass, id);
     return entity != null;
   }
 
@@ -142,6 +143,7 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
    * @return the managed instance; callers must use this, not the argument (see {@link
    *     #save(Object)}).
    */
+  @SuppressWarnings("unchecked")
   protected <E> E persistOrMerge(E object) {
     Session session = getSession();
     Object id = getEntityId(object, session);
@@ -149,7 +151,7 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
       session.persist(object);
       return object;
     }
-    return session.merge(object);
+    return (E) session.merge(object);
   }
 
   /**
@@ -189,7 +191,7 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
 
   @Override
   public Optional<T> getSafeNull(PK id) {
-    T rc = getSession().get(this.persistentClass, id);
+    T rc = (T) getSession().get(this.persistentClass, id);
     return Optional.ofNullable(rc);
   }
 
@@ -201,7 +203,7 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
 
   @Override
   public T load(PK id) {
-    return getSession().load(this.persistentClass, id);
+    return (T) getSession().load(this.persistentClass, id);
   }
 
   /**
