@@ -14,6 +14,7 @@
  *
  * ============================================================================
  */
+import { format, isValid } from "date-fns";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import type React from "react";
 import i18n from "@/modules/common/i18n";
@@ -667,7 +668,10 @@ export default class IdentifierModel implements Identifier {
       subjects: this.subjects,
       descriptions: this.descriptions,
       alternateIdentifiers: this.alternateIdentifiers,
-      dates: this.dates,
+      dates: this.dates?.map((d) => ({
+        ...d,
+        value: d.value instanceof Date && isValid(d.value) ? format(d.value, "yyyy-MM-dd") : d.value,
+      })),
       geoLocations: this.geoLocations?.map((g) => g.toJson()),
       editing: this.editing,
       customFieldsOnPublicPage: this.customFieldsOnPublicPage,
