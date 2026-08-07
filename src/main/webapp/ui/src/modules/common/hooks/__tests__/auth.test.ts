@@ -5,7 +5,21 @@ import { fetchToken } from "@/modules/common/hooks/auth";
 import { getStoredToken } from "@/modules/common/utils/auth";
 
 describe("fetchToken", () => {
-  it("issues and stores an OAuth token through REST API v2", async () => {
+  it("issues and stores an OAuth token through the legacy endpoint by default", async () => {
+    let capturedRequest: Request | undefined;
+    server.use(
+      http.get("/userform/ajax/inventoryOauthToken", ({ request }) => {
+        capturedRequest = request;
+        return HttpResponse.json({ data: "legacy-token" });
+      }),
+    );
+
+    await expect(fetchToken()).resolves.toBe("legacy-token");
+    expect(capturedRequest?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
+    expect(getStoredToken()).toBe("legacy-token");
+  });
+
+  it("uses REST API v2 when requested by newApp", async () => {
     let capturedRequest: Request | undefined;
     server.use(
       http.post("/api/v2/oauth/tokens", ({ request }) => {
@@ -14,7 +28,7 @@ describe("fetchToken", () => {
       }),
     );
 
-    await expect(fetchToken()).resolves.toBe("new-token");
+    await expect(fetchToken(true)).resolves.toBe("new-token");
     expect(capturedRequest?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
     expect(getStoredToken()).toBe("new-token");
   });
@@ -22,12 +36,12 @@ describe("fetchToken", () => {
   it("rejects malformed token responses", async () => {
     server.use(http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ data: "old-shape" })));
 
-    await expect(fetchToken()).rejects.toThrow("Validation failed");
+    await expect(fetchToken(true)).rejects.toThrow("Validation failed");
   });
 
   it("rejects unsuccessful responses", async () => {
     server.use(http.post("/api/v2/oauth/tokens", () => new HttpResponse(null, { status: 500 })));
 
-    await expect(fetchToken()).rejects.toThrow("Failed to fetch token");
+    await expect(fetchToken(true)).rejects.toThrow("Failed to fetch token");
   });
 });

@@ -11,18 +11,19 @@ import {
 
 const queryKeys = {
   all: ["rspace.common.auth"] as const,
-  oauthToken: () => [...queryKeys.all, "oauthToken"] as const,
+  oauthToken: (useRestApiV2: boolean) => [...queryKeys.all, "oauthToken", useRestApiV2 ? "v2" : "legacy"] as const,
 };
 
 /**
  * Fetches a new OAuth token from the server.
  * This is used internally by the useOauthTokenQuery hook.
  */
-const OauthTokenSchema = v.object({ accessToken: v.string() });
+const LegacyOauthTokenSchema = v.object({ data: v.string() });
+const RestApiV2OauthTokenSchema = v.object({ accessToken: v.string() });
 
-export async function fetchToken(): Promise<string> {
-  const response = await fetch("/api/v2/oauth/tokens", {
-    method: "POST",
+export async function fetchToken(useRestApiV2 = false): Promise<string> {
+  const response = await fetch(useRestApiV2 ? "/api/v2/oauth/tokens" : "/userform/ajax/inventoryOauthToken", {
+    method: useRestApiV2 ? "POST" : "GET",
     headers: {
       "X-Requested-With": "XMLHttpRequest",
     },
@@ -33,7 +34,9 @@ export async function fetchToken(): Promise<string> {
   }
 
   const data: unknown = await response.json();
-  const newToken = parseOrThrow(OauthTokenSchema, data).accessToken;
+  const newToken = useRestApiV2
+    ? parseOrThrow(RestApiV2OauthTokenSchema, data).accessToken
+    : parseOrThrow(LegacyOauthTokenSchema, data).data;
   saveStoredToken(newToken);
   return newToken;
 }
@@ -71,9 +74,9 @@ export async function fetchToken(): Promise<string> {
  * The token is automatically refetched before expiry, so you can safely use
  * the token value from the query result without worrying about staleness.
  */
-export function useOauthTokenQuery() {
+export function useOauthTokenQuery({ useRestApiV2 = false }: { useRestApiV2?: boolean } = {}) {
   return useSuspenseQuery({
-    queryKey: queryKeys.oauthToken(),
+    queryKey: queryKeys.oauthToken(useRestApiV2),
     queryFn: async () => {
       // First, check if we have a valid token in session storage
       const savedToken = getStoredToken();
@@ -81,7 +84,7 @@ export function useOauthTokenQuery() {
         return savedToken;
       }
       // If no valid token exists, fetch a new one
-      return fetchToken();
+      return fetchToken(useRestApiV2);
     },
     // Calculate stale time based on token expiry
     // We'll consider the token stale 5 minutes before it actually expires
