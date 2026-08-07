@@ -1,15 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { Button } from "./button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardAction,
-  CardContent,
-  CardFooter,
-} from "./card";
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card";
 
 const meta = {
   title: "DesignSystem/Card",
@@ -26,9 +18,7 @@ export const Default: Story = {
     <Card style={{ width: "360px" }}>
       <CardHeader>
         <CardTitle>Create project</CardTitle>
-        <CardDescription>
-          Deploy your new project in one click.
-        </CardDescription>
+        <CardDescription>Deploy your new project in one click.</CardDescription>
         <CardAction>
           <Button variant="ghost" size="icon" aria-label="Settings">
             ...
@@ -47,9 +37,7 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     expect(canvas.getByText("Create project")).toBeInTheDocument();
-    expect(
-      canvas.getByRole("button", { name: /deploy/i })
-    ).toBeInTheDocument();
+    expect(canvas.getByRole("button", { name: /deploy/i })).toBeInTheDocument();
   },
 };
 

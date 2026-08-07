@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
 import { Button } from "./button";
-import { Input } from "./input";
-import { Label } from "./label";
 import {
   Dialog,
   DialogClose,
@@ -13,6 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./dialog";
+import { Input } from "./input";
+import { Label } from "./label";
 
 const meta = {
   title: "DesignSystem/Dialog",
@@ -27,15 +27,11 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: () => (
     <Dialog>
-      <DialogTrigger render={<Button variant="outline" />}>
-        Edit profile
-      </DialogTrigger>
+      <DialogTrigger render={<Button variant="outline" />}>Edit profile</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit profile</DialogTitle>
-          <DialogDescription>
-            Make changes to your profile here. Click save when you&apos;re done.
-          </DialogDescription>
+          <DialogDescription>Make changes to your profile here. Click save when you&apos;re done.</DialogDescription>
         </DialogHeader>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -69,15 +65,13 @@ export const Default: Story = {
 export const WithoutCloseButton: Story = {
   render: () => (
     <Dialog>
-      <DialogTrigger render={<Button variant="outline" />}>
-        Delete account
-      </DialogTrigger>
+      <DialogTrigger render={<Button variant="outline" />}>Delete account</DialogTrigger>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>Are you absolutely sure?</DialogTitle>
           <DialogDescription>
-            This action cannot be undone. This will permanently delete your
-            account and remove your data from our servers.
+            This action cannot be undone. This will permanently delete your account and remove your data from our
+            servers.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

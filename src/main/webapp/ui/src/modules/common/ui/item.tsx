@@ -1,10 +1,9 @@
-import * as React from "react"
-import { mergeProps } from "@base-ui/react/merge-props"
-import { useRender } from "@base-ui/react/use-render"
-import { cva, type VariantProps } from "class-variance-authority"
-
-import { cn } from "@/modules/common/utils/cn"
-import { Separator } from "@/modules/common/ui/separator"
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
+import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
+import { Separator } from "@/modules/common/ui/separator";
+import { cn } from "@/modules/common/utils/cn";
 
 /**
  * True inside an ItemGroup, which is a `role="list"`.
@@ -14,29 +13,27 @@ import { Separator } from "@/modules/common/ui/separator"
  * Outside a group both stay unroled, since a stray `listitem` with no list
  * around it is its own violation.
  */
-const ItemGroupContext = React.createContext(false)
+const ItemGroupContext = React.createContext(false);
 
 function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <ItemGroupContext.Provider value={true}>
+      {/* biome-ignore lint/a11y/useSemanticElements: ItemGroup accepts div props while its items provide listitem semantics. */}
       <div
         role="list"
         data-slot="item-group"
         className={cn(
           "group/item-group flex w-full flex-col gap-4 has-data-[size=sm]:gap-2.5 has-data-[size=xs]:gap-2",
-          className
+          className,
         )}
         {...props}
       />
     </ItemGroupContext.Provider>
-  )
+  );
 }
 
-function ItemSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof Separator>) {
-  const inGroup = React.useContext(ItemGroupContext)
+function ItemSeparator({ className, ...props }: React.ComponentProps<typeof Separator>) {
+  const inGroup = React.useContext(ItemGroupContext);
   return (
     <Separator
       data-slot="item-separator"
@@ -48,7 +45,7 @@ function ItemSeparator({
       className={cn("my-2", className)}
       {...props}
     />
-  )
+  );
 }
 
 const itemVariants = cva(
@@ -70,8 +67,8 @@ const itemVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
-)
+  },
+);
 
 function Item({
   className,
@@ -81,7 +78,7 @@ function Item({
   render,
   ...props
 }: useRender.ComponentProps<"div"> & VariantProps<typeof itemVariants>) {
-  const inGroup = React.useContext(ItemGroupContext)
+  const inGroup = React.useContext(ItemGroupContext);
   return useRender({
     defaultTagName: "div",
     props: mergeProps<"div">(
@@ -91,7 +88,7 @@ function Item({
         // Item rendered as an <a> inside a group should pass its own role.
         role: role ?? (inGroup ? "listitem" : undefined),
       },
-      props
+      props,
     ),
     render,
     state: {
@@ -99,7 +96,7 @@ function Item({
       variant,
       size,
     },
-  })
+  });
 }
 
 const itemMediaVariants = cva(
@@ -116,8 +113,8 @@ const itemMediaVariants = cva(
     defaultVariants: {
       variant: "default",
     },
-  }
-)
+  },
+);
 
 function ItemMedia({
   className,
@@ -131,7 +128,7 @@ function ItemMedia({
       className={cn(itemMediaVariants({ variant, className }))}
       {...props}
     />
-  )
+  );
 }
 
 function ItemContent({ className, ...props }: React.ComponentProps<"div">) {
@@ -142,11 +139,11 @@ function ItemContent({ className, ...props }: React.ComponentProps<"div">) {
         // min-w-0 lets this flex child shrink below its content width; without it
         // long content grows the column past the row instead of truncating.
         "flex min-w-0 flex-1 flex-col gap-1 group-data-[size=xs]/item:gap-0.5 [&+[data-slot=item-content]]:flex-none",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function ItemTitle({ className, ...props }: React.ComponentProps<"div">) {
@@ -157,11 +154,11 @@ function ItemTitle({ className, ...props }: React.ComponentProps<"div">) {
         // max-w-full caps w-fit, so a title with several children cannot size
         // itself past its container.
         "line-clamp-1 flex w-fit max-w-full items-center gap-2 text-sm leading-snug font-medium underline-offset-4",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function ItemDescription({ className, ...props }: React.ComponentProps<"p">) {
@@ -170,58 +167,46 @@ function ItemDescription({ className, ...props }: React.ComponentProps<"p">) {
       data-slot="item-description"
       className={cn(
         "line-clamp-2 text-left text-sm font-normal text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function ItemActions({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="item-actions"
-      className={cn("flex items-center gap-2", className)}
-      {...props}
-    />
-  )
+  return <div data-slot="item-actions" className={cn("flex items-center gap-2", className)} {...props} />;
 }
 
 function ItemHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="item-header"
-      className={cn(
-        "flex basis-full items-center justify-between gap-2",
-        className
-      )}
+      className={cn("flex basis-full items-center justify-between gap-2", className)}
       {...props}
     />
-  )
+  );
 }
 
 function ItemFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="item-footer"
-      className={cn(
-        "flex basis-full items-center justify-between gap-2",
-        className
-      )}
+      className={cn("flex basis-full items-center justify-between gap-2", className)}
       {...props}
     />
-  )
+  );
 }
 
 export {
   Item,
-  ItemMedia,
-  ItemContent,
   ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemFooter,
   ItemGroup,
+  ItemHeader,
+  ItemMedia,
   ItemSeparator,
   ItemTitle,
-  ItemDescription,
-  ItemHeader,
-  ItemFooter,
-}
+};

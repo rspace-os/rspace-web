@@ -33,8 +33,8 @@ export const Headings: Story = {
 export const Paragraph: Story = {
   render: () => (
     <P>
-      The quick brown fox jumps over the lazy dog. This paragraph demonstrates the
-      default leading and spacing applied to body text.
+      The quick brown fox jumps over the lazy dog. This paragraph demonstrates the default leading and spacing applied
+      to body text.
     </P>
   ),
 };

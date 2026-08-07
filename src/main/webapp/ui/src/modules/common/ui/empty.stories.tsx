@@ -1,15 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { within } from "storybook/test";
 import { InboxIcon } from "lucide-react";
+import { within } from "storybook/test";
 import { Button } from "./button";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "./empty";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "./empty";
 
 const meta = {
   title: "DesignSystem/Empty",
@@ -29,9 +22,7 @@ export const Default: Story = {
           <InboxIcon />
         </EmptyMedia>
         <EmptyTitle>No messages</EmptyTitle>
-        <EmptyDescription>
-          You don&apos;t have any messages yet. New messages will appear here.
-        </EmptyDescription>
+        <EmptyDescription>You don&apos;t have any messages yet. New messages will appear here.</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <Button>Compose message</Button>
@@ -62,9 +53,7 @@ export const MediaVariants: Story = {
             <InboxIcon />
           </EmptyMedia>
           <EmptyTitle>Icon media</EmptyTitle>
-          <EmptyDescription>
-            Renders the icon inside a rounded, muted badge.
-          </EmptyDescription>
+          <EmptyDescription>Renders the icon inside a rounded, muted badge.</EmptyDescription>
         </EmptyHeader>
       </Empty>
     </div>

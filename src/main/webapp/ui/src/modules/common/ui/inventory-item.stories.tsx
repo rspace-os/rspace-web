@@ -83,9 +83,7 @@ export const IdInDescription: Story = {
 
     const title = canvasElement.querySelector('[data-slot="item-title"]');
     expect(title).not.toContainElement(link);
-    const description = canvasElement.querySelector(
-      '[data-slot="item-description"]',
-    );
+    const description = canvasElement.querySelector('[data-slot="item-description"]');
     expect(description).toContainElement(link);
   },
 };
@@ -95,35 +93,21 @@ export const VariantComparison: Story = {
   render: () => (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <ItemGroup style={{ width: "420px" }}>
-        <InventoryItem
-          {...confocal}
-          idPlacement="title"
-          variant="outline"
-        >
+        <InventoryItem {...confocal} idPlacement="title" variant="outline">
           <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
           Lab 2.14
         </InventoryItem>
-        <InventoryItem
-          {...freezer}
-          idPlacement="title"
-          variant="outline"
-        >
+        <InventoryItem {...freezer} idPlacement="title" variant="outline">
           <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
           Biobank freezer F-2
         </InventoryItem>
       </ItemGroup>
       <ItemGroup style={{ width: "420px" }}>
-        <InventoryItem
-          {...confocal}
-          variant="outline"
-        >
+        <InventoryItem {...confocal} variant="outline">
           <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
           Lab 2.14
         </InventoryItem>
-        <InventoryItem
-          {...freezer}
-          variant="outline"
-        >
+        <InventoryItem {...freezer} variant="outline">
           <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
           Biobank freezer F-2
         </InventoryItem>
@@ -132,9 +116,7 @@ export const VariantComparison: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    expect(
-      canvas.getAllByRole("link", { name: /Open inventory record/ }),
-    ).toHaveLength(4);
+    expect(canvas.getAllByRole("link", { name: /Open inventory record/ })).toHaveLength(4);
   },
 };
 
@@ -161,10 +143,9 @@ export const LongName: Story = {
     const link = canvas.getByRole("link", {
       name: "Open inventory record IC-LSM900",
     });
-    const item = canvasElement.querySelector('[data-slot="item"]');
-    expect(item).not.toBeNull();
+    const item = canvas.getByRole("listitem");
 
-    const itemRight = item!.getBoundingClientRect().right;
+    const itemRight = item.getBoundingClientRect().right;
     expect(link.getBoundingClientRect().right).toBeLessThanOrEqual(itemRight + 1);
   },
 };

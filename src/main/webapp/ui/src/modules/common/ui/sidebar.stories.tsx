@@ -72,9 +72,7 @@ export const Default: Story = {
     </SidebarProvider>
   ),
   play: async ({ canvasElement }) => {
-    const trigger = canvasElement.querySelector<HTMLButtonElement>(
-      '[data-sidebar="trigger"]',
-    );
+    const trigger = canvasElement.querySelector<HTMLButtonElement>('[data-sidebar="trigger"]');
     expect(trigger).toBeInTheDocument();
     await userEvent.click(trigger as HTMLButtonElement);
   },

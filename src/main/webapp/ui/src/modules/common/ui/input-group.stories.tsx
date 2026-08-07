@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { CreditCardIcon, InfoIcon, SearchIcon } from "lucide-react";
 import { expect, within } from "storybook/test";
-import { SearchIcon, CreditCardIcon, InfoIcon } from "lucide-react";
 import {
   InputGroup,
   InputGroupAddon,
