@@ -288,14 +288,13 @@ final class ApiV2OpenApiAnnotationMerger {
     return result;
   }
 
-  @SuppressWarnings("rawtypes") // swagger-core exposes a raw Schema in this API.
   private static Map<String, Object> annotatedSchema(
       io.swagger.v3.oas.annotations.media.Schema schema,
       ArraySchema array,
       Type fallbackType,
       Map<String, Object> schemas) {
     Components components = new Components();
-    Optional<? extends Schema> documented =
+    var documented =
         AnnotationsUtils.getSchema(
             schema, array, false, rawClass(fallbackType), components, null, true);
     mergeSchemas(schemas, components);
