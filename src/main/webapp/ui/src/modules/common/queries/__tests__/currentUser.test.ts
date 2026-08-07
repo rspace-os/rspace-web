@@ -31,6 +31,7 @@ const currentUserResponse = {
     canPublish: false,
     canViewSystem: false,
   },
+  livechat: { enabled: true, serverKey: "server-key" },
   session: {
     operatedAs: false,
     lastSession: null,

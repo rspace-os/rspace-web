@@ -3,7 +3,6 @@ import { render, screen } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import * as React from "react";
 import { describe, expect, it } from "vitest";
-import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AboutPanel from "./AboutPanel";
@@ -31,9 +30,9 @@ function renderAboutPanel() {
 describe("AboutPanel", () => {
   it("renders version and deployment details from the public v2 config", async () => {
     server.use(
-      http.get("/public/version", () => new HttpResponse("2.99.1")),
       http.get("/api/v2/config", () =>
         HttpResponse.json({
+          version: "2.99.1",
           branding: { bannerImageUrl: "/public/banner" },
           helpLinks: [],
           deploymentDescription: "Configured for advanced research teams",
@@ -56,15 +55,11 @@ describe("AboutPanel", () => {
     );
   });
 
-  it("keeps support information visible when the version query fails", async () => {
-    // A suspense query that rejects throws to the error boundary; React logs the
-    // boundary-caught error, so silence those expected console.error lines.
-    const restoreConsole = silenceConsole(["error"], [/./]);
-
+  it("keeps support information visible when the version is unavailable", async () => {
     server.use(
-      http.get("/public/version", () => new HttpResponse(null, { status: 500 })),
       http.get("/api/v2/config", () =>
         HttpResponse.json({
+          version: "",
           branding: { bannerImageUrl: "/public/banner" },
           helpLinks: [],
           deploymentDescription: "",
@@ -78,7 +73,5 @@ describe("AboutPanel", () => {
     expect(await screen.findByText("about:version.unavailable")).toBeVisible();
     expect(screen.getByRole("link", { name: "about:support.generalLink" })).toBeVisible();
     expect(screen.queryByRole("link", { name: "about:support.accountsLink" })).not.toBeInTheDocument();
-
-    restoreConsole();
   });
 });

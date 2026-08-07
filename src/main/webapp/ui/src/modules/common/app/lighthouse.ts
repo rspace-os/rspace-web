@@ -3,7 +3,12 @@ import * as React from "react";
 import i18n from "@/modules/common/i18n";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import { createLighthouseConfig, LIGHTHOUSE_SCRIPT_ID, LIGHTHOUSE_SCRIPT_SRC } from "./helpWidget";
-import type { LivechatProperties } from "./queries/livechatProperties";
+
+export type LivechatProperties = {
+  livechatEnabled: boolean;
+  livechatServerKey?: string;
+  currentUser: string;
+};
 
 export { LIGHTHOUSE_SCRIPT_ID, LIGHTHOUSE_SCRIPT_SRC };
 

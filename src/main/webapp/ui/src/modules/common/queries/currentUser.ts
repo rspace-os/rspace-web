@@ -20,6 +20,11 @@ const CurrentUserSessionSchema = v.object({
   lastSession: v.nullable(v.pipe(v.string(), v.isoTimestamp())),
 });
 
+const CurrentUserLivechatSchema = v.object({
+  enabled: v.boolean(),
+  serverKey: v.nullable(v.string()),
+});
+
 const CurrentUserResponseSchema = v.object({
   id: v.pipe(v.number(), v.integer()),
   username: v.string(),
@@ -34,12 +39,14 @@ const CurrentUserResponseSchema = v.object({
   profileImageApiUrl: v.nullable(v.string()),
   orcid: CurrentUserOrcidSchema,
   capabilities: CurrentUserCapabilitiesSchema,
+  livechat: CurrentUserLivechatSchema,
   session: CurrentUserSessionSchema,
 });
 
 export type CurrentUser = v.InferOutput<typeof CurrentUserResponseSchema>;
 export type CurrentUserOrcid = v.InferOutput<typeof CurrentUserOrcidSchema>;
 export type CurrentUserCapabilities = v.InferOutput<typeof CurrentUserCapabilitiesSchema>;
+export type CurrentUserLivechat = v.InferOutput<typeof CurrentUserLivechatSchema>;
 export type CurrentUserSession = v.InferOutput<typeof CurrentUserSessionSchema>;
 
 export const currentUserQueryKeys = {
