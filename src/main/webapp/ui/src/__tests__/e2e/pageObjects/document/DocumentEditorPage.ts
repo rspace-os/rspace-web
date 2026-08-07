@@ -3,9 +3,14 @@ import { resolveFieldId } from "@/__tests__/e2e/components/document/DocumentFiel
 import { DocumentToolbar } from "@/__tests__/e2e/components/document/DocumentToolbar";
 import { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor";
 import { GalleryPickerComponent } from "@/__tests__/e2e/components/shared/GalleryPickerComponent";
+import { CaliraDialogComponent } from "@/modules/calira/__tests__/pageObjects/CaliraDialogComponent";
 import { ExternalWorkflowDialogComponent } from "@/modules/galaxy/__tests__/pageObjects/ExternalWorkflowDialogComponent";
 import { GalaxyDialogComponent } from "@/modules/galaxy/__tests__/pageObjects/GalaxyDialogComponent";
+import { GitHubDialogComponent } from "@/modules/github/__tests__/pageObjects/GitHubDialogComponent";
+import { NextcloudDialogComponent } from "@/modules/nextcloud/__tests__/pageObjects/NextcloudDialogComponent";
 import { OmeroDialogComponent } from "@/modules/omero/__tests__/pageObjects/OmeroDialogComponent";
+import { OwnCloudDialogComponent } from "@/modules/owncloud/__tests__/pageObjects/OwnCloudDialogComponent";
+import { ProtocolsIODialogComponent } from "@/modules/protocolsio/__tests__/pageObjects/ProtocolsIODialogComponent";
 import { PubchemDialogComponent } from "@/modules/pubchem/__tests__/pageObjects/PubchemDialogComponent";
 import { PyratDialogComponent } from "@/modules/pyrat/__tests__/pageObjects/PyratDialogComponent";
 import { DocumentPage } from "./DocumentPage";
@@ -18,6 +23,11 @@ export class DocumentEditorPage extends DocumentPage {
   readonly externalWorkflowDialog: ExternalWorkflowDialogComponent;
   readonly pyratDialog: PyratDialogComponent;
   readonly omeroDialog: OmeroDialogComponent;
+  readonly caliraDialog: CaliraDialogComponent;
+  readonly owncloudDialog: OwnCloudDialogComponent;
+  readonly nextcloudDialog: NextcloudDialogComponent;
+  readonly protocolsioDialog: ProtocolsIODialogComponent;
+  readonly githubDialog: GitHubDialogComponent;
 
   constructor(page: Page) {
     super(page);
@@ -28,6 +38,11 @@ export class DocumentEditorPage extends DocumentPage {
     this.externalWorkflowDialog = new ExternalWorkflowDialogComponent(page);
     this.pyratDialog = new PyratDialogComponent(page);
     this.omeroDialog = new OmeroDialogComponent(page);
+    this.caliraDialog = new CaliraDialogComponent(page);
+    this.owncloudDialog = new OwnCloudDialogComponent(page);
+    this.nextcloudDialog = new NextcloudDialogComponent(page);
+    this.protocolsioDialog = new ProtocolsIODialogComponent(page);
+    this.githubDialog = new GitHubDialogComponent(page);
   }
 
   override async isLoaded(): Promise<void> {
@@ -113,5 +128,55 @@ export class DocumentEditorPage extends DocumentPage {
     await this.omeroToolbarButton.click();
     await this.omeroDialog.waitForOpen();
     return this.omeroDialog;
+  }
+
+  get caliraToolbarButton(): Locator {
+    return this.page.getByRole("button", { name: "Insert from Calira" });
+  }
+
+  async openCaliraDialog(): Promise<CaliraDialogComponent> {
+    await this.caliraToolbarButton.click();
+    await this.caliraDialog.waitForOpen();
+    return this.caliraDialog;
+  }
+
+  get owncloudToolbarButton(): Locator {
+    return this.page.getByRole("button", { name: "Insert from ownCloud" });
+  }
+
+  async openOwnCloudDialog(): Promise<OwnCloudDialogComponent> {
+    await this.owncloudToolbarButton.click();
+    await this.owncloudDialog.waitForOpen();
+    return this.owncloudDialog;
+  }
+
+  get nextcloudToolbarButton(): Locator {
+    return this.page.getByRole("button", { name: "Insert from Nextcloud" });
+  }
+
+  async openNextcloudDialog(): Promise<NextcloudDialogComponent> {
+    await this.nextcloudToolbarButton.click();
+    await this.nextcloudDialog.waitForOpen();
+    return this.nextcloudDialog;
+  }
+
+  get protocolsioToolbarButton(): Locator {
+    return this.page.getByRole("button", { name: "Import from Protocols.io" });
+  }
+
+  async openProtocolsIoDialog(): Promise<ProtocolsIODialogComponent> {
+    await this.protocolsioToolbarButton.click();
+    await this.protocolsioDialog.waitForOpen();
+    return this.protocolsioDialog;
+  }
+
+  get githubToolbarButton(): Locator {
+    return this.page.getByRole("button", { name: "Insert from GitHub" });
+  }
+
+  async openGitHubDialog(): Promise<GitHubDialogComponent> {
+    await this.githubToolbarButton.click();
+    await this.githubDialog.waitForOpen();
+    return this.githubDialog;
   }
 }
