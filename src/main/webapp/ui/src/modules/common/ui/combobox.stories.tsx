@@ -35,7 +35,11 @@ export const Default: Story = {
       <ComboboxInput placeholder="Search fruit..." />
       <ComboboxContent>
         <ComboboxList>
-          {(item: string) => <ComboboxItem key={item} value={item}>{item}</ComboboxItem>}
+          {(item: string) => (
+            <ComboboxItem key={item} value={item}>
+              {item}
+            </ComboboxItem>
+          )}
         </ComboboxList>
         <ComboboxEmpty>No fruit found.</ComboboxEmpty>
       </ComboboxContent>
@@ -81,15 +85,17 @@ function MultipleExample() {
     <Combobox items={fruits} multiple>
       <ComboboxChips ref={anchor}>
         <ComboboxValue>
-          {(value: string[]) =>
-            value.map((item) => <ComboboxChip key={item}>{item}</ComboboxChip>)
-          }
+          {(value: string[]) => value.map((item) => <ComboboxChip key={item}>{item}</ComboboxChip>)}
         </ComboboxValue>
         <ComboboxChipsInput placeholder="Add fruit..." />
       </ComboboxChips>
       <ComboboxContent anchor={anchor}>
         <ComboboxList>
-          {(item: string) => <ComboboxItem key={item} value={item}>{item}</ComboboxItem>}
+          {(item: string) => (
+            <ComboboxItem key={item} value={item}>
+              {item}
+            </ComboboxItem>
+          )}
         </ComboboxList>
         <ComboboxEmpty>No fruit found.</ComboboxEmpty>
       </ComboboxContent>

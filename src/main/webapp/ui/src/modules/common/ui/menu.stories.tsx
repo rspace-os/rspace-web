@@ -16,9 +16,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: () => (
     <Menu>
-      <MenuTrigger className={buttonVariants({ variant: "outline" })}>
-        Open menu
-      </MenuTrigger>
+      <MenuTrigger className={buttonVariants({ variant: "outline" })}>Open menu</MenuTrigger>
       <MenuContent>
         <MenuLinkItem href="/profile">Profile</MenuLinkItem>
         <MenuLinkItem href="/settings">Settings</MenuLinkItem>

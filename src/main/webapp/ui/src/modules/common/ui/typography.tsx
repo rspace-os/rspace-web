@@ -45,9 +45,7 @@ function Heading({
 } & VariantProps<typeof textVariants>) {
   const tag = as ?? `h${level}`;
   const Tag = tag as React.ElementType;
-  return (
-    <Tag data-slot={tag} className={cn(headingStyles[level], textVariants({ variant }), className)} {...props} />
-  );
+  return <Tag data-slot={tag} className={cn(headingStyles[level], textVariants({ variant }), className)} {...props} />;
 }
 
 function P({ className, ...props }: React.ComponentProps<"p">) {

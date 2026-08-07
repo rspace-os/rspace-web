@@ -41,15 +41,11 @@ export const WithHandleGrip: Story = {
       style={{ height: "200px", width: "400px", border: "1px solid var(--border)" }}
     >
       <ResizablePanel defaultSize={25} minSize={15}>
-        <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center" }}>
-          Sidebar
-        </div>
+        <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center" }}>Sidebar</div>
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel defaultSize={75}>
-        <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center" }}>
-          Content
-        </div>
+        <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center" }}>Content</div>
       </ResizablePanel>
     </ResizablePanelGroup>
   ),

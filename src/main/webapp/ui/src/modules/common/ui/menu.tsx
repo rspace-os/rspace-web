@@ -17,8 +17,7 @@ function MenuContent({
   align = "end",
   sideOffset = 8,
   ...props
-}: MenuPrimitive.Popup.Props &
-  Pick<MenuPrimitive.Positioner.Props, "align" | "sideOffset">) {
+}: MenuPrimitive.Popup.Props & Pick<MenuPrimitive.Positioner.Props, "align" | "sideOffset">) {
   return (
     <MenuPrimitive.Portal>
       <MenuPrimitive.Positioner align={align} sideOffset={sideOffset} className="isolate z-50">

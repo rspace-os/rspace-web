@@ -1,35 +1,18 @@
-import type * as React from "react"
-import { ExternalLinkIcon, MicroscopeIcon } from "lucide-react"
+import { ExternalLinkIcon, MicroscopeIcon } from "lucide-react";
+import type * as React from "react";
 
-import { Badge } from "@/modules/common/ui/badge"
-import {
-  Item,
-  ItemContent,
-  ItemMedia,
-  ItemTitle,
-} from "@/modules/common/ui/item"
+import { Badge } from "@/modules/common/ui/badge";
+import { Item, ItemContent, ItemMedia, ItemTitle } from "@/modules/common/ui/item";
 
-type GlobalIdPlacement = "description" | "title"
+type GlobalIdPlacement = "description" | "title";
 
-function GlobalIdBadge({
-  globalId,
-  href,
-  label,
-}: {
-  globalId: string
-  href: string
-  label: string
-}) {
+function GlobalIdBadge({ globalId, href, label }: { globalId: string; href: string; label: string }) {
   return (
-    <Badge
-      variant="outline"
-      className="font-mono"
-      render={<a href={href} aria-label={label} />}
-    >
+    <Badge variant="outline" className="font-mono" render={<a href={href} aria-label={label} />}>
       <ExternalLinkIcon aria-hidden="true" />
       {globalId}
     </Badge>
-  )
+  );
 }
 
 function InventoryItem({
@@ -42,22 +25,20 @@ function InventoryItem({
   children,
   ...props
 }: Omit<React.ComponentProps<typeof Item>, "children"> & {
-  name: React.ReactNode
-  globalId: string
-  href: string
+  name: React.ReactNode;
+  globalId: string;
+  href: string;
   /**
    * Accessible name for the global-ID link. Required: the badge text alone is
    * an opaque identifier, and this layer has no i18n of its own, so the caller
    * owns the wording.
    */
-  idLinkLabel: string
-  idPlacement?: GlobalIdPlacement
-  children?: React.ReactNode
+  idLinkLabel: string;
+  idPlacement?: GlobalIdPlacement;
+  children?: React.ReactNode;
 }) {
-  const badge = (
-    <GlobalIdBadge globalId={globalId} href={href} label={idLinkLabel} />
-  )
-  const idInTitle = idPlacement === "title"
+  const badge = <GlobalIdBadge globalId={globalId} href={href} label={idLinkLabel} />;
+  const idInTitle = idPlacement === "title";
 
   return (
     <Item className={className} {...props}>
@@ -81,16 +62,12 @@ function InventoryItem({
           className="flex min-w-0 items-center gap-1.5 text-left text-sm font-normal text-muted-foreground"
         >
           {idInTitle ? null : badge}
-          {children ? (
-            <span className="flex min-w-0 items-center gap-1.5 truncate">
-              {children}
-            </span>
-          ) : null}
+          {children ? <span className="flex min-w-0 items-center gap-1.5 truncate">{children}</span> : null}
         </div>
       </ItemContent>
     </Item>
-  )
+  );
 }
 
-export { InventoryItem }
-export type { GlobalIdPlacement }
+export type { GlobalIdPlacement };
+export { InventoryItem };

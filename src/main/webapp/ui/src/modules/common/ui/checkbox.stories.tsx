@@ -1,5 +1,5 @@
-import * as React from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import * as React from "react";
 import { expect, userEvent, within } from "storybook/test";
 import { Checkbox } from "./checkbox";
 
@@ -15,8 +15,8 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (
-    <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-      <Checkbox defaultChecked />
+    <label htmlFor="terms" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <Checkbox id="terms" defaultChecked />
       Accept terms and conditions
     </label>
   ),
@@ -33,11 +33,8 @@ export const Controlled: Story = {
   render: () => {
     const [checked, setChecked] = React.useState(false);
     return (
-      <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <Checkbox
-          checked={checked}
-          onCheckedChange={(value) => setChecked(value)}
-        />
+      <label htmlFor="subscription" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <Checkbox id="subscription" checked={checked} onCheckedChange={(value) => setChecked(value)} />
         {checked ? "Subscribed" : "Not subscribed"}
       </label>
     );
@@ -47,6 +44,7 @@ export const Controlled: Story = {
 export const Disabled: Story = {
   render: () => (
     <label
+      htmlFor="disabled-option"
       style={{
         display: "flex",
         alignItems: "center",
@@ -54,7 +52,7 @@ export const Disabled: Story = {
         opacity: 0.5,
       }}
     >
-      <Checkbox disabled />
+      <Checkbox id="disabled-option" disabled />
       Disabled option
     </label>
   ),
@@ -62,8 +60,8 @@ export const Disabled: Story = {
 
 export const Indeterminate: Story = {
   render: () => (
-    <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-      <Checkbox indeterminate />
+    <label htmlFor="select-all" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <Checkbox id="select-all" indeterminate />
       Select all
     </label>
   ),

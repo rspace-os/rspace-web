@@ -30,8 +30,8 @@ export const Default: Story = {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your
-            account and remove your data from our servers.
+            This action cannot be undone. This will permanently delete your account and remove your data from our
+            servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -46,9 +46,7 @@ export const Default: Story = {
     const trigger = canvas.getByRole("button", { name: /delete account/i });
     await userEvent.click(trigger);
     const body = within(document.body);
-    expect(
-      await body.findByRole("alertdialog", { name: /are you absolutely sure/i })
-    ).toBeInTheDocument();
+    expect(await body.findByRole("alertdialog", { name: /are you absolutely sure/i })).toBeInTheDocument();
   },
 };
 
@@ -59,9 +57,7 @@ export const Small: Story = {
       <AlertDialogContent size="sm">
         <AlertDialogHeader>
           <AlertDialogTitle>Sign out?</AlertDialogTitle>
-          <AlertDialogDescription>
-            You will need to sign back in to access your account.
-          </AlertDialogDescription>
+          <AlertDialogDescription>You will need to sign back in to access your account.</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>

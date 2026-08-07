@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
-import { Input } from "./input";
 import {
   Field,
   FieldContent,
@@ -13,6 +12,7 @@ import {
   FieldSet,
   FieldTitle,
 } from "./field";
+import { Input } from "./input";
 
 const meta = {
   title: "DesignSystem/Field",
@@ -75,9 +75,7 @@ export const WithErrorAndFieldSet: Story = {
           <Field>
             <FieldContent>
               <FieldTitle>Two-factor authentication</FieldTitle>
-              <FieldDescription>
-                Require a code from your authenticator app when signing in.
-              </FieldDescription>
+              <FieldDescription>Require a code from your authenticator app when signing in.</FieldDescription>
             </FieldContent>
           </Field>
         </FieldGroup>

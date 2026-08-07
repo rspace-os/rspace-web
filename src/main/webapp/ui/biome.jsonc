@@ -7,7 +7,7 @@
     "defaultBranch": "main"
   },
   "files": {
-    "includes": ["**/*.ts", "**/*.tsx", "**/*.css", "!src/modules/common/ui"]
+    "includes": ["**/*.ts", "**/*.tsx", "**/*.css"]
   },
   "formatter": {
     "enabled": true,
@@ -54,6 +54,16 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["**/*.stories.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noJsxLiterals": "off"
+          }
+        }
+      }
+    },
     {
       "includes": ["src/components/PublicPages/IdentifierPublicPage.tsx"],
       "linter": {

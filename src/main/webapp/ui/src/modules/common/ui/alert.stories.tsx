@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, within } from "storybook/test";
 import { AlertTriangleIcon, InfoIcon } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "./alert";
+import { expect, within } from "storybook/test";
+import { Alert, AlertDescription, AlertTitle } from "./alert";
 
 const meta = {
   title: "DesignSystem/Alert",
@@ -18,9 +18,7 @@ export const Default: Story = {
     <Alert variant="default" style={{ maxWidth: "400px" }}>
       <InfoIcon />
       <AlertTitle>Heads up!</AlertTitle>
-      <AlertDescription>
-        You can add components to your app using the CLI.
-      </AlertDescription>
+      <AlertDescription>You can add components to your app using the CLI.</AlertDescription>
     </Alert>
   ),
   play: async ({ canvasElement }) => {
@@ -44,16 +42,12 @@ export const AllVariants: Story = {
       <Alert variant="default">
         <InfoIcon />
         <AlertTitle>Heads up!</AlertTitle>
-        <AlertDescription>
-          You can add components to your app using the CLI.
-        </AlertDescription>
+        <AlertDescription>You can add components to your app using the CLI.</AlertDescription>
       </Alert>
       <Alert variant="destructive">
         <AlertTriangleIcon />
         <AlertTitle>Something went wrong</AlertTitle>
-        <AlertDescription>
-          Your session has expired. Please sign in again.
-        </AlertDescription>
+        <AlertDescription>Your session has expired. Please sign in again.</AlertDescription>
       </Alert>
     </div>
   ),
