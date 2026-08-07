@@ -133,7 +133,14 @@ const UploadNewVersionMenuItem = ({
   const uploadNewVersionAllowed = computed((): Result<null> => {
     return selection
       .asSet()
-      .only.toResult(() => new Error(t("actionsMenu.validation.onlyOneNewVersion")))
+      .only.toResult(
+        () =>
+          new Error(
+            selection.isEmpty
+              ? t("actionsMenu.validation.nothingSelected")
+              : t("actionsMenu.validation.onlyOneNewVersion"),
+          ),
+      )
       .flatMap((file) => file.canUploadNewVersion);
   });
   return (
@@ -355,7 +362,12 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
   const editingAllowed = computed(() =>
     selection
       .asSet()
-      .only.toResult(() => new Error(t("actionsMenu.validation.tooManyItems")))
+      .only.toResult(
+        () =>
+          new Error(
+            selection.isEmpty ? t("actionsMenu.validation.nothingSelected") : t("actionsMenu.validation.tooManyItems"),
+          ),
+      )
       // refused outright before asking which editor applies, e.g. for a past version
       .flatMapDiscarding((file) => file.canBeEdited)
       .flatMap<
@@ -414,7 +426,12 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
   const viewAllowed = computed(() =>
     selection
       .asSet()
-      .only.toResult(() => new Error(t("actionsMenu.validation.tooManyItems")))
+      .only.toResult(
+        () =>
+          new Error(
+            selection.isEmpty ? t("actionsMenu.validation.nothingSelected") : t("actionsMenu.validation.tooManyItems"),
+          ),
+      )
       .flatMap((file) =>
         canPreviewAsImage(file)
           .map((downloadHref) => ({

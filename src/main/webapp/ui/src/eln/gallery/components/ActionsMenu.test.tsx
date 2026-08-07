@@ -497,6 +497,13 @@ describe("ActionsMenu", () => {
       ]) {
         expectMenuItemDisabled(screen.getByRole("menuitem", { name }));
       }
+      // view/edit must report "nothing selected", not "too many items selected", when empty.
+      for (const name of [/common:actions\.edit/i, /gallery:actionsMenu\.view/i]) {
+        const item = screen.getByRole("menuitem", { name });
+        expectMenuItemDisabled(item);
+        expect(item).toHaveTextContent(/gallery:actionsMenu\.validation\.nothingSelected/);
+        expect(item).not.toHaveTextContent(/gallery:actionsMenu\.validation\.tooManyItems/);
+      }
     });
 
     test("clicking Generate Data Record opens the sidecar preview dialog", async () => {
