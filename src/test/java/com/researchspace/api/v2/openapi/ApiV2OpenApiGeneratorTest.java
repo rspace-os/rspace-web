@@ -286,13 +286,14 @@ class ApiV2OpenApiGeneratorTest {
         .convertValue(generator.generate(), new TypeReference<LinkedHashMap<String, Object>>() {});
   }
 
-  @SuppressWarnings("unchecked") // Keys are validated before exposing the map view.
   private static Map<String, Object> objectMap(Object value) {
     if (!(value instanceof Map<?, ?> map)
         || map.keySet().stream().anyMatch(key -> !(key instanceof String))) {
       throw new AssertionError("Expected an object with string keys");
     }
-    return (Map<String, Object>) map;
+    Map<String, Object> result = new LinkedHashMap<>();
+    map.forEach((key, item) -> result.put((String) key, item));
+    return result;
   }
 
   private static List<Map<String, Object>> objectMapList(Object value) {

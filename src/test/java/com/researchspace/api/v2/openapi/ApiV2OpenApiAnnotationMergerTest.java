@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -162,13 +163,14 @@ class ApiV2OpenApiAnnotationMergerTest {
     return objectMap(objectMap(document.get("components")).get("schemas"));
   }
 
-  @SuppressWarnings("unchecked") // Keys are validated before exposing the map view.
   private static Map<String, Object> objectMap(Object value) {
     if (!(value instanceof Map<?, ?> map)
         || map.keySet().stream().anyMatch(key -> !(key instanceof String))) {
       throw new AssertionError("Expected an object with string keys");
     }
-    return (Map<String, Object>) map;
+    Map<String, Object> result = new LinkedHashMap<>();
+    map.forEach((key, item) -> result.put((String) key, item));
+    return result;
   }
 
   private static List<Map<String, Object>> objectMapList(Object value) {
