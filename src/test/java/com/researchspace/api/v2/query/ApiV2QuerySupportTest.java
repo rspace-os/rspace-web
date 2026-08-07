@@ -19,6 +19,7 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RsqlFilterParser;
 import java.time.Instant;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -115,13 +116,15 @@ class ApiV2QuerySupportTest {
     maintenance.setId(42L);
     maintenance.setMessage("upgrade");
 
-    ApiV2FieldsetQuery included = fields(Map.of("maintenances", "message"));
+    Map<String, String> includedFields = new LinkedHashMap<>(Map.of("maintenances", "message"));
+    ApiV2FieldsetQuery included = fields(includedFields);
     ApiV2FieldsetQuery excluded = exclude(Map.of("maintenances", "message"));
     ApiV2FieldsetQuery empty = fields(Map.of("maintenances", ""));
 
     ResourceRequest includedRequest =
         ApiV2ResourceRequestParser.item(
             0, included, ApiV2MaintenanceResource.DESCRIPTION, REGISTRY);
+    includedFields.put("maintenances", "startDate");
     ResourceRenderer renderer = new ResourceRenderer(REGISTRY);
     assertEquals(
         Map.of("id", 42L, "message", "upgrade"),

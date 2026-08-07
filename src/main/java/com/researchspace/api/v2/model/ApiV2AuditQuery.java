@@ -22,24 +22,4 @@ public final class ApiV2AuditQuery extends ApiV2PaginationCriteria implements Da
   private Date dateTo;
 
   private Set<AuditAction> actions = new HashSet<>();
-
-  @Override
-  public Date getDateFrom() {
-    return dateFrom == null ? null : new Date(dateFrom.getTime());
-  }
-
-  @Override
-  public void setDateFrom(Date dateFrom) {
-    this.dateFrom = dateFrom == null ? null : new Date(dateFrom.getTime());
-  }
-
-  @Override
-  public Date getDateTo() {
-    return dateTo == null ? null : new Date(dateTo.getTime());
-  }
-
-  @Override
-  public void setDateTo(Date dateTo) {
-    this.dateTo = dateTo == null ? null : new Date(dateTo.getTime());
-  }
 }
