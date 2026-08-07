@@ -64,6 +64,9 @@ public interface OAuthTokenManager {
   ServiceOperationResult<NewOAuthTokenResponse> createNewJwtToken(
       String clientId, String clientSecret, User user, OAuthTokenType tokenType);
 
+  /** Creates a UI OAuth access token for an authenticated browser user. */
+  String createUiToken(User user);
+
   List<OAuthToken> getTokensForUser(User user);
 
   /**

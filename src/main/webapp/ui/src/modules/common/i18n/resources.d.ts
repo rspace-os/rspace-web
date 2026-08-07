@@ -5349,6 +5349,79 @@ export default interface Resources {
       "allFields": {
         "required": "Please fill in all the fields."
       },
+      "api": {
+        "pagination": {
+          "limit": {
+            "max": "Limit must not exceed {value}.",
+            "min": "Limit must be 1 or greater."
+          },
+          "page": {
+            "min": "Page must be 1 or greater."
+          }
+        },
+        "v2": {
+          "authenticationRequired": "Authentication is required.",
+          "bookingConfiguration": {
+            "create": "The booking configuration is invalid.",
+            "patch": "The booking configuration patch is invalid.",
+            "target": {
+              "conflict": "The selected target already has a booking configuration.",
+              "invalid": "The selected target is not available for booking."
+            },
+            "timeZone": {
+              "invalid": "The time zone must be a valid IANA time zone.",
+              "required": "A time zone is required."
+            }
+          },
+          "bulk": {
+            "filter": {
+              "required": "A where filter is required for bulk operations."
+            },
+            "limit": "The bulk operation exceeds the allowed batch size for this operation."
+          },
+          "depth": {
+            "max": "Depth must not exceed {value}.",
+            "min": "Depth must be 0 or greater.",
+            "range": "Depth must be between 0 and {0}."
+          },
+          "forbidden": "You do not have permission to perform this action.",
+          "invalidRequest": "The request contains an invalid value.",
+          "maintenance": {
+            "endDate": {
+              "required": "End date is required."
+            },
+            "message": {
+              "length": "Message must not exceed 255 characters."
+            },
+            "patch": "The maintenance patch is invalid.",
+            "startDate": {
+              "required": "Start date is required."
+            },
+            "window": "End date must be after start date."
+          },
+          "methodNotAllowed": "This HTTP method is not supported for this resource.",
+          "missingParameter": "A required request parameter is missing.",
+          "notAcceptable": "The requested response content type is not available.",
+          "notFound": "The requested resource was not found.",
+          "query": {
+            "complexity": "The query is too complex.",
+            "field": "The query contains an unsupported field.",
+            "operator": "The query contains an unsupported operator.",
+            "syntax": "The RSQL expression is invalid.",
+            "value": "The query contains an invalid value."
+          },
+          "requestRejected": "The request could not be processed.",
+          "select": {
+            "mode": "Select cannot mix inclusive and exclusive fields."
+          },
+          "tooManyRequests": "Too many requests. Please try again later.",
+          "unexpected": "An unexpected error occurred.",
+          "unsupportedMediaType": "This content type is not supported for this resource.",
+          "where": {
+            "length": "The where expression must not exceed {0} characters."
+          }
+        }
+      },
       "authorization": {
         "apiError": "Authorisation error",
         "audit": {

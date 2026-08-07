@@ -20,6 +20,8 @@ import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.events.UserAccountEvent;
@@ -661,5 +663,20 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       }
     }
     return subject;
+  }
+
+  @Override
+  public ResourcePage<User> getUsers(ResourceRequest request) {
+    return userDao.getUsers(request);
+  }
+
+  @Override
+  public long countUsers(ResourceRequest request) {
+    return userDao.countUsers(request);
+  }
+
+  @Override
+  public Optional<User> getOptional(Long id) {
+    return userDao.getSafeNull(id);
   }
 }

@@ -1,6 +1,12 @@
 package com.researchspace.webapp.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.controller.*;
+import com.researchspace.api.v2.auth.ApiV2Authenticator;
+import com.researchspace.api.v2.auth.ApiV2BrowserSessionAuthenticator;
+import com.researchspace.api.v2.controller.ApiV2AuthenticationInterceptor;
+import com.researchspace.api.v2.controller.ApiV2PermissiveCorsInterceptor;
+import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.auth.TimezoneAdjuster;
 import com.researchspace.auth.TimezoneAdjusterImpl;
 import com.researchspace.properties.PropertyHolder;
@@ -19,6 +25,11 @@ import org.springframework.context.annotation.Configuration;
 public class WebDefaultConfig {
 
   @Autowired PropertyHolder properties;
+
+  @Bean
+  ObjectMapper objectMapper() {
+    return new ObjectMapper();
+  }
 
   @Bean
   public IControllerExceptionHandler controllerExceptionHandler() {
@@ -41,6 +52,15 @@ public class WebDefaultConfig {
   }
 
   @Bean
+  ApiV2AuthenticationInterceptor apiV2AuthenticationInterceptor(
+      ApiV2Authenticator apiV2Authenticator,
+      ApiV2BrowserSessionAuthenticator browserSessionAuthenticator,
+      ApiV2EndpointCatalog endpoints) {
+    return new ApiV2AuthenticationInterceptor(
+        apiV2Authenticator, browserSessionAuthenticator, endpoints);
+  }
+
+  @Bean
   PerformanceLoggingInterceptor performanceLoggingInterceptor() {
     return new PerformanceLoggingInterceptor(properties.getSlowLogThreshold());
   }
@@ -48,6 +68,11 @@ public class WebDefaultConfig {
   @Bean
   ApiPermissiveCorsInterceptor apiPermissiveCorsInterceptor() {
     return new ApiPermissiveCorsInterceptor();
+  }
+
+  @Bean
+  ApiV2PermissiveCorsInterceptor apiV2PermissiveCorsInterceptor() {
+    return new ApiV2PermissiveCorsInterceptor();
   }
 
   @Bean

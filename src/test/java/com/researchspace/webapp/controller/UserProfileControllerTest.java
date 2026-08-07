@@ -93,6 +93,18 @@ public class UserProfileControllerTest {
   }
 
   @Test
+  public void inventoryOAuthTokenDelegatesToSharedUiTokenCreation() {
+    Principal principal = () -> sessionUser.getUsername();
+    when(usrMgr.getUserByUsername(sessionUser.getUsername())).thenReturn(sessionUser);
+    when(oAuthTokenManager.createUiToken(sessionUser)).thenReturn("access-token");
+
+    AjaxReturnObject<String> result = userProfileController.getInventoryOauthToken(principal);
+
+    assertEquals("access-token", result.getData());
+    verify(oAuthTokenManager).createUiToken(sessionUser);
+  }
+
+  @Test
   public void addOAuthAppsSuccess() {
     // given
     when(usrMgr.getAuthenticatedUserInSession()).thenReturn(sessionUser);
