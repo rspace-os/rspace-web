@@ -1,5 +1,9 @@
 import type { BrowserContext, BrowserContextOptions, Page, TestFixture } from "@playwright/test";
 import { test as base } from "@playwright/test";
+import { GitHubAppsCardComponent } from "@/modules/github/__tests__/pageObjects/GitHubAppsCardComponent";
+import { MsTeamsShareDialogComponent } from "@/modules/msteams/__tests__/pageObjects/MsTeamsShareDialogComponent";
+import { OrcidProfilePage } from "@/modules/orcid/__tests__/pageObjects/OrcidProfilePage";
+import { SlackDialogComponent } from "@/modules/slack/__tests__/pageObjects/SlackDialogComponent";
 import { storageStatePath } from "../authState";
 import { ExportWizardComponent } from "../components/shared/ExportWizardComponent";
 import { NotificationsDialogComponent } from "../components/shared/NotificationsDialogComponent";
@@ -38,9 +42,13 @@ type UiFixtures = {
   pageAuditTrail: AuditTrailPage;
   pageDeletedItems: DeletedItemsPage;
   pageNotebook: NotebookPage;
+  pageGitHubAppsCard: GitHubAppsCardComponent;
+  pageOrcidProfile: OrcidProfilePage;
   componentExportWizard: ExportWizardComponent;
   componentNotifications: NotificationsDialogComponent;
   componentToasts: ToastsComponent;
+  componentMsTeamsShare: MsTeamsShareDialogComponent;
+  componentSlackDialog: SlackDialogComponent;
 };
 
 function pageFixture<T>(Ctor: new (page: Page) => T): TestFixture<T, { page: Page }> {
@@ -83,7 +91,11 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   pageAuditTrail: pageFixture(AuditTrailPage),
   pageDeletedItems: pageFixture(DeletedItemsPage),
   pageNotebook: pageFixture(NotebookPage),
+  pageGitHubAppsCard: pageFixture(GitHubAppsCardComponent),
+  pageOrcidProfile: pageFixture(OrcidProfilePage),
   componentExportWizard: pageFixture(ExportWizardComponent),
   componentNotifications: pageFixture(NotificationsDialogComponent),
   componentToasts: pageFixture(ToastsComponent),
+  componentMsTeamsShare: pageFixture(MsTeamsShareDialogComponent),
+  componentSlackDialog: pageFixture(SlackDialogComponent),
 });
