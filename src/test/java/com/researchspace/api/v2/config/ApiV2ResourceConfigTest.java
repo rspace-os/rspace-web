@@ -21,6 +21,7 @@ import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Field;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionFieldTypes;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import java.util.List;
@@ -99,6 +100,7 @@ class ApiV2ResourceConfigTest {
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
     context.registerBean(MaintenanceManager.class, () -> mock(MaintenanceManager.class));
     context.registerBean(UserManager.class, () -> mock(UserManager.class));
+    context.registerBean(FeatureFlagManager.class, () -> mock(FeatureFlagManager.class));
     context.registerBean(
         BookingConfigurationManager.class, () -> mock(BookingConfigurationManager.class));
     context.registerBean(

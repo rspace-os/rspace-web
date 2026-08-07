@@ -74,6 +74,15 @@ class PublicApiV2AuthenticationMVCIT {
           .andExpect(jsonPath("$.totalDocs").isNumber());
     }
 
+    @Test
+    @DisplayName("the feature flag collection is served without credentials")
+    void featureFlagCollectionIsPublic() throws Exception {
+      mockMvc
+          .perform(get("/api/v2/feature-flags"))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.docs").isArray());
+    }
+
     /**
      * Spring 6 stopped treating a trailing slash as an alias for the mapped path, and RSpace does
      * not re-enable it. Pinned because it is a framework behaviour change rather than an
@@ -105,8 +114,9 @@ class PublicApiV2AuthenticationMVCIT {
               + "\"endDate\":\"2026-08-01T11:00:00Z\"}",
           "PATCH  | /api/v2/maintenances/1 | {\"message\":\"test\"}",
           "DELETE | /api/v2/maintenances/1 | ",
+          "PATCH  | /api/v2/feature-flags/bookingEnabled | {\"overrideValue\":true}",
         })
-    @DisplayName("mutating maintenance endpoints require credentials")
+    @DisplayName("mutating endpoints require credentials")
     void mutatingEndpointsRequireCredentials(String method, String path, String body)
         throws Exception {
       MockHttpServletRequestBuilder httpRequest =

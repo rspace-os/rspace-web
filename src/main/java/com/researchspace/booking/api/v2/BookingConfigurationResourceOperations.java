@@ -1,5 +1,7 @@
 package com.researchspace.booking.api.v2;
 
+import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
+
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
@@ -23,10 +25,12 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.service.FeatureFlagManager;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -37,9 +41,12 @@ public final class BookingConfigurationResourceOperations
     implements ResourceOperations<BookingConfiguration, Long> {
 
   private final BookingConfigurationManager manager;
+  private final FeatureFlagManager featureFlags;
 
-  public BookingConfigurationResourceOperations(BookingConfigurationManager manager) {
+  public BookingConfigurationResourceOperations(
+      BookingConfigurationManager manager, FeatureFlagManager featureFlags) {
     this.manager = manager;
+    this.featureFlags = featureFlags;
   }
 
   @Bean
@@ -91,48 +98,79 @@ public final class BookingConfigurationResourceOperations
 
   @Override
   public ResourcePage<BookingConfiguration> find(ResourceRequest request, User actor) {
+    if (!enabled(actor)) {
+      return new ResourcePage<>(List.of(), 0);
+    }
     return manager.getConfigurations(request);
   }
 
   @Override
   public long count(ResourceRequest request, User actor) {
+    if (!enabled(actor)) {
+      return 0;
+    }
     return manager.countConfigurations(request);
   }
 
   @Override
   public Optional<BookingConfiguration> findById(Long id, User actor) {
+    if (!enabled(actor)) {
+      return Optional.empty();
+    }
     return manager.getConfiguration(id);
   }
 
   @Override
   public BookingConfiguration create(ParsedDocument document, User actor) {
+    if (!enabled(actor)) {
+      throw new AuthorizationException();
+    }
     return manager.createConfiguration(create(document), actor);
   }
 
   @Override
   public List<BookingConfiguration> createMany(List<ParsedDocument> documents, User actor) {
+    if (!enabled(actor)) {
+      throw new AuthorizationException();
+    }
     return manager.createConfigurations(documents.stream().map(this::create).toList(), actor);
   }
 
   @Override
   public Optional<BookingConfiguration> update(Long id, ParsedDocument document, User actor) {
+    if (!enabled(actor)) {
+      return Optional.empty();
+    }
     return manager.updateConfiguration(id, patch(document), actor);
   }
 
   @Override
   public List<BookingConfiguration> updateMany(
       ResourceRequest request, ParsedDocument document, User actor) {
+    if (!enabled(actor)) {
+      return List.of();
+    }
     return manager.updateConfigurations(request, patch(document), actor);
   }
 
   @Override
   public Optional<BookingConfiguration> delete(Long id, User actor) {
+    if (!enabled(actor)) {
+      return Optional.empty();
+    }
     return manager.removeConfiguration(id, actor);
   }
 
   @Override
   public List<BookingConfiguration> deleteMany(ResourceRequest request, User actor) {
+    if (!enabled(actor)) {
+      return List.of();
+    }
     return manager.removeConfigurations(request, actor);
+  }
+
+  private boolean enabled(User actor) {
+    return featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, actor);
   }
 
   private static Patch patch(ParsedDocument document) {

@@ -10,6 +10,8 @@ import {
 import { useTranslation } from "react-i18next";
 import RSpaceLogo from "@/assets/branding/rspace/logo.svg";
 import RSpaceLogoTight from "@/assets/branding/rspace/logo-tight.svg";
+import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import { useCurrentUserEventSync, useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { buttonVariants } from "@/modules/common/ui/button";
 import AccountMenu from "./AccountMenu";
@@ -49,6 +51,7 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
   const { data: appConfig } = useAppConfigQuery();
   const { data: nextMaintenance } = useNextMaintenanceQuery();
   const config = appConfig ?? DEFAULT_APP_CONFIG;
+  const showBooking = useIsFeatureFlagEnabled(FEATURE_FLAGS.bookingEnabled);
   const navItems: NavItem[] = [
     {
       id: "workspace",
@@ -82,8 +85,7 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
       label: t("appBar.sections.booking.title"),
       href: "/booking",
       routerTo: "/booking",
-      // Off until the feature-flag PR wires up visibility control.
-      isVisible: false,
+      isVisible: showBooking,
       description: t("appBar.sections.booking.subheader"),
       icon: <CalendarIcon />,
       iconClassName: "text-amber-500",
