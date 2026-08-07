@@ -5,6 +5,10 @@ import type { GallerySection } from "@/__tests__/e2e/components/gallery/GalleryS
 import { GallerySidebar } from "@/__tests__/e2e/components/gallery/GallerySidebar";
 import { GallerySortMenu } from "@/__tests__/e2e/components/gallery/GallerySortMenu";
 import { GalleryViewsMenu } from "@/__tests__/e2e/components/gallery/GalleryViewsMenu";
+import { ArgosImportDialogComponent } from "@/modules/argos/__tests__/pageObjects/ArgosImportDialogComponent";
+import { DMPAssistantImportDialogComponent } from "@/modules/dmpassistant/__tests__/pageObjects/DMPAssistantImportDialogComponent";
+import { DMPOnlineImportDialogComponent } from "@/modules/dmponline/__tests__/pageObjects/DMPOnlineImportDialogComponent";
+import { DMPToolImportDialogComponent } from "@/modules/dmptool/__tests__/pageObjects/DMPToolImportDialogComponent";
 import { DSWImportDialogComponent } from "@/modules/dsw/__tests__/pageObjects/DSWImportDialogComponent";
 import { BasePage } from "../BasePage";
 
@@ -88,6 +92,38 @@ export class GalleryPage extends BasePage {
     await this.sidebar.createButton.click();
     await this.page.getByRole("menuitem", { name: `${alias} DSW / FAIR Wizard` }).click();
     const dialog = new DSWImportDialogComponent(this.page);
+    await dialog.waitForOpen();
+    return dialog;
+  }
+
+  async openDMPToolImport(): Promise<DMPToolImportDialogComponent> {
+    await this.sidebar.createButton.click();
+    await this.page.getByRole("menuitem", { name: "DMPTool", exact: true }).click();
+    const dialog = new DMPToolImportDialogComponent(this.page);
+    await dialog.waitForOpen();
+    return dialog;
+  }
+
+  async openDMPAssistantImport(): Promise<DMPAssistantImportDialogComponent> {
+    await this.sidebar.createButton.click();
+    await this.page.getByRole("menuitem", { name: "DMP Assistant", exact: true }).click();
+    const dialog = new DMPAssistantImportDialogComponent(this.page);
+    await dialog.waitForOpen();
+    return dialog;
+  }
+
+  async openDMPOnlineImport(): Promise<DMPOnlineImportDialogComponent> {
+    await this.sidebar.createButton.click();
+    await this.page.getByRole("menuitem", { name: "DMPonline", exact: true }).click();
+    const dialog = new DMPOnlineImportDialogComponent(this.page);
+    await dialog.waitForOpen();
+    return dialog;
+  }
+
+  async openArgosImport(): Promise<ArgosImportDialogComponent> {
+    await this.sidebar.createButton.click();
+    await this.page.getByRole("menuitem", { name: "Argos", exact: true }).click();
+    const dialog = new ArgosImportDialogComponent(this.page);
     await dialog.waitForOpen();
     return dialog;
   }
