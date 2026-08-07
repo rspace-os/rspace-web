@@ -34,9 +34,11 @@ import jakarta.ws.rs.NotFoundException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -79,7 +81,7 @@ class ApiV2AuditLogTest {
     query.setLimit(20);
     query.setDateFrom(Date.from(Instant.now().minus(Duration.ofDays(500))));
     query.setDateTo(new Date());
-    query.setActions(java.util.Set.of(AuditAction.WRITE));
+    query.setActions(new HashSet<>(Set.of(AuditAction.WRITE)));
 
     var page = auditLog.search(resource, "7", query, actor);
 
@@ -93,9 +95,16 @@ class ApiV2AuditLogTest {
     ArgumentCaptor<PaginationCriteria<AuditTrailSearchResult>> pagination =
         ArgumentCaptor.forClass(PaginationCriteria.class);
     verify(handler).searchAuditTrail(config.capture(), pagination.capture(), eq(actor));
+    Date restrictedFrom = config.getValue().getDateFrom();
+    Date restrictedTo = config.getValue().getDateTo();
+    query.getDateFrom().setTime(0);
+    query.getDateTo().setTime(0);
+    query.getActions().clear();
     assertEquals("things:7", config.getValue().getOid());
-    assertEquals(java.util.Set.of(AuditDomain.RECORD), config.getValue().getDomains());
-    assertEquals(java.util.Set.of(AuditAction.WRITE), config.getValue().getActions());
+    assertEquals(Set.of(AuditDomain.RECORD), config.getValue().getDomains());
+    assertEquals(Set.of(AuditAction.WRITE), config.getValue().getActions());
+    assertEquals(restrictedFrom, config.getValue().getDateFrom());
+    assertEquals(restrictedTo, config.getValue().getDateTo());
     assertTrue(
         Duration.between(
                     config.getValue().getDateFrom().toInstant(),
