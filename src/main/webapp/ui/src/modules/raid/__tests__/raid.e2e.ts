@@ -144,7 +144,7 @@ test.describe(`RAiD integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () =
         const notificationTexts = (await componentNotifications.getNotificationTexts()).join("\n");
         expect(notificationTexts).toContain("Your export is completed and generated an archive");
         expect(notificationTexts).toContain("Your deposit to repository Zenodo is complete.");
-        expect(notificationTexts).toContain("has been added to your RaID record");
+        expect(notificationTexts).toContain("has been added to your RAiD record");
         await componentNotifications.close();
       });
     });
