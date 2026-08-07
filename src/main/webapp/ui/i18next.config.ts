@@ -18,7 +18,6 @@ export default defineConfig({
       "src/test-stubs/**",
       "src/__tests__/**",
       "src/modules/common/i18n/**",
-      "src/modules/**/prototypes/**",
     ],
     output: "src/modules/common/i18n/locales/{{language}}/{{namespace}}.json",
     primaryLanguage: "en-US",
@@ -39,14 +38,6 @@ export default defineConfig({
     resourcesFile: "src/modules/common/i18n/resources.d.ts",
   },
   lint: {
-    ignore: [
-      "**/__tests__/**",
-      "**/*.test.*",
-      "**/*.spec.*",
-      "**/*.story.*",
-      "**/*.stories.*",
-      "src/test-stubs/**",
-      "src/modules/**/prototypes/**",
-    ],
+    ignore: ["**/__tests__/**", "**/*.test.*", "**/*.spec.*", "**/*.story.*", "**/*.stories.*", "src/test-stubs/**"],
   },
 });
