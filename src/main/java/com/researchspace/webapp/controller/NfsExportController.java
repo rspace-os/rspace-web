@@ -112,10 +112,19 @@ public class NfsExportController extends BaseController {
     return plan;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings("unchecked") // Every entry is validated before exposing the session map.
   protected Map<String, NfsExportPlan> getNfsExportPlansFromSession(HttpServletRequest request) {
-    Map<String, NfsExportPlan> exportPlans =
-        (Map<String, NfsExportPlan>) request.getSession().getAttribute(SESSION_NFS_EXPORT_PLANS);
+    Object attribute = request.getSession().getAttribute(SESSION_NFS_EXPORT_PLANS);
+    if (attribute != null
+        && (!(attribute instanceof Map<?, ?> map)
+            || map.entrySet().stream()
+                .anyMatch(
+                    entry ->
+                        !(entry.getKey() instanceof String)
+                            || !(entry.getValue() instanceof NfsExportPlan)))) {
+      throw new IllegalStateException("Invalid NFS export plans session attribute");
+    }
+    Map<String, NfsExportPlan> exportPlans = (Map<String, NfsExportPlan>) attribute;
     if (exportPlans == null) {
       exportPlans = new HashMap<>();
       request.getSession().setAttribute(SESSION_NFS_EXPORT_PLANS, exportPlans);

@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.jsp.jstl.core.Config;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import org.springframework.context.i18n.LocaleContext;
@@ -39,7 +40,6 @@ public class LocaleFilter extends OncePerRequestFilter {
    * @throws IOException when something goes wrong
    * @throws ServletException when a communication failure happens
    */
-  @SuppressWarnings("unchecked")
   public void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws IOException, ServletException {
@@ -64,8 +64,14 @@ public class LocaleFilter extends OncePerRequestFilter {
 
     String theme = request.getParameter("theme");
     if (theme != null && request.isUserInRole(Constants.ADMIN_ROLE)) {
-      Map<String, Object> config = (Map) getServletContext().getAttribute(Constants.CONFIG);
+      Object configAttribute = getServletContext().getAttribute(Constants.CONFIG);
+      if (!(configAttribute instanceof Map<?, ?> existing)) {
+        throw new IllegalStateException("Application config attribute must be a map");
+      }
+      Map<String, Object> config = new LinkedHashMap<>();
+      existing.forEach((key, value) -> config.put(String.class.cast(key), value));
       config.put(Constants.CSS_THEME, theme);
+      getServletContext().setAttribute(Constants.CONFIG, config);
     }
 
     try {

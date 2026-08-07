@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -114,7 +115,7 @@ public final class InMemoryCollectionQuery<T> {
     return ascending ? result : -result;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings("unchecked") // Class equality above proves both values have the same T.
   private static int compare(Object left, Object right) {
     if (!(left instanceof Comparable<?> comparable) || !left.getClass().isInstance(right)) {
       throw new IllegalStateException("Collection values are not mutually comparable");
@@ -123,9 +124,7 @@ public final class InMemoryCollectionQuery<T> {
   }
 
   private static boolean contains(String actual, String expected) {
-    return actual
-        .toLowerCase(java.util.Locale.ROOT)
-        .contains(expected.toLowerCase(java.util.Locale.ROOT));
+    return actual.toLowerCase(Locale.ROOT).contains(expected.toLowerCase(Locale.ROOT));
   }
 
   private static boolean wordsLike(String actual, String expected) {

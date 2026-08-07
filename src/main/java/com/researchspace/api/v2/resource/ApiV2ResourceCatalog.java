@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.resource;
 
+import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.ResourceRegistry;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,7 +64,7 @@ public final class ApiV2ResourceCatalog {
     return List.copyOf(relationshipTargets.values());
   }
 
-  public List<com.researchspace.model.collection.CollectionDescription<?>> allSchemas() {
+  public List<CollectionDescription<?>> allSchemas() {
     return List.copyOf(registry.resources());
   }
 

@@ -6,18 +6,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import io.swagger.v3.core.util.Json31;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ApiV2OpenApiValidatorTest {
 
-  private Map<String, Object> document;
+  private OpenAPI document;
 
   @BeforeEach
   void setUp() {
@@ -28,28 +34,28 @@ class ApiV2OpenApiValidatorTest {
 
   @Test
   void rejectsDuplicateOperationIds() {
-    Map<String, Object> paths = objectMap(document.get("paths"));
-    paths.put("/one", Map.of("get", operation("duplicate")));
-    paths.put("/two", Map.of("get", operation("duplicate")));
+    document.getPaths().addPathItem("/one", new PathItem().get(operation("duplicate")));
+    document.getPaths().addPathItem("/two", new PathItem().get(operation("duplicate")));
 
     assertThrows(IllegalArgumentException.class, () -> ApiV2OpenApiValidator.validate(document));
   }
 
   @Test
   void rejectsUnresolvedComponentReferences() {
-    Map<String, Object> operation = operation("one");
-    operation.put(
-        "responses",
-        Map.of(
+    Operation operation = operation("one");
+    operation
+        .getResponses()
+        .addApiResponse(
             "200",
-            Map.of(
-                "description",
-                "ok",
-                "content",
-                Map.of(
-                    "application/json",
-                    Map.of("schema", Map.of("$ref", "#/components/schemas/Missing"))))));
-    objectMap(document.get("paths")).put("/one", Map.of("get", operation));
+            new ApiResponse()
+                .description("ok")
+                .content(
+                    new Content()
+                        .addMediaType(
+                            "application/json",
+                            new MediaType()
+                                .schema(new Schema<>().$ref("#/components/schemas/Missing")))));
+    document.getPaths().addPathItem("/one", new PathItem().get(operation));
 
     assertThrows(IllegalArgumentException.class, () -> ApiV2OpenApiValidator.validate(document));
   }
@@ -65,15 +71,7 @@ class ApiV2OpenApiValidatorTest {
     assertTrue(parsed.getMessages().isEmpty(), String.join("; ", parsed.getMessages()));
   }
 
-  private static Map<String, Object> operation(String id) {
-    Map<String, Object> operation = new LinkedHashMap<>();
-    operation.put("operationId", id);
-    operation.put("responses", Map.of());
-    return operation;
-  }
-
-  @SuppressWarnings("unchecked")
-  private static Map<String, Object> objectMap(Object value) {
-    return (Map<String, Object>) value;
+  private static Operation operation(String id) {
+    return new Operation().operationId(id).responses(new ApiResponses());
   }
 }

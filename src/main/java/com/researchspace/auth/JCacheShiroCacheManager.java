@@ -36,7 +36,7 @@ public class JCacheShiroCacheManager implements org.apache.shiro.cache.CacheMana
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings("unchecked") // Shiro's cache API has no runtime key/value type tokens.
   public <K, V> Cache<K, V> getCache(String name) throws CacheException {
     javax.cache.Cache<K, V> jCache = (javax.cache.Cache<K, V>) jCacheManager.getCache(name);
     if (jCache == null) {
@@ -45,7 +45,6 @@ public class JCacheShiroCacheManager implements org.apache.shiro.cache.CacheMana
     return new JCacheShiroCache<>(jCache);
   }
 
-  @SuppressWarnings("unchecked")
   private <K, V> javax.cache.Cache<K, V> createJCache(String name) {
     Duration ttl = cacheTtls.getOrDefault(name, defaultTtl);
 
@@ -59,7 +58,7 @@ public class JCacheShiroCacheManager implements org.apache.shiro.cache.CacheMana
     }
 
     log.info("Creating Shiro JCache '{}' with TTL {}", name, ttl != null ? ttl : "eternal");
-    return (javax.cache.Cache<K, V>) jCacheManager.createCache(name, config);
+    return jCacheManager.createCache(name, config);
   }
 
   @Override

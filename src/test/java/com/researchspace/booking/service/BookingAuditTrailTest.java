@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -25,7 +26,7 @@ class BookingAuditTrailTest {
         new BookingConfigurationAuditEvent(
             mock(User.class), new BookingConfiguration(), AuditAction.CREATE));
 
-    verify(auditTrail).notify(org.mockito.ArgumentMatchers.any(GenericEvent.class));
+    verify(auditTrail).notify(any(GenericEvent.class));
   }
 
   @Test

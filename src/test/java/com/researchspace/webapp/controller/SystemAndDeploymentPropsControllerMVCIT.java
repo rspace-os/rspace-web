@@ -37,8 +37,7 @@ public class SystemAndDeploymentPropsControllerMVCIT extends MVCTestBase {
   public void testGetPropertyValues() throws Exception {
     logoutAndLoginAsCommunityAdmin(); // can be anyone,
     MvcResult res = mockMvc.perform(get("/deploymentproperties/ajax/properties")).andReturn();
-    @SuppressWarnings("unchecked")
-    Map<String, String> data = getFromJsonResponseBody(res, Map.class);
+    Map<?, ?> data = getFromJsonResponseBody(res, Map.class);
     final int MIN_PROPERTY_COUNT = 7; // from rspac861
     assertTrue(data.keySet().size() >= MIN_PROPERTY_COUNT);
     // assert properties are merged from DB...

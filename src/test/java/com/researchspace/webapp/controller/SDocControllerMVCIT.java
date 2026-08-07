@@ -346,7 +346,6 @@ public class SDocControllerMVCIT extends MVCTestBase {
     return idArray;
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void testListRevisions() throws Exception {
     final int ntimes = 12;

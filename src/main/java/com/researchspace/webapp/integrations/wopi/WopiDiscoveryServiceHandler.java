@@ -6,7 +6,7 @@ import com.researchspace.webapp.integrations.wopi.models.xml.XmlProofKey;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,11 +77,10 @@ public class WopiDiscoveryServiceHandler {
    * Single object that gets changed when the discovery XML data gets updated. Source of truth for
    * the latest data. Can be null.
    */
-  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  private Optional<WopiData> data = Optional.empty();
+  private WopiData data;
 
   public void setData(WopiData data) {
-    this.data = Optional.of(data);
+    this.data = Objects.requireNonNull(data, "WOPI data");
     proofKeyValidator.setPublicKeys(data.getKeys());
   }
 
@@ -91,12 +90,12 @@ public class WopiDiscoveryServiceHandler {
    * @return map of action names / actions supporting given file extension
    */
   public Map<String, WopiAction> getActionsForFileType(String ext) {
-    if (!data.isPresent()) return Collections.emptyMap();
-    else return data.get().getAvailableActionsForExt().getOrDefault(ext, new HashMap<>());
+    if (data == null) return Collections.emptyMap();
+    else return data.getAvailableActionsForExt().getOrDefault(ext, new HashMap<>());
   }
 
   public Map<String, WopiApp> getSupportedExtensions() {
-    if (!data.isPresent()) return Collections.emptyMap();
-    else return data.get().getSupportedExtensions();
+    if (data == null) return Collections.emptyMap();
+    else return data.getSupportedExtensions();
   }
 }

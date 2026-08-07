@@ -84,7 +84,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
   private @Autowired MessageSourceUtils messages;
 
-  @SuppressWarnings("unused") // unused but required for spring ApplicationContext to load properly
   private @Autowired IRecordFactory recordFactory;
 
   /** {@inheritDoc} */

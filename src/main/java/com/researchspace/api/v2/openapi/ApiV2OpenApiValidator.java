@@ -1,7 +1,11 @@
 package com.researchspace.api.v2.openapi;
 
 import io.swagger.v3.core.util.Json31;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -12,73 +16,66 @@ import java.util.regex.Pattern;
 
 public final class ApiV2OpenApiValidator {
 
-  private static final Set<String> HTTP_METHODS =
-      Set.of("get", "put", "post", "delete", "options", "head", "patch", "trace");
   private static final Pattern PATH_PARAMETER = Pattern.compile("\\{([^}/]+)}");
 
   private ApiV2OpenApiValidator() {}
 
-  public static void validate(Map<String, Object> document) {
-    if (!"3.1.0".equals(document.get("openapi"))) {
+  public static void validate(OpenAPI document) {
+    if (!"3.1.0".equals(document.getOpenapi())) {
       throw new IllegalArgumentException("REST API v2 must generate OpenAPI 3.1.0");
     }
-    Map<String, Object> paths = objectMap(document.get("paths"), "OpenAPI paths");
-    Map<String, Object> components = objectMap(document.get("components"), "OpenAPI components");
-    Map<String, Object> schemas = objectMap(components.get("schemas"), "OpenAPI schemas");
-    Map<String, Object> responses = objectMap(components.get("responses"), "OpenAPI responses");
-    Map<String, Object> headers = objectMap(components.get("headers"), "OpenAPI headers");
-    Map<String, Object> securitySchemes =
-        objectMap(components.get("securitySchemes"), "OpenAPI security schemes");
+    Paths paths = require(document.getPaths(), "OpenAPI paths");
+    Components components = require(document.getComponents(), "OpenAPI components");
+    Map<String, ?> schemas = require(components.getSchemas(), "OpenAPI schemas");
+    Map<String, ?> responses = require(components.getResponses(), "OpenAPI responses");
+    Map<String, ?> headers = require(components.getHeaders(), "OpenAPI headers");
+    Map<String, ?> securitySchemes =
+        require(components.getSecuritySchemes(), "OpenAPI security schemes");
     Set<String> operationIds = new HashSet<>();
     paths.forEach(
-        (path, rawPathItem) -> {
+        (path, pathItem) -> {
           if (!path.startsWith("/")) {
             throw new IllegalArgumentException("OpenAPI paths must start with '/': " + path);
           }
-          Map<String, Object> pathItem = objectMap(rawPathItem, "OpenAPI path item");
-          pathItem.forEach(
-              (method, rawOperation) -> {
-                if (!HTTP_METHODS.contains(method)) {
-                  return;
-                }
-                Map<String, Object> operation = objectMap(rawOperation, "OpenAPI operation");
-                validateOperation(path, operation, operationIds, securitySchemes.keySet());
-              });
+          require(pathItem, "OpenAPI path item")
+              .readOperations()
+              .forEach(
+                  operation ->
+                      validateOperation(path, operation, operationIds, securitySchemes.keySet()));
         });
-    validateReferences(document, schemas.keySet(), responses.keySet(), headers.keySet());
+    validateReferences(
+        Json31.mapper().convertValue(document, Object.class),
+        schemas.keySet(),
+        responses.keySet(),
+        headers.keySet());
     validateWithSwaggerCore(document);
   }
 
   private static void validateOperation(
-      String path,
-      Map<String, Object> operation,
-      Set<String> operationIds,
-      Set<String> securitySchemes) {
-    Object id = operation.get("operationId");
-    if (!(id instanceof String operationId)
-        || operationId.isBlank()
-        || !operationIds.add(operationId)) {
-      throw new IllegalArgumentException("OpenAPI operation IDs must be present and unique: " + id);
+      String path, Operation operation, Set<String> operationIds, Set<String> securitySchemes) {
+    String operationId = operation.getOperationId();
+    if (operationId == null || operationId.isBlank() || !operationIds.add(operationId)) {
+      throw new IllegalArgumentException(
+          "OpenAPI operation IDs must be present and unique: " + operationId);
     }
-    Map<String, Object> responses =
-        objectMap(operation.get("responses"), "OpenAPI operation responses");
+    Map<String, ?> responses = require(operation.getResponses(), "OpenAPI operation responses");
     if (responses.isEmpty()
         || responses.keySet().stream()
             .anyMatch(code -> !code.equals("default") && !code.matches("[1-5](?:\\d\\d|XX)"))) {
       throw new IllegalArgumentException(
           "OpenAPI operation responses must use valid status codes: " + operationId);
     }
-    List<?> parameters = operation.get("parameters") instanceof List<?> values ? values : List.of();
+    List<Parameter> parameters =
+        operation.getParameters() == null ? List.of() : operation.getParameters();
     Set<String> declared = new HashSet<>();
-    for (Object rawParameter : parameters) {
-      Map<String, Object> parameter = objectMap(rawParameter, "OpenAPI parameter");
-      String name = String.valueOf(parameter.get("name"));
-      String location = String.valueOf(parameter.get("in"));
+    for (Parameter parameter : parameters) {
+      String name = String.valueOf(parameter.getName());
+      String location = String.valueOf(parameter.getIn());
       if (!declared.add(location + ":" + name)) {
         throw new IllegalArgumentException(
             "Duplicate OpenAPI parameter " + location + ":" + name + " on " + operationId);
       }
-      if (location.equals("path") && !Boolean.TRUE.equals(parameter.get("required"))) {
+      if (location.equals("path") && !Boolean.TRUE.equals(parameter.getRequired())) {
         throw new IllegalArgumentException("OpenAPI path parameters must be required: " + name);
       }
     }
@@ -89,9 +86,8 @@ public final class ApiV2OpenApiValidator {
             "OpenAPI path parameter is not declared: " + matcher.group(1));
       }
     }
-    if (operation.get("security") instanceof List<?> requirements) {
-      requirements.stream()
-          .map(requirement -> objectMap(requirement, "OpenAPI security requirement"))
+    if (operation.getSecurity() != null) {
+      operation.getSecurity().stream()
           .flatMap(requirement -> requirement.keySet().stream())
           .filter(name -> !securitySchemes.contains(name))
           .findFirst()
@@ -133,7 +129,7 @@ public final class ApiV2OpenApiValidator {
     }
   }
 
-  private static void validateWithSwaggerCore(Map<String, Object> document) {
+  private static void validateWithSwaggerCore(OpenAPI document) {
     try {
       OpenAPI parsed =
           Json31.mapper().readValue(Json31.mapper().writeValueAsBytes(document), OpenAPI.class);
@@ -145,11 +141,10 @@ public final class ApiV2OpenApiValidator {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  private static Map<String, Object> objectMap(Object value, String label) {
-    if (!(value instanceof Map<?, ?>)) {
-      throw new IllegalArgumentException(label + " must be an object");
+  private static <T> T require(T value, String label) {
+    if (value == null) {
+      throw new IllegalArgumentException(label + " must be present");
     }
-    return (Map<String, Object>) value;
+    return value;
   }
 }

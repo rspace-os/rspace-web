@@ -6,6 +6,7 @@ import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.FieldSelection;
+import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourceRegistry;
@@ -15,6 +16,7 @@ import com.researchspace.model.collection.RsqlFilterParser;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -131,8 +133,7 @@ public final class ApiV2ResourceRequestParser {
     return !key.isEmpty() && key.indexOf('[') < 0 && key.indexOf(']') < 0;
   }
 
-  private static com.researchspace.model.collection.FilterExpression filter(
-      String where, CollectionDescription<?> description) {
+  private static FilterExpression filter(String where, CollectionDescription<?> description) {
     validateWhere(where);
     return new RsqlFilterParser(description).parse(where);
   }
@@ -205,7 +206,7 @@ public final class ApiV2ResourceRequestParser {
     if (value.isEmpty()) {
       return Set.of();
     }
-    Set<String> fields = new java.util.LinkedHashSet<>();
+    Set<String> fields = new LinkedHashSet<>();
     for (String token : value.split(",", -1)) {
       String field = token.trim();
       if (field.isEmpty()) {

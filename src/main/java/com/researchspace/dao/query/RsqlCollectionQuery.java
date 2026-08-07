@@ -69,15 +69,15 @@ public final class RsqlCollectionQuery {
   }
 
   private String compileComparison(FilterExpression.Comparison comparison, State state) {
-    FilterSelector selector = description.requireFilterSelector(comparison.field());
+    FilterSelector<?> selector = description.requireFilterSelector(comparison.field());
     Operator operator = comparison.operator();
     if (!selector.operators().contains(operator)) {
       throw new CollectionQueryException(CollectionQueryException.Reason.OPERATOR);
     }
-    if (selector instanceof FilterSelector.RelationshipPart relationship) {
+    if (selector instanceof FilterSelector.RelationshipPart<?> relationship) {
       return compileRelationship(comparison, relationship, state);
     }
-    FilterSelector.Property property = (FilterSelector.Property) selector;
+    FilterSelector.Property<?> property = (FilterSelector.Property<?>) selector;
     String path = alias + "." + property.property();
     if (operator == Operator.EXISTS) {
       return path + (Boolean.TRUE.equals(comparison.values().get(0)) ? " IS NOT NULL" : " IS NULL");
@@ -105,7 +105,7 @@ public final class RsqlCollectionQuery {
 
   private String compileRelationship(
       FilterExpression.Comparison comparison,
-      FilterSelector.RelationshipPart selector,
+      FilterSelector.RelationshipPart<?> selector,
       State state) {
     SplitReferenceBinding<?, ?, ?> binding = selector.relationship().binding();
     String kindPath = alias + "." + binding.kindProperty();

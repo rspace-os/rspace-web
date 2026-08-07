@@ -24,7 +24,7 @@ public class InstrumentRelationshipTargetConfig {
   @Bean
   ApiV2RelationshipTargetSpec<Instrument, Long> instrumentApiV2RelationshipTarget() {
     return new ApiV2RelationshipTargetSpec<>(
-        ApiV2InstrumentResource.DESCRIPTION, this::findReadable);
+        ApiV2InstrumentResource.DESCRIPTION, Long.class, this::findReadable);
   }
 
   private Optional<Instrument> findReadable(Long id, User actor) {

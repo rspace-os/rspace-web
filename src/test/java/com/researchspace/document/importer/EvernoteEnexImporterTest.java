@@ -37,7 +37,6 @@ public class EvernoteEnexImporterTest extends SpringTransactionalTest {
     super.setUp();
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void testImportWithAllMediaAttachments() throws IOException {
     User anyUser = createInitAndLoginAnyUser();

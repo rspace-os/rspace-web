@@ -44,17 +44,15 @@ class CollectionQueryExecutorTest {
   private CriteriaBuilder<Widget> query;
 
   @BeforeEach
-  @SuppressWarnings("unchecked")
   void setUp() {
-    query = mock(CriteriaBuilder.class);
+    query = erasedMock(CriteriaBuilder.class);
     when(factory.create(session, Widget.class, "item")).thenReturn(query);
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   void pagesWithTranslatedFiltersAndMappedSortProperties() {
-    PaginatedCriteriaBuilder<Widget> paginated = mock(PaginatedCriteriaBuilder.class);
-    PagedList<Widget> page = mock(PagedList.class);
+    PaginatedCriteriaBuilder<Widget> paginated = erasedMock(PaginatedCriteriaBuilder.class);
+    PagedList<Widget> page = erasedMock(PagedList.class);
     Widget third = new Widget(3L, "Grace");
     Widget fourth = new Widget(4L, "Linus");
     when(query.page(2, 2)).thenReturn(paginated);
@@ -82,10 +80,9 @@ class CollectionQueryExecutorTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   void countsThroughAPagedQueryOrderedByTheMappedIdProperty() {
-    PaginatedCriteriaBuilder<Widget> paginated = mock(PaginatedCriteriaBuilder.class);
-    PagedList<Widget> page = mock(PagedList.class);
+    PaginatedCriteriaBuilder<Widget> paginated = erasedMock(PaginatedCriteriaBuilder.class);
+    PagedList<Widget> page = erasedMock(PagedList.class);
     when(query.page(0, 1)).thenReturn(paginated);
     when(paginated.getResultList()).thenReturn(page);
     when(page.getTotalSize()).thenReturn(7L);
@@ -95,10 +92,9 @@ class CollectionQueryExecutorTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   void returnsAnEmptyPageWithAnAccurateTotalWhenTheOffsetExceedsBlazesIntegerLimit() {
-    PaginatedCriteriaBuilder<Widget> paginated = mock(PaginatedCriteriaBuilder.class);
-    PagedList<Widget> countPage = mock(PagedList.class);
+    PaginatedCriteriaBuilder<Widget> paginated = erasedMock(PaginatedCriteriaBuilder.class);
+    PagedList<Widget> countPage = erasedMock(PagedList.class);
     when(query.page(0, 1)).thenReturn(paginated);
     when(paginated.getResultList()).thenReturn(countPage);
     when(countPage.getTotalSize()).thenReturn(7L);
@@ -109,6 +105,11 @@ class CollectionQueryExecutorTest {
     assertEquals(List.of(), result.resources());
     assertEquals(7L, result.total());
     verify(query).orderByAsc("item.entityId");
+  }
+
+  @SuppressWarnings("unchecked") // Mockito has no Class token for parameterized third-party APIs.
+  private static <T> T erasedMock(Class<?> rawType) {
+    return (T) mock(rawType);
   }
 
   @Test

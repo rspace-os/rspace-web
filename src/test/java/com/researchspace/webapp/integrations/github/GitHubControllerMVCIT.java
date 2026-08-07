@@ -142,7 +142,6 @@ public class GitHubControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andExpect(view().name(GitHubController.GITHUB_VIEW_NAME))
             .andReturn();
-    @SuppressWarnings("unchecked")
     List<GitHubController.TreeNode> nodes =
         (List<TreeNode>) result.getModelAndView().getModel().get("treeNodes");
 
@@ -197,7 +196,6 @@ public class GitHubControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andExpect(view().name(GitHubController.GITHUB_VIEW_NAME))
             .andReturn();
-    @SuppressWarnings("unchecked")
     List<GitHubController.TreeNode> nodes =
         (List<TreeNode>) result.getModelAndView().getModel().get("treeNodes");
 

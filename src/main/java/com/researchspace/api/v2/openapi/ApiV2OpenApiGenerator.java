@@ -15,7 +15,6 @@ import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.AccessPolicySchema;
 import com.researchspace.model.collection.CollectionDescription.FieldSchema;
-import com.researchspace.model.collection.CollectionDescription.RelationshipCardinality;
 import com.researchspace.model.collection.CollectionDescription.RelationshipSchema;
 import com.researchspace.model.collection.CollectionDescription.ResourceSchema;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
@@ -23,8 +22,16 @@ import com.researchspace.model.collection.CollectionFieldType;
 import com.researchspace.model.collection.CollectionQueryLimits;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
 import com.researchspace.model.collection.RelationshipInputForm;
+import io.swagger.v3.core.util.Json31;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.tags.Tag;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -32,7 +39,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class ApiV2OpenApiGenerator {
 
@@ -67,7 +76,7 @@ public final class ApiV2OpenApiGenerator {
     this.serverUrl = requireText(serverUrl, "OpenAPI server URL");
   }
 
-  public Map<String, Object> generate() {
+  public OpenAPI generate() {
     Map<String, Object> paths = new LinkedHashMap<>();
     Map<String, Object> schemas = new LinkedHashMap<>();
     Map<String, String> componentNames = componentNames(catalog.allSchemas());
@@ -79,7 +88,7 @@ public final class ApiV2OpenApiGenerator {
     Set<String> routableNames =
         catalog.routableResources().stream()
             .map(ApiV2ResourceRegistration::resourceName)
-            .collect(java.util.stream.Collectors.toUnmodifiableSet());
+            .collect(Collectors.toUnmodifiableSet());
 
     addStandardSchemas(schemas);
 
@@ -102,41 +111,33 @@ public final class ApiV2OpenApiGenerator {
     components.put("headers", standardHeaders());
     components.put("securitySchemes", securitySchemes());
 
-    Map<String, Object> document = new LinkedHashMap<>();
-    document.put("openapi", "3.1.0");
-    document.put(
-        "info",
-        ordered(
-            "title",
-            title,
-            "version",
-            version,
-            "description",
-            "Generated contract for RSpace REST API v2. Resource operations and schemas are "
-                + "derived from the same definitions used at runtime."));
-    document.put(
-        "servers",
-        List.of(
-            ordered(
-                "url",
-                serverUrl,
-                "description",
-                "RSpace deployment root for this generated document.")));
-    List<Map<String, Object>> tags = new ArrayList<>();
+    List<Tag> tags = new ArrayList<>();
     catalog
         .routableResources()
         .forEach(
             resource ->
                 tags.add(
-                    ordered(
-                        "name",
-                        resource.resourceName(),
-                        "description",
-                        "Operations on the " + resource.resourceName() + " collection.")));
-    document.put("tags", tags);
-    document.put("paths", paths);
-    document.put("components", components);
-    return document;
+                    new Tag()
+                        .name(resource.resourceName())
+                        .description(
+                            "Operations on the " + resource.resourceName() + " collection.")));
+    return new OpenAPI()
+        .openapi("3.1.0")
+        .info(
+            new Info()
+                .title(title)
+                .version(version)
+                .description(
+                    "Generated contract for RSpace REST API v2. Resource operations and schemas "
+                        + "are derived from the same definitions used at runtime."))
+        .servers(
+            List.of(
+                new Server()
+                    .url(serverUrl)
+                    .description("RSpace deployment root for this generated document.")))
+        .tags(tags)
+        .paths(Json31.mapper().convertValue(paths, Paths.class))
+        .components(Json31.mapper().convertValue(components, Components.class));
   }
 
   private void addPaths(
@@ -157,9 +158,8 @@ public final class ApiV2OpenApiGenerator {
             case READ, UPDATE, DELETE -> itemPath;
             default -> collectionPath;
           };
-      @SuppressWarnings("unchecked")
       Map<String, Object> pathItem =
-          (Map<String, Object>) paths.computeIfAbsent(path, ignored -> new LinkedHashMap<>());
+          mutableObjectMap(paths.computeIfAbsent(path, ignored -> new LinkedHashMap<>()));
       String method = METHODS.get(operation);
       if (pathItem.containsKey(method)) {
         throw new IllegalArgumentException("Duplicate OpenAPI operation " + method + " " + path);
@@ -238,7 +238,7 @@ public final class ApiV2OpenApiGenerator {
                     "type",
                     "string",
                     "enum",
-                    java.util.Arrays.stream(AuditAction.values()).map(Enum::name).toList())),
+                    Arrays.stream(AuditAction.values()).map(Enum::name).toList())),
             "Audit actions to include.");
     actions.put("style", "form");
     actions.put("explode", true);
@@ -521,7 +521,7 @@ public final class ApiV2OpenApiGenerator {
 
   private static Map<String, Object> filterSchema(
       String selector, ResourceSchema resource, Map<String, ResourceSchema> resourceSchemas) {
-    java.util.Optional<FieldSchema> field =
+    Optional<FieldSchema> field =
         resource.fields().stream().filter(value -> value.name().equals(selector)).findFirst();
     if (field.isPresent()) {
       return scalarSchema(field.get().type(), field.get().nullable());
@@ -681,8 +681,7 @@ public final class ApiV2OpenApiGenerator {
             (status, responseDocumentation) -> {
               Object existing = responses.get(String.valueOf(status));
               if (existing instanceof Map<?, ?> response) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> mutable = new LinkedHashMap<>((Map<String, Object>) response);
+                Map<String, Object> mutable = objectMap(response);
                 mutable.put("description", responseDocumentation.description());
                 responses.put(String.valueOf(status), mutable);
               }
@@ -736,6 +735,9 @@ public final class ApiV2OpenApiGenerator {
       }
       Map<String, Object> property = scalarSchema(field.type(), field.nullable());
       applyDocumentation(property, field.openApi());
+      if (writeOperation == WriteOperation.CREATE && field.defaultValue() != null) {
+        property.put("default", field.defaultValue());
+      }
       property.put(
           "x-rspace-access",
           accessExtension(
@@ -746,9 +748,6 @@ public final class ApiV2OpenApiGenerator {
                       : field.updateAccess()));
       if (writeOperation == null && field.readOnly()) {
         property.put("readOnly", true);
-      }
-      if (field.hasDefaultValue()) {
-        property.put("x-rspace-has-dynamic-default", true);
       }
       properties.put(field.name(), property);
       if ((writeOperation == WriteOperation.CREATE && field.requiredOnCreate())
@@ -811,9 +810,7 @@ public final class ApiV2OpenApiGenerator {
                   expandedReferenceSchema(target, ref(names.get(target) + "Read"), prefix));
             });
     Map<String, Object> value = ordered("oneOf", variants);
-    return relationship.cardinality() == RelationshipCardinality.TO_MANY
-        ? ordered("type", "array", "items", value)
-        : value;
+    return value;
   }
 
   private static Map<String, Object> relationshipInput(
@@ -824,7 +821,7 @@ public final class ApiV2OpenApiGenerator {
       String alternatives =
           relationship.globalIdPrefixesByTarget().values().stream()
               .map(ApiV2OpenApiGenerator::escapeEcmaRegex)
-              .collect(java.util.stream.Collectors.joining("|"));
+              .collect(Collectors.joining("|"));
       variants.add(
           ordered(
               "type",
@@ -1288,15 +1285,29 @@ public final class ApiV2OpenApiGenerator {
     return value;
   }
 
-  @SuppressWarnings("unchecked")
-  private static <T> Map<String, T> ordered(Object... entries) {
+  private static Map<String, Object> ordered(Object... entries) {
     if (entries.length % 2 != 0) {
       throw new IllegalArgumentException("Ordered map entries must be key/value pairs");
     }
-    Map<String, T> result = new LinkedHashMap<>();
+    Map<String, Object> result = new LinkedHashMap<>();
     for (int i = 0; i < entries.length; i += 2) {
-      result.put((String) entries[i], (T) entries[i + 1]);
+      result.put(String.class.cast(entries[i]), entries[i + 1]);
     }
     return result;
+  }
+
+  private static Map<String, Object> objectMap(Map<?, ?> source) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    source.forEach((key, value) -> result.put(String.class.cast(key), value));
+    return result;
+  }
+
+  @SuppressWarnings("unchecked") // Every key is checked before returning the mutable view.
+  private static Map<String, Object> mutableObjectMap(Object value) {
+    if (!(value instanceof Map<?, ?> map)
+        || map.keySet().stream().anyMatch(key -> !(key instanceof String))) {
+      throw new IllegalArgumentException("Expected an object with string keys");
+    }
+    return (Map<String, Object>) map;
   }
 }

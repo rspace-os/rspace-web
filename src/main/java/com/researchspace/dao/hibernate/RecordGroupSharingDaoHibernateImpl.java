@@ -156,7 +156,6 @@ public class RecordGroupSharingDaoHibernateImpl
     return query.list();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<BaseRecord> getSharedRecordsWithUser(User user) {
     return getSession()
@@ -165,7 +164,6 @@ public class RecordGroupSharingDaoHibernateImpl
         .list();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<Long> getSharedRecordIdsWithUser(User user) {
     return getSession()
@@ -174,7 +172,6 @@ public class RecordGroupSharingDaoHibernateImpl
         .list();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<BaseRecord> getSharedTemplatesWithUser(User user) {
     return getSession()

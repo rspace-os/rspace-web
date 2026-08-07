@@ -73,6 +73,33 @@ class CollectionDescriptionTest {
                     TestEntity::setValue)
                 .required()
                 .writeOnlyOn(WriteOperation.UPDATE));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            Field.writable(
+                    "value",
+                    "value",
+                    CollectionFieldTypes.text(10),
+                    TestEntity::value,
+                    TestEntity::setValue)
+                .defaultValue("fixed")
+                .writeOnlyOn(WriteOperation.UPDATE));
+
+    Field<TestEntity, String> defaulted =
+        Field.writable(
+                "value",
+                "value",
+                CollectionFieldTypes.text(10),
+                TestEntity::value,
+                TestEntity::setValue)
+            .defaultValue("fixed");
+    assertEquals(
+        "fixed",
+        description(List.of(idField(), defaulted), List.of(new Sort("id", true)))
+            .schema()
+            .fields()
+            .get(1)
+            .defaultValue());
   }
 
   @Test
@@ -106,7 +133,10 @@ class CollectionDescriptionTest {
   void buildsACollectionDescriptionFromAnAnnotatedResourceRecord() {
     CollectionDescription<AnnotatedEntity> description =
         CollectionDescription.fromApiV2Resource(
-            ApiV2AnnotatedResource.class, List.of(), List.of(new Sort("id", true)));
+            ApiV2AnnotatedResource.class,
+            AnnotatedEntity.class,
+            List.of(),
+            List.of(new Sort("id", true)));
     AnnotatedEntity entity = new AnnotatedEntity();
 
     assertEquals(
@@ -122,6 +152,8 @@ class CollectionDescriptionTest {
     assertFalse(schemaFields.get("value").filterOperators().isEmpty());
     assertTrue(schemaFields.get("serverManaged").sortable());
     assertTrue(schemaFields.get("serverManaged").filterOperators().isEmpty());
+    assertEquals("value", description.findField("value").orElseThrow().name());
+    assertTrue(description.findField("unknown").isEmpty());
     assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("value"));
     assertThrows(
         CollectionQueryException.class, () -> description.requireFilterSelector("serverManaged"));
@@ -150,7 +182,10 @@ class CollectionDescriptionTest {
   void mapsAutomaticAuditFieldsToLegacyBeanPropertiesAndOmitsUnavailableProperties() {
     CollectionDescription<LegacyAuditedEntity> description =
         CollectionDescription.fromApiV2Resource(
-            LegacyAuditedResource.class, List.of(), List.of(new Sort("id", true)));
+            LegacyAuditedResource.class,
+            LegacyAuditedEntity.class,
+            List.of(),
+            List.of(new Sort("id", true)));
 
     assertEquals(
         List.of("id", "createdAt"), description.fields().stream().map(Field::name).toList());

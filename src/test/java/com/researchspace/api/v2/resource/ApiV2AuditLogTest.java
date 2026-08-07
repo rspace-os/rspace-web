@@ -91,9 +91,7 @@ class ApiV2AuditLogTest {
     assertEquals(eventTime.toString(), page.docs().get(0).timestamp());
     ArgumentCaptor<IAuditTrailSearchConfig> config =
         ArgumentCaptor.forClass(IAuditTrailSearchConfig.class);
-    @SuppressWarnings("unchecked")
-    ArgumentCaptor<PaginationCriteria<AuditTrailSearchResult>> pagination =
-        ArgumentCaptor.forClass(PaginationCriteria.class);
+    ArgumentCaptor<PaginationCriteria<AuditTrailSearchResult>> pagination = paginationCaptor();
     verify(handler).searchAuditTrail(config.capture(), pagination.capture(), eq(actor));
     Date restrictedFrom = config.getValue().getDateFrom();
     Date restrictedTo = config.getValue().getDateTo();
@@ -138,8 +136,7 @@ class ApiV2AuditLogTest {
 
   @Test
   void returnsEmptyPageWhenEntityDoesNotPublishAuditMetadata() {
-    @SuppressWarnings("unchecked")
-    ResourceOperations<PlainThing, Long> plainOperations = mock(ResourceOperations.class);
+    ResourceOperations<PlainThing, Long> plainOperations = operationsMock();
     PlainThing plain = new PlainThing(9L);
     when(plainOperations.findById(9L, actor)).thenReturn(Optional.of(plain));
     ApiV2ResourceSpec<PlainThing, Long> spec =
@@ -159,9 +156,19 @@ class ApiV2AuditLogTest {
     verify(handler, never()).searchAuditTrail(any(), any(), any());
   }
 
-  @SuppressWarnings("unchecked")
   private static ResourceOperations<AuditedThing, Long> operations() {
-    return mock(ResourceOperations.class);
+    return operationsMock();
+  }
+
+  @SuppressWarnings("unchecked") // Mockito creates an erased interface mock; ID use is test-owned.
+  private static <T> ResourceOperations<T, Long> operationsMock() {
+    return (ResourceOperations<T, Long>) mock(ResourceOperations.class);
+  }
+
+  @SuppressWarnings("unchecked") // ArgumentCaptor has no parameterized Class token API.
+  private static ArgumentCaptor<PaginationCriteria<AuditTrailSearchResult>> paginationCaptor() {
+    return (ArgumentCaptor<PaginationCriteria<AuditTrailSearchResult>>)
+        (ArgumentCaptor<?>) ArgumentCaptor.forClass(PaginationCriteria.class);
   }
 
   @AuditTrailData(auditDomain = AuditDomain.RECORD)
@@ -208,6 +215,7 @@ class ApiV2AuditLogTest {
     static final CollectionDescription<AuditedThing> DESCRIPTION =
         CollectionDescription.fromApiV2Resource(
             ThingResource.class,
+            AuditedThing.class,
             List.of(),
             List.of(new Sort("id", true)),
             AccessPolicy.authenticated());
@@ -236,6 +244,7 @@ class ApiV2AuditLogTest {
     static final CollectionDescription<PlainThing> DESCRIPTION =
         CollectionDescription.fromApiV2Resource(
             PlainResource.class,
+            PlainThing.class,
             List.of(),
             List.of(new Sort("id", true)),
             AccessPolicy.authenticated());

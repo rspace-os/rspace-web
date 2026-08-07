@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.resource.ApiV2DocumentParser;
 import com.researchspace.inventory.api.v2.ApiV2InstrumentResource;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
@@ -89,7 +90,7 @@ class ApiV2BookingConfigurationResourceTest {
   void declaresAuthenticatedReadsAndSysadminWrites() {
     User member = mock(User.class);
     User sysadmin = mock(User.class);
-    when(sysadmin.hasRole(com.researchspace.model.Role.SYSTEM_ROLE)).thenReturn(true);
+    when(sysadmin.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
 
     assertTrue(
         ApiV2BookingConfigurationResource.DESCRIPTION

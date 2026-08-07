@@ -782,7 +782,6 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     return (ISearchResults<BaseRecord>) model.asMap().get("searchResults");
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void testSearchText() throws Exception {
     final String[] option = {SearchConstants.FULL_TEXT_SEARCH_OPTION};

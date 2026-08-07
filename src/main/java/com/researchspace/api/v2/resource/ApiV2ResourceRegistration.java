@@ -428,11 +428,10 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return List.copyOf(resolved);
   }
 
-  @SuppressWarnings("unchecked")
   private ID castId(Object id) {
     try {
-      return (ID) description.requireField(description.idField()).type().javaType().cast(id);
-    } catch (ClassCastException ex) {
+      return spec.idParser().apply(String.valueOf(id));
+    } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException("Relationship target ID has the wrong type", ex);
     }
   }

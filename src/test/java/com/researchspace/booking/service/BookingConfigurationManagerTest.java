@@ -45,7 +45,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 class BookingConfigurationManagerTest {
 
-  @SuppressWarnings("unchecked")
   private final BookingConfigurationDao dao = mock(BookingConfigurationDao.class);
 
   private final User actor = mock(User.class);

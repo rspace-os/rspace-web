@@ -120,7 +120,7 @@ public final class RsqlFilterParser {
     @Override
     public FilterExpression visit(ComparisonNode node, State state) {
       state.recordComparison();
-      FilterSelector selector = description.requireFilterSelector(node.getSelector());
+      FilterSelector<?> selector = description.requireFilterSelector(node.getSelector());
       Operator operator = toOperator(node.getOperator());
       if (!selector.operators().contains(operator)) {
         throw new CollectionQueryException(CollectionQueryException.Reason.OPERATOR);
@@ -174,7 +174,7 @@ public final class RsqlFilterParser {
   }
 
   private static FilterExpression.Comparison comparison(
-      FilterSelector selector, Operator operator, List<Object> values, boolean wildcard) {
+      FilterSelector<?> selector, Operator operator, List<Object> values, boolean wildcard) {
     return new FilterExpression.Comparison(selector.name(), operator, values, wildcard);
   }
 
@@ -186,7 +186,7 @@ public final class RsqlFilterParser {
     return mapped;
   }
 
-  private static Object parse(FilterSelector selector, String argument) {
+  private static Object parse(FilterSelector<?> selector, String argument) {
     try {
       return selector.parse(argument);
     } catch (RuntimeException ex) {
@@ -194,7 +194,7 @@ public final class RsqlFilterParser {
     }
   }
 
-  private static List<Object> parseAll(FilterSelector selector, List<String> arguments) {
+  private static List<Object> parseAll(FilterSelector<?> selector, List<String> arguments) {
     List<Object> values = new ArrayList<>(arguments.size());
     arguments.forEach(argument -> values.add(parse(selector, argument)));
     return List.copyOf(values);

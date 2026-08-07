@@ -1,10 +1,7 @@
 package com.researchspace.model.collection;
 
 import com.researchspace.model.collection.CollectionDescription.Relationship;
-import com.researchspace.model.collection.CollectionDescription.RelationshipCardinality;
-import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -101,48 +98,9 @@ public final class ResourceRenderer {
       return;
     }
     Optional<IncludeTree> child = includes.relationship(relationship.name());
-    if (relationship.hasBinding()) {
-      document.put(
-          relationship.name(),
-          renderReference(entity, description, relationship, child, selections, targetResolver));
-    } else {
-      child.ifPresent(
-          childIncludes ->
-              document.put(
-                  relationship.name(),
-                  renderLegacyRelationship(
-                      entity,
-                      description,
-                      relationship,
-                      childIncludes,
-                      selections,
-                      targetResolver)));
-    }
-  }
-
-  private <T> Object renderLegacyRelationship(
-      T entity,
-      CollectionDescription<T> description,
-      Relationship<T> relationship,
-      IncludeTree includes,
-      ResourceFieldSelections selections,
-      TargetResolver targetResolver) {
-    Object value = description.readRelationship(entity, relationship);
-    if (value == null) {
-      return relationship.cardinality() == RelationshipCardinality.TO_MANY ? List.of() : null;
-    }
-    CollectionDescription<?> target = registry.requireResource(relationship.targetResource());
-    FieldSelection targetFields = selections.forResource(target.resourceName());
-    if (relationship.cardinality() == RelationshipCardinality.TO_ONE) {
-      return renderUnknown(value, target, targetFields, selections, includes, targetResolver);
-    }
-    if (!(value instanceof Collection<?> collection)) {
-      throw new IllegalStateException("To-many relationship reader must return a collection");
-    }
-    return collection.stream()
-        .map(
-            item -> renderUnknown(item, target, targetFields, selections, includes, targetResolver))
-        .toList();
+    document.put(
+        relationship.name(),
+        renderReference(entity, description, relationship, child, selections, targetResolver));
   }
 
   private <T> Object renderReference(

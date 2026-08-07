@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,7 +53,7 @@ class ApiV2OpenApiAnnotationMergerTest {
                 new ApiV2EndpointCatalog(
                     List.of(
                         new ApiV2EndpointSpec(ConfigV2Controller.class, AccessFunction.anyone()))),
-                () -> java.util.stream.Stream.of(handlerMapping))
+                () -> Stream.of(handlerMapping))
             .generate();
 
     Map<String, Object> paths = objectMap(document.get("paths"));
@@ -85,16 +86,13 @@ class ApiV2OpenApiAnnotationMergerTest {
 
     Map<String, Object> document =
         new ApiV2OpenApiDocumentService(
-                generator,
-                new ApiV2EndpointCatalog(List.of()),
-                () -> java.util.stream.Stream.of(handlerMapping))
+                generator, new ApiV2EndpointCatalog(List.of()), () -> Stream.of(handlerMapping))
             .generate();
     Map<String, Object> operation =
         objectMap(
             objectMap(objectMap(document.get("paths")).get("/api/v2/things/{id}")).get("post"));
 
-    @SuppressWarnings("unchecked")
-    List<Map<String, Object>> parameters = (List<Map<String, Object>>) operation.get("parameters");
+    List<Map<String, Object>> parameters = objectMapList(operation.get("parameters"));
     assertEquals(
         List.of("id", "mode"), parameters.stream().map(value -> value.get("name")).toList());
     assertEquals(true, parameters.get(0).get("required"));
@@ -127,7 +125,7 @@ class ApiV2OpenApiAnnotationMergerTest {
                             OAuthTokensV2Controller.class,
                             AccessFunction.authenticated(),
                             ApiV2AuthenticationMode.BROWSER_SESSION))),
-                () -> java.util.stream.Stream.of(handlerMapping))
+                () -> Stream.of(handlerMapping))
             .generate();
 
     Map<String, Object> operation =
@@ -164,8 +162,19 @@ class ApiV2OpenApiAnnotationMergerTest {
     return objectMap(objectMap(document.get("components")).get("schemas"));
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings("unchecked") // Keys are validated before exposing the map view.
   private static Map<String, Object> objectMap(Object value) {
-    return (Map<String, Object>) value;
+    if (!(value instanceof Map<?, ?> map)
+        || map.keySet().stream().anyMatch(key -> !(key instanceof String))) {
+      throw new AssertionError("Expected an object with string keys");
+    }
+    return (Map<String, Object>) map;
+  }
+
+  private static List<Map<String, Object>> objectMapList(Object value) {
+    if (!(value instanceof List<?> list)) {
+      throw new AssertionError("Expected an array");
+    }
+    return list.stream().map(ApiV2OpenApiAnnotationMergerTest::objectMap).toList();
   }
 }

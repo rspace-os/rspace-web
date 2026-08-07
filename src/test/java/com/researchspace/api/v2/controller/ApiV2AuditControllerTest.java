@@ -70,9 +70,8 @@ class ApiV2AuditControllerTest {
     AuditTrailSearchResult result =
         new AuditTrailSearchResult(event, Instant.now().minus(Duration.ofDays(1)).toEpochMilli());
     when(handler.searchAuditTrail(any(), any(), eq(actor)))
-        .thenReturn(
-            new SearchResultsImpl<>(Collections.nCopies(4, result), 0, 4, 20),
-            new SearchResultsImpl<>(List.of(result), 0, 4, 1));
+        .thenReturn(new SearchResultsImpl<>(Collections.nCopies(4, result), 0, 4, 20))
+        .thenReturn(new SearchResultsImpl<>(List.of(result), 0, 4, 1));
 
     mockMvc
         .perform(get("/api/v2/users/7/audit").requestAttr("user", actor))
@@ -87,8 +86,12 @@ class ApiV2AuditControllerTest {
         .andExpect(jsonPath("$.totalDocs").value(4));
   }
 
-  @SuppressWarnings("unchecked")
   private static ResourceOperations<User, Long> operations() {
-    return mock(ResourceOperations.class);
+    return operationsMock();
+  }
+
+  @SuppressWarnings("unchecked") // Mockito creates an erased interface mock; ID use is test-owned.
+  private static <T> ResourceOperations<T, Long> operationsMock() {
+    return (ResourceOperations<T, Long>) mock(ResourceOperations.class);
   }
 }

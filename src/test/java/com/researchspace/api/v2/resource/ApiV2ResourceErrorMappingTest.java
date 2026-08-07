@@ -43,9 +43,13 @@ class ApiV2ResourceErrorMappingTest {
   private ResourceOperations<Widget, Long> operations;
 
   @BeforeEach
-  @SuppressWarnings("unchecked")
   void setUp() {
-    operations = mock(ResourceOperations.class);
+    operations = operationsMock();
+  }
+
+  @SuppressWarnings("unchecked") // Mockito creates an erased interface mock; ID use is test-owned.
+  private static ResourceOperations<Widget, Long> operationsMock() {
+    return (ResourceOperations<Widget, Long>) mock(ResourceOperations.class);
   }
 
   @Test

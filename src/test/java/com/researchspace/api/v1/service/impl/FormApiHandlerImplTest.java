@@ -73,7 +73,6 @@ public class FormApiHandlerImplTest {
         () -> impl.editForm(formInitialId, toPost, anyUser, sessionTracker));
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void testEditFormWithNewFieldsNeverCallsUpdate() {
     anyForm.setEditStatus(EditStatus.EDIT_MODE);
