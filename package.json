@@ -4,7 +4,9 @@
   "type": "module",
   "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c",
   "intent": {
-    "skills": ["@tanstack/router-core"]
+    "skills": [
+      "@tanstack/router-core"
+    ]
   },
   "scripts": {
     "prepare": "node scripts/install-git-hooks.mjs",
@@ -43,9 +45,9 @@
     "@mswjs/http-middleware": "0.10.3",
     "@playwright/test": "1.62.1",
     "@sa11y/vitest": "8.0.28",
-    "@storybook/addon-a11y": "10.4.6",
-    "@storybook/addon-vitest": "10.4.6",
-    "@storybook/react-vite": "10.4.6",
+    "@storybook/addon-a11y": "10.5.5",
+    "@storybook/addon-vitest": "10.5.5",
+    "@storybook/react-vite": "10.5.5",
     "@tailwindcss/vite": "4.3.3",
     "@testing-library/jest-dom": "7.0.0",
     "@testing-library/react": "16.3.2",
@@ -78,7 +80,7 @@
     "msw": "2.15.0",
     "playwright-core": "1.62.1",
     "rollup-plugin-visualizer": "7.0.1",
-    "storybook": "10.4.6",
+    "storybook": "10.5.5",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
     "url": "0.11.4",
@@ -121,7 +123,7 @@
     "@tanstack/query-core": "5.101.4",
     "@tanstack/react-form": "1.33.3",
     "@tanstack/react-query": "5.101.4",
-    "@tanstack/react-router": "1.170.17",
+    "@tanstack/react-router": "1.170.18",
     "@tinymce/tinymce-react": "6.3.0",
     "axios": "1.19.0",
     "class-variance-authority": "0.7.1",
@@ -134,8 +136,8 @@
     "i18next-icu": "2.4.4",
     "i18next-resources-to-backend": "1.2.3",
     "immer": "11.1.15",
-    "intl-messageformat": "11.2.13",
     "input-otp": "1.4.2",
+    "intl-messageformat": "11.2.13",
     "jwt-decode": "4.0.0",
     "katex": "0.18.1",
     "ketcher-core": "3.15.0",

@@ -4,13 +4,13 @@ import { server } from "@/__tests__/mswServer";
 import { getMaintenanceStatus } from "@/modules/maintenance/queries";
 
 describe("getMaintenanceStatus", () => {
-  const envelope = (canUserLoginNow: boolean) => ({
-    docs: [{ canUserLoginNow }],
-    totalDocs: 1,
+  const envelope = (docs: Array<{ canUserLoginNow: boolean }>) => ({
+    docs,
+    totalDocs: docs.length,
     limit: 1,
     page: 1,
     pagingCounter: 1,
-    totalPages: 1,
+    totalPages: docs.length === 0 ? 0 : 1,
     hasPrevPage: false,
     hasNextPage: false,
     prevPage: null,
@@ -22,7 +22,7 @@ describe("getMaintenanceStatus", () => {
     server.use(
       http.get("/api/v2/maintenances", ({ request }) => {
         capturedRequest = request;
-        return HttpResponse.json(envelope(false));
+        return HttpResponse.json(envelope([{ canUserLoginNow: false }]));
       }),
     );
 
@@ -34,33 +34,29 @@ describe("getMaintenanceStatus", () => {
     expect(capturedRequest?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
-  it("reports 'clear' once maintenance is over", async () => {
-    server.use(http.get("/api/v2/maintenances", () => HttpResponse.json(envelope(true))));
-    expect(await getMaintenanceStatus()).toBe("clear");
-  });
-
-  it("reports 'clear' when no maintenance window remains", async () => {
-    server.use(
-      http.get("/api/v2/maintenances", () =>
-        HttpResponse.json({
-          ...envelope(true),
-          docs: [],
-          totalDocs: 0,
-          totalPages: 0,
-        }),
-      ),
-    );
-
-    expect(await getMaintenanceStatus()).toBe("clear");
-  });
-
-  it("treats a failed status check as still in maintenance (no false redirect)", async () => {
-    server.use(http.get("/api/v2/maintenances", () => new HttpResponse(null, { status: 503 })));
-    expect(await getMaintenanceStatus()).toBe("in-progress");
-  });
-
-  it("treats a malformed response as still in maintenance", async () => {
-    server.use(http.get("/api/v2/maintenances", () => HttpResponse.json({ unexpected: true })));
-    expect(await getMaintenanceStatus()).toBe("in-progress");
+  it.each([
+    {
+      name: "reports 'clear' once maintenance is over",
+      response: () => HttpResponse.json(envelope([{ canUserLoginNow: true }])),
+      expected: "clear",
+    },
+    {
+      name: "reports 'clear' when no maintenance window remains",
+      response: () => HttpResponse.json(envelope([])),
+      expected: "clear",
+    },
+    {
+      name: "treats a failed status check as still in maintenance (no false redirect)",
+      response: () => new HttpResponse(null, { status: 503 }),
+      expected: "in-progress",
+    },
+    {
+      name: "treats a malformed response as still in maintenance",
+      response: () => HttpResponse.json({ unexpected: true }),
+      expected: "in-progress",
+    },
+  ] as const)("$name", async ({ response, expected }) => {
+    server.use(http.get("/api/v2/maintenances", response));
+    expect(await getMaintenanceStatus()).toBe(expected);
   });
 });

@@ -19,8 +19,6 @@ export default defineConfig({
       "src/__tests__/**",
       "src/modules/common/i18n/**",
       "src/modules/**/prototypes/**",
-      // Vendored shadcn primitives, excluded from Biome too (see biome.jsonc) — treat as read-only generated code.
-      "src/modules/common/ui/**",
     ],
     output: "src/modules/common/i18n/locales/{{language}}/{{namespace}}.json",
     primaryLanguage: "en-US",
@@ -49,7 +47,6 @@ export default defineConfig({
       "**/*.stories.*",
       "src/test-stubs/**",
       "src/modules/**/prototypes/**",
-      "src/modules/common/ui/**",
     ],
   },
 });
