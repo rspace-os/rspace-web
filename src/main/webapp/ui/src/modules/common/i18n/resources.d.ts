@@ -1033,7 +1033,7 @@ export default interface Resources {
       "owncloud": "v8ss2uso0a-owncloud-integration",
       "panelAdjuster": "bt6kx098eq-more-info-sidebar#panel_adjuster",
       "permissions": "n09nmg4ax7-permissions",
-      "pidinstIdentifiers": "pidinst-identifiers",
+      "pidinstIdentifiers": "oahocdfqyg-pidinst-identifiers",
       "protocolsio": "nid9q64pas-protocols-io-integration",
       "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
       "publicationOfDocuments": "lqxsej13hv-publication-of-documents",
@@ -3085,6 +3085,7 @@ export default interface Resources {
           "pointLatitude": "Point {index} latitude",
           "pointLongitude": "Point {index} longitude",
           "polygonDescription": "You can add a Polygon to a Geolocation associated with an IGSN ID. A Polygon is made of 4 or more points that form a closed shape. The first and last points have the same coordinates, editing the first point will automatically update the last one.",
+          "polygonDescriptionPidinst": "You can add a Polygon to a Geolocation associated with a PIDINST ID. A Polygon is made of 4 or more points that form a closed shape. The first and last points have the same coordinates, editing the first point will automatically update the last one.",
           "removePoint": "Remove point",
           "state": {
             "complete": "Complete polygon",

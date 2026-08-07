@@ -822,6 +822,7 @@
         "pointLatitude": "Point {index} latitude",
         "pointLongitude": "Point {index} longitude",
         "polygonDescription": "You can add a Polygon to a Geolocation associated with an IGSN ID. A Polygon is made of 4 or more points that form a closed shape. The first and last points have the same coordinates, editing the first point will automatically update the last one.",
+        "polygonDescriptionPidinst": "You can add a Polygon to a Geolocation associated with a PIDINST ID. A Polygon is made of 4 or more points that form a closed shape. The first and last points have the same coordinates, editing the first point will automatically update the last one.",
         "removePoint": "Remove point",
         "state": {
           "complete": "Complete polygon",
