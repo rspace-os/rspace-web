@@ -102,11 +102,10 @@ public class LoggingInterceptor implements HandlerInterceptor {
     return true;
   }
 
-  @SuppressWarnings("unchecked")
   private Set<String> getParamsToIgnore(IgnoreInLoggingInterceptor ignoreAnnotationPolicy) {
     if (ignoreAnnotationPolicy == null
         || ignoreAnnotationPolicy.ignoreRequestParams().length == 0) {
-      return Collections.EMPTY_SET;
+      return Collections.emptySet();
     } else {
       return TransformerUtils.toSet(ignoreAnnotationPolicy.ignoreRequestParams());
     }

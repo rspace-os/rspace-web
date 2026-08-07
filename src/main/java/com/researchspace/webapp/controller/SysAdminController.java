@@ -763,11 +763,14 @@ public class SysAdminController extends BaseController {
     return REDIRECT_SYSTEM_COMMUNITY_LIST;
   }
 
-  @SuppressWarnings("unchecked")
   private String getCreateCommunityValidationErrorView(Model model, Community community) {
     List<User> potentialAdmins = userManager.getAvailableAdminUsers();
     community.setAvailableAdmins(potentialAdmins);
-    community.setAvailableGroups((List<Group>) model.asMap().get("communityGroups"));
+    Object groups = model.asMap().get("communityGroups");
+    if (!(groups instanceof List<?> groupList)) {
+      throw new IllegalStateException("communityGroups model attribute must be a list");
+    }
+    community.setAvailableGroups(groupList.stream().map(Group.class::cast).toList());
     return SYSTEM_CREATE_COMMUNITY_VIEW;
   }
 

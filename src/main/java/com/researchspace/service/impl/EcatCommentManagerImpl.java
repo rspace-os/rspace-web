@@ -43,8 +43,7 @@ public class EcatCommentManagerImpl implements EcatCommentManager {
   }
 
   @Override
-  @SuppressWarnings("rawtypes")
-  public List getCommentAll(Long parentId) {
+  public List<EcatComment> getCommentAll(Long parentId) {
     return ecatCommentDao.getCommentAll(parentId);
   }
 
@@ -54,10 +53,7 @@ public class EcatCommentManagerImpl implements EcatCommentManager {
   }
 
   @Override
-  @SuppressWarnings("rawtypes")
-  public List getCommentItems(Long comId) {
-
-    List<EcatCommentItem> comments = ecatCommentDao.getCommentItems(comId);
-    return comments;
+  public List<EcatCommentItem> getCommentItems(Long comId) {
+    return ecatCommentDao.getCommentItems(comId);
   }
 }

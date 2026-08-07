@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
-import org.hibernate.transform.AliasToBeanResultTransformer;
+import org.hibernate.transform.Transformers;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.stereotype.Repository;
 
@@ -225,17 +225,17 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     }
     Session session = sessionFactory.getCurrentSession();
     List<String> usernames = users.stream().map(User::getUsername).collect(Collectors.toList());
-    Query q =
+    Query<DatabaseUsageByUserGroupByResult> q =
         session
             .createQuery(
                 COUNT_OWNERS_QUERY
                     + " where owner.username in (:users) "
                     + " group by owner.username "
                     + " order by countLong "
-                    + pgCrit.getSortOrder().toString())
-            .setParameterList("users", usernames)
-            .setResultTransformer(
-                new AliasToBeanResultTransformer(DatabaseUsageByUserGroupByResult.class));
+                    + pgCrit.getSortOrder().toString(),
+                Object[].class)
+            .setTupleTransformer(Transformers.aliasToBean(DatabaseUsageByUserGroupByResult.class))
+            .setParameterList("users", usernames);
 
     q.setFirstResult(pgCrit.getFirstResultIndex());
     q.setMaxResults(pgCrit.getResultsPerPage());
@@ -257,14 +257,14 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     String sortOrder = pgCrit.getSortOrder().toString();
     // preserve DB sort order
     Map<String, DatabaseUsageByUserGroupByResult> rc = new LinkedHashMap<>();
-    Query q =
+    Query<DatabaseUsageByUserGroupByResult> q =
         session
             .createQuery(
-                COUNT_OWNERS_QUERY + " group by owner.username order by countLong " + sortOrder)
+                COUNT_OWNERS_QUERY + " group by owner.username order by countLong " + sortOrder,
+                Object[].class)
+            .setTupleTransformer(Transformers.aliasToBean(DatabaseUsageByUserGroupByResult.class))
             .setMaxResults(pgCrit.getResultsPerPage())
-            .setFirstResult(pgCrit.getFirstResultIndex())
-            .setResultTransformer(
-                new AliasToBeanResultTransformer(DatabaseUsageByUserGroupByResult.class));
+            .setFirstResult(pgCrit.getFirstResultIndex());
     List<DatabaseUsageByUserGroupByResult> results = q.list();
 
     for (DatabaseUsageByUserGroupByResult fu : results) {
@@ -273,18 +273,18 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     return rc;
   }
 
-  @SuppressWarnings("rawtypes")
   @Override
   public BaseRecord getRecordFromFieldId(long fieldId) {
     Session session = getSessionFactory().getCurrentSession();
-    Query q =
+    Query<BaseRecord> q =
         session.createQuery(
             "Select r from BaseRecord r, Field f "
-                + "where f.id= :fieldId and r.id = f.structuredDocument.id");
+                + "where f.id= :fieldId and r.id = f.structuredDocument.id",
+            BaseRecord.class);
     q.setParameter("fieldId", fieldId);
-    List results = q.list();
+    List<BaseRecord> results = q.list();
     if (results != null && !results.isEmpty()) {
-      return (BaseRecord) results.get(0);
+      return results.get(0);
     } else {
       return null;
     }
@@ -339,7 +339,6 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     return getViewableRecords(userIds, limitTo, null, EcatMediaFile.class);
   }
 
-  @SuppressWarnings("unchecked")
   private <T extends BaseRecord> Set<BaseRecord> getViewableRecords(
       Set<Long> userIds, String[] limitToTypes, String[] excludeTypes, Class<T> clazz) {
     Session session = sessionFactory.getCurrentSession();
@@ -613,14 +612,13 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
 
   @Override
   public List<RecordInformation> getInfosOfDocumentsLinkedToMediaFile(Long mediaFileId) {
-    @SuppressWarnings("unchecked")
     Query<RecordInformation> q =
         getSession()
-            .createQuery(LINKED_DOCS_QUERY)
+            .createQuery(LINKED_DOCS_QUERY, Object[].class)
+            .setTupleTransformer(Transformers.aliasToBean(RecordInformation.class))
             .setParameter("mediaFileId", mediaFileId)
             .setParameter(DELETED, false)
-            .setParameter("mediaDeleted", false)
-            .setResultTransformer(new AliasToBeanResultTransformer(RecordInformation.class));
+            .setParameter("mediaDeleted", false);
     return q.list();
   }
 
@@ -738,7 +736,6 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     return count > 0;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<BaseRecord> getTemplatesOwnedByUserAndUsedByOtherUsers(User user) {
     Session session = getSession();
@@ -749,7 +746,8 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
                     + " brB.id where sdB.id in (select brA.id from StructuredDocument sdA join"
                     + " BaseRecord brA on sdA.id = brA.id where sdA.template.id in (select"
                     + " sd.template.id from StructuredDocument sd join BaseRecord br on br.id ="
-                    + " sd.template.id where br.owner = :owner) and brA.owner != :owner)")
+                    + " sd.template.id where br.owner = :owner) and brA.owner != :owner)",
+                BaseRecord.class)
             .setParameter("owner", user);
     List<BaseRecord> templates = query.list();
     return templates.stream().distinct().collect(Collectors.toList());
@@ -839,7 +837,6 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     query.executeUpdate();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<EcatMediaFile> getGalleryItemsForTemplates(
       List<Long> templateIds, User originalOwner) {
@@ -850,7 +847,8 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
                 + " JOIN Field f ON fa.field = f"
                 + " WHERE f.structuredDocument.id IN :templateIds"
                 + " AND m.owner = :originalOwner"
-                + " AND fa.deleted = false")
+                + " AND fa.deleted = false",
+            EcatMediaFile.class)
         .setParameter("templateIds", templateIds)
         .setParameter("originalOwner", originalOwner)
         .list();

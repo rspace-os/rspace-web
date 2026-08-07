@@ -49,7 +49,7 @@ public class EcatCommentDaoHibernate extends GenericDaoHibernate<EcatComment, Lo
     List<EcatComment> lst = sq.list();
 
     for (int i = 0; i < lst.size(); i++) {
-      EcatComment ecm = (EcatComment) lst.get(i);
+      EcatComment ecm = lst.get(i);
       List<EcatCommentItem> lst1 = getCommentItems(ecm.getComId());
       ecm.setItems(lst1);
     }
@@ -69,7 +69,7 @@ public class EcatCommentDaoHibernate extends GenericDaoHibernate<EcatComment, Lo
       return null;
     }
 
-    EcatComment ecm = (EcatComment) lst.get(0);
+    EcatComment ecm = lst.get(0);
     List<EcatCommentItem> lst1 = getCommentItems(ecm.getComId());
     ecm.setItems(lst1);
     return ecm;
@@ -109,7 +109,6 @@ public class EcatCommentDaoHibernate extends GenericDaoHibernate<EcatComment, Lo
   }
 
   @Override
-  @SuppressWarnings("rawtypes")
   public void deleteComments(Long parentId) {
     // createTransaction();
     NativeQuery<EcatComment> sq =
@@ -118,9 +117,8 @@ public class EcatCommentDaoHibernate extends GenericDaoHibernate<EcatComment, Lo
                 "select * from ecat_comm where parent_id = :parentId  order by com_id",
                 EcatComment.class);
     sq.setParameter("parentId", parentId);
-    List lst = sq.addEntity(EcatComment.class).list();
-    for (int i = 0; i < lst.size(); i++) {
-      EcatComment ecm = (EcatComment) lst.get(i);
+    List<EcatComment> comments = sq.list();
+    for (EcatComment ecm : comments) {
       deleteComment(ecm);
     }
   }

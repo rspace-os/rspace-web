@@ -154,7 +154,6 @@ public class CommunityDaoImpl extends GenericDaoHibernate<Community, Long> imple
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public List<Community> listCommunitiesForAdmin(Long userId) {
     return getSession()
         .createQuery(

@@ -954,7 +954,7 @@ public class StructuredDocumentController extends BaseController {
     EditStatus es = recordManager.requestRecordEdit(recordId, subject, users);
     if (!EditStatus.ACCESS_DENIED.equals(es) && !EditStatus.CANNOT_EDIT_OTHER_EDITING.equals(es)) {
       try {
-        CompositeRecordOperationResult result =
+        CompositeRecordOperationResult<BaseRecord> result =
             deletionManager.deleteRecord(parentid, recordId, subject);
         if (result != null) {
           auditService.notify(new GenericEvent(subject, result, AuditAction.DELETE));
@@ -1075,7 +1075,6 @@ public class StructuredDocumentController extends BaseController {
    * @param revision revision number if we're looking at an old revision.
    * @return List<EcatCommentItem>
    */
-  @SuppressWarnings("unchecked")
   @GetMapping("/getComments")
   @ResponseBody
   public List<EcatCommentItem> getComments(

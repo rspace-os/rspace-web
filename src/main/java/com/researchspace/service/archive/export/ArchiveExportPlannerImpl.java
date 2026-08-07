@@ -335,7 +335,6 @@ public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
     }
   }
 
-  @SuppressWarnings("unchecked")
   public List<AuditedRecord> getVersionsToExportForRecord(
       IArchiveExportConfig aconfig, GlobalIdentifier recordToExportOid, Record latestRecord) {
 
@@ -354,13 +353,7 @@ public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
           versionsToExport.add(auditedRecord);
         }
       } else if (latestRecord.isMediaRecord()) {
-        List<?> mediaHistory =
-            auditManager.getRevisionsForEntity(latestRecord.getClass(), latestRecord.getId());
-        for (Object o : mediaHistory) {
-          AuditedEntity<EcatMediaFile> am = (AuditedEntity<EcatMediaFile>) o;
-          am.getEntity().setParents(latestRecord.getParents());
-          versionsToExport.add(new AuditedRecord(am.getEntity(), am.getRevision()));
-        }
+        addMediaRevisions(latestRecord, versionsToExport);
       }
     } else {
       if (latestRecord.isIdentifiedByOid(recordToExportOid)) {
@@ -387,5 +380,21 @@ public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
       }
     }
     return versionsToExport;
+  }
+
+  private void addMediaRevisions(BaseRecord latestRecord, List<AuditedRecord> versionsToExport) {
+    Class<? extends EcatMediaFile> mediaType =
+        latestRecord.getClass().asSubclass(EcatMediaFile.class);
+    addMediaRevisions(mediaType, latestRecord, versionsToExport);
+  }
+
+  private <M extends EcatMediaFile> void addMediaRevisions(
+      Class<M> mediaType, BaseRecord record, List<AuditedRecord> versionsToExport) {
+    M latestRecord = mediaType.cast(record);
+    for (AuditedEntity<M> revision :
+        auditManager.getRevisionsForEntity(mediaType, latestRecord.getId())) {
+      revision.getEntity().setParents(latestRecord.getParents());
+      versionsToExport.add(new AuditedRecord(revision.getEntity(), revision.getRevision()));
+    }
   }
 }

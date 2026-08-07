@@ -274,13 +274,17 @@ public class GitHubController {
   }
 
   // Map is from repository name to access code
-  @SuppressWarnings("unchecked")
   private Map<String, String> getConfiguredRepositoriesWithTokens(Principal principal) {
     Map<String, String> hashMap = new HashMap<>();
     User user = userManager.getUserByUsername(principal.getName());
     IntegrationInfo integration = integrationsHandler.getIntegration(user, "GITHUB");
     for (Object propertySetObject : integration.getOptions().values()) {
-      Map<String, String> propertySet = (Map<String, String>) propertySetObject;
+      if (!(propertySetObject instanceof Map<?, ?> values)) {
+        throw new IllegalStateException("GitHub integration options must be objects");
+      }
+      Map<String, String> propertySet = new HashMap<>();
+      values.forEach(
+          (key, value) -> propertySet.put(String.class.cast(key), String.class.cast(value)));
       String repositoryName = propertySet.get("GITHUB_REPOSITORY_FULL_NAME");
       String accessToken = propertySet.get("GITHUB_ACCESS_TOKEN");
       hashMap.put(repositoryName, accessToken);
