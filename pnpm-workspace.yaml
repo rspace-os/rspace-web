@@ -29,13 +29,16 @@ allowBuilds:
   msw: true
   protobufjs: true
   vue-demi: true
+  '@storybook/addon-vitest': true
 
 # Block packages published less than 7 days ago (10080 minutes) as a defence
 # against supply-chain attacks that are typically caught within that window.
 # Stricter than pnpm 11's 1440-minute (1 day) default.
 minimumReleaseAge: 10080
-# Requested releases published 2026-07-08/09 are <7 days old — REMOVE after ~2026-07-17
 minimumReleaseAgeExclude:
+  - '@base-ui/react@1.6.0'
+  - '@base-ui/utils@0.3.1'
+  # Requested releases published 2026-07-08/09 are <7 days old — REMOVE after ~2026-07-17
   - typescript
   - '@typescript/typescript-*'
   - i18next
