@@ -4,6 +4,7 @@ import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 
 const AppConfigResponseSchema = v.object({
+  version: v.string(),
   branding: v.object({
     bannerImageUrl: v.string(),
   }),
@@ -21,6 +22,7 @@ export type AppConfig = v.InferOutput<typeof AppConfigResponseSchema>;
 
 export const DEFAULT_APP_CONFIG: AppConfig = freeze(
   {
+    version: "",
     branding: { bannerImageUrl: "" },
     helpLinks: [],
     deploymentDescription: null,

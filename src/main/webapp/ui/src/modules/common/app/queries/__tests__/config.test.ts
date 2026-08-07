@@ -8,6 +8,7 @@ describe("getAppConfig", () => {
   it("returns validated deployment configuration", async () => {
     let request: Request | undefined;
     const response = {
+      version: "2.99.1",
       branding: { bannerImageUrl: "/public/banner" },
       helpLinks: [{ label: "Support", url: "https://example.org/support" }],
       deploymentDescription: "Configured for advanced research teams",
@@ -27,6 +28,7 @@ describe("getAppConfig", () => {
 
   it("accepts nullable deployment metadata", async () => {
     const response = {
+      version: "2.99.1",
       branding: { bannerImageUrl: "/public/banner" },
       helpLinks: [],
       deploymentDescription: null,

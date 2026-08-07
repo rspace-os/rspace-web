@@ -3,13 +3,17 @@ import { useTranslation } from "react-i18next";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Menu, MenuContent, MenuItem, MenuLinkItem, MenuTrigger } from "@/modules/common/ui/menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
-import { useLighthouseSdk } from "./lighthouse";
+import { type LivechatProperties, useLighthouseSdk } from "./lighthouse";
 import type { AppConfig } from "./queries/config";
-import { useLivechatPropertiesQuery } from "./queries/livechatProperties";
 
-export default function HelpMenu({ helpLinks }: { helpLinks: AppConfig["helpLinks"] }) {
+export default function HelpMenu({
+  helpLinks,
+  livechatProperties,
+}: {
+  helpLinks: AppConfig["helpLinks"];
+  livechatProperties: LivechatProperties;
+}) {
   const { t } = useTranslation("common");
-  const { data: livechatProperties } = useLivechatPropertiesQuery();
   const { lighthouseReady, showLighthouse } = useLighthouseSdk(livechatProperties);
   const hasExtraHelpLinks = helpLinks.length > 0;
 

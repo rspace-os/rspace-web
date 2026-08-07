@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import * as v from "valibot";
+import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 
-// Public/unauthenticated endpoint: shown to logged-out users, so no OAuth token or /api/v2 resource.
+// The maintenance collection is public because logged-out users read this status.
 export type MaintenanceStatus = "in-progress" | "clear";
 
 export const maintenanceStatusQueryKeys = {
@@ -9,8 +12,14 @@ export const maintenanceStatusQueryKeys = {
 
 const POLL_INTERVAL_MS = 30 * 1000;
 
+const MaintenanceStatusEnvelopeSchema = v2ListEnvelope(v.object({ canUserLoginNow: v.boolean() }));
+
 export async function getMaintenanceStatus(): Promise<MaintenanceStatus> {
-  const response = await fetch("/public/maintenanceStatus", {
+  const parameters = new URLSearchParams({
+    limit: "1",
+    "fields[maintenances]": "canUserLoginNow",
+  });
+  const response = await fetch(`/api/v2/maintenances?${parameters}`, {
     method: "GET",
     headers: {
       "X-Requested-With": "XMLHttpRequest",
@@ -22,8 +31,13 @@ export async function getMaintenanceStatus(): Promise<MaintenanceStatus> {
     return "in-progress";
   }
 
-  const text = (await response.text()).trim();
-  return text === "No maintenance" ? "clear" : "in-progress";
+  try {
+    const data: unknown = await response.json();
+    const maintenance = parseOrThrow(MaintenanceStatusEnvelopeSchema, data).docs[0];
+    return maintenance?.canUserLoginNow === false ? "in-progress" : "clear";
+  } catch {
+    return "in-progress";
+  }
 }
 
 export function useMaintenanceStatusQuery() {

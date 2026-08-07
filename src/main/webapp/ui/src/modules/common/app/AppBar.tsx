@@ -137,7 +137,14 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
           <span className="sr-only">{t("appBar.notifications")}</span>
         </a>
         <AccountMenu currentUser={currentUser} bannerImageUrl={config.branding.bannerImageUrl} />
-        <HelpMenu helpLinks={config.helpLinks} />
+        <HelpMenu
+          helpLinks={config.helpLinks}
+          livechatProperties={{
+            livechatEnabled: currentUser.livechat.enabled,
+            livechatServerKey: currentUser.livechat.serverKey ?? undefined,
+            currentUser: currentUser.username,
+          }}
+        />
       </div>
     </header>
   );

@@ -1,4 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
+import * as v from "valibot";
+import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import {
   getStoredToken,
   isExpiringSoon,
@@ -16,8 +18,11 @@ const queryKeys = {
  * Fetches a new OAuth token from the server.
  * This is used internally by the useOauthTokenQuery hook.
  */
-async function fetchToken(): Promise<string> {
-  const response = await fetch("/userform/ajax/inventoryOauthToken", {
+const OauthTokenSchema = v.object({ accessToken: v.string() });
+
+export async function fetchToken(): Promise<string> {
+  const response = await fetch("/api/v2/oauth/tokens", {
+    method: "POST",
     headers: {
       "X-Requested-With": "XMLHttpRequest",
     },
@@ -27,8 +32,8 @@ async function fetchToken(): Promise<string> {
     throw new Error(`Failed to fetch token: ${response.statusText}`);
   }
 
-  const json = (await response.json()) as { data: string };
-  const newToken = json.data;
+  const data: unknown = await response.json();
+  const newToken = parseOrThrow(OauthTokenSchema, data).accessToken;
   saveStoredToken(newToken);
   return newToken;
 }

@@ -9,7 +9,6 @@ import AccountMenu, { formatFullName, logoutHrefForSession } from "@/modules/com
 import NewAppBar from "@/modules/common/app/AppBar";
 import HelpMenu from "@/modules/common/app/HelpMenu";
 import { useLighthouseSdk } from "@/modules/common/app/lighthouse";
-import { useLivechatPropertiesQuery } from "@/modules/common/app/queries/livechatProperties";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { UIStoreProvider } from "@/modules/common/stores/uiStore";
@@ -18,10 +17,6 @@ import { ID_TOKEN_KEY } from "@/modules/common/utils/auth";
 
 vi.mock("@/modules/common/hooks/auth", () => ({
   useOauthTokenQuery: vi.fn(),
-}));
-
-vi.mock("@/modules/common/app/queries/livechatProperties", () => ({
-  useLivechatPropertiesQuery: vi.fn(),
 }));
 
 vi.mock("@/modules/common/app/lighthouse", () => ({
@@ -62,10 +57,12 @@ const currentUser: CurrentUser = {
   profileImageApiUrl: null,
   orcid: { available: true, id: null },
   capabilities: { canUseInventory: true, canPublish: true, canViewSystem: false },
+  livechat: { enabled: false, serverKey: null },
   session: { operatedAs: false, lastSession: null },
 };
 
 const appConfig = {
+  version: "2.99.1",
   branding: { bannerImageUrl: "" },
   helpLinks: [{ label: "Local help", url: "https://help.example.com" }],
   deploymentDescription: "",
@@ -94,9 +91,6 @@ const defaultHandlers = [
 beforeEach(() => {
   server.use(...defaultHandlers);
   vi.mocked(useOauthTokenQuery).mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);
-  vi.mocked(useLivechatPropertiesQuery).mockReturnValue({
-    data: { livechatEnabled: false, currentUser: "ada" },
-  } as ReturnType<typeof useLivechatPropertiesQuery>);
   vi.mocked(useLighthouseSdk).mockReturnValue({ lighthouseReady: false, showLighthouse: vi.fn() });
 });
 
@@ -178,12 +172,34 @@ describe("NewAppBar (MSW-driven)", () => {
     const banners = await screen.findAllByRole("img", { name: "common:appBar.brandingAlt" });
     expect(banners[0]).toHaveAttribute("src", "/public/banner");
   });
+
+  it("supplies live-chat data from /api/v2/users/me to the help menu", async () => {
+    server.use(
+      http.get("/api/v2/users/me", () =>
+        HttpResponse.json({ ...currentUser, livechat: { enabled: true, serverKey: "server-key" } }),
+      ),
+    );
+
+    renderAppBar();
+
+    await screen.findByRole("navigation", { name: "common:appBar.mainLinks" });
+    expect(useLighthouseSdk).toHaveBeenCalledWith({
+      livechatEnabled: true,
+      livechatServerKey: "server-key",
+      currentUser: "ada",
+    });
+  });
 });
 
 describe("HelpMenu", () => {
   it("opens custom help links even when Lighthouse is not ready and closes on Escape", async () => {
     const user = userEvent.setup();
-    render(<HelpMenu helpLinks={[{ label: "Local help", url: "https://help.example.com" }]} />);
+    render(
+      <HelpMenu
+        helpLinks={[{ label: "Local help", url: "https://help.example.com" }]}
+        livechatProperties={{ livechatEnabled: false, currentUser: "ada" }}
+      />,
+    );
 
     await user.click(screen.getByRole("button", { name: "common:helpDocs.openHelp" }));
     expect(screen.getByRole("menuitem", { name: "Local help" })).toHaveAttribute("href", "https://help.example.com");
@@ -193,7 +209,7 @@ describe("HelpMenu", () => {
   });
 
   it("renders the disabled help fallback when there are no configured links", () => {
-    render(<HelpMenu helpLinks={[]} />);
+    render(<HelpMenu helpLinks={[]} livechatProperties={{ livechatEnabled: false, currentUser: "ada" }} />);
 
     expect(screen.getByRole("button", { name: "common:helpDocs.openHelp" })).toBeDisabled();
     expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();

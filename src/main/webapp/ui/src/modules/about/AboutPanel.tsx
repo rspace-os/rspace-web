@@ -1,25 +1,12 @@
-import * as React from "react";
 import { useTranslation } from "react-i18next";
 import RSpaceLogo from "@/assets/branding/rspace/logo.svg";
-import ErrorBoundary from "@/components/ErrorBoundary";
 import { DEFAULT_APP_CONFIG, useAppConfigQuery } from "@/modules/common/app/queries/config";
 import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
-import { useApplicationVersionQuery } from "@/modules/common/queries/applicationVersion";
 import { Card, CardContent } from "@/modules/common/ui/card";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading, Link, List, Text } from "@/modules/common/ui/typography";
 
 const SUPPORT_EMAIL = "support@researchspace.com";
-
-function VersionBlock() {
-  const { t } = useTranslation("about");
-  const version = useApplicationVersionQuery();
-  return (
-    <Text as="h2" variant="muted">
-      {t("version.label", { version: version.data })}
-    </Text>
-  );
-}
 
 export default function AboutPanel() {
   const { t } = useTranslation("about");
@@ -42,11 +29,9 @@ export default function AboutPanel() {
               <Heading level={3} as="h1" className="lg:text-3xl">
                 {t("tagline")}
               </Heading>
-              <ErrorBoundary message={t("version.unavailable")}>
-                <React.Suspense fallback={<Text variant="muted">{t("version.loading")}</Text>}>
-                  <VersionBlock />
-                </React.Suspense>
-              </ErrorBoundary>
+              <Text as="h2" variant="muted">
+                {config.version ? t("version.label", { version: config.version }) : t("version.unavailable")}
+              </Text>
               {config.deploymentDescription ? <Text>{config.deploymentDescription}</Text> : null}
             </div>
             <Separator />
