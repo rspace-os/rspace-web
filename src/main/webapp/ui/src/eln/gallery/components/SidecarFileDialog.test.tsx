@@ -4,15 +4,14 @@ import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import MockAdapter from "axios-mock-adapter";
+import { HttpResponse, http } from "msw";
 import type React from "react";
-import axios from "@/common/axios";
+import { expectAccessible } from "@/__tests__/accessibility";
+import { server } from "@/__tests__/mswServer";
 import Alerts from "@/components/Alerts/Alerts";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import SidecarFileDialog from "./SidecarFileDialog";
-
-const mockAxios = new MockAdapter(axios);
 
 const FILESTORE_ID = 42;
 const PREVIEW = {
@@ -22,10 +21,27 @@ const PREVIEW = {
 const previewUrl = `/api/v1/gallery/filestores/${FILESTORE_ID}/sidecarFile/preview`;
 const saveUrl = `/api/v1/gallery/filestores/${FILESTORE_ID}/sidecarFile`;
 
+// Request bodies captured by the MSW handlers, per endpoint.
+let previewBodies: Array<unknown>;
+let saveBodies: Array<unknown>;
+
+function handlePreview(status: number) {
+  return http.post(previewUrl, async ({ request }) => {
+    previewBodies.push(await request.json());
+    return status === 200 ? HttpResponse.json(PREVIEW) : new HttpResponse(null, { status });
+  });
+}
+function handleSave(status: number) {
+  return http.post(saveUrl, async ({ request }) => {
+    saveBodies.push(await request.json());
+    return new HttpResponse(JSON.stringify(PREVIEW), { status });
+  });
+}
+
 function renderDialog(props?: Partial<React.ComponentProps<typeof SidecarFileDialog>>) {
   const onClose = vi.fn();
   const refreshListing = vi.fn(() => Promise.resolve());
-  render(
+  const { baseElement } = render(
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Alerts>
         <SidecarFileDialog
@@ -39,58 +55,60 @@ function renderDialog(props?: Partial<React.ComponentProps<typeof SidecarFileDia
       </Alerts>
     </ThemeProvider>,
   );
-  return { onClose, refreshListing };
+  return { onClose, refreshListing, baseElement };
 }
 
 beforeEach(() => {
-  mockAxios.reset();
+  previewBodies = [];
+  saveBodies = [];
 });
-afterEach(() => {
-  cleanup();
-  mockAxios.reset();
-});
+afterEach(cleanup);
 
 describe("SidecarFileDialog", () => {
   test("composes and shows the metadata preview on open, writing nothing", async () => {
-    mockAxios.onPost(previewUrl).reply(200, PREVIEW);
+    server.use(handlePreview(200), handleSave(201));
     renderDialog();
 
     expect(await screen.findByText(PREVIEW.filename)).toBeVisible();
     expect(await screen.findByDisplayValue(/ltds-datacite4\.3/)).toBeVisible();
 
     // Preview only: the save endpoint must not be hit.
-    expect(mockAxios.history.post.map((r) => r.url)).not.toContain(saveUrl);
+    expect(saveBodies).toHaveLength(0);
     // Request describes the current browse folder.
-    expect(JSON.parse(mockAxios.history.post[0].data)).toEqual({ path: "experiments" });
+    expect(previewBodies).toEqual([{ path: "experiments" }]);
   });
 
   test("saving posts to the save endpoint, refreshes the listing, alerts, and closes", async () => {
-    mockAxios.onPost(previewUrl).reply(200, PREVIEW);
-    mockAxios.onPost(saveUrl).reply(201, PREVIEW);
+    server.use(handlePreview(200), handleSave(201));
     const user = userEvent.setup();
     const { onClose, refreshListing } = renderDialog();
 
     await screen.findByText(PREVIEW.filename);
     await user.click(screen.getByRole("button", { name: /gallery:sidecarFile\.save/i }));
 
-    await waitFor(() => {
-      const saveCalls = mockAxios.history.post.filter((r) => r.url === saveUrl);
-      expect(saveCalls).toHaveLength(1);
-      expect(JSON.parse(saveCalls[0].data)).toEqual({ path: "experiments" });
-    });
-    expect(refreshListing).toHaveBeenCalled();
+    // Synchronize on the user-visible result, not on the request firing.
     // The success toast portals to the body; while the (test-controlled) dialog stays open the
     // modal marks it aria-hidden, so assert by text rather than the alert role.
     expect(await screen.findByText("gallery:sidecarFile.saveSuccess")).toBeInTheDocument();
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(refreshListing).toHaveBeenCalled();
+    expect(saveBodies).toEqual([{ path: "experiments" }]);
+  });
+
+  test("has no accessibility violations once the preview is shown", async () => {
+    server.use(handlePreview(200), handleSave(201));
+    const { baseElement } = renderDialog();
+
+    await screen.findByText(PREVIEW.filename);
+    await expectAccessible(baseElement);
   });
 
   test("shows an error and keeps Save disabled when the preview fails", async () => {
-    mockAxios.onPost(previewUrl).reply(500);
+    server.use(handlePreview(500), handleSave(201));
     renderDialog();
 
     expect(await screen.findByText(/gallery:sidecarFile\.previewFailed/)).toBeVisible();
     expect(screen.getByRole("button", { name: /gallery:sidecarFile\.save/i })).toBeDisabled();
-    expect(mockAxios.history.post.map((r) => r.url)).not.toContain(saveUrl);
+    expect(saveBodies).toHaveLength(0);
   });
 });

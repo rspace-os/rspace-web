@@ -102,13 +102,15 @@ export default function SidecarFileDialog({
                 {sidecarFile.filename}
               </Typography>
               <TextField
-                aria-label={t("sidecarFile.contentLabel")}
                 value={sidecarFile.content}
                 multiline
                 minRows={8}
                 maxRows={20}
                 fullWidth
-                slotProps={{ input: { readOnly: true, sx: { fontFamily: "monospace", fontSize: "0.8rem" } } }}
+                slotProps={{
+                  input: { readOnly: true, sx: { fontFamily: "monospace", fontSize: "0.8rem" } },
+                  htmlInput: { "aria-label": t("sidecarFile.contentLabel") },
+                }}
               />
             </>
           ),
