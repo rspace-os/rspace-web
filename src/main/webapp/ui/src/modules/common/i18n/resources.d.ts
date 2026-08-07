@@ -1785,6 +1785,8 @@ export default interface Resources {
         "title": "Permanently delete?"
       },
       "downloadImageForEditingFailed": "Failed to download image for editing",
+      "generateDataRecord": "Generate Data Record",
+      "generateDataRecordNotS3": "Only available inside a writeable S3 filestore.",
       "label": "actions",
       "moveToIrods": "Move to iRODS",
       "moveToS3": "Move to S3",
@@ -1812,6 +1814,7 @@ export default interface Resources {
         "onlyOneLogout": "Only one item may be logged out of at once.",
         "onlyOneNewVersion": "Only one item may be updated with a new version at once.",
         "onlyOneRename": "Only one item may be renamed at once.",
+        "onlyOneVersionHistory": "Only one item's version history may be viewed at once.",
         "onlyOwnerCanShare": "Only owners of the snippet can change its share settings.",
         "onlySnippetsShareable": "Only snippets can be shared.",
         "selectSnippet": "At least one snippet must be selected.",
@@ -2153,6 +2156,15 @@ export default interface Resources {
       "s3FolderNote": "Note that S3 has no native concept of folders: they can be emulated with an empty placeholder object, and the hierarchy is expressed purely through object-name prefixes. For many cases a flat list of files will be easier to manage than a folder structure.",
       "sectionsDrawerLabel": "gallery sections drawer",
       "uploadFiles": "Upload Files"
+    },
+    "sidecarFile": {
+      "contentLabel": "Metadata record preview",
+      "description": "Preview the metadata record composed for this folder, then save it to the filestore.",
+      "loading": "Composing metadata record...",
+      "previewFailed": "Could not compose the metadata record.",
+      "save": "Save to S3",
+      "saveFailed": "Could not save the metadata record.",
+      "saveSuccess": "Saved {filename} to the filestore."
     },
     "snippetPreview": {
       "error": "Error: {error}",
@@ -6376,6 +6388,12 @@ export default interface Resources {
           "deniedNoMetadata": "This item has no creation record and cannot be deleted",
           "deniedNotCreator": "You can only delete filestore items that you created",
           "deniedTooOld": "{0, plural, one {Filestore items can only be deleted within # minute of their creation} other {Filestore items can only be deleted within # minutes of their creation}}"
+        }
+      },
+      "sidecarFile": {
+        "errors": {
+          "notEnabled": "Metadata sidecar generation is not enabled on this RSpace instance (gallery.actions.metadata.sidecarFile.enabled=false)",
+          "notS3": "Metadata sidecar generation is only supported for S3 filestores"
         }
       },
       "validation": {
