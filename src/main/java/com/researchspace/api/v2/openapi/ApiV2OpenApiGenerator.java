@@ -1132,7 +1132,17 @@ public final class ApiV2OpenApiGenerator {
         "apiKey",
         ordered("type", "apiKey", "in", "header", "name", "apiKey"),
         "bearerAuth",
-        ordered("type", "http", "scheme", "bearer"));
+        ordered("type", "http", "scheme", "bearer"),
+        "browserSession",
+        ordered(
+            "type",
+            "apiKey",
+            "in",
+            "cookie",
+            "name",
+            "JSESSIONID",
+            "description",
+            "Authenticated browser session. A deployment can rename this cookie."));
   }
 
   private static Map<String, Object> responseRef(String name) {

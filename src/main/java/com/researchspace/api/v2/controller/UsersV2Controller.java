@@ -2,11 +2,13 @@ package com.researchspace.api.v2.controller;
 
 import com.researchspace.api.v2.model.ApiV2CurrentUser;
 import com.researchspace.api.v2.model.ApiV2CurrentUser.Capabilities;
+import com.researchspace.api.v2.model.ApiV2CurrentUser.LiveChat;
 import com.researchspace.api.v2.model.ApiV2CurrentUser.Orcid;
 import com.researchspace.api.v2.model.ApiV2CurrentUser.Session;
 import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.SystemPropertyName;
@@ -38,6 +40,7 @@ public class UsersV2Controller {
   private final UserExternalIdResolver externalIdResolver;
   private final UserProfileManager userProfileManager;
   private final SystemPropertyPermissionManager propertyPermissionManager;
+  private final IPropertyHolder properties;
 
   @GetMapping("/me")
   @Operation(
@@ -69,6 +72,7 @@ public class UsersV2Controller {
         picture == null ? null : "/api/v2/users/me/profile-image",
         orcid(user),
         capabilities(user),
+        liveChat(),
         session(user));
   }
 
@@ -122,5 +126,10 @@ public class UsersV2Controller {
   private Session session(User user) {
     Date lastLogin = user.getLastLogin();
     return new Session(false, lastLogin == null ? null : lastLogin.toInstant().toString());
+  }
+
+  private LiveChat liveChat() {
+    boolean enabled = properties.isLiveChatEnabled();
+    return new LiveChat(enabled, enabled ? properties.getLiveChatServerKey() : null);
   }
 }

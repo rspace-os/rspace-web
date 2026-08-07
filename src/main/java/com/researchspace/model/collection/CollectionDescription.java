@@ -74,6 +74,8 @@ public final class CollectionDescription<T> {
     private final String name;
     private final String property;
     private final CollectionFieldType<V> type;
+    private final boolean filterable;
+    private final boolean sortable;
     private final Function<T, V> reader;
     private final BiConsumer<T, V> writer;
     private final Set<WriteOperation> writeOperations;
@@ -89,6 +91,8 @@ public final class CollectionDescription<T> {
         String name,
         String property,
         CollectionFieldType<V> type,
+        boolean filterable,
+        boolean sortable,
         Function<T, V> reader,
         BiConsumer<T, V> writer,
         Set<WriteOperation> writeOperations,
@@ -102,6 +106,8 @@ public final class CollectionDescription<T> {
       this.name = requireName(name, "Field name");
       this.property = requireName(property, "Field property");
       this.type = Objects.requireNonNull(type, "Field type");
+      this.filterable = filterable;
+      this.sortable = sortable;
       this.reader = Objects.requireNonNull(reader, "Field reader");
       this.writer = writer;
       this.writeOperations = immutableOperations(writeOperations);
@@ -121,6 +127,8 @@ public final class CollectionDescription<T> {
           name,
           property,
           type,
+          true,
+          true,
           reader,
           null,
           Set.of(),
@@ -143,6 +151,8 @@ public final class CollectionDescription<T> {
           name,
           property,
           type,
+          true,
+          true,
           reader,
           Objects.requireNonNull(writer, "Field writer"),
           EnumSet.allOf(WriteOperation.class),
@@ -164,6 +174,8 @@ public final class CollectionDescription<T> {
           name,
           property,
           type,
+          filterable,
+          sortable,
           reader,
           writer,
           writeOperations,
@@ -195,6 +207,8 @@ public final class CollectionDescription<T> {
           name,
           property,
           type,
+          filterable,
+          sortable,
           reader,
           writer,
           writeOperations,
@@ -212,6 +226,8 @@ public final class CollectionDescription<T> {
           name,
           property,
           type,
+          filterable,
+          sortable,
           reader,
           writer,
           writeOperations,
@@ -229,6 +245,8 @@ public final class CollectionDescription<T> {
           name,
           property,
           type,
+          filterable,
+          sortable,
           reader,
           writer,
           writeOperations,
@@ -246,6 +264,8 @@ public final class CollectionDescription<T> {
           name,
           property,
           type,
+          filterable,
+          sortable,
           reader,
           writer,
           writeOperations,
@@ -268,22 +288,32 @@ public final class CollectionDescription<T> {
     }
 
     public Field<T, V> required() {
-      return copy(writeOperations, true, nullable, defaultValue);
+      return copy(writeOperations, true, nullable, defaultValue, filterable, sortable);
     }
 
     public Field<T, V> allowNull() {
-      return copy(writeOperations, requiredOnCreate, true, defaultValue);
+      return copy(writeOperations, requiredOnCreate, true, defaultValue, filterable, sortable);
     }
 
     public Field<T, V> defaultValue(Supplier<? extends V> value) {
-      return copy(writeOperations, requiredOnCreate, nullable, Objects.requireNonNull(value));
+      return copy(
+          writeOperations,
+          requiredOnCreate,
+          nullable,
+          Objects.requireNonNull(value),
+          filterable,
+          sortable);
     }
 
     public Field<T, V> writeOnlyOn(WriteOperation... operations) {
       Objects.requireNonNull(operations, "Write operations");
       Set<WriteOperation> selected = EnumSet.noneOf(WriteOperation.class);
       Collections.addAll(selected, operations);
-      return copy(selected, requiredOnCreate, nullable, defaultValue);
+      return copy(selected, requiredOnCreate, nullable, defaultValue, filterable, sortable);
+    }
+
+    private Field<T, V> withQueryCapabilities(boolean filterable, boolean sortable) {
+      return copy(writeOperations, requiredOnCreate, nullable, defaultValue, filterable, sortable);
     }
 
     public String name() {
@@ -308,9 +338,9 @@ public final class CollectionDescription<T> {
           writeOperations.isEmpty(),
           writeOperations,
           hasDefaultValue(),
-          type.operators(),
-          type.supportsWildcards(),
-          type.sortable(),
+          operators(),
+          supportsWildcards(),
+          sortable(),
           openApi,
           CollectionDescription.documented(readAccess, inherited.readAccess()),
           CollectionDescription.documented(createAccess, inherited.createAccess()),
@@ -318,11 +348,15 @@ public final class CollectionDescription<T> {
     }
 
     public Set<Operator> operators() {
-      return type.operators();
+      return filterable ? type.operators() : Set.of();
     }
 
     public boolean supportsWildcards() {
-      return type.supportsWildcards();
+      return filterable && type.supportsWildcards();
+    }
+
+    public boolean sortable() {
+      return sortable && type.sortable();
     }
 
     public FilterSelector filterSelector() {
@@ -382,11 +416,15 @@ public final class CollectionDescription<T> {
         Set<WriteOperation> operations,
         boolean required,
         boolean acceptsNull,
-        Supplier<? extends V> suppliedDefault) {
+        Supplier<? extends V> suppliedDefault,
+        boolean filterable,
+        boolean sortable) {
       return new Field<>(
           name,
           property,
           type,
+          filterable,
+          sortable,
           reader,
           writer,
           operations,
@@ -1054,7 +1092,7 @@ public final class CollectionDescription<T> {
     for (Sort sort : this.defaultSort) {
       Objects.requireNonNull(sort, "Default sort");
       Field<T, ?> field = this.fields.get(sort.field());
-      if (field == null || !field.type().sortable()) {
+      if (field == null || !field.sortable()) {
         throw new IllegalArgumentException("Default sort field must be described and sortable");
       }
       if (!sorted.add(sort.field())) {
@@ -1574,7 +1612,8 @@ public final class CollectionDescription<T> {
     return field
         .readableBy(definition.readAccess().resolve())
         .creatableBy(definition.createAccess().resolve())
-        .updatableBy(definition.updateAccess().resolve());
+        .updatableBy(definition.updateAccess().resolve())
+        .withQueryCapabilities(definition.filterable(), definition.sortable());
   }
 
   private static CollectionFieldType<?> fieldType(Class<?> type, int maxLength) {

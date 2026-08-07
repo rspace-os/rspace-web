@@ -11,20 +11,26 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.OAuthTokenManager;
+import io.github.resilience4j.core.IntervalFunction;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.vavr.control.Try;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +39,14 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
   private static final int ALLOWED_CLOCK_SKEW = 3 * 60;
   private static final int TOKEN_LENGTH = 32; // 192 bits in base64 (6bit)
   private static final Pattern jwtToken = Pattern.compile(".+\\..+\\..+");
+  private static final String UI_CLIENT_ID = "rsInventoryWebClient";
+  private static final String UI_CLIENT_SECRET = "rsInventoryPublicSecret";
+  private static final RetryConfig UI_TOKEN_RETRY =
+      RetryConfig.custom()
+          .maxAttempts(3)
+          .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(500, 2d))
+          .retryExceptions(DataIntegrityViolationException.class)
+          .build();
 
   @Autowired OAuthTokenDao tokenDao;
 
@@ -244,6 +258,18 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
     response.setExpiryTime(expiryTime);
 
     return new ServiceOperationResult<>(response, true);
+  }
+
+  @Override
+  public String createUiToken(User user) {
+    Retry retry = Retry.of("jwtTokenGeneration", UI_TOKEN_RETRY);
+    Callable<NewOAuthTokenResponse> createWithRetry =
+        Retry.decorateCallable(
+            retry,
+            () ->
+                createNewJwtToken(UI_CLIENT_ID, UI_CLIENT_SECRET, user, OAuthTokenType.UI_TOKEN)
+                    .getEntity());
+    return Try.ofCallable(createWithRetry).get().getAccessToken();
   }
 
   private Instant generateExpiryTime() {

@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.openapi;
 
+import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import io.swagger.v3.core.util.AnnotationsUtils;
 import io.swagger.v3.core.util.Json31;
@@ -99,7 +100,6 @@ final class ApiV2OpenApiAnnotationMerger {
                 operation.put(
                     "servers", Json31.mapper().convertValue(value, java.util.ArrayList.class)));
     operation.putAll(AnnotationsUtils.getExtensions(metadata.extensions()));
-    boolean publicEndpoint = endpoints.isPublic(handler);
     if (metadata.security().length > 0) {
       operation.put(
           "security",
@@ -107,11 +107,7 @@ final class ApiV2OpenApiAnnotationMerger {
               .map(requirement -> Map.of(requirement.name(), List.of(requirement.scopes())))
               .toList());
     } else {
-      operation.put(
-          "security",
-          publicEndpoint
-              ? List.of()
-              : List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+      operation.put("security", security(endpoints, handler));
     }
 
     List<Map<String, Object>> parameters = parameters(handler, metadata, schemas);
@@ -172,6 +168,17 @@ final class ApiV2OpenApiAnnotationMerger {
     operation.put("responses", responses);
     operation.put("x-rspace-operation", "CUSTOM");
     return operation;
+  }
+
+  private static List<Map<String, List<String>>> security(
+      ApiV2EndpointCatalog endpoints, HandlerMethod handler) {
+    if (endpoints.isPublic(handler)) {
+      return List.of();
+    }
+    if (endpoints.authenticationMode(handler) == ApiV2AuthenticationMode.BROWSER_SESSION) {
+      return List.of(Map.of("browserSession", List.of()));
+    }
+    return List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of()));
   }
 
   private static List<Map<String, Object>> parameters(

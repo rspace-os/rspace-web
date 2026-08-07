@@ -36,7 +36,7 @@ public final class ApiV2SortParser {
       }
       boolean ascending = !value.startsWith("-");
       String field = value.startsWith("-") ? value.substring(1) : value;
-      if (!description.requireField(field).type().sortable()) {
+      if (!description.requireField(field).sortable()) {
         throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
       }
       if (!seen.add(field)) {

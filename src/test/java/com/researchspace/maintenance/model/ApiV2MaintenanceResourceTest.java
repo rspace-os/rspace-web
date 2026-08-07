@@ -39,12 +39,13 @@ class ApiV2MaintenanceResourceTest {
     Map<String, Object> document = ApiV2MaintenanceResource.DESCRIPTION.toDocument(maintenance);
 
     assertEquals(
-        List.of("id", "startDate", "endDate", "stopUserLoginDate", "message"),
+        List.of("id", "startDate", "endDate", "stopUserLoginDate", "message", "canUserLoginNow"),
         List.copyOf(document.keySet()));
     assertEquals("2026-08-01T10:00:00Z", document.get("startDate"));
     assertEquals("2026-08-01T12:00:00Z", document.get("endDate"));
     assertEquals("upgrade", document.get("message"));
     assertNull(document.get("id"));
+    assertEquals(true, document.get("canUserLoginNow"));
   }
 
   @Test
@@ -72,6 +73,9 @@ class ApiV2MaintenanceResourceTest {
             .requireField("startDate")
             .operators()
             .contains(Operator.LIKE));
+    assertTrue(
+        ApiV2MaintenanceResource.DESCRIPTION.requireField("canUserLoginNow").operators().isEmpty());
+    assertFalse(ApiV2MaintenanceResource.DESCRIPTION.requireField("canUserLoginNow").sortable());
   }
 
   @Test

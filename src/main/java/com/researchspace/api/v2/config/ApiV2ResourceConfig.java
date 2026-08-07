@@ -2,9 +2,11 @@ package com.researchspace.api.v2.config;
 
 import com.researchspace.api.v2.controller.ApiV2CrudController;
 import com.researchspace.api.v2.controller.ConfigV2Controller;
+import com.researchspace.api.v2.controller.OAuthTokensV2Controller;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiController;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiDocumentService;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator;
+import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.api.v2.resource.ApiV2EndpointSpec;
 import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
@@ -18,33 +20,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-/**
- * Registers REST API v2 resource and endpoint specs.
- *
- * <p>Contributions are aggregated flatly rather than nested. A module exposes a collection by
- * declaring one {@link ApiV2ResourceSpec} bean in any scanned {@code @Configuration} and needs no
- * edit here: Spring collects every spec into the catalog. The component scan in {@code
- * applicationContext-service.xml} covers all of {@code com.researchspace}, so a sibling artifact on
- * the classpath is included automatically; a module outside that package prefix must have its
- * configuration imported explicitly.
- */
+/** Registers REST API v2 resources, endpoints, and OpenAPI services. */
 @Configuration
 public class ApiV2ResourceConfig {
 
-  /**
-   * Builds the single registry and binds every resource spec to it.
-   *
-   * <p>Deliberately one flat catalog rather than one per module. It validates duplicate resource
-   * names, duplicate entity types, and that every relationship target resolves — checks that are
-   * only meaningful over one namespace. Nesting catalogs would either make a relationship spanning
-   * two modules unverifiable or push that check to the first request, losing the fail-at-startup
-   * guarantee.
-   *
-   * <p>Because this is now a bean rather than a static constant, an invalid graph surfaces during
-   * context refresh wrapped in a {@code BeanCreationException} instead of as a bare {@code
-   * IllegalArgumentException} at class initialisation. It is still a startup failure, but look for
-   * the cause when diagnosing one.
-   */
   @Bean
   ApiV2ResourceCatalog apiV2ResourceCatalog(
       List<ApiV2ResourceSpec<?, ?>> specs,
@@ -53,23 +32,16 @@ public class ApiV2ResourceConfig {
   }
 
   @Bean
-  ApiV2EndpointCatalog apiV2EndpointCatalog(List<ApiV2EndpointSpec> specs) {
-    return new ApiV2EndpointCatalog(specs);
-  }
-
-  @Bean
-  ApiV2EndpointSpec apiV2CrudEndpointSpec() {
-    return new ApiV2EndpointSpec(ApiV2CrudController.class, AccessFunction.anyone());
-  }
-
-  @Bean
-  ApiV2EndpointSpec configV2EndpointSpec() {
-    return new ApiV2EndpointSpec(ConfigV2Controller.class, AccessFunction.anyone());
-  }
-
-  @Bean
-  ApiV2EndpointSpec apiV2OpenApiEndpointSpec() {
-    return new ApiV2EndpointSpec(ApiV2OpenApiController.class, AccessFunction.anyone());
+  ApiV2EndpointCatalog apiV2EndpointCatalog() {
+    return new ApiV2EndpointCatalog(
+        List.of(
+            new ApiV2EndpointSpec(ApiV2CrudController.class, AccessFunction.anyone()),
+            new ApiV2EndpointSpec(ConfigV2Controller.class, AccessFunction.anyone()),
+            new ApiV2EndpointSpec(
+                OAuthTokensV2Controller.class,
+                AccessFunction.authenticated(),
+                ApiV2AuthenticationMode.BROWSER_SESSION),
+            new ApiV2EndpointSpec(ApiV2OpenApiController.class, AccessFunction.anyone())));
   }
 
   @Bean

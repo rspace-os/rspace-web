@@ -84,6 +84,9 @@ public class WebConfig extends WebMvcConfigurationSupport {
           .addInterceptor(defaultConfig.originRefererCheckingInterceptor())
           .addPathPatterns("/**")
           .excludePathPatterns("/oauth/**", "/api/**", "/slack/callbacks/**", "/wopi/**");
+      registry
+          .addInterceptor(defaultConfig.originRefererCheckingInterceptor())
+          .addPathPatterns("/api/v2/oauth/tokens");
     }
     // add timezone via cookie if possible, just needed for sso
     if ("false".equals(standalone)) {
@@ -111,7 +114,8 @@ public class WebConfig extends WebMvcConfigurationSupport {
           .excludePathPatterns("/api/v2/**");
       registry
           .addInterceptor(defaultConfig.apiV2PermissiveCorsInterceptor())
-          .addPathPatterns("/api/v2/**");
+          .addPathPatterns("/api/v2/**")
+          .excludePathPatterns("/api/v2/oauth/tokens");
     }
     registry
         .addInterceptor(requestThrottle)
@@ -146,9 +150,6 @@ public class WebConfig extends WebMvcConfigurationSupport {
     registry
         .addViewController("/public/requestUsernameReminder")
         .setViewName("public/requestUsernameReminder");
-    registry
-        .addViewController("/public/maintenanceInProgress")
-        .setViewName("public/maintenanceInProgress");
     registry.addViewController("/public/terms").setViewName("public/terms");
     registry.addViewController("/public/ssoinfo").setViewName("public/ssoinfo");
     registry.addViewController("/public/noldapsignup").setViewName("public/noLdapSignUp");
@@ -159,7 +160,6 @@ public class WebConfig extends WebMvcConfigurationSupport {
         .addViewController("/public/ssoinfoUsernameNotAlias")
         .setViewName("public/ssoinfoUsernameNotAlias");
     registry.addViewController("/public/ipAddressInvalid").setViewName("public/ipAddressInvalid");
-    registry.addViewController("/public/apiDocs").setViewName("public/apiDocs");
     registry.addViewController("/audit/auditing").setViewName("audit/auditing");
 
     registry

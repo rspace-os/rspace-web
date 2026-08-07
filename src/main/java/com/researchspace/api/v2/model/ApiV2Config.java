@@ -4,8 +4,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 @Schema(
-    requiredProperties = {"branding", "helpLinks", "deploymentDescription", "deploymentHelpEmail"})
+    requiredProperties = {
+      "version",
+      "branding",
+      "helpLinks",
+      "deploymentDescription",
+      "deploymentHelpEmail"
+    })
 public record ApiV2Config(
+    @Schema(description = "RSpace application version.", example = "v2.24.0") String version,
     @Schema(description = "Deployment branding displayed by API clients.") Branding branding,
     @Schema(description = "Deployment-specific help links.") List<HelpLink> helpLinks,
     @Schema(description = "Human-readable description of this RSpace deployment.", nullable = true)

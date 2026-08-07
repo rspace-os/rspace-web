@@ -58,6 +58,12 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${deployment.helpEmail}")
   private String deploymentHelpEmail;
 
+  @Value("${livechat.enabled}")
+  private boolean liveChatEnabled;
+
+  @Value("${livechat.server.key}")
+  private String liveChatServerKey;
+
   @Value("${sysadmin.delete.user}")
   private String deleteUser;
 
@@ -638,6 +644,16 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public String getWebappVersion() {
     return "v" + rsversion;
+  }
+
+  @Override
+  public boolean isLiveChatEnabled() {
+    return liveChatEnabled;
+  }
+
+  @Override
+  public String getLiveChatServerKey() {
+    return liveChatServerKey;
   }
 
   @Override

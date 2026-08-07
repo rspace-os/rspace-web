@@ -12,6 +12,7 @@ import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
 import com.researchspace.model.record.Folder;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
 import com.researchspace.service.MessageSourceUtils;
@@ -37,6 +38,7 @@ class UsersV2ControllerTest {
   private final UserProfileManager userProfileManager = mock(UserProfileManager.class);
   private final SystemPropertyPermissionManager propertyPermissionManager =
       mock(SystemPropertyPermissionManager.class);
+  private final IPropertyHolder properties = mock(IPropertyHolder.class);
   private MockMvc mockMvc;
 
   @BeforeEach
@@ -48,7 +50,11 @@ class UsersV2ControllerTest {
 
   private UsersV2Controller newController() {
     return new UsersV2Controller(
-        containerApiManager, externalIdResolver, userProfileManager, propertyPermissionManager);
+        containerApiManager,
+        externalIdResolver,
+        userProfileManager,
+        propertyPermissionManager,
+        properties);
   }
 
   @Test
@@ -84,6 +90,8 @@ class UsersV2ControllerTest {
         .thenReturn(true);
     when(propertyPermissionManager.isPropertyAllowed(user, SystemPropertyName.PUBLIC_SHARING))
         .thenReturn(false);
+    when(properties.isLiveChatEnabled()).thenReturn(true);
+    when(properties.getLiveChatServerKey()).thenReturn("chat-key");
     mockMvc
         .perform(get("/api/v2/users/me").requestAttr("user", user))
         .andExpect(status().isOk())
@@ -103,6 +111,8 @@ class UsersV2ControllerTest {
         .andExpect(jsonPath("$.capabilities.canUseInventory").value(true))
         .andExpect(jsonPath("$.capabilities.canPublish").value(false))
         .andExpect(jsonPath("$.capabilities.canViewSystem").value(true))
+        .andExpect(jsonPath("$.livechat.enabled").value(true))
+        .andExpect(jsonPath("$.livechat.serverKey").value("chat-key"))
         .andExpect(jsonPath("$.session.operatedAs").value(false))
         .andExpect(jsonPath("$.session.lastSession").value("2026-07-15T08:30:00Z"));
   }
@@ -122,6 +132,8 @@ class UsersV2ControllerTest {
         .andExpect(jsonPath("$.profileImageApiUrl").isEmpty())
         .andExpect(jsonPath("$.orcid.available").value(false))
         .andExpect(jsonPath("$.orcid.id").isEmpty())
+        .andExpect(jsonPath("$.livechat.enabled").value(false))
+        .andExpect(jsonPath("$.livechat.serverKey").isEmpty())
         .andExpect(jsonPath("$.session.lastSession").isEmpty());
   }
 
@@ -169,7 +181,7 @@ class UsersV2ControllerTest {
     mockMvc
         .perform(get("/api/v2/users/me").requestAttr("user", user))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(14))
+        .andExpect(jsonPath("$.length()").value(15))
         .andExpect(jsonPath("$.orcid.length()").value(2))
         .andExpect(jsonPath("$.capabilities.length()").value(3))
         .andExpect(jsonPath("$.session.length()").value(2))

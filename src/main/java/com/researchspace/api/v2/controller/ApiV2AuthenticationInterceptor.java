@@ -1,6 +1,8 @@
 package com.researchspace.api.v2.controller;
 
 import com.researchspace.api.v2.auth.ApiV2Authenticator;
+import com.researchspace.api.v2.auth.ApiV2BrowserSessionAuthenticator;
+import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.model.User;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,12 +24,17 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class ApiV2AuthenticationInterceptor implements HandlerInterceptor {
 
   private final ApiV2Authenticator apiV2Authenticator;
+  private final ApiV2BrowserSessionAuthenticator browserSessionAuthenticator;
   private final ApiV2EndpointCatalog endpoints;
 
   @Override
   public boolean preHandle(
       HttpServletRequest request, HttpServletResponse response, Object handler) {
-    User caller = apiV2Authenticator.authenticateIfPresent(request).orElse(null);
+    User caller =
+        (endpoints.authenticationMode(handler) == ApiV2AuthenticationMode.BROWSER_SESSION
+                ? browserSessionAuthenticator.authenticateIfPresent(request)
+                : apiV2Authenticator.authenticateIfPresent(request))
+            .orElse(null);
     endpoints.authorize(request, handler, caller);
     if (caller != null) {
       request.setAttribute("user", caller);

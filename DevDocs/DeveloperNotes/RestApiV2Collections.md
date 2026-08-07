@@ -22,8 +22,9 @@ The current implementation supplies these routes outside the collection controll
 
 | Route | Access | Result |
 | --- | --- | --- |
-| `GET /api/v2/config` | Public | Deployment branding, help links, description, and support email. |
+| `GET /api/v2/config` | Public | Application version, branding, help links, description, and support email. |
 | `GET /api/v2/openapi.json` | Public | The generated OpenAPI 3.1 document. |
+| `POST /api/v2/oauth/tokens` | Browser session | A non-cached UI OAuth token. |
 | `GET /api/v2/users/me` | Authenticated | Identity, roles, capabilities, external identifiers, and API session state. |
 | `GET /api/v2/users/me/profile-image` | Authenticated | The current profile image as a non-cached PNG file. |
 
@@ -432,6 +433,8 @@ field that clients cannot query.
 | `updateAccess` | `INHERITED` | Controls update input. `NEVER` rejects the field. |
 | `requiredOnCreate` | `false` | Rejects a create body that omits the field. |
 | `nullable` | `false` | Permits an explicit JSON `null`. Omission is different from `null`. |
+| `filterable` | `true` | Permits the field in a `where` expression. |
+| `sortable` | `true` | Permits the field in a `sort` expression. |
 | `property` | Component name | Selects the entity JavaBean property. |
 | `maxLength` | Unset | Sets the maximum input string length. |
 | `title`, `description` | Empty | Adds OpenAPI text. |
@@ -454,8 +457,11 @@ The entity property must have a getter. The framework makes the ID read-only. It
 property read-only when that property has no setter. For other server-managed properties, set both
 `createAccess = NEVER` and `updateAccess = NEVER`.
 
-Use a programmatic `CollectionDescription` for another scalar type. Also use it for a computed
-reader, a custom writer, or row-specific field access.
+Set `filterable = false` and `sortable = false` for a computed property that is not persistent.
+This setting prevents the query layer from sending the property to Hibernate.
+
+Use a programmatic `CollectionDescription` for another scalar type. Also use it for a custom
+writer or row-specific field access.
 
 Most annotation options only change OpenAPI. They do not add domain validation. The runtime options
 in the table are exceptions. The manager must enforce all domain rules.
@@ -612,8 +618,12 @@ Access control has three layers:
 3. The manager controls domain rules that need stored data or permission services.
 
 The default policy requires authentication. Configure anonymous reads explicitly. REST API v2
-accepts an `apiKey` header or an OAuth bearer token. REST API v2 ignores browser cookies. A request
-with only a session cookie is anonymous.
+accepts an `apiKey` header or an OAuth bearer token. REST API v2 usually ignores browser cookies.
+A request with only a session cookie is usually anonymous.
+
+`POST /api/v2/oauth/tokens` is the only exception. It uses an existing authenticated browser
+session to create a UI OAuth token. It does not create a browser session. It ignores API keys and
+bearer tokens. Permissive API CORS does not apply to this route.
 
 The authentication interceptor always resolves supplied credentials and passes the caller, or an
 anonymous caller, to an access function. `ApiV2EndpointSpec` supplies the coarse controller policy;
@@ -673,10 +683,12 @@ receives one document through `requireInput()`.
 ### Stateless requests
 
 The servlet filter removes cookie headers before Shiro processes a REST API v2 request. The filter
-also prevents servlet-session reads and writes.
+also prevents servlet-session reads and writes. It preserves the existing session only for
+`POST /api/v2/oauth/tokens`.
 
 The authentication interceptor does not log in to Shiro. It does not log out of Shiro after the
-request. These rules prevent a browser session from changing API authorization.
+request. Endpoint metadata selects browser-session authentication only for the token route. These
+rules prevent a browser session from changing other API authorization.
 
 ### Rate limits
 

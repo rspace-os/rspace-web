@@ -3,6 +3,7 @@ package com.researchspace.webapp.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.controller.*;
 import com.researchspace.api.v2.auth.ApiV2Authenticator;
+import com.researchspace.api.v2.auth.ApiV2BrowserSessionAuthenticator;
 import com.researchspace.api.v2.controller.ApiV2AuthenticationInterceptor;
 import com.researchspace.api.v2.controller.ApiV2PermissiveCorsInterceptor;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
@@ -52,8 +53,11 @@ public class WebDefaultConfig {
 
   @Bean
   ApiV2AuthenticationInterceptor apiV2AuthenticationInterceptor(
-      ApiV2Authenticator apiV2Authenticator, ApiV2EndpointCatalog endpoints) {
-    return new ApiV2AuthenticationInterceptor(apiV2Authenticator, endpoints);
+      ApiV2Authenticator apiV2Authenticator,
+      ApiV2BrowserSessionAuthenticator browserSessionAuthenticator,
+      ApiV2EndpointCatalog endpoints) {
+    return new ApiV2AuthenticationInterceptor(
+        apiV2Authenticator, browserSessionAuthenticator, endpoints);
   }
 
   @Bean

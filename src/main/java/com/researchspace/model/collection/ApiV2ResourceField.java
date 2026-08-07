@@ -61,6 +61,12 @@ public @interface ApiV2ResourceField {
 
   boolean nullable() default false;
 
+  /** Whether clients can use this field in a {@code where} expression. */
+  boolean filterable() default true;
+
+  /** Whether clients can use this field in a {@code sort} expression. */
+  boolean sortable() default true;
+
   int maxLength() default -1;
 
   String property() default "";

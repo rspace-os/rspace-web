@@ -48,6 +48,30 @@ class ApiV2StatelessRequestFilterTest {
   }
 
   @Test
+  void preservesTheExistingSessionOnlyForTokenCreation() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v2/oauth/tokens");
+    request.getSession(true).setAttribute("user", "browser-user");
+    MockFilterChain chain = new MockFilterChain();
+
+    new ApiV2StatelessRequestFilter().doFilter(request, new MockHttpServletResponse(), chain);
+
+    HttpServletRequest filtered = (HttpServletRequest) chain.getRequest();
+    assertEquals("browser-user", filtered.getSession(false).getAttribute("user"));
+  }
+
+  @Test
+  void stripsTheSessionFromOtherMethodsOnTheTokenPath() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v2/oauth/tokens");
+    request.getSession(true).setAttribute("user", "browser-user");
+    MockFilterChain chain = new MockFilterChain();
+
+    new ApiV2StatelessRequestFilter().doFilter(request, new MockHttpServletResponse(), chain);
+
+    HttpServletRequest filtered = (HttpServletRequest) chain.getRequest();
+    assertNull(filtered.getSession(false));
+  }
+
+  @Test
   void isMappedBeforeShiroForEveryServletDispatchType() throws Exception {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);

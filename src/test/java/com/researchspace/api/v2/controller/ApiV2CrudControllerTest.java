@@ -150,7 +150,7 @@ class ApiV2CrudControllerTest {
         .andExpect(jsonPath("$.docs[0].endDate", isoDateTime()))
         .andExpect(jsonPath("$.docs[0].stopUserLoginDate", isoDateTime()))
         .andExpect(jsonPath("$.docs[0].message").value("Planned database upgrade"))
-        .andExpect(jsonPath("$.docs[0].canUserLoginNow").doesNotExist())
+        .andExpect(jsonPath("$.docs[0].canUserLoginNow").value(true))
         .andExpect(jsonPath("$.docs[0].activeNow").doesNotExist())
         .andExpect(jsonPath("$.totalDocs").value(3))
         .andExpect(jsonPath("$.totalPages").value(2))
