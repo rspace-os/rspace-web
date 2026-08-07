@@ -2,8 +2,7 @@ package com.researchspace.api.v2.config;
 
 import com.researchspace.api.v2.controller.ApiV2RequestThrottlingInterceptor;
 import com.researchspace.api.v2.throttling.APIRequestThrottler;
-import com.researchspace.api.v2.throttling.ApiRequestThrottlerImpl;
-import com.researchspace.api.v2.throttling.BoundedAllowanceTrackerSource;
+import com.researchspace.api.v2.throttling.Bucket4jApiRequestThrottler;
 import com.researchspace.core.util.DefaultTimeSource;
 import com.researchspace.core.util.TimeSource;
 import com.researchspace.core.util.throttling.ThrottleDefinitionSet;
@@ -69,13 +68,6 @@ public class ApiV2ThrottlingConfig {
   private static APIRequestThrottler throttler(
       ThrottleDefinitionSet definitions, int minimumInterval) {
     TimeSource timeSource = new DefaultTimeSource();
-    // Each throttler gets its own bounded source. The global throttler's source therefore holds
-    // only the single "global-id" key and can never evict it, which keeps it a hard ceiling even
-    // when a caller floods the user throttler with distinct keys.
-    ApiRequestThrottlerImpl throttler =
-        new ApiRequestThrottlerImpl(
-            timeSource, definitions, new BoundedAllowanceTrackerSource(timeSource, definitions));
-    throttler.setMinIntervalMillis(minimumInterval);
-    return throttler;
+    return new Bucket4jApiRequestThrottler(timeSource, definitions, minimumInterval);
   }
 }

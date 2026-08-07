@@ -700,6 +700,10 @@ rules prevent a browser session from changing other API authorization.
 REST API v2 has separate throttle beans from REST API v1. Both versions use the same deployment
 properties.
 
+REST API v2 uses thread-safe Bucket4j buckets with greedy refill. Each caller bucket applies the
+15-second, hourly, and daily limits atomically. A separate bucket applies the global limit and
+minimum request interval.
+
 The REST API v2 throttle uses these properties:
 
 | Property | Purpose |
@@ -743,7 +747,7 @@ These differences are intentional:
 | External OAuth controls | External OAuth does not apply all API availability settings. | External OAuth applies deployment, user, and OAuth availability settings. |
 | Disabled throttling | Responses contain fabricated rate-limit statistics. | Responses do not contain rate-limit statistics. |
 | Throttle keys | The bucket store retains raw credentials and has no size limit. | The bucket store retains fingerprints and keeps at most 10,000 caller keys. |
-| Concurrent requests | A caller can overspend one allowance through concurrent requests. | A per-key lock makes each allowance update atomic. |
+| Concurrent requests | A caller can overspend one allowance through concurrent requests. | Bucket4j consumes every configured allowance atomically. |
 
 ## Relationships
 
