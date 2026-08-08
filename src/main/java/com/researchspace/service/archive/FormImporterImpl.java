@@ -149,14 +149,21 @@ public class FormImporterImpl implements FormImporter {
    * consistent with the database, so later merges are no-ops. (The form is owned by the importing
    * user, so no permission check is needed here.)
    */
-  @SuppressWarnings("unchecked")
   private <F extends FieldForm> F persistFieldForm(RSForm form, FormFieldSource<F> dto) {
     F fieldForm = dto.createFieldForm();
     fieldForm.setColumnIndex(form.getNumActiveFields());
     fieldForm.setForm(form);
-    F managed = (F) fieldFormDao.save(fieldForm);
+    FieldForm managed = fieldFormDao.save(fieldForm);
     form.addFieldForm(managed);
-    return managed;
+    return checkedManagedForm(fieldForm, managed);
+  }
+
+  @SuppressWarnings("unchecked") // The persisted value is checked against the concrete F instance.
+  private static <F extends FieldForm> F checkedManagedForm(F original, FieldForm managed) {
+    if (!original.getClass().isInstance(managed)) {
+      throw new IllegalStateException("Persisted field form changed type");
+    }
+    return (F) managed;
   }
 
   Optional<IconEntity> createFormIcon(ArchivalDocumentParserRef parserRef, Long newFormId)

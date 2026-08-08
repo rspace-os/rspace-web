@@ -33,11 +33,12 @@ public class CreateWorkbenchAndMoveSubSamples_DeletedFix_1_70
   protected void doExecute(Database database) {
     logger.info("executing deleted subsamples move update");
 
-    @SuppressWarnings("unchecked")
     List<SubSample> subSamples =
         sessionFactory
             .getCurrentSession()
-            .createQuery("from SubSample where deleted = true and parentLocation_id is not null")
+            .createQuery(
+                "from SubSample where deleted = true and parentLocation_id is not null",
+                SubSample.class)
             .list();
 
     for (SubSample ss : subSamples) {

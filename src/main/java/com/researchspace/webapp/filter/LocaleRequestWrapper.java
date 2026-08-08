@@ -41,7 +41,6 @@ public class LocaleRequestWrapper extends HttpServletRequestWrapper {
   }
 
   /** {@inheritDoc} */
-  @SuppressWarnings("unchecked")
   public Enumeration<Locale> getLocales() {
     if (null != preferredLocale) {
       List<Locale> l = Collections.list(super.getLocales());

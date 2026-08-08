@@ -28,7 +28,7 @@ public interface FormManager extends AbstractFormManager<RSForm> {
    * @return The copy of the Template.
    * @throws Exception
    */
-  RSForm copy(Long templateID, User user, IFormCopyPolicy policy);
+  RSForm copy(Long templateID, User user, IFormCopyPolicy<RSForm> policy);
 
   /**
    * Loads a {@link RSForm} of a given ID

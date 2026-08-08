@@ -59,7 +59,6 @@ public class APIThrottlingInterceptorTest {
     assertEquals(ANY_KEY, apiThrottlingInterceptor.assertApiAccess(req));
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void testGenerateInvHeaders() throws Exception {
     apiThrottlingInterceptor.setInventoryThrottler(inventoryThrottler);
@@ -81,7 +80,8 @@ public class APIThrottlingInterceptorTest {
             .build();
     when(inventoryThrottler.getStats(
             Mockito.eq(identifierString), Mockito.eq(ThrottleInterval.HOUR)))
-        .thenReturn(Optional.of(hour), Optional.of(hourExceeded));
+        .thenReturn(Optional.of(hour))
+        .thenReturn(Optional.of(hourExceeded));
     req.setRequestURI("/api/inventory/v1/samples");
     req.addHeader("apiKey", identifierString);
 

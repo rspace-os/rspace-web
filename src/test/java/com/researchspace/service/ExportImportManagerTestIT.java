@@ -2037,7 +2037,6 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
         2, allImages.stream().filter(img -> img.getName().equals(editedImage.getName())).count());
   }
 
-  @SuppressWarnings("unchecked")
   private List<EcatImage> getImagesForUser(final User user) throws Exception {
     return doInTransaction(
         () ->

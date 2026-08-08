@@ -122,6 +122,8 @@ public class BundleTag extends TagSupport {
     return toDevServerUrlStatic(relativePath);
   }
 
+  // This tag is the only writer of ENTRYPOINTS_CACHE_ATTR, so the cached map is always
+  // Map<String, String>. Copying it instead would defeat the servlet-context cache.
   @SuppressWarnings("unchecked")
   Map<String, String> getEntrypoints() {
     ServletContext servletContext = pageContext.getServletContext();
@@ -158,6 +160,8 @@ public class BundleTag extends TagSupport {
     }
   }
 
+  // BundleTag and ViteClientTag are the only writers of RENDERED_ASSETS_ATTR, and both must mutate
+  // the same Set<String> for per-request dedupe to work, so a defensive copy is not an option.
   @SuppressWarnings("unchecked")
   Set<String> getRenderedAssetKeys() {
     Object existing = getRequest().getAttribute(RENDERED_ASSETS_ATTR);
