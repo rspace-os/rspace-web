@@ -209,7 +209,7 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
             + " :notificationType)";
 
     return getSession()
-        .createQuery(jpql, Long.class)
+        .createMutationQuery(jpql)
         .setParameter("status", CommunicationStatus.COMPLETED)
         .setParameter("lastStatusUpdate", new Date())
         .setParameter("subjectUserName", subjectUserName)

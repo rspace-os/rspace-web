@@ -67,7 +67,7 @@ public class NameDateFilterImpl implements NameDateFilter {
 
     String q1 = generateCountQueryString(input, pname, pval);
 
-    Query<Number> countQuery = sf.getCurrentSession().createNativeQuery(q1, Number.class);
+    Query<Long> countQuery = sf.getCurrentSession().createNativeQuery(q1, Long.class);
     applyNamedParameterToQuery(countQuery, pname, pval);
 
     Long totalHits = countQuery.uniqueResult().longValue();

@@ -766,11 +766,12 @@ public class SysAdminController extends BaseController {
   private String getCreateCommunityValidationErrorView(Model model, Community community) {
     List<User> potentialAdmins = userManager.getAvailableAdminUsers();
     community.setAvailableAdmins(potentialAdmins);
+    // the session attribute is absent if the create-community form was never rendered
     Object groups = model.asMap().get("communityGroups");
-    if (!(groups instanceof List<?> groupList)) {
-      throw new IllegalStateException("communityGroups model attribute must be a list");
-    }
-    community.setAvailableGroups(groupList.stream().map(Group.class::cast).toList());
+    community.setAvailableGroups(
+        groups instanceof List<?> groupList
+            ? groupList.stream().map(Group.class::cast).toList()
+            : List.of());
     return SYSTEM_CREATE_COMMUNITY_VIEW;
   }
 

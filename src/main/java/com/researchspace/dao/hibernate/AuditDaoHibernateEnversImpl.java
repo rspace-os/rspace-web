@@ -541,18 +541,17 @@ public class AuditDaoHibernateEnversImpl implements AuditDao {
   private List<AuditedRecord> getRecordsToArchiveInternal(int maxToKeep) {
     List<AuditedRecord> allresults = new ArrayList<>();
     String distinctIdsQuery = "select distinct id from StructuredDocument_AUD";
-    NativeQuery<Number> getIds =
-        sessionFactory.getCurrentSession().createNativeQuery(distinctIdsQuery, Number.class);
+    NativeQuery<Long> getIds =
+        sessionFactory.getCurrentSession().createNativeQuery(distinctIdsQuery, Long.class);
     NativeQuery<Object[]> getOld =
         sessionFactory
             .getCurrentSession()
             .createNativeQuery(
                 "select REV, id  from StructuredDocument_AUD where id =? order by REV desc",
                 Object[].class);
-    List<Number> ids = getIds.list();
-    for (Number o : ids) {
-      // Hibernate 6: native SQL returns Long, not BigInteger
-      Long id = o.longValue();
+    // Hibernate 6: native SQL returns Long, not BigInteger
+    List<Long> ids = getIds.list();
+    for (Long id : ids) {
       getOld.setParameter(1, id);
       getOld.setFirstResult(maxToKeep);
       List<Object[]> res = getOld.list();
