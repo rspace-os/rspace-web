@@ -1,0 +1,16 @@
+[
+  {
+    "identifier": {
+      "id": "https://raid.org.au/10.12345/rd-001",
+      "raidAgencyUrl": "https://raid.org.au"
+    },
+    "title": [{ "text": "Marine Sensor Deployment Study" }]
+  },
+  {
+    "identifier": {
+      "id": "https://raid.org.au/10.12345/rd-002",
+      "raidAgencyUrl": "https://raid.org.au"
+    },
+    "title": [{ "text": "Urban Heat Mapping Project" }]
+  }
+]

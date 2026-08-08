@@ -24,6 +24,12 @@ export class SystemConfigPage extends BasePage {
     }
   }
 
+  async ensureSettings(settings: Record<string, SystemPropertyValue>): Promise<void> {
+    for (const [name, value] of Object.entries(settings)) {
+      await this.ensureSetting(name, value);
+    }
+  }
+
   async setSetting(name: string, value: SystemPropertyValue): Promise<void> {
     const row = this.settingRow(name);
     // View/edit state has no semantic hook; these classes are stable within the data-name row.

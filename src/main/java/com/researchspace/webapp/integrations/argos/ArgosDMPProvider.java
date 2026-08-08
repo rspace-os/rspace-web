@@ -2,6 +2,7 @@ package com.researchspace.webapp.integrations.argos;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.researchspace.argos.client.ArgosClient;
 import com.researchspace.argos.client.ArgosClientImpl;
 import com.researchspace.argos.model.ArgosDMP;
@@ -30,6 +31,10 @@ import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 public class ArgosDMPProvider {
+
+  // ArgosDMP#getDoi() returns Optional<String>; Jdk8Module is required to serialize it.
+  static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new Jdk8Module());
+
   private RestTemplate restTemplate;
   private ArgosClient argosClient;
   private URL baseUrl;
@@ -83,8 +88,7 @@ public class ArgosDMPProvider {
     ArgosDMP dmpDetails = getPlanById(id);
     log.info("Importing DMP: " + id + ", " + dmpDetails.getLabel());
 
-    ObjectMapper objectMapper = new ObjectMapper();
-    String json = objectMapper.writeValueAsString(dmpDetails);
+    String json = OBJECT_MAPPER.writeValueAsString(dmpDetails);
     InputStream is = new ByteArrayInputStream(json.getBytes());
     EcatDocumentFile file =
         mediaManager.saveNewDMP(dmpDetails.getLabel() + ".json", is, user, null);

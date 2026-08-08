@@ -155,6 +155,11 @@ services:
       RSPACE_E2E_MOCKS: ${RSPACE_E2E_MOCKS:-false}
       E2E_MOCK_PORT: ${E2E_MOCK_PORT:-9099}
       E2E_MOCK_HOST: 0.0.0.0
+      # The E2E mock server (started by entrypoint-frontend.sh, not Playwright's
+      # own webServer hook) needs the app's externally-reachable base URL for
+      # mocks that build a cross-origin redirect back to the app (e.g. GitHub's
+      # OAuth authorize handler, which has no redirect_uri param to echo back).
+      RSPACE_BASE_URL: http://localhost:${APP_PORT:-8080}
       # Shared, content-addressed pnpm store (mounted volume) to avoid
       # re-downloading packages across worktrees.
       npm_config_store_dir: /pnpm-store

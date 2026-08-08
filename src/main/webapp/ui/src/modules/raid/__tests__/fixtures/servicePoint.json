@@ -1,0 +1,13 @@
+{
+  "id": 1,
+  "name": "Mock RAiD Service Point",
+  "identifierOwner": "Mock University",
+  "repositoryId": "mock-repo",
+  "prefix": "10.12345",
+  "groupId": "mock-group",
+  "searchContent": "",
+  "techEmail": "tech@example.com",
+  "adminEmail": "admin@example.com",
+  "enabled": true,
+  "appWritesEnabled": true
+}
