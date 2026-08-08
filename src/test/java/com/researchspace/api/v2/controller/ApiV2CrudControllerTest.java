@@ -133,7 +133,7 @@ class ApiV2CrudControllerTest {
 
   @Test
   void pagesAllFutureMaintenancesThroughTheEnvelope() throws Exception {
-    when(maintenanceManager.getResources(any(ResourceRequest.class)))
+    when(maintenanceManager.getResources(any(ResourceRequest.class), any()))
         .thenReturn(
             new ResourcePage<>(
                 List.of(
@@ -223,7 +223,7 @@ class ApiV2CrudControllerTest {
         .andExpect(status().isOk());
 
     ArgumentCaptor<ResourceRequest> request = ArgumentCaptor.forClass(ResourceRequest.class);
-    verify(maintenanceManager).getResources(request.capture());
+    verify(maintenanceManager).getResources(request.capture(), any());
     assertEquals(
         List.of(new Sort("startDate", false), new Sort("message", true), new Sort("id", true)),
         request.getValue().sort());
@@ -250,8 +250,8 @@ class ApiV2CrudControllerTest {
   void countsAndFindsFutureMaintenance() throws Exception {
     ScheduledMaintenance maintenance = futureMaintenance(2, "Planned database upgrade");
     maintenance.setId(42L);
-    when(maintenanceManager.countResources(any(ResourceRequest.class))).thenReturn(3L);
-    when(maintenanceManager.getResources(any(ResourceRequest.class)))
+    when(maintenanceManager.countResources(any(ResourceRequest.class), any())).thenReturn(3L);
+    when(maintenanceManager.getResources(any(ResourceRequest.class), any()))
         .thenReturn(new ResourcePage<>(List.of(maintenance), 1));
 
     mockMvc
@@ -268,7 +268,7 @@ class ApiV2CrudControllerTest {
 
   @Test
   void returnsNotFoundForExpiredOrUnknownMaintenance() throws Exception {
-    when(maintenanceManager.getResources(any(ResourceRequest.class)))
+    when(maintenanceManager.getResources(any(ResourceRequest.class), any()))
         .thenReturn(new ResourcePage<>(List.of(), 0));
 
     mockMvc
@@ -522,7 +522,7 @@ class ApiV2CrudControllerTest {
 
   private void stubPage(
       List<ScheduledMaintenance> results, long total, int page, int resultsPerPage) {
-    when(maintenanceManager.getResources(any(ResourceRequest.class)))
+    when(maintenanceManager.getResources(any(ResourceRequest.class), any()))
         .thenReturn(new ResourcePage<>(results, total));
   }
 

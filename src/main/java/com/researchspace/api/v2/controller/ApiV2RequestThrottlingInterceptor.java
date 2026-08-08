@@ -3,6 +3,7 @@ package com.researchspace.api.v2.controller;
 import com.researchspace.api.v2.throttling.APIRequestThrottler;
 import com.researchspace.api.v2.throttling.APIUsageStats;
 import com.researchspace.core.util.throttling.ThrottleInterval;
+import com.researchspace.core.util.throttling.TooManyRequestsException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
@@ -39,10 +40,37 @@ public class ApiV2RequestThrottlingInterceptor extends ApiV2AbstractThrottleInte
 
   public boolean preHandle(
       HttpServletRequest request, HttpServletResponse response, Object handler) {
+    // Anonymous public endpoints have already passed the IP-keyed pre-authentication limiter. They
+    // must not consume the capacity reserved for successfully authenticated callers.
+    if (request.getAttribute("user") == null) {
+      return true;
+    }
     String identifier = assertApiAccess(request);
     // Preserve v1 semantics: these headers describe the allowance before this request is consumed.
     setUsageHeaderStats(request, response, identifier);
-    return userThrottler.proceed(identifier) && globalThrottler.proceed(GLOBAL_ALLOWANCE_KEY);
+    // Both buckets must be evaluated. Short-circuiting here lets a caller with an exhausted
+    // per-client bucket generate unlimited rejection work outside the global admission ceiling.
+    boolean clientAllowed = false;
+    TooManyRequestsException clientFailure = null;
+    try {
+      clientAllowed = userThrottler.proceed(identifier);
+    } catch (TooManyRequestsException ex) {
+      clientFailure = ex;
+    }
+    boolean globallyAllowed;
+    try {
+      globallyAllowed = globalThrottler.proceed(GLOBAL_ALLOWANCE_KEY);
+    } catch (TooManyRequestsException globalFailure) {
+      if (clientFailure != null) {
+        clientFailure.addSuppressed(globalFailure);
+        throw clientFailure;
+      }
+      throw globalFailure;
+    }
+    if (clientFailure != null) {
+      throw clientFailure;
+    }
+    return clientAllowed && globallyAllowed;
   }
 
   void setUsageHeaderStats(

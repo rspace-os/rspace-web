@@ -19,6 +19,7 @@ import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
@@ -26,9 +27,11 @@ import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CollectionMutationException;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validation;
 import jakarta.validation.ValidatorFactory;
@@ -49,9 +52,12 @@ class BookingConfigurationManagerTest {
 
   private final User actor = mock(User.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+  private final InstrumentEntityApiManager instrumentManager =
+      mock(InstrumentEntityApiManager.class);
   private final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
   private final BookingConfigurationManager manager =
-      new BookingConfigurationManagerImpl(dao, validatorFactory.getValidator(), events);
+      new BookingConfigurationManagerImpl(
+          dao, validatorFactory.getValidator(), events, instrumentManager);
 
   @BeforeEach
   void setUp() {
@@ -70,6 +76,35 @@ class BookingConfigurationManagerTest {
     proxyFactory.setProxyTargetClass(false);
 
     assertInstanceOf(BookingConfigurationManager.class, proxyFactory.getProxy());
+  }
+
+  @Test
+  void ordinaryReadersSeeOnlyConfigurationsForReadableInstruments() {
+    when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(false);
+    BookingConfiguration readable = configuration(1L, 11L);
+    BookingConfiguration hidden = configuration(2L, 12L);
+    ResourceRequest request = ResourceRequest.unpaged(null);
+    when(dao.getAllResources(request)).thenReturn(List.of(readable, hidden));
+    when(dao.getSafeNull(2L)).thenReturn(Optional.of(hidden));
+    when(instrumentManager.findReadableInstrument(11L, actor))
+        .thenReturn(Optional.of(mock(Instrument.class)));
+    when(instrumentManager.findReadableInstrument(12L, actor)).thenReturn(Optional.empty());
+
+    ResourcePage<BookingConfiguration> page = manager.getConfigurations(request, actor);
+
+    assertEquals(List.of(readable), page.resources());
+    assertEquals(1, page.total());
+    assertEquals(1, manager.countConfigurations(request, actor));
+    assertTrue(manager.getConfiguration(2L, actor).isEmpty());
+  }
+
+  @Test
+  void directBookingReadsRequireAnActor() {
+    ResourceRequest request = ResourceRequest.unpaged(null);
+
+    assertThrows(AuthorizationException.class, () -> manager.getConfigurations(request, null));
+    assertThrows(AuthorizationException.class, () -> manager.countConfigurations(request, null));
+    assertThrows(AuthorizationException.class, () -> manager.getConfiguration(1L, null));
   }
 
   @Test
@@ -212,7 +247,8 @@ class BookingConfigurationManagerTest {
 
     when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
     BookingConfiguration configuration = new BookingConfiguration();
-    int oversizedBatch = CollectionMutationLimits.MAX_BULK_UPDATE_DELETE_ROWS + 1;
+    int oversizedBatch =
+        ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
     when(dao.getResources(request, oversizedBatch))
         .thenReturn(Collections.nCopies(oversizedBatch, configuration));
 
@@ -284,7 +320,9 @@ class BookingConfigurationManagerTest {
             new FilterExpression.Comparison("id", Operator.IN, List.of(1L, 2L), false));
     BookingConfiguration first = configuration(1L, 11L);
     BookingConfiguration second = configuration(2L, 12L);
-    when(dao.getResources(request, CollectionMutationLimits.MAX_BULK_UPDATE_DELETE_ROWS + 1))
+    when(dao.getResources(
+            request,
+            ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1))
         .thenReturn(List.of(first, second));
 
     assertThrows(

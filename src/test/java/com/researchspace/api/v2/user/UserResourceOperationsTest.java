@@ -1,10 +1,11 @@
 package com.researchspace.api.v2.user;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.User;
@@ -13,6 +14,7 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.UserManager;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class UserResourceOperationsTest {
@@ -24,19 +26,35 @@ class UserResourceOperationsTest {
   private final ResourceRequest request = mock(ResourceRequest.class);
 
   @Test
-  void exposesTheStandardOperationSet() {
+  void exposesOnlyReadOperations() {
     assertEquals(
-        EnumSet.allOf(ResourceOperation.class), operations.userApiV2Resource().exposedOperations());
+        EnumSet.of(ResourceOperation.LIST, ResourceOperation.COUNT, ResourceOperation.READ),
+        operations.userApiV2Resource().exposedOperations());
   }
 
   @Test
-  void writeOperationsDoNotPersistAnything() {
-    assertSame(actor, operations.create(document, actor));
-    assertTrue(operations.createMany(List.of(document), actor).isEmpty());
-    assertTrue(operations.update(1L, document, actor).isEmpty());
-    assertTrue(operations.updateMany(request, document, actor).isEmpty());
-    assertTrue(operations.delete(1L, actor).isEmpty());
-    assertTrue(operations.deleteMany(request, actor).isEmpty());
+  void writeOperationsFailClosedAsDefenceInDepth() {
+    assertThrows(UnsupportedOperationException.class, () -> operations.create(document, actor));
+    assertThrows(
+        UnsupportedOperationException.class, () -> operations.createMany(List.of(document), actor));
+    assertThrows(UnsupportedOperationException.class, () -> operations.update(1L, document, actor));
+    assertThrows(
+        UnsupportedOperationException.class, () -> operations.updateMany(request, document, actor));
+    assertThrows(UnsupportedOperationException.class, () -> operations.delete(1L, actor));
+    assertThrows(UnsupportedOperationException.class, () -> operations.deleteMany(request, actor));
     verifyNoInteractions(manager);
+  }
+
+  @Test
+  void everyReadCarriesTheActorToTheManagerBoundary() {
+    when(manager.getUserResource(1L, actor)).thenReturn(Optional.of(actor));
+
+    operations.find(request, actor);
+    operations.count(request, actor);
+    operations.findById(1L, actor);
+
+    verify(manager).getUsers(request, actor);
+    verify(manager).countUsers(request, actor);
+    verify(manager).getUserResource(1L, actor);
   }
 }

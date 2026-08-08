@@ -146,7 +146,8 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
                 List.of(new Sort("startDate", false), new Sort("id", true)),
                 new Page(1, 20),
                 FieldSelection.all(),
-                IncludeTree.empty()));
+                IncludeTree.empty()),
+            sysUser);
 
     assertEquals(1L, results.total());
     assertEquals(matching.getId(), results.resources().get(0).getId());
@@ -155,8 +156,9 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
         maintenanceManager.countResources(
             ResourceRequest.unpaged(
                 new RsqlFilterParser(ApiV2MaintenanceResource.DESCRIPTION)
-                    .parse("message==apiV2Match"))));
-    assertTrue(maintenanceManager.getResource(matching.getId()).isPresent());
+                    .parse("message==apiV2Match")),
+            sysUser));
+    assertTrue(maintenanceManager.getResource(matching.getId(), sysUser).isPresent());
   }
 
   @Test
@@ -201,10 +203,10 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
             List.of(new Sort("message", true), new Sort("id", false)),
             1,
             1);
-    ResourcePage<ScheduledMaintenance> firstPage = maintenanceManager.getResources(sorted);
+    ResourcePage<ScheduledMaintenance> firstPage = maintenanceManager.getResources(sorted, sysUser);
     assertEquals(2L, firstPage.total());
     assertEquals(fourth.getId(), firstPage.resources().get(0).getId());
-    assertEquals(2L, maintenanceManager.countResources(sorted));
+    assertEquals(2L, maintenanceManager.countResources(sorted, sysUser));
   }
 
   @Test
@@ -218,11 +220,12 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
             1,
             20);
 
-    ResourcePage<ScheduledMaintenance> results = maintenanceManager.getResources(matchingBoth);
+    ResourcePage<ScheduledMaintenance> results =
+        maintenanceManager.getResources(matchingBoth, sysUser);
     assertEquals(2L, results.total());
     assertEquals(expired.getId(), results.resources().get(0).getId());
-    assertEquals(2L, maintenanceManager.countResources(matchingBoth));
-    assertTrue(maintenanceManager.getResource(expired.getId()).isPresent());
+    assertEquals(2L, maintenanceManager.countResources(matchingBoth, sysUser));
+    assertTrue(maintenanceManager.getResource(expired.getId(), sysUser).isPresent());
 
     List<ScheduledMaintenance> updated =
         maintenanceManager.updateResources(
@@ -271,7 +274,8 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
   }
 
   private ResourcePage<ScheduledMaintenance> find(String where) {
-    return maintenanceManager.getResources(request(where, List.of(new Sort("id", true)), 1, 20));
+    return maintenanceManager.getResources(
+        request(where, List.of(new Sort("id", true)), 1, 20), sysUser);
   }
 
   private static ResourceRequest request(String where, List<Sort> sort, int page, int pageSize) {

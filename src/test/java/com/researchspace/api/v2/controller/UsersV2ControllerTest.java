@@ -21,6 +21,7 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserProfileManager;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.session.SessionAttributeUtils;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Locale;
@@ -152,6 +153,7 @@ class UsersV2ControllerTest {
         .perform(get("/api/v2/users/me/profile-image").requestAttr("user", user))
         .andExpect(status().isOk())
         .andExpect(header().string("Cache-Control", "no-store"))
+        .andExpect(header().string("X-Content-Type-Options", "nosniff"))
         .andExpect(content().contentType("image/png"))
         .andExpect(content().bytes(imageBytes));
   }
@@ -232,6 +234,20 @@ class UsersV2ControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.hasSysAdminRole").value(true))
         .andExpect(jsonPath("$.capabilities.canViewSystem").value(true));
+  }
+
+  @Test
+  void reportsRunAsStateFromTheBrowserSession() throws Exception {
+    User user = mock(User.class);
+    when(userProfileManager.getUserProfile(user)).thenReturn(mock(UserProfile.class));
+
+    mockMvc
+        .perform(
+            get("/api/v2/users/me")
+                .requestAttr("user", user)
+                .sessionAttr(SessionAttributeUtils.IS_RUN_AS, Boolean.TRUE))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.session.operatedAs").value(true));
   }
 
   @Test

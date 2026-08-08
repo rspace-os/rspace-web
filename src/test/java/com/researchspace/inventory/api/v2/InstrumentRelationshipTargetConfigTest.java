@@ -11,7 +11,7 @@ import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
-import jakarta.ws.rs.NotFoundException;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class InstrumentRelationshipTargetConfigTest {
@@ -25,17 +25,17 @@ class InstrumentRelationshipTargetConfigTest {
   void resolvesAnInstrumentThroughTheExistingPermissionCheck() {
     Instrument instrument = new Instrument();
     instrument.setId(12L);
-    when(manager.assertUserCanReadInstrument(12L, actor)).thenReturn(instrument);
+    when(manager.findReadableInstrument(12L, actor)).thenReturn(Optional.of(instrument));
 
     assertEquals(instrument, target.resolveReadable(12L, actor).orElseThrow().entity());
   }
 
   @Test
   void hidesMissingAndUnauthenticatedTargets() {
-    when(manager.assertUserCanReadInstrument(12L, actor)).thenThrow(new NotFoundException());
+    when(manager.findReadableInstrument(12L, actor)).thenReturn(Optional.empty());
 
     assertTrue(target.resolveReadable(12L, actor).isEmpty());
     assertTrue(target.resolveReadable(12L, null).isEmpty());
-    verify(manager, never()).assertUserCanReadInstrument(12L, null);
+    verify(manager, never()).findReadableInstrument(12L, null);
   }
 }

@@ -91,6 +91,22 @@ class ApiV2PreHandlerProblemResolverTest {
   }
 
   @Test
+  void writesProblemJsonForTheExactApiV2Root() throws Exception {
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    assertNotNull(
+        resolver.resolveException(
+            request("GET", "/api/v2"),
+            response,
+            null,
+            new NoHandlerFoundException("GET", "/api/v2", new HttpHeaders())));
+
+    assertEquals(404, response.getStatus());
+    assertTrue(
+        MediaType.valueOf(response.getContentType()).isCompatibleWith(ApiV2Problem.PROBLEM_JSON));
+  }
+
+  @Test
   void leavesNonV2RequestsToTheirOwnErrorHandling() throws Exception {
     MockHttpServletResponse response = new MockHttpServletResponse();
 

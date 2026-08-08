@@ -1,14 +1,15 @@
 package com.researchspace.api.v2.user;
 
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
+import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ApiV2UserResource;
-import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.UserManager;
-import java.util.List;
+import java.util.EnumSet;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,17 +36,19 @@ public final class UserResourceOperations implements ResourceOperations<User, Lo
         this,
         Long::valueOf,
         "errors.api.v2.invalidRequest",
-        "errors.api.v2.invalidRequest");
+        "errors.api.v2.invalidRequest",
+        EnumSet.of(ResourceOperation.LIST, ResourceOperation.COUNT, ResourceOperation.READ),
+        Map.of());
   }
 
   @Override
   public ResourcePage<User> find(ResourceRequest request, User actor) {
-    return manager.getUsers(request);
+    return manager.getUsers(request, actor);
   }
 
   @Override
   public long count(ResourceRequest request, User actor) {
-    return manager.countUsers(request);
+    return manager.countUsers(request, actor);
   }
 
   /**
@@ -55,36 +58,6 @@ public final class UserResourceOperations implements ResourceOperations<User, Lo
    */
   @Override
   public Optional<User> findById(Long id, User actor) {
-    return manager.getOptional(id);
-  }
-
-  @Override
-  public User create(ParsedDocument document, User actor) {
-    return actor;
-  }
-
-  @Override
-  public List<User> createMany(List<ParsedDocument> documents, User actor) {
-    return List.of();
-  }
-
-  @Override
-  public Optional<User> update(Long id, ParsedDocument document, User actor) {
-    return Optional.empty();
-  }
-
-  @Override
-  public List<User> updateMany(ResourceRequest request, ParsedDocument document, User actor) {
-    return List.of();
-  }
-
-  @Override
-  public Optional<User> delete(Long id, User actor) {
-    return Optional.empty();
-  }
-
-  @Override
-  public List<User> deleteMany(ResourceRequest request, User actor) {
-    return List.of();
+    return manager.getUserResource(id, actor);
   }
 }

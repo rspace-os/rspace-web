@@ -48,6 +48,11 @@ public class BookingConfigurationDaoHibernate
   }
 
   @Override
+  public List<BookingConfiguration> getAllResources(ResourceRequest request) {
+    return COLLECTION_QUERY.list(criteriaBuilderFactory, getSession(), request);
+  }
+
+  @Override
   public Optional<BookingConfiguration> findByTarget(BookableTargetReference target) {
     return getSession()
         .createQuery(

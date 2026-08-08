@@ -166,6 +166,27 @@ class ApiV2RelationshipResolverTest {
     assertEquals(1, operations.readableLookupCalls);
   }
 
+  @Test
+  void omitsRawRelationshipIdsWhenTheTargetIsUnreadable() {
+    RecordingNodeOperations operations = new RecordingNodeOperations();
+    operations.nodes.put(1L, new Node(1L, new ResourceReference<>("NODE", 2L)));
+    operations.nodes.put(2L, new Node(2L, null));
+    operations.deniedIds.add(2L);
+    ResourceRequest request =
+        new ResourceRequest(
+            new com.researchspace.model.collection.FilterExpression.Comparison(
+                "id", CollectionDescription.Operator.EQUAL, List.of(1L), false),
+            List.of(),
+            new ResourceRequest.Page(1, 20),
+            FieldSelection.all(),
+            IncludeTree.empty());
+
+    Map<String, Object> document =
+        registration(description(false), operations).list(request, actor).docs().get(0);
+
+    assertFalse(document.containsKey("target"));
+  }
+
   private ApiV2ResourceRegistration<?, ?> registration(
       CollectionDescription<Node> description, RecordingNodeOperations operations) {
     ApiV2ResourceCatalog catalog =

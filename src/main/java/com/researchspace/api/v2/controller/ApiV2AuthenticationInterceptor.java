@@ -8,6 +8,8 @@ import com.researchspace.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
@@ -38,6 +40,8 @@ public class ApiV2AuthenticationInterceptor implements HandlerInterceptor {
     endpoints.authorize(request, handler, caller);
     if (caller != null) {
       request.setAttribute("user", caller);
+      response.setHeader(
+          HttpHeaders.CACHE_CONTROL, CacheControl.noStore().cachePrivate().getHeaderValue());
     }
     return true;
   }

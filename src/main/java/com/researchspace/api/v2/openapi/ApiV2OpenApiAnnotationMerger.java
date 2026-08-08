@@ -30,6 +30,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -41,6 +43,8 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 final class ApiV2OpenApiAnnotationMerger {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ApiV2OpenApiAnnotationMerger.class);
 
   private static final TypeReference<LinkedHashMap<String, Object>> OBJECT_MAP =
       new TypeReference<>() {};
@@ -421,6 +425,7 @@ final class ApiV2OpenApiAnnotationMerger {
     try {
       return Json31.mapper().readValue(value, Object.class);
     } catch (IOException ex) {
+      LOG.warn("Could not parse a REST API v2 OpenAPI annotation example as JSON", ex);
       return value;
     }
   }

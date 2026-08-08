@@ -2,9 +2,14 @@ package com.researchspace.service.impl;
 
 import com.researchspace.dao.CollectionDao;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessContext;
+import com.researchspace.model.collection.AccessContext.Operation;
+import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionMutationLimits;
+import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
@@ -14,6 +19,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.shiro.authz.AuthorizationException;
 
 /**
  * Standard transaction-scoped mechanics for a mutable REST API v2 collection.
@@ -25,27 +31,83 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
 
   private final CollectionDao<T, ID> collectionDao;
   private final CollectionDescription<T> collectionDescription;
+  private final CollectionMutationLimits mutationLimits;
 
   protected AbstractCollectionManager(
       CollectionDao<T, ID> collectionDao, CollectionDescription<T> collectionDescription) {
+    this(collectionDao, collectionDescription, CollectionMutationLimits.DEFAULT);
+  }
+
+  protected AbstractCollectionManager(
+      CollectionDao<T, ID> collectionDao,
+      CollectionDescription<T> collectionDescription,
+      CollectionMutationLimits mutationLimits) {
     this.collectionDao = collectionDao;
     this.collectionDescription =
         Objects.requireNonNull(collectionDescription, "Collection description");
+    this.mutationLimits = Objects.requireNonNull(mutationLimits, "Collection mutation limits");
   }
 
   @Override
-  public ResourcePage<T> getResources(ResourceRequest request) {
-    return collectionDao.getResources(request);
+  public ResourcePage<T> getResources(ResourceRequest request, User actor) {
+    return collectionDao.getResources(authorizeRead(request, actor));
   }
 
   @Override
-  public long countResources(ResourceRequest request) {
-    return collectionDao.countResources(request);
+  public long countResources(ResourceRequest request, User actor) {
+    return collectionDao.countResources(authorizeRead(request, actor));
   }
 
   @Override
-  public Optional<T> getResource(ID id) {
-    return collectionDao.getSafeNull(id);
+  public Optional<T> getResource(ID id, User actor) {
+    AccessResult access = readAccess(actor, id);
+    if (access.constraintOrEmpty().isEmpty()) {
+      return collectionDao.getSafeNull(id);
+    }
+    FilterExpression idFilter =
+        new FilterExpression.Comparison(
+            collectionDescription.idField(), Operator.EQUAL, List.of(id), false);
+    ResourceRequest constrained =
+        ResourceRequest.unpaged(and(access.constraintOrEmpty().orElseThrow(), idFilter));
+    return collectionDao.getResources(constrained).resources().stream().findFirst();
+  }
+
+  private ResourceRequest authorizeRead(ResourceRequest request, User actor) {
+    AccessResult access = readAccess(actor, null);
+    return access
+        .constraintOrEmpty()
+        .map(
+            constraint ->
+                new ResourceRequest(
+                    and(constraint, request.filter()),
+                    request.sort(),
+                    request.page(),
+                    request.fieldSelections(),
+                    request.includes()))
+        .orElse(request);
+  }
+
+  private AccessResult readAccess(User actor, Object id) {
+    AccessResult access =
+        collectionDescription
+            .accessPolicy()
+            .readAccess()
+            .check(
+                new AccessContext(actor, Operation.READ, collectionDescription.resourceName(), id));
+    if (access.isDenied()) {
+      throw new AuthorizationException("Collection read access refused");
+    }
+    return access;
+  }
+
+  private static FilterExpression and(FilterExpression left, FilterExpression right) {
+    if (left == null) {
+      return right;
+    }
+    if (right == null) {
+      return left;
+    }
+    return new FilterExpression.And(List.of(left, right));
   }
 
   @Override
@@ -60,7 +122,7 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
   @Override
   public List<T> createResources(List<T> resources, User actor) {
     authorizeMutation(actor);
-    if (resources.size() > CollectionMutationLimits.MAX_BULK_CREATE_ROWS) {
+    if (resources.size() > mutationLimits.maxBulkCreateRows()) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }
     resources.forEach(this::validateResource);
@@ -149,9 +211,8 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
       throw new CollectionMutationException(CollectionMutationException.Reason.FILTER_REQUIRED);
     }
     List<T> matches =
-        collectionDao.getResources(
-            request, CollectionMutationLimits.MAX_BULK_UPDATE_DELETE_ROWS + 1);
-    if (matches.size() > CollectionMutationLimits.MAX_BULK_UPDATE_DELETE_ROWS) {
+        collectionDao.getResources(request, mutationLimits.maxBulkUpdateDeleteRows() + 1);
+    if (matches.size() > mutationLimits.maxBulkUpdateDeleteRows()) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }
     return matches;

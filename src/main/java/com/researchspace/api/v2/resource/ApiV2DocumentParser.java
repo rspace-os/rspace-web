@@ -38,8 +38,12 @@ public final class ApiV2DocumentParser {
   }
 
   static <T> List<ParsedDocument> parseManyStructure(
-      JsonNode body, CollectionDescription<T> description, String errorKey, AccessContext context) {
-    return parseMany(body, description, errorKey, context, false);
+      JsonNode body,
+      CollectionDescription<T> description,
+      String errorKey,
+      AccessContext context,
+      int maxDocuments) {
+    return parseMany(body, description, errorKey, context, false, maxDocuments);
   }
 
   private static <T> List<ParsedDocument> parseMany(
@@ -48,6 +52,22 @@ public final class ApiV2DocumentParser {
       String errorKey,
       AccessContext context,
       boolean authorizeFields) {
+    return parseMany(
+        body,
+        description,
+        errorKey,
+        context,
+        authorizeFields,
+        CollectionMutationLimits.MAX_BULK_CREATE_ROWS);
+  }
+
+  private static <T> List<ParsedDocument> parseMany(
+      JsonNode body,
+      CollectionDescription<T> description,
+      String errorKey,
+      AccessContext context,
+      boolean authorizeFields,
+      int maxDocuments) {
     if (body == null
         || !body.isObject()
         || body.size() != 1
@@ -57,7 +77,7 @@ public final class ApiV2DocumentParser {
       throw new DocumentValidationException(
           errorKey, List.of(new Violation("docs", Reason.INVALID_DOCUMENT)));
     }
-    if (body.get("docs").size() > CollectionMutationLimits.MAX_BULK_CREATE_ROWS) {
+    if (body.get("docs").size() > maxDocuments) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }
 

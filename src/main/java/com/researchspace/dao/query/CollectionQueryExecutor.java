@@ -55,6 +55,13 @@ public final class CollectionQueryExecutor<T> {
     return query.getResultList();
   }
 
+  /** Returns every matching row in the caller-requested stable sort order. */
+  public List<T> list(CriteriaBuilderFactory factory, Session session, ResourceRequest request) {
+    CriteriaBuilder<T> query = query(factory, session, request);
+    request.sort().forEach(sort -> applySort(query, sort));
+    return query.getResultList();
+  }
+
   private CriteriaBuilder<T> query(
       CriteriaBuilderFactory factory, Session session, ResourceRequest request) {
     CriteriaBuilder<T> query = factory.create(session, entityType, alias);

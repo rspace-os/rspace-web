@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -110,7 +111,9 @@ class ApiV2OpenApiAnnotationMergerTest {
     ApiV2OpenApiGenerator generator =
         new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "Test API", "2.0.0");
     OAuthTokensV2Controller controller = new OAuthTokensV2Controller(mock(OAuthTokenManager.class));
-    Method method = OAuthTokensV2Controller.class.getMethod("createToken", User.class);
+    Method method =
+        OAuthTokensV2Controller.class.getMethod(
+            "createToken", User.class, HttpServletRequest.class);
     RequestMappingInfo mapping =
         RequestMappingInfo.paths("/api/v2/oauth/tokens").methods(RequestMethod.POST).build();
     RequestMappingHandlerMapping handlerMapping = mock(RequestMappingHandlerMapping.class);

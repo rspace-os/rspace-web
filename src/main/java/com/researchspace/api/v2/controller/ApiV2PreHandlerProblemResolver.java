@@ -30,7 +30,7 @@ import org.springframework.web.servlet.ModelAndView;
 @Slf4j
 public class ApiV2PreHandlerProblemResolver implements HandlerExceptionResolver, Ordered {
 
-  private static final String API_V2_PREFIX = "/api/v2/";
+  private static final String API_V2_ROOT = "/api/v2";
 
   private final ApiV2ControllerAdvice advice;
   private final ObjectMapper objectMapper;
@@ -76,6 +76,6 @@ public class ApiV2PreHandlerProblemResolver implements HandlerExceptionResolver,
         contextPath != null && !contextPath.isEmpty() && uri.startsWith(contextPath)
             ? uri.substring(contextPath.length())
             : uri;
-    return path.startsWith(API_V2_PREFIX);
+    return path.equals(API_V2_ROOT) || path.startsWith(API_V2_ROOT + "/");
   }
 }

@@ -10,6 +10,7 @@ import com.researchspace.model.collection.ApiV2ResourceField;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionDescription.Sort;
+import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.FilterExpression;
 import java.util.Date;
 import java.util.List;
@@ -50,6 +51,9 @@ public record ApiV2MaintenanceResource(
             sortable = false,
             description = "Whether ordinary users can log in at the current server time.")
         boolean canUserLoginNow) {
+
+  public static final CollectionMutationLimits MUTATION_LIMITS =
+      new CollectionMutationLimits(100, 1000);
 
   /**
    * Authenticated callers see all rows. Anonymous callers see only windows that have not ended;

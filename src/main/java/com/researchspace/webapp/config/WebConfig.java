@@ -9,6 +9,7 @@ import com.researchspace.api.v1.controller.InventoryFilesApiController;
 import com.researchspace.api.v1.controller.InventoryImportApiController;
 import com.researchspace.api.v2.controller.ApiV2AuthenticationInterceptor;
 import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
+import com.researchspace.api.v2.controller.ApiV2PreAuthenticationThrottlingInterceptor;
 import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
 import com.researchspace.api.v2.controller.ApiV2RequestThrottlingInterceptor;
 import com.researchspace.webapp.integrations.wopi.WopiAuthorisationInterceptor;
@@ -43,6 +44,7 @@ public class WebConfig extends WebMvcConfigurationSupport {
   @Autowired APIRequestThrottlingInterceptor requestThrottle;
   @Autowired APIFileUploadThrottlingInterceptor fileUploadThrottle;
   @Autowired ApiV2RequestThrottlingInterceptor apiV2RequestThrottle;
+  @Autowired ApiV2PreAuthenticationThrottlingInterceptor apiV2PreAuthenticationThrottle;
   @Autowired ApiV2AuthenticationInterceptor apiV2Authentication;
   @Autowired ApiV2ControllerAdvice apiV2ControllerAdvice;
   @Autowired ObjectMapper objectMapper;
@@ -121,7 +123,7 @@ public class WebConfig extends WebMvcConfigurationSupport {
         .addInterceptor(requestThrottle)
         .addPathPatterns("/api/**")
         .excludePathPatterns("/api/v2/**");
-    registry.addInterceptor(apiV2RequestThrottle).addPathPatterns("/api/v2/**");
+    registry.addInterceptor(apiV2PreAuthenticationThrottle).addPathPatterns("/api/v2/**");
     if ("true".equals(fileuploadRateLimitEnabled)) {
       registry.addInterceptor(fileUploadThrottle).addPathPatterns("/api/**/files");
     }
@@ -130,6 +132,7 @@ public class WebConfig extends WebMvcConfigurationSupport {
         .addPathPatterns("/api/**")
         .excludePathPatterns("/api/v2/**", "/api/inventory/v1/public/**");
     registry.addInterceptor(apiV2Authentication).addPathPatterns("/api/v2/**");
+    registry.addInterceptor(apiV2RequestThrottle).addPathPatterns("/api/v2/**");
     registry.addInterceptor(wopiAuthorisation).addPathPatterns("/wopi/files/**");
     registry.addInterceptor(wopiProofKeyValidation).addPathPatterns("/wopi/files/**");
   }

@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -93,6 +94,8 @@ class ApiV2AuthenticationInterceptorTest {
 
     assertTrue(interceptor.preHandle(request, response, handler));
     assertSame(user, request.getAttribute("user"));
+    assertTrue(response.getHeader(HttpHeaders.CACHE_CONTROL).contains("no-store"));
+    assertTrue(response.getHeader(HttpHeaders.CACHE_CONTROL).contains("private"));
   }
 
   @Test

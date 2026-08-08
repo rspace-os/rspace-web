@@ -8,6 +8,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.oauth.OAuthToken;
 import com.researchspace.model.oauth.OAuthTokenType;
+import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.OAuthTokenManager;
@@ -31,6 +32,7 @@ public class ApiV2Authenticator {
 
   private static final Logger API_REQUEST_LOG =
       LoggerFactory.getLogger("com.researchspace.api.v2.requests");
+  private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
   private final UserApiKeyManager apiKeyManager;
   private final OAuthTokenManager oAuthTokenManager;
@@ -49,15 +51,23 @@ public class ApiV2Authenticator {
    * credentials still throw rather than silently degrading to anonymous access.
    */
   public Optional<User> authenticateIfPresent(HttpServletRequest request) {
-    String apiKey = request.getHeader("apiKey");
-    if (apiKey != null && !apiKey.isEmpty()) {
-      return Optional.of(authenticateApiKey(request, apiKey));
+    try {
+      String apiKey = request.getHeader("apiKey");
+      if (apiKey != null && !apiKey.isEmpty()) {
+        return Optional.of(authenticateApiKey(request, apiKey));
+      }
+      String authorization = request.getHeader("Authorization");
+      if (authorization != null && !authorization.isEmpty()) {
+        return Optional.of(authenticateOAuth(request, authorization));
+      }
+      return Optional.empty();
+    } catch (ApiV2AuthenticationException ex) {
+      SECURITY_LOG.warn(
+          "REST API v2 authentication failed for request [{}] from [{}]",
+          request.getRequestURI(),
+          RequestUtil.remoteAddr(request));
+      throw ex;
     }
-    String authorization = request.getHeader("Authorization");
-    if (authorization != null && !authorization.isEmpty()) {
-      return Optional.of(authenticateOAuth(request, authorization));
-    }
-    return Optional.empty();
   }
 
   private User authenticateApiKey(HttpServletRequest request, String apiKey) {

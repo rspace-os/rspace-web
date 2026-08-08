@@ -9,6 +9,7 @@ import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionFieldTypes;
+import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
@@ -38,6 +39,9 @@ public record ApiV2BookingConfigurationResource(
             updateAccess = NEVER,
             description = "Optimistic configuration revision.")
         long configurationVersion) {
+
+  public static final CollectionMutationLimits MUTATION_LIMITS =
+      new CollectionMutationLimits(50, 250);
 
   private static final AccessPolicy ACCESS = AccessPolicy.authenticatedReadsSysadminWrites();
 

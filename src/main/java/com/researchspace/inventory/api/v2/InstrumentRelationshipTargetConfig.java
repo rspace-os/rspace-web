@@ -1,11 +1,8 @@
 package com.researchspace.inventory.api.v2;
 
 import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
-import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
-import jakarta.ws.rs.NotFoundException;
-import java.util.Optional;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,14 +21,6 @@ public class InstrumentRelationshipTargetConfig {
   @Bean
   ApiV2RelationshipTargetSpec<Instrument, Long> instrumentApiV2RelationshipTarget() {
     return new ApiV2RelationshipTargetSpec<>(
-        ApiV2InstrumentResource.DESCRIPTION, Long.class, this::findReadable);
-  }
-
-  private Optional<Instrument> findReadable(Long id, User actor) {
-    try {
-      return Optional.of(instrumentManager.assertUserCanReadInstrument(id, actor));
-    } catch (NotFoundException ex) {
-      return Optional.empty();
-    }
+        ApiV2InstrumentResource.DESCRIPTION, Long.class, instrumentManager::findReadableInstrument);
   }
 }
