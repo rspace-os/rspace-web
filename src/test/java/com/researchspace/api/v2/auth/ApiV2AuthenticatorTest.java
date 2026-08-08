@@ -8,15 +8,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.analytics.service.AnalyticsManager;
+import com.researchspace.core.testutil.CoreTestUtils;
+import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.model.oauth.OAuthToken;
 import com.researchspace.model.oauth.OAuthTokenType;
+import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.OAuthTokenManager;
 import com.researchspace.service.UserApiKeyManager;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -63,6 +67,22 @@ class ApiV2AuthenticatorTest {
 
     verify(user).setAuthenticatedBy(UserAuthenticationMethod.API_KEY);
     verify(analytics).publicApiUsed(user, request);
+  }
+
+  @Test
+  void securityLogsAuthenticationFailuresWithoutLoggingTheCredential() {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v2/users/me");
+    request.setRemoteAddr("192.0.2.10");
+    request.addHeader("apiKey", "raw-secret-that-must-not-be-logged");
+    when(availability.isApiAvailableForUser(null)).thenReturn(true);
+    StringAppenderForTestLogging securityLog =
+        CoreTestUtils.configureStringLogger(LogManager.getLogger(SecurityLogger.class));
+
+    assertThrows(ApiV2AuthenticationException.class, () -> authenticator.authenticate(request));
+
+    assertTrue(securityLog.logContents.contains("REST API v2 authentication failed"));
+    assertTrue(securityLog.logContents.contains("/api/v2/users/me"));
+    assertTrue(!securityLog.logContents.contains("raw-secret-that-must-not-be-logged"));
   }
 
   @Test

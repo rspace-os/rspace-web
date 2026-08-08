@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.resource;
 
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.ResourceRegistry;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -20,7 +21,8 @@ public record ApiV2ResourceSpec<T, ID>(
     String updateErrorKey,
     Set<ResourceOperation> exposedOperations,
     Map<ResourceOperation, OpenApiOperationDocumentation> operationDocumentation,
-    Map<ResourceOperation, List<ApiV2ErrorMapping>> errorMappings) {
+    Map<ResourceOperation, List<ApiV2ErrorMapping>> errorMappings,
+    CollectionMutationLimits mutationLimits) {
 
   private static final Set<ResourceOperation> STANDARD_OPERATIONS =
       Set.copyOf(EnumSet.allOf(ResourceOperation.class));
@@ -35,6 +37,7 @@ public record ApiV2ResourceSpec<T, ID>(
     exposedOperations = exposed;
     operationDocumentation = Map.copyOf(operationDocumentation);
     errorMappings = copyErrorMappings(errorMappings);
+    Objects.requireNonNull(mutationLimits, "Collection mutation limits");
     if (!exposed.containsAll(operationDocumentation.keySet())
         || !exposed.containsAll(errorMappings.keySet())) {
       throw new IllegalArgumentException(
@@ -59,7 +62,8 @@ public record ApiV2ResourceSpec<T, ID>(
         updateErrorKey,
         STANDARD_OPERATIONS,
         Map.of(),
-        Map.of());
+        Map.of(),
+        CollectionMutationLimits.DEFAULT);
   }
 
   public ApiV2ResourceSpec(
@@ -77,7 +81,8 @@ public record ApiV2ResourceSpec<T, ID>(
         updateErrorKey,
         STANDARD_OPERATIONS,
         Map.of(),
-        errorMappings);
+        errorMappings,
+        CollectionMutationLimits.DEFAULT);
   }
 
   public ApiV2ResourceSpec(
@@ -96,7 +101,29 @@ public record ApiV2ResourceSpec<T, ID>(
         updateErrorKey,
         exposedOperations,
         operationDocumentation,
-        Map.of());
+        Map.of(),
+        CollectionMutationLimits.DEFAULT);
+  }
+
+  public ApiV2ResourceSpec(
+      CollectionDescription<T> description,
+      ResourceOperations<T, ID> operations,
+      Function<String, ID> idParser,
+      String createErrorKey,
+      String updateErrorKey,
+      Set<ResourceOperation> exposedOperations,
+      Map<ResourceOperation, OpenApiOperationDocumentation> operationDocumentation,
+      Map<ResourceOperation, List<ApiV2ErrorMapping>> errorMappings) {
+    this(
+        description,
+        operations,
+        idParser,
+        createErrorKey,
+        updateErrorKey,
+        exposedOperations,
+        operationDocumentation,
+        errorMappings,
+        CollectionMutationLimits.DEFAULT);
   }
 
   ApiV2ResourceRegistration<T, ID> bind(

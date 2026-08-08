@@ -12,6 +12,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,6 +46,8 @@ public final class MaintenanceResourceOperations
         Long::valueOf,
         "errors.api.v2.invalidRequest",
         "errors.api.v2.maintenance.patch",
+        EnumSet.allOf(ResourceOperation.class),
+        Map.of(),
         Map.of(
             ResourceOperation.CREATE,
             invalidWindow,
@@ -53,22 +56,23 @@ public final class MaintenanceResourceOperations
             ResourceOperation.UPDATE,
             invalidWindow,
             ResourceOperation.BULK_UPDATE,
-            invalidWindow));
+            invalidWindow),
+        ApiV2MaintenanceResource.MUTATION_LIMITS);
   }
 
   @Override
   public ResourcePage<ScheduledMaintenance> find(ResourceRequest request, User actor) {
-    return manager.getResources(request);
+    return manager.getResources(request, actor);
   }
 
   @Override
   public long count(ResourceRequest request, User actor) {
-    return manager.countResources(request);
+    return manager.countResources(request, actor);
   }
 
   @Override
   public Optional<ScheduledMaintenance> findById(Long id, User actor) {
-    return manager.getResource(id);
+    return manager.getResource(id, actor);
   }
 
   @Override

@@ -18,13 +18,13 @@ public interface BookingConfigurationManager {
   record Patch(Boolean enabled, String timeZone, ResolvedBookableTarget target) {}
 
   /** Returns one page selected by a parsed collection request. */
-  ResourcePage<BookingConfiguration> getConfigurations(ResourceRequest request);
+  ResourcePage<BookingConfiguration> getConfigurations(ResourceRequest request, User actor);
 
   /** Counts configurations selected by a parsed collection request. */
-  long countConfigurations(ResourceRequest request);
+  long countConfigurations(ResourceRequest request, User actor);
 
   /** Finds one configuration without throwing when it is absent. */
-  Optional<BookingConfiguration> getConfiguration(Long id);
+  Optional<BookingConfiguration> getConfiguration(Long id, User actor);
 
   /** Authorizes, validates, and persists a new booking configuration. */
   BookingConfiguration createConfiguration(Create create, User actor);

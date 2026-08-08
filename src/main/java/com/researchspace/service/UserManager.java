@@ -390,10 +390,13 @@ public interface UserManager extends GenericManager<User, Long> {
    * @param request already narrowed by {@code ApiV2UserResource}'s access policy, so an ordinary
    *     caller's request carries an {@code id} constraint limiting it to their own row
    */
-  ResourcePage<User> getUsers(ResourceRequest request);
+  ResourcePage<User> getUsers(ResourceRequest request, User actor);
 
   /** Total users matching a REST API v2 collection request. */
-  long countUsers(ResourceRequest request);
+  long countUsers(ResourceRequest request, User actor);
+
+  /** Returns a REST API v2 user row only when the actor may read it. */
+  Optional<User> getUserResource(Long id, User actor);
 
   /**
    * A user by id, empty when there is none.

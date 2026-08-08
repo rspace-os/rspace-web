@@ -1,9 +1,8 @@
 package com.researchspace.api.v2.controller;
 
-import static org.apache.commons.lang3.StringUtils.isEmpty;
-
 import com.researchspace.api.v2.throttling.Bucket4jApiRequestThrottler;
 import com.researchspace.core.util.RequestUtil;
+import com.researchspace.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -14,27 +13,21 @@ import org.springframework.web.servlet.HandlerInterceptor;
 /**
  * Derives the throttle bucket key for a REST API v2 request.
  *
- * <p>This runs before authentication, so every key here is caller-supplied and untrusted. Retention
- * is bounded by {@link Bucket4jApiRequestThrottler} rather than by trusting the key.
+ * <p>This runs before authentication. Consequently, supplied credentials are not a trustworthy
+ * identity: an attacker can rotate arbitrary values to obtain fresh buckets. Pre-authentication
+ * admission is therefore keyed only by the network source. Retention is bounded by {@link
+ * Bucket4jApiRequestThrottler}.
  */
 public class ApiV2AbstractThrottleInterceptor implements HandlerInterceptor {
 
   String assertApiAccess(HttpServletRequest request) {
-    String identifier = request.getHeader("apiKey");
-    if (!isEmpty(identifier)) {
-      return fingerprint("apiKey", identifier);
-    }
-    identifier = request.getHeader("Authorization");
-    if (!isEmpty(identifier)) {
-      return fingerprint("authorization", normalizeAuthorization(identifier));
+    Object authenticated = request.getAttribute("user");
+    if (authenticated instanceof User user && user.getId() != null) {
+      return fingerprint("authenticatedApiUser", user.getId().toString());
     }
     // RequestUtil.remoteAddr honours X-Forwarded-For, so deployments must accept that header only
     // from trusted proxies. The value is hashed to avoid retaining client addresses in memory.
-    return clientFingerprint("anonymousApiUser", request);
-  }
-
-  private static String normalizeAuthorization(String authorization) {
-    return authorization.trim().replaceAll("\\s+", " ");
+    return clientFingerprint("preAuthApiClient", request);
   }
 
   private static String clientFingerprint(String prefix, HttpServletRequest request) {

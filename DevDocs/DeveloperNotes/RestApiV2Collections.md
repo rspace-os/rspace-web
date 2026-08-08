@@ -24,7 +24,7 @@ The current implementation supplies these routes outside the collection controll
 | --- | --- | --- |
 | `GET /api/v2/config` | Public | Application version, branding, help links, description, and support email. |
 | `GET /api/v2/openapi.json` | Public | The generated OpenAPI 3.1 document. |
-| `POST /api/v2/oauth/tokens` | Browser session | A non-cached UI OAuth token. |
+| `POST /api/v2/oauth/tokens` | Browser session, not operating as another user | A non-cached UI OAuth token. |
 | `GET /api/v2/users/me` | Authenticated | Identity, roles, capabilities, external identifiers, and API session state. |
 | `GET /api/v2/users/me/profile-image` | Authenticated | The current profile image as a non-cached PNG file. |
 
@@ -233,7 +233,9 @@ pipeline into a resource-specific service.
 
 Every read operation receives the caller. Caller-independent collections can ignore it.
 Collections that calculate caller-specific values must use the supplied user. They must not read a
-browser session or an implicit security context.
+browser session or an implicit security context. Managers must apply the resource read policy and
+row constraint before they return data, including when they are called outside the HTTP
+registration pipeline.
 
 Use `InMemoryCollectionQuery` for a bounded collection that does not use database queries. This
 adapter applies the standard filter, sort, page, and count rules to a resource snapshot.
@@ -586,9 +588,10 @@ A successful bulk operation returns the affected documents and an empty error li
 }
 ```
 
-A bulk update or delete request must contain a `where` filter. Put the batch limit and other
-resource rules in the resource manager. Document these rules in the OpenAPI operation. Do not use
-one limit for all resource types.
+A bulk update or delete request must contain a `where` filter. Declare create and update/delete
+batch limits in the resource spec's `CollectionMutationLimits`, and enforce the same limits in the
+resource manager. Document these rules in the OpenAPI operation. Do not use one limit for all
+resource types.
 
 ## Query configuration
 
@@ -695,14 +698,21 @@ The authentication interceptor does not log in to Shiro. It does not log out of 
 request. Endpoint metadata selects browser-session authentication only for the token route. These
 rules prevent a browser session from changing other API authorization.
 
+An operating-as browser session cannot mint a UI OAuth token. This rule prevents the delegated
+identity from becoming a persistent bearer credential without its original actor. Authenticated
+responses use `Cache-Control: no-store, private`; public configuration and OpenAPI responses keep
+their explicit cache policies.
+
 ### Rate limits
 
 REST API v2 has separate throttle beans from REST API v1. Both versions use the same deployment
 properties.
 
-REST API v2 uses thread-safe Bucket4j buckets with greedy refill. Each caller bucket applies the
-15-second, hourly, and daily limits atomically. A separate bucket applies the global limit and
-minimum request interval.
+REST API v2 uses thread-safe Bucket4j buckets with greedy refill. Before authentication, a source
+bucket limits credential failures and anonymous traffic. After successful authentication, each
+stable user-ID bucket applies the 15-second, hourly, and daily limits atomically. A separate global
+bucket and minimum request interval apply only to authenticated traffic. Raw, unvalidated
+credentials are never bucket keys and cannot consume the authenticated global allowance.
 
 The REST API v2 throttle uses these properties:
 
@@ -718,9 +728,9 @@ The REST API v2 throttle uses these properties:
 When throttling is enabled, responses contain `X-Rate-Limit-*` usage headers. A rejected request
 returns 429 and an API problem body.
 
-Credential buckets use a SHA-256 fingerprint of the credential. Public and anonymous buckets use a
-fingerprint of the client address. The server does not retain credentials or client addresses in
-the bucket key.
+Authenticated buckets use a SHA-256 fingerprint of the stable user ID. Public, anonymous, and
+invalid-credential buckets use a fingerprint of the client address. The server does not retain
+user IDs or client addresses in the bucket key.
 
 The address resolver accepts `X-Forwarded-For`. Configure each trusted proxy to replace an
 untrusted `X-Forwarded-For` header.
@@ -775,7 +785,9 @@ This example is a polymorphic to-one value:
 
 Before it calls the operations class, the relationship resolver verifies that the target exists.
 It also verifies that the actor can read the target. The operations class receives a
-`ResolvedResourceReference`. It does not receive an untrusted ID.
+`ResolvedResourceReference`. It does not receive an untrusted ID. Rendering repeats target read
+authorization for every relationship and omits an unreadable reference at every depth; it never
+falls back to a raw target ID.
 
 A target can support relationships without top-level CRUD routes. Register an
 `ApiV2RelationshipTargetSpec<T, ID>` bean for this target. The lookup must return only entities that

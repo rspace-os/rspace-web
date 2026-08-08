@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.config;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -7,7 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.controller.ApiV2CrudController;
+import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperations;
@@ -23,14 +26,30 @@ import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.method.HandlerMethod;
 
 class ApiV2ResourceConfigTest {
+
+  @Test
+  void genericMutationsRequireAuthenticationBeforeRequestBodyBinding() {
+    ApiV2EndpointCatalog endpoints = new ApiV2ResourceConfig().apiV2EndpointCatalog();
+    ApiV2CrudController controller = new ApiV2CrudController(mock(ApiV2ResourceCatalog.class));
+    HandlerMethod create = handler(controller, "create");
+    HandlerMethod list = handler(controller, "list");
+    MockHttpServletRequest post = new MockHttpServletRequest("POST", "/api/v2/maintenances");
+    MockHttpServletRequest get = new MockHttpServletRequest("GET", "/api/v2/maintenances");
+
+    assertThrows(ApiV2AuthenticationException.class, () -> endpoints.authorize(post, create, null));
+    assertDoesNotThrow(() -> endpoints.authorize(get, list, null));
+  }
 
   @Test
   void wiresRegistrationsIntoTheGenericController() {
@@ -109,6 +128,15 @@ class ApiV2ResourceConfigTest {
         MaintenanceResourceOperations.class,
         UserResourceOperations.class);
     return context;
+  }
+
+  private static HandlerMethod handler(ApiV2CrudController controller, String methodName) {
+    return new HandlerMethod(
+        controller,
+        Arrays.stream(ApiV2CrudController.class.getDeclaredMethods())
+            .filter(method -> method.getName().equals(methodName))
+            .findFirst()
+            .orElseThrow());
   }
 
   private static Throwable rootCause(Throwable thrown) {

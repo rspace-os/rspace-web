@@ -1097,6 +1097,12 @@ public final class CollectionDescription<T> {
     return document;
   }
 
+  /** Returns the serialized identifier value used for row-specific access decisions. */
+  public Object idValue(T entity) {
+    Objects.requireNonNull(entity, "Entity");
+    return requireField(idField).documentValue(entity);
+  }
+
   /** Applies parsed values in description order for deterministic setter behavior. */
   public void apply(T entity, ParsedDocument document) {
     Objects.requireNonNull(document, "Document");

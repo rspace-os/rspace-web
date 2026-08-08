@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.config;
 
+import com.researchspace.api.v2.controller.ApiV2PreAuthenticationThrottlingInterceptor;
 import com.researchspace.api.v2.controller.ApiV2RequestThrottlingInterceptor;
 import com.researchspace.api.v2.throttling.APIRequestThrottler;
 import com.researchspace.api.v2.throttling.Bucket4jApiRequestThrottler;
@@ -41,6 +42,22 @@ public class ApiV2ThrottlingConfig {
       @Qualifier("apiV2UserThrottler") APIRequestThrottler userThrottler,
       @Qualifier("apiV2GlobalThrottler") APIRequestThrottler globalThrottler) {
     return new ApiV2RequestThrottlingInterceptor(userThrottler, globalThrottler);
+  }
+
+  @Bean
+  ApiV2PreAuthenticationThrottlingInterceptor apiV2PreAuthenticationThrottlingInterceptor(
+      @Qualifier("apiV2PreAuthenticationThrottler") APIRequestThrottler throttler) {
+    return new ApiV2PreAuthenticationThrottlingInterceptor(throttler);
+  }
+
+  @Bean("apiV2PreAuthenticationThrottler")
+  APIRequestThrottler apiV2PreAuthenticationThrottler() {
+    if (!enabled) {
+      return APIRequestThrottler.PASS_THRU;
+    }
+    ThrottleDefinitionSet definitions = new ThrottleDefinitionSet("v2 pre-authentication requests");
+    definitions.addDefinition(ThrottleInterval.QUARTER_MIN, globalLimit15Seconds);
+    return throttler(definitions, 0);
   }
 
   @Bean("apiV2UserThrottler")

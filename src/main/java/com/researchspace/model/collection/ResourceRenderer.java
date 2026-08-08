@@ -98,33 +98,41 @@ public final class ResourceRenderer {
       return;
     }
     Optional<IncludeTree> child = includes.relationship(relationship.name());
-    document.put(
-        relationship.name(),
-        renderReference(entity, description, relationship, child, selections, targetResolver));
-  }
-
-  private <T> Object renderReference(
-      T entity,
-      CollectionDescription<T> description,
-      Relationship<T> relationship,
-      Optional<IncludeTree> includes,
-      ResourceFieldSelections selections,
-      TargetResolver targetResolver) {
     Object value = description.readRelationship(entity, relationship);
     if (value == null) {
-      return null;
+      document.put(relationship.name(), null);
+      return;
     }
     if (!(value instanceof ResourceReference<?, ?> reference)) {
       throw new IllegalStateException("Relationship binding must return a resource reference");
     }
+    renderReference(relationship, reference, child, selections, targetResolver)
+        .ifPresent(rendered -> document.put(relationship.name(), rendered));
+  }
+
+  private <T> Optional<Object> renderReference(
+      Relationship<T> relationship,
+      ResourceReference<?, ?> reference,
+      Optional<IncludeTree> includes,
+      ResourceFieldSelections selections,
+      TargetResolver targetResolver) {
     RelationshipTarget<?> target = relationship.targetForKind(reference.kind());
     CollectionDescription<?> targetDescription = registry.requireResource(target.resourceName());
     FieldSelection requestedFields = selections.forResource(target.resourceName());
+    Optional<ResolvedTarget> resolved =
+        targetResolver == NO_TARGETS
+            ? Optional.empty()
+            : targetResolver.resolve(target.resourceName(), reference.id());
+    // API rendering supplies an authorization-aware resolver. An empty result means the target is
+    // missing or unreadable and the reference itself must disappear; falling back to its raw ID
+    // would turn expansion authorization into an identifier-enumeration oracle.
+    if (targetResolver != NO_TARGETS && resolved.isEmpty()) {
+      return Optional.empty();
+    }
     Object renderedValue = serialize(relationship.idType(), reference.id());
     if (includes.isPresent()) {
       renderedValue =
-          targetResolver
-              .resolve(target.resourceName(), reference.id())
+          resolved
               .<Object>map(
                   targetEntity ->
                       renderUnknown(
@@ -144,7 +152,7 @@ public final class ResourceRenderer {
     if (target.globalIdPrefix() != null) {
       referenceDocument.put("globalId", target.globalIdPrefix() + reference.id());
     }
-    return referenceDocument;
+    return Optional.of(referenceDocument);
   }
 
   private static <V> Object serialize(CollectionFieldType<V> type, Object value) {

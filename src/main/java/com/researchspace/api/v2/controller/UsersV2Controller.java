@@ -16,12 +16,16 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserProfileManager;
 import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.session.SessionAttributeUtils;
+import com.researchspace.webapp.controller.ResponseHeaders;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -53,7 +57,8 @@ public class UsersV2Controller {
         @ApiResponse(responseCode = "403", description = "Access is forbidden."),
         @ApiResponse(responseCode = "429", description = "The request was throttled.")
       })
-  public ApiV2CurrentUser getCurrentUser(@RequestAttribute(name = "user") User user) {
+  public ApiV2CurrentUser getCurrentUser(
+      @RequestAttribute(name = "user") User user, HttpServletRequest request) {
     UserProfile profile = userProfileManager.getUserProfile(user);
     ImageBlob picture = profile.getProfilePicture();
     return new ApiV2CurrentUser(
@@ -73,7 +78,7 @@ public class UsersV2Controller {
         orcid(user),
         capabilities(user),
         liveChat(),
-        session(user));
+        session(user, request));
   }
 
   @GetMapping(value = "/me/profile-image", produces = MediaType.IMAGE_PNG_VALUE)
@@ -97,9 +102,11 @@ public class UsersV2Controller {
     if (image == null) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
+    HttpHeaders headers = new HttpHeaders();
+    ResponseHeaders.setContentTypeAndPreventSniffing(headers, MediaType.IMAGE_PNG);
     return ResponseEntity.ok()
+        .headers(headers)
         .cacheControl(CacheControl.noStore())
-        .contentType(MediaType.IMAGE_PNG)
         .body(image.getData());
   }
 
@@ -123,9 +130,13 @@ public class UsersV2Controller {
         user.hasAdminRole());
   }
 
-  private Session session(User user) {
+  private Session session(User user, HttpServletRequest request) {
     Date lastLogin = user.getLastLogin();
-    return new Session(false, lastLogin == null ? null : lastLogin.toInstant().toString());
+    boolean operatedAs =
+        request.getSession(false) != null
+            && Boolean.TRUE.equals(
+                request.getSession(false).getAttribute(SessionAttributeUtils.IS_RUN_AS));
+    return new Session(operatedAs, lastLogin == null ? null : lastLogin.toInstant().toString());
   }
 
   private LiveChat liveChat() {

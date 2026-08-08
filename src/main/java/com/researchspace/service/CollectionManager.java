@@ -12,13 +12,13 @@ import java.util.Optional;
 public interface CollectionManager<T, ID extends Serializable> {
 
   /** Returns one page selected by a fully parsed resource request. */
-  ResourcePage<T> getResources(ResourceRequest request);
+  ResourcePage<T> getResources(ResourceRequest request, User actor);
 
   /** Counts resources selected by a fully parsed resource request. */
-  long countResources(ResourceRequest request);
+  long countResources(ResourceRequest request, User actor);
 
   /** Finds one resource without throwing when the identifier is absent. */
-  Optional<T> getResource(ID id);
+  Optional<T> getResource(ID id, User actor);
 
   /** Validates and persists a new resource. */
   T createResource(T resource, User actor);

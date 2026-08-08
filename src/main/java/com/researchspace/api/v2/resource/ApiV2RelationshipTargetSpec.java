@@ -7,14 +7,10 @@ import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
-import com.researchspace.model.permissions.SecurityLogger;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
-import org.apache.shiro.authz.AuthorizationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** A readable relationship target that does not expose generic CRUD routes. */
 public record ApiV2RelationshipTargetSpec<T, ID>(
@@ -22,8 +18,6 @@ public record ApiV2RelationshipTargetSpec<T, ID>(
     Class<ID> idType,
     BiFunction<ID, User, Optional<T>> findReadableById)
     implements ApiV2ReadableResourceTarget {
-
-  private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
   public ApiV2RelationshipTargetSpec {
     Objects.requireNonNull(description, "Resource description");
@@ -45,17 +39,11 @@ public record ApiV2RelationshipTargetSpec<T, ID>(
           "A target-only REST API v2 resource cannot enforce a read row constraint: "
               + description.resourceName());
     }
-    try {
-      FieldSelection fields = readableFields(context);
-      return findReadableById.apply(id, actor).map(entity -> new ResolvedTarget(entity, fields));
-    } catch (AuthorizationException ex) {
-      SECURITY_LOG.warn(
-          "REST API v2 relationship target authorization failure for user [{}], resource [{}]",
-          actor == null ? "(anonymous)" : actor.getUsername(),
-          description.resourceName(),
-          ex);
-      return Optional.empty();
-    }
+    FieldSelection fields = readableFields(context);
+    return ApiV2ReadableTargetSupport.hideAuthorizationFailure(
+        actor,
+        description.resourceName(),
+        () -> findReadableById.apply(id, actor).map(entity -> new ResolvedTarget(entity, fields)));
   }
 
   private FieldSelection readableFields(AccessContext context) {

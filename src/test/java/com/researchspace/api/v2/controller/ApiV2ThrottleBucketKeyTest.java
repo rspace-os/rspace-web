@@ -3,7 +3,10 @@ package com.researchspace.api.v2.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.researchspace.model.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -13,11 +16,11 @@ class ApiV2ThrottleBucketKeyTest {
       new ApiV2AbstractThrottleInterceptor();
 
   @Test
-  void normalizesAndFingerprintsOAuthCredentials() {
+  void ignoresUnvalidatedCredentialsAndKeysPreAuthenticationBySource() {
     MockHttpServletRequest first = requestFrom("192.0.2.1");
     first.addHeader("Authorization", "Bearer token-value");
-    MockHttpServletRequest second = requestFrom("192.0.2.2");
-    second.addHeader("Authorization", "Bearer    token-value  ");
+    MockHttpServletRequest second = requestFrom("192.0.2.1");
+    second.addHeader("Authorization", "Bearer attacker-rotated-value");
 
     String firstKey = interceptor.assertApiAccess(first);
     String secondKey = interceptor.assertApiAccess(second);
@@ -44,6 +47,20 @@ class ApiV2ThrottleBucketKeyTest {
 
     assertEquals(first, sameClient);
     assertNotEquals(first, otherClient);
+  }
+
+  @Test
+  void keysAuthenticatedRequestsByValidatedUserRatherThanCredentialOrAddress() {
+    User user = mock(User.class);
+    when(user.getId()).thenReturn(42L);
+    MockHttpServletRequest first = requestFrom("192.0.2.1");
+    first.addHeader("apiKey", "first-credential");
+    first.setAttribute("user", user);
+    MockHttpServletRequest second = requestFrom("192.0.2.2");
+    second.addHeader("Authorization", "Bearer second-credential");
+    second.setAttribute("user", user);
+
+    assertEquals(interceptor.assertApiAccess(first), interceptor.assertApiAccess(second));
   }
 
   private static MockHttpServletRequest requestFrom(String address) {

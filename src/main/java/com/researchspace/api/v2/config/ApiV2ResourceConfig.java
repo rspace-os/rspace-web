@@ -24,6 +24,14 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 @Configuration
 public class ApiV2ResourceConfig {
 
+  private static final AccessFunction CRUD_ENDPOINT_ACCESS =
+      AccessFunction.documented(
+          AccessFunction.anyone().documentation().orElseThrow(),
+          context ->
+              context.operation() == com.researchspace.model.collection.AccessContext.Operation.READ
+                  ? com.researchspace.model.collection.AccessResult.allowed()
+                  : AccessFunction.authenticated().check(context));
+
   @Bean
   ApiV2ResourceCatalog apiV2ResourceCatalog(
       List<ApiV2ResourceSpec<?, ?>> specs,
@@ -35,7 +43,10 @@ public class ApiV2ResourceConfig {
   ApiV2EndpointCatalog apiV2EndpointCatalog() {
     return new ApiV2EndpointCatalog(
         List.of(
-            new ApiV2EndpointSpec(ApiV2CrudController.class, AccessFunction.anyone()),
+            // Reads may be public for resources such as maintenance notices. Every mutation
+            // requires authentication before Spring materializes its request body; the resource
+            // policy subsequently applies the more specific role/row authorization.
+            new ApiV2EndpointSpec(ApiV2CrudController.class, CRUD_ENDPOINT_ACCESS),
             new ApiV2EndpointSpec(ConfigV2Controller.class, AccessFunction.anyone()),
             new ApiV2EndpointSpec(
                 OAuthTokensV2Controller.class,

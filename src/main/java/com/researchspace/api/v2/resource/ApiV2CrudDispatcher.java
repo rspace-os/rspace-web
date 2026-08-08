@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /** Shared CRUD mechanics for Payload-shaped REST v2 collection endpoints. */
@@ -58,6 +59,11 @@ public final class ApiV2CrudDispatcher<T, ID> {
   }
 
   public ApiV2ListResult<Map<String, Object>> list(ResourceRequest request, User actor) {
+    return list(request, actor, ignored -> request.fields());
+  }
+
+  public ApiV2ListResult<Map<String, Object>> list(
+      ResourceRequest request, User actor, Function<T, FieldSelection> fieldsForRow) {
     return invoke(
         ResourceOperation.LIST,
         () -> {
@@ -65,7 +71,9 @@ public final class ApiV2CrudDispatcher<T, ID> {
           TargetResolver targetResolver = targetResolver(actor);
           return ApiV2ListResult.of(
               page.resources().stream()
-                  .map(resource -> document(resource, request, targetResolver))
+                  .map(
+                      resource ->
+                          document(resource, request, fieldsForRow.apply(resource), targetResolver))
                   .toList(),
               page.total(),
               request.page().size(),
@@ -172,8 +180,20 @@ public final class ApiV2CrudDispatcher<T, ID> {
 
   private Map<String, Object> document(
       T resource, ResourceRequest request, TargetResolver targetResolver) {
+    return document(resource, request, request.fields(), targetResolver);
+  }
+
+  private Map<String, Object> document(
+      T resource,
+      ResourceRequest request,
+      FieldSelection rootFields,
+      TargetResolver targetResolver) {
     return renderer.render(
-        resource, description, request.fieldSelections(), request.includes(), targetResolver);
+        resource,
+        description,
+        request.fieldSelections().withRoot(rootFields),
+        request.includes(),
+        targetResolver);
   }
 
   /**

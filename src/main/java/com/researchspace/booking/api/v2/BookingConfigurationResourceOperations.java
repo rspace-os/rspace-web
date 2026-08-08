@@ -86,22 +86,23 @@ public final class BookingConfigurationResourceOperations
             ResourceOperation.UPDATE,
             writeErrors,
             ResourceOperation.BULK_UPDATE,
-            writeErrors));
+            writeErrors),
+        ApiV2BookingConfigurationResource.MUTATION_LIMITS);
   }
 
   @Override
   public ResourcePage<BookingConfiguration> find(ResourceRequest request, User actor) {
-    return manager.getConfigurations(request);
+    return manager.getConfigurations(request, actor);
   }
 
   @Override
   public long count(ResourceRequest request, User actor) {
-    return manager.countConfigurations(request);
+    return manager.countConfigurations(request, actor);
   }
 
   @Override
   public Optional<BookingConfiguration> findById(Long id, User actor) {
-    return manager.getConfiguration(id);
+    return manager.getConfiguration(id, actor);
   }
 
   @Override

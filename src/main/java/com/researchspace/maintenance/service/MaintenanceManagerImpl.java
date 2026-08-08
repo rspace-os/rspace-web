@@ -26,7 +26,10 @@ public class MaintenanceManagerImpl extends AbstractCollectionManager<ScheduledM
       MaintenanceDao maintenanceDao,
       ApplicationEventPublisher events,
       MessageSourceUtils messages) {
-    super(maintenanceDao, ApiV2MaintenanceResource.DESCRIPTION);
+    super(
+        maintenanceDao,
+        ApiV2MaintenanceResource.DESCRIPTION,
+        ApiV2MaintenanceResource.MUTATION_LIMITS);
     this.maintenanceDao = maintenanceDao;
     this.events = events;
     this.messages = messages;

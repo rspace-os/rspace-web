@@ -21,7 +21,6 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.model.collection.ResourceRequest;
-import com.researchspace.model.permissions.SecurityLogger;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -32,13 +31,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** One collection registered for automatic REST API v2 CRUD routing. */
 public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableResourceTarget {
-
-  private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
   private final CollectionDescription<T> description;
   private final ResourceRegistry registry;
@@ -91,7 +86,18 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   }
 
   public ApiV2ListResult<Map<String, Object>> list(ResourceRequest request, User caller) {
-    return crud.list(authorize(Operation.READ, caller, request), caller);
+    ResourceRequest authorized = authorize(Operation.READ, caller, request);
+    return crud.list(
+        authorized,
+        caller,
+        entity ->
+            narrowFields(
+                new AccessContext(
+                    caller,
+                    Operation.READ,
+                    description.resourceName(),
+                    description.idValue(entity)),
+                authorized.fields()));
   }
 
   public ApiV2CountResult count(ResourceRequest request, User caller) {
@@ -130,7 +136,12 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     requireDocumentedAuthentication(Operation.CREATE, actor);
     AccessContext base = new AccessContext(actor, Operation.CREATE, description.resourceName());
     List<ParsedDocument> documents =
-        ApiV2DocumentParser.parseManyStructure(body, description, spec.createErrorKey(), base);
+        ApiV2DocumentParser.parseManyStructure(
+            body,
+            description,
+            spec.createErrorKey(),
+            base,
+            spec.mutationLimits().maxBulkCreateRows());
     AccessContext context = authorizeWrite(base.withInputs(documents));
     ApiV2DocumentParser.authorizeManyFields(
         body, documents, description, spec.createErrorKey(), context);
@@ -187,26 +198,23 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     if (result.isDenied()) {
       return Optional.empty();
     }
-    try {
-      return result
-          .constraintOrEmpty()
-          .map(
-              constraint ->
-                  operations
-                      .find(ResourceRequest.unpaged(and(constraint, idEquals(id))), actor)
-                      .resources()
-                      .stream()
-                      .findFirst())
-          .orElseGet(() -> operations.findById(id, actor))
-          .map(entity -> new ResolvedTarget(entity, narrowFields(context, FieldSelection.all())));
-    } catch (AuthorizationException ex) {
-      SECURITY_LOG.warn(
-          "REST API v2 relationship target authorization failure for user [{}], resource [{}]",
-          actor == null ? "(anonymous)" : actor.getUsername(),
-          description.resourceName(),
-          ex);
-      return Optional.empty();
-    }
+    return ApiV2ReadableTargetSupport.hideAuthorizationFailure(
+        actor,
+        description.resourceName(),
+        () ->
+            result
+                .constraintOrEmpty()
+                .map(
+                    constraint ->
+                        operations
+                            .find(ResourceRequest.unpaged(and(constraint, idEquals(id))), actor)
+                            .resources()
+                            .stream()
+                            .findFirst())
+                .orElseGet(() -> operations.findById(id, actor))
+                .map(
+                    entity ->
+                        new ResolvedTarget(entity, narrowFields(context, FieldSelection.all()))));
   }
 
   /**

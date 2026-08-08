@@ -181,6 +181,23 @@ class ApiV2ResourceAccessTest {
   }
 
   @Test
+  void rowSpecificFieldAccessIsEvaluatedForEveryListDocument() {
+    AccessFunction ownRowOnly =
+        AccessFunction.when(context -> context.targetId() == null || context.targets(7L));
+    CollectionDescription<Widget> widgets =
+        describe(AccessPolicy.readOnly(AccessFunction.anyone()), ownRowOnly);
+    when(operations.find(any(), nullable(User.class)))
+        .thenReturn(
+            new ResourcePage<>(List.of(new Widget(7L, "visible"), new Widget(8L, "hidden")), 2));
+
+    List<Map<String, Object>> documents =
+        register(widgets).list(request(null, List.of()), user(false)).docs();
+
+    assertEquals("visible", documents.get(0).get("secret"));
+    assertFalse(documents.get(1).containsKey("secret"));
+  }
+
+  @Test
   @DisplayName("a field access function returning a row constraint fails closed")
   void rowConstraintCannotBeAppliedAsFieldAccess() {
     FilterExpression constraint =
