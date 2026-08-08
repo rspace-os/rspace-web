@@ -15,6 +15,7 @@ import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import java.util.List;
+import java.util.Optional;
 
 /** Handles API actions around Inventory Instrument. */
 public interface InstrumentEntityApiManager extends InventoryApiManager<InstrumentEntity> {
@@ -162,6 +163,9 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
   Instrument assertUserCanEditInstrument(Long dbId, User user);
 
   Instrument assertUserCanReadInstrument(Long dbId, User user);
+
+  /** Returns the instrument only when it exists and the caller may read it. */
+  Optional<Instrument> findReadableInstrument(Long dbId, User user);
 
   Instrument assertUserCanDeleteInstrument(Long dbId, User user);
 

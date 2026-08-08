@@ -2,6 +2,8 @@ package com.researchspace.webapp.filter;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.auth.MaintenanceLoginAuthorizer;
 import com.researchspace.core.testutil.CoreTestUtils;
@@ -11,7 +13,6 @@ import com.researchspace.model.User;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Date;
-import java.util.List;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
 import org.junit.After;
@@ -29,27 +30,7 @@ public class BaseShiroFormAuthFilterExtTest extends SpringTransactionalTest {
 
   private ScheduledMaintenance testMaintenance;
 
-  private MaintenanceManager maintenanceManagerStub =
-      new MaintenanceManager() {
-        @Override
-        public ScheduledMaintenance getNextScheduledMaintenance() {
-          return testMaintenance;
-        }
-
-        public ScheduledMaintenance getScheduledMaintenance(Long id) {
-          return null;
-        }
-
-        public List<ScheduledMaintenance> getAllFutureMaintenances() {
-          return null;
-        }
-
-        public ScheduledMaintenance saveScheduledMaintenance(ScheduledMaintenance m, User user) {
-          return null;
-        }
-
-        public void removeScheduledMaintenance(Long id, User user) {}
-      };
+  private final MaintenanceManager maintenanceManagerStub = mock(MaintenanceManager.class);
 
   @Before
   public void setUp() {
@@ -63,6 +44,7 @@ public class BaseShiroFormAuthFilterExtTest extends SpringTransactionalTest {
     // sets maintenance starting now and ending in 10 seconds
     Date now = new Date();
     testMaintenance = new ScheduledMaintenance(now, new Date(now.getTime() + 10000));
+    when(maintenanceManagerStub.getNextScheduledMaintenance()).thenReturn(testMaintenance);
 
     initHttpReqAndResp();
   }
