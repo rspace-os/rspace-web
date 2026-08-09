@@ -13,6 +13,7 @@ export class ProtocolsIODialogComponent {
     this.closeButton = this.root.getByRole("button", { name: "Close" });
   }
 
+  // Legacy jQuery/Mustache widget — no ARIA roles here at all.
   async waitForOpen(): Promise<void> {
     await this.root.waitFor({ state: "visible" });
     await this.frame.locator("#protocols_ioListings").waitFor({ state: "visible" });

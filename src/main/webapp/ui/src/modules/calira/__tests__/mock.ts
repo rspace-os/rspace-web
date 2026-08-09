@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+import { mockOAuthAuthorize } from "@/__tests__/e2e/mocks/mockOAuthAuthorize";
 
 const BOOKING_ID = 9990001;
 const EQUIPMENT_ID = 9990002;
@@ -6,18 +7,7 @@ export const MOCK_EQUIPMENT_NAME = "Mock PCR Machine";
 export const MOCK_REQUESTER_NAME = "Mock Requester";
 
 export const caliraHandlers = [
-  http.get("/calira-web/oauth/authorize", ({ request }) => {
-    const url = new URL(request.url);
-    const redirectUri = url.searchParams.get("redirect_uri");
-    if (!redirectUri) {
-      return new HttpResponse("Missing redirect_uri", { status: 400 });
-    }
-    const target = new URL(redirectUri);
-    target.searchParams.set("code", "mock-calira-auth-code");
-    const state = url.searchParams.get("state");
-    if (state) target.searchParams.set("state", state);
-    return HttpResponse.redirect(target.toString(), 302);
-  }),
+  mockOAuthAuthorize("/calira-web/oauth/authorize", "mock-calira-auth-code", { echoState: true }),
 
   http.post("/calira-web/oauth/token", () =>
     HttpResponse.json({

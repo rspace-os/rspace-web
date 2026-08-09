@@ -1,18 +1,8 @@
 import { HttpResponse, http } from "msw";
+import { mockOAuthAuthorize } from "@/__tests__/e2e/mocks/mockOAuthAuthorize";
 
 export const dryadHandlers = [
-  http.get("/dryad/oauth/authorize", ({ request }) => {
-    const url = new URL(request.url);
-    const redirectUri = url.searchParams.get("redirect_uri");
-    if (!redirectUri) {
-      return new HttpResponse("Missing redirect_uri", { status: 400 });
-    }
-    const target = new URL(redirectUri);
-    target.searchParams.set("code", "mock-dryad-auth-code");
-    const state = url.searchParams.get("state");
-    if (state) target.searchParams.set("state", state);
-    return HttpResponse.redirect(target.toString(), 302);
-  }),
+  mockOAuthAuthorize("/dryad/oauth/authorize", "mock-dryad-auth-code", { echoState: true }),
 
   http.post("/dryad/oauth/token", () =>
     HttpResponse.json({

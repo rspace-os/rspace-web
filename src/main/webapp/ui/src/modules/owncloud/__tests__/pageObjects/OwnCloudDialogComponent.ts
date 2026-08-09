@@ -18,6 +18,7 @@ export class OwnCloudDialogComponent {
     await this.tree.waitFor({ state: "visible" });
   }
 
+  // FancyTree selection lives on the checkbox, not the (roleless) treeitem.
   async selectFile(fileName: string): Promise<void> {
     await this.tree.getByRole("treeitem", { name: fileName }).locator(".fancytree-checkbox").click();
   }

@@ -19,6 +19,7 @@ export class NextcloudDialogComponent {
     await this.tree.getByRole("treeitem", { name: "Loading..." }).waitFor({ state: "hidden" });
   }
 
+  // FancyTree selection lives on the checkbox, not the (roleless) treeitem.
   async selectFile(fileName: string): Promise<void> {
     await this.tree.getByRole("treeitem", { name: fileName }).locator(".fancytree-checkbox").click();
   }

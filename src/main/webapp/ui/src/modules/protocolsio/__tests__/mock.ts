@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+import { mockOAuthAuthorize } from "@/__tests__/e2e/mocks/mockOAuthAuthorize";
 
 export const MOCK_PROTOCOL_ID = 999999;
 export const MOCK_PROTOCOL_TITLE = "Mock Protocol Import Test";
@@ -39,17 +40,9 @@ export const MOCK_PROTOCOLS_IO_PROTOCOL_RESPONSE = {
 };
 
 export const protocolsioHandlers = [
-  http.get("/protocolsio/oauth/authorize", ({ request }) => {
-    const url = new URL(request.url);
-    const redirectUrl = url.searchParams.get("redirect_url");
-    if (!redirectUrl) {
-      return new HttpResponse("Missing redirect_url", { status: 400 });
-    }
-    const target = new URL(redirectUrl);
-    target.searchParams.set("code", "mock-protocolsio-auth-code");
-    const state = url.searchParams.get("state");
-    if (state) target.searchParams.set("state", state);
-    return HttpResponse.redirect(target.toString(), 302);
+  mockOAuthAuthorize("/protocolsio/oauth/authorize", "mock-protocolsio-auth-code", {
+    redirectParam: "redirect_url",
+    echoState: true,
   }),
 
   http.post("/protocolsio/oauth/token", () =>

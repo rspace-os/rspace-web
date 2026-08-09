@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+import { mockOAuthAuthorize } from "@/__tests__/e2e/mocks/mockOAuthAuthorize";
 import plansFixture from "./fixtures/plans.json" with { type: "json" };
 
 type PlanFixture = {
@@ -30,15 +31,7 @@ function planListResponse(origin: string, ids: string[]) {
 }
 
 export const dmptoolHandlers = [
-  http.get("/oauth/authorize", ({ request }) => {
-    const redirectUri = new URL(request.url).searchParams.get("redirect_uri");
-    if (!redirectUri) {
-      return new HttpResponse("Missing redirect_uri", { status: 400 });
-    }
-    const target = new URL(redirectUri);
-    target.searchParams.set("code", "mock-dmptool-auth-code");
-    return HttpResponse.redirect(target.toString(), 302);
-  }),
+  mockOAuthAuthorize("/oauth/authorize", "mock-dmptool-auth-code"),
 
   http.post("/oauth/token", () =>
     HttpResponse.json({

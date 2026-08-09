@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+import { mockOAuthAuthorize } from "@/__tests__/e2e/mocks/mockOAuthAuthorize";
 import plansFixture from "./fixtures/plans.json" with { type: "json" };
 
 type PlanFixture = {
@@ -28,18 +29,7 @@ function planListResponse(origin: string, ids: string[]) {
 }
 
 export const dmpassistantHandlers = [
-  http.get("/dmpassistant/oauth/authorize", ({ request }) => {
-    const url = new URL(request.url);
-    const redirectUri = url.searchParams.get("redirect_uri");
-    if (!redirectUri) {
-      return new HttpResponse("Missing redirect_uri", { status: 400 });
-    }
-    const target = new URL(redirectUri);
-    target.searchParams.set("code", "mock-dmpassistant-auth-code");
-    const state = url.searchParams.get("state");
-    if (state) target.searchParams.set("state", state);
-    return HttpResponse.redirect(target.toString(), 302);
-  }),
+  mockOAuthAuthorize("/dmpassistant/oauth/authorize", "mock-dmpassistant-auth-code", { echoState: true }),
 
   http.post("/dmpassistant/oauth/token", () =>
     HttpResponse.json({

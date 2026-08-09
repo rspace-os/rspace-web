@@ -1,4 +1,5 @@
 import { HttpResponse, http } from "msw";
+import { mockOAuthAuthorize } from "@/__tests__/e2e/mocks/mockOAuthAuthorize";
 
 export const MOCK_FILE_NAME = "mock-nextcloud-document.pdf";
 
@@ -32,15 +33,7 @@ const WEBDAV_MULTISTATUS = `<?xml version="1.0"?>
 </d:multistatus>`;
 
 export const nextcloudHandlers = [
-  http.get("/nextcloud/index.php/apps/oauth2/authorize", ({ request }) => {
-    const redirectUri = new URL(request.url).searchParams.get("redirect_uri");
-    if (!redirectUri) {
-      return new HttpResponse("Missing redirect_uri", { status: 400 });
-    }
-    const target = new URL(redirectUri);
-    target.searchParams.set("code", "mock-nextcloud-auth-code");
-    return HttpResponse.redirect(target.toString(), 302);
-  }),
+  mockOAuthAuthorize("/nextcloud/index.php/apps/oauth2/authorize", "mock-nextcloud-auth-code"),
 
   http.post("/nextcloud/index.php/apps/oauth2/api/v1/token", () =>
     HttpResponse.json({
@@ -64,12 +57,13 @@ export const nextcloudHandlers = [
         },
       }),
   ),
-  http.all(
-    "/nextcloud/remote.php/webdav*",
-    () =>
-      new HttpResponse(WEBDAV_MULTISTATUS, {
-        status: 207,
-        headers: { "Content-Type": "application/xml", "Access-Control-Allow-Origin": "*" },
-      }),
-  ),
+  http.all("/nextcloud/remote.php/webdav*", ({ request }) => {
+    if (request.method !== "PROPFIND") {
+      return new HttpResponse(null, { status: 405, headers: { "Access-Control-Allow-Origin": "*" } });
+    }
+    return new HttpResponse(WEBDAV_MULTISTATUS, {
+      status: 207,
+      headers: { "Content-Type": "application/xml", "Access-Control-Allow-Origin": "*" },
+    });
+  }),
 ];
