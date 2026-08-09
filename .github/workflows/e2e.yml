@@ -149,12 +149,15 @@ jobs:
           CALIRA_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.CALIRA_CLIENT_SECRET || '' }}
           NEXTCLOUD_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.NEXTCLOUD_CLIENT_ID || '' }}
           NEXTCLOUD_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.NEXTCLOUD_CLIENT_SECRET || '' }}
+          BOX_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.BOX_CLIENT_ID || '' }}
+          BOX_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.BOX_CLIENT_SECRET || '' }}
         run: |
           set -euo pipefail
           if [ "${{ inputs.mode }}" = "mock" ]; then
             INTEGRATION_ARGS=(
               "-Dpubchem.base.url=http://localhost:$E2E_MOCK_PORT"
               "-Dfieldmark.api.url=http://localhost:$E2E_MOCK_PORT"
+              "-Dsnapgene.web.url=http://localhost:$E2E_MOCK_PORT"
               "-Dzenodo.url=http://localhost:$E2E_MOCK_PORT"
               "-Dgalaxy.server.config=[{\"alias\":\"mock\",\"url\":\"http://localhost:$E2E_MOCK_PORT\"}]"
               "-Dpyrat.server.config={\"mock\":{\"url\":\"http://localhost:$E2E_MOCK_PORT\",\"token\":\"mock-server-token\"}}"
@@ -208,6 +211,8 @@ jobs:
               "-Dnextcloud.client.id=$NEXTCLOUD_CLIENT_ID"
               "-Dnextcloud.secret=$NEXTCLOUD_CLIENT_SECRET"
               "-Dnextcloud.server.name=Nextcloud"
+              "-Dbox.client.id=$BOX_CLIENT_ID"
+              "-Dbox.client.secret=$BOX_CLIENT_SECRET"
             )
           fi
           nohup ./mvnw jetty:run-war \
@@ -262,6 +267,9 @@ jobs:
           CALIRA_PASSWORD: ${{ inputs.mode == 'real' && secrets.CALIRA_PASSWORD || '' }}
           NEXTCLOUD_USERNAME: ${{ inputs.mode == 'real' && secrets.NEXTCLOUD_USERNAME || '' }}
           NEXTCLOUD_PASS: ${{ inputs.mode == 'real' && secrets.NEXTCLOUD_PASS || '' }}
+          MSTEAMS_WEBHOOK_URL: ${{ inputs.mode == 'real' && secrets.MSTEAMS_WEBHOOK_URL || '' }}
+          BOX_USERNAME: ${{ inputs.mode == 'real' && secrets.BOX_USERNAME || '' }}
+          BOX_PASSWD: ${{ inputs.mode == 'real' && secrets.BOX_PASSWD || '' }}
           IGSN_ACCOUNT_ID: ${{ inputs.mode == 'real' && secrets.IGSN_ACCOUNT_ID || '' }}
           IGSN_PASSWORD: ${{ inputs.mode == 'real' && secrets.IGSN_PASSWORD || '' }}
           IGSN_REPO_PREFIX: ${{ inputs.mode == 'real' && secrets.IGSN_REPO_PREFIX || '' }}

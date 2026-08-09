@@ -71,8 +71,10 @@ export class GalleryPage extends BasePage {
 
   async selectFile(name: string): Promise<void> {
     const cell = this.fileCell(name);
-    await cell.click();
-    await expect(cell).toHaveAttribute("aria-selected", "true");
+    await expect(async () => {
+      await cell.click();
+      await expect(cell).toHaveAttribute("aria-selected", "true", { timeout: 1_000 });
+    }).toPass({ timeout: 15_000 });
     await this.infoPanel.waitUntilSelected(name);
   }
 
@@ -88,43 +90,36 @@ export class GalleryPage extends BasePage {
     await this.searchInput.fill(name);
   }
 
-  async openDSWImport(alias: string): Promise<DSWImportDialogComponent> {
+  /** Opens the Create menu, clicks the named import menu item, then waits for its dialog to open. */
+  private async openCreateMenuImport<T extends { waitForOpen(): Promise<void> }>(
+    menuItemName: string,
+    DialogCtor: new (page: Page) => T,
+    exact = true,
+  ): Promise<T> {
     await this.sidebar.createButton.click();
-    await this.page.getByRole("menuitem", { name: `${alias} DSW / FAIR Wizard` }).click();
-    const dialog = new DSWImportDialogComponent(this.page);
+    await this.page.getByRole("menuitem", { name: menuItemName, exact }).click();
+    const dialog = new DialogCtor(this.page);
     await dialog.waitForOpen();
     return dialog;
+  }
+
+  async openDSWImport(alias: string): Promise<DSWImportDialogComponent> {
+    return this.openCreateMenuImport(`${alias} DSW / FAIR Wizard`, DSWImportDialogComponent, false);
   }
 
   async openDMPToolImport(): Promise<DMPToolImportDialogComponent> {
-    await this.sidebar.createButton.click();
-    await this.page.getByRole("menuitem", { name: "DMPTool", exact: true }).click();
-    const dialog = new DMPToolImportDialogComponent(this.page);
-    await dialog.waitForOpen();
-    return dialog;
+    return this.openCreateMenuImport("DMPTool", DMPToolImportDialogComponent);
   }
 
   async openDMPAssistantImport(): Promise<DMPAssistantImportDialogComponent> {
-    await this.sidebar.createButton.click();
-    await this.page.getByRole("menuitem", { name: "DMP Assistant", exact: true }).click();
-    const dialog = new DMPAssistantImportDialogComponent(this.page);
-    await dialog.waitForOpen();
-    return dialog;
+    return this.openCreateMenuImport("DMP Assistant", DMPAssistantImportDialogComponent);
   }
 
   async openDMPOnlineImport(): Promise<DMPOnlineImportDialogComponent> {
-    await this.sidebar.createButton.click();
-    await this.page.getByRole("menuitem", { name: "DMPonline", exact: true }).click();
-    const dialog = new DMPOnlineImportDialogComponent(this.page);
-    await dialog.waitForOpen();
-    return dialog;
+    return this.openCreateMenuImport("DMPonline", DMPOnlineImportDialogComponent);
   }
 
   async openArgosImport(): Promise<ArgosImportDialogComponent> {
-    await this.sidebar.createButton.click();
-    await this.page.getByRole("menuitem", { name: "Argos", exact: true }).click();
-    const dialog = new ArgosImportDialogComponent(this.page);
-    await dialog.waitForOpen();
-    return dialog;
+    return this.openCreateMenuImport("Argos", ArgosImportDialogComponent);
   }
 }

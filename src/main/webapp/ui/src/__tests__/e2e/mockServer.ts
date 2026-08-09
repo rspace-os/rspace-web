@@ -27,6 +27,7 @@ import { pubchemHandlers } from "../../modules/pubchem/__tests__/mock.ts";
 import { pyratHandlers } from "../../modules/pyrat/__tests__/mock.ts";
 import { raidHandlers } from "../../modules/raid/__tests__/mock.ts";
 import { slackHandlers } from "../../modules/slack/__tests__/mock.ts";
+import { snapgeneHandlers } from "../../modules/snapgene/__tests__/mock.ts";
 import { zenodoHandlers } from "../../modules/zenodo/__tests__/mock.ts";
 import { dataciteHandlers } from "./mocks/datacite.ts";
 
@@ -55,6 +56,7 @@ const handlers = [
   ...dmponlineHandlers,
   ...raidHandlers,
   ...slackHandlers,
+  ...snapgeneHandlers,
   ...dryadHandlers,
   ...caliraHandlers,
   ...pyratHandlers,

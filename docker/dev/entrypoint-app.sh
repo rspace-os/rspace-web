@@ -98,6 +98,7 @@ if [ "${RSPACE_E2E_MOCKS:-false}" = "true" ]; then
   E2E_MOCK_ARGS=(
     "-Dpubchem.base.url=${E2E_MOCK_URL}"
     "-Dfieldmark.api.url=${E2E_MOCK_URL}"
+    "-Dsnapgene.web.url=${E2E_MOCK_URL}"
     "-Dzenodo.url=${E2E_MOCK_URL}"
     "-Dgalaxy.server.config=[{\"alias\":\"mock\",\"url\":\"${E2E_MOCK_URL}\"}]"
     "-Dpyrat.server.config={\"mock\":{\"url\":\"${E2E_MOCK_URL}\",\"token\":\"mock-server-token\"}}"
