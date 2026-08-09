@@ -34,6 +34,12 @@ export class AppsPage {
     await this.clickEnableOrClose(dialog, enabled ? "ENABLE" : "DISABLE");
   }
 
+  async setEnabledForBox(name: string): Promise<void> {
+    const dialog = await this.openCard(name);
+    await dialog.getByRole("button", { name: "Save" }).click();
+    await this.clickEnableOrClose(dialog);
+  }
+
   async setEnabledWithApiKey(
     name: string,
     apiKey: string,
@@ -103,6 +109,15 @@ export class AppsPage {
     }
 
     await this.clickEnableOrClose(dialog);
+  }
+
+  async openSlackAddChannelPopup(name: string): Promise<Page> {
+    const dialog = await this.openCard(name);
+    const [popup] = await Promise.all([
+      this.page.waitForEvent("popup"),
+      dialog.getByRole("button", { name: "Add", exact: true }).click(),
+    ]);
+    return popup;
   }
 
   async setEnabledForOmero(name: string, opts: { username: string; password: string }): Promise<void> {

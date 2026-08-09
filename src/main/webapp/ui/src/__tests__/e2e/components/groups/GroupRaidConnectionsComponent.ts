@@ -4,7 +4,8 @@ export class GroupRaidConnectionsComponent {
   readonly root: Locator;
 
   constructor(private readonly page: Page) {
-    this.root = page.getByRole("heading", { name: "RAiD Connections" }).locator("..");
+    // #raid-connections is the legacy JSP mount point
+    this.root = page.locator("#raid-connections");
   }
 
   async waitForLoaded(): Promise<void> {
