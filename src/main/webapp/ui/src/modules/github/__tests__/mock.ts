@@ -6,6 +6,9 @@ export const MOCK_BRANCH = "main";
 export const MOCK_FILE_PATH = "README.md";
 export const MOCK_FILE_SHA = "mock-github-blob-sha";
 
+export const MOCK_ADVERSARIAL_FILE_PATH = '<b>bold</b> & "quoted".txt';
+export const MOCK_ADVERSARIAL_FILE_SHA = "mock-github-adversarial-blob-sha";
+
 function appBaseUrl(): string {
   return process.env.RSPACE_BASE_URL ?? "http://localhost:8080";
 }
@@ -40,7 +43,10 @@ export const githubHandlers = [
     HttpResponse.json({
       sha: String(params.sha),
       url: `https://api.github.com/repos/${params.owner}/${params.repo}/git/trees/${params.sha}`,
-      tree: [{ path: MOCK_FILE_PATH, type: "blob", sha: MOCK_FILE_SHA }],
+      tree: [
+        { path: MOCK_FILE_PATH, type: "blob", sha: MOCK_FILE_SHA },
+        { path: MOCK_ADVERSARIAL_FILE_PATH, type: "blob", sha: MOCK_ADVERSARIAL_FILE_SHA },
+      ],
     }),
   ),
 ];
