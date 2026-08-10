@@ -29,7 +29,7 @@ public final class CollectionFieldTypes {
           Operator.LIKE,
           Operator.EXISTS);
   private static final Set<Operator> BOOLEAN_OPERATORS =
-      Set.of(Operator.EQUAL, Operator.NOT_EQUAL, Operator.IN, Operator.NOT_IN, Operator.EXISTS);
+      Set.of(Operator.EQUAL, Operator.NOT_EQUAL, Operator.EXISTS);
 
   private static final CollectionFieldType<Long> LONG =
       new ScalarFieldType<>(
