@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { mockOAuthAuthorize } from "@/__tests__/e2e/mocks/mockOAuthAuthorize";
+import { mockOAuthAuthorize } from "../../../__tests__/e2e/mocks/mockOAuthAuthorize.ts";
 
 export const MOCK_PROTOCOL_ID = 999999;
 export const MOCK_PROTOCOL_TITLE = "Mock Protocol Import Test";

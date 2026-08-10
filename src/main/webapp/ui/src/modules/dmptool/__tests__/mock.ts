@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { mockOAuthAuthorize } from "@/__tests__/e2e/mocks/mockOAuthAuthorize";
+import { mockOAuthAuthorize } from "../../../__tests__/e2e/mocks/mockOAuthAuthorize.ts";
 import plansFixture from "./fixtures/plans.json" with { type: "json" };
 
 type PlanFixture = {

@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { mockOAuthAuthorize } from "@/__tests__/e2e/mocks/mockOAuthAuthorize";
+import { mockOAuthAuthorize } from "../../../__tests__/e2e/mocks/mockOAuthAuthorize.ts";
 
 const BOOKING_ID = 9990001;
 const EQUIPMENT_ID = 9990002;

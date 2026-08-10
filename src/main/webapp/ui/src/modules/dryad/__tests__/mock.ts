@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { mockOAuthAuthorize } from "@/__tests__/e2e/mocks/mockOAuthAuthorize";
+import { mockOAuthAuthorize } from "../../../__tests__/e2e/mocks/mockOAuthAuthorize.ts";
 
 export const dryadHandlers = [
   mockOAuthAuthorize("/dryad/oauth/authorize", "mock-dryad-auth-code", { echoState: true }),
