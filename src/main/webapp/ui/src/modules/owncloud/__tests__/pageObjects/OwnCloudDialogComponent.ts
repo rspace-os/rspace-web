@@ -23,6 +23,10 @@ export class OwnCloudDialogComponent {
     await this.tree.getByRole("treeitem", { name: fileName }).locator(".fancytree-checkbox").click();
   }
 
+  async expandFolder(folderName: string): Promise<void> {
+    await this.tree.getByRole("treeitem", { name: folderName }).getByRole("button").click();
+  }
+
   async clickChoose(): Promise<void> {
     await this.chooseButton.click();
     await this.root.waitFor({ state: "detached" });

@@ -149,6 +149,8 @@ jobs:
           CALIRA_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.CALIRA_CLIENT_SECRET || '' }}
           NEXTCLOUD_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.NEXTCLOUD_CLIENT_ID || '' }}
           NEXTCLOUD_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.NEXTCLOUD_CLIENT_SECRET || '' }}
+          OWNCLOUD_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.OWNCLOUD_CLIENT_ID || '' }}
+          OWNCLOUD_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.OWNCLOUD_CLIENT_SECRET || '' }}
           BOX_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.BOX_CLIENT_ID || '' }}
           BOX_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.BOX_CLIENT_SECRET || '' }}
         run: |
@@ -211,6 +213,10 @@ jobs:
               "-Dnextcloud.client.id=$NEXTCLOUD_CLIENT_ID"
               "-Dnextcloud.secret=$NEXTCLOUD_CLIENT_SECRET"
               "-Dnextcloud.server.name=Nextcloud"
+              "-Downcloud.url=https://owncloud-test.researchspace.com"
+              "-Downcloud.client.id=$OWNCLOUD_CLIENT_ID"
+              "-Downcloud.secret=$OWNCLOUD_CLIENT_SECRET"
+              "-Downcloud.server.name=ownCloud"
               "-Dbox.client.id=$BOX_CLIENT_ID"
               "-Dbox.client.secret=$BOX_CLIENT_SECRET"
             )
@@ -267,6 +273,8 @@ jobs:
           CALIRA_PASSWORD: ${{ inputs.mode == 'real' && secrets.CALIRA_PASSWORD || '' }}
           NEXTCLOUD_USERNAME: ${{ inputs.mode == 'real' && secrets.NEXTCLOUD_USERNAME || '' }}
           NEXTCLOUD_PASS: ${{ inputs.mode == 'real' && secrets.NEXTCLOUD_PASS || '' }}
+          OWNCLOUD_USERNAME: ${{ inputs.mode == 'real' && secrets.OWNCLOUD_USERNAME || '' }}
+          OWNCLOUD_PASS: ${{ inputs.mode == 'real' && secrets.OWNCLOUD_PASS || '' }}
           MSTEAMS_WEBHOOK_URL: ${{ inputs.mode == 'real' && secrets.MSTEAMS_WEBHOOK_URL || '' }}
           BOX_USERNAME: ${{ inputs.mode == 'real' && secrets.BOX_USERNAME || '' }}
           BOX_PASSWD: ${{ inputs.mode == 'real' && secrets.BOX_PASSWD || '' }}

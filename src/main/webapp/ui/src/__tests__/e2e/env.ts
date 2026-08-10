@@ -58,6 +58,8 @@ export const env = {
   caliraPassword: optional("CALIRA_PASSWORD", ""),
   nextcloudUsername: optional("NEXTCLOUD_USERNAME", ""),
   nextcloudPassword: optional("NEXTCLOUD_PASS", ""),
+  ownCloudUsername: optional("OWNCLOUD_USERNAME", ""),
+  ownCloudPassword: optional("OWNCLOUD_PASS", ""),
   msteamsWebhookUrl: optional("MSTEAMS_WEBHOOK_URL", ""),
   boxUsername: optional("BOX_USERNAME", ""),
   boxPassword: optional("BOX_PASSWD", ""),
