@@ -19,8 +19,7 @@ public class DSWUser {
   @JsonProperty private String lastName;
   @JsonProperty private String lastSeenNewsId;
   @JsonProperty private String locale;
-  @JsonProperty private String[] permissions;
-  @JsonProperty private String role;
+  @JsonProperty private DSWRole role;
   @JsonProperty private String[] sources;
   @JsonProperty private String updatedAt;
   @JsonProperty private String uuid;
