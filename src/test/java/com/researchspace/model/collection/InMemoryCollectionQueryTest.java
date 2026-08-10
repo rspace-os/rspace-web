@@ -51,9 +51,32 @@ class InMemoryCollectionQueryTest {
                 comparison("name", Operator.LIKE, List.of("tray alpha"), false),
                 comparison("name", Operator.CONTAINS, List.of("BETA"), false)));
 
+    // "alpha tray" sorts before "Beta rotor": ordering ignores case, as the database collation
+    // does.
     assertEquals(
-        List.of(widgets.get(1), widgets.get(2)),
+        List.of(widgets.get(2), widgets.get(1)),
         query.page(widgets, request(filter, WIDGETS.defaultSort(), 1, 20)).resources());
+  }
+
+  @Test
+  void comparesTextWithoutCase() {
+    assertEquals(
+        List.of(widgets.get(0)),
+        matching(comparison("name", Operator.EQUAL, List.of("ALPHA ROTOR"), false)),
+        "the database matches this row with a case-insensitive collation");
+    assertEquals(
+        List.of(widgets.get(1)),
+        matching(comparison("name", Operator.IN, List.of("beta ROTOR"), false)));
+    assertEquals(
+        List.of(widgets.get(0), widgets.get(2)),
+        matching(comparison("name", Operator.EQUAL, List.of("ALPHA*"), true)));
+  }
+
+  /** An accented value cannot match ASCII text, so the caller gets an empty page. */
+  @Test
+  void doesNotFoldAccents() {
+    assertEquals(
+        List.of(), matching(comparison("name", Operator.CONTAINS, List.of("álpha"), false)));
   }
 
   @Test
@@ -70,6 +93,10 @@ class InMemoryCollectionQueryTest {
     assertEquals(
         new ResourcePage<>(List.of(), 3),
         query.page(widgets, request(null, WIDGETS.defaultSort(), Integer.MAX_VALUE, 100)));
+  }
+
+  private List<Widget> matching(FilterExpression filter) {
+    return query.page(widgets, request(filter, WIDGETS.defaultSort(), 1, 20)).resources();
   }
 
   private static FilterExpression.Comparison comparison(

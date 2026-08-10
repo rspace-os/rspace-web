@@ -20,6 +20,8 @@ import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.InventoryEntityFieldDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
@@ -1003,6 +1005,16 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     Instrument instrument = getInstrumentOrThrowNotFound(dbId);
     invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(instrument, user);
     return instrument;
+  }
+
+  @Override
+  public ResourcePage<Instrument> getReadableInstruments(ResourceRequest request, User user) {
+    return instrumentDao.getReadableResources(request, user);
+  }
+
+  @Override
+  public long countReadableInstruments(ResourceRequest request, User user) {
+    return instrumentDao.countReadableResources(request, user);
   }
 
   @Override

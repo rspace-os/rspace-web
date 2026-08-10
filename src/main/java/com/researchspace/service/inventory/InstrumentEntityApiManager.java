@@ -10,6 +10,8 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InstrumentTemplate;
@@ -166,6 +168,17 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
 
   /** Returns the instrument only when it exists and the caller may read it. */
   Optional<Instrument> findReadableInstrument(Long dbId, User user);
+
+  /**
+   * Returns one REST API v2 collection page of the instruments the user may read.
+   *
+   * <p>Transactional entry point for the collection routes: the database applies the request
+   * filter, the sort, the inventory permission rules, and the page together.
+   */
+  ResourcePage<Instrument> getReadableInstruments(ResourceRequest request, User user);
+
+  /** Counts the instruments the user may read that match a REST API v2 collection request. */
+  long countReadableInstruments(ResourceRequest request, User user);
 
   Instrument assertUserCanDeleteInstrument(Long dbId, User user);
 

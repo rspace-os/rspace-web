@@ -230,7 +230,14 @@ public final class CollectionDescription<T> {
       return copy(selected, requiredOnCreate, nullable, filterable, sortable);
     }
 
-    Field<T, V> withQueryCapabilities(boolean filterable, boolean sortable) {
+    /**
+     * Declares whether clients may use this field in {@code where} and {@code sort}.
+     *
+     * <p>Public because a programmatically described field can be derived rather than persistent: a
+     * value read from a {@code @Transient} accessor has no column to query, so it must be readable
+     * without being queryable.
+     */
+    public Field<T, V> withQueryCapabilities(boolean filterable, boolean sortable) {
       return copy(writeOperations, requiredOnCreate, nullable, filterable, sortable);
     }
 

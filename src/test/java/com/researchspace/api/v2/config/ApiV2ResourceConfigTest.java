@@ -17,7 +17,7 @@ import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.api.v2.user.UserResourceOperations;
 import com.researchspace.booking.api.v2.BookingConfigurationResourceOperations;
 import com.researchspace.booking.service.BookingConfigurationManager;
-import com.researchspace.inventory.api.v2.InstrumentRelationshipTargetConfig;
+import com.researchspace.inventory.api.v2.InstrumentResourceOperations;
 import com.researchspace.maintenance.api.v2.MaintenanceResourceOperations;
 import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.collection.CollectionDescription;
@@ -89,9 +89,9 @@ class ApiV2ResourceConfigTest {
               .sorted()
               .toList());
       assertEquals(
-          4,
+          5,
           context.getBeansOfType(ApiV2ResourceSpec.class).size(),
-          "the three built-in specs plus the contributed one");
+          "the four built-in specs plus the contributed one");
       assertNotNull(context.getBean(ApiV2CrudController.class));
     }
   }
@@ -124,7 +124,7 @@ class ApiV2ResourceConfigTest {
         InstrumentEntityApiManager.class, () -> mock(InstrumentEntityApiManager.class));
     context.register(
         BookingConfigurationResourceOperations.class,
-        InstrumentRelationshipTargetConfig.class,
+        InstrumentResourceOperations.class,
         MaintenanceResourceOperations.class,
         UserResourceOperations.class);
     return context;

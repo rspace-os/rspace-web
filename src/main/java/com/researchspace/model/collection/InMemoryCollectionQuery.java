@@ -75,13 +75,13 @@ public final class InMemoryCollectionQuery<T> {
       case EQUAL ->
           comparison.wildcard()
               ? wildcard(String.valueOf(actual), String.valueOf(expected))
-              : Objects.equals(actual, expected);
+              : equalValues(actual, expected);
       case NOT_EQUAL ->
           comparison.wildcard()
               ? !wildcard(String.valueOf(actual), String.valueOf(expected))
-              : !Objects.equals(actual, expected);
-      case IN -> comparison.values().contains(actual);
-      case NOT_IN -> !comparison.values().contains(actual);
+              : !equalValues(actual, expected);
+      case IN -> containsValue(comparison.values(), actual);
+      case NOT_IN -> !containsValue(comparison.values(), actual);
       case CONTAINS -> contains(String.valueOf(actual), String.valueOf(expected));
       case LIKE -> wordsLike(String.valueOf(actual), String.valueOf(expected));
       case GREATER_THAN -> compare(actual, expected) > 0;
@@ -115,16 +115,29 @@ public final class InMemoryCollectionQuery<T> {
     return ascending ? result : -result;
   }
 
-  @SuppressWarnings("unchecked") // Class equality above proves both values have the same T.
+  @SuppressWarnings("unchecked") // The isInstance guard below proves the cast is safe.
   private static int compare(Object left, Object right) {
+    if (left instanceof String text && right instanceof String other) {
+      return fold(text).compareTo(fold(other));
+    }
     if (!(left instanceof Comparable<?> comparable) || !left.getClass().isInstance(right)) {
       throw new IllegalStateException("Collection values are not mutually comparable");
     }
     return ((Comparable<Object>) comparable).compareTo(right);
   }
 
+  private static boolean equalValues(Object actual, Object expected) {
+    return actual instanceof String text && expected instanceof String other
+        ? fold(text).equals(fold(other))
+        : Objects.equals(actual, expected);
+  }
+
+  private static boolean containsValue(List<Object> expected, Object actual) {
+    return expected.stream().anyMatch(candidate -> equalValues(actual, candidate));
+  }
+
   private static boolean contains(String actual, String expected) {
-    return actual.toLowerCase(Locale.ROOT).contains(expected.toLowerCase(Locale.ROOT));
+    return fold(actual).contains(fold(expected));
   }
 
   private static boolean wordsLike(String actual, String expected) {
@@ -135,15 +148,27 @@ public final class InMemoryCollectionQuery<T> {
 
   private static boolean wildcard(String actual, String expected) {
     StringBuilder regex = new StringBuilder("^");
-    String[] parts = expected.split("\\*", -1);
+    String[] parts = fold(expected).split("\\*", -1);
     for (int index = 0; index < parts.length; index++) {
       if (index > 0) {
         regex.append(".*");
       }
       regex.append(Pattern.quote(parts[index]));
     }
-    return Pattern.compile(regex.append('$').toString(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL)
-        .matcher(actual)
+    return Pattern.compile(regex.append('$').toString(), Pattern.DOTALL)
+        .matcher(fold(actual))
         .matches();
+  }
+
+  /**
+   * Compares text case-insensitively, as the {@code utf8mb4_unicode_ci} collation does, so a query
+   * that matched a row in the database does not fail the same comparison here.
+   *
+   * <p>Accents are deliberately not folded. That collation ignores them, but no collection served
+   * from memory holds accented text, so an accented filter value can only be a caller mistake and
+   * must produce a miss. Fold accents here if such a collection is ever added.
+   */
+  private static String fold(String value) {
+    return value.toLowerCase(Locale.ROOT);
   }
 }

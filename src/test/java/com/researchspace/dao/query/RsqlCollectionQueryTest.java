@@ -1,6 +1,7 @@
 package com.researchspace.dao.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
@@ -69,6 +70,24 @@ class RsqlCollectionQueryTest {
             "rsql1", "%database%",
             "rsql2", "%upgrade%"),
         result.parameters());
+  }
+
+  @Test
+  void parsesRepresentativeRsqlBuilderOutputWithoutLosingNestedPrecedence() {
+    FilterExpression.And root =
+        assertInstanceOf(
+            FilterExpression.And.class,
+            parser.parse("(message==\"a(\",id==1);message=contains=\"Ada Lovelace\""));
+    FilterExpression.Or nested =
+        assertInstanceOf(FilterExpression.Or.class, root.children().get(0));
+    FilterExpression.Comparison escapedValue =
+        assertInstanceOf(FilterExpression.Comparison.class, nested.children().get(0));
+    FilterExpression.Comparison contains =
+        assertInstanceOf(FilterExpression.Comparison.class, root.children().get(1));
+
+    assertEquals(List.of("a("), escapedValue.values());
+    assertEquals(Operator.CONTAINS, contains.operator());
+    assertEquals(List.of("Ada Lovelace"), contains.values());
   }
 
   @Test

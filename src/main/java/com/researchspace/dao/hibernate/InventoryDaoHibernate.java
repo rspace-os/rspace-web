@@ -2,13 +2,23 @@ package com.researchspace.dao.hibernate;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.axiope.search.SearchUtils;
+import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.GenericDaoHibernate;
+import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
+import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
@@ -21,8 +31,89 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
 
   @Autowired protected InventoryPermissionUtils invPermissionUtils;
 
+  @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
+
   public InventoryDaoHibernate(Class<T> persistentClass) {
     super(persistentClass);
+  }
+
+  /**
+   * Returns one REST API v2 collection page of the records this user may read.
+   *
+   * <p>The database applies the caller's filter, the sort, the permission rules, and the page
+   * together, so the page and the total agree and no caller reads the collection to filter it.
+   */
+  protected ResourcePage<T> readableResourcePage(
+      CollectionQueryExecutor<T> collectionQuery, ResourceRequest request, User user) {
+    return collectionQuery.page(
+        criteriaBuilderFactory,
+        getSession(),
+        request,
+        inventoryReadRestriction(collectionQuery.alias(), user));
+  }
+
+  /** Counts the records this user may read that match a REST API v2 collection request. */
+  protected long countReadableResources(
+      CollectionQueryExecutor<T> collectionQuery, ResourceRequest request, User user) {
+    return collectionQuery.count(
+        criteriaBuilderFactory,
+        getSession(),
+        request,
+        inventoryReadRestriction(collectionQuery.alias(), user));
+  }
+
+  /**
+   * Builds the inventory read restriction for a Blaze-Persistence query.
+   *
+   * <p>This is the predicate form of {@link #getOwnedByAndPermittedItemsSqlQueryFragment}, which
+   * the legacy searches build as HQL text. The two must stay in step, so the disjuncts appear in
+   * the same order and rest on the same three inputs: the owners this role can see, the members of
+   * this user's groups, and the unique name of each of those groups. Enum values are bound as
+   * parameters rather than written as literals, because the Blaze expression parser does not accept
+   * the HQL literal form.
+   *
+   * @return {@code null} for a system administrator, who reads every record
+   */
+  protected Predicate inventoryReadRestriction(String alias, User user) {
+    if (user.hasSysadminRole()) {
+      return null;
+    }
+    List<String> groupMembers =
+        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
+    List<String> groupNames = user.getGroups().stream().map(Group::getUniqueName).toList();
+    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
+
+    Map<String, Object> parameters = new LinkedHashMap<>();
+    List<String> disjuncts = new ArrayList<>();
+    parameters.put("invPermUser", user.getUsername());
+    disjuncts.add(alias + ".owner.username = :invPermUser");
+    if (CollectionUtils.isNotEmpty(visibleOwners)) {
+      parameters.put("invPermVisibleOwners", visibleOwners);
+      disjuncts.add(alias + ".owner.username IN :invPermVisibleOwners");
+    }
+    if (CollectionUtils.isNotEmpty(groupMembers)) {
+      parameters.put("invPermSharedWithGroups", InventorySharingMode.OWNER_GROUPS);
+      parameters.put("invPermGroupMembers", groupMembers);
+      disjuncts.add(
+          "("
+              + alias
+              + ".sharingMode = :invPermSharedWithGroups AND "
+              + alias
+              + ".owner.username IN :invPermGroupMembers)");
+    }
+    for (int index = 0; index < groupNames.size(); index++) {
+      parameters.put("invPermWhitelisted", InventorySharingMode.WHITELIST);
+      parameters.put("invPermGroupAcl" + index, "%" + groupNames.get(index) + "%");
+      disjuncts.add(
+          "("
+              + alias
+              + ".sharingMode = :invPermWhitelisted AND "
+              + alias
+              + ".sharingACL.acl LIKE :invPermGroupAcl"
+              + index
+              + ")");
+    }
+    return new Predicate("(" + String.join(" OR ", disjuncts) + ")", parameters);
   }
 
   protected String getOwnedByAndPermittedItemsSqlQueryFragment(

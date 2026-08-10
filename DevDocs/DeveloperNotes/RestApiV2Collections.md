@@ -245,6 +245,57 @@ include a command that changes several aggregate types or an action that is not 
 normal collection routes on the standard contract. Document the reason for each escape hatch near
 its public interface.
 
+## Add a read-only collection
+
+Use `AccessPolicy.readOnly(...)` for a collection that clients only read, such as a relationship
+target that a picker searches. The policy refuses every mutation before dispatch reaches the
+operations class, so the class implements only `find`, `count`, and `findById`. Limit
+`exposedOperations` to `LIST`, `COUNT`, and `READ` so the generated OpenAPI document shows the
+routes the collection really serves.
+
+One resource name has one catalog entry. Registering a resource also registers it as a relationship
+target, so do not add an `ApiV2RelationshipTargetSpec` for a name that a resource spec already uses.
+Startup fails with a duplicate-target error.
+
+Describe a collection programmatically when a public field maps to a nested property. The annotated
+record derives the query property from a bean property name, so it cannot describe a value such as
+`editInfo.name`. `ApiV2InstrumentResource` is the example: it also declares `globalId` with
+`withQueryCapabilities(false, false)`, because a derived value has no column to filter or sort.
+
+Express a read rule as a row constraint when the rule fits the described fields. A read access
+function returns `AccessResult.allowedWhere(...)`, and the registration folds that constraint into
+the list, the count, the single read, and relationship resolution. `ApiV2InstrumentResource` hides
+soft-deleted rows this way, so its operations class does not repeat the rule on each route.
+
+Keep a rule that a constraint cannot express in the collection query, not in the operations class.
+Inventory sharing tests a whitelist ACL, which a constraint could reference only by publishing the
+sharing mode and the ACL as filterable API fields.
+
+Pass such a rule to `CollectionQueryExecutor.page` or `count` as a `RsqlCollectionQuery.Predicate`.
+The executor ANDs it with the caller's filter, so the database applies the filter, the sort, the
+restriction, and the page together. The page and the count then agree, and no route reads the whole
+collection to filter it in Java.
+
+```java
+return collectionQuery.page(criteriaBuilderFactory, getSession(), request, restriction);
+```
+
+Build the predicate with the alias the executor uses, available from `collectionQuery.alias()`. Bind
+enum values as parameters. The Blaze-Persistence expression parser does not accept the HQL literal
+form for a nested enum.
+
+Inventory DAOs do not build that predicate themselves. `InventoryDaoHibernate` supplies
+`readableResourcePage`, `countReadableResources`, and `inventoryReadRestriction`, so each inventory
+collection shares one copy of the sharing rules.
+
+Do not filter rows in the operations class. A second pass in Java compares text by Java rules, not
+by the database collation, so a row the query matched can disappear from the page and the total.
+
+An operations class must not call a DAO. A DAO assumes an active transaction, and the REST layer has
+none, so a collection read goes through the domain manager. `InstrumentResourceOperations` calls
+`InstrumentEntityApiManager`, which is under the transaction advice for
+`*..service.inventory.*Manager`.
+
 ## Reuse the operations layer
 
 The generic REST controller uses an `ApiV2ResourceRegistration`. The registration performs API
@@ -594,6 +645,8 @@ resource manager. Document these rules in the OpenAPI operation. Do not use one 
 resource types.
 
 ## Query configuration
+
+Use the [Table List adapter guide](./TableListAdapters.md) to connect a frontend table to a collection endpoint.
 
 The resource definition is also the query allowlist. Clients can use these parameters:
 

@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.resource.ApiV2DocumentParser;
-import com.researchspace.inventory.api.v2.ApiV2InstrumentResource;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
