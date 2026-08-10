@@ -55,5 +55,9 @@ public record ApiV2FeatureFlagResource(
 
   public static final CollectionDescription<FeatureFlagResource> DESCRIPTION =
       CollectionDescription.fromApiV2Resource(
-          ApiV2FeatureFlagResource.class, List.of(), List.of(new Sort("name", true)), ACCESS);
+          ApiV2FeatureFlagResource.class,
+          FeatureFlagResource.class,
+          List.of(),
+          List.of(new Sort("name", true)),
+          ACCESS);
 }
