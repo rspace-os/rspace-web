@@ -228,6 +228,7 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     Instrument instrument = new Instrument();
     instrument.setId(id);
     instrument.setName("Test Instrument");
+    instrument.setOwner(user);
     InventoryUriField lp = new InventoryUriField("Landing page");
     lp.setFieldData(landingPageData);
     addField(instrument, lp);
@@ -282,6 +283,7 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     Instrument source = new Instrument();
     source.setId(1L);
     source.setName("Plain Instrument");
+    source.setOwner(user);
 
     when(properties.getServerUrl()).thenReturn(serverUrl);
     stubDuplicateInfrastructure(source);
