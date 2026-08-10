@@ -32,7 +32,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: () => (
     <Combobox items={fruits}>
-      <ComboboxInput placeholder="Search fruit..." />
+      <ComboboxInput clearLabel="Clear fruit" placeholder="Search fruit..." triggerLabel="Show fruit options" />
       <ComboboxContent>
         <ComboboxList>
           {(item: string) => (
@@ -58,7 +58,7 @@ export const Default: Story = {
 export const Grouped: Story = {
   render: () => (
     <Combobox>
-      <ComboboxInput placeholder="Search produce..." />
+      <ComboboxInput clearLabel="Clear produce" placeholder="Search produce..." triggerLabel="Show produce options" />
       <ComboboxContent>
         <ComboboxList>
           <ComboboxGroup>
