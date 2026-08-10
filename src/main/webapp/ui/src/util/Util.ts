@@ -145,8 +145,9 @@ export const isInventoryPermalink = (str: string): boolean => {
 };
 
 /**
- * Performs a full-page navigation. A wrapper around window.location so that
- * tests can stub navigation, which jsdom cannot otherwise intercept.
+ * Navigates the browser to a URL with a full page load, as opposed to an
+ * in-app route change. Centralising this also gives tests a seam to stub,
+ * since jsdom cannot intercept assignments to window.location.
  */
 export const visitUrl = (url: string): void => {
   window.location.assign(url);
