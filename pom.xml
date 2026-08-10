@@ -4,7 +4,7 @@
 
   <modelVersion>4.0.0</modelVersion>
   <artifactId>rspace-core-model</artifactId>
-  <version>3.2.0</version>
+  <version>3.2.1</version>
   <parent>
     <artifactId>rspace-parent</artifactId>
     <groupId>com.github.rspace-os</groupId>

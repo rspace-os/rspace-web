@@ -2,6 +2,9 @@
 
 Summary of important or breaking changes.
 
+## 3.2.0 2026-08-07
+ - Keep temporary autosave document copies out of the Lucene index
+
 ## 3.1.0 2026-07-29
  - Adapting B2inst object for the community workflow
 

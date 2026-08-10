@@ -9,6 +9,7 @@ import jakarta.persistence.Transient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.envers.Audited;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
@@ -53,6 +54,7 @@ public class InstrumentTemplate extends InstrumentEntity {
    * property up automatically via the class-level {@code @Audited}.
    */
   @Column(name = "isEditable", nullable = false)
+  @ColumnDefault("1") // sibling Instrument inserts omit this template-only column, so DB needs a default
   public boolean isEditable() {
     return editable;
   }
