@@ -1,8 +1,7 @@
 import "@/stores/stores/RootStore";
 import { ThemeProvider } from "@mui/material/styles";
-import { act, render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { delay } from "es-toolkit";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import SearchContext from "../../../../stores/contexts/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
@@ -47,14 +46,14 @@ function renderSearchbar({
 async function scanIntoOpenScanner(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "inventory:search.controls.searchbar.scanBarcode" }));
   /*
-   * Wait a second because the barcode scanner checks for a barcode once per
-   * second. The extra 100ms is just to ensure that this code doesn't execute
-   * before the detection completes.
+   * The scanner polls for a barcode once per second, then enables its confirm
+   * button. Wait for that button to enable rather than sleeping a fixed time,
+   * so the test isn't racing the detection interval (the poll interval is the
+   * default waitFor timeout, so allow more headroom).
    */
-  await act(async () => {
-    await delay(1100);
-  });
-  await user.click(screen.getByRole("button", { name: "inventory:search.controls.searchbar.scanConfirm" }));
+  const confirmButton = screen.getByRole("button", { name: "inventory:search.controls.searchbar.scanConfirm" });
+  await waitFor(() => expect(confirmButton).toBeEnabled(), { timeout: 3000 });
+  await user.click(confirmButton);
 }
 
 describe("Searchbar barcode scanning", () => {
