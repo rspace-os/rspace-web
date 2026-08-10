@@ -6,14 +6,12 @@ import { uniqueName } from "@/__tests__/e2e/testData";
 import type { MsTeamsAdaptiveCardMessage } from "./mock";
 
 const INTEGRATION_MODE = env.integrationMode;
-const MSTEAMS_WEBHOOK_URL = `${env.mockBackendBaseUrl}/msteams/webhook`;
+const MSTEAMS_WEBHOOK_URL =
+  INTEGRATION_MODE === "real" ? env.msteamsWebhookUrl : `${env.mockBackendBaseUrl}/msteams/webhook`;
 const CHANNEL_NAME = "e2e-teams-channel";
 
-test.describe("Microsoft Teams integration", { tag: tags.APPS }, () => {
-  test.skip(
-    INTEGRATION_MODE === "real",
-    "real mode out of scope: no real Teams webhook URL exists for this suite, and this spec always saves the mock server's webhook URL",
-  );
+test.describe(`Microsoft Teams integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () => {
+  test.skip(INTEGRATION_MODE === "real" && !MSTEAMS_WEBHOOK_URL, "real mode needs MSTEAMS_WEBHOOK_URL");
 
   test.beforeEach(async ({ flowSysadminConfig }) => {
     await flowSysadminConfig.ensureSetting("msteams.available", "ALLOWED");
@@ -45,6 +43,10 @@ test.describe("Microsoft Teams integration", { tag: tags.APPS }, () => {
       await componentMsTeamsShare.open();
       await componentMsTeamsShare.send(CHANNEL_NAME, message);
     });
+
+    if (INTEGRATION_MODE === "real") {
+      return;
+    }
 
     const payload = await test.step("Then the Teams webhook receives an Adaptive Card message", async () => {
       const res = await page.request.get(`${env.mockBaseUrl}/msteams/webhook/_lastPayload`);

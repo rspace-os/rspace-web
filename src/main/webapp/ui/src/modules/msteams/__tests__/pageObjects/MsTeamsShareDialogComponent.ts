@@ -9,6 +9,7 @@ export class MsTeamsShareDialogComponent {
   constructor(page: Page) {
     this.toolbarButton = page.getByRole("button", { name: "Send message on MicrosoftTeams" });
     this.root = page.getByRole("dialog", { name: "Send message to external messaging platform" });
+    // The label's `for` targets a class, not an id — no accessible name resolves.
     this.channelSelect = this.root.locator("select.channelSelect");
     this.messageInput = this.root.locator("textarea.extMessageRequestMessage");
   }
@@ -23,6 +24,7 @@ export class MsTeamsShareDialogComponent {
     await this.messageInput.fill(message);
 
     await this.root.locator(".ui-dialog-buttonpane").getByRole("button", { name: "Send", exact: true }).click();
+    await this.root.page().getByText("Message sent").waitFor({ state: "visible" });
     await this.root.waitFor({ state: "hidden" });
   }
 }
