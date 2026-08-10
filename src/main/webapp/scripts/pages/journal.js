@@ -790,19 +790,4 @@ function journal($, extensions = default_extensions) {
   $(window).on('resize', function(e) {
     repositionEntryNavButtons();
   });
-
-  // When a notebook is created directly in a shared group folder the server
-  // redirects here with ?sharedWithGroup=<group>. Mirror the document editor
-  // (coreEditor.js) and confirm the automatic share to the user, since the
-  // notebook editor does not load coreEditor.js.
-  $(document).ready(function() {
-    const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.has("sharedWithGroup")) {
-      RS.confirm(
-        RS.msg("legacyjs.workspace.journal.sharedWithGroup", RS.escapeHtml(searchParams.get("sharedWithGroup"))),
-        "success",
-        "infinite"
-      );
-    }
-  });
 };

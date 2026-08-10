@@ -2145,11 +2145,16 @@ window.addEventListener("ReactToolbarMounted", () => {
   });
 });
 
+// Confirm the automatic share after the server redirects here with
+// ?sharedWithGroup=<group> on creating a document or notebook in a shared group folder.
 $(document).ready(function () {
   const searchParams = new URLSearchParams(window.location.search);
   if (searchParams.has("sharedWithGroup")) {
+    const messageKey = isDocumentEditor
+      ? "legacyjs.workspace.coreEditor.sharedWithGroup"
+      : "legacyjs.workspace.coreEditor.notebookSharedWithGroup";
     RS.confirm(
-      RS.msg("legacyjs.workspace.coreEditor.sharedWithGroup", RS.escapeHtml(searchParams.get("sharedWithGroup"))),
+      RS.msg(messageKey, RS.escapeHtml(searchParams.get("sharedWithGroup"))),
       "success",
       "infinite"
     );
