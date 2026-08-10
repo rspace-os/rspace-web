@@ -19,6 +19,7 @@ import useIsTextWiderThanField from "../../../hooks/ui/useIsTextWiderThanField";
 import SearchContext from "../../../stores/contexts/Search";
 import { isInventoryPermalink, visitUrl } from "../../../util/Util";
 import BarcodeScanner from "../../components/BarcodeScanner/BarcodeScanner";
+import type { BarcodeInput } from "../../components/BarcodeScanner/BarcodeScannerSkeleton";
 
 type FormArgs = {
   handleSearch: (query: string) => void;
@@ -47,7 +48,7 @@ const Form = observer(({ handleSearch }: FormArgs) => {
 
   const [scannerAnchorEl, setScannerAnchorEl] = useState<HTMLElement | null>(null);
 
-  const handleScan = (barcode: { rawValue: string }) => {
+  const handleScan = (barcode: BarcodeInput) => {
     if (isInventoryPermalink(barcode.rawValue)) {
       visitUrl(barcode.rawValue);
     } else {
@@ -72,7 +73,9 @@ const Form = observer(({ handleSearch }: FormArgs) => {
       <TextField
         data-test-id="s-search-input-normal"
         placeholder={
-          search.showBarcodeScan ? t("search.controls.searchbar.searchOrScan") : t("search.controls.searchbar.search")
+          search.showBarcodeScan
+            ? t("search.controls.searchbar.scanPlaceholder")
+            : t("search.controls.searchbar.search")
         }
         value={search.fetcher.query ?? ""}
         onChange={handleChange}
@@ -129,7 +132,9 @@ const Form = observer(({ handleSearch }: FormArgs) => {
           },
 
           htmlInput: {
-            "aria-label": t("search.controls.searchbar.search"),
+            "aria-label": search.showBarcodeScan
+              ? t("search.controls.searchbar.scanPlaceholder")
+              : t("search.controls.searchbar.search"),
             type: "search",
             ref: inputRef,
           },
@@ -163,14 +168,11 @@ const Form = observer(({ handleSearch }: FormArgs) => {
           },
         }}
       >
-        {/* Only mount the scanner while open so the camera is not activated eagerly. */}
-        {Boolean(scannerAnchorEl) && (
-          <BarcodeScanner
-            onClose={() => setScannerAnchorEl(null)}
-            onScan={handleScan}
-            buttonPrefix={t("search.controls.searchbar.scanSearch")}
-          />
-        )}
+        <BarcodeScanner
+          onClose={() => setScannerAnchorEl(null)}
+          onScan={handleScan}
+          buttonPrefix={t("search.controls.searchbar.scanConfirm")}
+        />
       </Popover>
     </Box>
   );

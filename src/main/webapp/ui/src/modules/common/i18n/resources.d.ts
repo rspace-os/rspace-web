@@ -4267,9 +4267,9 @@ export default interface Resources {
         "searchbar": {
           "clearSearch": "Clear search",
           "scanBarcode": "Scan barcode",
-          "scanSearch": "Search barcode",
-          "search": "Search",
-          "searchOrScan": "Search or scan a barcode"
+          "scanConfirm": "Search barcode",
+          "scanPlaceholder": "Search or scan a barcode",
+          "search": "Search"
         },
         "sort": {
           "ascending": "(A-Z)",
