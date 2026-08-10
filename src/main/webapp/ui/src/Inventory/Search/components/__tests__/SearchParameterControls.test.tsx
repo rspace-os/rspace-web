@@ -45,6 +45,33 @@ window.fetch = vi.fn(() =>
   } as Response),
 );
 describe("SearchParameterControls", () => {
+  test("There is no Barcode chip; barcode scanning lives in the search bar instead.", () => {
+    const rootStore = makeMockRootStore({
+      searchStore: {
+        savedSearches: [],
+        savedBaskets: [],
+      },
+    });
+    const search = new Search({
+      factory: mockFactory(),
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <storesContext.Provider value={rootStore}>
+          <SearchContext.Provider
+            value={{
+              search,
+              differentSearchForSettingActiveResult: search,
+            }}
+          >
+            <SearchParameterControls />
+          </SearchContext.Provider>
+        </storesContext.Provider>
+      </ThemeProvider>,
+    );
+    expect(screen.queryByRole("button", { name: "Barcode" })).not.toBeInTheDocument();
+  });
+
   describe("Saved searches controls", () => {
     test("If the search disallows a particular record type, saved searches with that type filter should be disabled.", async () => {
       const user = userEvent.setup();

@@ -4266,7 +4266,10 @@ export default interface Resources {
         },
         "searchbar": {
           "clearSearch": "Clear search",
-          "search": "Search"
+          "scanBarcode": "Scan barcode",
+          "scanSearch": "Search barcode",
+          "search": "Search",
+          "searchOrScan": "Search or scan a barcode"
         },
         "sort": {
           "ascending": "(A-Z)",
