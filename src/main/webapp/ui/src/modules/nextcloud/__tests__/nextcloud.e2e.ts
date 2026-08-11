@@ -13,6 +13,16 @@ async function connectToNextcloudViaLogin(popup: Page): Promise<void> {
   await popup.getByRole("textbox", { name: "Password" }).fill(env.nextcloudPassword);
   await popup.getByRole("button", { name: "Log in", exact: true }).click();
   await popup.getByRole("button", { name: "Grant access" }).click();
+
+  const reauthDialog = popup.getByRole("dialog", { name: "Authentication required" });
+  const reauthAppeared = await reauthDialog
+    .waitFor({ state: "visible", timeout: 3_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (reauthAppeared) {
+    await reauthDialog.getByRole("textbox", { name: "Password" }).fill(env.nextcloudPassword);
+    await reauthDialog.getByRole("button", { name: "Confirm" }).click();
+  }
 }
 
 test.describe(`Nextcloud integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () => {
