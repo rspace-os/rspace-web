@@ -11,8 +11,7 @@ import java.util.List;
 public interface TextSearchDao {
 
   /** Only called from test code, is this needed? */
-  @SuppressWarnings("rawtypes")
-  List searchText(String flds[], String match, Class<?> persistentClass);
+  <T> List<T> searchText(String[] fields, String match, Class<T> persistentClass);
 
   /**
    * Explicitly rebuilds the full text index

@@ -37,6 +37,5 @@ public interface EcatCommentManager {
    */
   EcatComment getEcatComment(Long comId, Long parentId, User user);
 
-  @SuppressWarnings("rawtypes")
-  List getCommentItems(Long comId);
+  List<EcatCommentItem> getCommentItems(Long comId);
 }

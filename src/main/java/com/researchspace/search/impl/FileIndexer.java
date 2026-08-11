@@ -43,13 +43,6 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
 
   public static final String FIELD_CONTENTS = "contents";
 
-  @SuppressWarnings("unused")
-  private static final String[] ENGLISH_STOP_WORDS = {
-    "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "if", "in", "into", "is", "it",
-    "no", "not", "of", "on", "or", "such", "that", "the", "their", "then", "there", "these", "they",
-    "this", "to", "was", "will", "with"
-  };
-
   private static final String[] SUFFIXES = {
     ".odp", ".odt", ".ods", ".pdf", ".doc", ".txt", ".xml", ".html", ".rtf", ".xls", ".ppt",
     ".pptx", ".docx", ".xlsx", ".csv"

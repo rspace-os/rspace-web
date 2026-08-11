@@ -2,7 +2,6 @@ package com.researchspace.model.dtos;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import com.researchspace.model.field.TimeFieldForm;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import org.springframework.validation.Errors;
@@ -13,14 +12,15 @@ public class TimeFieldDTOValidator extends AbstractFieldFormValidator implements
 
   @Override
   public boolean supports(Class<?> clazz) {
-    return clazz.isAssignableFrom(TimeFieldDTO.class);
+    return TimeFieldDTO.class.isAssignableFrom(clazz);
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
   public void validate(Object target, Errors errors) {
+    if (!(target instanceof TimeFieldDTO<?> dto)) {
+      throw new IllegalArgumentException("Target must be a TimeFieldDTO");
+    }
     super.validate(target, errors);
-    TimeFieldDTO<TimeFieldForm> dto = (TimeFieldDTO) target;
 
     SimpleDateFormat df;
     try {
