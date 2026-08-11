@@ -14,6 +14,7 @@ vi.mock("../../../../common/InvApiService", () => ({
 import { ThemeProvider } from "@mui/material/styles";
 import { cleanup, render, screen } from "@testing-library/react";
 
+import { makeMockInstrumentTemplate } from "../../../../stores/models/__tests__/InstrumentTemplateModel/mocking";
 import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
 import materialTheme from "../../../../theme";
 import LatestTemplateActions from "../LatestTemplateActions";
@@ -42,5 +43,20 @@ describe("LatestTemplateActions", () => {
   test("stays hidden for a historical version even when samples need updating", () => {
     renderFor(makeMockTemplate({ samplesToUpdateCount: 2, historicalVersion: true }));
     expect(screen.queryByRole("button", { name: "inventory:moreInfo.updateSamples" })).not.toBeInTheDocument();
+  });
+
+  test("hides the Update Instruments button when no instruments need updating", () => {
+    renderFor(makeMockInstrumentTemplate({ instrumentsToUpdateCount: 0 }));
+    expect(screen.queryByRole("button", { name: "inventory:moreInfo.updateInstruments" })).not.toBeInTheDocument();
+  });
+
+  test("shows the Update Instruments button when instruments need updating", () => {
+    renderFor(makeMockInstrumentTemplate({ instrumentsToUpdateCount: 2 }));
+    expect(screen.getByRole("button", { name: "inventory:moreInfo.updateInstruments" })).toBeInTheDocument();
+  });
+
+  test("stays hidden for a historical version even when instruments need updating", () => {
+    renderFor(makeMockInstrumentTemplate({ instrumentsToUpdateCount: 2, historicalVersion: true }));
+    expect(screen.queryByRole("button", { name: "inventory:moreInfo.updateInstruments" })).not.toBeInTheDocument();
   });
 });

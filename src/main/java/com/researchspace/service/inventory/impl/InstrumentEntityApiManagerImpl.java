@@ -1087,7 +1087,25 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     if (apiInstrument != null) { // populate only if it is already created
       setOtherFieldsForOutgoingApiInventoryRecord(apiInstrument, instrument, user);
       populateSharingPermissions(apiInstrument.getSharedWith(), instrument);
+      if (apiInstrument instanceof ApiInstrumentTemplate apiTemplate) {
+        setInstrumentsToUpdateCount(apiTemplate, (InstrumentTemplate) instrument, user);
+      }
     }
+  }
+
+  /**
+   * Records, on the outgoing template DTO, how many of {@code user}'s instruments were created from
+   * an older version of this template and could therefore be updated to its latest version. This is
+   * the same "behind" set the bulk update endpoint acts on, so the count is 0 exactly when there is
+   * nothing to update.
+   */
+  void setInstrumentsToUpdateCount(
+      ApiInstrumentTemplate apiTemplate, InstrumentTemplate template, User user) {
+    apiTemplate.setInstrumentsToUpdateCount(
+        instrumentDao
+            .getInstrumentsLinkingOlderTemplateVersionForUser(
+                template.getId(), template.getVersion(), user)
+            .size());
   }
 
   /**

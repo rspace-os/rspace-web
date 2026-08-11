@@ -3871,6 +3871,7 @@ export default interface Resources {
         "linkField": "Other Inventory items that link to this item through a Link custom field will also be listed here.",
         "listOfMaterials": "Adding this item to a document's <helpDocs docLink=\"listOfMaterials\">List of Materials</helpDocs> will add an entry for the document in this panel."
       },
+      "updateInstruments": "Update Instruments",
       "updateSamples": "Update Samples",
       "versionHistory": {
         "columns": {

@@ -6,6 +6,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
+import InstrumentTemplateModel from "../../../stores/models/InstrumentTemplateModel";
 import TemplateModel from "../../../stores/models/TemplateModel";
 
 type LatestTemplateActionsArgs = {
@@ -14,26 +15,46 @@ type LatestTemplateActionsArgs = {
 
 function LatestTemplateActions({ record }: LatestTemplateActionsArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
-  // Only offer the update when the template actually has samples to update:
-  // samples created from an older version of it (samplesToUpdateCount). Merely
-  // being a link target (e.g. a sample links to this template) is not something
-  // to update, so the button must stay hidden in that case.
-  if (!(record instanceof TemplateModel) || record.historicalVersion || record.samplesToUpdateCount <= 0) return null;
+
+  // Only offer the update when the template actually has records to update (created
+  // from an older version). Being a mere link target does not count.
+  const isSampleTemplate =
+    record instanceof TemplateModel && !record.historicalVersion && record.samplesToUpdateCount > 0;
+
+  const isInstrumentTemplate =
+    record instanceof InstrumentTemplateModel && !record.historicalVersion && record.instrumentsToUpdateCount > 0;
+
+  if (!isSampleTemplate && !isInstrumentTemplate) return null;
 
   return (
     <FormControl component="fieldset" sx={{ alignItems: "flex-start" }}>
-      <FormLabel component="legend">{t("moreInfo.updateSamples")}</FormLabel>
+      <FormLabel component="legend">
+        {isSampleTemplate ? t("moreInfo.updateSamples") : t("moreInfo.updateInstruments")}
+      </FormLabel>
       {/* width is unified across the sidebar's action buttons in SidebarBody */}
       <FormGroup>
-        <Button
-          variant="outlined"
-          disableElevation
-          onClick={() => {
-            void record.updateSamplesToLatest();
-          }}
-        >
-          {t("moreInfo.updateSamples")}
-        </Button>
+        {isSampleTemplate && (
+          <Button
+            variant="outlined"
+            disableElevation
+            onClick={() => {
+              void (record as TemplateModel).updateSamplesToLatest();
+            }}
+          >
+            {t("moreInfo.updateSamples")}
+          </Button>
+        )}
+        {isInstrumentTemplate && (
+          <Button
+            variant="outlined"
+            disableElevation
+            onClick={() => {
+              void (record as InstrumentTemplateModel).updateInstrumentsToLatest();
+            }}
+          >
+            {t("moreInfo.updateInstruments")}
+          </Button>
+        )}
       </FormGroup>
     </FormControl>
   );
