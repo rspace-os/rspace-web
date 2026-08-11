@@ -287,7 +287,6 @@ jobs:
         if: failure()
         run: |
           echo "=== Jetty stdout (last 100 lines) ===" && tail -100 /tmp/jetty.log || true
-          echo "=== RSpace error.log (last 200 lines) ===" && tail -200 error.log || true
 
       - name: Upload Jetty log on failure
         if: failure()
@@ -296,16 +295,8 @@ jobs:
           name: jetty-log-${{ inputs.mode }}-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             /tmp/jetty.log
-            error.log
             httpRequests.log
           retention-days: 3
-
-      - name: Debug report output (disk space + report dirs)
-        if: always()
-        run: |
-          echo "=== Disk space ===" && df -h
-          echo "=== src/main/webapp/ui/playwright-report ===" && ls -la src/main/webapp/ui/playwright-report || true
-          echo "=== src/main/webapp/ui/test-results ===" && ls -la src/main/webapp/ui/test-results || true
 
       - name: Upload Playwright report
         if: always()
