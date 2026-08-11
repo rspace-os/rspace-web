@@ -1,6 +1,7 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect } from "@playwright/test";
+import { env } from "@/__tests__/e2e/env";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
 
@@ -11,7 +12,11 @@ const DNA_FILE_NAME = "alpha-2-macroglobulin.gb";
 const MOCK_ENZYME_NAME = "EcoRI";
 const MOCK_ORF_TRANSLATION = "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQAPILSRVGDGTQDNLSGAEKAVQVKVKALPDAQFEVVHSLAKWKR";
 
+const INTEGRATION_MODE = env.integrationMode;
+
 test.describe("SnapGene integration [mock]", { tag: tags.APPS }, () => {
+  test.skip(INTEGRATION_MODE === "real", "no real SnapGene server reachable from this suite — mock-only");
+
   test.beforeEach(async ({ flowSysadminConfig }) => {
     await flowSysadminConfig.ensureSetting("snapgene.available", "ALLOWED");
   });
