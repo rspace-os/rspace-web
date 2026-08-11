@@ -28,7 +28,6 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.IActiveUserStrategy;
-import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.views.UserView;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IVerificationPasswordValidator;
@@ -81,8 +80,6 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
   private @Autowired MessageSourceUtils messages;
-
-  private @Autowired IRecordFactory recordFactory;
 
   /** {@inheritDoc} */
   public User getUser(String userId) {

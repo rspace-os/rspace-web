@@ -3,6 +3,7 @@ package com.axiope.webapp.taglib;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
@@ -104,10 +105,11 @@ public class AssetUrlTagTest {
 
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
 
-    Map<String, String> cache =
-        (Map<String, String>) servletContextAttributes.get(AssetUrlTag.PRODUCTION_URL_CACHE_ATTR);
-    assertEquals(1, cache.size());
-    assertTrue(cache.containsValue("/scripts/global.js?v=2.23.0"));
+    AssetUrlTag.ProductionUrlCache cache =
+        (AssetUrlTag.ProductionUrlCache)
+            servletContextAttributes.get(AssetUrlTag.PRODUCTION_URL_CACHE_ATTR);
+    assertEquals(1, cache.urls.size());
+    assertTrue(cache.urls.containsValue("/scripts/global.js?v=2.23.0"));
 
     output.setLength(0);
     AssetUrlTag second = new AssetUrlTag();
@@ -116,7 +118,11 @@ public class AssetUrlTagTest {
 
     assertEquals(TagSupport.SKIP_BODY, second.doStartTag());
     assertEquals("/scripts/global.js?v=2.23.0", output.toString());
-    assertEquals(1, cache.size());
+    assertSame(
+        "the cache must be reused, not rebuilt per invocation",
+        cache,
+        servletContextAttributes.get(AssetUrlTag.PRODUCTION_URL_CACHE_ATTR));
+    assertEquals(1, cache.urls.size());
   }
 
   @Test
