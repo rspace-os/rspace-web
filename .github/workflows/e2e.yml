@@ -300,6 +300,13 @@ jobs:
             httpRequests.log
           retention-days: 3
 
+      - name: Debug report output (disk space + report dirs)
+        if: always()
+        run: |
+          echo "=== Disk space ===" && df -h
+          echo "=== src/main/webapp/ui/playwright-report ===" && ls -la src/main/webapp/ui/playwright-report || true
+          echo "=== src/main/webapp/ui/test-results ===" && ls -la src/main/webapp/ui/test-results || true
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v7.0.1
