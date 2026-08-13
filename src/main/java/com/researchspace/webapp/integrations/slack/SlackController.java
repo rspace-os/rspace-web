@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.List;
@@ -103,8 +104,19 @@ public class SlackController extends BaseController {
     var url =
         slackOauthAuthorizeUrl
             + "?scope=incoming-webhook,commands,channels:history,users:read,files:read,groups:history,im:history,mpim:history&client_id="
-            + this.clientId;
+            + this.clientId
+            + "&redirect_uri="
+            + encodedRedirectUri();
     return new AjaxReturnObject<>(url, null);
+  }
+
+  /**
+   * Slack's oauth.access rejects the token exchange with {@code bad_redirect_uri} unless it is
+   * given the same redirect_uri that was sent to the authorize endpoint, so both callers build it
+   * here.
+   */
+  private String encodedRedirectUri() {
+    return URLEncoder.encode(props.getServerUrl() + "/slack/redirect_uri", StandardCharsets.UTF_8);
   }
 
   @GetMapping("/redirect_uri")
@@ -132,7 +144,9 @@ public class SlackController extends BaseController {
               + "&client_secret="
               + clientSecret
               + "&code="
-              + authorizationCode;
+              + authorizationCode
+              + "&redirect_uri="
+              + encodedRedirectUri();
       String content = IOUtils.toString(new URL(slackUrl), StandardCharsets.UTF_8);
       model.addAttribute("connectionResponse", content);
       log.info("slack response retrieved fine");
