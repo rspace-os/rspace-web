@@ -31,7 +31,16 @@ function GalleryTheme({ children }: { children: React.ReactNode }): React.ReactN
 
 function SidebarStory({ folderId, path }: { folderId: Id; path: ReadonlyArray<GalleryFile> | null }): React.ReactNode {
   // Fresh client per mount so query caches don't leak between tests
-  const [queryClient] = React.useState(() => new QueryClient());
+  const [queryClient] = React.useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: false,
+          },
+        },
+      }),
+  );
   return (
     <React.StrictMode>
       <ErrorBoundary>

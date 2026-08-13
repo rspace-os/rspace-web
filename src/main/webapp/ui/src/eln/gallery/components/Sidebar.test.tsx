@@ -84,6 +84,29 @@ describe("Sidebar", () => {
     vi.clearAllMocks();
   });
 
+  test("Reopening the create menu reuses the cached integration states", async () => {
+    const user = userEvent.setup();
+    render(<DefaultSidebar />);
+
+    const allIntegrationsCalls = () => mockAxios.history.get.filter((req) => req.url?.includes("allIntegrations"));
+    const integrationInfoCalls = () => mockAxios.history.get.filter((req) => req.url?.includes("integrationInfo"));
+
+    await user.click(await screen.findByRole("button", { name: "common:actions.create" }));
+    await screen.findByRole("menuitem", { name: /dmpIntegrations.dmponline/ });
+    expect(allIntegrationsCalls()).toHaveLength(1);
+    expect(integrationInfoCalls()).toHaveLength(0);
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(screen.queryByRole("menuitem", { name: /dmpIntegrations.dmponline/ })).not.toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "common:actions.create" }));
+    await screen.findByRole("menuitem", { name: /dmpIntegrations.dmponline/ });
+    expect(allIntegrationsCalls()).toHaveLength(1);
+    expect(integrationInfoCalls()).toHaveLength(0);
+  });
+
   test("Should have no axe violations", async () => {
     const { baseElement } = render(<DefaultSidebar />);
 
