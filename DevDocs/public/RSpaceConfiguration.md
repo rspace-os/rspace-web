@@ -482,9 +482,9 @@ These optional settings configure  behaviour of the RSpace application.
 
 #### UI customization
 * **ui.bannerImage.path** A URI to a png, gif or jpg that can be used to replace the RSpace logo. E.g. file:/etc/rspace/mylogo.png. Default is standard RSpace logo.
-* **ui.bannerImage.url**. A URL to navigate to after clicking on banner image, when user is logged in. Default is the Workspace, making the banner image act as a "Home" button.
+* **ui.bannerImage.url**. (Deprecated) A URL to navigate to after clicking on the banner image. Currently only applies to the banner displayed on login/signup page. Consider 'ui.footer.urls' property instead.
 * **ui.bannerImage.loggedOutUrl**. A URL to navigate to after clicking on banner image, when user is not logged in. Default is https://www.researchspace.com/
-* **ui.footer.urls** A JSON Object that represents a map of links and urls to display in the footer of every page, e.g. `{'linkName1':'http://www.url.com/example1','linkName2':'http://www.url.com/example2'}`
+* **ui.footer.urls** A JSON Object representing a map of links and urls to display in the footer of every page, and in 'help' dropdown; e.g. `{'linkName1':'http://www.url.com/example1','linkName2':'http://www.url.com/example2'}`
 * **profile.email.editable** true/false. If true, user can edit their email address in their profile page. If false, they cannot. Default is true.
 * **profile.firstlastname.editable** true/false. If true, user can edit their display name in their profile page. If false, they cannot. Default is true.
 * **profile.hiding.enabled** All user profile information is hidden to other users.
