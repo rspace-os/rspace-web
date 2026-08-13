@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { expectAccessible } from "@/__tests__/accessibility";
 import axios from "@/common/axios";
+import allIntegrationsAreDisabled from "../../apps/__tests__/allIntegrationsAreDisabled.json";
 import { DefaultSidebar, S3_FILESTORE_ID, S3FilestoreSidebar } from "./Sidebar.story";
 
 const mockAxios = new MockAdapter(axios);
@@ -41,51 +42,21 @@ function mockNetwork() {
     data: "my-bucket/test/",
   });
 
-  // DMP integration status lookups (DmpMenuSection)
-  const integrationInfo = (
-    name: string,
-    overrides: Partial<{
-      displayName: string;
-      available: boolean;
-      enabled: boolean;
-    }> = {},
-  ) => ({
-    data: {
-      name,
-      displayName: overrides.displayName ?? name,
-      available: overrides.available ?? false,
-      enabled: overrides.enabled ?? false,
-      oauthConnected: false,
-      options: {},
-    },
-    error: null,
-    success: true,
-    errorMsg: null,
-  });
-  mockAxios
-    .onGet("/integration/integrationInfo", { params: { name: "DMPTOOL" } })
-    .reply(200, integrationInfo("DMPTOOL", { displayName: "DMPtool", available: true }));
-  mockAxios.onGet("/integration/integrationInfo", { params: { name: "DMPONLINE" } }).reply(
-    200,
-    integrationInfo("DMPONLINE", {
-      displayName: "DMPonline",
-      available: true,
-      enabled: true,
-    }),
-  );
-  mockAxios
-    .onGet("/integration/integrationInfo", { params: { name: "ARGOS" } })
-    .reply(200, integrationInfo("ARGOS", { displayName: "Argos" }));
-  mockAxios
-    .onGet("/integration/integrationInfo", { params: { name: "DSW" } })
-    .reply(200, integrationInfo("DSW", { displayName: "DSW" }));
-
-  // DmpMenuSection also fetches the aggregated integration list; the component
-  // tolerates failures here, but stub it to keep the console clean.
+  // DmpMenuSection derives the DMP menu from /allIntegrations
   mockAxios.onGet("/integration/allIntegrations").reply(200, {
-    success: true,
-    data: { DSW: { options: {} } },
-    error: null,
+    ...allIntegrationsAreDisabled,
+    data: {
+      ...allIntegrationsAreDisabled.data,
+      DMPTOOL: {
+        ...allIntegrationsAreDisabled.data.DMPTOOL,
+        available: true,
+      },
+      DMPONLINE: {
+        ...allIntegrationsAreDisabled.data.DMPONLINE,
+        available: true,
+        enabled: true,
+      },
+    },
   });
 
   // AddFilestoreMenuItem fetches the configured filesystems on mount.

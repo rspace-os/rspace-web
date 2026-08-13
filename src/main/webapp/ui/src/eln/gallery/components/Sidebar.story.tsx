@@ -3,6 +3,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import MenuItem from "@mui/material/MenuItem";
 import { type Theme, ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { BrowserRouter } from "react-router";
@@ -29,31 +30,35 @@ function GalleryTheme({ children }: { children: React.ReactNode }): React.ReactN
 }
 
 function SidebarStory({ folderId, path }: { folderId: Id; path: ReadonlyArray<GalleryFile> | null }): React.ReactNode {
+  // Fresh client per mount so query caches don't leak between tests
+  const [queryClient] = React.useState(() => new QueryClient());
   return (
     <React.StrictMode>
       <ErrorBoundary>
         <BrowserRouter>
           <GalleryTheme>
-            <Analytics>
-              <UiPreferences>
-                <DisableDragAndDropByDefault>
-                  <Alerts>
-                    <LandmarksProvider>
-                      <Sidebar
-                        selectedSection="Images"
-                        setSelectedSection={() => {}}
-                        drawerOpen={true}
-                        setDrawerOpen={() => {}}
-                        folderId={{ tag: "success", value: folderId }}
-                        path={path}
-                        refreshListing={() => Promise.resolve()}
-                        id="1"
-                      />
-                    </LandmarksProvider>
-                  </Alerts>
-                </DisableDragAndDropByDefault>
-              </UiPreferences>
-            </Analytics>
+            <QueryClientProvider client={queryClient}>
+              <Analytics>
+                <UiPreferences>
+                  <DisableDragAndDropByDefault>
+                    <Alerts>
+                      <LandmarksProvider>
+                        <Sidebar
+                          selectedSection="Images"
+                          setSelectedSection={() => {}}
+                          drawerOpen={true}
+                          setDrawerOpen={() => {}}
+                          folderId={{ tag: "success", value: folderId }}
+                          path={path}
+                          refreshListing={() => Promise.resolve()}
+                          id="1"
+                        />
+                      </LandmarksProvider>
+                    </Alerts>
+                  </DisableDragAndDropByDefault>
+                </UiPreferences>
+              </Analytics>
+            </QueryClientProvider>
           </GalleryTheme>
         </BrowserRouter>
       </ErrorBoundary>
