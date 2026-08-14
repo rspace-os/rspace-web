@@ -126,7 +126,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
     String authorizationCode = params.get("code");
     try {
       ResponseEntity<AccessToken> accessToken = getAccessToken(authorizationCode);
-      log.info("Got access token {}", accessToken);
+      log.info("Received Protocols.io access token for user {}", subject.getUsername());
       UserConnection conn = new UserConnection();
       conn.setAccessToken(accessToken.getBody().getAccessToken());
       conn.setExpireTime(getExpireTime(accessToken));

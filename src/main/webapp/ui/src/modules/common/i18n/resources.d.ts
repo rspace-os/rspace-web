@@ -7486,6 +7486,7 @@ export default interface Resources {
           "message": "Please confirm that you wish to cancel - the changes you made won't be saved."
         },
         "egnyte": {
+          "authError": "Egnyte authorization could not be verified. Please try connecting to Egnyte again.",
           "configMissing": "Egnyte is not configured properly on this RSpace instance. Please contact your System Admin",
           "domainMissing": "Egnyte Domain URL is not set, please go to Apps page and set it up."
         },
