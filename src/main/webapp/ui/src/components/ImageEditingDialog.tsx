@@ -3,6 +3,7 @@ import Dialog, { dialogClasses } from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import { paperClasses } from "@mui/material/Paper";
+import { applyPalette, GIFEncoder, quantize } from "gifenc";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import ReactCrop from "react-image-crop";
@@ -28,6 +29,57 @@ const readAsBinaryString = (file: Blob): Promise<string> =>
     };
     reader.readAsBinaryString(file);
   });
+const encodeAsGif = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement): Blob => {
+  const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const palette = quantize(data, 256);
+  const index = applyPalette(data, palette);
+  const gif = GIFEncoder();
+  gif.writeFrame(index, width, height, { palette });
+  gif.finish();
+  return new Blob([gif.bytes()], { type: "image/gif" });
+};
+const encodeAsBmp = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement): Blob => {
+  const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  // BMP rows are bottom-up and pixels are BGR; each row is padded to 4 bytes.
+  const stride = Math.ceil((width * 3) / 4) * 4;
+  const pixelDataSize = stride * height;
+  const fileSize = 54 + pixelDataSize;
+  const buffer = new ArrayBuffer(fileSize);
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+  // File header (14 bytes)
+  view.setUint8(0, 0x42); // 'B'
+  view.setUint8(1, 0x4d); // 'M'
+  view.setUint32(2, fileSize, true);
+  view.setUint32(6, 0, true); // reserved
+  view.setUint32(10, 54, true); // pixel data offset
+  // BITMAPINFOHEADER (40 bytes)
+  view.setUint32(14, 40, true); // header size
+  view.setInt32(18, width, true);
+  view.setInt32(22, height, true); // positive = bottom-up storage
+  view.setUint16(26, 1, true); // colour planes
+  view.setUint16(28, 24, true); // bits per pixel (24-bit BGR)
+  view.setUint32(30, 0, true); // BI_RGB (no compression)
+  view.setUint32(34, pixelDataSize, true);
+  view.setUint32(38, 0, true); // pixels per metre, horizontal
+  view.setUint32(42, 0, true); // pixels per metre, vertical
+  view.setUint32(46, 0, true); // colours in table
+  view.setUint32(50, 0, true); // important colours
+  // Pixel data: rows written bottom-up, each pixel as BGR
+  for (let row = 0; row < height; row++) {
+    const srcRow = height - 1 - row;
+    const dstRowOffset = 54 + row * stride;
+    for (let col = 0; col < width; col++) {
+      const src = (srcRow * width + col) * 4;
+      const dst = dstRowOffset + col * 3;
+      bytes[dst] = data[src + 2]; // B
+      bytes[dst + 1] = data[src + 1]; // G
+      bytes[dst + 2] = data[src]; // R
+    }
+    // padding bytes remain 0 from ArrayBuffer initialisation
+  }
+  return new Blob([buffer], { type: "image/bmp" });
+};
 type ImageEditingDialogArgs = {
   imageFile: Blob | null;
   open: boolean;
@@ -108,7 +160,7 @@ function ImageEditingDialog({
         ctx.rotate(((direction === "clockwise" ? 90 : -90) * Math.PI) / 180);
         ctx.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
       }
-      return canvas.toDataURL(imageType, 1.0);
+      return canvas.toDataURL(`image/${imageType}`, 1.0);
     };
     setEditorData(getRotatedImageURL());
   };
@@ -121,18 +173,21 @@ function ImageEditingDialog({
     canvas.width = maxWidth;
     canvas.height = crop.height * imageRatio;
     const ctx = canvas.getContext("2d");
-    if (ctx)
-      ctx.drawImage(
-        image,
-        crop.x * scale.x,
-        crop.y * scale.y,
-        crop.width * scale.x,
-        crop.height * scale.y,
-        0,
-        0,
-        crop.width * imageRatio,
-        crop.height * imageRatio,
-      );
+    if (!ctx) throw new Error("Canvas context not available");
+    ctx.drawImage(
+      image,
+      crop.x * scale.x,
+      crop.y * scale.y,
+      crop.width * scale.x,
+      crop.height * scale.y,
+      0,
+      0,
+      crop.width * imageRatio,
+      crop.height * imageRatio,
+    );
+    if (format === "gif") return Promise.resolve(encodeAsGif(ctx, canvas));
+    if (format === "bmp" || format === "x-bmp" || format === "x-ms-bmp" || format === "octet-stream")
+      return Promise.resolve(encodeAsBmp(ctx, canvas));
     return new Promise((resolve) => {
       canvas.toBlob(
         (blob) => {
@@ -140,7 +195,7 @@ function ImageEditingDialog({
             resolve(blob);
           }
         },
-        format,
+        `image/${format}`,
         1.0,
       );
     });
