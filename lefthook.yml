@@ -5,6 +5,23 @@ colors: false
 pre-commit:
   parallel: true
   commands:
+    # Refuse to commit local secret/config files. `.gitignore` already covers
+    # the known paths, but `git add -f` and new locations slip through, so match
+    # by filename instead: any `.env`/`.env.*` and any `deployment.properties`.
+    # Exempt the committed templates (`*.example`) and the checked-in defaults
+    # (`defaultDeployment.properties`). Escape hatch: `git commit --no-verify`.
+    secret-files:
+      run: |
+        blocked=$(printf '%s\n' {staged_files} \
+          | grep -iE '(^|/)(\.env(\..+)?|.*deployment\.properties)$' \
+          | grep -viE '\.example$|(^|/)defaultDeployment\.properties$' \
+          | sed 's/^/  /' || true)
+        if [ -n "$blocked" ]; then
+          echo "Refusing to commit local secret/config files:" >&2
+          echo "$blocked" >&2
+          echo "Unstage them (git restore --staged <file>), or use --no-verify if intentional." >&2
+          exit 1
+        fi
     # Fail the commit if any staged Java file is not spotless-formatted.
     # spotlessFiles matches the absolute path via String#matches, so each
     # staged (repo-relative) path is prefixed with `.*` to anchor correctly.
