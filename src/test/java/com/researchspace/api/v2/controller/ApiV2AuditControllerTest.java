@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2AuditLog;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
@@ -74,14 +75,18 @@ class ApiV2AuditControllerTest {
         .thenReturn(new SearchResultsImpl<>(List.of(result), 0, 4, 1));
 
     mockMvc
-        .perform(get("/api/v2/users/7/audit").requestAttr("user", actor))
+        .perform(
+            get("/api/v2/users/7/audit")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(actor)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs[0].action").value("WRITE"))
         .andExpect(jsonPath("$.totalDocs").value(4))
         .andExpect(jsonPath("$.limit").value(20));
 
     mockMvc
-        .perform(get("/api/v2/users/7/audit/count").requestAttr("user", actor))
+        .perform(
+            get("/api/v2/users/7/audit/count")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(actor)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalDocs").value(4));
   }

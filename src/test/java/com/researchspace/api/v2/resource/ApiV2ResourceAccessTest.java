@@ -2,6 +2,7 @@ package com.researchspace.api.v2.resource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -14,6 +15,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
@@ -94,6 +96,10 @@ class ApiV2ResourceAccessTest {
     return user;
   }
 
+  private static ApiV2Caller caller(User user) {
+    return ApiV2Caller.direct(user);
+  }
+
   @Test
   @DisplayName("an anonymous read of an authenticated collection is 401, not 403")
   void anonymousReadOfAuthenticatedCollectionIsUnauthorized() {
@@ -117,8 +123,8 @@ class ApiV2ResourceAccessTest {
   }
 
   @Test
-  @DisplayName("a policy constraint is ANDed into the caller's filter and reaches the adapter")
-  void policyConstraintIsFoldedIntoTheQuery() {
+  @DisplayName("a read policy constraint is not reclassified as a caller filter")
+  void policyConstraintRemainsTheResourceOperationsResponsibility() {
     FilterExpression ownRows =
         new FilterExpression.Comparison("id", Operator.EQUAL, List.of(7L), false);
     FilterExpression callerFilter =
@@ -133,9 +139,8 @@ class ApiV2ResourceAccessTest {
 
     ArgumentCaptor<ResourceRequest> captor = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(operations).find(captor.capture(), any(User.class));
-    FilterExpression applied = captor.getValue().filter();
-    assertTrue(applied instanceof FilterExpression.And, "expected a conjunction, got " + applied);
-    assertEquals(List.of(ownRows, callerFilter), ((FilterExpression.And) applied).children());
+    assertEquals(callerFilter, captor.getValue().filter());
+    assertNull(captor.getValue().serverConstraint());
   }
 
   /**
@@ -215,8 +220,8 @@ class ApiV2ResourceAccessTest {
   }
 
   @Test
-  @DisplayName("a row constraint also scopes get, so a row outside it is a 404")
-  void rowConstraintScopesGet() {
+  @DisplayName("get delegates collection-specific row authorization to resource operations")
+  void getUsesTheAuthorizedResourceOperationsLookup() {
     FilterExpression ownRows =
         new FilterExpression.Comparison("id", Operator.EQUAL, List.of(7L), false);
     ApiV2ResourceRegistration<Widget, Long> widgets =
@@ -224,18 +229,31 @@ class ApiV2ResourceAccessTest {
             describe(
                 AccessPolicy.readOnly(documented(context -> AccessResult.allowedWhere(ownRows))),
                 AccessFunction.anyone()));
-    when(operations.find(any(), nullable(User.class))).thenReturn(new ResourcePage<>(List.of(), 0));
+    User actor = user(false);
+    when(operations.findById(9L, actor)).thenReturn(Optional.empty());
 
-    assertThrows(
-        NotFoundException.class, () -> widgets.get("9", request(null, List.of()), user(false)));
+    assertThrows(NotFoundException.class, () -> widgets.get("9", request(null, List.of()), actor));
 
-    // findById would have ignored the constraint entirely and handed back row 9.
-    verify(operations, never()).findById(any(), any());
+    verify(operations).findById(9L, actor);
+  }
+
+  @Test
+  @DisplayName("a constrained relationship lookup uses the collection's default sort")
+  void constrainedRelationshipLookupUsesDefaultSort() {
+    FilterExpression ownRows =
+        new FilterExpression.Comparison("id", Operator.EQUAL, List.of(7L), false);
+    CollectionDescription<Widget> description =
+        describe(
+            AccessPolicy.readOnly(documented(context -> AccessResult.allowedWhere(ownRows))),
+            AccessFunction.anyone());
+    when(operations.find(any(), nullable(User.class)))
+        .thenReturn(new ResourcePage<>(List.of(new Widget(7L, "visible")), 1));
+
+    assertTrue(register(description).resolveReadable(7L, user(false)).isPresent());
+
     ArgumentCaptor<ResourceRequest> captor = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(operations).find(captor.capture(), any(User.class));
-    assertEquals(
-        List.of(ownRows, new FilterExpression.Comparison("id", Operator.EQUAL, List.of(9L), false)),
-        ((FilterExpression.And) captor.getValue().filter()).children());
+    assertEquals(description.defaultSort(), captor.getValue().sort());
   }
 
   @Test
@@ -243,7 +261,7 @@ class ApiV2ResourceAccessTest {
   void relationshipAuthorizationFailureIsAudited() {
     User actor = user(false);
     when(actor.getUsername()).thenReturn("ada");
-    when(operations.findById(7L, actor)).thenThrow(new AuthorizationException("denied"));
+    when(operations.find(any(), any())).thenThrow(new AuthorizationException("denied"));
     ApiV2ResourceRegistration<Widget, Long> widgets =
         register(describe(AccessPolicy.readOnly(AccessFunction.anyone()), AccessFunction.anyone()));
     StringAppenderForTestLogging securityLog =
@@ -271,7 +289,7 @@ class ApiV2ResourceAccessTest {
                     AccessFunction.authenticated()),
                 AccessFunction.anyone()));
 
-    assertThrows(IllegalStateException.class, () -> widgets.update("9", null, user(false)));
+    assertThrows(IllegalStateException.class, () -> widgets.update("9", null, caller(user(false))));
     verify(operations, never()).update(any(), any(), any());
   }
 
@@ -308,8 +326,9 @@ class ApiV2ResourceAccessTest {
     User actor = user(true);
 
     Map<String, Object> created =
-        registration.create(new ObjectMapper().createObjectNode().put("secret", "hunter2"), actor);
-    Map<String, Object> deleted = registration.delete("7", actor);
+        registration.create(
+            new ObjectMapper().createObjectNode().put("secret", "hunter2"), caller(actor));
+    Map<String, Object> deleted = registration.delete("7", caller(actor));
 
     // Even a sysadmin must not see it: never() ignores the caller entirely.
     assertFalse(created.containsKey("secret"), "create echoed the secret back: " + created);
@@ -341,20 +360,21 @@ class ApiV2ResourceAccessTest {
     when(stranger.getId()).thenReturn(99L);
 
     // The owner writes their own row.
-    assertEquals(7L, widgets.update("7", secretBody(), owner).get("id"));
+    assertEquals(7L, widgets.update("7", secretBody(), caller(owner)).get("id"));
     // A sysadmin writes anyone's row.
-    assertEquals(7L, widgets.update("7", secretBody(), user(true)).get("id"));
+    assertEquals(7L, widgets.update("7", secretBody(), caller(user(true))).get("id"));
 
     // A third party is refused, and identically to a field that is not writable at all.
     DocumentValidationException refused =
         assertThrows(
-            DocumentValidationException.class, () -> widgets.update("7", secretBody(), stranger));
+            DocumentValidationException.class,
+            () -> widgets.update("7", secretBody(), caller(stranger)));
     DocumentValidationException notWritable =
         assertThrows(
             DocumentValidationException.class,
             () ->
                 register(describe(AccessPolicy.authenticated(), AccessFunction.anyone()))
-                    .update("7", secretBody(), stranger));
+                    .update("7", secretBody(), caller(stranger)));
     assertEquals(notWritable.getViolations(), refused.getViolations());
   }
 
@@ -421,8 +441,9 @@ class ApiV2ResourceAccessTest {
     User actor = user(false);
     when(operations.create(any(), any())).thenReturn(new Widget(7L, "allowed"));
 
-    assertEquals(7L, widgets.create(secretBody("allowed"), actor).get("id"));
-    assertThrows(AuthorizationException.class, () -> widgets.create(secretBody("denied"), actor));
+    assertEquals(7L, widgets.create(secretBody("allowed"), caller(actor)).get("id"));
+    assertThrows(
+        AuthorizationException.class, () -> widgets.create(secretBody("denied"), caller(actor)));
   }
 
   @Test
@@ -470,7 +491,7 @@ class ApiV2ResourceAccessTest {
             .createMany(
                 new ObjectMapper()
                     .readTree("{\"docs\":[{\"secret\":\"first\"},{\"secret\":\"second\"}]}"),
-                user(false))
+                caller(user(false)))
             .docs()
             .size());
   }
@@ -505,9 +526,10 @@ class ApiV2ResourceAccessTest {
     User actor = user(false);
     when(operations.create(any(), any())).thenReturn(new Widget(7L, "allowed"));
 
-    assertEquals(7L, widgets.create(secretBody("allowed"), actor).get("id"));
+    assertEquals(7L, widgets.create(secretBody("allowed"), caller(actor)).get("id"));
     assertThrows(
-        DocumentValidationException.class, () -> widgets.create(secretBody("denied"), actor));
+        DocumentValidationException.class,
+        () -> widgets.create(secretBody("denied"), caller(actor)));
   }
 
   private static JsonNode secretBody(String value) {

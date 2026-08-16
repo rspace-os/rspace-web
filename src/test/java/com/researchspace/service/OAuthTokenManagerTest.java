@@ -17,6 +17,7 @@ import com.researchspace.model.oauth.OAuthToken;
 import com.researchspace.model.oauth.OAuthTokenType;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.OAuthTokenManager.UiTokenContext;
 import com.researchspace.testutils.SpringTransactionalTest;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -34,6 +35,20 @@ public class OAuthTokenManagerTest extends SpringTransactionalTest {
   private @Autowired OAuthAppManager appManager;
   private @Autowired OAuthTokenDao tokenDao;
   private @Autowired IPropertyHolder properties;
+
+  @Test
+  public void sessionBoundUiTokenRetainsSubjectActorAndSessionContext() {
+    User actor = createAndSaveRandomUser();
+    User subject = createAndSaveRandomUser();
+
+    String token = tokenManager.createUiToken(subject, actor, "session-context");
+    UiTokenContext context = tokenManager.getUiTokenContext(token).orElseThrow();
+
+    assertEquals(subject.getId().longValue(), context.subjectId());
+    assertEquals(actor.getId(), context.actorId().orElseThrow());
+    assertEquals("session-context", context.sessionContextId());
+    assertEquals(subject, tokenManager.authenticate(token).getEntity().getUser());
+  }
 
   @Test
   public void createTokenWithWrongParams() {

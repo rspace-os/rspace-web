@@ -1,5 +1,9 @@
 package com.researchspace.webapp.filter;
 
+import static com.researchspace.auth.BrowserSessionAuthContext.UI_TOKEN_AUDIENCE;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,12 +14,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-/** Removes ambient browser cookies and servlet-session access from REST API v2 requests. */
+/** Removes ambient browser state unless a REST API v2 route requires the live session. */
 public final class ApiV2StatelessRequestFilter implements Filter {
+
+  private static final ObjectMapper JSON = new ObjectMapper();
 
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
@@ -25,11 +32,38 @@ public final class ApiV2StatelessRequestFilter implements Filter {
       return;
     }
     String tokenPath = httpRequest.getContextPath() + "/api/v2/oauth/tokens";
-    if ("POST".equals(httpRequest.getMethod()) && tokenPath.equals(httpRequest.getRequestURI())) {
+    if (("POST".equals(httpRequest.getMethod()) && tokenPath.equals(httpRequest.getRequestURI()))
+        || (!hasApiKey(httpRequest) && hasSessionBoundUiToken(httpRequest))) {
       filterChain.doFilter(request, response);
       return;
     }
     filterChain.doFilter(new StatelessRequest(httpRequest), response);
+  }
+
+  private static boolean hasApiKey(HttpServletRequest request) {
+    String apiKey = request.getHeader("apiKey");
+    return apiKey != null && !apiKey.isBlank();
+  }
+
+  private static boolean hasSessionBoundUiToken(HttpServletRequest request) {
+    String authorization = request.getHeader("Authorization");
+    if (authorization == null || authorization.length() > 8192) {
+      return false;
+    }
+    String[] headerParts = authorization.split("\\s+");
+    if (headerParts.length != 2 || !"Bearer".equals(headerParts[0])) {
+      return false;
+    }
+    String[] jwtParts = headerParts[1].split("\\.");
+    if (jwtParts.length != 3) {
+      return false;
+    }
+    try {
+      JsonNode claims = JSON.readTree(Base64.getUrlDecoder().decode(jwtParts[1]));
+      return UI_TOKEN_AUDIENCE.equals(claims.path("aud").asText());
+    } catch (IllegalArgumentException | IOException ex) {
+      return false;
+    }
   }
 
   private static final class StatelessRequest extends HttpServletRequestWrapper {

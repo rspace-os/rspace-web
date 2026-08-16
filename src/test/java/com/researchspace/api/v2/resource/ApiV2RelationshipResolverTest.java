@@ -3,12 +3,14 @@ package com.researchspace.api.v2.resource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
@@ -48,7 +50,7 @@ class ApiV2RelationshipResolverTest {
     operations.nodes.put(2L, new Node(2L, null));
     ApiV2ResourceRegistration<?, ?> nodes = registration(description(false), operations);
 
-    nodes.create(referenceBody(2L), actor);
+    nodes.create(referenceBody(2L), ApiV2Caller.direct(actor));
 
     ResolvedResourceReference<?, ?> resolved =
         assertInstanceOf(
@@ -66,13 +68,16 @@ class ApiV2RelationshipResolverTest {
 
     DocumentValidationException missing =
         assertThrows(
-            DocumentValidationException.class, () -> nodes.create(referenceBody(99L), actor));
+            DocumentValidationException.class,
+            () -> nodes.create(referenceBody(99L), ApiV2Caller.direct(actor)));
     DocumentValidationException unreadable =
         assertThrows(
-            DocumentValidationException.class, () -> nodes.create(referenceBody(3L), actor));
+            DocumentValidationException.class,
+            () -> nodes.create(referenceBody(3L), ApiV2Caller.direct(actor)));
     DocumentValidationException self =
         assertThrows(
-            DocumentValidationException.class, () -> nodes.update("2", referenceBody(2L), actor));
+            DocumentValidationException.class,
+            () -> nodes.update("2", referenceBody(2L), ApiV2Caller.direct(actor)));
 
     assertEquals(List.of(new Violation("target", Reason.INVALID_VALUE)), missing.getViolations());
     assertEquals(missing.getViolations(), unreadable.getViolations());
@@ -95,10 +100,10 @@ class ApiV2RelationshipResolverTest {
     ApiV2ResourceRegistration<?, ?> restricted = registration(description(false), operations);
     assertThrows(
         DocumentValidationException.class,
-        () -> restricted.updateMany(request, referenceBody(2L), actor));
+        () -> restricted.updateMany(request, referenceBody(2L), ApiV2Caller.direct(actor)));
 
     ApiV2ResourceRegistration<?, ?> permitted = registration(description(true), operations);
-    permitted.updateMany(request, referenceBody(2L), actor);
+    permitted.updateMany(request, referenceBody(2L), ApiV2Caller.direct(actor));
 
     assertInstanceOf(
         ResolvedResourceReference.class, operations.lastDocument.values().get("target"));
@@ -116,12 +121,18 @@ class ApiV2RelationshipResolverTest {
                 new ApiV2RelationshipTargetSpec<>(
                     targets,
                     Long.class,
-                    (Long id, User caller) -> Optional.of(new Target(id, "classified")))));
+                    (ids, caller) ->
+                        ids.stream()
+                            .collect(
+                                java.util.stream.Collectors.toMap(
+                                    id -> id, id -> new Target(id, "classified"))))));
 
     catalog
         .find("nodes")
         .orElseThrow()
-        .create(mapper.readTree("{\"target\":{\"relationTo\":\"targets\",\"value\":7}}"), actor);
+        .create(
+            mapper.readTree("{\"target\":{\"relationTo\":\"targets\",\"value\":7}}"),
+            ApiV2Caller.direct(actor));
 
     ResolvedResourceReference<?, ?> resolved =
         assertInstanceOf(
@@ -147,27 +158,33 @@ class ApiV2RelationshipResolverTest {
   }
 
   @Test
-  void cachesRepeatedPopulationLookupsForOneListRequest() {
+  void batchesDistinctPopulationLookupsOncePerDepthForOneListRequest() {
     RecordingNodeOperations operations = new RecordingNodeOperations();
-    operations.nodes.put(1L, new Node(1L, new ResourceReference<>("NODE", 2L)));
-    operations.nodes.put(2L, new Node(2L, null));
-    operations.nodes.put(3L, new Node(3L, new ResourceReference<>("NODE", 2L)));
+    operations.nodes.put(1L, new Node(1L, new ResourceReference<>("NODE", 101L)));
+    operations.nodes.put(2L, new Node(2L, new ResourceReference<>("NODE", 102L)));
+    operations.nodes.put(101L, new Node(101L, new ResourceReference<>("NODE", 201L)));
+    operations.nodes.put(102L, new Node(102L, new ResourceReference<>("NODE", 202L)));
+    operations.nodes.put(201L, new Node(201L, null));
+    operations.nodes.put(202L, new Node(202L, null));
     ApiV2ResourceRegistration<?, ?> nodes = registration(description(false), operations);
     ResourceRequest request =
         new ResourceRequest(
-            null,
+            new com.researchspace.model.collection.FilterExpression.Comparison(
+                "id", CollectionDescription.Operator.IN, List.of(1L, 2L), false),
             List.of(),
             new ResourceRequest.Page(1, 20),
             FieldSelection.all(),
-            new IncludeTree(Map.of("target", IncludeTree.empty())));
+            new IncludeTree(
+                Map.of("target", new IncludeTree(Map.of("target", IncludeTree.empty())))));
 
     nodes.list(request, actor);
 
-    assertEquals(1, operations.readableLookupCalls);
+    assertEquals(3, operations.findCalls);
+    assertEquals(0, operations.readableLookupCalls);
   }
 
   @Test
-  void omitsRawRelationshipIdsWhenTheTargetIsUnreadable() {
+  void rendersNullWithoutRawRelationshipIdsWhenTheTargetIsUnreadable() {
     RecordingNodeOperations operations = new RecordingNodeOperations();
     operations.nodes.put(1L, new Node(1L, new ResourceReference<>("NODE", 2L)));
     operations.nodes.put(2L, new Node(2L, null));
@@ -184,7 +201,8 @@ class ApiV2RelationshipResolverTest {
     Map<String, Object> document =
         registration(description(false), operations).list(request, actor).docs().get(0);
 
-    assertFalse(document.containsKey("target"));
+    assertTrue(document.containsKey("target"));
+    assertNull(document.get("target"));
   }
 
   private ApiV2ResourceRegistration<?, ?> registration(
@@ -262,10 +280,23 @@ class ApiV2RelationshipResolverTest {
     private final Set<Long> deniedIds = new HashSet<>();
     private ParsedDocument lastDocument;
     private int writeCalls;
+    private int findCalls;
     private int readableLookupCalls;
 
     @Override
     public ResourcePage<Node> find(ResourceRequest request, User actor) {
+      findCalls++;
+      if (request.filter()
+          instanceof com.researchspace.model.collection.FilterExpression.Comparison comparison) {
+        List<Node> selected =
+            comparison.values().stream()
+                .map(Long.class::cast)
+                .filter(id -> !deniedIds.contains(id))
+                .map(nodes::get)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        return new ResourcePage<>(selected, selected.size());
+      }
       return new ResourcePage<>(List.copyOf(nodes.values()), nodes.size());
     }
 
@@ -284,7 +315,7 @@ class ApiV2RelationshipResolverTest {
     }
 
     @Override
-    public Node create(ParsedDocument document, User actor) {
+    public Node create(ParsedDocument document, ApiV2Caller caller) {
       lastDocument = document;
       writeCalls++;
       ResolvedResourceReference<?, ?> resolved =
@@ -293,14 +324,15 @@ class ApiV2RelationshipResolverTest {
     }
 
     @Override
-    public Optional<Node> update(Long id, ParsedDocument document, User actor) {
+    public Optional<Node> update(Long id, ParsedDocument document, ApiV2Caller caller) {
       lastDocument = document;
       writeCalls++;
       return Optional.of(new Node(id, null));
     }
 
     @Override
-    public List<Node> updateMany(ResourceRequest request, ParsedDocument document, User actor) {
+    public List<Node> updateMany(
+        ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
       lastDocument = document;
       writeCalls++;
       return List.of();

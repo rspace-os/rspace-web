@@ -31,7 +31,7 @@ public final class ApiV2ResourceRequestParser {
       CollectionDescription<?> description,
       ResourceRegistry registry) {
     return new ResourceRequest(
-        filter(query.getWhere(), description),
+        filter(query.getWhere(), description, registry),
         ApiV2SortParser.parse(query.getSort(), description),
         new Page(query.getPage(), query.getLimit()),
         fields(fieldsets, description, registry),
@@ -51,16 +51,18 @@ public final class ApiV2ResourceRequestParser {
         includes(depth, description, registry));
   }
 
-  public static ResourceRequest filtered(String where, CollectionDescription<?> description) {
+  public static ResourceRequest filtered(
+      String where, CollectionDescription<?> description, ResourceRegistry registry) {
     // Length is enforced by filter(); calling validateWhere here too would just repeat it.
-    return ResourceRequest.unpaged(filter(where, description));
+    return ResourceRequest.unpaged(filter(where, description, registry));
   }
 
-  public static ResourceRequest bulk(String where, CollectionDescription<?> description) {
+  public static ResourceRequest bulk(
+      String where, CollectionDescription<?> description, ResourceRegistry registry) {
     if (where == null || where.isBlank()) {
       throw new ApiV2BadRequestException("errors.api.v2.bulk.filter.required");
     }
-    return filtered(where, description);
+    return filtered(where, description, registry);
   }
 
   /**
@@ -133,9 +135,10 @@ public final class ApiV2ResourceRequestParser {
     return !key.isEmpty() && key.indexOf('[') < 0 && key.indexOf(']') < 0;
   }
 
-  private static FilterExpression filter(String where, CollectionDescription<?> description) {
+  private static FilterExpression filter(
+      String where, CollectionDescription<?> description, ResourceRegistry registry) {
     validateWhere(where);
-    return new RsqlFilterParser(description).parse(where);
+    return new RsqlFilterParser(description, registry).parse(where);
   }
 
   private static IncludeTree includes(

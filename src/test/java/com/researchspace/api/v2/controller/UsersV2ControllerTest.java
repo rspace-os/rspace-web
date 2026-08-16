@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
@@ -21,7 +22,6 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserProfileManager;
 import com.researchspace.service.inventory.ContainerApiManager;
-import com.researchspace.session.SessionAttributeUtils;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Locale;
@@ -94,7 +94,9 @@ class UsersV2ControllerTest {
     when(properties.isLiveChatEnabled()).thenReturn(true);
     when(properties.getLiveChatServerKey()).thenReturn("chat-key");
     mockMvc
-        .perform(get("/api/v2/users/me").requestAttr("user", user))
+        .perform(
+            get("/api/v2/users/me")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(123))
         .andExpect(jsonPath("$.username").value("ada"))
@@ -127,7 +129,9 @@ class UsersV2ControllerTest {
         .thenReturn(false);
 
     mockMvc
-        .perform(get("/api/v2/users/me").requestAttr("user", user))
+        .perform(
+            get("/api/v2/users/me")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.profileImageUrl").isEmpty())
         .andExpect(jsonPath("$.profileImageApiUrl").isEmpty())
@@ -150,7 +154,9 @@ class UsersV2ControllerTest {
     when(image.getData()).thenReturn(imageBytes);
 
     mockMvc
-        .perform(get("/api/v2/users/me/profile-image").requestAttr("user", user))
+        .perform(
+            get("/api/v2/users/me/profile-image")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
         .andExpect(status().isOk())
         .andExpect(header().string("Cache-Control", "no-store"))
         .andExpect(header().string("X-Content-Type-Options", "nosniff"))
@@ -165,7 +171,9 @@ class UsersV2ControllerTest {
     when(userProfileManager.getUserProfile(user)).thenReturn(profile);
 
     mockMvc
-        .perform(get("/api/v2/users/me/profile-image").requestAttr("user", user))
+        .perform(
+            get("/api/v2/users/me/profile-image")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
         .andExpect(status().isNotFound());
   }
 
@@ -181,7 +189,9 @@ class UsersV2ControllerTest {
     when(userProfileManager.getUserProfile(user)).thenReturn(mock(UserProfile.class));
 
     mockMvc
-        .perform(get("/api/v2/users/me").requestAttr("user", user))
+        .perform(
+            get("/api/v2/users/me")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(15))
         .andExpect(jsonPath("$.orcid.length()").value(2))
@@ -215,7 +225,9 @@ class UsersV2ControllerTest {
     when(userProfileManager.getUserProfile(user)).thenReturn(mock(UserProfile.class));
 
     mockMvc
-        .perform(get("/api/v2/users/me").requestAttr("user", user))
+        .perform(
+            get("/api/v2/users/me")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.hasPiRole").value(true))
         .andExpect(jsonPath("$.hasSysAdminRole").value(false))
@@ -230,22 +242,26 @@ class UsersV2ControllerTest {
     when(userProfileManager.getUserProfile(user)).thenReturn(mock(UserProfile.class));
 
     mockMvc
-        .perform(get("/api/v2/users/me").requestAttr("user", user))
+        .perform(
+            get("/api/v2/users/me")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.hasSysAdminRole").value(true))
         .andExpect(jsonPath("$.capabilities.canViewSystem").value(true));
   }
 
   @Test
-  void reportsRunAsStateFromTheBrowserSession() throws Exception {
-    User user = mock(User.class);
-    when(userProfileManager.getUserProfile(user)).thenReturn(mock(UserProfile.class));
+  void reportsRunAsStateFromActorAndSubject() throws Exception {
+    User subject = mock(User.class);
+    User actor = mock(User.class);
+    when(subject.getId()).thenReturn(42L);
+    when(actor.getId()).thenReturn(1L);
+    when(userProfileManager.getUserProfile(subject)).thenReturn(mock(UserProfile.class));
 
     mockMvc
         .perform(
             get("/api/v2/users/me")
-                .requestAttr("user", user)
-                .sessionAttr(SessionAttributeUtils.IS_RUN_AS, Boolean.TRUE))
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, new ApiV2Caller(subject, actor)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.session.operatedAs").value(true));
   }
@@ -264,7 +280,9 @@ class UsersV2ControllerTest {
         .thenReturn(true);
 
     mockMvc
-        .perform(get("/api/v2/users/me").requestAttr("user", user))
+        .perform(
+            get("/api/v2/users/me")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.orcid.available").value(true))
         .andExpect(jsonPath("$.orcid.id").isEmpty())

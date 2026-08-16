@@ -11,11 +11,15 @@ import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResolvedResourceReference;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
+import com.researchspace.model.collection.ResourceRenderer.TargetKey;
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 /** Resolves relationship references through the caller-aware resource catalog. */
@@ -33,6 +37,30 @@ final class ApiV2RelationshipResolver {
 
   Optional<ResolvedTarget> resolveReadable(String resourceName, Object id, User actor) {
     return targets.apply(resourceName).flatMap(target -> target.resolveReadable(id, actor));
+  }
+
+  Map<TargetKey, Optional<ResolvedTarget>> resolveReadable(Collection<TargetKey> keys, User actor) {
+    Map<String, Set<Object>> idsByResource = new LinkedHashMap<>();
+    keys.forEach(
+        key ->
+            idsByResource
+                .computeIfAbsent(key.resourceName(), ignored -> new LinkedHashSet<>())
+                .add(key.id()));
+    Map<TargetKey, Optional<ResolvedTarget>> result = new LinkedHashMap<>();
+    keys.forEach(key -> result.put(key, Optional.empty()));
+    idsByResource.forEach(
+        (resourceName, ids) ->
+            targets
+                .apply(resourceName)
+                .ifPresent(
+                    target ->
+                        target
+                            .resolveReadable(ids, actor)
+                            .forEach(
+                                (id, resolved) ->
+                                    result.put(
+                                        new TargetKey(resourceName, id), Optional.of(resolved)))));
+    return result;
   }
 
   ParsedDocument resolve(

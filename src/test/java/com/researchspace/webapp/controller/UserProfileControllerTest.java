@@ -7,6 +7,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.never;
@@ -35,6 +36,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.OAuthTokenManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.UserProfileController.UserGroupInfo;
 import java.io.IOException;
@@ -45,6 +47,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -98,10 +101,23 @@ public class UserProfileControllerTest {
     when(usrMgr.getUserByUsername(sessionUser.getUsername())).thenReturn(sessionUser);
     when(oAuthTokenManager.createUiToken(sessionUser)).thenReturn("access-token");
 
-    AjaxReturnObject<String> result = userProfileController.getInventoryOauthToken(principal);
+    AjaxReturnObject<String> result =
+        userProfileController.getInventoryOauthToken(principal, mockRequest);
 
     assertEquals("access-token", result.getData());
     verify(oAuthTokenManager).createUiToken(sessionUser);
+  }
+
+  @Test
+  public void inventoryOAuthTokenRefusesRunAsSession() {
+    Principal principal = () -> sessionUser.getUsername();
+    mockRequest.getSession().setAttribute(SessionAttributeUtils.IS_RUN_AS, Boolean.TRUE);
+
+    assertThrows(
+        AuthorizationException.class,
+        () -> userProfileController.getInventoryOauthToken(principal, mockRequest));
+
+    verify(oAuthTokenManager, never()).createUiToken(Mockito.any());
   }
 
   @Test

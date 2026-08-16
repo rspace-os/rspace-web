@@ -823,6 +823,36 @@ public final class CollectionDescription<T> {
     }
   }
 
+  /** Metadata shared by every field rendered in a resource document. */
+  public sealed interface ResourceFieldSchema permits FieldSchema, RelationshipSchema {
+
+    String name();
+
+    boolean requiredOnCreate();
+
+    boolean nullable();
+
+    default boolean nullableOnRead() {
+      return nullable();
+    }
+
+    boolean readOnly();
+
+    Set<WriteOperation> writeOperations();
+
+    OpenApiSchemaDocumentation openApi();
+
+    AccessDocumentation readAccess();
+
+    AccessDocumentation createAccess();
+
+    AccessDocumentation updateAccess();
+
+    default Object defaultValue() {
+      return null;
+    }
+  }
+
   public record FieldSchema(
       String name,
       String property,
@@ -838,7 +868,8 @@ public final class CollectionDescription<T> {
       OpenApiSchemaDocumentation openApi,
       AccessDocumentation readAccess,
       AccessDocumentation createAccess,
-      AccessDocumentation updateAccess) {}
+      AccessDocumentation updateAccess)
+      implements ResourceFieldSchema {}
 
   public record FilterSchema(String selector, Set<Operator> operators, boolean supportsWildcards) {}
 
@@ -855,7 +886,14 @@ public final class CollectionDescription<T> {
       OpenApiSchemaDocumentation openApi,
       AccessDocumentation readAccess,
       AccessDocumentation createAccess,
-      AccessDocumentation updateAccess) {}
+      AccessDocumentation updateAccess)
+      implements ResourceFieldSchema {
+
+    @Override
+    public boolean nullableOnRead() {
+      return true;
+    }
+  }
 
   public record AccessPolicySchema(
       AccessDocumentation readAccess,
@@ -872,15 +910,39 @@ public final class CollectionDescription<T> {
       List<RelationshipSchema> relationships,
       List<FilterSchema> filters,
       List<Sort> defaultSort,
-      AccessPolicySchema access) {}
+      AccessPolicySchema access) {
+
+    /** All fields that can appear in a resource document, in stable schema order. */
+    public List<ResourceFieldSchema> documentFields() {
+      return Stream.<ResourceFieldSchema>concat(fields.stream(), relationships.stream()).toList();
+    }
+  }
 
   public record Sort(String field, boolean ascending) {}
+
+  /**
+   * A filter the server may compile but a caller may not name.
+   *
+   * <p>Unlike a {@link Field} this has no reader, so it never appears in a document and cannot be
+   * evaluated in memory. It exists so an access constraint can test a persisted property that must
+   * stay unpublished.
+   */
+  public record InternalFilter(String name, String property, CollectionFieldType<?> type) {
+
+    public InternalFilter {
+      if (name == null || name.isBlank() || property == null || property.isBlank()) {
+        throw new IllegalArgumentException("Internal filter names must not be blank");
+      }
+      Objects.requireNonNull(type, "Internal filter type");
+    }
+  }
 
   private final String resourceName;
   private final Class<T> entityType;
   private final Map<String, Field<T, ?>> fields;
   private final Map<String, Relationship<T>> relationships;
   private final Map<String, FilterSelector<T>> filterSelectors;
+  private final Map<String, FilterSelector<T>> internalFilterSelectors;
   private final String idField;
   private final List<Sort> defaultSort;
   private final AccessPolicy accessPolicy;
@@ -917,6 +979,34 @@ public final class CollectionDescription<T> {
       String idField,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy) {
+    this(
+        resourceName,
+        entityType,
+        fields,
+        relationships,
+        idField,
+        defaultSort,
+        accessPolicy,
+        List.of());
+  }
+
+  /**
+   * Describes a collection that also carries filters only the server may use.
+   *
+   * <p>An {@link InternalFilter} is resolvable by the query compiler but is invisible to callers:
+   * {@link #requirePublicFilterSelector} refuses it and {@link #schema()} omits it. This is what
+   * lets an {@link AccessResult#allowedWhere} constraint test a property that must never become a
+   * public filter, such as an access control list, without publishing it as an API field.
+   */
+  public CollectionDescription(
+      String resourceName,
+      Class<T> entityType,
+      List<? extends Field<T, ?>> fields,
+      List<Relationship<T>> relationships,
+      String idField,
+      List<Sort> defaultSort,
+      AccessPolicy accessPolicy,
+      List<InternalFilter> internalFilters) {
     this.accessPolicy = Objects.requireNonNull(accessPolicy, "Access policy");
     this.resourceName = requireText(resourceName, "Resource name");
     this.entityType = Objects.requireNonNull(entityType, "Entity type");
@@ -960,6 +1050,22 @@ public final class CollectionDescription<T> {
               }
             });
     filterSelectors = Collections.unmodifiableMap(selectors);
+
+    Map<String, FilterSelector<T>> internal = new LinkedHashMap<>();
+    Objects.requireNonNull(internalFilters, "Internal filters")
+        .forEach(
+            filter -> {
+              Objects.requireNonNull(filter, "Internal filter");
+              if (selectors.containsKey(filter.name())
+                  || internal.put(
+                          filter.name(),
+                          new FilterSelector.Property<>(
+                              filter.name(), filter.property(), filter.type()))
+                      != null) {
+                throw new IllegalArgumentException("Duplicate filter selector " + filter.name());
+              }
+            });
+    internalFilterSelectors = Collections.unmodifiableMap(internal);
 
     Field<T, ?> id = this.fields.get(this.idField);
     if (id == null) {
@@ -1068,7 +1174,43 @@ public final class CollectionDescription<T> {
     return Optional.ofNullable(relationships.get(name));
   }
 
+  /**
+   * Resolves a selector for compilation, including the internal ones.
+   *
+   * <p>Safe to be permissive because a caller cannot reach an internal selector: the only path from
+   * request text to a filter is {@link RsqlFilterParser}, which resolves through {@link
+   * #requirePublicFilterSelector}. An internal selector therefore only ever arrives in a
+   * server-built access constraint.
+   */
   public FilterSelector<T> requireFilterSelector(String name) {
+    FilterSelector<T> selector = filterSelectors.get(name);
+    if (selector == null) {
+      selector = internalFilterSelectors.get(name);
+    }
+    if (selector == null) {
+      throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
+    }
+    return selector;
+  }
+
+  /** Resolves a selector for compilation, or empty when this collection has no such selector. */
+  public Optional<FilterSelector<T>> findFilterSelector(String name) {
+    FilterSelector<T> selector = filterSelectors.get(name);
+    return Optional.ofNullable(selector != null ? selector : internalFilterSelectors.get(name));
+  }
+
+  /** Resolves a selector a caller may name, or empty when there is none. */
+  public Optional<FilterSelector<T>> findPublicFilterSelector(String name) {
+    return Optional.ofNullable(filterSelectors.get(name));
+  }
+
+  /** Public selectors in declaration order, for registry-level relationship path discovery. */
+  public List<FilterSelector<T>> publicFilterSelectors() {
+    return List.copyOf(filterSelectors.values());
+  }
+
+  /** Resolves a selector a caller may name. Refuses an internal filter as an unknown field. */
+  public FilterSelector<T> requirePublicFilterSelector(String name) {
     FilterSelector<T> selector = filterSelectors.get(name);
     if (selector == null) {
       throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
@@ -1233,9 +1375,25 @@ public final class CollectionDescription<T> {
 
   Object readFilterValue(T entity, String selectorName) {
     FilterSelector<T> selector = requireFilterSelector(selectorName);
-    if (selector instanceof FilterSelector.Property<?> property) {
-      return fields.get(property.name()).reader.apply(entity);
+    // Covers every permitted FilterSelector. Java 17 has no pattern switch, so a new selector kind
+    // fails here explicitly rather than through a cast that breaks only when a caller filters on
+    // it.
+    if (selector instanceof FilterSelector.Property<T> property) {
+      Field<T, ?> field = fields.get(property.name());
+      if (field == null) {
+        // An internal filter has no reader, so only a database query can evaluate it.
+        throw new IllegalStateException(
+            "Internal filter " + property.name() + " cannot be evaluated in memory");
+      }
+      return field.reader.apply(entity);
     }
+    if (selector instanceof FilterSelector.RelationshipPart<T> part) {
+      return readRelationshipValue(entity, part);
+    }
+    throw new IllegalStateException("Unsupported filter selector " + selector.getClass());
+  }
+
+  private Object readRelationshipValue(T entity, FilterSelector.RelationshipPart<T> selector) {
     Object value = selector.readRelationship(entity);
     if (value == null) {
       return null;
@@ -1243,8 +1401,7 @@ public final class CollectionDescription<T> {
     if (!(value instanceof ResourceReference<?, ?> reference)) {
       throw new IllegalStateException("Relationship filter requires a resource reference");
     }
-    FilterSelector.RelationshipPart<?> part = (FilterSelector.RelationshipPart<?>) selector;
-    return switch (part.part()) {
+    return switch (selector.part()) {
       case ROOT -> reference;
       case KIND -> reference.kind();
       case ID -> reference.id();

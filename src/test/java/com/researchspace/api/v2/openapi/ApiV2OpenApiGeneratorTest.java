@@ -27,7 +27,6 @@ import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,7 +82,7 @@ class ApiV2OpenApiGeneratorTest {
             "update-error");
     ApiV2RelationshipTargetSpec<Instrument, Long> instruments =
         new ApiV2RelationshipTargetSpec<>(
-            ApiV2InstrumentResource.DESCRIPTION, Long.class, (id, actor) -> Optional.empty());
+            ApiV2InstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
     generator =
         new ApiV2OpenApiGenerator(
             new ApiV2ResourceCatalog(List.of(maintenance, users, bookings), List.of(instruments)),
@@ -169,8 +168,10 @@ class ApiV2OpenApiGeneratorTest {
             .findFirst()
             .orElseThrow();
     Map<String, Object> filter = objectMap(where.get("x-rspace-filter"));
+    assertEquals(32768, objectMap(where.get("schema")).get("maxLength"));
     assertEquals(50, filter.get("maximumComparisons"));
     assertEquals(10, filter.get("maximumLikeComparisons"));
+    assertEquals(1000, filter.get("maximumArguments"));
     assertTrue(objectMap(filter.get("selectors")).containsKey("message"));
     assertFalse(objectMap(filter.get("selectors")).containsKey("canUserLoginNow"));
     Map<String, Object> messageFilter =
@@ -188,6 +189,19 @@ class ApiV2OpenApiGeneratorTest {
         ((List<?>) objectMap(sort.get("x-rspace-sort")).get("fields")).contains("canUserLoginNow"));
     assertEquals(
         1, parameters.stream().filter(parameter -> parameter.get("name").equals("fields")).count());
+
+    Map<String, Object> bookingList =
+        objectMap(objectMap(paths.get("/api/v2/booking-configurations")).get("get"));
+    Map<String, Object> bookingWhere =
+        objectMapList(bookingList.get("parameters")).stream()
+            .filter(parameter -> parameter.get("name").equals("where"))
+            .findFirst()
+            .orElseThrow();
+    Map<String, Object> bookingSelectors =
+        objectMap(objectMap(bookingWhere.get("x-rspace-filter")).get("selectors"));
+    assertTrue(bookingSelectors.containsKey("target.name"));
+    assertTrue(bookingSelectors.containsKey("createdBy.username"));
+    assertTrue(bookingSelectors.containsKey("updatedBy.username"));
 
     Map<String, Object> schemas = schemas(document);
     Map<String, Object> readProperties =
@@ -233,10 +247,13 @@ class ApiV2OpenApiGeneratorTest {
     assertTrue(bookingReadProperties.containsKey("updatedAt"));
     assertTrue(bookingReadProperties.containsKey("createdBy"));
     assertTrue(bookingReadProperties.containsKey("updatedBy"));
+    assertTrue((Boolean) objectMap(bookingReadProperties.get("updatedBy")).get("readOnly"));
     assertTrue(bookingReadProperties.containsKey("timezone"));
     assertFalse(bookingReadProperties.containsKey("timeZone"));
-    List<?> targetOutputVariants =
-        (List<?>) objectMap(bookingReadProperties.get("target")).get("oneOf");
+    List<?> nullableTargetOutput =
+        (List<?>) objectMap(bookingReadProperties.get("target")).get("anyOf");
+    assertEquals("null", objectMap(nullableTargetOutput.get(1)).get("type"));
+    List<?> targetOutputVariants = (List<?>) objectMap(nullableTargetOutput.get(0)).get("oneOf");
     Map<String, Object> targetReference = objectMap(targetOutputVariants.get(0));
     List<?> targetReferenceParts = (List<?>) targetReference.get("allOf");
     assertEquals(

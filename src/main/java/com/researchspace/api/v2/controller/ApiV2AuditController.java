@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.controller;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.model.ApiV2AuditEvent;
 import com.researchspace.api.v2.model.ApiV2AuditQuery;
 import com.researchspace.api.v2.model.ApiV2CountResult;
@@ -42,19 +43,19 @@ public final class ApiV2AuditController {
   public ApiV2ListResult<ApiV2AuditEvent> list(
       @PathVariable String resource,
       @PathVariable String id,
-      @RequestAttribute(name = "user", required = false) User actor,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
       @Valid @ModelAttribute ApiV2AuditQuery query,
       BindingResult errors)
       throws BindException {
     throwBindExceptionIfErrors(errors);
-    return auditLog.search(requireResource(resource), id, query, actor);
+    return auditLog.search(requireResource(resource), id, query, subject(caller));
   }
 
   @GetMapping("/{resource}/{id}/audit/count")
   public ApiV2CountResult count(
       @PathVariable String resource,
       @PathVariable String id,
-      @RequestAttribute(name = "user", required = false) User actor,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
       @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Date dateFrom,
       @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE_TIME) Date dateTo,
       @RequestParam(required = false) Set<AuditAction> actions) {
@@ -65,7 +66,7 @@ public final class ApiV2AuditController {
     query.setPage(1);
     query.setLimit(1);
     return new ApiV2CountResult(
-        auditLog.search(requireResource(resource), id, query, actor).totalDocs());
+        auditLog.search(requireResource(resource), id, query, subject(caller)).totalDocs());
   }
 
   private ApiV2ResourceRegistration<?, ?> requireResource(String name) {
@@ -76,5 +77,9 @@ public final class ApiV2AuditController {
     if (errors != null && errors.hasErrors()) {
       throw new BindException(errors);
     }
+  }
+
+  private static User subject(ApiV2Caller caller) {
+    return caller == null ? null : caller.subject();
   }
 }

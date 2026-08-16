@@ -36,6 +36,12 @@ class ApiV2BookingConfigurationResourceTest {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
+  void limitsBulkMutationsForBookingConfigurations() {
+    assertEquals(50, ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkCreateRows());
+    assertEquals(1000, ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows());
+  }
+
+  @Test
   void usesResourceSpecificAuditIdentifier() {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setId(7L);
@@ -188,6 +194,33 @@ class ApiV2BookingConfigurationResourceTest {
         ApiV2BookingConfigurationResource.DESCRIPTION
             .writableFields(WriteOperation.CREATE)
             .contains("createdBy"));
+  }
+
+  @Test
+  void keepsTheConfigurationAndRendersAnUnavailableTargetAsNull() {
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setId(7L);
+    configuration.setTimeZone("UTC");
+    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L));
+    ResourceRegistry registry =
+        new ResourceRegistry(
+            List.of(
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                ApiV2UserResource.DESCRIPTION,
+                ApiV2InstrumentResource.DESCRIPTION));
+
+    Map<String, Object> rendered =
+        new ResourceRenderer(registry)
+            .render(
+                configuration,
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                FieldSelection.all(),
+                IncludeTree.empty(),
+                (resourceName, id) -> java.util.Optional.empty());
+
+    assertEquals(7L, rendered.get("id"));
+    assertTrue(rendered.containsKey("target"));
+    assertNull(rendered.get("target"));
   }
 
   @Test

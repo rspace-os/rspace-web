@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Authenticator;
 import com.researchspace.api.v2.auth.ApiV2BrowserSessionAuthenticator;
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiController;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiDocumentService;
 import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
@@ -89,11 +90,12 @@ class ApiV2AuthenticationInterceptorTest {
   @Test
   void attachesAnAuthenticatedCallerBeforeApplyingTheDefaultPolicy() throws Exception {
     User user = mock(User.class);
-    when(authenticator.authenticateIfPresent(request)).thenReturn(Optional.of(user));
+    when(authenticator.authenticateIfPresent(request))
+        .thenReturn(Optional.of(ApiV2Caller.direct(user)));
     HandlerMethod handler = protectedHandler();
 
     assertTrue(interceptor.preHandle(request, response, handler));
-    assertSame(user, request.getAttribute("user"));
+    assertSame(user, ApiV2Caller.from(request).subject());
     assertTrue(response.getHeader(HttpHeaders.CACHE_CONTROL).contains("no-store"));
     assertTrue(response.getHeader(HttpHeaders.CACHE_CONTROL).contains("private"));
   }
@@ -110,24 +112,27 @@ class ApiV2AuthenticationInterceptorTest {
   @Test
   void genericCrudAddsAnAuthenticatedCallerWhenPresent() throws Exception {
     User user = mock(User.class);
-    when(authenticator.authenticateIfPresent(request)).thenReturn(Optional.of(user));
+    when(authenticator.authenticateIfPresent(request))
+        .thenReturn(Optional.of(ApiV2Caller.direct(user)));
 
     assertTrue(interceptor.preHandle(request, response, crudHandler("create")));
 
-    assertSame(user, request.getAttribute("user"));
+    assertSame(user, ApiV2Caller.from(request).subject());
   }
 
   @Test
   void usesOnlyBrowserSessionAuthenticationForTheTokenEndpoint() throws Exception {
     User user = mock(User.class);
-    when(browserSessionAuthenticator.authenticateIfPresent(request)).thenReturn(Optional.of(user));
+    when(browserSessionAuthenticator.authenticateIfPresent(request))
+        .thenReturn(Optional.of(ApiV2Caller.direct(user)));
     HandlerMethod handler =
         new HandlerMethod(
             new BrowserSessionController(), BrowserSessionController.class.getMethod("create"));
 
     assertTrue(interceptor.preHandle(request, response, handler));
 
-    assertSame(user, request.getAttribute("user"));
+    assertSame(user, ApiV2Caller.from(request).subject());
+    assertSame(user, ApiV2Caller.from(request).actor());
     verify(browserSessionAuthenticator).authenticateIfPresent(request);
     verifyNoInteractions(authenticator);
   }

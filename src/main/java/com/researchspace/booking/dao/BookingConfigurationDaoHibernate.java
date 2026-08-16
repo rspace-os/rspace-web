@@ -6,6 +6,7 @@ import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import java.util.List;
@@ -33,23 +34,22 @@ public class BookingConfigurationDaoHibernate
   }
 
   @Override
-  public ResourcePage<BookingConfiguration> getResources(ResourceRequest request) {
-    return COLLECTION_QUERY.page(criteriaBuilderFactory, getSession(), request);
+  public ResourcePage<BookingConfiguration> getResources(
+      ResourceRequest request, RelationshipReadAccess targetAccess) {
+    return COLLECTION_QUERY.page(criteriaBuilderFactory, getSession(), request, null, targetAccess);
   }
 
   @Override
-  public long countResources(ResourceRequest request) {
-    return COLLECTION_QUERY.count(criteriaBuilderFactory, getSession(), request);
+  public long countResources(ResourceRequest request, RelationshipReadAccess targetAccess) {
+    return COLLECTION_QUERY.count(
+        criteriaBuilderFactory, getSession(), request, null, targetAccess);
   }
 
   @Override
-  public List<BookingConfiguration> getResources(ResourceRequest request, int limit) {
-    return COLLECTION_QUERY.listById(criteriaBuilderFactory, getSession(), request, limit);
-  }
-
-  @Override
-  public List<BookingConfiguration> getAllResources(ResourceRequest request) {
-    return COLLECTION_QUERY.list(criteriaBuilderFactory, getSession(), request);
+  public List<BookingConfiguration> getResources(
+      ResourceRequest request, int limit, RelationshipReadAccess targetAccess) {
+    return COLLECTION_QUERY.listById(
+        criteriaBuilderFactory, getSession(), request, limit, targetAccess);
   }
 
   @Override

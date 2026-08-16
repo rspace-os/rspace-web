@@ -11,14 +11,14 @@ import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.Subject;
 import org.springframework.stereotype.Service;
 
-/** Resolves the user from an existing authenticated browser session. */
+/** Resolves the effective subject and original actor from an authenticated browser session. */
 @Service
 @RequiredArgsConstructor
 public class ApiV2BrowserSessionAuthenticator {
 
   private final UserManager userManager;
 
-  public Optional<User> authenticateIfPresent(HttpServletRequest request) {
+  public Optional<ApiV2Caller> authenticateIfPresent(HttpServletRequest request) {
     if (request.getSession(false) == null) {
       return Optional.empty();
     }
@@ -30,13 +30,38 @@ public class ApiV2BrowserSessionAuthenticator {
     if (session == null) {
       return Optional.empty();
     }
-    Object user = session.getAttribute(SessionAttributeUtils.USER);
-    if (user instanceof User authenticatedUser) {
-      return Optional.of(authenticatedUser);
+    User authenticatedUser;
+    Object sessionUser = session.getAttribute(SessionAttributeUtils.USER);
+    if (sessionUser instanceof User user) {
+      authenticatedUser = user;
+    } else {
+      Object principal = subject.getPrincipal();
+      if (!(principal instanceof String username)) {
+        return Optional.empty();
+      }
+      authenticatedUser = userManager.getUserByUsername(username);
+      if (authenticatedUser == null) {
+        return Optional.empty();
+      }
     }
-    Object principal = subject.getPrincipal();
-    return principal instanceof String username
-        ? Optional.ofNullable(userManager.getUserByUsername(username))
-        : Optional.empty();
+
+    boolean sessionSaysRunAs =
+        Boolean.TRUE.equals(session.getAttribute(SessionAttributeUtils.IS_RUN_AS));
+    if (sessionSaysRunAs != subject.isRunAs()) {
+      throw new ApiV2AuthenticationException();
+    }
+    if (!sessionSaysRunAs) {
+      return Optional.of(ApiV2Caller.direct(authenticatedUser));
+    }
+
+    Object previousPrincipal = subject.getPreviousPrincipals().getPrimaryPrincipal();
+    if (!(previousPrincipal instanceof String actorUsername)) {
+      throw new ApiV2AuthenticationException();
+    }
+    User actor = userManager.getUserByUsername(actorUsername);
+    if (actor == null) {
+      throw new ApiV2AuthenticationException();
+    }
+    return Optional.of(new ApiV2Caller(authenticatedUser, actor));
   }
 }

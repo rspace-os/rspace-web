@@ -62,9 +62,38 @@ public final class RsqlFilterParser {
   }
 
   private final CollectionDescription<?> description;
+  private final ResourceRegistry registry;
 
   public RsqlFilterParser(CollectionDescription<?> description) {
+    this(description, null);
+  }
+
+  /**
+   * Parses filters that can also name a field reached through a relationship, such as {@code
+   * primary.name}.
+   *
+   * <p>Resolving that needs the target's own description, which a collection does not hold, so it
+   * comes from the registry. Without a registry those selectors stay unknown, which is the safe
+   * default for any caller that cannot supply one.
+   */
+  public RsqlFilterParser(CollectionDescription<?> description, ResourceRegistry registry) {
     this.description = description;
+    this.registry = registry;
+  }
+
+  /**
+   * Resolves {@code <relationship>.<field>} against the targets of that relationship.
+   *
+   * <p>Returns null when the name is not of that shape. The caller then reports an unknown field.
+   * The related resource must publish the field. This rule prevents access to an internal filter.
+   */
+  private FilterSelector<?> relationshipFieldSelector(String name) {
+    return registry == null
+        ? null
+        : registry
+            .findRelationshipQueryPath(description.resourceName(), name)
+            .map(ResourceRegistry.RelationshipQueryPath::filterSelector)
+            .orElse(null);
   }
 
   public FilterExpression parse(String rsql) {
@@ -120,7 +149,11 @@ public final class RsqlFilterParser {
     @Override
     public FilterExpression visit(ComparisonNode node, State state) {
       state.recordComparison();
-      FilterSelector<?> selector = description.requireFilterSelector(node.getSelector());
+      FilterSelector<?> relationshipField = relationshipFieldSelector(node.getSelector());
+      FilterSelector<?> selector =
+          relationshipField != null
+              ? relationshipField
+              : description.requirePublicFilterSelector(node.getSelector());
       Operator operator = toOperator(node.getOperator());
       if (!selector.operators().contains(operator)) {
         throw new CollectionQueryException(CollectionQueryException.Reason.OPERATOR);

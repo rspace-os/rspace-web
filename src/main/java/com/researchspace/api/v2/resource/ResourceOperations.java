@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.resource;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ParsedDocument;
@@ -13,15 +14,15 @@ import java.util.Optional;
  *
  * <p>A read-only collection pairs the three read methods with {@link AccessPolicy#readOnly}, which
  * refuses every mutation before dispatch reaches the adapter, so the throws below are unreachable
- * defence rather than the mechanism that makes a collection read-only.
+ * defense rather than the mechanism that makes a collection read-only.
  */
 public interface ResourceOperations<T, ID> {
 
-  /** Finds one page, resolving any caller-specific values for {@code actor}. */
-  ResourcePage<T> find(ResourceRequest request, User actor);
+  /** Finds one page, resolving any caller-specific values for the effective {@code subject}. */
+  ResourcePage<T> find(ResourceRequest request, User subject);
 
   /** Counts matching resources after caller-specific values are resolved. */
-  long count(ResourceRequest request, User actor);
+  long count(ResourceRequest request, User subject);
 
   /**
    * Finds one resource with caller-specific values and collection-specific read authorization.
@@ -30,29 +31,29 @@ public interface ResourceOperations<T, ID> {
    * existing permission model cannot be represented as a query constraint can implement that check
    * here. Relationship resolution uses this method, so it cannot bypass those permissions.
    */
-  Optional<T> findById(ID id, User actor);
+  Optional<T> findById(ID id, User subject);
 
-  default T create(ParsedDocument document, User actor) {
+  default T create(ParsedDocument document, ApiV2Caller caller) {
     throw readOnly("create");
   }
 
-  default List<T> createMany(List<ParsedDocument> documents, User actor) {
+  default List<T> createMany(List<ParsedDocument> documents, ApiV2Caller caller) {
     throw readOnly("create");
   }
 
-  default Optional<T> update(ID id, ParsedDocument document, User actor) {
+  default Optional<T> update(ID id, ParsedDocument document, ApiV2Caller caller) {
     throw readOnly("update");
   }
 
-  default List<T> updateMany(ResourceRequest request, ParsedDocument document, User actor) {
+  default List<T> updateMany(ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
     throw readOnly("update");
   }
 
-  default Optional<T> delete(ID id, User actor) {
+  default Optional<T> delete(ID id, ApiV2Caller caller) {
     throw readOnly("delete");
   }
 
-  default List<T> deleteMany(ResourceRequest request, User actor) {
+  default List<T> deleteMany(ResourceRequest request, ApiV2Caller caller) {
     throw readOnly("delete");
   }
 

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -17,6 +18,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
@@ -24,14 +26,16 @@ import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.ResolvedBookableTarget;
+import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CollectionMutationException;
-import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validation;
 import jakarta.validation.ValidatorFactory;
@@ -42,7 +46,9 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -52,17 +58,23 @@ class BookingConfigurationManagerTest {
 
   private final User actor = mock(User.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-  private final InstrumentEntityApiManager instrumentManager =
-      mock(InstrumentEntityApiManager.class);
+  private final ObjectProvider<ResourceRegistry> resourceRegistry = mock(ObjectProvider.class);
   private final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
   private final BookingConfigurationManager manager =
       new BookingConfigurationManagerImpl(
-          dao, validatorFactory.getValidator(), events, instrumentManager);
+          dao, validatorFactory.getValidator(), events, resourceRegistry);
 
   @BeforeEach
   void setUp() {
     when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
     when(actor.getUsername()).thenReturn("sysadmin");
+    when(resourceRegistry.getObject())
+        .thenReturn(
+            new ResourceRegistry(
+                List.of(
+                    ApiV2BookingConfigurationResource.DESCRIPTION,
+                    ApiV2InstrumentResource.DESCRIPTION,
+                    ApiV2UserResource.DESCRIPTION)));
   }
 
   @AfterEach
@@ -79,16 +91,13 @@ class BookingConfigurationManagerTest {
   }
 
   @Test
-  void ordinaryReadersSeeOnlyConfigurationsForReadableInstruments() {
+  void appliesTargetVisibilityOnlyToRelationshipFilters() {
     when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(false);
     BookingConfiguration readable = configuration(1L, 11L);
-    BookingConfiguration hidden = configuration(2L, 12L);
     ResourceRequest request = ResourceRequest.unpaged(null);
-    when(dao.getAllResources(request)).thenReturn(List.of(readable, hidden));
-    when(dao.getSafeNull(2L)).thenReturn(Optional.of(hidden));
-    when(instrumentManager.findReadableInstrument(11L, actor))
-        .thenReturn(Optional.of(mock(Instrument.class)));
-    when(instrumentManager.findReadableInstrument(12L, actor)).thenReturn(Optional.empty());
+    when(dao.getResources(any(), any())).thenReturn(new ResourcePage<>(List.of(readable), 1));
+    when(dao.countResources(any(), any())).thenReturn(1L);
+    when(dao.getSafeNull(2L)).thenReturn(Optional.empty());
 
     ResourcePage<BookingConfiguration> page = manager.getConfigurations(request, actor);
 
@@ -113,7 +122,7 @@ class BookingConfigurationManagerTest {
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     BookingConfiguration created =
-        manager.createConfiguration(new Create(true, "Europe/Berlin", target(12L)), actor);
+        manager.createConfiguration(new Create(true, "Europe/Berlin", target(12L)), actor, actor);
 
     assertTrue(created.isEnabled());
     assertEquals("Europe/Berlin", created.getTimeZone());
@@ -136,6 +145,7 @@ class BookingConfigurationManagerTest {
             List.of(
                 new Create(true, "Europe/Berlin", target(12L)),
                 new Create(false, "UTC", target(13L))),
+            actor,
             actor);
 
     assertEquals(2, created.size());
@@ -155,6 +165,7 @@ class BookingConfigurationManagerTest {
                 List.of(
                     new Create(true, "UTC", target(14L)),
                     new Create(true, "Not/A_Zone", target(15L))),
+                actor,
                 actor));
     verify(dao, never())
         .findByTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 14L));
@@ -169,6 +180,7 @@ class BookingConfigurationManagerTest {
                 List.of(
                     new Create(true, "UTC", target(12L)),
                     new Create(false, "Europe/Berlin", target(12L))),
+                actor,
                 actor));
 
     verify(dao, never()).saveAndFlush(any());
@@ -179,12 +191,15 @@ class BookingConfigurationManagerTest {
     when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(false);
     assertThrows(
         AuthorizationException.class,
-        () -> manager.createConfiguration(new Create(true, "Europe/Berlin", target(12L)), actor));
+        () ->
+            manager.createConfiguration(
+                new Create(true, "Europe/Berlin", target(12L)), actor, actor));
 
     when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
     assertThrows(
         ConstraintViolationException.class,
-        () -> manager.createConfiguration(new Create(true, "Not/A_Zone", target(12L)), actor));
+        () ->
+            manager.createConfiguration(new Create(true, "Not/A_Zone", target(12L)), actor, actor));
 
     verify(dao, never()).saveAndFlush(any());
   }
@@ -198,7 +213,7 @@ class BookingConfigurationManagerTest {
     when(dao.saveAndFlush(configuration)).thenReturn(configuration);
 
     BookingConfiguration updated =
-        manager.updateConfiguration(42L, new Patch(true, null, null), actor).orElseThrow();
+        manager.updateConfiguration(42L, new Patch(true, null, null), actor, actor).orElseThrow();
 
     assertTrue(updated.isEnabled());
     assertEquals("UTC", updated.getTimeZone());
@@ -216,6 +231,7 @@ class BookingConfigurationManagerTest {
         () ->
             manager.createConfigurations(
                 Collections.nCopies(CollectionMutationLimits.MAX_BULK_CREATE_ROWS + 1, create),
+                actor,
                 actor));
 
     verify(dao, never()).findByTarget(any());
@@ -226,8 +242,9 @@ class BookingConfigurationManagerTest {
   void reportsAnAbsentConfigurationWithoutWriting() {
     when(dao.getSafeNull(42L)).thenReturn(Optional.empty());
 
-    assertFalse(manager.updateConfiguration(42L, new Patch(true, null, null), actor).isPresent());
-    assertFalse(manager.removeConfiguration(42L, actor).isPresent());
+    assertFalse(
+        manager.updateConfiguration(42L, new Patch(true, null, null), actor, actor).isPresent());
+    assertFalse(manager.removeConfiguration(42L, actor, actor).isPresent());
 
     verify(dao, never()).save(any());
     verify(dao, never()).remove(any());
@@ -242,20 +259,38 @@ class BookingConfigurationManagerTest {
 
     assertThrows(
         AuthorizationException.class,
-        () -> manager.updateConfigurations(request, new Patch(true, null, null), actor));
-    verify(dao, never()).getResources(any(ResourceRequest.class), anyInt());
+        () -> manager.updateConfigurations(request, new Patch(true, null, null), actor, actor));
+    verify(dao, never()).getResources(any(ResourceRequest.class), anyInt(), any());
 
     when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
     BookingConfiguration configuration = new BookingConfiguration();
     int oversizedBatch =
         ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
-    when(dao.getResources(request, oversizedBatch))
+    when(dao.getResources(eq(request), eq(oversizedBatch), any()))
         .thenReturn(Collections.nCopies(oversizedBatch, configuration));
 
     assertThrows(
         CollectionMutationException.class,
-        () -> manager.updateConfigurations(request, new Patch(true, null, null), actor));
+        () -> manager.updateConfigurations(request, new Patch(true, null, null), actor, actor));
     verify(dao, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void explicitlyAllowsRelationshipTargetsForSystemAuthorizedBulkSelection() {
+    ResourceRequest request =
+        ResourceRequest.unpaged(
+            new FilterExpression.Comparison(
+                "target.name", Operator.EQUAL, List.of("Microscope"), false));
+    int limit = ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
+    ArgumentCaptor<RelationshipReadAccess> access =
+        ArgumentCaptor.forClass(RelationshipReadAccess.class);
+    when(dao.getResources(eq(request), eq(limit), any())).thenReturn(List.of());
+
+    manager.removeConfigurations(request, actor, actor);
+
+    verify(dao).getResources(eq(request), eq(limit), access.capture());
+    assertFalse(access.getValue().result("instruments").isDenied());
+    assertTrue(access.getValue().result("instruments").constraintOrEmpty().isEmpty());
   }
 
   @Test
@@ -268,7 +303,9 @@ class BookingConfigurationManagerTest {
     when(dao.saveAndFlush(configuration)).thenReturn(configuration);
 
     BookingConfiguration updated =
-        manager.updateConfiguration(42L, new Patch(null, null, target(13L)), actor).orElseThrow();
+        manager
+            .updateConfiguration(42L, new Patch(null, null, target(13L)), actor, actor)
+            .orElseThrow();
 
     assertEquals(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 13L), updated.getTarget());
@@ -280,7 +317,7 @@ class BookingConfigurationManagerTest {
 
     assertThrows(
         BookingConfigurationTargetConflictException.class,
-        () -> manager.updateConfiguration(42L, new Patch(null, null, target(14L)), actor));
+        () -> manager.updateConfiguration(42L, new Patch(null, null, target(14L)), actor, actor));
   }
 
   @Test
@@ -294,7 +331,7 @@ class BookingConfigurationManagerTest {
 
     assertThrows(
         InvalidBookableTargetException.class,
-        () -> manager.createConfiguration(new Create(true, "UTC", target), actor));
+        () -> manager.createConfiguration(new Create(true, "UTC", target), actor, actor));
     verify(dao, never()).saveAndFlush(any());
   }
 
@@ -307,7 +344,9 @@ class BookingConfigurationManagerTest {
     when(dao.getSafeNull(42L)).thenReturn(Optional.of(configuration));
 
     BookingConfiguration result =
-        manager.updateConfiguration(42L, new Patch(null, null, target(12L)), actor).orElseThrow();
+        manager
+            .updateConfiguration(42L, new Patch(null, null, target(12L)), actor, actor)
+            .orElseThrow();
 
     assertEquals(configuration, result);
     verify(dao, never()).saveAndFlush(any());
@@ -321,13 +360,16 @@ class BookingConfigurationManagerTest {
     BookingConfiguration first = configuration(1L, 11L);
     BookingConfiguration second = configuration(2L, 12L);
     when(dao.getResources(
-            request,
-            ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1))
+            eq(request),
+            eq(ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1),
+            any()))
         .thenReturn(List.of(first, second));
 
     assertThrows(
         BookingConfigurationTargetConflictException.class,
-        () -> manager.updateConfigurations(request, new Patch(null, null, target(13L)), actor));
+        () ->
+            manager.updateConfigurations(
+                request, new Patch(null, null, target(13L)), actor, actor));
 
     assertEquals(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 11L), first.getTarget());
@@ -345,7 +387,7 @@ class BookingConfigurationManagerTest {
 
     assertThrows(
         BookingConfigurationTargetConflictException.class,
-        () -> manager.createConfiguration(new Create(true, "UTC", target(12L)), actor));
+        () -> manager.createConfiguration(new Create(true, "UTC", target(12L)), actor, actor));
 
     DataIntegrityViolationException otherFailure =
         new DataIntegrityViolationException("another constraint");
@@ -355,7 +397,7 @@ class BookingConfigurationManagerTest {
         otherFailure,
         assertThrows(
             DataIntegrityViolationException.class,
-            () -> manager.createConfiguration(new Create(true, "UTC", target(13L)), actor)));
+            () -> manager.createConfiguration(new Create(true, "UTC", target(13L)), actor, actor)));
   }
 
   private static ResolvedBookableTarget target(long id) {

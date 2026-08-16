@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
@@ -36,7 +37,7 @@ class BookingConfigurationResourceOperationsTest {
     configuration.setTimeZone("Europe/Berlin");
     ResolvedResourceReference<BookableTargetType, Long> resolved = resolved(12L);
     ResolvedBookableTarget target = target(resolved);
-    when(manager.createConfiguration(new Create(true, "Europe/Berlin", target), actor))
+    when(manager.createConfiguration(new Create(true, "Europe/Berlin", target), actor, actor))
         .thenReturn(configuration);
 
     BookingConfiguration created =
@@ -44,10 +45,22 @@ class BookingConfigurationResourceOperationsTest {
             new ParsedDocument(
                 WriteOperation.CREATE,
                 Map.of("enabled", true, "timezone", "Europe/Berlin", "target", resolved)),
-            actor);
+            ApiV2Caller.direct(actor));
 
     assertEquals(configuration, created);
-    verify(manager).createConfiguration(new Create(true, "Europe/Berlin", target), actor);
+    verify(manager).createConfiguration(new Create(true, "Europe/Berlin", target), actor, actor);
+  }
+
+  @Test
+  void authorizesAsTheSubjectAndRetainsTheOriginatingActorForWrites() {
+    User subject = mock(User.class);
+    User originatingActor = mock(User.class);
+    ParsedDocument document = ParsedDocument.update(Map.of("enabled", true));
+
+    operations.update(42L, document, new ApiV2Caller(subject, originatingActor));
+
+    verify(manager)
+        .updateConfiguration(42L, new Patch(true, null, null), subject, originatingActor);
   }
 
   @Test
@@ -60,7 +73,7 @@ class BookingConfigurationResourceOperationsTest {
             new Create(false, "UTC", target(second)));
     List<BookingConfiguration> configurations =
         List.of(new BookingConfiguration(), new BookingConfiguration());
-    when(manager.createConfigurations(creates, actor)).thenReturn(configurations);
+    when(manager.createConfigurations(creates, actor, actor)).thenReturn(configurations);
 
     assertEquals(
         configurations,
@@ -72,23 +85,24 @@ class BookingConfigurationResourceOperationsTest {
                 new ParsedDocument(
                     WriteOperation.CREATE,
                     Map.of("enabled", false, "timezone", "UTC", "target", second))),
-            actor));
-    verify(manager).createConfigurations(creates, actor);
+            ApiV2Caller.direct(actor)));
+    verify(manager).createConfigurations(creates, actor, actor);
   }
 
   @Test
   void translatesRestPatchesAndDeletesToTheSharedManagerInterface() {
     ParsedDocument document = ParsedDocument.update(Map.of("enabled", true));
     BookingConfiguration configuration = new BookingConfiguration();
-    when(manager.updateConfiguration(42L, new Patch(true, null, null), actor))
+    when(manager.updateConfiguration(42L, new Patch(true, null, null), actor, actor))
         .thenReturn(Optional.of(configuration));
-    when(manager.removeConfiguration(42L, actor)).thenReturn(Optional.of(configuration));
+    when(manager.removeConfiguration(42L, actor, actor)).thenReturn(Optional.of(configuration));
 
-    assertEquals(configuration, operations.update(42L, document, actor).orElseThrow());
-    assertEquals(configuration, operations.delete(42L, actor).orElseThrow());
+    assertEquals(
+        configuration, operations.update(42L, document, ApiV2Caller.direct(actor)).orElseThrow());
+    assertEquals(configuration, operations.delete(42L, ApiV2Caller.direct(actor)).orElseThrow());
 
-    verify(manager).updateConfiguration(42L, new Patch(true, null, null), actor);
-    verify(manager).removeConfiguration(42L, actor);
+    verify(manager).updateConfiguration(42L, new Patch(true, null, null), actor, actor);
+    verify(manager).removeConfiguration(42L, actor, actor);
   }
 
   @Test
@@ -96,16 +110,17 @@ class BookingConfigurationResourceOperationsTest {
     BookingConfiguration configuration = new BookingConfiguration();
     ResolvedResourceReference<BookableTargetType, Long> resolved = resolved(18L);
     ResolvedBookableTarget target = target(resolved);
-    when(manager.updateConfiguration(42L, new Patch(null, null, target), actor))
+    when(manager.updateConfiguration(42L, new Patch(null, null, target), actor, actor))
         .thenReturn(Optional.of(configuration));
 
     assertEquals(
         configuration,
         operations
-            .update(42L, ParsedDocument.update(Map.of("target", resolved)), actor)
+            .update(
+                42L, ParsedDocument.update(Map.of("target", resolved)), ApiV2Caller.direct(actor))
             .orElseThrow());
 
-    verify(manager).updateConfiguration(42L, new Patch(null, null, target), actor);
+    verify(manager).updateConfiguration(42L, new Patch(null, null, target), actor, actor);
   }
 
   private static ResolvedResourceReference<BookableTargetType, Long> resolved(long id) {

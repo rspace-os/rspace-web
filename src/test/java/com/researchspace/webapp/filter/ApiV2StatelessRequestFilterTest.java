@@ -1,5 +1,6 @@
 package com.researchspace.webapp.filter;
 
+import static com.researchspace.auth.BrowserSessionAuthContext.UI_TOKEN_AUDIENCE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -8,7 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -72,6 +75,46 @@ class ApiV2StatelessRequestFilterTest {
   }
 
   @Test
+  void preservesTheSessionForASessionBoundUiBearerToken() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v2/users/me");
+    request.addHeader("Authorization", "Bearer " + jwtWithAudience(UI_TOKEN_AUDIENCE));
+    request.getSession(true).setAttribute("user", "browser-user");
+    MockFilterChain chain = new MockFilterChain();
+
+    new ApiV2StatelessRequestFilter().doFilter(request, new MockHttpServletResponse(), chain);
+
+    HttpServletRequest filtered = (HttpServletRequest) chain.getRequest();
+    assertEquals("browser-user", filtered.getSession(false).getAttribute("user"));
+  }
+
+  @Test
+  void stripsTheSessionWhenAnApiKeyTakesPrecedenceOverAUiAudienceHint() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v2/users/me");
+    request.addHeader("apiKey", "valid-api-key-shape");
+    request.addHeader("Authorization", "Bearer " + jwtWithAudience(UI_TOKEN_AUDIENCE));
+    request.getSession(true).setAttribute("user", "unrelated-browser-user");
+    MockFilterChain chain = new MockFilterChain();
+
+    new ApiV2StatelessRequestFilter().doFilter(request, new MockHttpServletResponse(), chain);
+
+    HttpServletRequest filtered = (HttpServletRequest) chain.getRequest();
+    assertNull(filtered.getSession(false));
+  }
+
+  @Test
+  void stripsTheSessionForAnExternalBearerToken() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v2/users/me");
+    request.addHeader("Authorization", "Bearer " + jwtWithAudience("external-api"));
+    request.getSession(true).setAttribute("user", "browser-user");
+    MockFilterChain chain = new MockFilterChain();
+
+    new ApiV2StatelessRequestFilter().doFilter(request, new MockHttpServletResponse(), chain);
+
+    HttpServletRequest filtered = (HttpServletRequest) chain.getRequest();
+    assertNull(filtered.getSession(false));
+  }
+
+  @Test
   void isMappedBeforeShiroForEveryServletDispatchType() throws Exception {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
@@ -121,5 +164,14 @@ class ApiV2StatelessRequestFilterTest {
       values.add(children.item(index).getTextContent().trim());
     }
     return values;
+  }
+
+  private static String jwtWithAudience(String audience) {
+    Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+    return encoder.encodeToString("{}".getBytes(StandardCharsets.UTF_8))
+        + "."
+        + encoder.encodeToString(
+            ("{\"aud\":\"" + audience + "\"}").getBytes(StandardCharsets.UTF_8))
+        + ".signature";
   }
 }

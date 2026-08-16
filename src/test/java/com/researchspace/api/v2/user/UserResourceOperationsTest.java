@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ParsedDocument;
@@ -34,14 +35,18 @@ class UserResourceOperationsTest {
 
   @Test
   void writeOperationsFailClosedAsDefenceInDepth() {
-    assertThrows(UnsupportedOperationException.class, () -> operations.create(document, actor));
+    ApiV2Caller caller = ApiV2Caller.direct(actor);
+    assertThrows(UnsupportedOperationException.class, () -> operations.create(document, caller));
     assertThrows(
-        UnsupportedOperationException.class, () -> operations.createMany(List.of(document), actor));
-    assertThrows(UnsupportedOperationException.class, () -> operations.update(1L, document, actor));
+        UnsupportedOperationException.class,
+        () -> operations.createMany(List.of(document), caller));
     assertThrows(
-        UnsupportedOperationException.class, () -> operations.updateMany(request, document, actor));
-    assertThrows(UnsupportedOperationException.class, () -> operations.delete(1L, actor));
-    assertThrows(UnsupportedOperationException.class, () -> operations.deleteMany(request, actor));
+        UnsupportedOperationException.class, () -> operations.update(1L, document, caller));
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> operations.updateMany(request, document, caller));
+    assertThrows(UnsupportedOperationException.class, () -> operations.delete(1L, caller));
+    assertThrows(UnsupportedOperationException.class, () -> operations.deleteMany(request, caller));
     verifyNoInteractions(manager);
   }
 

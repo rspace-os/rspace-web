@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.service.UserManager;
 import com.researchspace.session.SessionAttributeUtils;
 import org.apache.shiro.session.Session;
+import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ThreadContext;
 import org.junit.jupiter.api.AfterEach;
@@ -48,7 +49,34 @@ class ApiV2BrowserSessionAuthenticatorTest {
     when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(user);
     ThreadContext.bind(subject);
 
-    assertSame(user, authenticator.authenticateIfPresent(request).orElseThrow());
+    ApiV2Caller caller = authenticator.authenticateIfPresent(request).orElseThrow();
+    assertSame(user, caller.subject());
+    assertSame(user, caller.actor());
     verifyNoInteractions(userManager);
+  }
+
+  @Test
+  void returnsTheTargetAndOriginalActorDuringRunAs() {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.getSession(true);
+    Subject subject = mock(Subject.class);
+    Session session = mock(Session.class);
+    PrincipalCollection previousPrincipals = mock(PrincipalCollection.class);
+    User target = mock(User.class);
+    User actor = mock(User.class);
+    when(subject.isAuthenticated()).thenReturn(true);
+    when(subject.isRunAs()).thenReturn(true);
+    when(subject.getSession(false)).thenReturn(session);
+    when(subject.getPreviousPrincipals()).thenReturn(previousPrincipals);
+    when(previousPrincipals.getPrimaryPrincipal()).thenReturn("sysadmin1");
+    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(target);
+    when(session.getAttribute(SessionAttributeUtils.IS_RUN_AS)).thenReturn(Boolean.TRUE);
+    when(userManager.getUserByUsername("sysadmin1")).thenReturn(actor);
+    ThreadContext.bind(subject);
+
+    ApiV2Caller caller = authenticator.authenticateIfPresent(request).orElseThrow();
+
+    assertSame(target, caller.subject());
+    assertSame(actor, caller.actor());
   }
 }

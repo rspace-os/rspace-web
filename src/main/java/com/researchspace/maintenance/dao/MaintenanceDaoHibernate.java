@@ -5,6 +5,7 @@ import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
+import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import java.util.Date;
@@ -49,18 +50,23 @@ public class MaintenanceDaoHibernate extends GenericDaoHibernate<ScheduledMainte
   }
 
   @Override
-  public ResourcePage<ScheduledMaintenance> getResources(ResourceRequest request) {
-    return COLLECTION_QUERY.page(criteriaBuilderFactory, getSession(), request);
+  public ResourcePage<ScheduledMaintenance> getResources(
+      ResourceRequest request, RelationshipReadAccess relationshipAccess) {
+    return COLLECTION_QUERY.page(
+        criteriaBuilderFactory, getSession(), request, null, relationshipAccess);
   }
 
   @Override
-  public long countResources(ResourceRequest request) {
-    return COLLECTION_QUERY.count(criteriaBuilderFactory, getSession(), request);
+  public long countResources(ResourceRequest request, RelationshipReadAccess relationshipAccess) {
+    return COLLECTION_QUERY.count(
+        criteriaBuilderFactory, getSession(), request, null, relationshipAccess);
   }
 
   @Override
-  public List<ScheduledMaintenance> getResources(ResourceRequest request, int limit) {
-    return COLLECTION_QUERY.listById(criteriaBuilderFactory, getSession(), request, limit);
+  public List<ScheduledMaintenance> getResources(
+      ResourceRequest request, int limit, RelationshipReadAccess relationshipAccess) {
+    return COLLECTION_QUERY.listById(
+        criteriaBuilderFactory, getSession(), request, limit, relationshipAccess);
   }
 
   private List<ScheduledMaintenance> getAllFutureMaintenanceOrderedByDateAsc() {

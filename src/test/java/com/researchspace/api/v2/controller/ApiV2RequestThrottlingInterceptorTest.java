@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.throttling.APIRequestThrottler;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
 import com.researchspace.model.User;
@@ -92,7 +93,7 @@ class ApiV2RequestThrottlingInterceptorTest {
     MockHttpServletRequest request = new MockHttpServletRequest();
     User user = mock(User.class);
     when(user.getId()).thenReturn(42L);
-    request.setAttribute("user", user);
+    request.setAttribute(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user));
     return request;
   }
 }

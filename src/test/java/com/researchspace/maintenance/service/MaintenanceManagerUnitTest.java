@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -20,6 +21,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.RelationshipReadAccess;
+import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RsqlFilterParser;
 import com.researchspace.service.CollectionMutationException;
@@ -34,6 +37,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 
 class MaintenanceManagerUnitTest {
@@ -42,11 +46,15 @@ class MaintenanceManagerUnitTest {
   private final User user = mock(User.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   private final MessageSourceUtils messages = mock(MessageSourceUtils.class);
-  private final MaintenanceManager manager = new MaintenanceManagerImpl(dao, events, messages);
+  private final ObjectProvider<ResourceRegistry> resourceRegistry = mock(ObjectProvider.class);
+  private final MaintenanceManager manager =
+      new MaintenanceManagerImpl(dao, events, messages, resourceRegistry);
 
   @BeforeEach
   void setUp() {
     when(user.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
+    when(resourceRegistry.getObject())
+        .thenReturn(new ResourceRegistry(List.of(ApiV2MaintenanceResource.DESCRIPTION)));
   }
 
   @Test
@@ -93,7 +101,8 @@ class MaintenanceManagerUnitTest {
     verify(dao, never()).save(any());
 
     ResourceRequest query = request("message==test");
-    when(dao.getResources(query, 1001)).thenReturn(Collections.nCopies(1001, maintenance));
+    when(dao.getResources(eq(query), eq(1001), any(RelationshipReadAccess.class)))
+        .thenReturn(Collections.nCopies(1001, maintenance));
     assertThrows(
         CollectionMutationException.class, () -> manager.updateResources(query, invalid, user));
     verify(dao, never()).save(any());
@@ -174,7 +183,7 @@ class MaintenanceManagerUnitTest {
             CollectionMutationException.class, () -> manager.removeResources(unfiltered, user));
 
     assertEquals(CollectionMutationException.Reason.FILTER_REQUIRED, exception.getReason());
-    verify(dao, never()).getResources(any(ResourceRequest.class), anyInt());
+    verify(dao, never()).getResources(any(ResourceRequest.class), anyInt(), any());
   }
 
   @Test
@@ -184,7 +193,7 @@ class MaintenanceManagerUnitTest {
 
     assertThrows(AuthorizationException.class, () -> manager.removeResources(query, user));
 
-    verify(dao, never()).getResources(any(ResourceRequest.class), anyInt());
+    verify(dao, never()).getResources(any(ResourceRequest.class), anyInt(), any());
   }
 
   @Test
@@ -192,7 +201,8 @@ class MaintenanceManagerUnitTest {
     ResourceRequest query = request("message==test");
     ScheduledMaintenance first = maintenance(2);
     ScheduledMaintenance second = maintenance(3);
-    when(dao.getResources(query, 1001)).thenReturn(List.of(first, second));
+    when(dao.getResources(eq(query), eq(1001), any(RelationshipReadAccess.class)))
+        .thenReturn(List.of(first, second));
 
     manager.updateResources(query, ParsedDocument.update(Map.of("message", "updated")), user);
 

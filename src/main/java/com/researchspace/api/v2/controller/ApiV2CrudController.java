@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.model.ApiV2BulkResult;
 import com.researchspace.api.v2.model.ApiV2CollectionQuery;
 import com.researchspace.api.v2.model.ApiV2CountResult;
@@ -60,7 +61,7 @@ public class ApiV2CrudController {
   @GetMapping("/{resource}")
   public ApiV2ListResult<Map<String, Object>> list(
       @PathVariable String resource,
-      @RequestAttribute(name = "user", required = false) User caller,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
       @Valid @ModelAttribute ApiV2CollectionQuery query,
       BindingResult queryErrors,
       @ModelAttribute("fieldsets") ApiV2FieldsetQuery fieldsets,
@@ -73,25 +74,27 @@ public class ApiV2CrudController {
     ResourceRequest request =
         ApiV2ResourceRequestParser.parse(
             query, fieldsets, registration.description(), registration.registry());
-    return registration.list(request, caller);
+    return registration.list(request, subject(caller));
   }
 
   @GetMapping("/{resource}/count")
   public ApiV2CountResult count(
       @PathVariable String resource,
-      @RequestAttribute(name = "user", required = false) User caller,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
       @RequestParam(required = false) String where) {
     ApiV2ResourceRegistration<?, ?> registration =
         requireResource(resource, ResourceOperation.COUNT);
     return registration.count(
-        ApiV2ResourceRequestParser.filtered(where, registration.description()), caller);
+        ApiV2ResourceRequestParser.filtered(
+            where, registration.description(), registration.registry()),
+        subject(caller));
   }
 
   @GetMapping("/{resource}/{id}")
   public Map<String, Object> get(
       @PathVariable String resource,
       @PathVariable String id,
-      @RequestAttribute(name = "user", required = false) User caller,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
       @RequestParam(defaultValue = "0") int depth,
       @ModelAttribute("fieldsets") ApiV2FieldsetQuery fieldsets,
       BindingResult fieldsetErrors)
@@ -103,25 +106,27 @@ public class ApiV2CrudController {
         id,
         ApiV2ResourceRequestParser.item(
             depth, fieldsets, registration.description(), registration.registry()),
-        caller);
+        subject(caller));
   }
 
   @PostMapping("/{resource}")
   public ResponseEntity<Map<String, Object>> create(
       @PathVariable String resource,
       @RequestBody JsonNode body,
-      @RequestAttribute(name = "user", required = false) User user) {
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(requireResource(resource, ResourceOperation.CREATE).create(body, user));
+        .body(requireResource(resource, ResourceOperation.CREATE).create(body, caller));
   }
 
   @PostMapping("/{resource}/bulk")
   public ResponseEntity<ApiV2BulkResult<Map<String, Object>>> createMany(
       @PathVariable String resource,
       @RequestBody JsonNode body,
-      @RequestAttribute(name = "user", required = false) User user) {
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(requireResource(resource, ResourceOperation.BULK_CREATE).createMany(body, user));
+        .body(requireResource(resource, ResourceOperation.BULK_CREATE).createMany(body, caller));
   }
 
   @PatchMapping("/{resource}/{id}")
@@ -129,8 +134,9 @@ public class ApiV2CrudController {
       @PathVariable String resource,
       @PathVariable String id,
       @RequestBody JsonNode body,
-      @RequestAttribute(name = "user", required = false) User user) {
-    return requireResource(resource, ResourceOperation.UPDATE).update(id, body, user);
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
+    return requireResource(resource, ResourceOperation.UPDATE).update(id, body, caller);
   }
 
   @PatchMapping("/{resource}")
@@ -138,30 +144,36 @@ public class ApiV2CrudController {
       @PathVariable String resource,
       @RequestParam(required = false) String where,
       @RequestBody JsonNode body,
-      @RequestAttribute(name = "user", required = false) User user) {
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
     ApiV2ResourceRegistration<?, ?> registration =
         requireResource(resource, ResourceOperation.BULK_UPDATE);
     return registration.updateMany(
-        ApiV2ResourceRequestParser.bulk(where, registration.description()), body, user);
+        ApiV2ResourceRequestParser.bulk(where, registration.description(), registration.registry()),
+        body,
+        caller);
   }
 
   @DeleteMapping("/{resource}/{id}")
   public Map<String, Object> delete(
       @PathVariable String resource,
       @PathVariable String id,
-      @RequestAttribute(name = "user", required = false) User user) {
-    return requireResource(resource, ResourceOperation.DELETE).delete(id, user);
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
+    return requireResource(resource, ResourceOperation.DELETE).delete(id, caller);
   }
 
   @DeleteMapping("/{resource}")
   public ApiV2BulkResult<Map<String, Object>> deleteMany(
       @PathVariable String resource,
       @RequestParam(required = false) String where,
-      @RequestAttribute(name = "user", required = false) User user) {
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
     ApiV2ResourceRegistration<?, ?> registration =
         requireResource(resource, ResourceOperation.BULK_DELETE);
     return registration.deleteMany(
-        ApiV2ResourceRequestParser.bulk(where, registration.description()), user);
+        ApiV2ResourceRequestParser.bulk(where, registration.description(), registration.registry()),
+        caller);
   }
 
   private ApiV2ResourceRegistration<?, ?> requireResource(String name) {
@@ -181,5 +193,9 @@ public class ApiV2CrudController {
     if (errors != null && errors.hasErrors()) {
       throw new BindException(errors);
     }
+  }
+
+  private static User subject(ApiV2Caller caller) {
+    return caller == null ? null : caller.subject();
   }
 }

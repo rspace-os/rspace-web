@@ -15,13 +15,17 @@ import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.AccessPolicySchema;
 import com.researchspace.model.collection.CollectionDescription.FieldSchema;
+import com.researchspace.model.collection.CollectionDescription.FilterSchema;
 import com.researchspace.model.collection.CollectionDescription.RelationshipSchema;
+import com.researchspace.model.collection.CollectionDescription.ResourceFieldSchema;
 import com.researchspace.model.collection.CollectionDescription.ResourceSchema;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionFieldType;
 import com.researchspace.model.collection.CollectionQueryLimits;
+import com.researchspace.model.collection.FilterSelector;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
 import com.researchspace.model.collection.RelationshipInputForm;
+import com.researchspace.model.collection.ResourceRegistry;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -323,7 +327,8 @@ public final class ApiV2OpenApiGenerator {
 
     AccessDocumentation access = access(schema.access(), operation);
     applyAccess(result, access);
-    List<Map<String, Object>> parameters = parameters(operation, schema, resourceSchemas);
+    List<Map<String, Object>> parameters =
+        parameters(operation, schema, resourceSchemas, resource.registry());
     if (!parameters.isEmpty()) {
       result.put("parameters", parameters);
     }
@@ -385,7 +390,8 @@ public final class ApiV2OpenApiGenerator {
   private static List<Map<String, Object>> parameters(
       ResourceOperation operation,
       ResourceSchema schema,
-      Map<String, ResourceSchema> resourceSchemas) {
+      Map<String, ResourceSchema> resourceSchemas,
+      ResourceRegistry registry) {
     List<Map<String, Object>> parameters = new ArrayList<>();
     if (operation == ResourceOperation.READ
         || operation == ResourceOperation.UPDATE
@@ -395,7 +401,7 @@ public final class ApiV2OpenApiGenerator {
           parameter("id", "path", true, scalarSchema(id.type(), false), "Resource identifier."));
     }
     if (operation == ResourceOperation.LIST) {
-      parameters.add(where(schema, false, resourceSchemas));
+      parameters.add(where(schema, false, resourceSchemas, registry));
       Map<String, Object> sort =
           parameter(
               "sort",
@@ -446,7 +452,8 @@ public final class ApiV2OpenApiGenerator {
     if (operation == ResourceOperation.COUNT
         || operation == ResourceOperation.BULK_UPDATE
         || operation == ResourceOperation.BULK_DELETE) {
-      parameters.add(where(schema, operation != ResourceOperation.COUNT, resourceSchemas));
+      parameters.add(
+          where(schema, operation != ResourceOperation.COUNT, resourceSchemas, registry));
     }
     if (operation == ResourceOperation.LIST || operation == ResourceOperation.READ) {
       parameters.add(
@@ -464,8 +471,9 @@ public final class ApiV2OpenApiGenerator {
                   "default",
                   0),
               "Relationship expansion depth. At depth 0, the response is the canonical update"
-                  + " reference object and value is the raw target ID. At greater depth, value is"
-                  + " the expanded read document; relationTo and globalId remain stable."));
+                  + " reference object and value is the readable target ID. At greater depth,"
+                  + " value is the expanded read document; relationTo and globalId remain stable."
+                  + " A missing or unreadable target is null at every depth."));
       parameters.add(
           fieldset("fields", schema, resourceSchemas, "Fields to include by resource type."));
       parameters.add(
@@ -475,7 +483,10 @@ public final class ApiV2OpenApiGenerator {
   }
 
   private static Map<String, Object> where(
-      ResourceSchema schema, boolean required, Map<String, ResourceSchema> resourceSchemas) {
+      ResourceSchema schema,
+      boolean required,
+      Map<String, ResourceSchema> resourceSchemas,
+      ResourceRegistry registry) {
     Map<String, Object> parameter =
         parameter(
             "where",
@@ -484,28 +495,104 @@ public final class ApiV2OpenApiGenerator {
             ordered("type", "string", "maxLength", CollectionQueryLimits.MAX_WHERE_LENGTH),
             "Bounded RSQL filter expression. Available selectors and operators are provided in"
                 + " x-rspace-filter.");
-    parameter.put("x-rspace-filter", filterExtension(schema, resourceSchemas));
+    parameter.put("x-rspace-filter", filterExtension(schema, resourceSchemas, registry));
     return parameter;
   }
 
-  private static Map<String, Object> filterExtension(
-      ResourceSchema resource, Map<String, ResourceSchema> resourceSchemas) {
-    Map<String, Object> selectors = new LinkedHashMap<>();
+  private record PublishedFilter(
+      String selector,
+      String sourceSelector,
+      ResourceSchema source,
+      List<String> operators,
+      boolean supportsWildcards) {}
+
+  /**
+   * Discovers every public filter visible from a collection through its declared relationships.
+   *
+   * <p>The same traversal handles any number of relationships and target collections. Only scalar
+   * fields of an immediate target are reachable because the query language permits one relationship
+   * hop.
+   */
+  private static List<PublishedFilter> publishedFilters(
+      ResourceSchema resource,
+      Map<String, ResourceSchema> resourceSchemas,
+      ResourceRegistry registry) {
+    Map<String, PublishedFilter> published = new LinkedHashMap<>();
     resource
         .filters()
         .forEach(
             filter ->
-                selectors.put(
+                published.put(
                     filter.selector(),
-                    ordered(
-                        "schema",
-                        filterSchema(filter.selector(), resource, resourceSchemas),
-                        "operators",
-                        filter.operators().stream()
-                            .map(ApiV2OpenApiGenerator::operatorToken)
-                            .toList(),
-                        "wildcards",
-                        filter.supportsWildcards())));
+                    publishedFilter(filter.selector(), filter, resource, false)));
+    registry
+        .relationshipQueryPaths(resource.name())
+        .forEach(
+            path -> {
+              ResourceSchema target =
+                  resourceSchemas.get(path.targets().get(0).description().resourceName());
+              if (target == null) {
+                return;
+              }
+              target.filters().stream()
+                  .filter(filter -> filter.selector().equals(path.targetField()))
+                  .findFirst()
+                  .map(
+                      filter ->
+                          new PublishedFilter(
+                              path.selector(),
+                              path.targetField(),
+                              target,
+                              path.filterSelector().operators().stream()
+                                  .map(ApiV2OpenApiGenerator::operatorToken)
+                                  .toList(),
+                              path.filterSelector().supportsWildcards()))
+                  .filter(filter -> !filter.operators().isEmpty())
+                  .ifPresent(filter -> published.put(filter.selector(), filter));
+            });
+    return List.copyOf(published.values());
+  }
+
+  private static PublishedFilter publishedFilter(
+      String selector, FilterSchema filter, ResourceSchema source, boolean throughRelationship) {
+    return new PublishedFilter(
+        selector,
+        filter.selector(),
+        source,
+        filter.operators().stream()
+            .filter(
+                operator ->
+                    !throughRelationship
+                        || FilterSelector.relationshipTargetFieldOperators().contains(operator))
+            .map(ApiV2OpenApiGenerator::operatorToken)
+            .toList(),
+        filter.supportsWildcards());
+  }
+
+  private static Map<String, Object> filterExtension(
+      ResourceSchema resource,
+      Map<String, ResourceSchema> resourceSchemas,
+      ResourceRegistry registry) {
+    Map<String, Object> selectors = new LinkedHashMap<>();
+    publishedFilters(resource, resourceSchemas, registry)
+        .forEach(
+            filter -> {
+              Map<String, Object> definition =
+                  ordered(
+                      "schema",
+                      filterSchema(filter.sourceSelector(), filter.source(), resourceSchemas),
+                      "operators",
+                      filter.operators(),
+                      "wildcards",
+                      filter.supportsWildcards());
+              filter.source().fields().stream()
+                  .filter(field -> field.name().equals(filter.sourceSelector()))
+                  .map(field -> field.openApi().title())
+                  .filter(title -> title != null && !title.isBlank())
+                  .findFirst()
+                  .ifPresent(title -> definition.put("title", title));
+              selectors.put(filter.selector(), definition);
+            });
     return ordered(
         "maximumComparisons",
         CollectionQueryLimits.MAX_COMPARISONS,
@@ -565,9 +652,8 @@ public final class ApiV2OpenApiGenerator {
           if (target == null) {
             return;
           }
-          List<String> fieldNames = new ArrayList<>();
-          target.fields().stream().map(FieldSchema::name).forEach(fieldNames::add);
-          target.relationships().stream().map(RelationshipSchema::name).forEach(fieldNames::add);
+          List<String> fieldNames =
+              target.documentFields().stream().map(ResourceFieldSchema::name).toList();
           allowedFields.put(resourceName, fieldNames);
           properties.put(resourceName, ordered("type", "string"));
         });
@@ -729,11 +815,11 @@ public final class ApiV2OpenApiGenerator {
       ResourceSchema resource, Map<String, String> names, WriteOperation writeOperation) {
     Map<String, Object> properties = new LinkedHashMap<>();
     List<String> required = new ArrayList<>();
-    for (FieldSchema field : resource.fields()) {
+    for (ResourceFieldSchema field : resource.documentFields()) {
       if (writeOperation != null && !field.writeOperations().contains(writeOperation)) {
         continue;
       }
-      Map<String, Object> property = scalarSchema(field.type(), field.nullable());
+      Map<String, Object> property = documentFieldSchema(field, names, writeOperation);
       applyDocumentation(property, field.openApi());
       if (writeOperation == WriteOperation.CREATE && field.defaultValue() != null) {
         property.put("default", field.defaultValue());
@@ -755,29 +841,6 @@ public final class ApiV2OpenApiGenerator {
         required.add(field.name());
       }
     }
-    for (RelationshipSchema relationship : resource.relationships()) {
-      if (writeOperation != null && !relationship.writeOperations().contains(writeOperation)) {
-        continue;
-      }
-      Map<String, Object> property =
-          new LinkedHashMap<>(
-              writeOperation == null
-                  ? relationshipOutput(relationship, names)
-                  : relationshipInput(relationship, writeOperation, names));
-      applyDocumentation(property, relationship.openApi());
-      property.put(
-          "x-rspace-access",
-          accessExtension(
-              writeOperation == null
-                  ? relationship.readAccess()
-                  : writeOperation == WriteOperation.CREATE
-                      ? relationship.createAccess()
-                      : relationship.updateAccess()));
-      properties.put(relationship.name(), nullable(property, relationship.nullable()));
-      if (writeOperation == WriteOperation.CREATE && relationship.requiredOnCreate()) {
-        required.add(relationship.name());
-      }
-    }
     Map<String, Object> schema =
         ordered("type", "object", "additionalProperties", false, "properties", properties);
     if (!required.isEmpty()) {
@@ -792,6 +855,23 @@ public final class ApiV2OpenApiGenerator {
                     ? resource.access().createAccess()
                     : resource.access().updateAccess()));
     return schema;
+  }
+
+  private static Map<String, Object> documentFieldSchema(
+      ResourceFieldSchema field, Map<String, String> names, WriteOperation writeOperation) {
+    Map<String, Object> schema;
+    if (field instanceof FieldSchema scalar) {
+      schema = scalarSchema(scalar.type(), false);
+    } else if (field instanceof RelationshipSchema relationship) {
+      schema =
+          new LinkedHashMap<>(
+              writeOperation == null
+                  ? relationshipOutput(relationship, names)
+                  : relationshipInput(relationship, writeOperation, names));
+    } else {
+      throw new IllegalStateException("Unsupported resource field schema " + field.getClass());
+    }
+    return nullable(schema, writeOperation == null ? field.nullableOnRead() : field.nullable());
   }
 
   private static Map<String, Object> relationshipOutput(
@@ -898,7 +978,15 @@ public final class ApiV2OpenApiGenerator {
   }
 
   private static Map<String, Object> nullable(Map<String, Object> schema, boolean nullable) {
-    return nullable ? ordered("anyOf", List.of(schema, ordered("type", "null"))) : schema;
+    if (!nullable) {
+      return schema;
+    }
+    if (schema.get("type") instanceof String type) {
+      Map<String, Object> result = new LinkedHashMap<>(schema);
+      result.put("type", List.of(type, "null"));
+      return result;
+    }
+    return ordered("anyOf", List.of(schema, ordered("type", "null")));
   }
 
   private static Map<String, Object> scalarSchema(

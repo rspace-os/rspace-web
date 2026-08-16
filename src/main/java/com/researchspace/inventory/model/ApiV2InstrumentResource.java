@@ -25,37 +25,42 @@ import java.util.Set;
 public final class ApiV2InstrumentResource {
 
   public static final CollectionDescription<Instrument> DESCRIPTION =
-      new CollectionDescription<>(
-          "instruments",
-          Instrument.class,
-          List.<Field<Instrument, ?>>of(
-              Field.<Instrument, Long>readOnly(
-                      "id", "id", CollectionFieldTypes.longNumber(), Instrument::getId)
-                  .documented(
-                      documentation("Instrument ID", "Stable instrument identifier.", "123")),
-              Field.<Instrument, String>readOnly(
-                      "name", "editInfo.name", CollectionFieldTypes.text(255), Instrument::getName)
-                  .documented(
-                      documentation(
-                          "Name", "Display name of the instrument.", "Confocal microscope")),
-              Field.<Instrument, String>readOnly(
-                      "globalId",
-                      "globalIdentifier",
-                      CollectionFieldTypes.text(),
-                      Instrument::getGlobalIdentifier)
-                  // Derived from the ID, so there is no column to filter or sort on.
-                  .withQueryCapabilities(false, false)
-                  .documented(documentation("Global ID", "RSpace global identifier.", "IN123")),
-              Field.<Instrument, Boolean>readOnly(
-                      "deleted", "deleted", CollectionFieldTypes.bool(), Instrument::isDeleted)
-                  .withQueryCapabilities(true, false)
-                  .documented(
-                      documentation(
-                          "Deleted", "True when the instrument is in the trash.", "false"))),
-          List.of(),
-          "id",
-          List.of(new Sort("name", true), new Sort("id", true)),
-          AccessPolicy.readOnly(activeInstruments()));
+      description(activeInstruments());
+
+  /** Builds this collection shape with its deployment's complete instrument read policy. */
+  public static CollectionDescription<Instrument> description(AccessFunction readAccess) {
+    return new CollectionDescription<>(
+        "instruments",
+        Instrument.class,
+        List.<Field<Instrument, ?>>of(
+            Field.<Instrument, Long>readOnly(
+                    "id", "id", CollectionFieldTypes.longNumber(), Instrument::getId)
+                .documented(documentation("Instrument ID", "Stable instrument identifier.", "123")),
+            Field.<Instrument, String>readOnly(
+                    "name", "editInfo.name", CollectionFieldTypes.text(255), Instrument::getName)
+                .documented(
+                    documentation(
+                        "Name", "Display name of the instrument.", "Confocal microscope")),
+            Field.<Instrument, String>readOnly(
+                    "globalId",
+                    "globalIdentifier",
+                    CollectionFieldTypes.text(),
+                    Instrument::getGlobalIdentifier)
+                // Derived from the ID, so there is no column to filter or sort on.
+                .withQueryCapabilities(false, false)
+                .documented(documentation("Global ID", "RSpace global identifier.", "IN123")),
+            Field.<Instrument, Boolean>readOnly(
+                    "deleted", "deleted", CollectionFieldTypes.bool(), Instrument::isDeleted)
+                .withQueryCapabilities(true, false)
+                .documented(
+                    documentation(
+                        "Deleted", "True when the instrument is in the trash.", "false"))),
+        List.of(),
+        "id",
+        List.of(new Sort("name", true), new Sort("id", true)),
+        AccessPolicy.readOnly(readAccess),
+        InventoryReadFilters.ALL);
+  }
 
   private ApiV2InstrumentResource() {}
 

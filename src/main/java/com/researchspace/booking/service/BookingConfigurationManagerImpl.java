@@ -9,11 +9,12 @@ import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.ResolvedBookableTarget;
+import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CollectionMutationException;
-import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
@@ -24,6 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -36,55 +38,38 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   private final BookingConfigurationDao bookingConfigurationDao;
   private final Validator validator;
   private final ApplicationEventPublisher events;
-  private final InstrumentEntityApiManager instrumentManager;
+  private final ObjectProvider<ResourceRegistry> resourceRegistry;
 
   public BookingConfigurationManagerImpl(
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao bookingConfigurationDao,
       Validator validator,
       ApplicationEventPublisher events,
-      InstrumentEntityApiManager instrumentManager) {
+      ObjectProvider<ResourceRegistry> resourceRegistry) {
     this.bookingConfigurationDao = bookingConfigurationDao;
     this.validator = validator;
     this.events = events;
-    this.instrumentManager = instrumentManager;
+    this.resourceRegistry = resourceRegistry;
   }
 
   /** Returns one page selected by a parsed collection request. */
   @Override
   public ResourcePage<BookingConfiguration> getConfigurations(ResourceRequest request, User actor) {
     authorizeRead(actor);
-    if (actor.hasRole(Role.SYSTEM_ROLE)) {
-      return bookingConfigurationDao.getResources(request);
-    }
-    List<BookingConfiguration> readable = readableConfigurations(request, actor);
-    long first = (long) (request.page().number() - 1) * request.page().size();
-    if (first >= readable.size() || first > Integer.MAX_VALUE) {
-      return new ResourcePage<>(List.of(), readable.size());
-    }
-    int from = (int) first;
-    int to = Math.min(from + request.page().size(), readable.size());
-    return new ResourcePage<>(readable.subList(from, to), readable.size());
+    return bookingConfigurationDao.getResources(request, targetAccess(actor));
   }
 
   /** Counts configurations selected by a parsed collection request. */
   @Override
   public long countConfigurations(ResourceRequest request, User actor) {
     authorizeRead(actor);
-    return actor.hasRole(Role.SYSTEM_ROLE)
-        ? bookingConfigurationDao.countResources(request)
-        : readableConfigurations(request, actor).size();
+    return bookingConfigurationDao.countResources(request, targetAccess(actor));
   }
 
   /** Finds one configuration without throwing when it is absent. */
   @Override
   public Optional<BookingConfiguration> getConfiguration(Long id, User actor) {
     authorizeRead(actor);
-    if (actor.hasRole(Role.SYSTEM_ROLE)) {
-      return bookingConfigurationDao.getSafeNull(id);
-    }
-    return bookingConfigurationDao
-        .getSafeNull(id)
-        .filter(configuration -> isReadable(configuration, actor));
+    return bookingConfigurationDao.getSafeNull(id);
   }
 
   private void authorizeRead(User actor) {
@@ -93,29 +78,19 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     }
   }
 
-  private List<BookingConfiguration> readableConfigurations(ResourceRequest request, User actor) {
-    return bookingConfigurationDao.getAllResources(request).stream()
-        .filter(configuration -> isReadable(configuration, actor))
-        .toList();
+  private RelationshipReadAccess targetAccess(User actor) {
+    return RelationshipReadAccess.forActor(resourceRegistry.getObject(), actor);
   }
 
-  private boolean isReadable(BookingConfiguration configuration, User actor) {
-    BookableTargetReference target = configuration.getTarget();
-    return target != null
-        && target.type() == BookableTargetType.INSTRUMENT
-        && instrumentManager.findReadableInstrument(target.id(), actor).isPresent();
-  }
-
-  /** Authorizes, validates, and persists a new booking configuration. */
   @Override
-  public BookingConfiguration createConfiguration(Create create, User actor) {
-    return createConfigurations(List.of(create), actor).get(0);
+  public BookingConfiguration createConfiguration(Create create, User subject, User actor) {
+    return createConfigurations(List.of(create), subject, actor).get(0);
   }
 
-  /** Authorizes and atomically validates and persists configurations in input order. */
   @Override
-  public List<BookingConfiguration> createConfigurations(List<Create> creates, User actor) {
-    authorizeMutation(actor);
+  public List<BookingConfiguration> createConfigurations(
+      List<Create> creates, User subject, User actor) {
+    authorizeMutation(subject);
     if (creates.size() > ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkCreateRows()) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }
@@ -130,7 +105,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       requireTargetAvailable(configuration.getTarget(), null);
     }
     List<BookingConfiguration> saved = configurations.stream().map(this::save).toList();
-    saved.forEach(configuration -> notifyAudit(actor, configuration, AuditAction.CREATE));
+    saved.forEach(configuration -> notifyAudit(actor, subject, configuration, AuditAction.CREATE));
     return saved;
   }
 
@@ -144,10 +119,10 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     return configuration;
   }
 
-  /** Authorizes and applies a validated change when the configuration exists. */
   @Override
-  public Optional<BookingConfiguration> updateConfiguration(Long id, Patch patch, User actor) {
-    authorizeMutation(actor);
+  public Optional<BookingConfiguration> updateConfiguration(
+      Long id, Patch patch, User subject, User actor) {
+    authorizeMutation(subject);
     return bookingConfigurationDao
         .getSafeNull(id)
         .map(
@@ -168,16 +143,15 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
               touchAudit(configuration, actor, new Date());
               validate(configuration);
               BookingConfiguration saved = save(configuration);
-              notifyAudit(actor, saved, AuditAction.WRITE);
+              notifyAudit(actor, subject, saved, AuditAction.WRITE);
               return saved;
             });
   }
 
-  /** Authorizes and atomically applies a validated change to the selected configurations. */
   @Override
   public List<BookingConfiguration> updateConfigurations(
-      ResourceRequest request, Patch patch, User actor) {
-    List<BookingConfiguration> matches = bulkMatches(request, actor);
+      ResourceRequest request, Patch patch, User subject, User actor) {
+    List<BookingConfiguration> matches = bulkMatches(request, subject);
     if (patch.target() != null) {
       BookableTargetReference target = validateTarget(patch.target());
       if (matches.size() > 1) {
@@ -196,26 +170,26 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
           validate(configuration);
         });
     matches.forEach(this::save);
-    matches.forEach(configuration -> notifyAudit(actor, configuration, AuditAction.WRITE));
+    matches.forEach(configuration -> notifyAudit(actor, subject, configuration, AuditAction.WRITE));
     return matches;
   }
 
-  /** Authorizes and removes one configuration, returning its previous value when present. */
   @Override
-  public Optional<BookingConfiguration> removeConfiguration(Long id, User actor) {
-    authorizeMutation(actor);
+  public Optional<BookingConfiguration> removeConfiguration(Long id, User subject, User actor) {
+    authorizeMutation(subject);
     Optional<BookingConfiguration> configuration = bookingConfigurationDao.getSafeNull(id);
     configuration.ifPresent(ignored -> bookingConfigurationDao.remove(id));
-    configuration.ifPresent(deleted -> notifyAudit(actor, deleted, AuditAction.DELETE));
+    configuration.ifPresent(deleted -> notifyAudit(actor, subject, deleted, AuditAction.DELETE));
     return configuration;
   }
 
-  /** Authorizes and atomically removes the selected configurations. */
   @Override
-  public List<BookingConfiguration> removeConfigurations(ResourceRequest request, User actor) {
-    List<BookingConfiguration> matches = bulkMatches(request, actor);
+  public List<BookingConfiguration> removeConfigurations(
+      ResourceRequest request, User subject, User actor) {
+    List<BookingConfiguration> matches = bulkMatches(request, subject);
     matches.forEach(configuration -> bookingConfigurationDao.remove(configuration.getId()));
-    matches.forEach(configuration -> notifyAudit(actor, configuration, AuditAction.DELETE));
+    matches.forEach(
+        configuration -> notifyAudit(actor, subject, configuration, AuditAction.DELETE));
     return matches;
   }
 
@@ -240,7 +214,8 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     List<BookingConfiguration> matches =
         bookingConfigurationDao.getResources(
             request,
-            ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1);
+            ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1,
+            RelationshipReadAccess.unrestricted(resourceRegistry.getObject()));
     if (matches.size()
         > ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows()) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
@@ -270,8 +245,9 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     configuration.setUpdatedBy(actor);
   }
 
-  private void notifyAudit(User actor, BookingConfiguration configuration, AuditAction action) {
-    events.publishEvent(new BookingConfigurationAuditEvent(actor, configuration, action));
+  private void notifyAudit(
+      User actor, User subject, BookingConfiguration configuration, AuditAction action) {
+    events.publishEvent(new BookingConfigurationAuditEvent(actor, subject, configuration, action));
   }
 
   private static BookableTargetReference validateTarget(ResolvedBookableTarget target) {

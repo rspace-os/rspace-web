@@ -3,6 +3,7 @@ package com.researchspace.model.collection;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -80,6 +81,24 @@ public final class CollectionFieldTypes {
 
   public static CollectionFieldType<String> text() {
     return text(Integer.MAX_VALUE);
+  }
+
+  /**
+   * A field stored as an enum constant name.
+   *
+   * <p>Written for an internal filter, where a server-built constraint compares against the enum
+   * value itself. Equality is the only meaningful comparison, so ordering and wildcards are absent.
+   */
+  public static <E extends Enum<E>> CollectionFieldType<E> enumeration(Class<E> type) {
+    Objects.requireNonNull(type, "Enum type");
+    return new ScalarFieldType<>(
+        type,
+        CollectionFieldType.InputKind.STRING,
+        new CollectionFieldType.Schema("string", null, null),
+        value -> Enum.valueOf(type, value),
+        Enum::name,
+        BOOLEAN_OPERATORS,
+        false);
   }
 
   public static CollectionFieldType<String> text(int maxLength) {

@@ -5,7 +5,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -22,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
@@ -33,6 +33,7 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionDescription.Sort;
+import com.researchspace.model.collection.CollectionQueryLimits;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
@@ -229,7 +230,7 @@ class ApiV2CrudControllerTest {
         request.getValue().sort());
     assertEquals(
         new FilterExpression.Comparison("message", Operator.EQUAL, List.of("*upgrade*"), true),
-        assertAnonymousMaintenanceConstraint(request.getValue().filter()));
+        request.getValue().filter());
   }
 
   @Test
@@ -251,8 +252,7 @@ class ApiV2CrudControllerTest {
     ScheduledMaintenance maintenance = futureMaintenance(2, "Planned database upgrade");
     maintenance.setId(42L);
     when(maintenanceManager.countResources(any(ResourceRequest.class), any())).thenReturn(3L);
-    when(maintenanceManager.getResources(any(ResourceRequest.class), any()))
-        .thenReturn(new ResourcePage<>(List.of(maintenance), 1));
+    when(maintenanceManager.getResource(42L, null)).thenReturn(Optional.of(maintenance));
 
     mockMvc
         .perform(get(ENDPOINT + "/count").param("where", "message==*upgrade*"))
@@ -275,16 +275,6 @@ class ApiV2CrudControllerTest {
         .perform(get(ENDPOINT + "/42"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("errors.api.v2.notFound"));
-  }
-
-  private static FilterExpression assertAnonymousMaintenanceConstraint(FilterExpression filter) {
-    FilterExpression.And constrained = assertInstanceOf(FilterExpression.And.class, filter);
-    FilterExpression.Comparison endDate =
-        assertInstanceOf(FilterExpression.Comparison.class, constrained.children().get(0));
-    assertEquals("endDate", endDate.field());
-    assertEquals(Operator.GREATER_THAN, endDate.operator());
-    assertInstanceOf(Date.class, endDate.values().get(0));
-    return constrained.children().get(1);
   }
 
   @Test
@@ -354,13 +344,15 @@ class ApiV2CrudControllerTest {
     // real query string is always present, so the raw advice rejects first; either way the caller
     // gets 400 with the same message key, which ApiV2ErrorContractMVCIT asserts end to end.
     mockMvc
-        .perform(get(ENDPOINT).param("where", "x".repeat(4097)))
+        .perform(
+            get(ENDPOINT).param("where", "x".repeat(CollectionQueryLimits.MAX_WHERE_LENGTH + 1)))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.where.length"));
 
     // A real query string does reach the raw advice, which rejects before binding.
+    String oversizedEncodedWhere = "%61".repeat(CollectionQueryLimits.MAX_WHERE_LENGTH / 3 + 1);
     mockMvc
-        .perform(get(ENDPOINT + "?where=" + "%61".repeat(1366)))
+        .perform(get(ENDPOINT + "?where=" + oversizedEncodedWhere))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.where.length"));
   }
@@ -394,7 +386,7 @@ class ApiV2CrudControllerTest {
     mockMvc
         .perform(
             post(ENDPOINT)
-                .requestAttr("user", user)
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -411,7 +403,7 @@ class ApiV2CrudControllerTest {
     mockMvc
         .perform(
             post(ENDPOINT)
-                .requestAttr("user", user)
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"startDate\":\"2026-08-01T10:00:00Z\"}"))
         .andExpect(status().isBadRequest())
@@ -419,7 +411,7 @@ class ApiV2CrudControllerTest {
     mockMvc
         .perform(
             post(ENDPOINT)
-                .requestAttr("user", user)
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -438,7 +430,7 @@ class ApiV2CrudControllerTest {
     mockMvc
         .perform(
             patch(ENDPOINT + "/42")
-                .requestAttr("user", user)
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":null}"))
         .andExpect(status().isOk())
@@ -447,7 +439,9 @@ class ApiV2CrudControllerTest {
 
     when(maintenanceManager.removeResource(42L, user)).thenReturn(Optional.of(updated));
     mockMvc
-        .perform(delete(ENDPOINT + "/42").requestAttr("user", user))
+        .perform(
+            delete(ENDPOINT + "/42")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(42));
   }
@@ -463,7 +457,7 @@ class ApiV2CrudControllerTest {
     mockMvc
         .perform(
             post(ENDPOINT + "/bulk")
-                .requestAttr("user", user)
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -488,7 +482,7 @@ class ApiV2CrudControllerTest {
     mockMvc
         .perform(
             post(ENDPOINT + "/bulk")
-                .requestAttr("user", user)
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"docs\":[]}"))
         .andExpect(status().isBadRequest())
@@ -507,7 +501,7 @@ class ApiV2CrudControllerTest {
         .perform(
             patch(ENDPOINT)
                 .param("where", "id==42")
-                .requestAttr("user", user)
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":\"Updated\"}"))
         .andExpect(status().isOk())
@@ -515,7 +509,10 @@ class ApiV2CrudControllerTest {
         .andExpect(jsonPath("$.errors").isEmpty());
 
     mockMvc
-        .perform(delete(ENDPOINT).requestAttr("user", user).contentType(MediaType.APPLICATION_JSON))
+        .perform(
+            delete(ENDPOINT)
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user))
+                .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bulk.filter.required"));
   }

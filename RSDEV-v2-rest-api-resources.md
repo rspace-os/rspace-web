@@ -10,7 +10,8 @@ OpenAPI document at `/api/v2/openapi.json` is the public HTTP contract.
 The `users` collection has standard collection routes. Its policy gives a system administrator
 access to all users. Another authenticated user can read only their own row.
 
-The `/api/v2/users/me` route is a concrete controller route. It returns the current API user.
+The `/api/v2/users/me` route is a concrete controller route. It returns the effective subject and
+API session state. During delegated use, the session state also identifies the original actor.
 The `/api/v2/users/me/profile-image` route returns the current profile image as a PNG file.
 
 User write routes exist in the standard route set. The read-only access policy refuses every user
@@ -33,8 +34,12 @@ requests through `ETag` and `If-None-Match`.
 
 ## Common request behavior
 
-REST API v2 accepts an API key or an OAuth bearer token. It does not use browser cookies or servlet
-sessions.
+REST API v2 accepts an API key or an OAuth bearer token. Ordinary API keys and external OAuth
+tokens do not use browser cookies or servlet sessions. The token-minting route uses the live
+browser session. A session-bound UI token must also match that session.
+
+The session-bound token identifies the effective subject and the original actor. Authorization
+uses the subject. Throttling uses the actor.
 
 Public routes do not require credentials. Collection routes apply their resource policy. Other
 routes require authentication by default.

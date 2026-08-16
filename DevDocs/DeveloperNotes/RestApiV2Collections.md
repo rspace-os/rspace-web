@@ -24,7 +24,7 @@ The current implementation supplies these routes outside the collection controll
 | --- | --- | --- |
 | `GET /api/v2/config` | Public | Application version, branding, help links, description, and support email. |
 | `GET /api/v2/openapi.json` | Public | The generated OpenAPI 3.1 document. |
-| `POST /api/v2/oauth/tokens` | Browser session, not operating as another user | A non-cached UI OAuth token. |
+| `POST /api/v2/oauth/tokens` | Browser session | A non-cached, session-bound UI OAuth token that retains actor and subject during run-as. |
 | `GET /api/v2/users/me` | Authenticated | Identity, roles, capabilities, external identifiers, and API session state. |
 | `GET /api/v2/users/me/profile-image` | Authenticated | The current profile image as a non-cached PNG file. |
 
@@ -73,6 +73,7 @@ public record ApiV2WidgetResource(
   public static final CollectionDescription<Widget> DESCRIPTION =
       CollectionDescription.fromApiV2Resource(
           ApiV2WidgetResource.class,
+          Widget.class,
           List.of(),
           List.of(new Sort("name", true), new Sort("id", true)),
           AccessPolicy.authenticated());
@@ -99,6 +100,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.api.v2.resource.ResourceOperation;
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
@@ -141,50 +143,54 @@ public class WidgetResourceOperations implements ResourceOperations<Widget, Long
   }
 
   @Override
-  public ResourcePage<Widget> find(ResourceRequest request, User actor) {
-    return manager.getWidgets(request);
+  public ResourcePage<Widget> find(ResourceRequest request, User subject) {
+    return manager.getWidgets(request, subject);
   }
 
   @Override
-  public long count(ResourceRequest request, User actor) {
-    return manager.countWidgets(request);
+  public long count(ResourceRequest request, User subject) {
+    return manager.countWidgets(request, subject);
   }
 
   @Override
-  public Optional<Widget> findById(Long id, User actor) {
-    return manager.getWidget(id);
+  public Optional<Widget> findById(Long id, User subject) {
+    return manager.getWidget(id, subject);
   }
 
   @Override
-  public Widget create(ParsedDocument document, User actor) {
-    return manager.createWidget(WidgetCreate.from(document), actor);
+  public Widget create(ParsedDocument document, ApiV2Caller caller) {
+    return manager.createWidget(WidgetCreate.from(document), caller.subject(), caller.actor());
   }
 
   @Override
-  public List<Widget> createMany(List<ParsedDocument> documents, User actor) {
+  public List<Widget> createMany(List<ParsedDocument> documents, ApiV2Caller caller) {
     return manager.createResources(
-        documents.stream().map(WidgetInput::from).map(WidgetInput::toWidget).toList(), actor);
+        documents.stream().map(WidgetInput::from).map(WidgetInput::toWidget).toList(),
+        caller.subject(),
+        caller.actor());
   }
 
   @Override
-  public Optional<Widget> update(Long id, ParsedDocument document, User actor) {
-    return manager.updateWidget(id, WidgetPatch.from(document), actor);
+  public Optional<Widget> update(Long id, ParsedDocument document, ApiV2Caller caller) {
+    return manager.updateWidget(
+        id, WidgetPatch.from(document), caller.subject(), caller.actor());
   }
 
   @Override
   public List<Widget> updateMany(
-      ResourceRequest request, ParsedDocument document, User actor) {
-    return manager.updateWidgets(request, WidgetPatch.from(document), actor);
+      ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
+    return manager.updateWidgets(
+        request, WidgetPatch.from(document), caller.subject(), caller.actor());
   }
 
   @Override
-  public Optional<Widget> delete(Long id, User actor) {
-    return manager.removeWidget(id, actor);
+  public Optional<Widget> delete(Long id, ApiV2Caller caller) {
+    return manager.removeWidget(id, caller.subject(), caller.actor());
   }
 
   @Override
-  public List<Widget> deleteMany(ResourceRequest request, User actor) {
-    return manager.removeWidgets(request, actor);
+  public List<Widget> deleteMany(ResourceRequest request, ApiV2Caller caller) {
+    return manager.removeWidgets(request, caller.subject(), caller.actor());
   }
 }
 ```
@@ -237,6 +243,12 @@ browser session or an implicit security context. Managers must apply the resourc
 row constraint before they return data, including when they are called outside the HTTP
 registration pipeline.
 
+For a REST API v2 request, the user supplied to a read is the effective subject. A write receives
+an `ApiV2Caller`, which contains the effective subject and the originating actor. The manager must
+authorize the subject. An audit event must use the actor and retain the subject when they differ.
+Booking Configuration and Feature Flag changes keep the actor in the normal audit field. During
+delegation, they also add the subject username to the audit event data.
+
 Use `InMemoryCollectionQuery` for a bounded collection that does not use database queries. This
 adapter applies the standard filter, sort, page, and count rules to a resource snapshot.
 
@@ -267,29 +279,20 @@ function returns `AccessResult.allowedWhere(...)`, and the registration folds th
 the list, the count, the single read, and relationship resolution. `ApiV2InstrumentResource` hides
 soft-deleted rows this way, so its operations class does not repeat the rule on each route.
 
-Keep a rule that a constraint cannot express in the collection query, not in the operations class.
-Inventory sharing tests a whitelist ACL, which a constraint could reference only by publishing the
-sharing mode and the ACL as filterable API fields.
+Use an `InternalFilter` when a server access rule needs a property that clients must not query.
+The query compiler can resolve this selector, but request parsing and OpenAPI do not publish it.
 
-Pass such a rule to `CollectionQueryExecutor.page` or `count` as a `RsqlCollectionQuery.Predicate`.
-The executor ANDs it with the caller's filter, so the database applies the filter, the sort, the
-restriction, and the page together. The page and the count then agree, and no route reads the whole
-collection to filter it in Java.
+Inventory sharing uses internal selectors for the owner, sharing mode, and sharing ACL.
+`InventoryReadFilters.ALL` defines these selectors. Each applicable inventory description must
+include that list.
 
-```java
-return collectionQuery.page(criteriaBuilderFactory, getSession(), request, restriction);
-```
+`InstrumentReadAccess` returns one `AccessResult.allowedWhere(...)` constraint that uses those
+selectors. The manager evaluates the policy. `InventoryDaoHibernate` compiles the trusted
+constraint and combines it with the client filter. The database then applies access, filtering,
+sorting, pagination, and totals together.
 
-Build the predicate with the alias the executor uses, available from `collectionQuery.alias()`. Bind
-enum values as parameters. The Blaze-Persistence expression parser does not accept the HQL literal
-form for a nested enum.
-
-Inventory DAOs do not build that predicate themselves. `InventoryDaoHibernate` supplies
-`readableResourcePage`, `countReadableResources`, and `inventoryReadRestriction`, so each inventory
-collection shares one copy of the sharing rules.
-
-Do not filter rows in the operations class. A second pass in Java compares text by Java rules, not
-by the database collation, so a row the query matched can disappear from the page and the total.
+Do not filter rows in the operations class. A second Java pass uses Java text rules instead of the
+database collation. A matched row can then disappear from the page and total.
 
 An operations class must not call a DAO. A DAO assumes an active transaction, and the REST layer has
 none, so a collection read goes through the domain manager. `InstrumentResourceOperations` calls
@@ -303,7 +306,7 @@ access checks, parses JSON, resolves relationships, and renders the response. It
 resource operations class.
 
 Other Java code can inject the concrete operations class. Use this method when the caller already
-has REST v2 types such as `ResourceRequest` or `ParsedDocument`.
+has REST API v2 types such as `ResourceRequest` or `ParsedDocument`.
 
 ```java
 @Service
@@ -315,8 +318,8 @@ public final class WidgetReportService {
     this.widgetOperations = widgetOperations;
   }
 
-  public ResourcePage<Widget> findWidgets(ResourceRequest request) {
-    return widgetOperations.find(request);
+  public ResourcePage<Widget> findWidgets(ResourceRequest request, User subject) {
+    return widgetOperations.find(request, subject);
   }
 }
 ```
@@ -335,8 +338,8 @@ public WidgetReportService(
   this.widgetSpec = spec;
 }
 
-public ResourcePage<Widget> findWidgets(ResourceRequest request) {
-  return widgetSpec.operations().find(request);
+public ResourcePage<Widget> findWidgets(ResourceRequest request, User subject) {
+  return widgetSpec.operations().find(request, subject);
 }
 ```
 
@@ -353,8 +356,9 @@ these tasks:
 
 For this reason, do not use a direct operations call to bypass the REST registration. The caller
 must supply a validated `ResourceRequest`. For a write, the caller must supply a validated
-`ParsedDocument` with resolved relationships. The caller must also perform the required access
-checks.
+`ParsedDocument` with resolved relationships and an `ApiV2Caller`. Construct
+`ApiV2Caller.direct(user)` only when there is no delegated identity. The caller must also perform
+the required access checks.
 
 Most services must call the concrete standard collection manager instead of the operations class.
 The manager is the shared application boundary for collection commands. This rule keeps the same
@@ -363,9 +367,9 @@ handlers, and other services.
 
 Use the operations class in these cases:
 
-- The caller works with REST v2 request types.
+- The caller works with REST API v2 request types.
 - The caller needs the same conversion from `ParsedDocument` to a domain command.
-- The caller has already completed the REST v2 access and validation steps.
+- The caller has already completed the REST API v2 access and validation steps.
 
 Use the standard collection manager in these cases:
 
@@ -427,7 +431,7 @@ Each registered resource also has these routes:
 | `GET /api/v2/widgets/{id}/audit/count` | The number of matching audit events. |
 
 The caller must authenticate with an API key or an OAuth bearer token. The caller must also have
-read access to the resource. The audit handler applies its normal actor visibility rules.
+read access to the resource. The audit handler applies its normal subject visibility rules.
 
 The list route accepts `page`, `limit`, `dateFrom`, `dateTo`, and repeated `actions` parameters. The
 count route accepts the date and action filters. The server limits each search to 183 days. It uses
@@ -438,8 +442,8 @@ A resource without this metadata returns an empty audit result. Use a stable ide
 unique across audit domains. An entity in the `UNKNOWN` audit domain must include the resource name
 in its audit identifier.
 
-The response payload contains only audit properties that have matching readable REST v2 fields or
-relationships. It does not contain the audit identifier or audit-only properties. This rule
+The response payload contains only audit properties that have matching readable REST API v2 fields
+or relationships. It does not contain the audit identifier or audit-only properties. This rule
 prevents an audit response from bypassing field access.
 
 ## Resource configuration
@@ -519,7 +523,7 @@ writer or row-specific field access.
 A programmatic writable field can call `defaultValue(value)` to supply a fixed value when a create
 document omits that field. An explicit client value, including an allowed `null`, takes precedence.
 The framework applies this default only on create and publishes it in the create schema. Dynamic
-defaults are not supported yet; apply contextual values in the create operation.
+defaults are not supported yet. Apply contextual values in the create operation.
 
 Most annotation options only change OpenAPI. They do not add domain validation. The runtime options
 in the table are exceptions. The manager must enforce all domain rules.
@@ -682,16 +686,19 @@ The default policy requires authentication. Configure anonymous reads explicitly
 accepts an `apiKey` header or an OAuth bearer token. REST API v2 usually ignores browser cookies.
 A request with only a session cookie is usually anonymous.
 
-`POST /api/v2/oauth/tokens` is the only exception. It uses an existing authenticated browser
-session to create a UI OAuth token. It does not create a browser session. It ignores API keys and
-bearer tokens. Permissive API CORS does not apply to this route.
+`POST /api/v2/oauth/tokens` is the only credential-minting exception. It uses an existing
+authenticated browser session to create a UI OAuth token. It does not create a browser session. It
+ignores API keys and bearer tokens. Permissive API CORS does not apply to this route. During run-as,
+the token's `sub` is the effective user and its RFC 8693 `act.sub` is the original administrator.
+Every REST API v2 UI token carries the UI audience. It also carries an opaque `sid` that binds it to
+the current browser authentication context.
 
-The authentication interceptor always resolves supplied credentials and passes the caller, or an
-anonymous caller, to an access function. `ApiV2EndpointSpec` supplies the coarse controller policy;
-a handler with no contributed spec defaults to authenticated access. Public controllers contribute
-`AccessFunction.anyone()`. The generic CRUD controller also contributes `anyone()` at this seam so
-that its selected `ApiV2ResourceSpec` operation can make the final decision from the collection
-policy. Invalid supplied credentials are rejected even when the endpoint is public.
+The authentication interceptor always resolves supplied credentials and passes the subject, or an
+anonymous subject, to an access function. `ApiV2EndpointSpec` supplies the coarse controller policy.
+A handler with no contributed spec defaults to authenticated access. Public controllers contribute
+`AccessFunction.anyone()`. The generic CRUD controller also contributes `anyone()` at this seam.
+Its selected `ApiV2ResourceSpec` operation makes the final decision from the collection policy.
+Invalid supplied credentials are rejected even when the endpoint is public.
 The server uses the API key when both credential headers are present.
 
 These policy fields are independent:
@@ -743,18 +750,27 @@ receives one document through `requireInput()`.
 
 ### Stateless requests
 
-The servlet filter removes cookie headers before Shiro processes a REST API v2 request. The filter
-also prevents servlet-session reads and writes. It preserves the existing session only for
-`POST /api/v2/oauth/tokens`.
+The servlet filter removes cookie headers before Shiro processes ordinary REST API v2 requests. It
+also prevents servlet-session reads and writes. It preserves the existing session for
+`POST /api/v2/oauth/tokens` and for bearer JWTs that declare the dedicated REST API v2 UI audience.
+The audience declaration is only a routing hint. Authentication still verifies the JWT signature,
+token row, subject, actor, and session binding before any controller runs. API keys and
+external OAuth tokens remain stateless and cannot inherit run-as.
 
 The authentication interceptor does not log in to Shiro. It does not log out of Shiro after the
-request. Endpoint metadata selects browser-session authentication only for the token route. These
-rules prevent a browser session from changing other API authorization.
+request. Endpoint metadata selects browser-session authentication only for the token route. A
+session-bound UI token authorizes as its subject and records both actor and subject for delegated
+security events. Other credentials never consult the browser identity.
 
-An operating-as browser session cannot mint a UI OAuth token. This rule prevents the delegated
-identity from becoming a persistent bearer credential without its original actor. Authenticated
-responses use `Cache-Control: no-store, private`; public configuration and OpenAPI responses keep
-their explicit cache policies.
+Starting and ending legacy Shiro run-as rotates the opaque browser authentication context. Tokens
+from before either transition therefore fail immediately, even if their JWT expiry has not passed.
+The UI mints a fresh v2 token after each page load. It does not trust a token retained in session
+storage across a run-as redirect. Authenticated responses use `Cache-Control: no-store, private`.
+Public configuration and OpenAPI responses keep their explicit cache policies.
+
+The legacy UI-token endpoint refuses token creation during run-as. REST API v1 also rejects a
+session-bound REST API v2 UI token. The frontend keeps the v2 token in query memory and does not
+replace the legacy token in session storage.
 
 ### Rate limits
 
@@ -763,7 +779,7 @@ properties.
 
 REST API v2 uses thread-safe Bucket4j buckets with greedy refill. Before authentication, a source
 bucket limits credential failures and anonymous traffic. After successful authentication, each
-stable user-ID bucket applies the 15-second, hourly, and daily limits atomically. A separate global
+stable actor-ID bucket applies the 15-second, hourly, and daily limits atomically. A separate global
 bucket and minimum request interval apply only to authenticated traffic. Raw, unvalidated
 credentials are never bucket keys and cannot consume the authenticated global allowance.
 
@@ -781,7 +797,7 @@ The REST API v2 throttle uses these properties:
 When throttling is enabled, responses contain `X-Rate-Limit-*` usage headers. A rejected request
 returns 429 and an API problem body.
 
-Authenticated buckets use a SHA-256 fingerprint of the stable user ID. Public, anonymous, and
+Authenticated buckets use a SHA-256 fingerprint of the stable actor ID. Public, anonymous, and
 invalid-credential buckets use a fingerprint of the client address. The server does not retain
 user IDs or client addresses in the bucket key.
 
@@ -807,6 +823,7 @@ These differences are intentional:
 | --- | --- | --- |
 | Browser state | Authentication can use Shiro request state. | The stateless filter removes cookies and blocks servlet-session access. |
 | Authentication lifecycle | The interceptor logs in to Shiro and logs out after the request. | The interceptor validates credentials without changing Shiro state. |
+| UI bearer tokens | Accepts legacy UI tokens and rejects session-bound v2 UI tokens. | Requires the live session for a session-bound UI token. |
 | External OAuth controls | External OAuth does not apply all API availability settings. | External OAuth applies deployment, user, and OAuth availability settings. |
 | Disabled throttling | Responses contain fabricated rate-limit statistics. | Responses do not contain rate-limit statistics. |
 | Throttle keys | The bucket store retains raw credentials and has no size limit. | The bucket store retains fingerprints and keeps at most 10,000 caller keys. |
@@ -837,18 +854,66 @@ This example is a polymorphic to-one value:
 ```
 
 Before it calls the operations class, the relationship resolver verifies that the target exists.
-It also verifies that the actor can read the target. The operations class receives a
+It also verifies that the effective subject can read the target. The operations class receives a
 `ResolvedResourceReference`. It does not receive an untrusted ID. Rendering repeats target read
-authorization for every relationship and omits an unreadable reference at every depth; it never
-falls back to a raw target ID.
+authorization for every relationship. A missing or unreadable target renders the complete
+relationship field as `null` at every depth. It never falls back to a raw target ID, resource name,
+or global ID. The entity that contains the relationship remains readable and remains in list totals.
+
+An ordinary list or count does not join the relationship target or apply its access rule. A filter
+that observes a relationship, including its stored ID or a target field, compiles to an authorized
+correlated `EXISTS` query. Thus an unfiltered count performs no target-access query, while a target
+filter cannot be used to enumerate hidden references.
+
+Every `CollectionDao` query receives an explicit `RelationshipReadAccess`. The generic collection
+manager uses the complete `ResourceRegistry` by default. It evaluates each observed target's read
+policy for the effective subject. It caches each decision for the query and does not evaluate
+unrelated target policies.
+
+A new manager that extends `AbstractCollectionManager` must pass an
+`ObjectProvider<ResourceRegistry>` to the superclass:
+
+```java
+protected WidgetManager(
+    WidgetDao dao,
+    ObjectProvider<ResourceRegistry> resourceRegistry) {
+  super(dao, ApiV2WidgetResource.DESCRIPTION, resourceRegistry);
+}
+```
+
+The provider avoids a construction cycle while the resource catalog starts. The registry discovers
+each one-hop public scalar target filter from the declared relationship. A standard manager needs
+no override when a new relationship is added.
+
+For a new standard relationship, permissions resolve in this order:
+
+1. At startup, the registry validates the target resource, entity type, ID type, and query fields.
+2. The HTTP boundary checks access to the source relationship and each target field.
+3. The manager evaluates the target collection read policy for the effective subject.
+4. The DAO adds that target row constraint to the correlated `EXISTS` query.
+5. The renderer independently checks target access before it returns a relationship value.
+
+Thus, a new standard collection gets relationship permission handling from its declarations and
+registry. It does not need a collection-specific target map.
+
+A custom manager that does not extend `AbstractCollectionManager` must pass
+`RelationshipReadAccess.forActor(registry, subject)` to its DAO. Mutation filters reuse the read
+policy by default. `RelationshipReadAccess.none()` remains a fail-closed option for a lower-level
+query that has no registry.
+
+A manager can supply `unrestricted()` only after a domain-specific authorization check. The
+booking-configuration manager uses it after the system-role check for bulk mutations. A
+persistence adapter must not choose this policy.
 
 A target can support relationships without top-level CRUD routes. Register an
-`ApiV2RelationshipTargetSpec<T, ID>` bean for this target. The lookup must return only entities that
-the actor can read. A target-only resource adds schemas to OpenAPI but does not add paths.
+`ApiV2RelationshipTargetSpec<T, ID>` bean for this target. Its batch lookup receives a set of IDs
+and returns a map containing only entities that the effective subject can read. A target-only
+resource adds schemas to OpenAPI but does not add paths. Its access policy must not return a row
+constraint. The batch lookup must enforce row visibility.
 
-At `depth=0`, `value` is the raw target ID. This reference object is also the update shape. If the
-client supplies `globalId`, it must agree with `relationTo` and `value`. A relationship can also
-accept a global-ID string as update shorthand.
+At `depth=0`, a readable target's `value` is its ID. This reference object is also the update shape.
+If the client supplies `globalId`, it must agree with `relationTo` and `value`. A relationship can
+also accept a global-ID string as update shorthand. Target visibility is still checked at depth 0.
 
 At a greater depth, `value` is the expanded target document. The relationship envelope does not
 change. The target registration applies its access and field rules. The API does not accept an
@@ -857,6 +922,11 @@ expanded response object as update input.
 A response includes `globalId` when the target has a global-ID prefix. For example, an instrument
 reference includes `"globalId": "IN123"`. The response keeps `globalId` when `value` is expanded. A
 target without a global ID, such as a user, does not include this field.
+
+Relationship population is request-scoped and breadth-first. The renderer deduplicates target IDs,
+groups them by resource type, and issues one authorized `IN` query per type at each requested depth.
+Resolved and unavailable targets are cached for the request. This bounds projection queries by
+depth and target types instead of by the number of returned entities.
 
 ## Errors and locale
 

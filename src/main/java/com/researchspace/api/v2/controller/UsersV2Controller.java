@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.controller;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.model.ApiV2CurrentUser;
 import com.researchspace.api.v2.model.ApiV2CurrentUser.Capabilities;
 import com.researchspace.api.v2.model.ApiV2CurrentUser.LiveChat;
@@ -16,13 +17,12 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserProfileManager;
 import com.researchspace.service.inventory.ContainerApiManager;
-import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.controller.ResponseHeaders;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Date;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -58,7 +58,8 @@ public class UsersV2Controller {
         @ApiResponse(responseCode = "429", description = "The request was throttled.")
       })
   public ApiV2CurrentUser getCurrentUser(
-      @RequestAttribute(name = "user") User user, HttpServletRequest request) {
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
+    User user = caller.subject();
     UserProfile profile = userProfileManager.getUserProfile(user);
     ImageBlob picture = profile.getProfilePicture();
     return new ApiV2CurrentUser(
@@ -78,7 +79,7 @@ public class UsersV2Controller {
         orcid(user),
         capabilities(user),
         liveChat(),
-        session(user, request));
+        session(user, caller.actor()));
   }
 
   @GetMapping(value = "/me/profile-image", produces = MediaType.IMAGE_PNG_VALUE)
@@ -97,7 +98,8 @@ public class UsersV2Controller {
         @ApiResponse(responseCode = "429", description = "The request was throttled.")
       })
   public ResponseEntity<byte[]> getCurrentUserProfileImage(
-      @RequestAttribute(name = "user") User user) {
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
+    User user = caller.subject();
     ImageBlob image = userProfileManager.getUserProfile(user).getProfilePicture();
     if (image == null) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -130,12 +132,9 @@ public class UsersV2Controller {
         user.hasAdminRole());
   }
 
-  private Session session(User user, HttpServletRequest request) {
+  private Session session(User user, User actor) {
     Date lastLogin = user.getLastLogin();
-    boolean operatedAs =
-        request.getSession(false) != null
-            && Boolean.TRUE.equals(
-                request.getSession(false).getAttribute(SessionAttributeUtils.IS_RUN_AS));
+    boolean operatedAs = actor != null && !Objects.equals(actor.getId(), user.getId());
     return new Session(operatedAs, lastLogin == null ? null : lastLogin.toInstant().toString());
   }
 

@@ -2,6 +2,7 @@ package com.researchspace.api.v2.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.model.ApiV2BulkResult;
 import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.model.ApiV2ListResult;
@@ -17,12 +18,14 @@ import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.model.collection.ResourceRequest;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -108,33 +111,30 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     ID id = parseId(rawId);
     AccessContext context =
         new AccessContext(caller, Operation.READ, description.resourceName(), id);
-    AccessResult result = decide(context, Operation.READ);
+    decide(context, Operation.READ);
     rejectUnreadableQueryFields(context, request);
     ResourceRequest narrowed = narrowSelection(context, request);
-    Optional<FilterExpression> constraint = result.constraintOrEmpty();
-    if (constraint.isEmpty()) {
-      return crud.get(id, narrowed, caller);
-    }
-    return crud.getMatching(
-        singleRow(withFilter(narrowed, and(constraint.get(), idEquals(id)))), caller);
+    return crud.get(id, narrowed, caller);
   }
 
-  public Map<String, Object> create(JsonNode body, User actor) {
-    requireDocumentedAuthentication(Operation.CREATE, actor);
-    AccessContext base = new AccessContext(actor, Operation.CREATE, description.resourceName());
+  public Map<String, Object> create(JsonNode body, ApiV2Caller caller) {
+    User subject = subject(caller);
+    requireDocumentedAuthentication(Operation.CREATE, subject);
+    AccessContext base = new AccessContext(subject, Operation.CREATE, description.resourceName());
     ParsedDocument document =
         ApiV2DocumentParser.parseStructure(
             body, description, WriteOperation.CREATE, spec.createErrorKey(), base);
     AccessContext context = authorizeWrite(base.withInput(document));
     ApiV2DocumentParser.authorizeFields(
         body, description, WriteOperation.CREATE, spec.createErrorKey(), context);
-    document = resolve(document, actor, context, spec.createErrorKey(), false);
-    return crud.create(document, actor, narrowFields(context, FieldSelection.all()));
+    document = resolve(document, subject, context, spec.createErrorKey(), false);
+    return crud.create(document, caller, narrowFields(context, FieldSelection.all()));
   }
 
-  public ApiV2BulkResult<Map<String, Object>> createMany(JsonNode body, User actor) {
-    requireDocumentedAuthentication(Operation.CREATE, actor);
-    AccessContext base = new AccessContext(actor, Operation.CREATE, description.resourceName());
+  public ApiV2BulkResult<Map<String, Object>> createMany(JsonNode body, ApiV2Caller caller) {
+    User subject = subject(caller);
+    requireDocumentedAuthentication(Operation.CREATE, subject);
+    AccessContext base = new AccessContext(subject, Operation.CREATE, description.resourceName());
     List<ParsedDocument> documents =
         ApiV2DocumentParser.parseManyStructure(
             body,
@@ -146,41 +146,48 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     ApiV2DocumentParser.authorizeManyFields(
         body, documents, description, spec.createErrorKey(), context);
     return crud.createMany(
-        resolveMany(documents, actor, context, spec.createErrorKey()),
-        actor,
+        resolveMany(documents, subject, context, spec.createErrorKey()),
+        caller,
         narrowFields(context, FieldSelection.all()));
   }
 
-  public Map<String, Object> update(String rawId, JsonNode body, User actor) {
+  public Map<String, Object> update(String rawId, JsonNode body, ApiV2Caller caller) {
+    User subject = subject(caller);
     ID id = parseId(rawId);
-    AccessContext context = authorizeWrite(Operation.UPDATE, actor, id);
+    AccessContext context = authorizeWrite(Operation.UPDATE, subject, id);
     ParsedDocument document =
         ApiV2DocumentParser.parse(
             body, description, WriteOperation.UPDATE, spec.updateErrorKey(), context);
-    document = resolve(document, actor, context, spec.updateErrorKey(), false);
-    return crud.update(id, document, actor, narrowFields(context, FieldSelection.all()));
+    document = resolve(document, subject, context, spec.updateErrorKey(), false);
+    return crud.update(id, document, caller, narrowFields(context, FieldSelection.all()));
   }
 
   public ApiV2BulkResult<Map<String, Object>> updateMany(
-      ResourceRequest request, JsonNode body, User actor) {
-    AccessContext context = new AccessContext(actor, Operation.UPDATE, description.resourceName());
+      ResourceRequest request, JsonNode body, ApiV2Caller caller) {
+    User subject = subject(caller);
+    AccessContext context =
+        new AccessContext(subject, Operation.UPDATE, description.resourceName());
     ResourceRequest authorized = authorizeWith(context, request);
     ParsedDocument document =
         ApiV2DocumentParser.parse(
             body, description, WriteOperation.UPDATE, spec.updateErrorKey(), context);
-    document = resolve(document, actor, context, spec.updateErrorKey(), true);
-    return crud.updateMany(authorized, document, actor);
+    document = resolve(document, subject, context, spec.updateErrorKey(), true);
+    return crud.updateMany(authorized, document, caller);
   }
 
-  public Map<String, Object> delete(String rawId, User actor) {
+  public Map<String, Object> delete(String rawId, ApiV2Caller caller) {
+    User subject = subject(caller);
     ID id = parseId(rawId);
-    AccessContext context = authorizeWrite(Operation.DELETE, actor, id);
-    return crud.delete(id, actor, narrowFields(context, FieldSelection.all()));
+    AccessContext context = authorizeWrite(Operation.DELETE, subject, id);
+    return crud.delete(id, caller, narrowFields(context, FieldSelection.all()));
   }
 
-  public ApiV2BulkResult<Map<String, Object>> deleteMany(ResourceRequest request, User actor) {
-    AccessContext context = new AccessContext(actor, Operation.DELETE, description.resourceName());
-    return crud.deleteMany(authorizeWith(context, request), actor);
+  public ApiV2BulkResult<Map<String, Object>> deleteMany(
+      ResourceRequest request, ApiV2Caller caller) {
+    User subject = subject(caller);
+    AccessContext context =
+        new AccessContext(subject, Operation.DELETE, description.resourceName());
+    return crud.deleteMany(authorizeWith(context, request), caller);
   }
 
   /** Finds one readable entity for the default audit endpoints. */
@@ -188,55 +195,73 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return resolveReadable(parseId(rawId), actor).orElseThrow(NotFoundException::new);
   }
 
-  /** Finds one entity for a relationship without disclosing why it is unavailable. */
+  /** Finds entities for relationship projection without disclosing why any one is unavailable. */
   @Override
-  public Optional<ResolvedTarget> resolveReadable(Object rawId, User actor) {
-    ID id = castId(rawId);
-    AccessContext context =
-        new AccessContext(actor, Operation.READ, description.resourceName(), id);
+  public Map<Object, ResolvedTarget> resolveReadable(Set<Object> rawIds, User actor) {
+    Set<ID> ids = rawIds.stream().map(this::castId).collect(java.util.stream.Collectors.toSet());
+    AccessContext context = new AccessContext(actor, Operation.READ, description.resourceName());
     AccessResult result = description.accessPolicy().readAccess().check(context);
     if (result.isDenied()) {
-      return Optional.empty();
+      return Map.of();
     }
+    FilterExpression idsFilter =
+        new FilterExpression.Comparison(
+            description.idField(), CollectionDescription.Operator.IN, new ArrayList<>(ids), false);
     return ApiV2ReadableTargetSupport.hideAuthorizationFailure(
-        actor,
-        description.resourceName(),
-        () ->
-            result
-                .constraintOrEmpty()
-                .map(
-                    constraint ->
-                        operations
-                            .find(ResourceRequest.unpaged(and(constraint, idEquals(id))), actor)
-                            .resources()
-                            .stream()
-                            .findFirst())
-                .orElseGet(() -> operations.findById(id, actor))
-                .map(
-                    entity ->
-                        new ResolvedTarget(entity, narrowFields(context, FieldSelection.all()))));
+            actor,
+            description.resourceName(),
+            () ->
+                Optional.of(
+                    operations
+                        .find(
+                            new ResourceRequest(
+                                idsFilter,
+                                description.defaultSort(),
+                                new ResourceRequest.Page(1, ids.size()),
+                                FieldSelection.all(),
+                                IncludeTree.empty()),
+                            actor)
+                        .resources()
+                        .stream()
+                        .filter(entity -> ids.contains(description.idValue(entity)))
+                        .collect(
+                            java.util.stream.Collectors.toMap(
+                                entity -> description.idValue(entity),
+                                entity ->
+                                    new ResolvedTarget(
+                                        entity,
+                                        narrowFields(
+                                            new AccessContext(
+                                                actor,
+                                                Operation.READ,
+                                                description.resourceName(),
+                                                description.idValue(entity)),
+                                            FieldSelection.all())),
+                                (left, right) -> left,
+                                LinkedHashMap::new))))
+        .<Map<Object, ResolvedTarget>>map(map -> new LinkedHashMap<>(map))
+        .orElseGet(Map::of);
   }
 
   /**
-   * The single place collection and field access are enforced.
+   * The single place collection and field access are enforced at the HTTP boundary.
    *
-   * <p>Order matters. Field access is checked against the caller's own query first, then the
-   * policy's constraint is folded in: the constraint legitimately references fields the caller may
-   * not read (an ownership check on {@code id} being the obvious case), so it must not be subject
-   * to the same rejection.
+   * <p>Order matters. Field access is checked against the caller's own query first, then the policy
+   * decision is made. Row constraints remain the service's responsibility so a resource is not
+   * narrowed twice when the same manager also serves non-HTTP callers.
    */
   private ResourceRequest authorize(Operation operation, User caller, ResourceRequest request) {
-    return authorizeWith(new AccessContext(caller, operation, description.resourceName()), request);
+    AccessContext context = new AccessContext(caller, operation, description.resourceName());
+    decide(context, operation);
+    rejectUnreadableQueryFields(context, request);
+    return narrowSelection(context, request);
   }
 
   private ResourceRequest authorizeWith(AccessContext context, ResourceRequest request) {
     AccessResult result = decide(context, context.operation());
     rejectUnreadableQueryFields(context, request);
     ResourceRequest narrowed = narrowSelection(context, request);
-    return result
-        .constraintOrEmpty()
-        .map(constraint -> withFilter(narrowed, and(constraint, narrowed.filter())))
-        .orElse(narrowed);
+    return result.constraintOrEmpty().map(narrowed::restrict).orElse(narrowed);
   }
 
   /**
@@ -288,21 +313,6 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     }
   }
 
-  private FilterExpression idEquals(ID id) {
-    return new FilterExpression.Comparison(
-        description.idField(), CollectionDescription.Operator.EQUAL, List.of(id), false);
-  }
-
-  /** A get returns at most one row, whatever page the request carried. */
-  private static ResourceRequest singleRow(ResourceRequest request) {
-    return new ResourceRequest(
-        request.filter(),
-        request.sort(),
-        new ResourceRequest.Page(1, 1),
-        request.fieldSelections(),
-        request.includes());
-  }
-
   /**
    * 401 when the caller is anonymous, 403 when they are known but refused, so a client can tell
    * "log in" from "not for you".
@@ -322,7 +332,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     queryFields(request.filter())
         .forEach(
             field -> {
-              if (!description.fieldReadable(field, context)) {
+              if (!registry.isQueryFieldReadable(field, context)) {
                 throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
               }
             });
@@ -364,6 +374,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     }
     return new ResourceRequest(
         request.filter(),
+        request.serverConstraint(),
         request.sort(),
         request.page(),
         request.fieldSelections().withRoot(narrowed),
@@ -394,15 +405,6 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     Set<String> all = new LinkedHashSet<>(first);
     all.addAll(second);
     return all;
-  }
-
-  private static FilterExpression and(FilterExpression constraint, FilterExpression caller) {
-    return caller == null ? constraint : new FilterExpression.And(List.of(constraint, caller));
-  }
-
-  private static ResourceRequest withFilter(ResourceRequest request, FilterExpression filter) {
-    return new ResourceRequest(
-        filter, request.sort(), request.page(), request.fieldSelections(), request.includes());
   }
 
   private ID parseId(String rawId) {
@@ -442,5 +444,9 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException("Relationship target ID has the wrong type", ex);
     }
+  }
+
+  private static User subject(ApiV2Caller caller) {
+    return caller == null ? null : caller.subject();
   }
 }

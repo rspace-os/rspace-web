@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.controller;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.throttling.Bucket4jApiRequestThrottler;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.User;
@@ -21,8 +22,9 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class ApiV2AbstractThrottleInterceptor implements HandlerInterceptor {
 
   String assertApiAccess(HttpServletRequest request) {
-    Object authenticated = request.getAttribute("user");
-    if (authenticated instanceof User user && user.getId() != null) {
+    ApiV2Caller caller = ApiV2Caller.from(request);
+    User user = caller == null ? null : caller.actor();
+    if (user != null && user.getId() != null) {
       return fingerprint("authenticatedApiUser", user.getId().toString());
     }
     // RequestUtil.remoteAddr honours X-Forwarded-For, so deployments must accept that header only

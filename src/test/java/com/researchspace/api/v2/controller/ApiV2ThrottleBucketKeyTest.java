@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.model.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -55,10 +56,26 @@ class ApiV2ThrottleBucketKeyTest {
     when(user.getId()).thenReturn(42L);
     MockHttpServletRequest first = requestFrom("192.0.2.1");
     first.addHeader("apiKey", "first-credential");
-    first.setAttribute("user", user);
+    first.setAttribute(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user));
     MockHttpServletRequest second = requestFrom("192.0.2.2");
     second.addHeader("Authorization", "Bearer second-credential");
-    second.setAttribute("user", user);
+    second.setAttribute(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user));
+
+    assertEquals(interceptor.assertApiAccess(first), interceptor.assertApiAccess(second));
+  }
+
+  @Test
+  void keysDelegatedRequestsByOriginalActorRatherThanEffectiveSubject() {
+    User actor = mock(User.class);
+    User firstSubject = mock(User.class);
+    User secondSubject = mock(User.class);
+    when(actor.getId()).thenReturn(1L);
+    when(firstSubject.getId()).thenReturn(41L);
+    when(secondSubject.getId()).thenReturn(42L);
+    MockHttpServletRequest first = requestFrom("192.0.2.1");
+    first.setAttribute(ApiV2Caller.REQUEST_ATTRIBUTE, new ApiV2Caller(firstSubject, actor));
+    MockHttpServletRequest second = requestFrom("192.0.2.2");
+    second.setAttribute(ApiV2Caller.REQUEST_ATTRIBUTE, new ApiV2Caller(secondSubject, actor));
 
     assertEquals(interceptor.assertApiAccess(first), interceptor.assertApiAccess(second));
   }

@@ -1,5 +1,6 @@
 package com.researchspace.maintenance.api.v2;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
@@ -76,39 +77,40 @@ public final class MaintenanceResourceOperations
   }
 
   @Override
-  public ScheduledMaintenance create(ParsedDocument document, User actor) {
+  public ScheduledMaintenance create(ParsedDocument document, ApiV2Caller caller) {
     return manager.createResource(
-        ApiV2MaintenanceInput.from(document).toScheduledMaintenance(), actor);
+        ApiV2MaintenanceInput.from(document).toScheduledMaintenance(), caller.subject());
   }
 
   @Override
-  public List<ScheduledMaintenance> createMany(List<ParsedDocument> documents, User actor) {
+  public List<ScheduledMaintenance> createMany(List<ParsedDocument> documents, ApiV2Caller caller) {
     return manager.createResources(
         documents.stream()
             .map(ApiV2MaintenanceInput::from)
             .map(ApiV2MaintenanceInput::toScheduledMaintenance)
             .toList(),
-        actor);
+        caller.subject());
   }
 
   @Override
-  public Optional<ScheduledMaintenance> update(Long id, ParsedDocument document, User actor) {
-    return manager.updateResource(id, document, actor);
+  public Optional<ScheduledMaintenance> update(
+      Long id, ParsedDocument document, ApiV2Caller caller) {
+    return manager.updateResource(id, document, caller.subject());
   }
 
   @Override
   public List<ScheduledMaintenance> updateMany(
-      ResourceRequest request, ParsedDocument document, User actor) {
-    return manager.updateResources(request, document, actor);
+      ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
+    return manager.updateResources(request, document, caller.subject());
   }
 
   @Override
-  public Optional<ScheduledMaintenance> delete(Long id, User actor) {
-    return manager.removeResource(id, actor);
+  public Optional<ScheduledMaintenance> delete(Long id, ApiV2Caller caller) {
+    return manager.removeResource(id, caller.subject());
   }
 
   @Override
-  public List<ScheduledMaintenance> deleteMany(ResourceRequest request, User actor) {
-    return manager.removeResources(request, actor);
+  public List<ScheduledMaintenance> deleteMany(ResourceRequest request, ApiV2Caller caller) {
+    return manager.removeResources(request, caller.subject());
   }
 }

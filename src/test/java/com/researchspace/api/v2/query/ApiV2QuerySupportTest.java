@@ -9,10 +9,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.researchspace.api.v2.controller.ApiV2BadRequestException;
 import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.api.v2.model.ApiV2ListResult;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
+import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionQueryException;
+import com.researchspace.model.collection.CollectionQueryLimits;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRenderer;
 import com.researchspace.model.collection.ResourceRequest;
@@ -33,13 +37,36 @@ class ApiV2QuerySupportTest {
 
   @Test
   void limitsTheRawEncodedWhereValue() {
+    String encodedAtLimit =
+        "%61".repeat(CollectionQueryLimits.MAX_WHERE_LENGTH / 3)
+            + "a".repeat(CollectionQueryLimits.MAX_WHERE_LENGTH % 3);
+
     assertDoesNotThrow(
-        () -> ApiV2ResourceRequestParser.validateRawWhere("where=" + "a".repeat(4096)));
+        () -> ApiV2ResourceRequestParser.validateRawWhere("where=" + encodedAtLimit));
     assertThrows(
         ApiV2BadRequestException.class,
         () ->
             ApiV2ResourceRequestParser.validateRawWhere(
-                "unrelated=value&w%68ere=" + "%61".repeat(1366)));
+                "unrelated=value&w%68ere=" + encodedAtLimit + "a"));
+  }
+
+  @Test
+  void limitsTheTotalFilterArguments() {
+    String oneThousandIds =
+        IntStream.rangeClosed(1, CollectionQueryLimits.MAX_ARGUMENTS)
+            .mapToObj(String::valueOf)
+            .collect(Collectors.joining(","));
+    String oneThousandAndOneIds = oneThousandIds + "," + (CollectionQueryLimits.MAX_ARGUMENTS + 1);
+
+    assertDoesNotThrow(
+        () ->
+            new RsqlFilterParser(ApiV2MaintenanceResource.DESCRIPTION)
+                .parse("id=in=(" + oneThousandIds + ")"));
+    assertThrows(
+        CollectionQueryException.class,
+        () ->
+            new RsqlFilterParser(ApiV2MaintenanceResource.DESCRIPTION)
+                .parse("id=in=(" + oneThousandAndOneIds + ")"));
   }
 
   @Test
@@ -105,6 +132,23 @@ class ApiV2QuerySupportTest {
         () ->
             new RsqlFilterParser(ApiV2MaintenanceResource.DESCRIPTION)
                 .parse(elevenPatternComparisons));
+  }
+
+  @Test
+  void parsesRelationshipTargetFieldsOnBulkRoutes() {
+    ResourceRegistry registry =
+        new ResourceRegistry(
+            List.of(
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                ApiV2InstrumentResource.DESCRIPTION,
+                ApiV2UserResource.DESCRIPTION));
+
+    assertDoesNotThrow(
+        () ->
+            ApiV2ResourceRequestParser.bulk(
+                "target.name=contains=confocal",
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                registry));
   }
 
   @Test

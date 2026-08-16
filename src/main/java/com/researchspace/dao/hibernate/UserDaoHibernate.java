@@ -3,7 +3,6 @@ package com.researchspace.dao.hibernate;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.Constants;

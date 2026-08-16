@@ -13,6 +13,7 @@ import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.model.collection.AccessFunction;
+import com.researchspace.model.collection.ResourceRegistry;
 import jakarta.servlet.ServletContext;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
@@ -37,6 +38,12 @@ public class ApiV2ResourceConfig {
       List<ApiV2ResourceSpec<?, ?>> specs,
       List<ApiV2RelationshipTargetSpec<?, ?>> relationshipTargets) {
     return new ApiV2ResourceCatalog(specs, relationshipTargets);
+  }
+
+  /** Shares the catalog's validated relationship graph with collection persistence adapters. */
+  @Bean
+  ResourceRegistry apiV2ResourceRegistry(ApiV2ResourceCatalog catalog) {
+    return catalog.registry();
   }
 
   @Bean

@@ -6,7 +6,14 @@ import java.util.Set;
 
 /** A server-owned mapping from one public filter selector to typed persistence metadata. */
 public sealed interface FilterSelector<T>
-    permits FilterSelector.Property, FilterSelector.RelationshipPart {
+    permits FilterSelector.Property,
+        FilterSelector.RelationshipPart,
+        FilterSelector.RelationshipProperty {
+
+  /** Positive operators allowed for a public field reached through a relationship. */
+  static Set<Operator> relationshipTargetFieldOperators() {
+    return Set.of(Operator.EQUAL, Operator.IN, Operator.CONTAINS, Operator.LIKE);
+  }
 
   enum RelationshipComponent {
     ROOT,
@@ -41,6 +48,29 @@ public sealed interface FilterSelector<T>
     @Override
     public Set<Operator> operators() {
       return type.operators();
+    }
+
+    @Override
+    public Object parse(String value) {
+      return type.parse(value);
+    }
+
+    @Override
+    public boolean supportsWildcards() {
+      return type.supportsWildcards();
+    }
+  }
+
+  /** Typed selector synthesized for a scalar field shared by relationship destinations. */
+  record RelationshipProperty<T>(String name, CollectionFieldType<?> type, Set<Operator> operators)
+      implements FilterSelector<T> {
+
+    public RelationshipProperty {
+      if (name == null || name.isBlank()) {
+        throw new IllegalArgumentException("Filter selector name must not be blank");
+      }
+      Objects.requireNonNull(type, "Filter field type");
+      operators = Set.copyOf(operators);
     }
 
     @Override

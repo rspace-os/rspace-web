@@ -11,7 +11,9 @@ import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.CollectionManager;
 import com.researchspace.service.CollectionMutationException;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
+import org.springframework.beans.factory.ObjectProvider;
 
 /**
  * Standard transaction-scoped mechanics for a mutable REST API v2 collection.
@@ -32,30 +35,36 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
   private final CollectionDao<T, ID> collectionDao;
   private final CollectionDescription<T> collectionDescription;
   private final CollectionMutationLimits mutationLimits;
+  private final ObjectProvider<ResourceRegistry> resourceRegistry;
 
   protected AbstractCollectionManager(
-      CollectionDao<T, ID> collectionDao, CollectionDescription<T> collectionDescription) {
-    this(collectionDao, collectionDescription, CollectionMutationLimits.DEFAULT);
+      CollectionDao<T, ID> collectionDao,
+      CollectionDescription<T> collectionDescription,
+      ObjectProvider<ResourceRegistry> resourceRegistry) {
+    this(collectionDao, collectionDescription, CollectionMutationLimits.DEFAULT, resourceRegistry);
   }
 
   protected AbstractCollectionManager(
       CollectionDao<T, ID> collectionDao,
       CollectionDescription<T> collectionDescription,
-      CollectionMutationLimits mutationLimits) {
+      CollectionMutationLimits mutationLimits,
+      ObjectProvider<ResourceRegistry> resourceRegistry) {
     this.collectionDao = collectionDao;
     this.collectionDescription =
         Objects.requireNonNull(collectionDescription, "Collection description");
     this.mutationLimits = Objects.requireNonNull(mutationLimits, "Collection mutation limits");
+    this.resourceRegistry = Objects.requireNonNull(resourceRegistry, "Resource registry provider");
   }
 
   @Override
   public ResourcePage<T> getResources(ResourceRequest request, User actor) {
-    return collectionDao.getResources(authorizeRead(request, actor));
+    return collectionDao.getResources(authorizeRead(request, actor), relationshipReadAccess(actor));
   }
 
   @Override
   public long countResources(ResourceRequest request, User actor) {
-    return collectionDao.countResources(authorizeRead(request, actor));
+    return collectionDao.countResources(
+        authorizeRead(request, actor), relationshipReadAccess(actor));
   }
 
   @Override
@@ -68,23 +77,17 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
         new FilterExpression.Comparison(
             collectionDescription.idField(), Operator.EQUAL, List.of(id), false);
     ResourceRequest constrained =
-        ResourceRequest.unpaged(and(access.constraintOrEmpty().orElseThrow(), idFilter));
-    return collectionDao.getResources(constrained).resources().stream().findFirst();
+        ResourceRequest.unpaged(idFilter).restrict(access.constraintOrEmpty().orElseThrow());
+    return collectionDao
+        .getResources(constrained, relationshipReadAccess(actor))
+        .resources()
+        .stream()
+        .findFirst();
   }
 
   private ResourceRequest authorizeRead(ResourceRequest request, User actor) {
     AccessResult access = readAccess(actor, null);
-    return access
-        .constraintOrEmpty()
-        .map(
-            constraint ->
-                new ResourceRequest(
-                    and(constraint, request.filter()),
-                    request.sort(),
-                    request.page(),
-                    request.fieldSelections(),
-                    request.includes()))
-        .orElse(request);
+    return access.constraintOrEmpty().map(request::restrict).orElse(request);
   }
 
   private AccessResult readAccess(User actor, Object id) {
@@ -98,16 +101,6 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
       throw new AuthorizationException("Collection read access refused");
     }
     return access;
-  }
-
-  private static FilterExpression and(FilterExpression left, FilterExpression right) {
-    if (left == null) {
-      return right;
-    }
-    if (right == null) {
-      return left;
-    }
-    return new FilterExpression.And(List.of(left, right));
   }
 
   @Override
@@ -188,6 +181,18 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
   /** Refuses a mutation before any row is loaded or changed. */
   protected abstract void authorizeMutation(User actor);
 
+  /**
+   * Supplies every registered target policy lazily. Unrelated target policies are not evaluated.
+   */
+  protected RelationshipReadAccess relationshipReadAccess(User actor) {
+    return RelationshipReadAccess.forActor(resourceRegistry.getObject(), actor);
+  }
+
+  /** Uses the read policy for mutation filters unless a domain explicitly authorizes otherwise. */
+  protected RelationshipReadAccess relationshipMutationAccess(User actor) {
+    return relationshipReadAccess(actor);
+  }
+
   /** Applies an update document in field-definition order. */
   protected void applyPatch(ParsedDocument patch, T resource) {
     if (patch.operation() != WriteOperation.UPDATE) {
@@ -211,7 +216,10 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
       throw new CollectionMutationException(CollectionMutationException.Reason.FILTER_REQUIRED);
     }
     List<T> matches =
-        collectionDao.getResources(request, mutationLimits.maxBulkUpdateDeleteRows() + 1);
+        collectionDao.getResources(
+            request,
+            mutationLimits.maxBulkUpdateDeleteRows() + 1,
+            relationshipMutationAccess(actor));
     if (matches.size() > mutationLimits.maxBulkUpdateDeleteRows()) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }

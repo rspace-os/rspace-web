@@ -15,6 +15,7 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
+import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,8 @@ import org.junit.jupiter.api.Test;
 class InstrumentResourceOperationsTest {
 
   private final InstrumentEntityApiManager manager = mock(InstrumentEntityApiManager.class);
-  private final InstrumentResourceOperations operations = new InstrumentResourceOperations(manager);
+  private final InstrumentResourceOperations operations =
+      new InstrumentResourceOperations(manager, mock(InstrumentReadAccess.class));
   private final User actor = mock(User.class);
   private final ResourceRequest request =
       new ResourceRequest(

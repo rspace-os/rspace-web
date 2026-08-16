@@ -1,5 +1,6 @@
 package com.researchspace.booking.api.v2;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
@@ -106,34 +107,36 @@ public final class BookingConfigurationResourceOperations
   }
 
   @Override
-  public BookingConfiguration create(ParsedDocument document, User actor) {
-    return manager.createConfiguration(create(document), actor);
+  public BookingConfiguration create(ParsedDocument document, ApiV2Caller caller) {
+    return manager.createConfiguration(create(document), caller.subject(), caller.actor());
   }
 
   @Override
-  public List<BookingConfiguration> createMany(List<ParsedDocument> documents, User actor) {
-    return manager.createConfigurations(documents.stream().map(this::create).toList(), actor);
+  public List<BookingConfiguration> createMany(List<ParsedDocument> documents, ApiV2Caller caller) {
+    return manager.createConfigurations(
+        documents.stream().map(this::create).toList(), caller.subject(), caller.actor());
   }
 
   @Override
-  public Optional<BookingConfiguration> update(Long id, ParsedDocument document, User actor) {
-    return manager.updateConfiguration(id, patch(document), actor);
+  public Optional<BookingConfiguration> update(
+      Long id, ParsedDocument document, ApiV2Caller caller) {
+    return manager.updateConfiguration(id, patch(document), caller.subject(), caller.actor());
   }
 
   @Override
   public List<BookingConfiguration> updateMany(
-      ResourceRequest request, ParsedDocument document, User actor) {
-    return manager.updateConfigurations(request, patch(document), actor);
+      ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
+    return manager.updateConfigurations(request, patch(document), caller.subject(), caller.actor());
   }
 
   @Override
-  public Optional<BookingConfiguration> delete(Long id, User actor) {
-    return manager.removeConfiguration(id, actor);
+  public Optional<BookingConfiguration> delete(Long id, ApiV2Caller caller) {
+    return manager.removeConfiguration(id, caller.subject(), caller.actor());
   }
 
   @Override
-  public List<BookingConfiguration> deleteMany(ResourceRequest request, User actor) {
-    return manager.removeConfigurations(request, actor);
+  public List<BookingConfiguration> deleteMany(ResourceRequest request, ApiV2Caller caller) {
+    return manager.removeConfigurations(request, caller.subject(), caller.actor());
   }
 
   private static Patch patch(ParsedDocument document) {

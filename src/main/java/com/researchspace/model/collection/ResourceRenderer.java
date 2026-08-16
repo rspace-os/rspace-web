@@ -1,10 +1,16 @@
 package com.researchspace.model.collection;
 
 import com.researchspace.model.collection.CollectionDescription.Relationship;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 
 /** Renders selected attributes and included relationships from registered resource metadata. */
 public final class ResourceRenderer {
@@ -12,7 +18,15 @@ public final class ResourceRenderer {
   @FunctionalInterface
   public interface TargetResolver {
     Optional<ResolvedTarget> resolve(String resourceName, Object id);
+
+    default Map<TargetKey, Optional<ResolvedTarget>> resolveAll(Collection<TargetKey> targets) {
+      Map<TargetKey, Optional<ResolvedTarget>> resolved = new LinkedHashMap<>();
+      targets.forEach(target -> resolved.put(target, resolve(target.resourceName(), target.id())));
+      return resolved;
+    }
   }
+
+  public record TargetKey(String resourceName, Object id) {}
 
   public record ResolvedTarget(Object entity, FieldSelection fields) {
 
@@ -56,8 +70,147 @@ public final class ResourceRenderer {
       ResourceFieldSelections selections,
       IncludeTree includes,
       TargetResolver targetResolver) {
-    return render(entity, description, selections.root(), selections, includes, targetResolver);
+    return renderAll(
+            List.of(entity),
+            description,
+            ignored -> selections.root(),
+            selections,
+            includes,
+            targetResolver)
+        .get(0);
   }
+
+  /** Resolves relationships for the complete result set before rendering any one document. */
+  public <T> List<Map<String, Object>> renderAll(
+      List<T> entities,
+      CollectionDescription<T> description,
+      Function<T, FieldSelection> fieldsForEntity,
+      ResourceFieldSelections selections,
+      IncludeTree includes,
+      TargetResolver targetResolver) {
+    TargetResolver requestResolver =
+        targetResolver == NO_TARGETS ? NO_TARGETS : new CachingTargetResolver(targetResolver);
+    if (targetResolver != NO_TARGETS) {
+      List<RenderNode> roots =
+          entities.stream()
+              .map(
+                  entity ->
+                      new RenderNode(entity, description, fieldsForEntity.apply(entity), includes))
+              .toList();
+      prefetch(roots, selections, requestResolver);
+    }
+    return entities.stream()
+        .map(
+            entity ->
+                render(
+                    entity,
+                    description,
+                    fieldsForEntity.apply(entity),
+                    selections,
+                    includes,
+                    requestResolver))
+        .toList();
+  }
+
+  /** Owns page-local resolution state so batching works with every resolver adapter. */
+  private static final class CachingTargetResolver implements TargetResolver {
+
+    private final TargetResolver delegate;
+    private final Map<TargetKey, Optional<ResolvedTarget>> cache = new LinkedHashMap<>();
+
+    private CachingTargetResolver(TargetResolver delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public Optional<ResolvedTarget> resolve(String resourceName, Object id) {
+      TargetKey key = new TargetKey(resourceName, id);
+      resolveAll(List.of(key));
+      return cache.getOrDefault(key, Optional.empty());
+    }
+
+    @Override
+    public Map<TargetKey, Optional<ResolvedTarget>> resolveAll(Collection<TargetKey> targets) {
+      Set<TargetKey> missing = new LinkedHashSet<>(targets);
+      missing.removeAll(cache.keySet());
+      if (!missing.isEmpty()) {
+        Map<TargetKey, Optional<ResolvedTarget>> resolved = delegate.resolveAll(missing);
+        missing.forEach(
+            target -> cache.put(target, resolved.getOrDefault(target, Optional.empty())));
+      }
+      Map<TargetKey, Optional<ResolvedTarget>> result = new LinkedHashMap<>();
+      targets.forEach(target -> result.put(target, cache.getOrDefault(target, Optional.empty())));
+      return result;
+    }
+  }
+
+  private void prefetch(
+      List<RenderNode> roots, ResourceFieldSelections selections, TargetResolver targetResolver) {
+    List<RenderNode> level = roots;
+    while (!level.isEmpty()) {
+      Set<TargetKey> targets = new LinkedHashSet<>();
+      List<PendingExpansion> expansions = new ArrayList<>();
+      level.forEach(node -> collectTargets(node, targets, expansions));
+      Map<TargetKey, Optional<ResolvedTarget>> resolved = targetResolver.resolveAll(targets);
+      List<RenderNode> next = new ArrayList<>();
+      for (PendingExpansion expansion : expansions) {
+        resolved
+            .getOrDefault(expansion.target(), Optional.empty())
+            .ifPresent(
+                target -> {
+                  CollectionDescription<?> targetDescription =
+                      registry.requireResource(expansion.target().resourceName());
+                  next.add(
+                      new RenderNode(
+                          target.entity(),
+                          targetDescription,
+                          target
+                              .fields()
+                              .intersect(
+                                  selections.forResource(expansion.target().resourceName()),
+                                  targetDescription.idField()),
+                          expansion.includes()));
+                });
+      }
+      level = next;
+    }
+  }
+
+  private void collectTargets(
+      RenderNode node, Set<TargetKey> targets, List<PendingExpansion> expansions) {
+    collectTargetsCaptured(node, node.description(), targets, expansions);
+  }
+
+  private <T> void collectTargetsCaptured(
+      RenderNode node,
+      CollectionDescription<T> description,
+      Set<TargetKey> targets,
+      List<PendingExpansion> expansions) {
+    T entity = description.entityType().cast(node.entity());
+    for (Relationship<T> relationship : description.relationships()) {
+      if (!node.fields().includes(relationship.name(), description.idField())) {
+        continue;
+      }
+      Object value = description.readRelationship(entity, relationship);
+      if (!(value instanceof ResourceReference<?, ?> reference)) {
+        continue;
+      }
+      RelationshipTarget<?> target = relationship.targetForKind(reference.kind());
+      TargetKey key = new TargetKey(target.resourceName(), reference.id());
+      targets.add(key);
+      node.includes()
+          .relationship(relationship.name())
+          .ifPresent(child -> expansions.add(new PendingExpansion(key, child)));
+    }
+  }
+
+  private record RenderNode(
+      Object entity,
+      CollectionDescription<?> description,
+      FieldSelection fields,
+      IncludeTree includes) {}
+
+  private record PendingExpansion(TargetKey target, IncludeTree includes) {}
 
   private <T> Map<String, Object> render(
       T entity,
@@ -106,8 +259,9 @@ public final class ResourceRenderer {
     if (!(value instanceof ResourceReference<?, ?> reference)) {
       throw new IllegalStateException("Relationship binding must return a resource reference");
     }
-    renderReference(relationship, reference, child, selections, targetResolver)
-        .ifPresent(rendered -> document.put(relationship.name(), rendered));
+    document.put(
+        relationship.name(),
+        renderReference(relationship, reference, child, selections, targetResolver).orElse(null));
   }
 
   private <T> Optional<Object> renderReference(

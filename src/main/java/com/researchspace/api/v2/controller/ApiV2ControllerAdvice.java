@@ -2,9 +2,9 @@ package com.researchspace.api.v2.controller;
 
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.core.util.throttling.ThrottlingException;
-import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.permissions.SecurityLogger;
@@ -258,6 +258,13 @@ public class ApiV2ControllerAdvice {
   }
 
   private static Object principal(HttpServletRequest request) {
-    return request.getAttribute("user") instanceof User user ? user.getUsername() : null;
+    ApiV2Caller caller = ApiV2Caller.from(request);
+    if (caller == null) {
+      return null;
+    }
+    if (caller.isDelegated()) {
+      return caller.actor().getUsername() + " as " + caller.subject().getUsername();
+    }
+    return caller.subject().getUsername();
   }
 }

@@ -4,6 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessContext;
+import com.researchspace.model.collection.AccessContext.Operation;
+import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.FieldSelection;
@@ -11,6 +14,7 @@ import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import org.junit.Test;
@@ -24,6 +28,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
 
   @Autowired private InstrumentDao instrumentDao;
+  @Autowired private InstrumentReadAccess instrumentReadAccess;
+
+  private AccessResult readAccess(User user) {
+    return instrumentReadAccess.check(new AccessContext(user, Operation.READ, "instruments"));
+  }
 
   private static ResourceRequest request(FilterExpression filter) {
     return new ResourceRequest(
@@ -65,8 +74,8 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
 
     assertEquals(
         List.of("Confocal microscope"),
-        names(instrumentDao.getReadableResources(request, owner).resources()));
-    assertEquals(1, instrumentDao.countReadableResources(request, owner));
+        names(instrumentDao.getReadableResources(request, readAccess(owner)).resources()));
+    assertEquals(1, instrumentDao.countReadableResources(request, readAccess(owner)));
   }
 
   @Test
@@ -76,7 +85,9 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
     createBasicInstrumentTemplateForUser(owner, "Shared name");
 
     List<Instrument> matches =
-        instrumentDao.getReadableResources(request(nameContains("Shared name")), owner).resources();
+        instrumentDao
+            .getReadableResources(request(nameContains("Shared name")), readAccess(owner))
+            .resources();
 
     assertEquals(1, matches.size());
     assertTrue(matches.get(0).getGlobalIdentifier().startsWith("IN"));
@@ -93,11 +104,11 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
 
     assertEquals(
         List.of("Alpha scope"),
-        names(instrumentDao.getReadableResources(first, owner).resources()));
-    assertEquals(2, instrumentDao.getReadableResources(first, owner).total());
+        names(instrumentDao.getReadableResources(first, readAccess(owner)).resources()));
+    assertEquals(2, instrumentDao.getReadableResources(first, readAccess(owner)).total());
     assertEquals(
         List.of("Beta scope"),
-        names(instrumentDao.getReadableResources(second, owner).resources()));
+        names(instrumentDao.getReadableResources(second, readAccess(owner)).resources()));
   }
 
   @Test
@@ -108,9 +119,10 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
 
     ResourceRequest request = request(nameContains("Private scope"));
 
-    assertTrue(instrumentDao.getReadableResources(request, other).resources().isEmpty());
-    assertEquals(0, instrumentDao.countReadableResources(request, other));
-    assertEquals(1, instrumentDao.countReadableResources(request, owner));
+    assertTrue(
+        instrumentDao.getReadableResources(request, readAccess(other)).resources().isEmpty());
+    assertEquals(0, instrumentDao.countReadableResources(request, readAccess(other)));
+    assertEquals(1, instrumentDao.countReadableResources(request, readAccess(owner)));
   }
 
   @Test
@@ -124,7 +136,8 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
     ResourceRequest request =
         request(new FilterExpression.And(List.of(nameContains("Trashed scope"), notDeleted())));
 
-    assertTrue(instrumentDao.getReadableResources(request, owner).resources().isEmpty());
-    assertEquals(0, instrumentDao.countReadableResources(request, owner));
+    assertTrue(
+        instrumentDao.getReadableResources(request, readAccess(owner)).resources().isEmpty());
+    assertEquals(0, instrumentDao.countReadableResources(request, readAccess(owner)));
   }
 }

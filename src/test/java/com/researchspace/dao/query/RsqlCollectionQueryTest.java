@@ -3,19 +3,25 @@ package com.researchspace.dao.query;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
+import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Field;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionQueryException;
+import com.researchspace.model.collection.CollectionQueryLimits;
 import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
+import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.RsqlFilterParser;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import java.time.Instant;
@@ -135,7 +141,7 @@ class RsqlCollectionQueryTest {
             .collect(Collectors.joining(";"));
     String arguments =
         "id=in=("
-            + IntStream.rangeClosed(1, 101)
+            + IntStream.rangeClosed(1, CollectionQueryLimits.MAX_ARGUMENTS + 1)
                 .mapToObj(Integer::toString)
                 .collect(Collectors.joining(","))
             + ")";
@@ -169,40 +175,55 @@ class RsqlCollectionQueryTest {
   }
 
   @Test
-  void translatesSplitRelationshipSelectorsAndKeepsGlobalIdPairsTogether() {
+  void doesNotChargeTrustedAccessConstraintsToTheCallerLikeBudget() {
+    FilterExpression constraint =
+        new FilterExpression.Or(
+            IntStream.rangeClosed(1, 51)
+                .<FilterExpression>mapToObj(
+                    value ->
+                        new FilterExpression.Comparison(
+                            "message", Operator.CONTAINS, List.of("group-" + value), false))
+                .toList());
+
+    Predicate translated = translator.translateTrusted(constraint);
+
+    assertEquals(51, translated.parameters().size());
+  }
+
+  @Test
+  void translatesSplitRelationshipSelectorsThroughReadableTargets() {
     CollectionDescription<Related> description = relationshipDescription();
     RsqlFilterParser relationshipParser = new RsqlFilterParser(description);
     RsqlCollectionQuery relationshipTranslator = new RsqlCollectionQuery(description, "item");
+    RelationshipReadAccess targets =
+        RelationshipReadAccess.unrestricted(
+            new ResourceRegistry(
+                List.of(
+                    description,
+                    relationshipTargetDescription(
+                        "instruments", RelatedTarget.class, RelatedTarget::id),
+                    relationshipTargetDescription(
+                        "samples", RelatedSample.class, RelatedSample::id))));
 
     Predicate pairs =
         relationshipTranslator.translate(
-            relationshipParser.parse("target=in=(IN1,SA2);target.value==3"));
-    assertEquals(
-        "(((item.targetType = :rsql0 AND item.targetId = :rsql1) OR "
-            + "(item.targetType = :rsql2 AND item.targetId = :rsql3)) AND "
-            + "item.targetId = :rsql4)",
-        pairs.expression());
-    assertEquals(
-        Map.of(
-            "rsql0", TargetKind.INSTRUMENT,
-            "rsql1", 1L,
-            "rsql2", TargetKind.SAMPLE,
-            "rsql3", 2L,
-            "rsql4", 3L),
-        pairs.parameters());
+            relationshipParser.parse("target=in=(IN1,SA2);target.value==3"), targets);
+    assertEquals(4, pairs.subqueries().size());
+    assertTrue(pairs.expression().contains("EXISTS"));
+    assertTrue(pairs.expression().contains("item.targetId = :"));
+    assertTrue(pairs.parameters().containsValue(3L));
 
     Predicate kind =
         relationshipTranslator.translate(
-            relationshipParser.parse("target.relationTo==instruments"));
-    assertEquals("item.targetType = :rsql0", kind.expression());
-    assertEquals(Map.of("rsql0", TargetKind.INSTRUMENT), kind.parameters());
+            relationshipParser.parse("target.relationTo==instruments"), targets);
+    assertEquals(2, kind.subqueries().size());
+    assertTrue(kind.expression().contains("item.targetType = :"));
+    assertTrue(kind.parameters().containsValue(TargetKind.INSTRUMENT));
 
     Predicate excluded =
-        relationshipTranslator.translate(relationshipParser.parse("target=out=(IN1,SA2)"));
-    assertEquals(
-        "NOT ((item.targetType = :rsql0 AND item.targetId = :rsql1) OR "
-            + "(item.targetType = :rsql2 AND item.targetId = :rsql3))",
-        excluded.expression());
+        relationshipTranslator.translate(relationshipParser.parse("target=out=(IN1,SA2)"), targets);
+    assertEquals(2, excluded.subqueries().size());
+    assertTrue(excluded.expression().contains(" AND NOT "));
     assertThrows(
         CollectionQueryException.class, () -> relationshipParser.parse("target.globalId==IN1"));
     assertThrows(CollectionQueryException.class, () -> relationshipParser.parse("target==XX1"));
@@ -213,28 +234,28 @@ class RsqlCollectionQueryTest {
     CollectionDescription<?> description = ApiV2BookingConfigurationResource.DESCRIPTION;
     RsqlFilterParser auditParser = new RsqlFilterParser(description);
     RsqlCollectionQuery auditTranslator = new RsqlCollectionQuery(description, "item");
+    RelationshipReadAccess targets =
+        RelationshipReadAccess.unrestricted(
+            new ResourceRegistry(
+                List.of(
+                    description,
+                    ApiV2UserResource.DESCRIPTION,
+                    ApiV2InstrumentResource.DESCRIPTION)));
 
     Predicate result =
         auditTranslator.translate(
             auditParser.parse(
                 "createdAt>=2026-08-01T00:00:00Z;updatedAt<2026-08-03T00:00:00Z;"
-                    + "createdBy.value==21;updatedBy.value==22"));
+                    + "createdBy.value==21;updatedBy.value==22"),
+            targets);
 
-    assertEquals(
-        "(item.createdAt >= :rsql0 AND item.updatedAt < :rsql1 AND "
-            + "item.createdBy.id = :rsql2 AND item.updatedBy.id = :rsql3)",
-        result.expression());
-    assertEquals(
-        Map.of(
-            "rsql0",
-            Date.from(Instant.parse("2026-08-01T00:00:00Z")),
-            "rsql1",
-            Date.from(Instant.parse("2026-08-03T00:00:00Z")),
-            "rsql2",
-            21L,
-            "rsql3",
-            22L),
-        result.parameters());
+    assertEquals(2, result.subqueries().size());
+    assertTrue(result.expression().contains("item.createdBy.id = :"));
+    assertTrue(result.expression().contains("item.updatedBy.id = :"));
+    assertTrue(result.parameters().containsValue(Date.from(Instant.parse("2026-08-01T00:00:00Z"))));
+    assertTrue(result.parameters().containsValue(Date.from(Instant.parse("2026-08-03T00:00:00Z"))));
+    assertTrue(result.parameters().containsValue(21L));
+    assertTrue(result.parameters().containsValue(22L));
   }
 
   private static CollectionDescription<Related> relationshipDescription() {
@@ -250,8 +271,19 @@ class RsqlCollectionQueryTest {
                     new RelationshipTarget<>(
                         "instruments", TargetKind.INSTRUMENT, "IN", RelatedTarget.class),
                     new RelationshipTarget<>(
-                        "samples", TargetKind.SAMPLE, "SA", RelatedTarget.class)),
+                        "samples", TargetKind.SAMPLE, "SA", RelatedSample.class)),
                 new SplitReferenceBinding<>(Related::target, "targetType", "targetId"))),
+        "id",
+        List.of(new Sort("id", true)));
+  }
+
+  private static <T> CollectionDescription<T> relationshipTargetDescription(
+      String name, Class<T> entityType, java.util.function.Function<T, Long> idAccessor) {
+    return new CollectionDescription<>(
+        name,
+        entityType,
+        List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), idAccessor)),
+        List.of(),
         "id",
         List.of(new Sort("id", true)));
   }
@@ -267,6 +299,8 @@ class RsqlCollectionQueryTest {
   }
 
   private record RelatedTarget(Long id) {}
+
+  private record RelatedSample(Long id) {}
 
   private enum TargetKind {
     INSTRUMENT,

@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.controller;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.throttling.APIRequestThrottler;
 import com.researchspace.api.v2.throttling.APIUsageStats;
 import com.researchspace.core.util.throttling.ThrottleInterval;
@@ -14,7 +15,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Throttles API request rate per user. */
+/** Throttles authenticated API requests by originating actor. */
 public class ApiV2RequestThrottlingInterceptor extends ApiV2AbstractThrottleInterceptor {
 
   static final String GLOBAL_ALLOWANCE_KEY = "global-id";
@@ -42,7 +43,7 @@ public class ApiV2RequestThrottlingInterceptor extends ApiV2AbstractThrottleInte
       HttpServletRequest request, HttpServletResponse response, Object handler) {
     // Anonymous public endpoints have already passed the IP-keyed pre-authentication limiter. They
     // must not consume the capacity reserved for successfully authenticated callers.
-    if (request.getAttribute("user") == null) {
+    if (ApiV2Caller.from(request) == null) {
       return true;
     }
     String identifier = assertApiAccess(request);

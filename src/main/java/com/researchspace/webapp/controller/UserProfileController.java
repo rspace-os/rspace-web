@@ -72,6 +72,7 @@ import com.researchspace.service.UserNotFoundException;
 import com.researchspace.service.UserProfileManager;
 import com.researchspace.service.UserRoleHandler;
 import com.researchspace.service.cloud.CommunityUserManager;
+import com.researchspace.session.SessionAttributeUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -96,6 +97,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -853,7 +855,15 @@ public class UserProfileController extends BaseController {
 
   @ResponseBody
   @GetMapping("/ajax/inventoryOauthToken")
-  public AjaxReturnObject<String> getInventoryOauthToken(Principal principal) {
+  public AjaxReturnObject<String> getInventoryOauthToken(
+      Principal principal, HttpServletRequest request) {
+    HttpSession session = request.getSession(false);
+    if (session != null
+        && Boolean.TRUE.equals(session.getAttribute(SessionAttributeUtils.IS_RUN_AS))) {
+      SECURITY_LOG.warn(
+          "Refused legacy UI token creation while operating as user [{}]", principal.getName());
+      throw new AuthorizationException(getText("errors.api.v2.forbidden"));
+    }
     User user = userManager.getUserByUsername(principal.getName());
     return new AjaxReturnObject<>(oAuthTokenManager.createUiToken(user), null);
   }

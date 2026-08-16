@@ -10,6 +10,7 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
@@ -39,13 +40,14 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   }
 
   @Override
-  public ResourcePage<Instrument> getReadableResources(ResourceRequest request, User user) {
-    return readableResourcePage(COLLECTION_QUERY, request, user);
+  public ResourcePage<Instrument> getReadableResources(
+      ResourceRequest request, AccessResult access) {
+    return readableResourcePage(COLLECTION_QUERY, request, access);
   }
 
   @Override
-  public long countReadableResources(ResourceRequest request, User user) {
-    return countReadableResources(COLLECTION_QUERY, request, user);
+  public long countReadableResources(ResourceRequest request, AccessResult access) {
+    return countReadableResources(COLLECTION_QUERY, request, access);
   }
 
   @Override

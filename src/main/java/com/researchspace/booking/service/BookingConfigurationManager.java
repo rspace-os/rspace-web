@@ -26,21 +26,24 @@ public interface BookingConfigurationManager {
   /** Finds one configuration without throwing when it is absent. */
   Optional<BookingConfiguration> getConfiguration(Long id, User actor);
 
-  /** Authorizes, validates, and persists a new booking configuration. */
-  BookingConfiguration createConfiguration(Create create, User actor);
+  /** Creates as {@code subject}, retaining the originating {@code actor} for audit. */
+  BookingConfiguration createConfiguration(Create create, User subject, User actor);
 
-  /** Authorizes and atomically validates and persists configurations in input order. */
-  List<BookingConfiguration> createConfigurations(List<Create> creates, User actor);
+  /** Bulk-creates as {@code subject}, retaining the originating {@code actor} for audit. */
+  List<BookingConfiguration> createConfigurations(List<Create> creates, User subject, User actor);
 
-  /** Authorizes and applies a validated change when the configuration exists. */
-  Optional<BookingConfiguration> updateConfiguration(Long id, Patch patch, User actor);
+  /** Updates as {@code subject}, retaining the originating {@code actor} for audit. */
+  Optional<BookingConfiguration> updateConfiguration(
+      Long id, Patch patch, User subject, User actor);
 
-  /** Authorizes and atomically applies a validated change to the selected configurations. */
-  List<BookingConfiguration> updateConfigurations(ResourceRequest request, Patch patch, User actor);
+  /** Bulk-updates as {@code subject}, retaining the originating {@code actor} for audit. */
+  List<BookingConfiguration> updateConfigurations(
+      ResourceRequest request, Patch patch, User subject, User actor);
 
-  /** Authorizes and removes one configuration, returning its previous value when present. */
-  Optional<BookingConfiguration> removeConfiguration(Long id, User actor);
+  /** Removes as {@code subject}, retaining the originating {@code actor} for audit. */
+  Optional<BookingConfiguration> removeConfiguration(Long id, User subject, User actor);
 
-  /** Authorizes and atomically removes the selected configurations. */
-  List<BookingConfiguration> removeConfigurations(ResourceRequest request, User actor);
+  /** Bulk-removes as {@code subject}, retaining the originating {@code actor} for audit. */
+  List<BookingConfiguration> removeConfigurations(
+      ResourceRequest request, User subject, User actor);
 }

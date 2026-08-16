@@ -5,10 +5,12 @@ import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.impl.AbstractCollectionManager;
 import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -25,11 +27,13 @@ public class MaintenanceManagerImpl extends AbstractCollectionManager<ScheduledM
   public MaintenanceManagerImpl(
       MaintenanceDao maintenanceDao,
       ApplicationEventPublisher events,
-      MessageSourceUtils messages) {
+      MessageSourceUtils messages,
+      ObjectProvider<ResourceRegistry> resourceRegistry) {
     super(
         maintenanceDao,
         ApiV2MaintenanceResource.DESCRIPTION,
-        ApiV2MaintenanceResource.MUTATION_LIMITS);
+        ApiV2MaintenanceResource.MUTATION_LIMITS,
+        resourceRegistry);
     this.maintenanceDao = maintenanceDao;
     this.events = events;
     this.messages = messages;

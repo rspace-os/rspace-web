@@ -41,7 +41,7 @@ public record ApiV2BookingConfigurationResource(
         long configurationVersion) {
 
   public static final CollectionMutationLimits MUTATION_LIMITS =
-      new CollectionMutationLimits(50, 250);
+      new CollectionMutationLimits(50, 1000);
 
   private static final AccessPolicy ACCESS = AccessPolicy.authenticatedReadsSysadminWrites();
 

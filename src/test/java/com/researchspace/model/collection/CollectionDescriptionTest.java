@@ -283,6 +283,66 @@ class CollectionDescriptionTest {
         .acceptGlobalIdOn(WriteOperation.UPDATE);
   }
 
+  @Test
+  void keepsInternalFiltersOutOfReachOfCallers() {
+    CollectionDescription<TestEntity> described = withInternalFilter();
+
+    assertInstanceOf(
+        FilterSelector.Property.class,
+        described.requireFilterSelector("sharingAcl"),
+        "the query compiler resolves it, so an access constraint can name it");
+    assertThrows(
+        CollectionQueryException.class,
+        () -> described.requirePublicFilterSelector("sharingAcl"),
+        "a caller must not be able to filter on it");
+    assertFalse(
+        described.schema().filters().stream()
+            .anyMatch(filter -> filter.selector().equals("sharingAcl")),
+        "an unpublished filter must not appear in the generated OpenAPI document");
+  }
+
+  @Test
+  void refusesAnInternalFilterThatShadowsAPublicOne() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new CollectionDescription<>(
+                "testEntities",
+                TestEntity.class,
+                List.of(idField()),
+                List.of(),
+                "id",
+                List.of(new Sort("id", true)),
+                AccessPolicy.authenticated(),
+                List.of(
+                    new CollectionDescription.InternalFilter(
+                        "id", "id", CollectionFieldTypes.longNumber()))));
+  }
+
+  @Test
+  void refusesToReadAnInternalFilterInMemory() {
+    CollectionDescription<TestEntity> described = withInternalFilter();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> described.readFilterValue(new TestEntity(), "sharingAcl"),
+        "an internal filter has no reader, so only a database query can evaluate it");
+  }
+
+  private static CollectionDescription<TestEntity> withInternalFilter() {
+    return new CollectionDescription<>(
+        "testEntities",
+        TestEntity.class,
+        List.of(idField()),
+        List.of(),
+        "id",
+        List.of(new Sort("id", true)),
+        AccessPolicy.authenticated(),
+        List.of(
+            new CollectionDescription.InternalFilter(
+                "sharingAcl", "sharingACL.acl", CollectionFieldTypes.text())));
+  }
+
   private static Field<TestEntity, Long> idField() {
     return Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TestEntity::id);
   }

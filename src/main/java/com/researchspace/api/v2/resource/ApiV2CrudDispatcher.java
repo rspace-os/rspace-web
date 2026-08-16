@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.resource;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.model.ApiV2BulkResult;
 import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.model.ApiV2ListResult;
@@ -12,14 +13,17 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRenderer;
 import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
+import com.researchspace.model.collection.ResourceRenderer.TargetKey;
 import com.researchspace.model.collection.ResourceRenderer.TargetResolver;
 import com.researchspace.model.collection.ResourceRequest;
 import jakarta.ws.rs.NotFoundException;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -70,11 +74,13 @@ public final class ApiV2CrudDispatcher<T, ID> {
           ResourcePage<T> page = operations.find(request, actor);
           TargetResolver targetResolver = targetResolver(actor);
           return ApiV2ListResult.of(
-              page.resources().stream()
-                  .map(
-                      resource ->
-                          document(resource, request, fieldsForRow.apply(resource), targetResolver))
-                  .toList(),
+              renderer.renderAll(
+                  page.resources(),
+                  description,
+                  fieldsForRow,
+                  request.fieldSelections(),
+                  request.includes(),
+                  targetResolver),
               page.total(),
               request.page().size(),
               request.page().number());
@@ -116,58 +122,65 @@ public final class ApiV2CrudDispatcher<T, ID> {
                 .orElseThrow(NotFoundException::new));
   }
 
-  public Map<String, Object> create(ParsedDocument document, User actor, FieldSelection selection) {
+  public Map<String, Object> create(
+      ParsedDocument document, ApiV2Caller caller, FieldSelection selection) {
     return invoke(
         ResourceOperation.CREATE,
-        () -> document(operations.create(document, actor), selection, targetResolver(actor)));
+        () ->
+            document(
+                operations.create(document, caller), selection, targetResolver(caller.subject())));
   }
 
   public ApiV2BulkResult<Map<String, Object>> createMany(
-      List<ParsedDocument> documents, User actor, FieldSelection selection) {
+      List<ParsedDocument> documents, ApiV2Caller caller, FieldSelection selection) {
     return invoke(
         ResourceOperation.BULK_CREATE,
         () ->
             ApiV2BulkResult.success(
-                renderMany(operations.createMany(documents, actor), selection, actor)));
+                renderMany(operations.createMany(documents, caller), selection, caller.subject())));
   }
 
   public Map<String, Object> update(
-      ID id, ParsedDocument document, User actor, FieldSelection selection) {
+      ID id, ParsedDocument document, ApiV2Caller caller, FieldSelection selection) {
     return invoke(
         ResourceOperation.UPDATE,
         () ->
             operations
-                .update(id, document, actor)
-                .map(resource -> document(resource, selection, targetResolver(actor)))
+                .update(id, document, caller)
+                .map(resource -> document(resource, selection, targetResolver(caller.subject())))
                 .orElseThrow(NotFoundException::new));
   }
 
   public ApiV2BulkResult<Map<String, Object>> updateMany(
-      ResourceRequest request, ParsedDocument document, User actor) {
+      ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
     return invoke(
         ResourceOperation.BULK_UPDATE,
         () ->
             ApiV2BulkResult.success(
                 renderMany(
-                    operations.updateMany(request, document, actor), request.fields(), actor)));
+                    operations.updateMany(request, document, caller),
+                    request.fields(),
+                    caller.subject())));
   }
 
-  public Map<String, Object> delete(ID id, User actor, FieldSelection selection) {
+  public Map<String, Object> delete(ID id, ApiV2Caller caller, FieldSelection selection) {
     return invoke(
         ResourceOperation.DELETE,
         () ->
             operations
-                .delete(id, actor)
-                .map(resource -> document(resource, selection, targetResolver(actor)))
+                .delete(id, caller)
+                .map(resource -> document(resource, selection, targetResolver(caller.subject())))
                 .orElseThrow(NotFoundException::new));
   }
 
-  public ApiV2BulkResult<Map<String, Object>> deleteMany(ResourceRequest request, User actor) {
+  public ApiV2BulkResult<Map<String, Object>> deleteMany(
+      ResourceRequest request, ApiV2Caller caller) {
     return invoke(
         ResourceOperation.BULK_DELETE,
         () ->
             ApiV2BulkResult.success(
-                renderMany(operations.deleteMany(request, actor), request.fields(), actor)));
+                renderMany(
+                    operations.deleteMany(request, caller), request.fields(), caller.subject())));
   }
 
   private <R> R invoke(ResourceOperation operation, Supplier<R> action) {
@@ -212,18 +225,28 @@ public final class ApiV2CrudDispatcher<T, ID> {
   private List<Map<String, Object>> renderMany(
       List<T> resources, FieldSelection selection, User actor) {
     TargetResolver targetResolver = targetResolver(actor);
-    return resources.stream()
-        .map(resource -> document(resource, selection, targetResolver))
-        .toList();
+    return renderer.renderAll(
+        resources,
+        description,
+        ignored -> selection,
+        com.researchspace.model.collection.ResourceFieldSelections.root(selection),
+        IncludeTree.empty(),
+        targetResolver);
   }
 
   private TargetResolver targetResolver(User actor) {
-    Map<TargetKey, Optional<ResolvedTarget>> cache = new HashMap<>();
-    return (resourceName, id) ->
-        cache.computeIfAbsent(
-            new TargetKey(resourceName, id),
-            key -> relationshipResolver.resolveReadable(key.resourceName(), key.id(), actor));
-  }
+    return new TargetResolver() {
+      @Override
+      public Optional<ResolvedTarget> resolve(String resourceName, Object id) {
+        return relationshipResolver
+            .resolveReadable(Set.of(new TargetKey(resourceName, id)), actor)
+            .getOrDefault(new TargetKey(resourceName, id), Optional.empty());
+      }
 
-  private record TargetKey(String resourceName, Object id) {}
+      @Override
+      public Map<TargetKey, Optional<ResolvedTarget>> resolveAll(Collection<TargetKey> targets) {
+        return relationshipResolver.resolveReadable(new LinkedHashSet<>(targets), actor);
+      }
+    };
+  }
 }

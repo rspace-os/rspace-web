@@ -18,6 +18,15 @@ public final class BookingAuditTrail {
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void bookingConfigurationChanged(BookingConfigurationAuditEvent event) {
-    auditTrail.notify(new GenericEvent(event.actor(), event.configuration(), event.action()));
+    if (event.actor().equals(event.subject())) {
+      auditTrail.notify(new GenericEvent(event.actor(), event.configuration(), event.action()));
+      return;
+    }
+    auditTrail.notify(
+        new GenericEvent(
+            event.actor(),
+            event.configuration(),
+            event.action(),
+            "subject=" + event.subject().getUsername()));
   }
 }

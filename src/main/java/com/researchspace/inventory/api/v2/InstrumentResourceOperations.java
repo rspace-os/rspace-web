@@ -10,6 +10,7 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
+import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -33,15 +34,18 @@ import org.springframework.context.annotation.Configuration;
 public class InstrumentResourceOperations implements ResourceOperations<Instrument, Long> {
 
   private final InstrumentEntityApiManager instrumentManager;
+  private final InstrumentReadAccess readAccess;
 
-  public InstrumentResourceOperations(InstrumentEntityApiManager instrumentManager) {
+  public InstrumentResourceOperations(
+      InstrumentEntityApiManager instrumentManager, InstrumentReadAccess readAccess) {
     this.instrumentManager = instrumentManager;
+    this.readAccess = readAccess;
   }
 
   @Bean
   ApiV2ResourceSpec<Instrument, Long> instrumentApiV2Resource() {
     return new ApiV2ResourceSpec<>(
-        ApiV2InstrumentResource.DESCRIPTION,
+        ApiV2InstrumentResource.description(readAccess),
         this,
         Long::valueOf,
         "errors.api.v2.instrument.create",

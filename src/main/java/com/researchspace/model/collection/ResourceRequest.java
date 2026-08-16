@@ -7,6 +7,7 @@ import java.util.Objects;
 /** Complete, typed request for reading or selecting resources from one collection. */
 public record ResourceRequest(
     FilterExpression filter,
+    FilterExpression serverConstraint,
     List<Sort> sort,
     Page page,
     ResourceFieldSelections fieldSelections,
@@ -34,7 +35,16 @@ public record ResourceRequest(
       Page page,
       FieldSelection fields,
       IncludeTree includes) {
-    this(filter, sort, page, ResourceFieldSelections.root(fields), includes);
+    this(filter, null, sort, page, ResourceFieldSelections.root(fields), includes);
+  }
+
+  public ResourceRequest(
+      FilterExpression filter,
+      List<Sort> sort,
+      Page page,
+      ResourceFieldSelections fieldSelections,
+      IncludeTree includes) {
+    this(filter, null, sort, page, fieldSelections, includes);
   }
 
   /** Field selection for the request's root resource. */
@@ -45,5 +55,17 @@ public record ResourceRequest(
   public static ResourceRequest unpaged(FilterExpression filter) {
     return new ResourceRequest(
         filter, List.of(), new Page(1, 1), FieldSelection.all(), IncludeTree.empty());
+  }
+
+  /** Adds a trusted server-owned restriction without changing or reclassifying caller input. */
+  public ResourceRequest restrict(FilterExpression constraint) {
+    if (constraint == null) {
+      return this;
+    }
+    FilterExpression combined =
+        serverConstraint == null
+            ? constraint
+            : new FilterExpression.And(List.of(serverConstraint, constraint));
+    return new ResourceRequest(filter, combined, sort, page, fieldSelections, includes);
   }
 }
