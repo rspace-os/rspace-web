@@ -50,9 +50,8 @@ public class IconImgDaoHibernate extends GenericDaoHibernate<ImageBlob, Long>
     return fg;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<Long> getAllIconIds() {
-    return getSession().createQuery("select id from IconEntity").list();
+    return getSession().createQuery("select id from IconEntity", Long.class).list();
   }
 }

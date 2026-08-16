@@ -37,7 +37,6 @@ public class CommunitySearchCriteria extends FilterCriteria {
     if (this == obj) return true;
     if (obj == null) return false;
     if (getClass() != obj.getClass()) return false;
-    @SuppressWarnings("rawtypes")
     CommunitySearchCriteria other = (CommunitySearchCriteria) obj;
     if (displayName == null) {
       if (other.displayName != null) return false;

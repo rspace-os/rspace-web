@@ -82,6 +82,10 @@ describe("createApiDocsConfiguration", () => {
     expect(config.mcp?.disabled).toBe(true);
   });
 
+  test("disables Scalar telemetry", () => {
+    expect(config.telemetry).toBe(false);
+  });
+
   test("disables the Ask AI agent on every source", () => {
     for (const source of config.sources ?? []) {
       expect(source.agent?.disabled).toBe(true);

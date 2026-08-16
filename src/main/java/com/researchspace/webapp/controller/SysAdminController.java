@@ -763,11 +763,15 @@ public class SysAdminController extends BaseController {
     return REDIRECT_SYSTEM_COMMUNITY_LIST;
   }
 
-  @SuppressWarnings("unchecked")
   private String getCreateCommunityValidationErrorView(Model model, Community community) {
     List<User> potentialAdmins = userManager.getAvailableAdminUsers();
     community.setAvailableAdmins(potentialAdmins);
-    community.setAvailableGroups((List<Group>) model.asMap().get("communityGroups"));
+    // the session attribute is absent if the create-community form was never rendered
+    Object groups = model.asMap().get("communityGroups");
+    community.setAvailableGroups(
+        groups instanceof List<?> groupList
+            ? groupList.stream().map(Group.class::cast).toList()
+            : List.of());
     return SYSTEM_CREATE_COMMUNITY_VIEW;
   }
 

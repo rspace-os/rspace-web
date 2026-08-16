@@ -57,7 +57,6 @@ public class SysadminApiControllerUserDeletionTest extends SysadminApiController
   public void mockUserExport() throws Exception {
     // Mock the user export so the non-temp deletion path doesn't try to write to the filestore.
     mockUserExportHandler = mock(UserExportHandler.class);
-    @SuppressWarnings("unchecked")
     Future<ArchiveResult> fakeArchive = (Future<ArchiveResult>) mock(Future.class);
     when(fakeArchive.get()).thenReturn(new ArchiveResult());
     when(mockUserExportHandler.doUserArchive(any(), any(), any(User.class), any()))

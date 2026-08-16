@@ -242,7 +242,6 @@ public class JournalController extends BaseController {
     return buffer.toString();
   }
 
-  @SuppressWarnings("unchecked")
   @GetMapping("/ajax/retrieveHistory/{recordid}/{position}/{refresh}")
   @ResponseBody
   public ResponseEntity<List<JournalEntry>> retrieveHistory(
@@ -259,7 +258,11 @@ public class JournalController extends BaseController {
       readableRecords = recordManager.getLoadableNotebookEntries(u, notebookId);
       session.setAttribute(HISTORY_SESSION_KEY, readableRecords);
     } else {
-      readableRecords = (List<Record>) session.getAttribute(HISTORY_SESSION_KEY);
+      Object history = session.getAttribute(HISTORY_SESSION_KEY);
+      if (!(history instanceof List<?> records)) {
+        throw new IllegalStateException("Invalid journal history session attribute");
+      }
+      readableRecords = records.stream().map(Record.class::cast).toList();
     }
 
     // position is 'page' of history, 1-based. e.g., 15 entries; page is 1,2,or 3

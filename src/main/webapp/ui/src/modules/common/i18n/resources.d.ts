@@ -3871,6 +3871,7 @@ export default interface Resources {
         "linkField": "Other Inventory items that link to this item through a Link custom field will also be listed here.",
         "listOfMaterials": "Adding this item to a document's <helpDocs docLink=\"listOfMaterials\">List of Materials</helpDocs> will add an entry for the document in this panel."
       },
+      "updateInstruments": "Update Instruments",
       "updateSamples": "Update Samples",
       "versionHistory": {
         "columns": {
@@ -7485,6 +7486,7 @@ export default interface Resources {
           "message": "Please confirm that you wish to cancel - the changes you made won't be saved."
         },
         "egnyte": {
+          "authError": "Egnyte authorization could not be verified. Please try connecting to Egnyte again.",
           "configMissing": "Egnyte is not configured properly on this RSpace instance. Please contact your System Admin",
           "domainMissing": "Egnyte Domain URL is not set, please go to Apps page and set it up."
         },

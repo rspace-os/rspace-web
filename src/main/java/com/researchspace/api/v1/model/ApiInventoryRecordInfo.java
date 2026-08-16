@@ -166,13 +166,12 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
    * the abstract hierarchy root (e.g. SampleEntity). The is*() checks dispatch through proxies,
    * but the casts to concrete subclasses still need the real instance, so unwrap first.
    */
-  @SuppressWarnings("unchecked")
-  static <T> T unproxy(T entity) {
-    return (T) Hibernate.unproxy(entity);
+  static <T> T unproxy(Object entity, Class<T> type) {
+    return type.cast(Hibernate.unproxy(entity));
   }
 
   public static ApiInventoryRecordInfo fromInventoryRecord(InventoryRecord invRecord) {
-    invRecord = unproxy(invRecord);
+    invRecord = unproxy(invRecord, InventoryRecord.class);
     if (invRecord.isSampleTemplate()) {
       return new ApiSampleTemplateInfo((SampleTemplate) invRecord);
     } else if (invRecord.isSample()) {
@@ -192,7 +191,7 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
 
   public static ApiInventoryRecordInfo fromInventoryRecordToFullApiRecord(
       InventoryRecord invRecord) {
-    invRecord = unproxy(invRecord);
+    invRecord = unproxy(invRecord, InventoryRecord.class);
     if (invRecord.isSampleTemplate()) {
       return new ApiSampleTemplate((SampleTemplate) invRecord);
     } else if (invRecord.isSample()) {

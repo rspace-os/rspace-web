@@ -247,11 +247,10 @@ public class RecordEditorTracker {
    * @param r
    * @return A <code>Set </code> of the current list of viewers.
    */
-  @SuppressWarnings("unchecked")
   public Set<String> getViewersForRecord(Long recordId) {
     Set<String> viewers = recordViewing.get(recordId);
     if (viewers == null) {
-      return Collections.unmodifiableSet(Collections.EMPTY_SET);
+      return Collections.emptySet();
     }
     return Collections.unmodifiableSet(viewers);
   }

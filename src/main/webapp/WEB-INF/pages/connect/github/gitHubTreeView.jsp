@@ -2,7 +2,7 @@
 
 <ul class="jqueryFileTree" style="display: none;">
 	<c:if test="${not empty error}">
-		<div><c:out value="${error}"></c:out></div>
+		<div>${error}</div>
 	</c:if>
 	<c:forEach items="${treeNodes}" var="node">
 		  <li class="${node.folder ? 'directory collapsed' : 'file'}">

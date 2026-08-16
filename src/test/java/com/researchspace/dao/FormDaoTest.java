@@ -68,7 +68,6 @@ public class FormDaoTest extends BaseDaoTestCase {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   // rspac-235
   public void testFindOldestFormByName() throws InterruptedException {
     // create 5 with same name
