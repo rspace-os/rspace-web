@@ -25,6 +25,12 @@ public interface FeatureFlagManager {
   /** Applies a patch and returns the updated caller-specific feature flag when it exists. */
   Optional<FeatureFlagResource> updateFeatureFlag(String flagName, Patch patch, User actor);
 
+  /** Applies a patch as {@code subject}, retaining the originating {@code actor} for audit. */
+  default Optional<FeatureFlagResource> updateFeatureFlag(
+      String flagName, Patch patch, User subject, User actor) {
+    return updateFeatureFlag(flagName, patch, subject);
+  }
+
   /** Returns whether a flag is enabled for the current user, or its unauthenticated baseline. */
   boolean isFeatureFlagEnabled(String flagName);
 

@@ -2,6 +2,7 @@ package com.researchspace.featureflags;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourceRequest;
@@ -32,13 +33,17 @@ class ApiV2FeatureFlagResourceTest {
         new FeatureFlagResource(
             "bookingEnabled", true, false, true, FeatureFlagSource.USER_OVERRIDE, true);
     Mockito.when(manager.getFeatureFlags(actor)).thenReturn(List.of(state));
-    Mockito.when(manager.updateFeatureFlag("bookingEnabled", new Patch(true, true, null), actor))
+    Mockito.when(
+            manager.updateFeatureFlag("bookingEnabled", new Patch(true, true, null), actor, actor))
         .thenReturn(Optional.of(state));
 
     assertEquals(List.of(state), operations.find(request, actor).resources());
-    assertEquals(state, operations.update("bookingEnabled", document, actor).orElseThrow());
+    assertEquals(
+        state,
+        operations.update("bookingEnabled", document, ApiV2Caller.direct(actor)).orElseThrow());
 
     Mockito.verify(manager).getFeatureFlags(actor);
-    Mockito.verify(manager).updateFeatureFlag("bookingEnabled", new Patch(true, true, null), actor);
+    Mockito.verify(manager)
+        .updateFeatureFlag("bookingEnabled", new Patch(true, true, null), actor, actor);
   }
 }

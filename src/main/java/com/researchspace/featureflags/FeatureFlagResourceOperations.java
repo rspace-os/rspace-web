@@ -1,5 +1,6 @@
 package com.researchspace.featureflags;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
@@ -86,7 +87,8 @@ public class FeatureFlagResourceOperations
   }
 
   @Override
-  public Optional<FeatureFlagResource> update(String id, ParsedDocument document, User actor) {
+  public Optional<FeatureFlagResource> update(
+      String id, ParsedDocument document, ApiV2Caller caller) {
     Map<String, Object> values = document.values();
     return manager.updateFeatureFlag(
         id,
@@ -94,6 +96,7 @@ public class FeatureFlagResourceOperations
             (Boolean) values.get("baselineValue"),
             values.containsKey("overrideValue"),
             (Boolean) values.get("overrideValue")),
-        actor);
+        caller.subject(),
+        caller.actor());
   }
 }

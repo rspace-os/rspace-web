@@ -68,6 +68,7 @@ class BookingConfigurationResourceOperationsTest {
   void authorizesAsTheSubjectAndRetainsTheOriginatingActorForWrites() {
     User subject = mock(User.class);
     User originatingActor = mock(User.class);
+    when(featureFlags.isFeatureFlagEnabled(FeatureFlags.BOOKING_ENABLED, subject)).thenReturn(true);
     ParsedDocument document = ParsedDocument.update(Map.of("enabled", true));
 
     operations.update(42L, document, new ApiV2Caller(subject, originatingActor));
@@ -145,13 +146,14 @@ class BookingConfigurationResourceOperationsTest {
     assertEquals(List.of(), operations.find(request, actor).resources());
     assertEquals(0, operations.count(request, actor));
     assertEquals(Optional.empty(), operations.findById(42L, actor));
-    assertThrows(AuthorizationException.class, () -> operations.create(document, actor));
+    ApiV2Caller caller = ApiV2Caller.direct(actor);
+    assertThrows(AuthorizationException.class, () -> operations.create(document, caller));
     assertThrows(
-        AuthorizationException.class, () -> operations.createMany(List.of(document), actor));
-    assertEquals(Optional.empty(), operations.update(42L, document, actor));
-    assertEquals(List.of(), operations.updateMany(request, document, actor));
-    assertEquals(Optional.empty(), operations.delete(42L, actor));
-    assertEquals(List.of(), operations.deleteMany(request, actor));
+        AuthorizationException.class, () -> operations.createMany(List.of(document), caller));
+    assertEquals(Optional.empty(), operations.update(42L, document, caller));
+    assertEquals(List.of(), operations.updateMany(request, document, caller));
+    assertEquals(Optional.empty(), operations.delete(42L, caller));
+    assertEquals(List.of(), operations.deleteMany(request, caller));
     verifyNoInteractions(manager);
   }
 

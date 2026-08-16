@@ -112,6 +112,12 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
   @Override
   public synchronized Optional<FeatureFlagResource> updateFeatureFlag(
       String flagName, Patch patch, User actor) {
+    return updateFeatureFlag(flagName, patch, actor, actor);
+  }
+
+  @Override
+  public synchronized Optional<FeatureFlagResource> updateFeatureFlag(
+      String flagName, Patch patch, User subject, User actor) {
     RuntimeFeatureFlags snapshot = requireRuntime();
     if (!snapshot.definitions().containsKey(flagName)) {
       return Optional.empty();
@@ -119,10 +125,10 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     assertWritable(flagName, snapshot);
     boolean changesBaseline = patch.baselineValue() != null;
     boolean changesOverride = patch.updateOverride();
-    if (changesBaseline && !canChangeFeatureFlagBaselines(actor)) {
+    if (changesBaseline && !canChangeFeatureFlagBaselines(subject)) {
       throw new FeatureFlagPermissionException();
     }
-    if (changesOverride && !canOverrideFeatureFlags(actor)) {
+    if (changesOverride && !canOverrideFeatureFlags(subject)) {
       throw new FeatureFlagPermissionException();
     }
 
@@ -138,19 +144,20 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     }
     if (changesOverride) {
       Boolean value = patch.overrideValue();
-      Map<String, Boolean> currentOverrides = getUserOverrides(actor);
+      Map<String, Boolean> currentOverrides = getUserOverrides(subject);
       boolean hasOverride = currentOverrides.containsKey(flagName);
       if (value == null && hasOverride) {
-        featureFlagDao.clearOverride(actor.getId(), flagName);
+        featureFlagDao.clearOverride(subject.getId(), flagName);
         changed = true;
       } else if (value != null && (!hasOverride || !value.equals(currentOverrides.get(flagName)))) {
-        featureFlagDao.setOverride(actor.getId(), flagName, value);
+        featureFlagDao.setOverride(subject.getId(), flagName, value);
         changed = true;
       }
     }
-    FeatureFlagResource updated = resolveResource(flagName, actor, responseSnapshot).orElseThrow();
+    FeatureFlagResource updated =
+        resolveResource(flagName, subject, responseSnapshot).orElseThrow();
     if (changed) {
-      events.publishEvent(new FeatureFlagResourceChangedEvent(actor, updated));
+      events.publishEvent(new FeatureFlagResourceChangedEvent(actor, subject, updated));
     }
     return Optional.of(updated);
   }

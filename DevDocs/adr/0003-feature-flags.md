@@ -42,7 +42,7 @@ Retired names may be reused later, but not in adjacent releases.
 
 Baseline values are held in memory after startup. Writes update the database
 inside a transaction and update the current node's snapshot only after commit.
-There is no database polling or multi-node propagation; a future multi-node
+There is no database polling or multi-node propagation. A future multi-node
 deployment will need shared state.
 
 ## API and access
@@ -58,8 +58,9 @@ The source is `DEFAULT`, `DATABASE`, `USER_OVERRIDE`, or `PROPERTIES_FILE`.
 The API does not expose feature flag definition metadata.
 
 Anonymous callers receive baseline values. A caller with API credentials
-receives values for that user. REST API v2 ignores cookies and browser sessions.
-The browser uses its Inventory OAuth token for authenticated requests.
+receives values for the effective subject. API keys and external OAuth tokens do
+not use cookies or browser sessions. The browser uses a session-bound REST API
+v2 UI token. The server verifies that token against the live browser session.
 
 The resource access policy permits public reads and authenticated updates.
 Invalid credentials return `401`. An anonymous update also returns `401`.
