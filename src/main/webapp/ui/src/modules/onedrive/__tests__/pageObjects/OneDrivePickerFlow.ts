@@ -4,7 +4,7 @@ export class OneDrivePickerFlow {
   constructor(private readonly popup: Page) {}
 
   async login(email: string, password: string): Promise<void> {
-    await this.popup.getByRole("textbox", { name: /Email|Sign in/ }).fill(email);
+    await this.popup.getByRole("textbox", { name: email }).fill(email);
     await this.popup.getByRole("button", { name: "Next" }).click();
     await this.popup.getByRole("textbox", { name: "Password" }).fill(password);
     await this.popup.getByRole("button", { name: "Sign in" }).click();

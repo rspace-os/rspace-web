@@ -88,3 +88,6 @@ src/main/webapp/ui/coverage
 /playwright-report/
 # Playwright MCP output (snapshots, console logs, screenshots from browser driving)
 .playwright-mcp/
+
+# Local test runner
+runcmd.sh

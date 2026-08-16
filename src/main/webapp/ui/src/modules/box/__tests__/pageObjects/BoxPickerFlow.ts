@@ -16,7 +16,7 @@ export class BoxPickerFlow {
     const radio = this.popup.getByRole("radio").first();
     const row = this.popup.getByRole("listitem").filter({ has: radio }).first();
     const fullText = await row.innerText();
-    const name = fullText.split(/\r?\nUpdated\b/)[0].trim();
+    const name = fullText.split("\nUpdated")[0].trim();
     if (!name) throw new Error("selectFirstFileAndChoose: matched a file row with no text content");
 
     await radio.click();

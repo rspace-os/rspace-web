@@ -12,7 +12,7 @@ import {
 
 test.describe("Video embed (YouTube/JoVE/TIB AV-Portal) [mock]", { tag: tags.APPS }, () => {
   test("As a user, I can embed a YouTube video into a document field", async ({ page, pageWorkspace }) => {
-    await page.route(new RegExp(`^https://www\\.youtube\\.com/embed/${MOCK_YOUTUBE_ID}`), (route) =>
+    await page.route(`https://www.youtube.com/embed/${MOCK_YOUTUBE_ID}`, (route) =>
       route.fulfill({ contentType: "text/html", body: MOCK_YOUTUBE_EMBED_BODY }),
     );
 
@@ -34,7 +34,7 @@ test.describe("Video embed (YouTube/JoVE/TIB AV-Portal) [mock]", { tag: tags.APP
   });
 
   test("As a user, I can embed a JoVE video into a document field", async ({ page, pageWorkspace }) => {
-    await page.route(new RegExp(`^https://www\\.jove\\.com/embed/player\\?id=${MOCK_JOVE_ID}`), (route) =>
+    await page.route(`https://www.jove.com/embed/player?id=${MOCK_JOVE_ID}&t=1&s=1&fpv=1`, (route) =>
       route.fulfill({ contentType: "text/html", body: MOCK_JOVE_EMBED_BODY }),
     );
 
@@ -50,7 +50,7 @@ test.describe("Video embed (YouTube/JoVE/TIB AV-Portal) [mock]", { tag: tags.APP
   });
 
   test("As a user, I can embed a TIB AV-Portal video into a document field", async ({ page, pageWorkspace }) => {
-    await page.route(new RegExp(`^https://av\\.tib\\.eu/player/${MOCK_TIB_ID}`), (route) =>
+    await page.route(`https://av.tib.eu/player/${MOCK_TIB_ID}`, (route) =>
       route.fulfill({ contentType: "text/html", body: MOCK_TIB_EMBED_BODY }),
     );
 

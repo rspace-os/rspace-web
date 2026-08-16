@@ -22,7 +22,7 @@ test.describe(`ORCID integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () 
     // throws "Cannot fulfill with redirect status" on webkit. A same-behavior
     // client-side redirect via a tiny HTML/JS page works identically on all
     // three engines.
-    await page.context().route(/^https:\/\/orcid\.org\/oauth\/authorize/, async (route) => {
+    await page.context().route("https://orcid.org/oauth/authorize**", async (route) => {
       const requestUrl = new URL(route.request().url());
       const redirectUri = requestUrl.searchParams.get("redirect_uri");
       if (!redirectUri) {

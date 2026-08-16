@@ -2,7 +2,12 @@ import { expect } from "@playwright/test";
 import { env } from "@/__tests__/e2e/env";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
-import { MOCK_PROTOCOL_TITLE, MOCK_PROTOCOLS_IO_PROTOCOL_RESPONSE, MOCK_PROTOCOLS_IO_SEARCH_RESPONSE } from "./mock";
+import {
+  MOCK_PROTOCOL_ID,
+  MOCK_PROTOCOL_TITLE,
+  MOCK_PROTOCOLS_IO_PROTOCOL_RESPONSE,
+  MOCK_PROTOCOLS_IO_SEARCH_RESPONSE,
+} from "./mock";
 
 const INTEGRATION_MODE = env.integrationMode;
 
@@ -21,10 +26,10 @@ test.describe(`protocols.io integration [${INTEGRATION_MODE}]`, { tag: tags.APPS
   });
 
   test("As a user, I can import a protocol into a document field", async ({ page, pageWorkspace }) => {
-    await page.route(/^https:\/\/www\.protocols\.io\/api\/v3\/protocols\?/, (route) =>
+    await page.route("https://www.protocols.io/api/v3/protocols?**", (route) =>
       route.fulfill({ json: MOCK_PROTOCOLS_IO_SEARCH_RESPONSE }),
     );
-    await page.route(/^https:\/\/www\.protocols\.io\/api\/v3\/protocols\/\d+$/, (route) =>
+    await page.route(`https://www.protocols.io/api/v3/protocols/${MOCK_PROTOCOL_ID}`, (route) =>
       route.fulfill({ json: MOCK_PROTOCOLS_IO_PROTOCOL_RESPONSE }),
     );
 

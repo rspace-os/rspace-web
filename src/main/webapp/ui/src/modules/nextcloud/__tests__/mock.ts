@@ -32,6 +32,29 @@ const WEBDAV_MULTISTATUS = `<?xml version="1.0"?>
   </d:response>
 </d:multistatus>`;
 
+const WEBDAV_ROOT_PATH = "/nextcloud/remote.php/webdav/";
+const WEBDAV_FILE_PATH = `/nextcloud/remote.php/webdav/${MOCK_FILE_NAME}`;
+
+const corsPreflightResponse = () =>
+  new HttpResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "PROPFIND, GET, OPTIONS",
+      "Access-Control-Allow-Headers": "*",
+    },
+  });
+
+const webdavResponse = (request: Request) => {
+  if (request.method !== "PROPFIND") {
+    return new HttpResponse(null, { status: 405, headers: { "Access-Control-Allow-Origin": "*" } });
+  }
+  return new HttpResponse(WEBDAV_MULTISTATUS, {
+    status: 207,
+    headers: { "Content-Type": "application/xml", "Access-Control-Allow-Origin": "*" },
+  });
+};
+
 export const nextcloudHandlers = [
   mockOAuthAuthorize("/nextcloud/index.php/apps/oauth2/authorize", "mock-nextcloud-auth-code"),
 
@@ -45,25 +68,8 @@ export const nextcloudHandlers = [
     }),
   ),
 
-  http.options(
-    "/nextcloud/remote.php/webdav*",
-    () =>
-      new HttpResponse(null, {
-        status: 204,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "PROPFIND, GET, OPTIONS",
-          "Access-Control-Allow-Headers": "*",
-        },
-      }),
-  ),
-  http.all("/nextcloud/remote.php/webdav*", ({ request }) => {
-    if (request.method !== "PROPFIND") {
-      return new HttpResponse(null, { status: 405, headers: { "Access-Control-Allow-Origin": "*" } });
-    }
-    return new HttpResponse(WEBDAV_MULTISTATUS, {
-      status: 207,
-      headers: { "Content-Type": "application/xml", "Access-Control-Allow-Origin": "*" },
-    });
-  }),
+  http.options(WEBDAV_ROOT_PATH, corsPreflightResponse),
+  http.options(WEBDAV_FILE_PATH, corsPreflightResponse),
+  http.all(WEBDAV_ROOT_PATH, ({ request }) => webdavResponse(request)),
+  http.all(WEBDAV_FILE_PATH, ({ request }) => webdavResponse(request)),
 ];

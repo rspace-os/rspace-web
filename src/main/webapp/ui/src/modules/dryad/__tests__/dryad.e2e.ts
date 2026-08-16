@@ -6,6 +6,8 @@ import { alphaNumericUnique } from "@/__tests__/e2e/testData";
 
 const INTEGRATION_MODE = env.integrationMode;
 
+const MOCK_CROSSREF_FUNDER_ID = "https://doi.org/10.13039/100000001";
+
 test.describe(`Dryad integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () => {
   test.skip(INTEGRATION_MODE === "real", "is out of scope");
 
@@ -26,7 +28,9 @@ test.describe(`Dryad integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () 
     componentToasts,
   }) => {
     await page.route("https://api.crossref.org/funders**", (route) =>
-      route.fulfill({ json: { message: { items: [{ name: "Mock Funding Body" }] } } }),
+      route.fulfill({
+        json: { message: { items: [{ id: MOCK_CROSSREF_FUNDER_ID, name: "Mock Funding Body" }] } },
+      }),
     );
 
     const doc = await clientDocuments.create({ name: alphaNumericUnique("Dryad export") });
@@ -50,7 +54,19 @@ test.describe(`Dryad integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () 
     await componentExportWizard.selectResearchDomain("Law");
     await componentExportWizard.selectRepositoryLicense("CC-0");
     await componentExportWizard.selectGrantingOrganization("Mock", "Mock Funding Body");
+
+    const exportRequest = page.waitForRequest(
+      (request) => request.url().endsWith("/export/ajax/export") && request.method() === "POST",
+    );
     await componentExportWizard.submit();
+
+    const exportRequestBody = (await exportRequest).postDataJSON() as {
+      repositoryConfig?: { meta?: { otherProperties?: { funder?: string } } };
+    };
+    const submittedFunder = JSON.parse(exportRequestBody.repositoryConfig?.meta?.otherProperties?.funder ?? "{}") as {
+      id?: string;
+    };
+    expect(submittedFunder.id).toBe(MOCK_CROSSREF_FUNDER_ID);
 
     await expect(
       componentToasts.byVariant("success", "Your export generation request has been submitted"),

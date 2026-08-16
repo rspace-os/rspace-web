@@ -1,9 +1,6 @@
-// import { expect } from "@playwright/test";
 import { env } from "@/__tests__/e2e/env";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
-
-// import { DropboxPickerFlow } from "./pageObjects/DropboxPickerFlow";
 
 test.describe("Dropbox integration [real]", { tag: tags.APPS }, () => {
   test.skip(
@@ -24,12 +21,5 @@ test.describe("Dropbox integration [real]", { tag: tags.APPS }, () => {
     const docEditor = await pageWorkspace.createBasicDocument();
     const popup = await docEditor.openDropboxPicker();
     await popup.waitForLoadState();
-
-    // const flow = new DropboxPickerFlow(popup);
-    // await flow.login(env.dropboxUsername, env.dropboxPassword);
-    // const fileName = await flow.selectFirstFileAndChoose();
-
-    // const field = await docEditor.getField("New List of Materials");
-    // await expect.poll(() => field.getText()).toContain(fileName);
   });
 });

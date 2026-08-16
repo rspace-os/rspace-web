@@ -17,9 +17,7 @@ test.describe(`Slack integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () 
     await pageApps.setEnabled("Slack", true);
   });
 
-  // Skipped: connect/connected.jsp double-escapes data-response (c:out around
-  // an already-escaped EL expression), which corrupts Slack's JSON OAuth
-  // payload and breaks the frontend's JSON.parse.
+  // Skipped:known backend bug.
   test.skip("As a user, I can connect a Slack channel via OAuth", async ({ componentToasts, componentSlackDialog }) => {
     const dialog = componentSlackDialog;
 
