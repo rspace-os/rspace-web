@@ -56,7 +56,7 @@ class ApiV2BrowserSessionAuthenticatorTest {
   }
 
   @Test
-  void returnsTheTargetAndOriginalActorDuringRunAs() {
+  void usesCurrentPrincipalRatherThanStaleSessionUserDuringRunAs() {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.getSession(true);
     Subject subject = mock(Subject.class);
@@ -64,13 +64,16 @@ class ApiV2BrowserSessionAuthenticatorTest {
     PrincipalCollection previousPrincipals = mock(PrincipalCollection.class);
     User target = mock(User.class);
     User actor = mock(User.class);
+    User staleSessionUser = mock(User.class);
     when(subject.isAuthenticated()).thenReturn(true);
     when(subject.isRunAs()).thenReturn(true);
     when(subject.getSession(false)).thenReturn(session);
+    when(subject.getPrincipal()).thenReturn("target1");
     when(subject.getPreviousPrincipals()).thenReturn(previousPrincipals);
     when(previousPrincipals.getPrimaryPrincipal()).thenReturn("sysadmin1");
-    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(target);
+    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(staleSessionUser);
     when(session.getAttribute(SessionAttributeUtils.IS_RUN_AS)).thenReturn(Boolean.TRUE);
+    when(userManager.getUserByUsername("target1")).thenReturn(target);
     when(userManager.getUserByUsername("sysadmin1")).thenReturn(actor);
     ThreadContext.bind(subject);
 
