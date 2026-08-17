@@ -1,4 +1,56 @@
 {
+  "bookableItems": {
+    "actions": {
+      "add": "Add",
+      "delete": "Delete {item}",
+      "edit": "Edit {item}",
+      "save": "Save changes",
+      "submit": "Submit"
+    },
+    "addError": "Could not add the bookable item. Try again.",
+    "addTitle": "Add Bookable Item",
+    "availability": {
+      "alreadyConfigured": "This inventory item already has a bookable item configuration.",
+      "checkFailed": "RSpace could not check whether this instrument can be added. Select it again or try another instrument.",
+      "checking": "Checking whether this instrument can be added.",
+      "editExisting": "Edit the existing configuration",
+      "instrumentRequired": "The selected inventory item is not an instrument and cannot be added as a bookable item."
+    },
+    "bulk": {
+      "actions": {
+        "delete": "Delete selected",
+        "disable": "Disable",
+        "enable": "Enable"
+      },
+      "deleteDialog": {
+        "description": "This action cannot be undone.",
+        "title": "Delete {count, plural, one {# bookable item} other {# bookable items}}?"
+      },
+      "errors": {
+        "delete": "Could not delete the selected rows. No rows changed. Try again.",
+        "disable": "Could not disable the selected rows. No rows changed. Try again.",
+        "enable": "Could not enable the selected rows. No rows changed. Try again."
+      }
+    },
+    "deleteDialog": {
+      "description": "Delete {item}? This action cannot be undone.",
+      "error": "Could not delete {item}. Try again.",
+      "title": "Delete bookable item?"
+    },
+    "editError": "Could not update the bookable item. Try again.",
+    "editTitle": "Edit Bookable Item",
+    "fields": {
+      "actions": "Actions",
+      "enabled": "Enabled",
+      "id": "ID",
+      "target": "Bookable item",
+      "targetName": "Bookable item name",
+      "timezone": "Time zone",
+      "updatedAt": "Last updated"
+    },
+    "plural": "Bookable Items",
+    "singular": "Bookable item"
+  },
   "dayTimeline": {
     "event": {
       "busy": "Busy",
@@ -24,5 +76,15 @@
       "notes": "Laser alignment and safety inspection.",
       "title": "Scheduled maintenance"
     }
+  },
+  "sidebar": {
+    "administration": "Administration",
+    "approvalQueue": "Approval Queue",
+    "bookableItems": "Bookable Items",
+    "calendar": "Calendar",
+    "dashboard": "Dashboard",
+    "label": "Booking",
+    "myBookings": "My Bookings",
+    "settings": "Settings"
   }
 }
