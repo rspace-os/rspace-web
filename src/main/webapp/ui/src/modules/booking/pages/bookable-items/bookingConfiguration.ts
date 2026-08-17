@@ -1,0 +1,100 @@
+import { createElement } from "react";
+import * as v from "valibot";
+import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import i18n from "@/modules/common/i18n";
+import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { UnknownItem } from "@/modules/common/ui/unknown-item";
+
+export const BookingConfigurationSchema = v.object({
+  id: v.number(),
+  target: v.nullable(
+    v.object({
+      relationTo: v.literal("instruments"),
+      value: v.object({ id: v.number(), name: v.string(), deleted: v.boolean() }),
+      globalId: v.string(),
+    }),
+  ),
+  enabled: v.boolean(),
+  timezone: v.string(),
+  updatedAt: v.nullable(v.string()),
+});
+
+export type BookingConfiguration = v.InferOutput<typeof BookingConfigurationSchema>;
+
+export const BookingConfigurationInputSchema = v.object({
+  target: v.object({
+    relationTo: v.literal("instruments"),
+    value: v.number(),
+  }),
+  enabled: v.boolean(),
+  timezone: v.string(),
+});
+
+export type BookingConfigurationInput = v.InferOutput<typeof BookingConfigurationInputSchema>;
+
+export const BookingConfigurationUpdateInputSchema = v.object({
+  target: v.optional(
+    v.object({
+      relationTo: v.literal("instruments"),
+      value: v.number(),
+    }),
+  ),
+  enabled: v.boolean(),
+  timezone: v.string(),
+});
+
+export type BookingConfigurationUpdateInput = v.InferOutput<typeof BookingConfigurationUpdateInputSchema>;
+
+export const bookingConfigurationConfig = {
+  slug: "bookable-items",
+  idField: "id",
+  labels: {
+    singularKey: "booking:bookableItems.singular",
+    pluralKey: "booking:bookableItems.plural",
+  },
+  useAsTitle: "target",
+  defaultColumns: ["target", "enabled", "timezone", "updatedAt"],
+  listSearchableFields: ["target.name", "timezone"],
+  fields: [
+    { name: "id", type: "number", labelKey: "booking:bookableItems.fields.id", list: false, form: false },
+    {
+      name: "target",
+      type: "relationship",
+      relationTo: "instruments",
+      hasMany: false,
+      labelKey: "booking:bookableItems.fields.target",
+      list: {
+        renderCell: ({ row }) => {
+          if (row.target === null) return createElement(UnknownItem, { size: "xs" });
+          return createElement(InventoryItem, {
+            name: row.target.value.name,
+            globalId: row.target.globalId,
+            href: `/globalId/${row.target.globalId}`,
+            idLinkLabel: i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId }),
+            compact: true,
+            size: "xs",
+          });
+        },
+      },
+    },
+    { name: "enabled", type: "boolean", labelKey: "booking:bookableItems.fields.enabled" },
+    {
+      name: "timezone",
+      type: "select",
+      options: Intl.supportedValuesOf("timeZone"),
+      labelKey: "booking:bookableItems.fields.timezone",
+    },
+    {
+      name: "updatedAt",
+      type: "dateTime",
+      labelKey: "booking:bookableItems.fields.updatedAt",
+      form: false,
+    },
+  ],
+} satisfies CollectionConfig<BookingConfiguration>;
+
+/** One row of the bookable-items table. `target` is null when its item cannot be resolved. */
+export type BookingConfigurationRow = CollectionRow<BookingConfiguration, "id" | "target">;
+
+export const bookingConfigurationFields = resolveCollectionConfig(bookingConfigurationConfig).fields;
