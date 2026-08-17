@@ -64,15 +64,15 @@ function referencingItemsEndpoint(globalId: string): string | null {
 function ReferencingItemsTable({ items }: { items: ReferencingItem[] }): React.ReactElement {
   const { t } = useTranslation("inventory");
   return (
-    <Table size="small" aria-label={t("moreInfo.linkedDocuments.inventoryLinksTable")}>
+    <Table size="small" aria-label={t("moreInfo.linkedItems.inventoryLinksTable")}>
       <TableHead>
         <TableRow>
-          <TableCell>{t("moreInfo.linkedDocuments.columns.name")}</TableCell>
+          <TableCell>{t("moreInfo.linkedItems.columns.name")}</TableCell>
           <TableCell>{t("moreInfo.globalId")}</TableCell>
-          <TableCell>{t("moreInfo.linkedDocuments.columns.relation")}</TableCell>
+          <TableCell>{t("moreInfo.linkedItems.columns.relation")}</TableCell>
           {/* Which version of THIS item the linking item points at (not a version
               of the linking item itself). */}
-          <TableCell>{t("moreInfo.linkedDocuments.columns.linkedVersion")}</TableCell>
+          <TableCell>{t("moreInfo.linkedItems.columns.linkedVersion")}</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -87,9 +87,7 @@ function ReferencingItemsTable({ items }: { items: ReferencingItem[] }): React.R
               </a>
             </TableCell>
             <TableCell>{item.relationType}</TableCell>
-            <TableCell>
-              {item.versionPin != null ? `v${item.versionPin}` : t("moreInfo.linkedDocuments.latest")}
-            </TableCell>
+            <TableCell>{item.versionPin != null ? `v${item.versionPin}` : t("moreInfo.linkedItems.latest")}</TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -100,12 +98,12 @@ function ReferencingItemsTable({ items }: { items: ReferencingItem[] }): React.R
 function DocumentsTable({ documents }: { documents: RsSet<Document> }): React.ReactElement {
   const { t } = useTranslation("inventory");
   return (
-    <Table aria-label={t("moreInfo.linkedDocuments.documentsTable")}>
+    <Table aria-label={t("moreInfo.linkedItems.documentsTable")}>
       <TableHead>
         <TableRow>
-          <TableCell>{t("moreInfo.linkedDocuments.columns.name")}</TableCell>
+          <TableCell>{t("moreInfo.linkedItems.columns.name")}</TableCell>
           <TableCell>{t("moreInfo.globalId")}</TableCell>
-          <TableCell>{t("moreInfo.linkedDocuments.columns.owner")}</TableCell>
+          <TableCell>{t("moreInfo.linkedItems.columns.owner")}</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -144,33 +142,33 @@ function DialogContents({ state }: { state: State }): React.ReactNode {
       <>
         <Box>
           <Typography variant="subtitle1" gutterBottom>
-            {t("moreInfo.linkedDocuments.documentsTable")}
+            {t("moreInfo.linkedItems.documentsTable")}
           </Typography>
           {documents.size > 0 ? (
             <DocumentsTable documents={documents} />
           ) : (
-            <NoValue label={t("moreInfo.linkedDocuments.noDocuments")} />
+            <NoValue label={t("moreInfo.linkedItems.noDocuments")} />
           )}
         </Box>
         <Box sx={{ mt: 2 }}>
           <Typography variant="subtitle1" gutterBottom>
-            {t("moreInfo.linkedDocuments.inventoryLinksTable")}
+            {t("moreInfo.linkedItems.inventoryLinksTable")}
           </Typography>
           {referencingItems.length > 0 ? (
             <ReferencingItemsTable items={referencingItems} />
           ) : (
-            <NoValue label={t("moreInfo.linkedDocuments.noInventoryLinks")} />
+            <NoValue label={t("moreInfo.linkedItems.noInventoryLinks")} />
           )}
         </Box>
         {bothEmpty && (
           <>
             <Box sx={{ mt: 1 }}>
               <Typography variant="body1">
-                <TransRichText i18nKey="inventory:moreInfo.linkedDocumentsHelp.listOfMaterials" />
+                <TransRichText i18nKey="inventory:moreInfo.linkedItemsHelp.listOfMaterials" />
               </Typography>
             </Box>
             <Box sx={{ mt: 1 }}>
-              <Typography variant="body1">{t("moreInfo.linkedDocumentsHelp.linkField")}</Typography>
+              <Typography variant="body1">{t("moreInfo.linkedItemsHelp.linkField")}</Typography>
             </Box>
           </>
         )}
@@ -180,12 +178,12 @@ function DialogContents({ state }: { state: State }): React.ReactNode {
   return null;
 }
 
-type LinkedDocumentsArgs = {
+type LinkedItemsArgs = {
   globalId: GlobalId;
   factory: Factory | null;
 };
 
-function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.ReactNode {
+function LinkedItems({ globalId, factory }: LinkedItemsArgs): React.ReactNode {
   const { t } = useTranslation(["inventory", "common"]);
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<State>({ state: "init" });
@@ -240,7 +238,7 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.Reac
   return (
     <Grid>
       <FormControl component="fieldset" style={{ alignItems: "flex-start" }}>
-        <FormLabel component="legend">{t("moreInfo.linkedDocuments.title")}</FormLabel>
+        <FormLabel component="legend">{t("moreInfo.linkedItems.title")}</FormLabel>
         <FormGroup>
           <Button
             variant="outlined"
@@ -250,10 +248,10 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.Reac
             }}
             disabled={!factory}
           >
-            {t("moreInfo.linkedDocuments.show")}
+            {t("moreInfo.linkedItems.show")}
           </Button>
           <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-            <DialogTitle>{t("moreInfo.linkedDocuments.title")}</DialogTitle>
+            <DialogTitle>{t("moreInfo.linkedItems.title")}</DialogTitle>
             <DialogContent>
               <DialogContents state={state} />
             </DialogContent>
@@ -267,4 +265,4 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.Reac
   );
 }
 
-export default observer(LinkedDocuments);
+export default observer(LinkedItems);

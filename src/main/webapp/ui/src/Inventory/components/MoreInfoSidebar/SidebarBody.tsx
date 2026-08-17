@@ -10,7 +10,7 @@ import type { InventoryRecord } from "../../../stores/definitions/InventoryRecor
 import Date from "./Date";
 import GlobalId from "./GlobalId";
 import LatestTemplateActions from "./LatestTemplateActions";
-import LinkedDocuments from "./LinkedDocuments";
+import LinkedItems from "./LinkedItems";
 import VersionHistory from "./VersionHistory";
 
 type SidebarBodyArgs = {
@@ -29,7 +29,7 @@ function SidebarBody({ record, factory }: SidebarBodyArgs): React.ReactNode {
     <Stack
       spacing={2}
       // Give every action button (version history, update samples, linked
-      // documents) a shared minimum width so they line up, while still letting
+      // items) a shared minimum width so they line up, while still letting
       // a longer label grow past it. These are the only FormGroup-wrapped
       // buttons in the panel; the dialog Close buttons they render are portaled
       // out of this subtree.
@@ -45,10 +45,10 @@ function SidebarBody({ record, factory }: SidebarBodyArgs): React.ReactNode {
       <VersionHistory record={record} />
       <LatestTemplateActions record={record} />
       {/* templates cannot appear in a List of Materials, but they are valid
-          link targets, so the linked-documents dialog (which also lists the
+          link targets, so the linked-items dialog (which also lists the
           inventory items linking here) applies to them like every other type */}
       {(record.usableInLoM || record.recordType === "sampleTemplate" || record.recordType === "instrumentTemplate") &&
-        record.globalId && <LinkedDocuments globalId={record.globalId} factory={factory} />}
+        record.globalId && <LinkedItems globalId={record.globalId} factory={factory} />}
     </Stack>
   );
 }

@@ -23,9 +23,9 @@ vi.mock("../LatestTemplateActions", () => ({
   default: () => <div data-testid="latest-template-actions" />,
 }));
 
-vi.mock("../LinkedDocuments", () => ({
+vi.mock("../LinkedItems", () => ({
   default: ({ globalId }: { globalId: string | null }) => (
-    <div data-testid="linked-documents" data-globalid={globalId ?? ""} />
+    <div data-testid="linked-items" data-globalid={globalId ?? ""} />
   ),
 }));
 
@@ -73,28 +73,28 @@ describe("SidebarBody", () => {
     );
   });
 
-  it("includes LinkedDocuments when the record is usable in a List of Materials and has a Global ID", () => {
+  it("includes LinkedItems when the record is usable in a List of Materials and has a Global ID", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <SidebarBody record={makeRecord() as never} factory={null} />
       </ThemeProvider>,
     );
-    expect(screen.getByTestId("linked-documents")).toHaveAttribute("data-globalid", "SA42");
+    expect(screen.getByTestId("linked-items")).toHaveAttribute("data-globalid", "SA42");
   });
 
-  it("omits LinkedDocuments when the record is not usable in a List of Materials", () => {
+  it("omits LinkedItems when the record is not usable in a List of Materials", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <SidebarBody record={makeRecord({ usableInLoM: false }) as never} factory={null} />
       </ThemeProvider>,
     );
-    expect(screen.queryByTestId("linked-documents")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("linked-items")).not.toBeInTheDocument();
   });
 
-  it("includes LinkedDocuments for a sample template", () => {
+  it("includes LinkedItems for a sample template", () => {
     // templates cannot appear in a List of Materials (usableInLoM is false),
     // but they are valid link targets, so "what links to this" applies and
-    // the Show Linked Documents button must be present like all other types
+    // the Show Linked Items button must be present like all other types
     render(
       <ThemeProvider theme={materialTheme}>
         <SidebarBody
@@ -109,10 +109,10 @@ describe("SidebarBody", () => {
         />
       </ThemeProvider>,
     );
-    expect(screen.getByTestId("linked-documents")).toHaveAttribute("data-globalid", "IT5");
+    expect(screen.getByTestId("linked-items")).toHaveAttribute("data-globalid", "IT5");
   });
 
-  it("includes LinkedDocuments for an instrument template", () => {
+  it("includes LinkedItems for an instrument template", () => {
     // like sample templates: not usable in a List of Materials, but a valid
     // link target, so the back-reference panel must render
     render(
@@ -129,15 +129,15 @@ describe("SidebarBody", () => {
         />
       </ThemeProvider>,
     );
-    expect(screen.getByTestId("linked-documents")).toHaveAttribute("data-globalid", "NT42");
+    expect(screen.getByTestId("linked-items")).toHaveAttribute("data-globalid", "NT42");
   });
 
-  it("omits LinkedDocuments when the record has no Global ID yet", () => {
+  it("omits LinkedItems when the record has no Global ID yet", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <SidebarBody record={makeRecord({ globalId: null }) as never} factory={null} />
       </ThemeProvider>,
     );
-    expect(screen.queryByTestId("linked-documents")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("linked-items")).not.toBeInTheDocument();
   });
 });
