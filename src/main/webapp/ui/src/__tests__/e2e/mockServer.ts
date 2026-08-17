@@ -14,6 +14,7 @@ import { dmponlineHandlers } from "../../modules/dmponline/__tests__/mock.ts";
 import { dmptoolHandlers } from "../../modules/dmptool/__tests__/mock.ts";
 import { dryadHandlers } from "../../modules/dryad/__tests__/mock.ts";
 import { dswHandlers } from "../../modules/dsw/__tests__/mock.ts";
+import { egnyteHandlers } from "../../modules/egnyte/__tests__/mock.ts";
 import { fieldmarkHandlers } from "../../modules/fieldmark/__tests__/mock.ts";
 import { galaxyHandlers } from "../../modules/galaxy/__tests__/mock.ts";
 import { githubHandlers } from "../../modules/github/__tests__/mock.ts";
@@ -51,6 +52,7 @@ const handlers = [
   ...dataverseHandlers,
   ...dcdHandlers,
   ...dswHandlers,
+  ...egnyteHandlers,
   ...dmptoolHandlers,
   ...dmpassistantHandlers,
   ...dmponlineHandlers,

@@ -5,6 +5,7 @@ import { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor
 import { VideoEmbedDialogComponent } from "@/__tests__/e2e/components/document/VideoEmbedDialogComponent";
 import { GalleryPickerComponent } from "@/__tests__/e2e/components/shared/GalleryPickerComponent";
 import { CaliraDialogComponent } from "@/modules/calira/__tests__/pageObjects/CaliraDialogComponent";
+import { EgnyteDialogComponent } from "@/modules/egnyte/__tests__/pageObjects/EgnyteDialogComponent";
 import { ExternalWorkflowDialogComponent } from "@/modules/galaxy/__tests__/pageObjects/ExternalWorkflowDialogComponent";
 import { GalaxyDialogComponent } from "@/modules/galaxy/__tests__/pageObjects/GalaxyDialogComponent";
 import { GitHubDialogComponent } from "@/modules/github/__tests__/pageObjects/GitHubDialogComponent";
@@ -27,6 +28,7 @@ export class DocumentEditorPage extends DocumentPage {
   readonly pyratDialog: PyratDialogComponent;
   readonly omeroDialog: OmeroDialogComponent;
   readonly caliraDialog: CaliraDialogComponent;
+  readonly egnyteDialog: EgnyteDialogComponent;
   readonly owncloudDialog: OwnCloudDialogComponent;
   readonly nextcloudDialog: NextcloudDialogComponent;
   readonly protocolsioDialog: ProtocolsIODialogComponent;
@@ -44,6 +46,7 @@ export class DocumentEditorPage extends DocumentPage {
     this.pyratDialog = new PyratDialogComponent(page);
     this.omeroDialog = new OmeroDialogComponent(page);
     this.caliraDialog = new CaliraDialogComponent(page);
+    this.egnyteDialog = new EgnyteDialogComponent(page);
     this.owncloudDialog = new OwnCloudDialogComponent(page);
     this.nextcloudDialog = new NextcloudDialogComponent(page);
     this.protocolsioDialog = new ProtocolsIODialogComponent(page);
@@ -136,6 +139,10 @@ export class DocumentEditorPage extends DocumentPage {
 
   async openGitHubDialog(): Promise<GitHubDialogComponent> {
     return this.openToolbarDialog("Insert from GitHub", this.githubDialog);
+  }
+
+  async openEgnyteDialog(): Promise<EgnyteDialogComponent> {
+    return this.openToolbarDialog("Insert from Egnyte", this.egnyteDialog);
   }
 
   get boxToolbarButton(): Locator {

@@ -153,6 +153,10 @@ jobs:
           OWNCLOUD_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.OWNCLOUD_CLIENT_SECRET || '' }}
           BOX_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.BOX_CLIENT_ID || '' }}
           BOX_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.BOX_CLIENT_SECRET || '' }}
+          PROTOCOLIO_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.PROTOCOLIO_CLIENT_ID || '' }}
+          PROTOCOLIO_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.PROTOCOLIO_CLIENT_SECRET || '' }}
+          ORCID_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.ORCID_CLIENT_ID || '' }}
+          ORCID_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.ORCID_CLIENT_SECRET || '' }}
         run: |
           set -euo pipefail
           if [ "${{ inputs.mode }}" = "mock" ]; then
@@ -179,6 +183,7 @@ jobs:
               "-Ddcd.base.url=http://localhost:$E2E_MOCK_PORT/dcd"
               "-Ddcd.client.id=mock-client"
               "-Ddcd.client.secret=mock-secret"
+              "-Degnyte.client.id=mock-client"
               "-Downcloud.url=http://localhost:$E2E_MOCK_PORT/owncloud"
               "-Downcloud.client.id=mock-client"
               "-Downcloud.secret=mock-secret"
@@ -219,6 +224,10 @@ jobs:
               "-Downcloud.server.name=ownCloud"
               "-Dbox.client.id=$BOX_CLIENT_ID"
               "-Dbox.client.secret=$BOX_CLIENT_SECRET"
+              "-Dprotocolsio.client.id=$PROTOCOLIO_CLIENT_ID"
+              "-Dprotocolsio.secret=$PROTOCOLIO_CLIENT_SECRET"
+              "-Dorcid.client.id=$ORCID_CLIENT_ID"
+              "-Dorcid.secret=$ORCID_CLIENT_SECRET"
             )
           fi
           nohup ./mvnw jetty:run-war \
@@ -281,6 +290,10 @@ jobs:
           IGSN_ACCOUNT_ID: ${{ inputs.mode == 'real' && secrets.IGSN_ACCOUNT_ID || '' }}
           IGSN_PASSWORD: ${{ inputs.mode == 'real' && secrets.IGSN_PASSWORD || '' }}
           IGSN_REPO_PREFIX: ${{ inputs.mode == 'real' && secrets.IGSN_REPO_PREFIX || '' }}
+          PROTOCOLIO_USERNAME: ${{ inputs.mode == 'real' && secrets.PROTOCOLIO_USERNAME || '' }}
+          PROTOCOLIO_PASSWORD: ${{ inputs.mode == 'real' && secrets.PROTOCOLIO_PASSWORD || '' }}
+          RSPACE_DEV_ORCID_EMAIL: ${{ inputs.mode == 'real' && secrets.RSPACE_DEV_ORCID_EMAIL || '' }}
+          RSPACE_DEV_ORCID_PASS: ${{ inputs.mode == 'real' && secrets.RSPACE_DEV_ORCID_PASS || '' }}
         run: pnpm run test-e2e --shard=${{ matrix.shard }}/${{ env.E2E_SHARD_OF }}
 
       - name: Dump server log on failure

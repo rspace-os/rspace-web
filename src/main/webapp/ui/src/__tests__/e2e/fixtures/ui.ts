@@ -4,6 +4,7 @@ import { GitHubAppsCardComponent } from "@/modules/github/__tests__/pageObjects/
 import { MsTeamsShareDialogComponent } from "@/modules/msteams/__tests__/pageObjects/MsTeamsShareDialogComponent";
 import { OrcidProfilePage } from "@/modules/orcid/__tests__/pageObjects/OrcidProfilePage";
 import { SlackDialogComponent } from "@/modules/slack/__tests__/pageObjects/SlackDialogComponent";
+import { SlackShareDialogComponent } from "@/modules/slack/__tests__/pageObjects/SlackShareDialogComponent";
 import { storageStatePath } from "../authState";
 import { ExportWizardComponent } from "../components/shared/ExportWizardComponent";
 import { NotificationsDialogComponent } from "../components/shared/NotificationsDialogComponent";
@@ -49,6 +50,7 @@ type UiFixtures = {
   componentToasts: ToastsComponent;
   componentMsTeamsShare: MsTeamsShareDialogComponent;
   componentSlackDialog: SlackDialogComponent;
+  componentSlackShare: SlackShareDialogComponent;
 };
 
 function pageFixture<T>(Ctor: new (page: Page) => T): TestFixture<T, { page: Page }> {
@@ -98,4 +100,5 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   componentToasts: pageFixture(ToastsComponent),
   componentMsTeamsShare: pageFixture(MsTeamsShareDialogComponent),
   componentSlackDialog: pageFixture(SlackDialogComponent),
+  componentSlackShare: pageFixture(SlackShareDialogComponent),
 });

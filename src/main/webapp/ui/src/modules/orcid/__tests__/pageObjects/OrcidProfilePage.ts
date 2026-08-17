@@ -1,4 +1,4 @@
-import type { Locator } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { BasePage } from "@/__tests__/e2e/pageObjects/BasePage";
 
 export class OrcidProfilePage extends BasePage {
@@ -12,8 +12,11 @@ export class OrcidProfilePage extends BasePage {
     return this.page.locator("#userOrcidIdLink");
   }
 
-  async connectOrcid(): Promise<void> {
+  async connectOrcid(opts?: { onExternalAuth?: (popup: Page) => Promise<void> }): Promise<void> {
     const [popup] = await Promise.all([this.page.waitForEvent("popup"), this.setOrcidIdLink.click()]);
+    if (opts?.onExternalAuth) {
+      await opts.onExternalAuth(popup);
+    }
     await popup.waitForEvent("close");
     await this.connectedOrcidLink.waitFor({ state: "visible" });
   }

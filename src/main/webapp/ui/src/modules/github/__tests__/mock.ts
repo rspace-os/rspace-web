@@ -14,9 +14,11 @@ function appBaseUrl(): string {
 }
 
 export const githubHandlers = [
-  http.get("/github/oauth/authorize", () => {
+  http.get("/github/oauth/authorize", ({ request }) => {
+    const incomingState = new URL(request.url).searchParams.get("state");
     const target = new URL("/github/redirect_uri", appBaseUrl());
     target.searchParams.set("code", "mock-github-auth-code");
+    if (incomingState) target.searchParams.set("state", incomingState);
     return HttpResponse.redirect(target.toString(), 302);
   }),
 
