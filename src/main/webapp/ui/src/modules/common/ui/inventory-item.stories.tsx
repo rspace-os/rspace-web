@@ -88,6 +88,38 @@ export const IdInDescription: Story = {
   },
 };
 
+export const Compact: Story = {
+  args: {
+    ...confocal,
+    compact: true,
+    variant: "outline",
+    children: (
+      <>
+        <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
+        Lab 2.14
+      </>
+    ),
+  },
+  render: (args) => (
+    <ItemGroup style={{ width: "420px" }}>
+      <InventoryItem {...args} />
+      <InventoryItem {...freezer} compact variant="outline" />
+    </ItemGroup>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const link = canvas.getByRole("link", { name: "Open inventory record IC-LSM900" });
+    const title = canvasElement.querySelector('[data-slot="item-title"]');
+
+    expect(title).toContainElement(link);
+    expect(canvasElement.querySelector('[data-slot="item-description"]')).toBeNull();
+    expect(canvas.queryByText("Lab 2.14")).not.toBeInTheDocument();
+
+    const [item] = canvas.getAllByRole("listitem");
+    expect(title?.getBoundingClientRect().height).toBeLessThanOrEqual(item.getBoundingClientRect().height);
+  },
+};
+
 export const VariantComparison: Story = {
   args: confocal,
   render: () => (

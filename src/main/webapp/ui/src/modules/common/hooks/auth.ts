@@ -37,22 +37,23 @@ export async function fetchToken(useRestApiV2 = false): Promise<string> {
   const newToken = useRestApiV2
     ? parseOrThrow(RestApiV2OauthTokenSchema, data).accessToken
     : parseOrThrow(LegacyOauthTokenSchema, data).data;
-  saveStoredToken(newToken);
+  // Session-bound v2 tokens belong to one browser/run-as context and must not replace the legacy
+  // bearer token that older API clients read from shared session storage.
+  if (!useRestApiV2) saveStoredToken(newToken);
   return newToken;
 }
 
 /**
- * This custom hook provides a TanStack Query-powered way to get a token for
- * making calls to the API endpoints that expect an API key. This hook uses
- * Suspense for loading states and leverages TanStack Query's built-in
- * caching, automatic refetching, and stale-while-revalidate behavior.
+ * Gets a token for authenticated API calls through TanStack Query. The hook uses Suspense for
+ * loading states. It also uses the TanStack Query cache and automatic refetch behavior.
  *
  * The hook automatically:
- * - Caches the token and reuses it across components
- * - Refetches the token when it's about to expire
- * - Persists the token to session storage
- * - Integrates with React Suspense for loading states
- * - Manages token lifetime using TanStack Query's staleTime
+ * - Caches the token and reuses it across components.
+ * - Refetches the token before it expires.
+ * - Persists legacy tokens to session storage.
+ * - Keeps session-bound API v2 tokens in query memory.
+ * - Integrates with React Suspense for loading states.
+ * - Manages token lifetime with the TanStack Query `staleTime` option.
  *
  * Usage example:
  *
@@ -78,6 +79,12 @@ export function useOauthTokenQuery({ useRestApiV2 = false }: { useRestApiV2?: bo
   return useSuspenseQuery({
     queryKey: queryKeys.oauthToken(useRestApiV2),
     queryFn: async () => {
+      // V2 tokens are bound to the current run-as identity and its rotating browser-session
+      // context. Mint once per page load so a run-as start/release redirect cannot reuse a stale
+      // token from session storage.
+      if (useRestApiV2) {
+        return fetchToken(true);
+      }
       // First, check if we have a valid token in session storage
       const savedToken = getStoredToken();
       if (savedToken && !isExpiringSoon(savedToken)) {

@@ -38,6 +38,8 @@ minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - '@base-ui/react@1.7.0'
   - '@base-ui/utils@0.3.2'
+  - '@tanstack/react-table@9.0.0'
+  - '@tanstack/table-core@9.0.0'
 strictPeerDependencies: true
 
 peerDependencyRules:

@@ -21,6 +21,7 @@ function InventoryItem({
   href,
   idLinkLabel,
   idPlacement = "description",
+  compact = false,
   className,
   children,
   ...props
@@ -35,10 +36,15 @@ function InventoryItem({
    */
   idLinkLabel: string;
   idPlacement?: GlobalIdPlacement;
+  /**
+   * Single-line layout: the name and the global ID share the title row and the
+   * second line is dropped, so `children` and `idPlacement` are ignored.
+   */
+  compact?: boolean;
   children?: React.ReactNode;
 }) {
   const badge = <GlobalIdBadge globalId={globalId} href={href} label={idLinkLabel} />;
-  const idInTitle = idPlacement === "title";
+  const idInTitle = compact || idPlacement === "title";
 
   return (
     <Item className={className} {...props}>
@@ -57,13 +63,15 @@ function InventoryItem({
           carries a badge plus arbitrary caller content. The muted typography is
           reused from ItemDescription so the two placements stay visually identical.
         */}
-        <div
-          data-slot="item-description"
-          className="flex min-w-0 items-center gap-1.5 text-left text-sm font-normal text-muted-foreground"
-        >
-          {idInTitle ? null : badge}
-          {children ? <span className="flex min-w-0 items-center gap-1.5 truncate">{children}</span> : null}
-        </div>
+        {compact ? null : (
+          <div
+            data-slot="item-description"
+            className="flex min-w-0 items-center gap-1.5 text-left text-sm font-normal text-muted-foreground"
+          >
+            {idInTitle ? null : badge}
+            {children ? <span className="flex min-w-0 items-center gap-1.5 truncate">{children}</span> : null}
+          </div>
+        )}
       </ItemContent>
     </Item>
   );
