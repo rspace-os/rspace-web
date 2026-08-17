@@ -6,6 +6,15 @@ import { describe, expect, it, vi } from "vitest";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCRIPTS_ROOT = resolve(__dirname, "../../../../scripts");
+const CLIENT_ID = "123456789-client.apps.googleusercontent.com";
+const APP_ID = "987654321";
+const DEVELOPER_KEY = "developer-key";
+const PICKER_URL = "https://docs.google.com/picker?picker-uri";
+const DEPLOYMENT_PROPERTIES = {
+  "googledrive.app.id": APP_ID,
+  "googledrive.client.id": CLIENT_ID,
+  "googledrive.developer.key": DEVELOPER_KEY,
+};
 
 function evaluateScript(relativePath: string, sandbox: Record<string, unknown>) {
   runInNewContext(readFileSync(resolve(SCRIPTS_ROOT, relativePath), "utf8"), sandbox);
@@ -27,8 +36,11 @@ function loadGoogleDriveConfigurator() {
       getScript,
       when: vi.fn(() => scriptRequest),
     },
+    console: { error: vi.fn(), log: vi.fn(), warn: vi.fn() },
+    document: { querySelector: () => null },
     RS: { msg: (key: string) => key },
     tinymce: { PluginManager: { add: () => {} } },
+    window: {},
   };
 
   evaluateScript("pages/workspace/editor/tinymce5_configuration.js", sandbox);
@@ -56,46 +68,22 @@ function loadGoogleDriveInserter() {
     return { requestAccessToken };
   });
   const requestAccessToken = vi.fn();
-  const setDeveloperKey = vi.fn();
-  const setAppId = vi.fn();
-  const setOrigin = vi.fn();
   const picker = { setVisible: vi.fn() };
-  class PickerBuilder {
-    addView() {
-      return this;
-    }
-
-    build() {
-      return picker;
-    }
-
-    setAppId(appId: string) {
-      setAppId(appId);
-      return this;
-    }
-
-    setCallback(callback: (response: { action: string; error?: number }) => void) {
+  const pickerBuilder = {
+    addView: vi.fn(() => pickerBuilder),
+    build: vi.fn(() => picker),
+    setAppId: vi.fn(() => pickerBuilder),
+    setCallback: vi.fn((callback: (response: { action: string; error?: number }) => void) => {
       pickerCallback = callback;
-      return this;
-    }
-
-    setDeveloperKey(developerKey: string) {
-      setDeveloperKey(developerKey);
-      return this;
-    }
-
-    setOAuthToken() {
-      return this;
-    }
-
-    setOrigin(origin: string) {
-      setOrigin(origin);
-      return this;
-    }
-
-    toUri() {
-      return "https://docs.google.com/picker?picker-uri";
-    }
+      return pickerBuilder;
+    }),
+    setDeveloperKey: vi.fn(() => pickerBuilder),
+    setOAuthToken: vi.fn(() => pickerBuilder),
+    setOrigin: vi.fn(() => pickerBuilder),
+    toUri: vi.fn(() => PICKER_URL),
+  };
+  function PickerBuilder() {
+    return pickerBuilder;
   }
   const sandbox: Record<string, unknown> = {
     RS: { msg: (key: string) => key },
@@ -134,47 +122,46 @@ function loadGoogleDriveInserter() {
     getPickerCallback: () => pickerCallback,
     initTokenClient,
     insert: sandbox.insertFromGoogleDrive as (editor: { settings: Record<string, string> }) => Promise<void>,
+    pickerBuilder,
     requestAccessToken,
-    setAppId,
-    setDeveloperKey,
-    setOrigin,
     picker,
   };
 }
 
-const editor = {
-  settings: {
-    googledrive_app_id: "987654321",
-    googledrive_client_id: "123456789-client.apps.googleusercontent.com",
-    googledrive_developer_key: "developer-key",
-    googledrive_scope: "drive-scope",
-  },
-  windowManager: { openUrl: vi.fn() },
-};
+function createEditor() {
+  return {
+    settings: {
+      googledrive_app_id: APP_ID,
+      googledrive_client_id: CLIENT_ID,
+      googledrive_developer_key: DEVELOPER_KEY,
+      googledrive_scope: "drive-scope",
+    },
+    windowManager: { openUrl: vi.fn() },
+  };
+}
+
+async function startInsertion(harness: ReturnType<typeof loadGoogleDriveInserter>, editor = createEditor()) {
+  const insertion = harness.insert(editor);
+  harness.finishPickerLoad();
+  await insertion;
+  const oauthConfiguration = harness.getOauthConfiguration();
+  if (!oauthConfiguration) throw new Error("Google OAuth was not configured");
+  return oauthConfiguration;
+}
 
 describe("Google Drive TinyMCE integration", () => {
   it("passes deployment properties to the plugin through TinyMCE settings", () => {
     const { configure } = loadGoogleDriveConfigurator();
     const setup = { external_plugins: {} };
 
-    expect(
-      configure(
-        setup,
-        {
-          "googledrive.app.id": "987654321",
-          "googledrive.client.id": "123456789-client.apps.googleusercontent.com",
-          "googledrive.developer.key": "developer-key",
-        },
-        true,
-      ),
-    ).toBe(true);
+    expect(configure(setup, DEPLOYMENT_PROPERTIES, true)).toBe(true);
     expect(setup).toMatchObject({
       external_plugins: {
         googledrive: "/scripts/externalTinymcePlugins/googledrive/plugin.min.js",
       },
-      googledrive_app_id: "987654321",
-      googledrive_client_id: "123456789-client.apps.googleusercontent.com",
-      googledrive_developer_key: "developer-key",
+      googledrive_app_id: APP_ID,
+      googledrive_client_id: CLIENT_ID,
+      googledrive_developer_key: DEVELOPER_KEY,
       googledrive_scope: "https://www.googleapis.com/auth/drive.file",
     });
   });
@@ -191,39 +178,15 @@ describe("Google Drive TinyMCE integration", () => {
       googledrive_scope: "old-scope",
     };
 
-    expect(
-      configure(
-        setup,
-        {
-          "googledrive.app.id": "",
-          "googledrive.client.id": "123456789-client.apps.googleusercontent.com",
-          "googledrive.developer.key": "developer-key",
-        },
-        true,
-      ),
-    ).toBe(false);
-    expect(setup.external_plugins).not.toHaveProperty("googledrive");
-    expect(setup).not.toHaveProperty("googledrive_client_id");
-    expect(setup).not.toHaveProperty("googledrive_app_id");
-    expect(setup).not.toHaveProperty("googledrive_developer_key");
-    expect(setup).not.toHaveProperty("googledrive_scope");
+    expect(configure(setup, { ...DEPLOYMENT_PROPERTIES, "googledrive.app.id": "" }, true)).toBe(false);
+    expect(setup).toEqual({ external_plugins: {} });
   });
 
   it("does not load the plugin when the integration is disabled", () => {
     const { configure } = loadGoogleDriveConfigurator();
     const setup = { external_plugins: {} };
 
-    expect(
-      configure(
-        setup,
-        {
-          "googledrive.app.id": "987654321",
-          "googledrive.client.id": "123456789-client.apps.googleusercontent.com",
-          "googledrive.developer.key": "developer-key",
-        },
-        false,
-      ),
-    ).toBe(false);
+    expect(configure(setup, DEPLOYMENT_PROPERTIES, false)).toBe(false);
     expect(setup.external_plugins).not.toHaveProperty("googledrive");
   });
 
@@ -234,9 +197,10 @@ describe("Google Drive TinyMCE integration", () => {
     const secondRequest = loadScripts();
 
     expect(secondRequest).toBe(firstRequest);
-    expect(getScript).toHaveBeenCalledTimes(2);
-    expect(getScript).toHaveBeenNthCalledWith(1, "https://accounts.google.com/gsi/client");
-    expect(getScript).toHaveBeenNthCalledWith(2, "https://apis.google.com/js/api.js");
+    expect(getScript.mock.calls).toEqual([
+      ["https://accounts.google.com/gsi/client"],
+      ["https://apis.google.com/js/api.js"],
+    ]);
   });
 
   it("uses TinyMCE settings for OAuth and Google Picker", async () => {
@@ -246,11 +210,10 @@ describe("Google Drive TinyMCE integration", () => {
       initTokenClient,
       insert,
       requestAccessToken,
-      setAppId,
-      setDeveloperKey,
-      setOrigin,
+      pickerBuilder,
       picker,
     } = loadGoogleDriveInserter();
+    const editor = createEditor();
 
     const insertion = insert(editor);
     await Promise.resolve();
@@ -260,31 +223,30 @@ describe("Google Drive TinyMCE integration", () => {
     await insertion;
     const oauthConfiguration = getOauthConfiguration();
     expect(oauthConfiguration).toMatchObject({
-      client_id: "123456789-client.apps.googleusercontent.com",
+      client_id: CLIENT_ID,
       scope: "drive-scope",
     });
     expect(requestAccessToken).toHaveBeenCalledWith({ prompt: "consent" });
 
     oauthConfiguration?.callback({ access_token: "access-token" });
-    expect(setDeveloperKey).toHaveBeenCalledWith("developer-key");
-    expect(setAppId).toHaveBeenCalledWith("987654321");
-    expect(setOrigin).toHaveBeenCalledWith("https://rspace.example.com");
+    expect(pickerBuilder.setDeveloperKey).toHaveBeenCalledWith(DEVELOPER_KEY);
+    expect(pickerBuilder.setAppId).toHaveBeenCalledWith(APP_ID);
+    expect(pickerBuilder.setOrigin).toHaveBeenCalledWith("https://rspace.example.com");
     expect(picker.setVisible).toHaveBeenCalledWith(true);
   });
 
   it("shows the Picker response in a TinyMCE iframe when Picker reports an error", async () => {
-    const { finishPickerLoad, getOauthConfiguration, getPickerCallback, insert, picker } = loadGoogleDriveInserter();
-    const insertion = insert(editor);
-    finishPickerLoad();
-    await insertion;
-    getOauthConfiguration()?.callback({ access_token: "access-token" });
+    const harness = loadGoogleDriveInserter();
+    const editor = createEditor();
+    const oauthConfiguration = await startInsertion(harness, editor);
+    oauthConfiguration.callback({ access_token: "access-token" });
 
-    getPickerCallback()?.({ action: "error" });
+    harness.getPickerCallback()?.({ action: "error" });
 
-    expect(picker.setVisible).toHaveBeenLastCalledWith(false);
+    expect(harness.picker.setVisible).toHaveBeenLastCalledWith(false);
     expect(editor.windowManager.openUrl).toHaveBeenCalledWith({
       title: "legacyjs.tinymce.googleDrive.pickerTitle",
-      url: "https://docs.google.com/picker?picker-uri",
+      url: PICKER_URL,
       width: 1051,
       height: 650,
     });
@@ -304,16 +266,12 @@ describe("Google Drive TinyMCE integration", () => {
   ])(
     "explains how to recover from $responseHandler failures",
     async ({ expectedMessage, response, responseHandler }) => {
-      const { apprise, finishPickerLoad, getOauthConfiguration, insert, setDeveloperKey } = loadGoogleDriveInserter();
-      const insertion = insert(editor);
-      finishPickerLoad();
-      await insertion;
+      const harness = loadGoogleDriveInserter();
+      const oauthConfiguration = await startInsertion(harness);
+      oauthConfiguration[responseHandler](response);
 
-      const oauthConfiguration = getOauthConfiguration();
-      oauthConfiguration?.[responseHandler](response);
-
-      expect(setDeveloperKey).not.toHaveBeenCalled();
-      expect(apprise).toHaveBeenCalledWith(expectedMessage);
+      expect(harness.pickerBuilder.setDeveloperKey).not.toHaveBeenCalled();
+      expect(harness.apprise).toHaveBeenCalledWith(expectedMessage);
     },
   );
 });
