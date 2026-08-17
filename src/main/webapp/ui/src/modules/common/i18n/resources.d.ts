@@ -3852,7 +3852,7 @@ export default interface Resources {
       "created": "Created",
       "globalId": "Global ID",
       "lastModified": "Last Modified",
-      "linkedDocuments": {
+      "linkedItems": {
         "columns": {
           "linkedVersion": "Linked version",
           "name": "Name",
@@ -3864,10 +3864,10 @@ export default interface Resources {
         "latest": "Latest",
         "noDocuments": "No documents",
         "noInventoryLinks": "No inventory links",
-        "show": "Show Linked Documents",
-        "title": "Linked Documents"
+        "show": "Show Linked Items",
+        "title": "Linked Items"
       },
-      "linkedDocumentsHelp": {
+      "linkedItemsHelp": {
         "linkField": "Other Inventory items that link to this item through a Link custom field will also be listed here.",
         "listOfMaterials": "Adding this item to a document's <helpDocs docLink=\"listOfMaterials\">List of Materials</helpDocs> will add an entry for the document in this panel."
       },
