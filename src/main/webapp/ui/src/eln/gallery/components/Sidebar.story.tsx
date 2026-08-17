@@ -29,18 +29,20 @@ function GalleryTheme({ children }: { children: React.ReactNode }): React.ReactN
   );
 }
 
+/**
+ * The one client these stories render with. Anything that renders them more
+ * than once must call `queryClient.clear()` between renders, or a cached
+ * response from the first will still be there for the second.
+ */
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
 function SidebarStory({ folderId, path }: { folderId: Id; path: ReadonlyArray<GalleryFile> | null }): React.ReactNode {
-  // Fresh client per mount so query caches don't leak between tests
-  const [queryClient] = React.useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            retry: false,
-          },
-        },
-      }),
-  );
   return (
     <React.StrictMode>
       <ErrorBoundary>

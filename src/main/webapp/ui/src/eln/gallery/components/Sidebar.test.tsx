@@ -7,7 +7,7 @@ import MockAdapter from "axios-mock-adapter";
 import { expectAccessible } from "@/__tests__/accessibility";
 import axios from "@/common/axios";
 import allIntegrationsAreDisabled from "../../apps/__tests__/allIntegrationsAreDisabled.json";
-import { DefaultSidebar, S3_FILESTORE_ID, S3FilestoreSidebar } from "./Sidebar.story";
+import { DefaultSidebar, queryClient, S3_FILESTORE_ID, S3FilestoreSidebar } from "./Sidebar.story";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -77,6 +77,7 @@ describe("Sidebar", () => {
   beforeEach(() => {
     mockAxios.reset();
     mockNetwork();
+    queryClient.clear();
   });
 
   afterEach(() => {
