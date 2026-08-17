@@ -1,4 +1,4 @@
-import { type AnyRoute, createRoute, Outlet } from "@tanstack/react-router";
+import { type AnyRoute, createRoute, Link, Outlet } from "@tanstack/react-router";
 import {
   CalendarIcon,
   CheckSquareIcon,
@@ -31,13 +31,13 @@ const items = [
   {
     key: "administration",
     icon: SettingsIcon,
-    children: [{ key: "settings" }, { key: "bookableItems" }],
+    children: [{ key: "settings" }, { key: "bookableItems", to: "/booking/config/bookable-items" }],
   },
   { key: "approvalQueue", icon: CheckSquareIcon },
 ] as const satisfies ReadonlyArray<{
   key: string;
   icon: LucideIcon;
-  children?: ReadonlyArray<{ key: string }>;
+  children?: ReadonlyArray<{ key: string; to?: string }>;
 }>;
 
 /** Content for the shared AppShell sidebar. The shell owns the surrounding layout. */
@@ -74,7 +74,10 @@ export function BookingSidebar() {
                   <SidebarMenuSub>
                     {item.children.map((child) => (
                       <SidebarMenuSubItem key={child.key}>
-                        <SidebarMenuSubButton render={<button type="button" />}>
+                        {/* an <a> without href has no role, so unrouted sub-items render as buttons */}
+                        <SidebarMenuSubButton
+                          render={"to" in child ? <Link to={child.to} /> : <button type="button" />}
+                        >
                           <span>{labels[child.key]}</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>

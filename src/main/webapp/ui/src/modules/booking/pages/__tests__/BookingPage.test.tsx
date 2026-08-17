@@ -16,6 +16,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { createBookingRoute } from "@/modules/booking/pages/BookingPage";
+import { createBookableItemRoute } from "@/modules/booking/pages/bookable-items/routes";
 import { getSidebarRenderer } from "@/modules/common/app/AppShell";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
@@ -43,6 +44,9 @@ const currentUser: CurrentUser = {
   session: {
     operatedAs: false,
     lastSession: null,
+    canUseDevtools: false,
+    canOverrideFeatureFlags: false,
+    canChangeFeatureFlagBaselines: false,
   },
 };
 
@@ -75,7 +79,7 @@ function renderAt(initialPath: string, hasSysAdminRole = true) {
   const bookingRoute = createBookingRoute(rootRoute);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
-    routeTree: rootRoute.addChildren([bookingRoute]),
+    routeTree: rootRoute.addChildren([bookingRoute.addChildren([createBookableItemRoute(bookingRoute)])]),
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
 
@@ -93,17 +97,14 @@ describe("booking sidebar", () => {
     const { container } = renderAt("/booking");
 
     // i18next runs in cimode under vitest, so t() renders "<namespace>:<key>"
-    for (const key of [
-      "dashboard",
-      "calendar",
-      "myBookings",
-      "administration",
-      "approvalQueue",
-      "settings",
-      "bookableItems",
-    ]) {
+    for (const key of ["dashboard", "calendar", "myBookings", "administration", "approvalQueue", "settings"]) {
       expect(await screen.findByRole("button", { name: `booking:sidebar.${key}` })).toBeInTheDocument();
     }
+
+    expect(await screen.findByRole("link", { name: "booking:sidebar.bookableItems" })).toHaveAttribute(
+      "href",
+      "/booking/config/bookable-items",
+    );
 
     await expectAccessible(container);
   });
@@ -126,6 +127,31 @@ describe("booking sidebar", () => {
 
     expect(await screen.findByRole("button", { name: "booking:sidebar.dashboard" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:sidebar.administration" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "booking:sidebar.bookableItems" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "booking:sidebar.bookableItems" })).not.toBeInTheDocument();
+  });
+
+  it("stays mounted on the bookable item route", async () => {
+    server.use(
+      http.get("/api/v2/booking-configurations/42", () =>
+        HttpResponse.json({
+          id: 42,
+          target: {
+            relationTo: "instruments",
+            value: { id: 123, name: "Confocal microscope", deleted: false },
+            globalId: "IN123",
+          },
+          enabled: true,
+          timezone: "Europe/Berlin",
+          updatedAt: null,
+        }),
+      ),
+      http.get("/api/v2/instruments/123", () =>
+        HttpResponse.json({ id: 123, name: "Confocal microscope", globalId: "IN123" }),
+      ),
+    );
+    renderAt("/booking/config/bookable-items/42");
+
+    expect(await screen.findByRole("button", { name: "booking:sidebar.dashboard" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "booking:bookableItems.editTitle" })).toBeVisible();
   });
 });
