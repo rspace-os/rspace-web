@@ -1236,7 +1236,7 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
   throw new Error(`encodeIntegrationState has not been implemented for integration ${integration}`);
 };
 
-const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
+const ONE_MINUTE_IN_MS = 60 * 1000;
 
 /**
  * This is a custom hook that allows for react components to fetch the current

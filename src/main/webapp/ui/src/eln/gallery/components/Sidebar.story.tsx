@@ -3,6 +3,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import MenuItem from "@mui/material/MenuItem";
 import { type Theme, ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { BrowserRouter } from "react-router";
@@ -28,32 +29,47 @@ function GalleryTheme({ children }: { children: React.ReactNode }): React.ReactN
   );
 }
 
+/**
+ * The one client these stories render with. Anything that renders them more
+ * than once must call `queryClient.clear()` between renders, or a cached
+ * response from the first will still be there for the second.
+ */
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
 function SidebarStory({ folderId, path }: { folderId: Id; path: ReadonlyArray<GalleryFile> | null }): React.ReactNode {
   return (
     <React.StrictMode>
       <ErrorBoundary>
         <BrowserRouter>
           <GalleryTheme>
-            <Analytics>
-              <UiPreferences>
-                <DisableDragAndDropByDefault>
-                  <Alerts>
-                    <LandmarksProvider>
-                      <Sidebar
-                        selectedSection="Images"
-                        setSelectedSection={() => {}}
-                        drawerOpen={true}
-                        setDrawerOpen={() => {}}
-                        folderId={{ tag: "success", value: folderId }}
-                        path={path}
-                        refreshListing={() => Promise.resolve()}
-                        id="1"
-                      />
-                    </LandmarksProvider>
-                  </Alerts>
-                </DisableDragAndDropByDefault>
-              </UiPreferences>
-            </Analytics>
+            <QueryClientProvider client={queryClient}>
+              <Analytics>
+                <UiPreferences>
+                  <DisableDragAndDropByDefault>
+                    <Alerts>
+                      <LandmarksProvider>
+                        <Sidebar
+                          selectedSection="Images"
+                          setSelectedSection={() => {}}
+                          drawerOpen={true}
+                          setDrawerOpen={() => {}}
+                          folderId={{ tag: "success", value: folderId }}
+                          path={path}
+                          refreshListing={() => Promise.resolve()}
+                          id="1"
+                        />
+                      </LandmarksProvider>
+                    </Alerts>
+                  </DisableDragAndDropByDefault>
+                </UiPreferences>
+              </Analytics>
+            </QueryClientProvider>
           </GalleryTheme>
         </BrowserRouter>
       </ErrorBoundary>
