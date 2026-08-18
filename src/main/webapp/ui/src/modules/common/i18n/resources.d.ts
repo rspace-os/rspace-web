@@ -6787,6 +6787,7 @@ export default interface Resources {
           "unrecognizedFileType": "Unrecognized fileType: {0}"
         },
         "instrument": {
+          "fieldCountMismatch": "Number of incoming instrument fields [{0}] doesn''t match number of template fields [{1}]",
           "nameExists": "There is already an instrument named [{0}]",
           "notFound": "No instrument with id: {0}",
           "templateNotFound": "No instrument template with id: {0}",

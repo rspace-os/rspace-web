@@ -28,7 +28,6 @@ import com.researchspace.model.events.InventoryEditingEvent;
 import com.researchspace.model.events.InventoryMoveEvent;
 import com.researchspace.model.events.InventoryRestoreEvent;
 import com.researchspace.model.events.InventoryTransferEvent;
-import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
@@ -69,13 +68,6 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     implements InstrumentEntityApiManager {
 
   public static final String INSTRUMENT_DEFAULT_NAME = "Generic Instrument";
-
-  /*
-   * Canonical spelling from the default PIDINST template; see CONTEXT.md ("PIDINST-mapped field").
-   * Matched the same way the PID mapping matches it, on trimmed case-insensitive name plus URI type,
-   * so an instrument shaped by that template is recognised however it was created.
-   */
-  private static final String LANDING_PAGE_FIELD_NAME = "Landing page";
 
   private @Autowired IPropertyHolder properties;
   private @Autowired InstrumentDao instrumentDao;
@@ -135,15 +127,23 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
         recordFactory.createInstrument(instrumentName, user, instrTemplate);
 
     setBasicFieldsFromNewIncomingApiInventoryRecord(instrumentToSave, apiInstrument, user);
+    String inheritedLandingPage = null;
     if (instrTemplate != null) {
       // might be null from incoming API request, but here we want to reference template icon id
       instrumentToSave.setIconId(instrTemplate.getIconId());
+      // read from the template itself, to recognise it if the request echoes it back below. The
+      // instrument's fields are deep copies, so the clear that follows cannot disturb this.
+      inheritedLandingPage =
+          landingPageField(instrTemplate).map(InventoryEntityField::getFieldData).orElse(null);
+      // must run before saveNewApiFieldsIntoInstrumentFields below: a landing page typed into
+      // the template must not travel onto the new instrument (RSDEV-1307)
+      clearLandingPage(instrumentToSave);
     }
     if (!apiInstrument.getFields().isEmpty()) {
       saveNewApiFieldsIntoInstrumentFields(
-          apiInstrument.getFields(), instrumentToSave.getActiveFields(), user);
+          apiInstrument.getFields(), instrumentToSave, inheritedLandingPage, user);
     } else {
-      assertDefaultFieldsValid(instrumentToSave.getActiveFields());
+      assertDefaultFieldsValid(instrumentToSave);
     }
     setLocationForNewInstrument(apiInstrument, instrumentToSave, user);
 
@@ -166,6 +166,10 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     return apiResultInstrument;
   }
 
+  private static Optional<InventoryEntityField> landingPageField(InstrumentEntity record) {
+    return PidinstFields.landingPage(record);
+  }
+
   /**
    * Gives an instrument shaped by the PIDINST template a landing page whenever the user leaves the
    * field empty, filling it with the instrument's own public RSpace address. A value the user typed
@@ -182,14 +186,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       return false;
     }
     Optional<InventoryEntityField> blankLandingPage =
-        instrument.getActiveFields().stream()
-            .filter(field -> field.getType() == FieldType.URI)
-            .filter(
-                field ->
-                    field.getName() != null
-                        && LANDING_PAGE_FIELD_NAME.equalsIgnoreCase(field.getName().trim()))
-            .filter(field -> StringUtils.isBlank(field.getFieldData()))
-            .findFirst();
+        landingPageField(instrument).filter(field -> StringUtils.isBlank(field.getFieldData()));
     if (blankLandingPage.isEmpty()) {
       return false;
     }
@@ -215,23 +212,16 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   }
 
   /**
-   * Blanks the Landing page field in {@code copy} when it contains the system-generated default URL
-   * for {@code source} — i.e. the URL RSpace would have auto-filled for the source record. A value
-   * the user typed on the source is left untouched.
+   * Blanks the Landing page field of a record derived from another record — a duplicated
+   * instrument, a duplicated template, or an instrument created from a template. The landing page
+   * names exactly one physical instrument, so a derived record must never start out pointing at its
+   * source's page, whether the source value was system-generated or typed by a user (RSDEV-1307).
+   * On a concrete Instrument the blanked field is refilled with the record's own address by {@link
+   * #fillBlankLandingPage}; on an InstrumentTemplate it stays blank, since templates are never
+   * filled.
    */
-  private void clearSystemGeneratedLandingPage(Instrument source, Instrument copy) {
-    GlobalIdUrls.globalIdUrl(properties, source.getGlobalIdentifier())
-        .ifPresent(
-            sourceUrl ->
-                copy.getActiveFields().stream()
-                    .filter(f -> f.getType() == FieldType.URI)
-                    .filter(
-                        f ->
-                            f.getName() != null
-                                && LANDING_PAGE_FIELD_NAME.equalsIgnoreCase(f.getName().trim()))
-                    .filter(f -> sourceUrl.equals(f.getFieldData()))
-                    .findFirst()
-                    .ifPresent(f -> f.setFieldData(null)));
+  private static void clearLandingPage(InstrumentEntity derivedRecord) {
+    landingPageField(derivedRecord).ifPresent(InventoryEntityField::clearValue);
   }
 
   private void setLocationForNewInstrument(
@@ -249,25 +239,60 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     setWorkbenchAsParentForNewInventoryRecord(workbench, instrument);
   }
 
-  private void assertDefaultFieldsValid(List<InventoryEntityField> activeFields) {
-    for (InventoryEntityField field : activeFields) {
+  /**
+   * Validates the defaults a new instrument inherited from its template. A blank Landing page is
+   * exempt: {@link #clearLandingPage} has just blanked the template-inherited value and {@link
+   * #fillBlankLandingPage} writes the instrument's own address immediately after the save, so at
+   * this point a blank is a materialised default in flight, not missing user input (RSDEV-1307).
+   *
+   * <p>The exemption is deliberately narrowed to a blank rather than to the field, so that a
+   * non-blank Landing page reaching here is still validated. No current path produces one, since
+   * {@link #clearLandingPage} runs first whenever there is a template, but the guard is what keeps
+   * that an implementation detail of the caller rather than a correctness requirement on it.
+   */
+  private void assertDefaultFieldsValid(Instrument instrument) {
+    InventoryEntityField landingPage = landingPageField(instrument).orElse(null);
+    for (InventoryEntityField field : instrument.getActiveFields()) {
+      if (field == landingPage && StringUtils.isBlank(field.getFieldData())) {
+        continue;
+      }
       field.assertFieldDataValid(field.getFieldData());
     }
   }
 
+  /**
+   * Writes the values of an incoming creation request onto the new instrument's template-derived
+   * fields, matched by position.
+   *
+   * <p>The Landing page is the one field whose incoming value is not always written through {@link
+   * InventoryEntityField#setFieldData}. Two incoming values mean "this instrument has no landing
+   * page of its own yet": a blank, which is what the creation UI posts after deliberately blanking
+   * the field, and {@code inheritedLandingPage}, the template's own value echoed back unchanged by
+   * a client that posted the template's fields verbatim. Neither is user input about this
+   * instrument, so both are applied with the validation-free {@link
+   * InventoryEntityField#clearValue()} and {@link #fillBlankLandingPage} writes the real value once
+   * the save has assigned an id. That keeps the RSDEV-1307 guarantee a property of the service
+   * rather than of client cooperation, and routing a blank through {@code setFieldData} would in
+   * any case fail the mandatory check on a template that marks the field mandatory. Any other
+   * non-blank Landing page is the user's own input for this record: it is kept and validated like
+   * every other value, so a malformed URI is still rejected.
+   */
   private void saveNewApiFieldsIntoInstrumentFields(
       List<ApiInventoryEntityField> apiFieldList,
-      List<InventoryEntityField> inventoryEntityFieldList,
+      Instrument instrumentToSave,
+      String inheritedLandingPage,
       User user) {
 
+    List<InventoryEntityField> inventoryEntityFieldList = instrumentToSave.getActiveFields();
     if (apiFieldList.size() != inventoryEntityFieldList.size()) {
       throw new IllegalArgumentException(
-          String.format(
-              "Number of incoming instrument fields [%d]"
-                  + " doesn't match number of template fields [%d]",
-              apiFieldList.size(), inventoryEntityFieldList.size()));
+          messages.getMessage(
+              "errors.inventory.instrument.fieldCountMismatch",
+              new Object[] {apiFieldList.size(), inventoryEntityFieldList.size()}));
     }
 
+    // resolved once and compared by reference, as assertDefaultFieldsValid does
+    InventoryEntityField landingPage = landingPageField(instrumentToSave).orElse(null);
     for (int i = 0; i < apiFieldList.size(); i++) {
       ApiInventoryEntityField apiField = apiFieldList.get(i);
       String newFieldContent = apiField.getContent();
@@ -277,10 +302,33 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
         applyLinkFieldValue((InventoryLinkField) inventoryEntityField, apiField, user);
       } else if (inventoryEntityField.isOptionsStoringField()) {
         inventoryEntityField.setSelectedOptions(apiField.getSelectedOptions());
+      } else if (inventoryEntityField == landingPage
+          && isNotThisInstrumentsOwnLandingPage(newFieldContent, inheritedLandingPage)) {
+        inventoryEntityField.clearValue();
       } else {
         inventoryEntityField.setFieldData(newFieldContent);
       }
     }
+  }
+
+  /**
+   * Whether an incoming Landing page value should be discarded rather than stored: either it is
+   * blank, or it is the value inherited from the template, echoed back unchanged. Compared on
+   * trimmed content so a client round-tripping the value cannot defeat the check with padding
+   * (RSDEV-1307).
+   *
+   * <p>This is hygiene, not a security boundary. Exact-match comparison is easily sidestepped with
+   * a trailing slash or a case change, and nothing needs it to be airtight: the Landing page is a
+   * freely editable URI, so a caller determined to store the template's address can simply PUT it
+   * after creation. The point is that the ordinary create-from-template flow cannot re-establish an
+   * inherited value by accident, not that it is impossible to do on purpose.
+   */
+  private static boolean isNotThisInstrumentsOwnLandingPage(
+      String incomingContent, String inheritedLandingPage) {
+    return StringUtils.isBlank(incomingContent)
+        || (StringUtils.isNotBlank(inheritedLandingPage)
+            && StringUtils.equals(
+                StringUtils.trim(inheritedLandingPage), StringUtils.trim(incomingContent)));
   }
 
   /**
@@ -595,7 +643,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   public ApiInstrument duplicateInstrument(Long instrumentId, User user) {
     Instrument dbInstrument = assertUserCanReadInstrument(instrumentId, user);
     Instrument copy = (Instrument) dbInstrument.copy(user);
-    clearSystemGeneratedLandingPage(dbInstrument, copy);
+    clearLandingPage(copy);
     setWorkbenchAsParentForNewInstrument(copy, user);
     copy = instrumentDao.save(copy);
     // Fill needs to be done after the save, as it needs the actual persisted id
@@ -889,6 +937,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   public ApiInstrumentTemplate duplicateInstrumentTemplate(Long templateId, User user) {
     InstrumentTemplate dbTemplate = assertUserCanReadInstrumentTemplate(templateId, user);
     InstrumentTemplate copy = (InstrumentTemplate) dbTemplate.copy(user);
+    clearLandingPage(copy);
     copy = instrumentTemplateDao.save(copy);
     publisher.publishEvent(new InventoryCreationEvent(copy, user));
     ApiInstrumentTemplate result = new ApiInstrumentTemplate(copy);

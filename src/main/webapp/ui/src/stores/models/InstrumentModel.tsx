@@ -69,6 +69,21 @@ export type InstrumentAttrs = {
   _links: Array<_LINK>;
 } & Record<string, unknown>;
 
+/**
+ * The name of the field holding an instrument's public landing page. Matched case-insensitively
+ * and ignoring surrounding whitespace, together with the field's URI type.
+ *
+ * This rule is duplicated, not shared: the backend's copy lives in `PidinstFields` (Java), which
+ * the service layer and the PIDINST mapping both resolve through. Nothing detects a divergence
+ * between that copy and this one, so a rename must be applied to both in lock-step.
+ */
+export const LANDING_PAGE_FIELD_NAME = "Landing page";
+
+const LANDING_PAGE_FIELD_NAME_LOWERCASE = LANDING_PAGE_FIELD_NAME.toLowerCase();
+
+const isLandingPageField = (field: Field): boolean =>
+  field.type === "uri" && field.name?.trim().toLowerCase() === LANDING_PAGE_FIELD_NAME_LOWERCASE;
+
 const FIELDS = new Set([...RESULT_FIELDS].concat(["fields", "template"]));
 const defaultVisibleFields = new Set([...FIELDS, ...defaultVisibleResultFields]);
 const defaultEditableFields = new Set<string>();
@@ -105,7 +120,9 @@ export default class InstrumentModel
 
   constructor(factory: Factory, params: InstrumentAttrs) {
     super(factory, params);
-    makeObservable(this, {
+    // the explicit key list is what lets a private member be annotated (MobX types the plain
+    // overload against the public shape only)
+    makeObservable<this, "blankLandingPageField">(this, {
       parentContainers: observable,
       immediateParentContainer: observable,
       createOptionsParametersState: observable,
@@ -115,6 +132,7 @@ export default class InstrumentModel
       templateVersion: observable,
       setTemplate: action,
       overrideFields: action,
+      blankLandingPageField: action,
       paramsForBackend: override,
       populateFromJson: override,
       updateFieldsState: override,
@@ -307,6 +325,32 @@ export default class InstrumentModel
     });
   }
 
+  /**
+   * Blanks the Landing page field of an instrument whose fields were just copied from a template.
+   * The landing page names exactly one physical instrument, so a record derived from another record
+   * must never start out pointing at its source's page (RSDEV-1307). The backend clears it on
+   * creation and then fills it with the new instrument's own address; blanking it here keeps the
+   * form showing what will actually be saved. Anything the user types into the creation form
+   * afterwards is their own input and is left alone.
+   *
+   * Only the first matching field is blanked, mirroring the backend, which resolves a single
+   * Landing page and refills only that one. Blanking a second match would leave it permanently
+   * empty, since nothing would ever fill it.
+   *
+   * Note that this deliberately blanks a field the template may mark mandatory. That is safe only
+   * because instrument structured fields are not validated client-side: `InventoryBaseRecord`
+   * validates `extraFields` only, and `FieldModel`'s mandatory branch reads
+   * `owner.enforceMandatoryFields`, which `InstrumentModel` does not define. If either changes,
+   * this needs revisiting — the backend routes the same case around `setFieldData` for exactly
+   * this reason.
+   */
+  private blankLandingPageField(): void {
+    const landingPage = this.fields.find(isLandingPageField);
+    if (landingPage) {
+      (landingPage as FieldModel).setAttributes({ content: "" });
+    }
+  }
+
   async setTemplate(template: InstrumentTemplateModel | null): Promise<void> {
     if (template) await template.fetchAdditionalInfo();
 
@@ -323,6 +367,7 @@ export default class InstrumentModel
 
     if (!this.id) {
       this.overrideFields(template.fields);
+      this.blankLandingPageField();
       const userAddedFields = this.extraFields.filter((ef) => !ef.fromTemplate);
       const templateFields = template.extraFields
         .filter((ef) => !ef.deleteFieldRequest)
