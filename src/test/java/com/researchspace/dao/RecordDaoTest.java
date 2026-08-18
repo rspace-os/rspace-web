@@ -26,7 +26,6 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
-@SuppressWarnings("deprecation")
 public class RecordDaoTest extends BaseDaoTestCase {
   static RecordFactory factoryAPI;
   static StructuredDocument d1, d2, d3;

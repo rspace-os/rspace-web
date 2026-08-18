@@ -92,7 +92,6 @@ public class FileTreeControllerMVCIT extends MVCTestBase {
 
   // RSPAC-773
   @Test
-  @SuppressWarnings("unchecked")
   public void getFileListDiscriminatesBetweenSameNamedFolders() throws Exception {
     User any = createInitAndLoginAnyUser();
     Folder root = getRootFolderForUser(any);
@@ -247,8 +246,11 @@ public class FileTreeControllerMVCIT extends MVCTestBase {
     assertEquals(sharedForEdit.getId(), resUser.get(0).getId());
   }
 
-  @SuppressWarnings("unchecked")
   private <T> List<T> getListFromModel(ModelAndView model, String property, Class<T> clazz) {
-    return (List<T>) model.getModelMap().get(property);
+    Object value = model.getModelMap().get(property);
+    if (!(value instanceof List<?> list)) {
+      throw new AssertionError(property + " is not a list");
+    }
+    return list.stream().map(clazz::cast).toList();
   }
 }

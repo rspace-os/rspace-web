@@ -3,8 +3,11 @@
   "firstName": "Mock",
   "lastName": "User",
   "email": "mock@example.com",
-  "role": "researcher",
-  "permissions": [],
+  "role": {
+    "uuid": "22222222-2222-2222-2222-222222222222",
+    "name": "researcher",
+    "permissions": []
+  },
   "sources": [],
   "active": "true"
 }

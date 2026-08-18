@@ -40,7 +40,6 @@ public class EcatCommentManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  @SuppressWarnings("rawtypes")
   public void testComment() {
     final Long pid = 23L;
     EcatComment cm1 = new EcatComment();

@@ -353,11 +353,11 @@ public class ExportObjectGenerator {
 
   // this used same exporter class for different media subclasses, as doesn't fit into the generic
   // mechanism
-  @SuppressWarnings("unchecked")
   private void addAttachmentFilesToExport(FieldExportContext context, FieldContents fieldContents) {
     FieldElementLinkPairs<EcatMediaFile> medias =
         fieldContents.getMediaElements(
-            EcatAudio.class, EcatDocumentFile.class, EcatVideo.class, EcatChemistryFile.class);
+            List.of(
+                EcatAudio.class, EcatDocumentFile.class, EcatVideo.class, EcatChemistryFile.class));
     for (FieldElementLinkPair<EcatMediaFile> mediaFilePair : medias.getPairs()) {
       new AttachmentFieldExporter(support).export(context, mediaFilePair);
     }

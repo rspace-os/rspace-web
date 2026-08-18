@@ -385,7 +385,6 @@ public class HTMLStringGeneratorForExport implements HTMLStringGenerator {
     if (exportConfig.isComments()) {
       for (int i = 0; i < lst1.size(); i++) {
         long comId = lst1.get(i);
-        @SuppressWarnings("unchecked")
         List<EcatCommentItem> cms = commentManager.getCommentItems(comId);
         CommentAppendix commentAppendx = new CommentAppendix();
         for (int j = 0; j < cms.size(); j++) {

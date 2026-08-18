@@ -64,7 +64,6 @@ public class ImageControllerMVCIT extends MVCTestBase {
     RSpaceTestUtils.logout();
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void saveLoadImage() throws Exception {
     // Load the initial dimensions of our image
@@ -435,7 +434,6 @@ public class ImageControllerMVCIT extends MVCTestBase {
     return b;
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void saveLoadSketch() throws Exception {
     StructuredDocument sd = createBasicDocumentInRootFolderWithText(testUser, "any");

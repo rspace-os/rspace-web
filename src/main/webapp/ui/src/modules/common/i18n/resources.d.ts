@@ -1785,6 +1785,8 @@ export default interface Resources {
         "title": "Permanently delete?"
       },
       "downloadImageForEditingFailed": "Failed to download image for editing",
+      "generateDataRecord": "Generate Data Record",
+      "generateDataRecordNotS3": "Only available inside a writeable S3 filestore.",
       "label": "actions",
       "moveToIrods": "Move to iRODS",
       "moveToS3": "Move to S3",
@@ -1812,6 +1814,7 @@ export default interface Resources {
         "onlyOneLogout": "Only one item may be logged out of at once.",
         "onlyOneNewVersion": "Only one item may be updated with a new version at once.",
         "onlyOneRename": "Only one item may be renamed at once.",
+        "onlyOneVersionHistory": "Only one item's version history may be viewed at once.",
         "onlyOwnerCanShare": "Only owners of the snippet can change its share settings.",
         "onlySnippetsShareable": "Only snippets can be shared.",
         "selectSnippet": "At least one snippet must be selected.",
@@ -2153,6 +2156,15 @@ export default interface Resources {
       "s3FolderNote": "Note that S3 has no native concept of folders: they can be emulated with an empty placeholder object, and the hierarchy is expressed purely through object-name prefixes. For many cases a flat list of files will be easier to manage than a folder structure.",
       "sectionsDrawerLabel": "gallery sections drawer",
       "uploadFiles": "Upload Files"
+    },
+    "sidecarFile": {
+      "contentLabel": "Metadata record preview",
+      "description": "Preview the metadata record composed for this folder, then save it to the filestore.",
+      "loading": "Composing metadata record...",
+      "previewFailed": "Could not compose the metadata record.",
+      "save": "Save to S3",
+      "saveFailed": "Could not save the metadata record.",
+      "saveSuccess": "Saved {filename} to the filestore."
     },
     "snippetPreview": {
       "error": "Error: {error}",
@@ -3840,7 +3852,7 @@ export default interface Resources {
       "created": "Created",
       "globalId": "Global ID",
       "lastModified": "Last Modified",
-      "linkedDocuments": {
+      "linkedItems": {
         "columns": {
           "linkedVersion": "Linked version",
           "name": "Name",
@@ -3852,13 +3864,14 @@ export default interface Resources {
         "latest": "Latest",
         "noDocuments": "No documents",
         "noInventoryLinks": "No inventory links",
-        "show": "Show Linked Documents",
-        "title": "Linked Documents"
+        "show": "Show Linked Items",
+        "title": "Linked Items"
       },
-      "linkedDocumentsHelp": {
+      "linkedItemsHelp": {
         "linkField": "Other Inventory items that link to this item through a Link custom field will also be listed here.",
         "listOfMaterials": "Adding this item to a document's <helpDocs docLink=\"listOfMaterials\">List of Materials</helpDocs> will add an entry for the document in this panel."
       },
+      "updateInstruments": "Update Instruments",
       "updateSamples": "Update Samples",
       "versionHistory": {
         "columns": {
@@ -6381,6 +6394,12 @@ export default interface Resources {
           "deniedTooOld": "{0, plural, one {Filestore items can only be deleted within # minute of their creation} other {Filestore items can only be deleted within # minutes of their creation}}"
         }
       },
+      "sidecarFile": {
+        "errors": {
+          "notEnabled": "Metadata sidecar generation is not enabled on this RSpace instance (gallery.actions.metadata.sidecarFile.enabled=false)",
+          "notS3": "Metadata sidecar generation is only supported for S3 filestores"
+        }
+      },
       "validation": {
         "noKey": "Please generate ssh key first",
         "noPassword": "Please provide the password",
@@ -7470,6 +7489,7 @@ export default interface Resources {
           "message": "Please confirm that you wish to cancel - the changes you made won't be saved."
         },
         "egnyte": {
+          "authError": "Egnyte authorization could not be verified. Please try connecting to Egnyte again.",
           "configMissing": "Egnyte is not configured properly on this RSpace instance. Please contact your System Admin",
           "domainMissing": "Egnyte Domain URL is not set, please go to Apps page and set it up."
         },
@@ -7643,6 +7663,7 @@ export default interface Resources {
           "imageDetails": "Image details",
           "linkAtServer": "at {0}",
           "markushNotSupported": "RSpace doesn't currently support the generation of Markush or R-Group structure images, your file is stored in the gallery but cannot be inserted into a document",
+          "notebookSharedWithGroup": "<b>This notebook has been automatically shared with edit rights with all members of {0}. It remains available in your own workspace.</b><br />To amend the permissions, visit the <a href=\"/record/share/manage\">Shared Documents</a> page.",
           "okButton": "OK",
           "ontologiesEnforcedMessage": "Ontologies are enforced, tag values must come from ontology files shared with a group",
           "pleaseEnterName": "Please enter a name",
@@ -7826,8 +7847,7 @@ export default interface Resources {
           "noMoreRecordsInDirection": "No more records in this direction.",
           "noParentRecordId": "No parent record ID was set, journal view cannot be rendered",
           "noResultsFound": "No results were found",
-          "searchFailed": "Search failed: {0}",
-          "sharedWithGroup": "<b>This notebook has been automatically shared with edit rights with all members of {0}. It remains available in your own workspace.</b><br />To amend the permissions, visit the <a href=\"/record/share/manage\">Shared Documents</a> page."
+          "searchFailed": "Search failed: {0}"
         },
         "main": {
           "cancelButton": "Cancel",

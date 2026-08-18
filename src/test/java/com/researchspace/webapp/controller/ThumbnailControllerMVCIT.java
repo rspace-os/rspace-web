@@ -86,9 +86,8 @@ public class ThumbnailControllerMVCIT extends MVCTestBase {
   private Long extractSourceId(MvcResult result) throws IOException {
     Map<String, Object> json = convertJsonStringToMap(result.getResponse().getContentAsString());
     assertNotNull(json.get("data"));
-    @SuppressWarnings("unchecked")
-    Map<String, Object> data = (Map<String, Object>) json.get("data");
-    Long id = Long.valueOf((Integer) data.get("id"));
+    Map<?, ?> data = Map.class.cast(json.get("data"));
+    Long id = Long.valueOf(Integer.class.cast(data.get("id")));
     assertNotNull(id);
     return id;
   }

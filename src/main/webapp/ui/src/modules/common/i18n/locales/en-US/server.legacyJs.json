@@ -560,6 +560,7 @@
         "message": "Please confirm that you wish to cancel - the changes you made won't be saved."
       },
       "egnyte": {
+        "authError": "Egnyte authorization could not be verified. Please try connecting to Egnyte again.",
         "configMissing": "Egnyte is not configured properly on this RSpace instance. Please contact your System Admin",
         "domainMissing": "Egnyte Domain URL is not set, please go to Apps page and set it up."
       },
@@ -733,6 +734,7 @@
         "imageDetails": "Image details",
         "linkAtServer": "at {0}",
         "markushNotSupported": "RSpace doesn't currently support the generation of Markush or R-Group structure images, your file is stored in the gallery but cannot be inserted into a document",
+        "notebookSharedWithGroup": "<b>This notebook has been automatically shared with edit rights with all members of {0}. It remains available in your own workspace.</b><br />To amend the permissions, visit the <a href=\"/record/share/manage\">Shared Documents</a> page.",
         "okButton": "OK",
         "ontologiesEnforcedMessage": "Ontologies are enforced, tag values must come from ontology files shared with a group",
         "pleaseEnterName": "Please enter a name",
@@ -916,8 +918,7 @@
         "noMoreRecordsInDirection": "No more records in this direction.",
         "noParentRecordId": "No parent record ID was set, journal view cannot be rendered",
         "noResultsFound": "No results were found",
-        "searchFailed": "Search failed: {0}",
-        "sharedWithGroup": "<b>This notebook has been automatically shared with edit rights with all members of {0}. It remains available in your own workspace.</b><br />To amend the permissions, visit the <a href=\"/record/share/manage\">Shared Documents</a> page."
+        "searchFailed": "Search failed: {0}"
       },
       "main": {
         "cancelButton": "Cancel",

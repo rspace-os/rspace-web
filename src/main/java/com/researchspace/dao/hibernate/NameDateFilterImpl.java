@@ -41,7 +41,6 @@ public class NameDateFilterImpl implements NameDateFilter {
    * @see com.researchspace.dao.hibernate.NameDateFilter#match(com.researchspace.webapp.controller.data.WorkspaceSearchInput)
    */
   @Override
-  @SuppressWarnings("unchecked")
   public ISearchResults<BaseRecord> match(WorkspaceListingConfig input) {
 
     String[] options = input.getSrchOptions();
@@ -58,7 +57,7 @@ public class NameDateFilterImpl implements NameDateFilter {
       List<RSForm> rc = searchDBForForms(terms[0]);
       // if no forms match search term, there can't be any results
       if (rc.isEmpty()) {
-        return new SearchResultsImpl<BaseRecord>(Collections.EMPTY_LIST, 0, 0L);
+        return new SearchResultsImpl<>(Collections.emptyList(), 0, 0L);
       }
 
       List<Long> formIds =
@@ -68,7 +67,7 @@ public class NameDateFilterImpl implements NameDateFilter {
 
     String q1 = generateCountQueryString(input, pname, pval);
 
-    Query<Number> countQuery = sf.getCurrentSession().createNativeQuery(q1);
+    Query<Long> countQuery = sf.getCurrentSession().createNativeQuery(q1, Long.class);
     applyNamedParameterToQuery(countQuery, pname, pval);
 
     Long totalHits = countQuery.uniqueResult().longValue();
@@ -78,7 +77,7 @@ public class NameDateFilterImpl implements NameDateFilter {
     String q2 = generateRetrieveQueryString(input, pname2, pval2);
 
     PaginationCriteria<BaseRecord> pgCrit = input.getPgCrit();
-    Query<Object> retrievequery = sf.getCurrentSession().createNativeQuery(q2);
+    Query<Object> retrievequery = sf.getCurrentSession().createNativeQuery(q2, Object.class);
     retrievequery.setFirstResult(pgCrit.getFirstResultIndex());
     retrievequery.setMaxResults(pgCrit.getResultsPerPage());
 
@@ -92,13 +91,13 @@ public class NameDateFilterImpl implements NameDateFilter {
     return results;
   }
 
-  @SuppressWarnings("rawtypes")
   private void applyNamedParameterToQuery(
-      Query queryObject, List<String> paramNames, List<Object> values) throws HibernateException {
+      Query<?> queryObject, List<String> paramNames, List<Object> values)
+      throws HibernateException {
     for (int c = 0; c < paramNames.size(); c++) {
       Object value = values.get(c);
-      if (value instanceof Collection) {
-        queryObject.setParameterList(paramNames.get(c), (Collection) value);
+      if (value instanceof Collection<?> collection) {
+        queryObject.setParameterList(paramNames.get(c), collection);
       } else if (value instanceof Object[]) {
         queryObject.setParameterList(paramNames.get(c), (Object[]) value);
       } else {
@@ -299,7 +298,6 @@ public class NameDateFilterImpl implements NameDateFilter {
     }
   }
 
-  @SuppressWarnings("unchecked")
   private List<RSForm> searchDBForForms(String searchTerm) {
     StringBuilder hql =
         new StringBuilder("from RSForm r where r.publishingState = :publishingState");

@@ -92,29 +92,26 @@ public class WithinRecordsSearchTest extends SearchSpringTestBase {
     StructuredDocument doc1c = createBasicDocumentInFolder(user, a, "I think protein is awesome.");
     StructuredDocument doc2 = createBasicDocumentInFolder(user, b, "I think protein is awesome.");
     StructuredDocument doc3 = createBasicDocumentInFolder(user, c, "I think protein is awesome.");
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
     StructuredDocument entry1 =
         (StructuredDocument)
             notebook.getChildrens().stream()
                 .filter(r -> r.getName().equals("entry_1"))
                 .findFirst()
-                .get();
+                .orElseThrow();
     entry1.getFields().get(0).setFieldData("I think protein is awesome");
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
     StructuredDocument entry2 =
         (StructuredDocument)
             notebook.getChildrens().stream()
                 .filter(r -> r.getName().equals("entry_2"))
                 .findFirst()
-                .get();
+                .orElseThrow();
     entry2.getFields().get(0).setFieldData("I think protein is awesome");
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
     StructuredDocument entry3 =
         (StructuredDocument)
             notebook.getChildrens().stream()
                 .filter(r -> r.getName().equals("entry_3"))
                 .findFirst()
-                .get();
+                .orElseThrow();
     entry3.getFields().get(0).setFieldData("I think protein is awesome");
     recordMgr.save(entry1, user);
     recordMgr.save(entry2, user);

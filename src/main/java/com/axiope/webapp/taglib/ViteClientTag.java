@@ -53,6 +53,7 @@ public class ViteClientTag extends TagSupport {
     return FrontendCacheVersion.isReactDevMode(pageContext.getServletContext());
   }
 
+  // See BundleTag#getRenderedAssetKeys: both tags must share one mutable Set<String> per request.
   @SuppressWarnings("unchecked")
   Set<String> getRenderedAssetKeys() {
     HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();

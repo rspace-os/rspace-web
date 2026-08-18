@@ -214,6 +214,26 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     return update.applyChangesToDatabaseField(blankLandingPage.get(), user);
   }
 
+  /**
+   * Blanks the Landing page field in {@code copy} when it contains the system-generated default URL
+   * for {@code source} — i.e. the URL RSpace would have auto-filled for the source record. A value
+   * the user typed on the source is left untouched.
+   */
+  private void clearSystemGeneratedLandingPage(Instrument source, Instrument copy) {
+    GlobalIdUrls.globalIdUrl(properties, source.getGlobalIdentifier())
+        .ifPresent(
+            sourceUrl ->
+                copy.getActiveFields().stream()
+                    .filter(f -> f.getType() == FieldType.URI)
+                    .filter(
+                        f ->
+                            f.getName() != null
+                                && LANDING_PAGE_FIELD_NAME.equalsIgnoreCase(f.getName().trim()))
+                    .filter(f -> sourceUrl.equals(f.getFieldData()))
+                    .findFirst()
+                    .ifPresent(f -> f.setFieldData(null)));
+  }
+
   private void setLocationForNewInstrument(
       ApiInstrument apiInstrument, Instrument instrumentToSave, User user) {
     inventoryMoveHelper.moveRecordToTargetParentAndLocation(
@@ -575,8 +595,13 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   public ApiInstrument duplicateInstrument(Long instrumentId, User user) {
     Instrument dbInstrument = assertUserCanReadInstrument(instrumentId, user);
     Instrument copy = (Instrument) dbInstrument.copy(user);
+    clearSystemGeneratedLandingPage(dbInstrument, copy);
     setWorkbenchAsParentForNewInstrument(copy, user);
     copy = instrumentDao.save(copy);
+    // Fill needs to be done after the save, as it needs the actual persisted id
+    if (fillBlankLandingPage(copy, user)) {
+      copy = instrumentDao.save(copy);
+    }
     publisher.publishEvent(new InventoryCreationEvent(copy, user));
     ApiInstrument result = new ApiInstrument(copy);
     populateOutgoingApiInstrumentEntity(result, copy, user);
@@ -1087,7 +1112,25 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     if (apiInstrument != null) { // populate only if it is already created
       setOtherFieldsForOutgoingApiInventoryRecord(apiInstrument, instrument, user);
       populateSharingPermissions(apiInstrument.getSharedWith(), instrument);
+      if (apiInstrument instanceof ApiInstrumentTemplate apiTemplate) {
+        setInstrumentsToUpdateCount(apiTemplate, (InstrumentTemplate) instrument, user);
+      }
     }
+  }
+
+  /**
+   * Records, on the outgoing template DTO, how many of {@code user}'s instruments were created from
+   * an older version of this template and could therefore be updated to its latest version. This is
+   * the same "behind" set the bulk update endpoint acts on, so the count is 0 exactly when there is
+   * nothing to update.
+   */
+  void setInstrumentsToUpdateCount(
+      ApiInstrumentTemplate apiTemplate, InstrumentTemplate template, User user) {
+    apiTemplate.setInstrumentsToUpdateCount(
+        instrumentDao
+            .getInstrumentsLinkingOlderTemplateVersionForUser(
+                template.getId(), template.getVersion(), user)
+            .size());
   }
 
   /**

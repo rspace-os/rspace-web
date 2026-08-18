@@ -16,20 +16,25 @@
     connectionResponse raw response payload (e.g. Slack OAuth JSON)
 
   Values are emitted as HTML-escaped data-* attributes (not interpolated into the
-  script) so provider-supplied error text cannot break out of the JS context.
+  script) so provider-supplied error text cannot break out of the JS context. The
+  escaping happens once, globally, via the EscapeXmlELResolver registered in
+  web.xml, which escapes every ${...} that resolves to a String. Do NOT wrap these
+  in <c:out>: that escapes an already-escaped value, so a " becomes &amp;#034; and
+  the browser decodes only one layer, corrupting JSON payloads such as Slack's
+  OAuth response.
 --%>
 <head>
   <spring:message code="connect.connected.defaultTitle" var="connectedDefaultTitle"/>
-  <title><c:out value="${appName}" default="${connectedDefaultTitle}"/></title>
+  <title>${empty appName ? connectedDefaultTitle : appName}</title>
 </head>
 <body>
 <div id="rs-connection-result"
-     data-channel="<c:out value='${connectionChannel}'/>"
-     data-type="<c:out value='${connectionType}'/>"
-     data-alias="<c:out value='${connectionAlias}'/>"
-     data-token="<c:out value='${connectionToken}'/>"
-     data-error="<c:out value='${connectionError}'/>"
-     data-response="<c:out value='${connectionResponse}'/>"></div>
+     data-channel="${connectionChannel}"
+     data-type="${connectionType}"
+     data-alias="${connectionAlias}"
+     data-token="${connectionToken}"
+     data-error="${connectionError}"
+     data-response="${connectionResponse}"></div>
 <p><spring:message code="connect.connected.closeWindowNotice"/></p>
 <script>
   window.addEventListener("load", () => {

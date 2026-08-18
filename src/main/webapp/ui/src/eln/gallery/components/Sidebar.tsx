@@ -14,12 +14,13 @@ import Divider from "@mui/material/Divider";
 import List from "@mui/material/List";
 import { paperClasses } from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
+import { useQuery } from "@tanstack/react-query";
 import { autorun } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import DSWAccentMenuItem, { type DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import DSWAccentMenuItem from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { Drawer } from "../../../components/DialogBoundary";
 import DrawerTab from "../../../components/DrawerTab";
@@ -30,16 +31,16 @@ import ArgosAccentMenuItem from "../../../eln-dmp-integration/Argos/ArgosAccentM
 import DMPAssistantAccentMenuItem from "../../../eln-dmp-integration/DMPAssistant/DMPAssistantAccentMenuItem";
 import DMPOnlineAccentMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineAccentMenuItem";
 import DMPToolAccentMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolAccentMenuItem";
-import { useIntegrationIsAllowedAndEnabled } from "../../../hooks/api/integrationHelpers";
 import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
 import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
+import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as FetchingData from "../../../util/fetchingData";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
-import type { FetchedState, Integration } from "../../apps/useIntegrationsEndpoint";
+import { useIntegrationsEndpoint } from "../../apps/useIntegrationsEndpoint";
 import { type GallerySection, gallerySectionIcon } from "../common";
 import { useGalleryActions } from "../useGalleryActions";
 import { asWritableS3Filestore, type GalleryFile, type Id, RemoteFile } from "../useGalleryListing";
@@ -345,14 +346,24 @@ type DmpMenuSectionArgs = {
   showDmpPanel: () => void;
 };
 const DmpMenuSection = ({ onDialogClose, showDmpPanel }: DmpMenuSectionArgs) => {
-  const [dswConnections, setDswConnections] = React.useState<null | DswConfig[]>(null);
-  const showArgos = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("ARGOS")).orElse(false);
-  const showDmpAssistant = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("DMPASSISTANT")).orElse(
-    false,
-  );
-  const showDmponline = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("DMPONLINE")).orElse(false);
-  const showDmptool = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("DMPTOOL")).orElse(false);
-  const showDsw = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("DSW")).orElse(false);
+  /*
+   * One /allIntegrations call covers every DMP source. Cached because the
+   * menu remounts this component on every open.
+   */
+  const { allIntegrations } = useIntegrationsEndpoint();
+  const { data: integrationStates } = useQuery({
+    queryKey: ["integration", "allIntegrations"],
+    queryFn: () => allIntegrations(),
+    staleTime: 60_000,
+  });
+  const showArgos = integrationStates?.ARGOS.mode === "ENABLED";
+  const showDmpAssistant = integrationStates?.DMPASSISTANT.mode === "ENABLED";
+  const showDmponline = integrationStates?.DMPONLINE.mode === "ENABLED";
+  const showDmptool = integrationStates?.DMPTOOL.mode === "ENABLED";
+  const showDsw = integrationStates?.DSW.mode === "ENABLED";
+  const dswConnections = integrationStates
+    ? ArrayUtils.mapOptional((config) => config, integrationStates.DSW.credentials)
+    : [];
   React.useEffect(() => {
     /*
      * This is to maintain backwards compatibility with the old Gallery. It
@@ -363,39 +374,6 @@ const DmpMenuSection = ({ onDialogClose, showDmpPanel }: DmpMenuSectionArgs) => 
     // @ts-expect-error gallery is a global function
     window.gallery = showDmpPanel;
   }, [showDmpPanel]);
-  React.useEffect(() => {
-    void (async () => {
-      const ONE_MINUTE_IN_MS = 60 * 1000;
-      const api = axios.create({
-        baseURL: "/integration",
-        timeout: ONE_MINUTE_IN_MS,
-      });
-      try {
-        const states = await api.get<
-          | {
-              success: true;
-              data: { [integration in Integration]: FetchedState };
-              error: null;
-            }
-          | {
-              success: false;
-              data: null;
-              error: string;
-            }
-        >("allIntegrations");
-        if (states.data.success) {
-          const data = states.data.data;
-          const configs = Object.entries(data.DSW.options).map(([_optionsId, config]) => {
-            return config as DswConfig;
-          });
-          setDswConnections(configs);
-        }
-      } catch (e) {
-        console.error(e);
-        setDswConnections([]);
-      }
-    })();
-  }, []);
 
   const { t } = useTranslation("gallery");
   if (!showArgos && !showDmpAssistant && !showDmponline && !showDmptool && !showDsw) return null;
@@ -409,8 +387,8 @@ const DmpMenuSection = ({ onDialogClose, showDmpPanel }: DmpMenuSectionArgs) => 
       {showDmponline && <DMPOnlineAccentMenuItem onDialogClose={onDialogClose} />}
       {showDmptool && <DMPToolAccentMenuItem onDialogClose={onDialogClose} />}
       {showDsw &&
-        dswConnections?.map((connection, _index) => {
-          return <DSWAccentMenuItem onDialogClose={onDialogClose} connection={connection} />;
+        dswConnections.map((connection) => {
+          return <DSWAccentMenuItem key={connection.optionsId} onDialogClose={onDialogClose} connection={connection} />;
         })}
     </>
   );

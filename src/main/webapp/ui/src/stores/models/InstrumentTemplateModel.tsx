@@ -48,6 +48,7 @@ export type InstrumentTemplateAttrs = {
   tags: string | null;
   version?: number;
   historicalVersion?: boolean;
+  instrumentsToUpdateCount?: number;
   iconId?: string;
   newBase64Image?: string;
   image?: string;
@@ -77,6 +78,7 @@ export default class InstrumentTemplateModel
 {
   fields: Array<Field> = [];
   search: Search;
+  instrumentsToUpdateCount: number = 0;
 
   declare version: number;
 
@@ -85,6 +87,7 @@ export default class InstrumentTemplateModel
     makeObservable(this, {
       fields: observable,
       search: observable,
+      instrumentsToUpdateCount: observable,
       addField: action,
       removeCustomField: action,
       moveField: action,
@@ -156,6 +159,7 @@ export default class InstrumentTemplateModel
     const fieldAttrs = (params.fields ?? []) as Array<FieldModelAttrs>;
     this.fields = fieldAttrs.map((f) => new FieldModel(f, this));
     this.version = params.version ?? 1;
+    this.instrumentsToUpdateCount = params.instrumentsToUpdateCount ?? 0;
   }
 
   addField(fieldParams: FieldModelAttrs): void {

@@ -38,7 +38,7 @@ describe("createApiDocsConfiguration", () => {
     expect(eln).toMatchObject({
       title: "common:apiDocs.sources.eln",
       slug: "rspace-eln",
-      url: "https://example.com/resources/rspace_api_specs_2_23_0.yaml",
+      url: "https://example.com/resources/rspace_api_specs_2_25_0.yaml",
       default: true,
     });
     expect(inventory).toMatchObject({
@@ -80,6 +80,10 @@ describe("createApiDocsConfiguration", () => {
 
   test("disables the MCP generation button", () => {
     expect(config.mcp?.disabled).toBe(true);
+  });
+
+  test("disables Scalar telemetry", () => {
+    expect(config.telemetry).toBe(false);
   });
 
   test("disables the Ask AI agent on every source", () => {

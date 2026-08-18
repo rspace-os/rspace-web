@@ -3,6 +3,7 @@ package com.researchspace.dao.hibernate;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.Constants;
 import com.researchspace.core.util.DateUtil;
 import com.researchspace.core.util.ISearchResults;
@@ -25,9 +26,9 @@ import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.dtos.UserSearchCriteria;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.model.views.UserView;
-import jakarta.persistence.EntityGraph;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.lang.reflect.InvocationTargetException;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -48,7 +50,6 @@ import java.util.TreeSet;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
-import org.hibernate.graph.EntityGraphs;
 import org.hibernate.graph.GraphParser;
 import org.hibernate.graph.RootGraph;
 import org.hibernate.query.Query;
@@ -140,13 +141,9 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
 
     // eagerly fetch path usergroups.group.usergroups.user to load associated users in the same
     // groups as this user
-    RootGraph<User> userGroups =
-        GraphParser.parse(User.class, "userGroups(group(userGroups(user(roles))))", getSession());
-    RootGraph<User> roles = GraphParser.parse(User.class, ROLES, getSession());
-
     RootGraph<User> graph =
-        (RootGraph<User>)
-            EntityGraphs.merge(getSession(), User.class, userGroups, (EntityGraph<User>) roles);
+        GraphParser.parse(
+            User.class, "roles,userGroups(group(userGroups(user(roles))))", getSession());
 
     CriteriaQuery<User> criteriaQuery = builder.createQuery(User.class);
     Root<User> root = criteriaQuery.from(User.class);
@@ -173,7 +170,6 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
         .list();
   }
 
-  @SuppressWarnings("unchecked")
   public List<User> searchUsers(String term) {
     String likeTerm = "%" + term.toLowerCase() + "%";
     return getSession()
@@ -216,7 +212,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     String countQuery = "select count (distinct u) " + USERS_IN_COMMUNITY_Q;
 
     String subQuery = "";
-    Map<String, Object> dateParams = new java.util.HashMap<>();
+    Map<String, Object> dateParams = new HashMap<>();
     if (pgCrit.getSearchCriteria() != null) {
       UserSearchCriteria searchCriteria = (UserSearchCriteria) pgCrit.getSearchCriteria();
       subQuery = applySearchRestrictionsToHQL(searchCriteria, dateParams);
@@ -319,7 +315,6 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     }
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public ISearchResults<User> searchUsers(PaginationCriteria<User> pgCrit) {
 
@@ -470,7 +465,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     if (pgCrit.getOrderBy() == null || !pgCrit.isOrderBySafe(pgCrit.getOrderBy())) {
       return;
     }
-    List<jakarta.persistence.criteria.Order> orders = new ArrayList<>();
+    List<Order> orders = new ArrayList<>();
     if (SortOrder.ASC.equals(pgCrit.getSortOrder())) {
       orders.add(builder.asc(root.get(pgCrit.getOrderBy())));
       if (pgCrit.getOrderBy().equalsIgnoreCase(LAST_NAME)) {
@@ -487,7 +482,6 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     query.orderBy(orders);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public Set<User> getAllGroupPis(String searchTerm) {
     Session session = getSessionFactory().getCurrentSession();
@@ -508,7 +502,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
 
   @Override
   public TokenBasedVerification saveTokenBasedVerification(TokenBasedVerification upwChange) {
-    return (TokenBasedVerification) getSessionFactory().getCurrentSession().merge(upwChange);
+    return getSessionFactory().getCurrentSession().merge(upwChange);
   }
 
   @Override
@@ -553,7 +547,6 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
         .uniqueResult();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public ISearchResults<User> listUsersByRole(Role role, PaginationCriteria<User> pgCrit) {
     Session session = getSessionFactory().getCurrentSession();
@@ -666,7 +659,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     Session session = getSessionFactory().getCurrentSession();
     List<User> result;
     if (subject.hasRole(Role.ADMIN_ROLE)) {
-      result = getCommunityUsers(subject, session, null);
+      result = getCommunityUsers(subject, session);
       if (!result.contains(subject)) {
         result.add(subject);
       }
@@ -705,11 +698,19 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   }
 
   public List<Long> getUserIdsInAdminsCommunity(User subject) {
-    return getCommunityUsers(subject, getSession(), "id");
+    return getCommunityUserIds(subject, getSession());
   }
 
-  @SuppressWarnings("unchecked")
-  private <T> List<T> getCommunityUsers(User subject, Session session, String projectionProperty) {
+  private List<User> getCommunityUsers(User subject, Session session) {
+    return communityUserQuery(subject, session, User.class, "select distinct u");
+  }
+
+  private List<Long> getCommunityUserIds(User subject, Session session) {
+    return communityUserQuery(subject, session, Long.class, "select distinct u.id");
+  }
+
+  private <T> List<T> communityUserQuery(
+      User subject, Session session, Class<T> resultType, String selectClause) {
     List<Community> comms =
         session
             .createQuery(
@@ -722,16 +723,11 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     }
     Community comm = comms.get(0);
 
-    String selectClause =
-        StringUtils.isBlank(projectionProperty)
-            ? "select distinct u"
-            : "select distinct u." + projectionProperty;
     String hql =
         selectClause
             + " from User u join u.userGroups ug join ug.group g join g.communities comm "
             + "where comm.id = :commId";
-    @SuppressWarnings("unchecked")
-    Query<T> query = (Query<T>) session.createQuery(hql);
+    Query<T> query = session.createQuery(hql, resultType);
     query.setParameter("commId", comm.getId());
     return query.list();
   }
@@ -812,12 +808,13 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   public List<String> getAllUserTags() {
     Set<String> result = new TreeSet<>();
     List<String> allUsersTagJsonStrings =
-        getSession().createQuery("select distinct tagsJsonString from User").list();
+        getSession().createQuery("select distinct tagsJsonString from User", String.class).list();
 
     if (CollectionUtils.isNotEmpty(allUsersTagJsonStrings)) {
       for (String userTagsJsonString : allUsersTagJsonStrings) {
         if (StringUtils.isNotEmpty(userTagsJsonString)) {
-          result.addAll(JacksonUtil.fromJson(userTagsJsonString, List.class));
+          JacksonUtil.fromJson(userTagsJsonString, JsonNode.class)
+              .forEach(node -> result.add(node.asText()));
         }
       }
     }
