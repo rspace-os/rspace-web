@@ -110,7 +110,7 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
 
     // Step A: a template carrying the filled PIDINST-shaped fields. POST /instruments cannot
     // create fields from a fields[] payload, so the instrument is created FROM a template: the
-    // copy path clones each field including its content.
+    // copy path clones each field including its content, bar the landing page (see below).
     ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
     templatePost.setName("PIDINST template copy");
     templatePost
@@ -202,7 +202,21 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
     assertEquals("Commissioned", sent.getDate().get(0).getDateType());
     // "Last calibrated" is not mapped; MeasuredVariable carries the measured quantity verbatim
     assertEquals(List.of("Air temperature"), sent.getMeasuredVariable());
-    assertEquals("https://lab.example.org/aws-42", sent.getLandingPage());
+    /*
+     * The one template field that deliberately does NOT copy across: a landing page names exactly
+     * one physical instrument, so the new instrument gets its own address instead of the template's
+     * (RSDEV-1307). That own address is what gets registered.
+     *
+     * Note this assertion no longer discriminates the landing page mapping itself: the mapped-field
+     * branch and the GlobalIdUrls fallback both produce this same "/globalId/..." string, so it
+     * would still pass if the field mapping were dropped. The mapping is pinned discriminatingly by
+     * the unit tests in RspaceToExternalProviderAdapterImplTest (see
+     * landingPageFromTheFieldSurvivesAnUnsetServerUrl); what this MVCIT pins is that a landing page
+     * reaches B2INST at all on the create-from-template path.
+     */
+    assertTrue(
+        sent.getLandingPage().endsWith("/globalId/" + instrumentGlobalId),
+        "expected the instrument's own landing page, got: " + sent.getLandingPage());
     assertEquals("Other", sent.getAlternateIdentifier().get(0).getAlternateIdentifierType());
     assertEquals(
         "INV-2025-0042", sent.getAlternateIdentifier().get(0).getAlternateIdentifierValue());
