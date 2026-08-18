@@ -515,6 +515,7 @@ var initTinyMCE_cachedIntegrationsResponse;
 var initTinyMCE_cachedBoxSelectRequest;
 var initTinyMCE_cachedDropboxScriptRequest;
 var initTinyMCE_cachedOneDriveScriptRequest;
+var initTinyMCE_cachedGoogleDriveScriptsRequest;
 var initTinyMCE_cachedOwnCloudClientRequest;
 var initTinyMCE_cachedNextCloudClientRequest;
 var defaultTinymceVitePluginBundles = {
@@ -573,6 +574,22 @@ function loadOneDriveScript() {
 	}
 
 	return initTinyMCE_cachedOneDriveScriptRequest;
+}
+
+function loadGoogleDriveScripts() {
+	if (!initTinyMCE_cachedGoogleDriveScriptsRequest) {
+		initTinyMCE_cachedGoogleDriveScriptsRequest = $.when(
+			$.getScript("https://accounts.google.com/gsi/client"),
+			$.getScript("https://apis.google.com/js/api.js")
+		);
+		initTinyMCE_cachedGoogleDriveScriptsRequest.fail(function () {
+			initTinyMCE_cachedGoogleDriveScriptsRequest = null;
+		});
+	} else {
+		console.log('using cached google drive script requests');
+	}
+
+	return initTinyMCE_cachedGoogleDriveScriptsRequest;
 }
 
 function loadOwnCloudClientScript() {
@@ -674,6 +691,37 @@ function addPluginIfNotPresent(localTinymcesetup, pluginName) {
 		plugins.push(pluginName);
 	}
 	localTinymcesetup.plugins = plugins;
+}
+
+function configureGoogleDrive(localTinymcesetup, properties, googleDriveEnabled) {
+	delete localTinymcesetup.external_plugins["googledrive"];
+	delete localTinymcesetup.googledrive_app_id;
+	delete localTinymcesetup.googledrive_client_id;
+	delete localTinymcesetup.googledrive_developer_key;
+	delete localTinymcesetup.googledrive_scope;
+
+	if (!googleDriveEnabled) {
+		return false;
+	}
+
+	const googleDriveClientId = properties['googledrive.client.id'];
+	const googleDriveDeveloperKey = properties['googledrive.developer.key'];
+	const googleDriveAppId = properties['googledrive.app.id'];
+	const hasValidGoogleDriveConfig =
+		typeof googleDriveAppId === "string" && /^\d+$/.test(googleDriveAppId) &&
+		typeof googleDriveClientId === "string" && googleDriveClientId.trim() !== "" &&
+		typeof googleDriveDeveloperKey === "string" && googleDriveDeveloperKey.trim() !== "";
+
+	if (!hasValidGoogleDriveConfig) {
+		return false;
+	}
+
+	localTinymcesetup.external_plugins["googledrive"] = "/scripts/externalTinymcePlugins/googledrive/plugin.min.js";
+	localTinymcesetup.googledrive_app_id = googleDriveAppId;
+	localTinymcesetup.googledrive_client_id = googleDriveClientId;
+	localTinymcesetup.googledrive_developer_key = googleDriveDeveloperKey;
+	localTinymcesetup.googledrive_scope = "https://www.googleapis.com/auth/drive.file";
+	return true;
 }
 
 function initTinyMCE(selector) {
@@ -807,8 +855,8 @@ function initTinyMCE(selector) {
 				fileRepositoriesMenu += " optOneDrive";
 			}
 		}
-		if (googleDriveEnabled) {
-			localTinymcesetup.external_plugins["googledrive"] = "/scripts/externalTinymcePlugins/googledrive/plugin.min.js";
+		const googleDriveConfigured = configureGoogleDrive(localTinymcesetup, properties, googleDriveEnabled);
+		if (googleDriveConfigured) {
 			enabledFileRepositories += " googledrive";
 			fileRepositoriesMenu += " optGoogleDrive";
 		}
@@ -880,6 +928,9 @@ function initTinyMCE(selector) {
 		if (oneDriveEnabled) {
 			dependencyRequests.push(loadOneDriveScript());
 		}
+		if (googleDriveConfigured) {
+			dependencyRequests.push(loadGoogleDriveScripts());
+		}
 		if (ownCloudEnabled) {
 			dependencyRequests.push(loadOwnCloudClientScript());
 		}
@@ -899,7 +950,7 @@ function initTinyMCE(selector) {
 	requestsPromise.always(function () {
 		Promise.all([
 			legacyDependencyLoadPromise.catch(function (error) {
-				console.log('box, dropbox, owncloud or nextcloud client script failed to load - starting with configured tinymce settings');
+				console.log('box, dropbox, google drive, owncloud or nextcloud client script failed to load - starting with configured tinymce settings');
 				console.error(error);
 			}),
 			vitePluginLoadPromise.catch(function (error) {

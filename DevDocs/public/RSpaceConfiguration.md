@@ -375,9 +375,14 @@ The new DMP integration, if enabled, requires a client ID and secret for OAuth c
 * **dmptool.client.secret**
 * **dmptool.base.url** The URL of DMPTool. This prototype integration defaults to `https://dmptool-stg.cdlib.org`
 
-The GoogleDrive integration, if enabled, requires a client ID and developer key
-* **googledrive.developer.key** The developer key. Defaults to RSpace developer key
-* **googledrive.client.id** The developer client id. Defaults to RSpace client id
+The Google Drive integration requires Google Picker API to be enabled in a Google Cloud project.
+Create the API key and OAuth web client in that same project. Add each RSpace origin to the OAuth
+client's authorised JavaScript origins and the API key's website restrictions. If the API key uses
+API restrictions, allow Google Picker API.
+
+* **googledrive.developer.key** Browser API key from the Google Cloud project
+* **googledrive.client.id** OAuth 2.0 web client ID from the same project
+* **googledrive.app.id** Numeric project number from the same project; do not use the OAuth client ID
 
 Properties for configuring MSOffice Online integration:
 * **msoffice.wopi.enabled** true/false. Default is `false`
