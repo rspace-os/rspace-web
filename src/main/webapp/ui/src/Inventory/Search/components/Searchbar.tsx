@@ -1,6 +1,7 @@
 import CloseIcon from "@mui/icons-material/Close";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
@@ -111,6 +112,14 @@ const Form = observer(({ handleSearch }: FormArgs) => {
                             <CloseIcon fontSize="small" />
                           </IconButton>
                         </CustomTooltip>
+                      )}
+                      {Boolean(search.fetcher.query) && search.showBarcodeScan && (
+                        /*
+                         * An explicit height rather than flexItem: InputAdornment's
+                         * flex container is 0.01em tall, so a stretched divider
+                         * renders invisibly.
+                         */
+                        <Divider orientation="vertical" sx={{ height: 20, ml: 1.5, mr: 0.5 }} />
                       )}
                       {search.showBarcodeScan && (
                         <CustomTooltip title={t("search.controls.searchbar.scanBarcode")}>
