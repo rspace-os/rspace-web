@@ -32,11 +32,6 @@ import {
 import { $PropertyExists, type OmeroArgs, type OmeroItem } from "./OmeroTypes";
 import ResultsTable, { omeroSort } from "./ResultsTable";
 
-const makeTableHeaderCells = (t: TFunction<"workspace">): Array<Cell<string>> => [
-  { id: "path", numeric: false, label: t("tinymce.omero.columns.path") },
-  { id: "description", numeric: false, label: t("tinymce.omero.columns.description") },
-];
-
 const ORDER_KEY = "omeroSearchOrder";
 const ORDER_BY_KEY = "omeroSearchOrderBy";
 const DEFAULT_ORDER = Order.asc;
@@ -45,7 +40,13 @@ export const getOrder = (): string => (localStorage.getItem(ORDER_KEY) || DEFAUL
 export const getOrderBy = (): string => (localStorage.getItem(ORDER_BY_KEY) || DEFAULT_ORDERBY).replace(/['"]+/g, "");
 function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   const { t } = useTranslation("workspace");
-  const visibleHeaderCells = useMemo(() => makeTableHeaderCells(t), [t]);
+  const visibleHeaderCells = useMemo<Array<Cell<string>>>(
+    () => [
+      { id: "path", numeric: false, label: t("tinymce.omero.columns.path") },
+      { id: "description", numeric: false, label: t("tinymce.omero.columns.description") },
+    ],
+    [t],
+  );
   const [items, setItems] = useState<Array<OmeroItem>>([]);
   const [fetchDone, setFetchDone] = useState(false);
   const [errorReason, setErrorReason] = useState<ErrorReasonType>(ErrorReason.None);
@@ -621,29 +622,18 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     [selectedItemIds],
   );
 
+  // The dialog runs in an iframe and does not touch the editor itself. It sends
+  // the button state and the table to insert to the plugin, which owns both.
   useEffect(() => {
+    const table =
+      selectedItems.length > 0 ? createTinyMceTable(selectedItems, visibleHeaderCells, order, orderBy, t) : null;
     window.parent.postMessage(
       {
-        mceAction: selectedItems.length > 0 ? "enable" : "disable",
+        mceAction: table ? "enable" : "disable",
+        tableHtml: table?.outerHTML ?? null,
       },
-      "*",
+      window.location.origin,
     );
-  }, [selectedItems]);
-
-  useEffect(() => {
-    const editor = window.parent.tinymce?.activeEditor;
-    if (!editor) return;
-    const insertSelectedItems = () => {
-      if (selectedItems.length > 0) {
-        const omeroTable = createTinyMceTable(selectedItems, visibleHeaderCells, order, orderBy, t);
-        editor.execCommand("mceInsertContent", false, omeroTable.outerHTML);
-      }
-      editor.windowManager.close();
-    };
-    editor.on("omero-insert", insertSelectedItems);
-    return () => {
-      editor.off("omero-insert", insertSelectedItems);
-    };
   }, [selectedItems, visibleHeaderCells, order, orderBy, t]);
 
   if (errorReason !== ErrorReason.None) {
