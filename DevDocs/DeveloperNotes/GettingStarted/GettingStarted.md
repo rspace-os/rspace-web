@@ -322,7 +322,7 @@ to cache.
 
 #### Capturing real emails locally with Mailpit
 
-`dev/deployment.properties` sets `email.enabled=false`, To exercise a real mail flow (password reset,forgotten username, signup verification, sharing notifications) against a
+`dev/deployment.properties` sets `email.enabled=false`. To exercise a real mail flow (password reset, forgotten username, signup verification, sharing notifications) against a
 local mailbox, run a [Mailpit](https://mailpit.axllent.org/) container and
 point RSpace's mail properties at it:
 
@@ -342,7 +342,7 @@ mvn clean jetty:run -Denvironment=keepdbintact -DRS.devlogLevel=INFO \
 `EmailBroadcastImpl` always performs SMTP AUTH; Mailpit accepts any
 credentials when started with `MP_SMTP_AUTH_ACCEPT_ANY=1`/
 `MP_SMTP_AUTH_ALLOW_INSECURE=1`, so `mail.emailAccount`/`mail.password` can be
-any placeholder no code changes are needed. `mail.from` does need a
+any placeholder; no code changes are needed. `mail.from` does need a
 syntactically valid override though: `deployments/dev/deployment.properties`
 doesn't set it, so it inherits `defaultDeployment.properties`' literal
 `support@<your_server>.com` placeholder, which Mailpit's strict SMTP
