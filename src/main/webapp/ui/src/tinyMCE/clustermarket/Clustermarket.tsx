@@ -251,36 +251,20 @@ function Clustermarket({
     [selectedBookingIds],
   );
 
+  // The dialog runs in an iframe and does not touch the editor itself. It sends
+  // the button state and the table to insert to the plugin, which owns both.
   useEffect(() => {
+    const table =
+      selectedBookings.length > 0
+        ? createTinyMceTable(selectedBookings, visibleHeaderCells, order, orderBy, clustermarket_web_url, t)
+        : null;
     window.parent.postMessage(
       {
-        mceAction: selectedBookings.length > 0 ? "enable" : "disable",
+        mceAction: table ? "enable" : "disable",
+        tableHtml: table?.outerHTML ?? null,
       },
-      "*",
+      window.location.origin,
     );
-  }, [selectedBookings]);
-
-  useEffect(() => {
-    const editor = window.parent.tinymce?.activeEditor;
-    if (!editor) return;
-    const insertSelectedBookings = () => {
-      if (selectedBookings.length > 0) {
-        const clustermarketTable = createTinyMceTable(
-          selectedBookings,
-          visibleHeaderCells,
-          order,
-          orderBy,
-          clustermarket_web_url,
-          t,
-        );
-        editor.execCommand("mceInsertContent", false, clustermarketTable.outerHTML);
-      }
-      editor.windowManager.close();
-    };
-    editor.on("clustermarket-insert", insertSelectedBookings);
-    return () => {
-      editor.off("clustermarket-insert", insertSelectedBookings);
-    };
   }, [selectedBookings, visibleHeaderCells, order, orderBy, clustermarket_web_url, t]);
   if (errorReason !== ErrorReason.None) {
     return <ErrorView errorReason={errorReason} errorMessage={errorMessage} />;

@@ -27,6 +27,11 @@ const findFirstByText = async (text: any, options?: any, waitOptions?: any) => {
   const [match] = await screen.findAllByText(text, options, waitOptions);
   return match;
 };
+type DialogMessage = { mceAction: string; tableHtml: string | null };
+type PostMessageSpy = { mock: { calls: Array<Array<unknown>> } };
+const lastMessage = (spy: PostMessageSpy): DialogMessage | undefined =>
+  spy.mock.calls.at(-1)?.[0] as DialogMessage | undefined;
+const lastTableHtml = (spy: PostMessageSpy): string | null => lastMessage(spy)?.tableHtml ?? null;
 beforeEach(() => {
   mockAxios.onGet("/apps/clustermarket/bookings").reply(200, BookingsList.data);
   mockAxios
@@ -54,6 +59,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 describe("Has defaultOrderBy", () => {
   test("when no value in localStorage then returns Order by start_time", () => {
@@ -148,15 +154,8 @@ describe("Renders page with booking data", () => {
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();
   });
 
-  test("adds noreferrer to links in inserted tables", async () => {
-    const handlers = new Map<string, () => void>();
-    const editor = {
-      execCommand: vi.fn(),
-      off: vi.fn((event: string) => handlers.delete(event)),
-      on: vi.fn((event: string, handler: () => void) => handlers.set(event, handler)),
-      windowManager: { close: vi.fn() },
-    };
-    vi.stubGlobal("tinymce", { activeEditor: editor });
+  test("adds noreferrer to links in the table sent to the plugin", async () => {
+    const postMessage = vi.spyOn(window.parent, "postMessage");
 
     const user = userEvent.setup();
     getWrapper({ clustermarket_web_url: "https://calira.example/" });
@@ -169,12 +168,8 @@ describe("Renders page with booking data", () => {
     await user.click(bookingRow);
     expect(bookingRow).toBeChecked();
 
-    handlers.get("clustermarket-insert")?.();
-
-    expect(editor.execCommand).toHaveBeenCalledOnce();
-    const insertedHtml = editor.execCommand.mock.calls[0]?.[2] as string;
     const container = document.createElement("div");
-    container.innerHTML = insertedHtml;
+    container.innerHTML = lastTableHtml(postMessage) ?? "";
     const links = Array.from(container.querySelectorAll("a"));
 
     expect(links).toHaveLength(2);
@@ -182,5 +177,23 @@ describe("Renders page with booking data", () => {
       expect(link).toHaveAttribute("target", "_blank");
       expect(link).toHaveAttribute("rel", "noreferrer");
     });
+  });
+
+  test("enables the insert button only while rows are selected", async () => {
+    const postMessage = vi.spyOn(window.parent, "postMessage");
+
+    const user = userEvent.setup();
+    getWrapper({ clustermarket_web_url: "https://calira.example/" });
+    await findFirstByText("CURRENT_2");
+    expect(lastMessage(postMessage)).toEqual({ mceAction: "disable", tableHtml: null });
+
+    const [bookingRow] = screen.getAllByRole("checkbox", { name: /CURRENT_2/ });
+    await user.click(bookingRow);
+
+    expect(lastMessage(postMessage)?.mceAction).toEqual("enable");
+    expect(lastTableHtml(postMessage)).toContain("<table");
+
+    await user.click(bookingRow);
+    expect(lastMessage(postMessage)).toEqual({ mceAction: "disable", tableHtml: null });
   });
 });
