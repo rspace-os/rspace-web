@@ -1130,7 +1130,6 @@
       <groupId>org.apache.shiro</groupId>
       <artifactId>shiro-core</artifactId>
       <version>${shiro.version}</version>
-      <classifier>jakarta</classifier>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -1142,7 +1141,6 @@
       <groupId>org.apache.shiro</groupId>
       <artifactId>shiro-web</artifactId>
       <version>${shiro.version}</version>
-      <classifier>jakarta</classifier>
       <exclusions>
         <exclusion>
           <groupId>org.apache.shiro</groupId>
@@ -1154,7 +1152,6 @@
       <groupId>org.apache.shiro</groupId>
       <artifactId>shiro-spring</artifactId>
       <version>${shiro.version}</version>
-      <classifier>jakarta</classifier>
       <exclusions>
         <exclusion>
           <groupId>org.apache.shiro</groupId>
@@ -1625,9 +1622,11 @@
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-log4j12</artifactId>
         </exclusion>
+        <!-- core-model builds against Shiro 2.1.0; rspace-web supplies Shiro 3
+             (the class names core-model uses are identical in both lines) -->
         <exclusion>
           <groupId>org.apache.shiro</groupId>
-          <artifactId>shiro-core</artifactId>
+          <artifactId>*</artifactId>
         </exclusion>
         <!-- core-model (>= 2.26.1) re-introduces ical4j (calendar/ICS), which drags in older
              slf4j-api:1.7.25 and commons-lang3:3.8.1 and breaks dependency convergence (the rest
@@ -2689,6 +2688,9 @@
     <hibernate.logLevel>ERROR</hibernate.logLevel>
 
     <javax.cache.version>1.1.1</javax.cache.version>
+
+    <!-- overrides rspace-parent (2.1.0, EOSL); fold into the parent pom later -->
+    <shiro.version>3.0.0</shiro.version>
 
     <hibernate.search.index>FTsearchIndices</hibernate.search.index>
     <lucene.attachment.searchIndex>LuceneFTsearchIndices</lucene.attachment.searchIndex>

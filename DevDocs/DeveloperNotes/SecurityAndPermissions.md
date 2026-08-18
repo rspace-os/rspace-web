@@ -15,6 +15,17 @@ Is configured in `WEB-INF/security.xml`, which defines role based access
 to URLs and the various Spring bean integrations. There is some good
 documentation in the Shiro project web docs which describes the basics.
 
+Since Shiro 3, the URL filter chains in `security.xml` behave as follows
+by default (all three are configurable):
+
+- Chain patterns match case-insensitively, so `/SYSTEM/foo` hits the
+  `/system/**` chain rather than falling through to `/**`.
+- A request that matches no chain is denied rather than allowed. This
+  does not currently apply to us because the `/**` catch-all matches
+  everything.
+- CORS preflight `OPTIONS` requests are allowed through authentication
+  filters without credentials.
+
 ## Authentication
 
 ### Standalone application
