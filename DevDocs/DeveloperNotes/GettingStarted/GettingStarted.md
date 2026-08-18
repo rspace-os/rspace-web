@@ -99,6 +99,11 @@ property that has a sensible production value live in
 `src/main/resources/deployments/defaultDeployment.properties`; only put dev-specific overrides and
 your own credentials in the copy.
 
+To add or change a property for the whole team, edit `deployment.properties.example` (and
+`defaultDeployment.properties` if it has a production value) and copy it down again. Your own
+`deployment.properties` is git-ignored and the pre-commit hook refuses to stage it, so a change
+made only there never reaches anyone else or CI.
+
 #### Sanity check
 
 As the 1st goal, you should be able to compile the java side of the code. 

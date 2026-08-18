@@ -6,6 +6,10 @@
 # The copy is git-ignored, so put your credentials there rather than here. Anything with a sensible
 # production value belongs in ../defaultDeployment.properties; this file holds only dev overrides
 # and the credential slots for opt-in real-connection tests.
+#
+# To add or change a property for everyone, edit THIS file (and ../defaultDeployment.properties
+# where the property has a production value), then copy it down. A change made only in your own
+# git-ignored deployment.properties is invisible to colleagues and is overwritten in CI.
 
 rs.customer.name=University of RSpace (Localhost)
 rs.customer.name.short=RSpace Local

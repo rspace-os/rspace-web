@@ -47,9 +47,10 @@ cp src/main/resources/deployments/dev/deployment.properties.example \
    src/main/resources/deployments/dev/deployment.properties
 ```
 
-`./docker/dev/rspace-dev`, the GitHub Actions workflows and the Jenkinsfile all run this copy
-automatically. Keep the `.example` template limited to dev-specific overrides and credential slots:
-anything with a sensible production value belongs in `defaultDeployment.properties`.
+`./docker/dev/rspace-dev` makes this copy automatically if you have no file yet, and CI overwrites
+it from the template on every run, so a change that lives only in your copy never reaches a build.
+Keep the `.example` template limited to dev-specific overrides and credential slots: anything with
+a sensible production value belongs in `defaultDeployment.properties`.
 
 If you already had a `deployment.properties` from before it was untracked, back it up before
 pulling: git deletes the file if you never edited it, and refuses to switch if you did. Restore
@@ -86,6 +87,13 @@ another property file. E.g., rs.properties.
 If the property also needs a different value locally, add the override to
 `deployments/dev/deployment.properties.example` (and to your own untracked copy) so other
 developers pick it up.
+
+**Editing your own `deployments/dev/deployment.properties` is never enough.** That file is
+git-ignored, so a property you add or change there exists only on your machine: colleagues,
+CI and the Docker dev stack all seed a fresh copy from
+`deployment.properties.example` and will never see it. The pre-commit hook blocks the file
+outright, so put the change in the template (and in `defaultDeployment.properties` when it has a
+sensible production value), then copy it down into your own file.
 
 For each deployment/subfolder, override if need be, if it is clear what
 value should be used by different deployments.

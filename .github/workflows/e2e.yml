@@ -48,7 +48,7 @@ jobs:
       - run: corepack enable
       - name: Seed dev deployment.properties
         run: |
-          cp -n src/main/resources/deployments/dev/deployment.properties.example \
+          cp -f src/main/resources/deployments/dev/deployment.properties.example \
             src/main/resources/deployments/dev/deployment.properties
 
       - name: Package WAR (frontend + backend)
