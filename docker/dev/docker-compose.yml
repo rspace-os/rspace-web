@@ -103,6 +103,11 @@ services:
       # from both the Java backend and the host Playwright process.
       RSPACE_E2E_MOCKS: ${RSPACE_E2E_MOCKS:-false}
       E2E_MOCK_PORT: ${E2E_MOCK_PORT:-9099}
+      # Optional Mailpit SMTP catcher (started with `rspace-dev up --mailpit`,
+      # which activates the "mailpit" compose profile). When enabled, the
+      # entrypoint flips email.enabled=true and points mail.* at Mailpit's SMTP
+      # listener over the project network (mailpit:1025).
+      RSPACE_MAILPIT: ${RSPACE_MAILPIT:-false}
     volumes:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
       - m2-repo:/root/.m2
@@ -183,6 +188,29 @@ services:
     profiles: ["chemistry"]
     volumes:
       - chemistry-files:/home/app
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Mailpit SMTP catcher (OPTIONAL): captures outbound mail so real email flows
+  # (password reset, forgotten username, signup verification, sharing
+  # notifications) can be exercised locally. Off by default — enable with
+  # `rspace-dev up --mailpit` (compose profile "mailpit"), which also points the
+  # app at it (email.enabled=true). The app reaches its SMTP listener at
+  # mailpit:1025 over the project network; only the HTTP UI/API (8025) is
+  # published to the host, for a browser and for Playwright. No volume: message
+  # store is ephemeral, matching the E2E mock server's fresh-per-run behaviour.
+  # ---------------------------------------------------------------------------
+  mailpit:
+    image: ${MAILPIT_IMAGE:-axllent/mailpit:latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-mailpit
+    profiles: ["mailpit"]
+    environment:
+      # EmailBroadcastImpl always performs SMTP AUTH; accept any credentials so
+      # no backend code change is needed to talk to Mailpit.
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    ports:
+      - "127.0.0.1:${MAILPIT_HTTP_PORT:-8025}:8025"
     restart: unless-stopped
 
 volumes:

@@ -11,7 +11,7 @@
 #   ./docker/dev/rspace-dev <command> [args]
 #
 # Commands:
-#   up [--fresh] [--chemistry|--no-chemistry] [--e2e|--no-e2e]
+#   up [--fresh] [--chemistry|--no-chemistry] [--e2e|--no-e2e] [--mailpit|--no-mailpit]
 #                  Build images (if needed) and start db + app + frontend.
 #                  First boot (or --fresh) recreates the DB schema + sample data.
 #                  --chemistry also starts the optional chemistry microservice
@@ -20,6 +20,9 @@
 #                  --e2e starts the integration mock server and points the
 #                  backend integrations at it; the choice persists until
 #                  --no-e2e.
+#                  --mailpit starts the optional Mailpit SMTP catcher and points
+#                  the app's outbound mail at it (email.enabled=true); the choice
+#                  persists in .env until --no-mailpit.
 #   down           Stop and remove the containers (keeps the database + caches).
 #   reload         Recompile and hot-redeploy the whole webapp (rebuilds the
 #                  Spring context) in the same JVM — applies any Java/JSP/config
@@ -101,13 +104,14 @@ ensure_env() {
     return 0
   fi
   echo "rspace-dev: first run for this worktree — allocating ports ..." >&2
-  local offset app_port vite_port db_port debug_port mock_port polling
+  local offset app_port vite_port db_port debug_port mock_port mailpit_port polling
   offset="$(path_offset)"
   app_port="$(free_port_from "$((8080 + offset))")"
   vite_port="$(free_port_from "$((5173 + offset))")"
   db_port="$(free_port_from "$((3306 + offset))")"
   debug_port="$(free_port_from "$((5005 + offset))")"
   mock_port="$(free_port_from "$((9099 + offset))")"
+  mailpit_port="$(free_port_from "$((8025 + offset))")"
   # File-watch polling is needed where inotify events do not reach the container
   # (macOS/Windows Docker Desktop VMs) but burns CPU needlessly on native Linux
   # Docker, where events are delivered. WSL2 reports Linux and gets events when
@@ -126,6 +130,7 @@ VITE_PORT=${vite_port}
 DB_PORT=${db_port}
 DEBUG_PORT=${debug_port}
 E2E_MOCK_PORT=${mock_port}
+MAILPIT_HTTP_PORT=${mailpit_port}
 VITE_HMR_HOST=localhost
 VITE_USE_POLLING=${polling}
 EOF
@@ -141,6 +146,9 @@ compose() {
   # compose subcommand (up/down/ps/logs/...) consistently includes the service.
   local profiles=""
   [ "$(env_get RSPACE_CHEMISTRY)" = "true" ] && profiles="chemistry"
+  if [ "$(env_get RSPACE_MAILPIT)" = "true" ]; then
+    profiles="${profiles:+${profiles},}mailpit"
+  fi
   COMPOSE_PROFILES="${profiles}" docker compose \
     --project-directory "${SCRIPT_DIR}" \
     --env-file "${ENV_FILE}" \
@@ -166,16 +174,20 @@ db_volume_exists() {
 }
 
 print_urls() {
-  local app_port vite_port db_port debug_port mock_port chem e2e
+  local app_port vite_port db_port debug_port mock_port mailpit_port chem e2e mailpit
   app_port="$(env_get APP_PORT)"; vite_port="$(env_get VITE_PORT)"; db_port="$(env_get DB_PORT)"
   debug_port="$(env_get DEBUG_PORT)"
   mock_port="$(env_get E2E_MOCK_PORT)"
+  mailpit_port="$(env_get MAILPIT_HTTP_PORT)"
   debug_port="${debug_port:-5005}"
   mock_port="${mock_port:-9099}"
+  mailpit_port="${mailpit_port:-8025}"
   chem="off (enable with: up --chemistry)"
   [ "$(env_get RSPACE_CHEMISTRY)" = "true" ] && chem="on (http://chemistry:8090, internal)"
   e2e="off (enable with: up --e2e)"
   [ "$(env_get RSPACE_E2E_MOCKS)" = "true" ] && e2e="on (http://localhost:${mock_port})"
+  mailpit="off (enable with: up --mailpit)"
+  [ "$(env_get RSPACE_MAILPIT)" = "true" ] && mailpit="on (http://localhost:${mailpit_port})"
   cat <<EOF
 
   RSpace (this worktree: $(basename "${RSPACE_SRC}"))
@@ -185,6 +197,7 @@ print_urls() {
     Debug      127.0.0.1:${debug_port}  (JDWP — attach IntelliJ "Remote JVM Debug")
     Chemistry  ${chem}
     E2E mocks  ${e2e}
+    Mailpit    ${mailpit}
 
     Logins: user1a .. user8h / user1234   sysadmin1 / sysWisc23!
 EOF
@@ -216,6 +229,13 @@ cmd_up() {
                       echo "rspace-dev: E2E integration mocks enabled (persisted in .env)" >&2 ;;
       --no-e2e)       env_set RSPACE_E2E_MOCKS false
                       echo "rspace-dev: E2E integration mocks disabled (persisted in .env)" >&2 ;;
+      --mailpit)      env_set RSPACE_MAILPIT true
+                      echo "rspace-dev: Mailpit enabled (persisted in .env)" >&2 ;;
+      --no-mailpit)   env_set RSPACE_MAILPIT false
+                      # A profile-disabled service is invisible to later compose
+                      # commands, so stop a leftover container explicitly.
+                      docker rm -f "$(env_get COMPOSE_PROJECT_NAME)-mailpit" >/dev/null 2>&1 || true
+                      echo "rspace-dev: Mailpit disabled (persisted in .env)" >&2 ;;
       *) die "unknown flag for up: '${arg}'" ;;
     esac
   done

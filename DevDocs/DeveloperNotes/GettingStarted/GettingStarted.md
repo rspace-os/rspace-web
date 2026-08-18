@@ -320,6 +320,38 @@ overrides the default filestore location.
 true/false will enable/disable the ability to set HTTP response headers
 to cache.
 
+#### Capturing real emails locally with Mailpit
+
+`dev/deployment.properties` sets `email.enabled=false`, To exercise a real mail flow (password reset,forgotten username, signup verification, sharing notifications) against a
+local mailbox, run a [Mailpit](https://mailpit.axllent.org/) container and
+point RSpace's mail properties at it:
+
+```bash
+docker run -d --name mailpit --rm \
+  -p 1025:1025 -p 8025:8025 \
+  -e MP_SMTP_AUTH_ACCEPT_ANY=1 -e MP_SMTP_AUTH_ALLOW_INSECURE=1 \
+  axllent/mailpit:latest
+
+mvn clean jetty:run -Denvironment=keepdbintact -DRS.devlogLevel=INFO \
+  -Dspring.profiles.active=run -DreactDevMode=true \
+  -Demail.enabled=true -Dmail.emailHost=localhost -Dmail.port=1025 \
+  -Dmail.emailAccount=mailpit -Dmail.password=mailpit -Dmail.ssl.enabled=false \
+  -Dmail.from=noreply@rspace-e2e.local
+```
+
+`EmailBroadcastImpl` always performs SMTP AUTH; Mailpit accepts any
+credentials when started with `MP_SMTP_AUTH_ACCEPT_ANY=1`/
+`MP_SMTP_AUTH_ALLOW_INSECURE=1`, so `mail.emailAccount`/`mail.password` can be
+any placeholder no code changes are needed. `mail.from` does need a
+syntactically valid override though: `deployments/dev/deployment.properties`
+doesn't set it, so it inherits `defaultDeployment.properties`' literal
+`support@<your_server>.com` placeholder, which Mailpit's strict SMTP
+validation rejects outright (`553 5.1.3 The address is not a valid RFC 5321
+address`) on `MAIL FROM`. Read captured mail at
+`http://localhost:8025`. If you're using the Docker dev stack instead of a
+bare `mvn jetty:run`, use `rspace-dev up --mailpit` instead (see
+`docker/dev/README.md`) — it wires the same properties automatically.
+
 #### Running RSpace in production mode locally
 
 Run the usual `mvn jetty:run` command, just change the active spring profile to `prod`

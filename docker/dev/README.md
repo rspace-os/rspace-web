@@ -129,7 +129,9 @@ endpoints.
 ./docker/dev/rspace-dev up --chemistry # also start the chemistry microservice
 ./docker/dev/rspace-dev up --e2e       # start and use third-party integration mocks
 ./docker/dev/rspace-dev up --no-e2e    # stop using integration mocks
-./docker/dev/rspace-dev logs [svc]     # follow logs: app | frontend | db | chemistry
+./docker/dev/rspace-dev up --mailpit   # also start the Mailpit SMTP catcher
+./docker/dev/rspace-dev up --no-mailpit # stop using Mailpit
+./docker/dev/rspace-dev logs [svc]     # follow logs: app | frontend | db | chemistry | mailpit
 ./docker/dev/rspace-dev ps             # status + URLs/ports for this worktree
 ./docker/dev/rspace-dev reload         # recompile Java + hot-redeploy webapp
 ./docker/dev/rspace-dev restart        # full backend JVM restart
@@ -162,6 +164,32 @@ the service is only reachable on the project's internal Docker network (no host
 port). Its working data lives in a per-worktree `chemistry-files` volume,
 removed by `nuke` like the others. Override the image with `CHEMISTRY_IMAGE` in
 `.env`.
+
+Note: toggling the flag changes the app container's environment, so the next
+`up` recreates the backend (expect the usual startup wait).
+
+## Optional: Mailpit SMTP catcher
+
+RSpace sends real email for flows like password reset, forgotten username,
+signup verification, and sharing notifications. Locally this is disabled by
+default (`email.enabled=false` in `deployments/dev/deployment.properties`), enable [Mailpit](https://mailpit.axllent.org/), a lightweight
+local SMTP catcher with a web UI and REST API:
+
+```bash
+./docker/dev/rspace-dev up --mailpit     # start it + point the app at it
+./docker/dev/rspace-dev up --no-mailpit  # turn it off again
+```
+
+The choice persists in `docker/dev/.env` (`RSPACE_MAILPIT=true`). When
+enabled, the app is started with `email.enabled=true` and `mail.emailHost`
+pointed at Mailpit's SMTP listener (`mailpit:1025`, Mailpit is started with
+`MP_SMTP_AUTH_ACCEPT_ANY=1`/`MP_SMTP_AUTH_ALLOW_INSECURE=1` so it accepts any
+placeholder credentials. The web UI/API
+is published at the per-worktree URL printed by `rspace-dev ps` (default
+`http://localhost:8025`); open it in a browser to read captured mail, or point
+the e2e suite's `MAILPIT_HTTP_URL` at it. Messages are not persisted — they
+live only for the container's lifetime. Override the image with
+`MAILPIT_IMAGE` in `.env`.
 
 Note: toggling the flag changes the app container's environment, so the next
 `up` recreates the backend (expect the usual startup wait).
@@ -417,6 +445,7 @@ is the quick lookup.
 | Frontend edits don't appear in the browser | HMR not receiving file events (common on macOS/Windows or `/mnt/c` on WSL2) | Set `VITE_USE_POLLING=true` in `.env`, then recreate the frontend container so it re-reads the var: `rspace-dev compose up -d --force-recreate frontend` (`rspace-dev restart` only recreates the backend `app`). On WSL2 keep the repo on the Linux filesystem. |
 | Java edits don't take effect after `reload` | Change needs a context rebuild or new JVM (see "What still requires a full restart") | `rspace-dev reload`, and if still stale `rspace-dev restart`. |
 | E2E integration calls reach live services or fail DNS | The stack was started without its mock mode | Run `rspace-dev up --e2e`; use the mock port printed by `rspace-dev ps` when running Playwright. |
+| Password reset / signup / notification emails never arrive anywhere | Mailpit not enabled — `email.enabled=false` by default locally, so mail is only logged | Run `rspace-dev up --mailpit`; read captured mail at the Mailpit URL printed by `rspace-dev ps`. |
 | Docker Desktop using too much RAM/disk | Multiple stacks running, or large caches | `rspace-dev down` worktrees you aren't using; reclaim disk per "Destroying a worktree's instance". |
 
 ## Notes & gotchas
@@ -427,6 +456,9 @@ is the quick lookup.
 - **E2E integration mocks**: `up --e2e` starts them beside Vite and persists
   `RSPACE_E2E_MOCKS=true`. `up --no-e2e` disables them. `rspace-dev ps` prints
   the per-worktree mock URL.
+- **Mailpit**: `up --mailpit` starts it and persists `RSPACE_MAILPIT=true`.
+  `up --no-mailpit` disables it. `rspace-dev ps` prints the per-worktree
+  Mailpit URL.
 - **Spotless**: `jetty:run` runs `spotless:apply` during compile, exactly as a
   local Maven run does. If you have unformatted Java, it may reformat files in
   your worktree.
