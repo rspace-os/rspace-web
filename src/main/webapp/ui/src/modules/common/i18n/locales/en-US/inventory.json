@@ -7,6 +7,7 @@
     "altEntry": "Alternatively, enter the data encoded in the barcode",
     "barcodeDetected": "Barcode detected: {format} format.",
     "cameraError": "Could not access camera, please enter code below.",
+    "cameraErrorSearchBox": "Could not access camera. Alternatively, enter the encoded data directly into the search box.",
     "helpTitle": "Info on using barcodes.",
     "loading": "Loading Barcode Scanner...",
     "otherFormats": "To scan other formats, please try an Android device, or Chrome on a Mac (with a webcam).",
@@ -2017,7 +2018,6 @@
       "searchbar": {
         "clearSearch": "Clear search",
         "scanBarcode": "Scan barcode",
-        "scanConfirm": "Search barcode",
         "scanPlaceholder": "Search or scan a barcode",
         "search": "Search"
       },

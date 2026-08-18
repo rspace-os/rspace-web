@@ -5,6 +5,7 @@ import CardActions from "@mui/material/CardActions";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import type React from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
@@ -19,7 +20,7 @@ export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
 type BarcodeScannerSkeletonArgs = {
   onClose: () => void;
   onScan: (scannedBarcodeInput: BarcodeInput) => void;
-  buttonPrefix: string;
+  buttonPrefix?: string;
   beforeScanHelpText: string;
   barcode: BarcodeInput | null;
   setBarcode: (value: BarcodeInput | null) => void;
@@ -27,6 +28,12 @@ type BarcodeScannerSkeletonArgs = {
   warning?: React.ReactNode;
   videoElem: React.RefObject<HTMLVideoElement | null>;
   error: boolean;
+  /*
+   * When set, the first detected barcode is submitted immediately: no confirm
+   * button, no manual-entry field, just Cancel. Used by the search bar for
+   * 1-click scan-and-search.
+   */
+  submitOnScan?: boolean;
 };
 
 export default function BarcodeScannerSkeleton({
@@ -40,6 +47,7 @@ export default function BarcodeScannerSkeleton({
   warning,
   videoElem,
   error,
+  submitOnScan = false,
 }: BarcodeScannerSkeletonArgs): React.ReactNode {
   const { uiStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
@@ -72,6 +80,18 @@ export default function BarcodeScannerSkeleton({
       onClose();
     }
   }
+
+  /*
+   * The ref guards against the camera re-detecting the same code on a later
+   * interval tick before the popover has finished closing.
+   */
+  const submitted = useRef(false);
+  useEffect(() => {
+    if (submitOnScan && barcode?.rawValue && !submitted.current) {
+      submitted.current = true;
+      handleOnSubmit();
+    }
+  });
 
   return (
     <Stack sx={{ alignItems: "center" }}>
@@ -106,16 +126,18 @@ export default function BarcodeScannerSkeleton({
         >
           {t("common:actions.cancel")}
         </Button>
-        <Button
-          disabled={!barcode?.rawValue}
-          color="callToAction"
-          variant="contained"
-          disableElevation
-          onClick={handleOnSubmit}
-        >
-          {buttonPrefix}
-        </Button>
-        {barcode && (
+        {!submitOnScan && (
+          <Button
+            disabled={!barcode?.rawValue}
+            color="callToAction"
+            variant="contained"
+            disableElevation
+            onClick={handleOnSubmit}
+          >
+            {buttonPrefix}
+          </Button>
+        )}
+        {barcode && !submitOnScan && (
           <Button
             onClick={() => {
               setBarcode(null);
@@ -142,7 +164,7 @@ export default function BarcodeScannerSkeleton({
         })}
       />
       {warning !== null && <Box>{warning}</Box>}
-      {(!barcode || barcode.format === "Unknown") && (
+      {!submitOnScan && (!barcode || barcode.format === "Unknown") && (
         <>
           <Box sx={{ width: "100%" }}>
             <Box sx={{ m: 1 }}>

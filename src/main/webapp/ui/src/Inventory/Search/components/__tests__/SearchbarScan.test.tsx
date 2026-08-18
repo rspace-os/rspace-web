@@ -43,17 +43,16 @@ function renderSearchbar({
   );
 }
 
-async function scanIntoOpenScanner(user: ReturnType<typeof userEvent.setup>) {
+/*
+ * Scanning is 1-click: opening the scanner is the only user action, and the
+ * first detected barcode is submitted automatically. The scanner polls once
+ * per second (longer than waitFor's default timeout), so assertions on the
+ * outcome need the extended timeout below.
+ */
+const DETECTION_TIMEOUT = { timeout: 3000 };
+
+async function openScanner(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "inventory:search.controls.searchbar.scanBarcode" }));
-  /*
-   * The scanner polls for a barcode once per second, then enables its confirm
-   * button. Wait for that button to enable rather than sleeping a fixed time,
-   * so the test isn't racing the detection interval (the poll interval is the
-   * default waitFor timeout, so allow more headroom).
-   */
-  const confirmButton = screen.getByRole("button", { name: "inventory:search.controls.searchbar.scanConfirm" });
-  await waitFor(() => expect(confirmButton).toBeEnabled(), { timeout: 3000 });
-  await user.click(confirmButton);
 }
 
 describe("Searchbar barcode scanning", () => {
@@ -97,9 +96,11 @@ describe("Searchbar barcode scanning", () => {
     });
     renderSearchbar({ search, handleSearch });
 
-    await scanIntoOpenScanner(user);
+    await openScanner(user);
+    /* no confirmation step: the scanner has a Cancel button but no manual entry */
+    expect(screen.queryByText("inventory:barcodeScanner.altEntry")).not.toBeInTheDocument();
 
-    expect(handleSearch).toHaveBeenCalledWith("BC-1234");
+    await waitFor(() => expect(handleSearch).toHaveBeenCalledWith("BC-1234"), DETECTION_TIMEOUT);
     expect(search.fetcher.query).toBe("BC-1234");
   });
 
@@ -114,9 +115,9 @@ describe("Searchbar barcode scanning", () => {
     });
     renderSearchbar({ search, handleSearch });
 
-    await scanIntoOpenScanner(user);
+    await openScanner(user);
 
-    expect(vi.mocked(visitUrl)).toHaveBeenCalledWith(permalink);
+    await waitFor(() => expect(vi.mocked(visitUrl)).toHaveBeenCalledWith(permalink), DETECTION_TIMEOUT);
     expect(handleSearch).not.toHaveBeenCalled();
   });
 
@@ -130,9 +131,12 @@ describe("Searchbar barcode scanning", () => {
     });
     renderSearchbar({ search, handleSearch });
 
-    await scanIntoOpenScanner(user);
+    await openScanner(user);
 
+    await waitFor(
+      () => expect(handleSearch).toHaveBeenCalledWith("https://evil.example/inventory/sample/123"),
+      DETECTION_TIMEOUT,
+    );
     expect(vi.mocked(visitUrl)).not.toHaveBeenCalled();
-    expect(handleSearch).toHaveBeenCalledWith("https://evil.example/inventory/sample/123");
   });
 });
