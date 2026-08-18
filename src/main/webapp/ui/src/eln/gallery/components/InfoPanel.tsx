@@ -19,7 +19,6 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import DescriptionList from "../../../components/DescriptionList";
-import ImagePreview, { type PreviewSize } from "../../../components/ImagePreview";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { filenameExceptExtension, formatFileSize } from "../../../util/files";
@@ -92,6 +91,115 @@ const ActionButton = ({
       {label}
     </Button>
   );
+};
+
+const PrimaryActionButton = ({
+  file,
+  sx,
+  onActionTaken,
+}: {
+  file: GalleryFile;
+  sx?: SxProps<Theme>;
+  /**
+   * Called after the action has been triggered, for the floating panel on small
+   * viewports to collapse itself.
+   */
+  onActionTaken?: () => void;
+}): React.ReactNode => {
+  const { t } = useTranslation(["gallery", "common"]);
+  const { openImagePreview } = useImagePreview();
+  const { openPdfPreview } = usePdfPreview();
+  const { openSnapGenePreview } = useSnapGenePreview();
+  const { openSnippetPreview } = useSnippetPreview();
+  const { openAsposePreview, loading: asposeLoading } = useAsposePreview();
+  const primaryAction = usePrimaryAction();
+  const { openFolder } = useFolderOpen();
+  const { trackEvent } = React.useContext(AnalyticsContext);
+  return primaryAction(file)
+    .map((action) => {
+      const { label, act } = ((): { label: string; act: () => void } => {
+        switch (action.tag) {
+          case "open":
+            return {
+              label: t("common:actions.open"),
+              act: () => openFolder(file),
+            };
+          case "image":
+            return {
+              label: t("actionsMenu.view"),
+              act: () => {
+                void action.downloadHref().then((url) => {
+                  openImagePreview(url, {
+                    caption: action.caption,
+                  });
+                });
+              },
+            };
+          case "collabora":
+            return {
+              label: t("common:actions.edit"),
+              act: () => {
+                window.open(action.url);
+                trackEvent("user:opens:document:collabora");
+              },
+            };
+          case "officeonline":
+            return {
+              label: t("common:actions.edit"),
+              act: () => {
+                window.open(action.url);
+                trackEvent("user:opens:document:officeonline");
+              },
+            };
+          case "pdf":
+            return {
+              label: t("actionsMenu.view"),
+              act: () => {
+                void action.downloadHref().then((href) => {
+                  openPdfPreview(href);
+                });
+              },
+            };
+          case "aspose":
+            return {
+              label: asposeLoading ? t("common:loading") : t("actionsMenu.view"),
+              act: () => {
+                void openAsposePreview(file);
+              },
+            };
+          case "snapgene":
+            return {
+              label: t("actionsMenu.view"),
+              act: () => openSnapGenePreview(file),
+            };
+          case "snippet":
+            return {
+              label: t("actionsMenu.view"),
+              act: () => openSnippetPreview(file),
+            };
+        }
+      })();
+      return (
+        <ActionButton
+          label={label}
+          disabled={action.tag === "aspose" && asposeLoading}
+          sx={sx}
+          onClick={(event) => {
+            /*
+             * The floating panel on small viewports is a SwipeableDrawer, which
+             * takes a click that reaches it as a request to toggle the panel.
+             */
+            event.stopPropagation();
+            act();
+            onActionTaken?.();
+          }}
+        />
+      );
+    })
+    .orElseGet((errors) => {
+      console.info("Could not provide view", errors);
+      return <ActionButton onClick={() => {}} disabled label={t("actionsMenu.view")} sx={sx} />;
+    });
 };
 
 /**
@@ -766,14 +874,6 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
 export function InfoPanelForLargeViewports() {
   const { t } = useTranslation(["gallery", "common"]);
   const selection = useGallerySelection();
-  const { openImagePreview } = useImagePreview();
-  const { openPdfPreview } = usePdfPreview();
-  const { openSnapGenePreview } = useSnapGenePreview();
-  const { openSnippetPreview } = useSnippetPreview();
-  const { openAsposePreview, loading: asposeLoading } = useAsposePreview();
-  const primaryAction = usePrimaryAction();
-  const { openFolder } = useFolderOpen();
-  const { trackEvent } = React.useContext(AnalyticsContext);
   return (
     <>
       <Grid
@@ -826,194 +926,17 @@ export function InfoPanelForLargeViewports() {
         </Grid>
         {selection
           .asSet()
-          .only.map((file) =>
-            primaryAction(file)
-              .map((action) => {
-                if (action.tag === "open")
-                  return (
-                    <Grid key={null}>
-                      <ActionButton
-                        onClick={() => {
-                          openFolder(file);
-                        }}
-                        label={t("common:actions.open")}
-                        sx={{
-                          height: "100%",
-                          marginTop: "8px",
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "image")
-                  return (
-                    <Grid key={null}>
-                      <ActionButton
-                        onClick={() => {
-                          void action.downloadHref().then((url) => {
-                            openImagePreview(url, {
-                              caption: action.caption,
-                            });
-                          });
-                        }}
-                        label={t("actionsMenu.view")}
-                        sx={{
-                          height: "100%",
-                          marginTop: "8px",
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "collabora")
-                  return (
-                    <Grid
-                      sx={{
-                        mt: 0.5,
-                        mb: 0.25,
-                      }}
-                      key={null}
-                    >
-                      <ActionButton
-                        onClick={() => {
-                          window.open(action.url);
-                          trackEvent("user:opens:document:collabora");
-                        }}
-                        label={t("common:actions.edit")}
-                        sx={{
-                          height: "100%",
-                          marginTop: "8px",
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "officeonline")
-                  return (
-                    <Grid
-                      sx={{
-                        mt: 0.5,
-                        mb: 0.25,
-                      }}
-                      key={null}
-                    >
-                      <ActionButton
-                        onClick={() => {
-                          window.open(action.url);
-                          trackEvent("user:opens:document:officeonline");
-                        }}
-                        label={t("common:actions.edit")}
-                        sx={{
-                          height: "100%",
-                          marginTop: "8px",
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "pdf")
-                  return (
-                    <Grid
-                      sx={{
-                        mt: 0.5,
-                        mb: 0.25,
-                      }}
-                      key={null}
-                    >
-                      <ActionButton
-                        onClick={() => {
-                          void action.downloadHref().then((href) => {
-                            openPdfPreview(href);
-                          });
-                        }}
-                        label={t("actionsMenu.view")}
-                        sx={{
-                          height: "100%",
-                          marginTop: "8px",
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "aspose")
-                  return (
-                    <Grid key={null}>
-                      <ActionButton
-                        disabled={asposeLoading}
-                        onClick={() => {
-                          void openAsposePreview(file);
-                        }}
-                        label={asposeLoading ? t("common:loading") : t("actionsMenu.view")}
-                        sx={{
-                          height: "100%",
-                          marginTop: "8px",
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "snapgene")
-                  return (
-                    <Grid
-                      sx={{
-                        mt: 0.5,
-                        mb: 0.25,
-                      }}
-                      key={null}
-                    >
-                      <ActionButton
-                        onClick={() => {
-                          void openSnapGenePreview(file);
-                        }}
-                        label={t("actionsMenu.view")}
-                        sx={{
-                          height: "100%",
-                          marginTop: "8px",
-                        }}
-                      />
-                    </Grid>
-                  );
-                if (action.tag === "snippet")
-                  return (
-                    <Grid
-                      sx={{
-                        mt: 0.5,
-                        mb: 0.25,
-                      }}
-                      key={null}
-                    >
-                      <ActionButton
-                        onClick={() => {
-                          void openSnippetPreview(file);
-                        }}
-                        label={t("actionsMenu.view")}
-                        sx={{
-                          height: "100%",
-                          marginTop: "8px",
-                        }}
-                      />
-                    </Grid>
-                  );
-                return null;
-              })
-              .orElseGet((errors) => {
-                console.info("Could not provide view", errors);
-                return (
-                  <Grid
-                    sx={{
-                      mt: 0.5,
-                      mb: 0.25,
-                    }}
-                  >
-                    <ActionButton
-                      onClick={() => {
-                        // do nothing
-                      }}
-                      disabled
-                      label={t("actionsMenu.view")}
-                      sx={{
-                        height: "100%",
-                        marginTop: "8px",
-                      }}
-                    />
-                  </Grid>
-                );
-              }),
-          )
+          .only.map((file) => (
+            <Grid key={null}>
+              <PrimaryActionButton
+                file={file}
+                sx={{
+                  height: "100%",
+                  marginTop: "8px",
+                }}
+              />
+            </Grid>
+          ))
           .orElse(null)}
       </Grid>
       {selection
@@ -1058,11 +981,8 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
 }> = ({ file }) => {
   const { t } = useTranslation(["gallery", "common"]);
   const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(false);
-  const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(null);
-  const [previewImageUrl, setPreviewImageUrl] = React.useState<null | string>(null);
   const selection = useGallerySelection();
   const mobileInfoPanelId = React.useId();
-  const { openFolder } = useFolderOpen();
   const { trackEvent } = React.useContext(AnalyticsContext);
   return (
     <SwipeableDrawer
@@ -1190,53 +1110,17 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
                   {file.name}
                 </Typography>
               </Grid>
-              {file.canOpen
-                .map(() => (
-                  <Grid key={null}>
-                    <ActionButton
-                      label={t("common:actions.open")}
-                      sx={{
-                        borderRadius: 3,
-                        px: 2.5,
-                        py: 0.5,
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openFolder(file);
-                        setMobileInfoPanelOpen(false);
-                      }}
-                    />
-                  </Grid>
-                ))
-                .orElse(null)}
-              {file.isImage && file.downloadHref && (
-                <Grid>
-                  <ActionButton
-                    onClick={() => {
-                      if (file.downloadHref)
-                        void file.downloadHref().then((url) => {
-                          setPreviewImageUrl(url);
-                        });
-                    }}
-                    label={t("actionsMenu.view")}
-                    sx={{
-                      borderRadius: 3,
-                      px: 2.5,
-                      py: 0.5,
-                    }}
-                  />
-                  {previewImageUrl && (
-                    <ImagePreview
-                      closePreview={() => {
-                        setPreviewImageUrl(null);
-                      }}
-                      link={previewImageUrl}
-                      size={previewSize}
-                      setSize={(s) => setPreviewSize(s)}
-                    />
-                  )}
-                </Grid>
-              )}
+              <Grid>
+                <PrimaryActionButton
+                  file={file}
+                  onActionTaken={() => setMobileInfoPanelOpen(false)}
+                  sx={{
+                    borderRadius: 3,
+                    px: 2.5,
+                    py: 0.5,
+                  }}
+                />
+              </Grid>
             </Grid>
             {selection
               .asSet()
