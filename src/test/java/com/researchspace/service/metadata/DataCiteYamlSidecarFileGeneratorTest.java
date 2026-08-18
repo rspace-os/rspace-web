@@ -1,0 +1,199 @@
+package com.researchspace.service.metadata;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.researchspace.model.User;
+import java.time.Year;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+
+class DataCiteYamlSidecarFileGeneratorTest {
+
+  private final DataCiteYamlSidecarFileGenerator generator = new DataCiteYamlSidecarFileGenerator();
+  private final YAMLMapper yaml = new YAMLMapper();
+
+  private User user() {
+    User u = new User("jmuller");
+    u.setFirstName("Jana");
+    u.setLastName("Müller");
+    return u;
+  }
+
+  @Test
+  void generatesLtdsDataCiteYamlWithCurrentUserAsCreator() throws Exception {
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
+            .user(user())
+            .institutionName("Leibniz Supercomputing Centre")
+            .bucketName("lrz-rs-experiments")
+            .folderPath("XRD-Experiments/")
+            .files(List.of())
+            .build();
+
+    GeneratedSidecarFile result = generator.generate(ctx);
+
+    assertTrue(
+        result.getFilename().endsWith(".sidecar.yaml"),
+        "sidecar filename should end with .sidecar.yaml, was: " + result.getFilename());
+
+    JsonNode root = yaml.readTree(result.getContent());
+    assertEquals("ltds-datacite4.3", root.path("schemaVersion").path("value").asText());
+
+    JsonNode creator = root.path("creators").path(0);
+    assertEquals("Müller, Jana", creator.path("name").path("value").asText());
+    assertEquals("Personal", creator.path("nameType").path("value").asText());
+  }
+
+  @Test
+  void populatesTypesPublisherAndYearFromInstanceConfig() throws Exception {
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
+            .user(user())
+            .institutionName("Leibniz Supercomputing Centre")
+            .bucketName("lrz-rs-experiments")
+            .folderPath("XRD-Experiments/")
+            .files(List.of())
+            .build();
+
+    int yearBefore = Year.now().getValue();
+    JsonNode root = yaml.readTree(generator.generate(ctx).getContent());
+    int yearAfter = Year.now().getValue();
+
+    assertEquals("Dataset", root.path("types").path("resourceTypeGeneral").path("value").asText());
+    assertEquals("", root.path("types").path("resourceType").path("value").asText());
+    assertEquals(
+        "Leibniz Supercomputing Centre",
+        root.path("publisher").path("name").path("value").asText());
+    // Accept either side of a year rollover between the two Year.now() reads.
+    String publicationYear = root.path("publicationYear").path("value").asText();
+    assertTrue(
+        publicationYear.equals(String.valueOf(yearBefore))
+            || publicationYear.equals(String.valueOf(yearAfter)),
+        "publicationYear should be the generation year, was: " + publicationYear);
+  }
+
+  @Test
+  void creatorCarriesGivenFamilyNameAndInstanceAffiliation() throws Exception {
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
+            .user(user())
+            .institutionName("Leibniz Supercomputing Centre")
+            .bucketName("lrz-rs-experiments")
+            .folderPath("XRD-Experiments/")
+            .files(List.of())
+            .build();
+
+    JsonNode creator = yaml.readTree(generator.generate(ctx).getContent()).path("creators").path(0);
+
+    assertEquals("Jana", creator.path("givenName").path("value").asText());
+    assertEquals("Müller", creator.path("familyName").path("value").asText());
+    JsonNode affiliation = creator.path("affiliations").path(0);
+    assertEquals("Leibniz Supercomputing Centre", affiliation.path("name").path("value").asText());
+    // No ROR configured -> no affiliation identifier emitted.
+    assertTrue(affiliation.path("affiliationIdentifier").isMissingNode());
+  }
+
+  @Test
+  void includesRorAffiliationIdentifierWhenConfigured() throws Exception {
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
+            .user(user())
+            .institutionName("Leibniz Supercomputing Centre")
+            .rorId("https://ror.org/00t3r8h32")
+            .bucketName("lrz-rs-experiments")
+            .folderPath("XRD-Experiments/")
+            .files(List.of())
+            .build();
+
+    JsonNode affiliation =
+        yaml.readTree(generator.generate(ctx).getContent())
+            .path("creators")
+            .path(0)
+            .path("affiliations")
+            .path(0);
+
+    assertEquals("Leibniz Supercomputing Centre", affiliation.path("name").path("value").asText());
+    assertEquals(
+        "https://ror.org/00t3r8h32",
+        affiliation.path("affiliationIdentifier").path("value").asText());
+    assertEquals("https://ror.org", affiliation.path("schemeURI").path("value").asText());
+    assertEquals("ROR", affiliation.path("affiliationIdentifierScheme").path("value").asText());
+  }
+
+  @Test
+  void includesOrcidNameIdentifierWhenUserHasOne() throws Exception {
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
+            .user(user())
+            .orcidId("https://orcid.org/0000-0002-1825-0097")
+            .institutionName("Leibniz Supercomputing Centre")
+            .bucketName("lrz-rs-experiments")
+            .folderPath("XRD-Experiments/")
+            .files(List.of())
+            .build();
+
+    JsonNode nameId =
+        yaml.readTree(generator.generate(ctx).getContent())
+            .path("creators")
+            .path(0)
+            .path("nameIdentifiers")
+            .path(0);
+
+    assertEquals(
+        "https://orcid.org/0000-0002-1825-0097",
+        nameId.path("nameIdentifier").path("value").asText());
+    assertEquals("https://orcid.org", nameId.path("schemeURI").path("value").asText());
+    assertEquals("ORCID", nameId.path("nameIdentifierScheme").path("value").asText());
+  }
+
+  @Test
+  void omitsNameIdentifiersWhenUserHasNoOrcid() throws Exception {
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
+            .user(user())
+            .institutionName("Leibniz Supercomputing Centre")
+            .bucketName("lrz-rs-experiments")
+            .folderPath("XRD-Experiments/")
+            .files(List.of())
+            .build();
+
+    JsonNode creator = yaml.readTree(generator.generate(ctx).getContent()).path("creators").path(0);
+
+    assertTrue(
+        creator.path("nameIdentifiers").isMissingNode(),
+        "nameIdentifiers must be omitted entirely when the user has no ORCID");
+  }
+
+  @Test
+  void mapsEachS3FileToRelatedItemWithS3Location() throws Exception {
+    SidecarFileGenerationContext ctx =
+        SidecarFileGenerationContext.builder()
+            .user(user())
+            .institutionName("Leibniz Supercomputing Centre")
+            .bucketName("lrz-rs-experiments")
+            .folderPath("XRD-Experiments/")
+            .files(
+                List.of(
+                    new SidecarFileEntry(
+                        "XRD-Experiments/xrd_run_041.dat", 2202009L, "b2c3d4", "STANDARD"),
+                    new SidecarFileEntry(
+                        "XRD-Experiments/run_log.log", 45056L, "e5f678", "GLACIER")))
+            .build();
+
+    JsonNode related = yaml.readTree(generator.generate(ctx).getContent()).path("relatedItems");
+
+    assertEquals(2, related.size());
+    JsonNode first = related.path(0);
+    assertEquals("Dataset", first.path("relatedItemType").path("value").asText());
+    assertEquals("HasPart", first.path("relationType").path("value").asText());
+    JsonNode loc = first.path("s3Location");
+    assertEquals("lrz-rs-experiments", loc.path("bucket").asText());
+    assertEquals("XRD-Experiments/xrd_run_041.dat", loc.path("key").asText());
+    assertEquals(2202009L, loc.path("sizeBytes").asLong());
+    assertEquals("b2c3d4", loc.path("etag").asText());
+    assertEquals("STANDARD", loc.path("storageClass").asText());
+  }
+}

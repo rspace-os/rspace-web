@@ -116,7 +116,7 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
             invited,
             token,
             velocityModel,
-            "email.group.invitation.subject",
+            "email.cloud.subject.groupInvitation",
             "groupInvitationNewUser.vm",
             "groupInvitationExistingUser.vm");
     emailer.sendEmail(content, List.of(invited.getEmail()), null);
@@ -145,7 +145,7 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
             invited,
             token,
             velocityModel,
-            "email.group.pi.invitation.subject",
+            "email.cloud.subject.groupPiInvitation",
             "groupPIInvitationNewUser.vm",
             "groupPIInvitationExistingUser.vm");
     emailer.sendEmail(msg, List.of(invited.getEmail()), null);
@@ -174,7 +174,7 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
             invited,
             token,
             velocityModel,
-            "email.share.record.invitation.subject",
+            "email.cloud.subject.shareRecord",
             "shareRecordInvitationNewUser.vm",
             "shareRecordInvitationExistingUser.vm");
     emailer.sendEmail(content, List.of(invited.getEmail()), null);

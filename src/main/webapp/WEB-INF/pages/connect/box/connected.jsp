@@ -1,8 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
 <head>
-	<title>Connected</title>
+	<title><spring:message code="connect.connected.title"/></title>
 </head>
 
 <div id="boxAPIconnectionSuccess">
-    Box API connection is now established. This window will be closed shortly.
+    <spring:message code="connect.box.connectedNotice"/>
 </div>

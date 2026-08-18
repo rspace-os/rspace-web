@@ -1,8 +1,8 @@
 package com.researchspace.model.dtos;
 
 import com.researchspace.core.util.FilterCriteria;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.core.util.UISearchTerm;
-import org.apache.commons.lang3.StringUtils;
 
 public class CommunitySearchCriteria extends FilterCriteria {
 
@@ -21,7 +21,7 @@ public class CommunitySearchCriteria extends FilterCriteria {
    * @param displayName
    */
   public void setDisplayName(String displayName) {
-    this.displayName = StringUtils.abbreviate(displayName, MAX_SEARCH_LENGTH);
+    this.displayName = StringAbbreviationUtils.abbreviate(displayName, MAX_SEARCH_LENGTH);
   }
 
   @Override
@@ -37,7 +37,6 @@ public class CommunitySearchCriteria extends FilterCriteria {
     if (this == obj) return true;
     if (obj == null) return false;
     if (getClass() != obj.getClass()) return false;
-    @SuppressWarnings("rawtypes")
     CommunitySearchCriteria other = (CommunitySearchCriteria) obj;
     if (displayName == null) {
       if (other.displayName != null) return false;

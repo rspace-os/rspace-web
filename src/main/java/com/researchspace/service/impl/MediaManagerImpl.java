@@ -52,14 +52,16 @@ import com.researchspace.service.FieldManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.ImageProcessor;
+import com.researchspace.service.MediaFileContentValidator;
 import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.service.MediaManager;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.ThumbnailManager;
 import com.researchspace.service.chemistry.ChemistryProvider;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -100,7 +102,6 @@ public class MediaManagerImpl implements MediaManager {
   private @Autowired ThumbnailManager thumbnailMgr;
   private @Autowired ImageProcessor imageProcessor;
   private @Autowired IFileIndexer fileIndexer;
-  private @Autowired OperationFailedMessageGenerator authMsgGenerator;
 
   private @Autowired IPermissionUtils permUtils;
   private @Autowired BaseRecordAdaptable recordAdapter;
@@ -113,6 +114,7 @@ public class MediaManagerImpl implements MediaManager {
   private @Autowired RecordDao recordDao;
 
   private @Autowired BaseRecordAdaptable baseRecordAdapter;
+  private @Autowired MessageSourceUtils messages;
 
   private final MediaFileLockHandler lockHandler = new MediaFileLockHandler();
 
@@ -327,7 +329,6 @@ public class MediaManagerImpl implements MediaManager {
       ImportOverride override)
       throws IOException {
 
-    String mediaFolderType = extractFileTypeFromPath(originalFileName);
     return doSaveMediaFile(
         inputStream,
         mediaFileId,
@@ -338,7 +339,7 @@ public class MediaManagerImpl implements MediaManager {
         caption,
         user,
         override,
-        mediaFolderType);
+        null);
   }
 
   private EcatMediaFile doSaveMediaFile(
@@ -358,6 +359,36 @@ public class MediaManagerImpl implements MediaManager {
       return updateMediaFile(mediaFileId, inputStream, originalFileName, user, null);
     }
 
+    try (InputStream ownedInputStream = new BufferedInputStream(inputStream)) {
+      String resolvedMediaFolderType =
+          mediaFolderType != null ? mediaFolderType : extractFileTypeFromPath(originalFileName);
+      return saveNewMediaFile(
+          ownedInputStream,
+          displayName,
+          originalFileName,
+          fieldId,
+          targetFolder,
+          caption,
+          user,
+          override,
+          resolvedMediaFolderType);
+    }
+  }
+
+  private EcatMediaFile saveNewMediaFile(
+      InputStream inputStream,
+      String displayName,
+      String originalFileName,
+      Long fieldId,
+      Folder targetFolder,
+      String caption,
+      User user,
+      ImportOverride override,
+      String mediaFolderType)
+      throws IOException {
+    inputStream =
+        MediaFileContentValidator.verifyContentMatchesExtension(inputStream, originalFileName);
+
     log.info("Saving new media file {} into {} ", originalFileName, mediaFolderType);
     // if target folder is wrong type, we'll just put in top level folder, like we do if it;s not
     // specified
@@ -374,46 +405,45 @@ public class MediaManagerImpl implements MediaManager {
 
     String extension = getExtension(originalFileName);
     EcatMediaFile media = null;
-    try (InputStream autoCloseableInputStream = inputStream) {
-      if (mediaFolderType.equals(IMAGES_MEDIA_FLDER_NAME)) {
-        File secureTmpDir = IoUtils.createOrGetSecureTempDirectory().toFile();
-        File tempFile =
-            File.createTempFile(
-                "tmp_file_upload_" + originalFileName, "." + extension, secureTmpDir);
-        try (FileOutputStream fos = new FileOutputStream(tempFile); ) {
-          IOUtils.copy(inputStream, fos);
-          FileProperty fp =
+    if (mediaFolderType.equals(IMAGES_MEDIA_FLDER_NAME)) {
+      File secureTmpDir = IoUtils.createOrGetSecureTempDirectory().toFile();
+      File tempFile =
+          File.createTempFile("tmp_file_upload_" + originalFileName, "." + extension, secureTmpDir);
+      try (FileOutputStream fos = new FileOutputStream(tempFile); ) {
+        IOUtils.copy(inputStream, fos);
+        FileProperty fp;
+        try (FileInputStream tempFileStream = new FileInputStream(tempFile)) {
+          fp =
               fileStore.createAndSaveFileProperty(
-                  mediaFolderType, user, originalFileName, new FileInputStream(tempFile));
-          media =
-              mediaFactory.generateEcatImage(
-                  user, fp, tempFile, extension, originalFileName, override);
-          imageProcessor.transformImageBlobToFileProperty(
-              originalFileName, user, (EcatImage) media);
+                  mediaFolderType, user, originalFileName, tempFileStream);
         }
+        media =
+            mediaFactory.generateEcatImage(
+                user, fp, tempFile, extension, originalFileName, override);
+        imageProcessor.transformImageBlobToFileProperty(originalFileName, user, (EcatImage) media);
+      }
+    } else {
+      FileProperty fp =
+          fileStore.createAndSaveFileProperty(mediaFolderType, user, originalFileName, inputStream);
+      if (mediaFolderType.equals(VIDEO_MEDIA_FLDER_NAME)) {
+        media = mediaFactory.generateEcatVideo(user, fp, extension, originalFileName, override);
+      } else if (mediaFolderType.equals(AUDIO_MEDIA_FLDER_NAME)) {
+        media = mediaFactory.generateEcatAudio(user, fp, extension, originalFileName, override);
+      } else if (mediaFolderType.equals(CHEMISTRY_MEDIA_FLDER_NAME)) {
+        media =
+            mediaFactory.generateEcatChemistryFile(user, fp, extension, originalFileName, override);
       } else {
-        FileProperty fp =
-            fileStore.createAndSaveFileProperty(
-                mediaFolderType, user, originalFileName, inputStream);
-        if (mediaFolderType.equals(VIDEO_MEDIA_FLDER_NAME)) {
-          media = mediaFactory.generateEcatVideo(user, fp, extension, originalFileName, override);
-        } else if (mediaFolderType.equals(AUDIO_MEDIA_FLDER_NAME)) {
-          media = mediaFactory.generateEcatAudio(user, fp, extension, originalFileName, override);
-        } else if (mediaFolderType.equals(CHEMISTRY_MEDIA_FLDER_NAME)) {
-          media =
-              mediaFactory.generateEcatChemistryFile(
-                  user, fp, extension, originalFileName, override);
-        } else {
-          // this will also include DMPs, which are always added to the top-level folder.
-          media =
-              mediaFactory.generateEcatDocument(
-                  user, fp, extension, mediaFolderType, originalFileName, override);
-        }
+        // this will also include DMPs, which are always added to the top-level folder.
+        media =
+            mediaFactory.generateEcatDocument(
+                user, fp, extension, mediaFolderType, originalFileName, override);
       }
     }
     if (media == null) {
       throw new IllegalStateException(
-          "Media file could not be saved - " + originalFileName.split(Pattern.quote("."))[0]);
+          messages.getMessage(
+              "gallery.errors.saveFailedFile",
+              new Object[] {originalFileName.split(Pattern.quote("."))[0]}));
     }
 
     folderManager.addChild(targetFolder.getId(), media, user);
@@ -462,17 +492,28 @@ public class MediaManagerImpl implements MediaManager {
       Long mediaFileId, InputStream inputStream, String updatedFileName, User user, String lockId)
       throws IOException {
 
+    try (InputStream ownedInputStream = new BufferedInputStream(inputStream)) {
+      return updateMediaFileWithOwnedStream(
+          mediaFileId, ownedInputStream, updatedFileName, user, lockId);
+    }
+  }
+
+  private EcatMediaFile updateMediaFileWithOwnedStream(
+      Long mediaFileId, InputStream inputStream, String updatedFileName, User user, String lockId)
+      throws IOException {
+
     BaseRecord recToUpdate =
         recordManager.getRecordWithLazyLoadedProperties(
             mediaFileId, user, new LinkedFieldsToMediaRecordInitPolicy(), true);
 
     if (!recToUpdate.isMediaRecord()) {
-      throw new IllegalArgumentException(mediaFileId + " is not a media record");
+      throw new IllegalArgumentException(
+          messages.getMessage("gallery.errors.notAMediaRecord", new Object[] {mediaFileId}));
     }
 
     String currentLock = lockHandler.getLock(recToUpdate.getGlobalIdentifier());
     if (!StringUtils.isBlank(currentLock) && !currentLock.equals(lockId)) {
-      throw new IllegalStateException("The file is currently locked and can't be updated");
+      throw new IllegalStateException(messages.getMessage("gallery.errors.fileLocked"));
     }
 
     EcatMediaFile media = (EcatMediaFile) recToUpdate;
@@ -482,8 +523,12 @@ public class MediaManagerImpl implements MediaManager {
     String newExtension = getExtension(updatedFileName);
     if (!isNewFileExtensionAllowed(oldExtension, newExtension)) {
       throw new IllegalArgumentException(
-          "Cannot update ." + oldExtension + " file with ." + newExtension);
+          messages.getMessage(
+              "gallery.errors.extensionChangeNotAllowed",
+              new Object[] {oldExtension, newExtension}));
     }
+    inputStream =
+        MediaFileContentValidator.verifyContentMatchesExtension(inputStream, updatedFileName);
 
     log.debug("Updating existing media file {}", mediaFileId);
     String fileType = extractFileTypeFromPath(updatedFileName);
@@ -498,9 +543,10 @@ public class MediaManagerImpl implements MediaManager {
       try (FileOutputStream fos = new FileOutputStream(tempFile); ) {
         IOUtils.copy(inputStream, fos);
 
-        newFileProperty =
-            fileStore.createAndSaveFileProperty(
-                fileType, user, updatedFileName, new FileInputStream(tempFile));
+        try (FileInputStream tempFileStream = new FileInputStream(tempFile)) {
+          newFileProperty =
+              fileStore.createAndSaveFileProperty(fileType, user, updatedFileName, tempFileStream);
+        }
         EcatImage mediaAsImage = (EcatImage) media;
         mediaFactory.updateEcatImageWithUploadedFileDetails(
             mediaAsImage, tempFile, newFileProperty, media.getExtension());
@@ -574,7 +620,8 @@ public class MediaManagerImpl implements MediaManager {
   private void assertCanAddToFolder(Folder parent, User user) {
     if (!permUtils.isPermitted(parent, PermissionType.WRITE, user)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(user.getUsername(), "add to Folder"));
+          messages.getMessage(
+              "errors.authorization.failure.addToFolder", new Object[] {user.getUsername()}));
     }
   }
 
@@ -590,18 +637,20 @@ public class MediaManagerImpl implements MediaManager {
     }
   }
 
-  private Field getFieldAndAssertAuthorised(long fieldId, User subject, String authFailureMsg) {
+  private Field getFieldAndAssertAuthorised(long fieldId, User subject, String failureMessageKey) {
     Field field = fieldDao.get(fieldId);
     if (!permUtils.isPermitted(field.getStructuredDocument(), PermissionType.WRITE, subject)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(subject.getUsername(), authFailureMsg));
+          messages.getMessage(failureMessageKey, new Object[] {subject.getUsername()}));
     }
     return field;
   }
 
   @Override
   public RSMath saveMath(String svg, long fieldId, String latex, Long mathId, User subject) {
-    Field field = getFieldAndAssertAuthorised(fieldId, subject, "save maths equation");
+    Field field =
+        getFieldAndAssertAuthorised(
+            fieldId, subject, "errors.authorization.failure.saveMathEquation");
     RSMath math = null;
     byte[] svgBytes = svg.getBytes(StandardCharsets.UTF_8);
     ImageBlob svgByteBlob = new ImageBlob(svgBytes);
@@ -663,7 +712,8 @@ public class MediaManagerImpl implements MediaManager {
   private void assertEditPermissionOnComment(User user, EcatComment ecatComment) {
     if (!permUtils.isPermitted(ecatComment.getRecord(), PermissionType.WRITE, user)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(user.getUsername(), "insert a comment"));
+          messages.getMessage(
+              "errors.authorization.failure.insertComment", new Object[] {user.getUsername()}));
     }
   }
 
@@ -696,7 +746,7 @@ public class MediaManagerImpl implements MediaManager {
     BufferedImage bufferedImage = getImageFromBytes(decodedBytes);
 
     EcatImageAnnotation ecatImageAnnotation = null;
-    if (!sketchId.equals("")) {
+    if (!sketchId.isEmpty()) {
       ecatImageAnnotation = ecatImageAnnotationManager.get(Long.parseLong(sketchId), subject);
     }
 
@@ -715,7 +765,8 @@ public class MediaManagerImpl implements MediaManager {
     Record parentRecord = recordManager.get(ecatImageAnnotation.getRecord().getId());
     if (subject != null && !permUtils.isPermitted(parentRecord, PermissionType.READ, subject)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(subject.getUsername(), "save sketch"));
+          messages.getMessage(
+              "errors.authorization.failure.saveSketch", new Object[] {subject.getUsername()}));
     }
     ecatImageAnnotationManager.save(ecatImageAnnotation, subject);
     return ecatImageAnnotation;
@@ -764,7 +815,9 @@ public class MediaManagerImpl implements MediaManager {
           || (subject != null
               && !permUtils.isPermitted(brOpt.get(), PermissionType.WRITE, subject))) {
         throw new AuthorizationException(
-            authMsgGenerator.getFailedMessage(subject.getUsername(), "save annotation"));
+            messages.getMessage(
+                "errors.authorization.failure.saveAnnotation",
+                new Object[] {subject.getUsername()}));
       }
     }
 
@@ -826,7 +879,9 @@ public class MediaManagerImpl implements MediaManager {
   private void assertMediaFilePermission(User user, EcatMediaFile media, PermissionType permType) {
     if (!permUtils.isRecordAccessPermitted(user, media, permType)) {
       throw new AuthorizationException(
-          authMsgGenerator.getFailedMessage(user, "access media file [" + media.getId() + "]."));
+          messages.getMessage(
+              "errors.authorization.failure.accessMediaFile",
+              new Object[] {user.getUsername(), media.getId()}));
     }
   }
 

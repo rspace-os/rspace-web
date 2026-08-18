@@ -49,7 +49,7 @@ public class RadioFieldDTOValidatorTest {
     Errors errors = new BeanPropertyBindingResult(NO_NAME, "MyObject");
     validator.validate(NO_NAME, errors);
     assertTrue(errors.hasErrors());
-    assertTrue(ValidationTestUtils.hasError("no.name", errors));
+    assertTrue(ValidationTestUtils.hasError("errors.noValue.name", errors));
   }
 
   @Test
@@ -68,7 +68,7 @@ public class RadioFieldDTOValidatorTest {
     dto.setRadioValues("a-b");
 
     validator.validate(dto, errors);
-    assertTrue(ValidationTestUtils.hasError("choiceoptions.invalidformat", errors));
+    assertTrue(ValidationTestUtils.hasError("form.choiceOptions.invalidFormat", errors));
   }
 
   @Test

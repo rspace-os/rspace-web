@@ -337,11 +337,10 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
     return channel;
   }
 
-  @SuppressWarnings("rawtypes")
   private List<LsEntry> getLsResult(String safePath) throws NfsException {
     log.debug("sftp ls on: {}", safePath);
 
-    Vector lsVector;
+    Vector<LsEntry> lsVector;
     try {
       synchronized (this) {
         lsVector = getSftpChannel().ls(safePath);
@@ -353,12 +352,7 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
 
     List<LsEntry> lsEntryList = new ArrayList<>();
     for (int i = 0; i < lsVector.size(); i++) {
-      Object lsElement = lsVector.elementAt(i);
-      if (lsElement instanceof LsEntry) {
-        lsEntryList.add((LsEntry) lsElement);
-      } else {
-        log.warn("got ls result of unknown type: {}", lsElement);
-      }
+      lsEntryList.add(lsVector.elementAt(i));
     }
 
     filterLsEntries(lsEntryList);
@@ -380,7 +374,7 @@ public class SftpClient extends NfsAbstractClient implements NfsClient {
 
   private String getResourceNameFromLsPath(String lsPath) {
     if (lsPath.contains("/")) {
-      return lsPath.substring(lsPath.lastIndexOf("/"));
+      return lsPath.substring(lsPath.lastIndexOf('/'));
     }
     return lsPath;
   }

@@ -1,11 +1,28 @@
-import type { Locator, Page } from "@playwright/test";
+import type { ElementHandle, Locator, Page } from "@playwright/test";
 import { WorkspaceRecordInfoDialog } from "./WorkspaceRecordInfoDialog";
+import { WorkspaceSelectionBar } from "./WorkspaceSelectionBar";
+
+export async function waitForTableSwap(page: Page, staleTable: ElementHandle | null): Promise<void> {
+  if (!staleTable) return;
+  await page
+    .waitForFunction((oldEl) => document.querySelector("#file_table") !== oldEl, staleTable, { timeout: 5_000 })
+    .catch(() => {});
+}
+
+export async function awaitTableRefresh(page: Page, trigger: () => Promise<void>): Promise<void> {
+  const staleTable = await page.locator("#file_table").elementHandle();
+  await trigger();
+  await page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
+  await waitForTableSwap(page, staleTable);
+}
 
 export class WorkspaceTable {
   readonly root: Locator;
+  private readonly selectionBar: WorkspaceSelectionBar;
 
   constructor(private readonly page: Page) {
-    this.root = page.getByRole("table");
+    this.root = page.locator("#file_table");
+    this.selectionBar = new WorkspaceSelectionBar(page);
   }
 
   row(name: string): Locator {
@@ -27,7 +44,14 @@ export class WorkspaceTable {
   }
 
   async selectRecord(name: string): Promise<void> {
-    await this.checkbox(name).check();
+    await this.selectRecords(name);
+  }
+
+  async selectRecords(...names: string[]): Promise<void> {
+    for (const [i, name] of names.entries()) {
+      await this.checkbox(name).check();
+      if (i === 0) await this.selectionBar.waitUntilVisible();
+    }
   }
 
   async deselectRecord(name: string): Promise<void> {
@@ -46,6 +70,22 @@ export class WorkspaceTable {
   }
 
   async sortBy(column: "Name" | "Created" | "Modified"): Promise<void> {
-    await this.root.getByRole("columnheader", { name: column }).getByRole("link", { name: column }).click();
+    await awaitTableRefresh(this.page, async () => {
+      await Promise.all([
+        this.page.waitForResponse((res) => {
+          const path = new URL(res.url()).pathname;
+          return path.endsWith("/workspace/ajax/search") || path.includes("/workspace/ajax/view/");
+        }),
+        this.root.getByRole("columnheader", { name: column }).getByRole("link", { name: column }).click(),
+      ]);
+    });
+  }
+
+  get dataRows(): Locator {
+    return this.root.locator("tbody tr");
+  }
+
+  async rowCount(): Promise<number> {
+    return this.dataRows.count();
   }
 }

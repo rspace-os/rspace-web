@@ -74,14 +74,14 @@ public class VerificationPasswordController extends BaseController {
           "User [{}] attempted to set verification password, from {}, but it has already been set",
           user.getUsername(),
           RequestUtil.remoteAddr(request));
-      return new AjaxReturnObject<>("Verification password has already been set.", null);
+      return new AjaxReturnObject<>(getText("verificationPassword.set.errors.alreadySet"), null);
     }
 
     String newPass = StringUtils.trim(newVerificationPassword);
     String confirmPass = StringUtils.trim(confirmVerificationPassword);
 
     if (isInputStringBlank(newPass) || isInputStringBlank(confirmPass)) {
-      return new AjaxReturnObject<>("Please enter data in all fields", null);
+      return new AjaxReturnObject<>(getText("errors.allFields.required"), null);
     }
 
     String checkPasswordResult =
@@ -101,7 +101,7 @@ public class VerificationPasswordController extends BaseController {
     userManager.saveUser(user);
 
     SECURITY_LOG.info("User [{}] successfully set verification password", user.getUsername());
-    return new AjaxReturnObject<>("Verification password set successfully", null);
+    return new AjaxReturnObject<>(getText("verificationPassword.set.success"), null);
   }
 
   /**

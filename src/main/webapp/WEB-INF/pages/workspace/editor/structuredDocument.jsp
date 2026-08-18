@@ -112,7 +112,7 @@
 
   <%-- Import picker dialog for the ownCloud / NextCloud TinyMCE plugins. Both
        plugins share this dialog id. --%>
-  <div id="owncloudDialog" title="Import From ownCloud / NextCloud"></div>
+  <div id="owncloudDialog" title="<spring:message code='documentView.importFromOwncloudTitle'/>"></div>
 
   <div id="tempData" style="display: none"></div>
 

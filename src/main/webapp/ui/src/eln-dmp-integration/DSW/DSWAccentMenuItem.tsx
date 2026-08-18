@@ -47,7 +47,7 @@ export default function DSWAccentMenuItem({ onDialogClose, connection }: DSWAcce
           open={showDSWDialog}
           setOpen={(b) => {
             setShowDSWDialog(b);
-            onDialogClose();
+            if (!b) onDialogClose();
           }}
           connection={connection}
         />

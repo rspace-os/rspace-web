@@ -6,6 +6,7 @@ import static com.researchspace.session.SessionAttributeUtils.SESSION_EGNYTE_TOK
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.controller.AjaxReturnObject;
@@ -41,14 +42,15 @@ public class EgnyteController {
   @GetMapping("/egnyteSessionToken")
   @ResponseBody
   public String getEgnyteTokenFromSession(HttpSession session) {
-    log.info("requesting egnyte token, which is: " + session.getAttribute(SESSION_EGNYTE_TOKEN));
+    log.info("Egnyte session token requested");
     return (String) session.getAttribute(SESSION_EGNYTE_TOKEN);
   }
 
+  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"token"})
   @PostMapping("/egnyteSessionToken")
   @ResponseBody
   public String saveEgnyteTokenToSession(@RequestParam("token") String token, HttpSession session) {
-    log.info("saving egnyte token: " + token);
+    log.info("Saving Egnyte token to session");
     session.setAttribute(SESSION_EGNYTE_TOKEN, token);
     return "OK";
   }
@@ -63,6 +65,8 @@ public class EgnyteController {
   @Autowired private UserConnectionManager userConnectionManager;
 
   @Autowired private EgnyteAuthConnector egnyteConnector;
+
+  @Autowired private MessageSourceUtils messages;
 
   @GetMapping("/egnyteConnectionSetup")
   public String getConnectSetupPage() {
@@ -83,7 +87,8 @@ public class EgnyteController {
     if (StringUtils.isBlank(egnyteUsername) || StringUtils.isBlank(egnytePassword)) {
       return new AjaxReturnObject<Boolean>(
           null,
-          ErrorList.createErrListWithSingleMsg("Egnyte username and password must be provided."));
+          ErrorList.createErrListWithSingleMsg(
+              messages.getMessage("apps.egnyte.errors.credentialsRequired")));
     }
 
     // query egnyte for access token
@@ -92,7 +97,8 @@ public class EgnyteController {
     if (accessTokenResponse == null || !accessTokenResponse.containsKey("access_token")) {
       return new AjaxReturnObject<Boolean>(
           null,
-          ErrorList.createErrListWithSingleMsg("Couldn't authenticate with provided credentials."));
+          ErrorList.createErrListWithSingleMsg(
+              messages.getMessage("apps.egnyte.errors.authenticationFailed")));
     }
     String token = (String) accessTokenResponse.get("access_token");
     Integer expiresIn = (Integer) accessTokenResponse.get("expires_in");
@@ -104,7 +110,7 @@ public class EgnyteController {
       return new AjaxReturnObject<Boolean>(
           null,
           ErrorList.createErrListWithSingleMsg(
-              "Received un-workable Egnyte access token for provided credentials."));
+              messages.getMessage("apps.egnyte.errors.invalidAccessToken")));
     }
 
     // save token and egnyte user id to UserConnection table

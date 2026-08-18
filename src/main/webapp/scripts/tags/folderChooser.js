@@ -31,6 +31,16 @@ function clearFolderChooser(folderChooserId) {
 }
 
 
+function setFolderChooserPrompt(folderChooserId, promptKey) {
+    var $prompt = $('#folderChooserPrompt' + folderChooserId);
+    var linkHtml = $prompt.data('folderChooserLink');
+    if (!linkHtml) {
+        linkHtml = $('#folderChooserLnk' + folderChooserId).prop('outerHTML');
+        $prompt.data('folderChooserLink', linkHtml);
+    }
+    $prompt.html(RS.msg(promptKey, linkHtml));
+}
+
 function setFolderChooserLinkDesc(folderChooserId, linkDesc) {
     $('#folderChooserLnk' + folderChooserId).html(linkDesc);
 }
@@ -84,15 +94,15 @@ function _doCreateSubfolder(folderChooserId) {
     var parentFolder = $("#folderChooser-id" + folderChooserId).val().trim();
     var selectionType = $('#folderChooser-type' + folderChooserId).val();
     if (RS.isBlank(newName)) {
-        apprise("Please enter a name for the new folder");
+        apprise(RS.msg("legacyjs.core.folder.nameRequired"));
         return;
     }
     if (RS.isBlank(parentFolder)) {
-        apprise("Please select location for the new folder using the tree view above");
+        apprise(RS.msg("legacyjs.core.folder.locationRequired"));
         return;
     }
     if (selectionType === 'NOTEBOOK') {
-        apprise("Cannot create a folder inside the Notebook");
+        apprise(RS.msg("legacyjs.core.folder.notInsideNotebook"));
         return;
     }
     parentFolder = parentFolder.replace(/\/$/, "");
@@ -117,7 +127,7 @@ function _doCreateSubfolder(folderChooserId) {
         }
     });
     jqxhr$.fail(function () {
-        RS.ajaxFailed("Folder creation", false, jqxhr$);
+        RS.ajaxFailed(RS.msg("legacyjs.core.folder.actionCreation"), false, jqxhr$);
     });
     jqxhr$.always(function () {
         // wait for max amount of time for operation to succeed before re-enabling
@@ -127,10 +137,12 @@ function _doCreateSubfolder(folderChooserId) {
 
 function _inactivateCreateFolder(folderChooserId) {
     $("#folderChooser-createFolderSpan"+folderChooserId).html(
-            "<img width='16' height='16' src='/images/ajax-loading.gif'/> Creating folder...");   
+            "<img width='16' height='16' src='/images/ajax-loading.gif'/> " +
+            RS.msg("legacyjs.core.folder.creating"));
 }
 
 function _activateCreateFolder(folderChooserId) {
     $("#folderChooser-createFolderSpan"+folderChooserId).html(
-            "<a style='color: #1465b7;' id='folderChooser-createNewSubfolder"+folderChooserId+"' href='#'>Create</a>");
+            "<a style='color: #1465b7;' id='folderChooser-createNewSubfolder"+folderChooserId+"' href='#'>" +
+            RS.msg("legacyjs.core.action.create") + "</a>");
 }

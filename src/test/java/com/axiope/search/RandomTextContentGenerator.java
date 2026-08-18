@@ -55,7 +55,7 @@ public class RandomTextContentGenerator {
       m.find();
       allWords[i] = lineArr[1];
       int x = java.lang.Integer.parseInt(m.group());
-      total = total + (x / 100); // approximate
+      total += (x / 100); // approximate
 
       cumulativeCount[i] = total;
       i++;

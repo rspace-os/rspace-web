@@ -8,16 +8,22 @@ pre-commit:
     # Fail the commit if any staged Java file is not spotless-formatted.
     # spotlessFiles matches the absolute path via String#matches, so each
     # staged (repo-relative) path is prefixed with `.*` to anchor correctly.
+    # git reports forward slashes, but the absolute path spotless matches uses
+    # the OS separator (backslashes on Windows), so each `/` is turned into a
+    # `[/\\]` class; without this the pattern matches nothing on Windows and the
+    # check silently passes.
     # Guard against an empty list (drop blank lines) so we never fall back to
     # `-DspotlessFiles=".*"`, which would match every file in the repo.
+    # -DspotlessStrict adds the CleanThat checks; scoped to staged files, so it
+    # never blocks a commit over an untouched file elsewhere.
     spotless:
       glob: "**/*.java"
       run: |
         spotless_files=$(printf '%s\n' {staged_files} \
-          | sed '/^$/d; s/[.[\](){}+^$|\\]/\\&/g; s#^#.*#' \
+          | sed '/^$/d; s/[.[\](){}+^$|\\]/\\&/g; s#/#[/\\\\]#g; s#^#.*#' \
           | paste -sd, -)
         if [ -n "$spotless_files" ]; then
-          ./mvnw -q spotless:check -DspotlessFiles="$spotless_files"
+          ./mvnw -q spotless:check -DspotlessStrict -DspotlessFiles="$spotless_files"
         fi
     # Type-check the frontend when any staged TS/TSX file changes. tsc is a
     # whole-project check, so we run the full `tsc --noEmit` rather than a

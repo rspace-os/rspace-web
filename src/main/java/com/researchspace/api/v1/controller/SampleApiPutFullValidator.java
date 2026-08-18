@@ -25,7 +25,7 @@ public class SampleApiPutFullValidator extends SampleApiValidator implements Val
     @Override
     public void accept(String errorMessage) {
       if (!StringUtils.isEmpty(errorMessage)) {
-        errors.reject("", errorMessage);
+        errors.reject("errors.inventory.field.validation", new Object[] {errorMessage}, null);
       }
     }
   }

@@ -1,36 +1,46 @@
+#*
+Template for messaging a user that a batch account was created for them.
+Arguments:
+- userFirstName - the new user's first name
+- htmlDomainPrefix - the base URL of the application
+- groupName - optional group name
+- msg - MessageSourceUtils for i18n phrase lookup
+*#
 
-<p>Hello ${userFirstName},</p>
+<p>$msg.format("email.common.greeting", [${userFirstName}])</p>
 
-<p>Welcome to ResearchSpace! We're pleased that you are using our system
-and we want to make your experience as positive as possible.
-</p>
+<p>$msg.getMessage("email.account.defaultWelcome.intro")</p>
 <p>
-You can access the application at <a href="${htmlDomainPrefix}/workspace">RSpace</a>.
+$msg.format("email.account.defaultWelcome.access", [${htmlDomainPrefix}])
 </p>
 <p>
 #if($groupName)
-You are part of the Lab Group '${groupName}', and can share documents, send messages, and collaborate with other members of the group.
+$msg.format("email.account.defaultWelcome.groupMember", [${groupName}])
 #else
-You are registered as an individual user.
+$msg.getMessage("email.account.defaultWelcome.individualUser")
 #end
 </p>
 <p>
-Here is some guidance for getting started with RSpace.
+$msg.getMessage("email.account.defaultWelcome.guidanceIntro")
 </p>
-<h3>Guidance</h3>
+<h3>$msg.getMessage("email.account.defaultWelcome.guidanceHeading")</h3>
 
-RSpace uses modern HTML technology, and to get the best experience we recommend a modern browser:
-#browserAdvice
-
-<p>As background you might like to watch our <a href="https://youtu.be/bhRExXIGxek&ab_channel=ResearchSpace">
-Getting Started for Researchers video</a>.
-
-<p>Our full <a href="https://researchspace.helpdocs.io/">Guidance Notes</a> are also available,
-and can be accessed through the in-app <b>Need Help?</b> button on the bottom-right of RSpace.
-
-For any help, comments, or questions, contact
-<a href="mailto:support@researchspace.com">support@researchspace.com</a>.
-
-#notificationPrefInfoNewUser
+$msg.getMessage("email.account.defaultWelcome.recommendModernBrowser")
 <p>
-#signature
+$msg.getMessage("email.account.defaultWelcome.browserAdvice")
+</p>
+
+<p>$msg.getMessage("email.account.defaultWelcome.guidanceVideo")
+
+<p>$msg.getMessage("email.account.defaultWelcome.helpDocs")
+
+$msg.getMessage("email.account.defaultWelcome.contact")
+
+<p>
+$msg.getMessage("email.common.notificationPrefNewUser")
+</p>
+<p>
+$msg.getMessage("email.common.signatureSignOff")
+<p>
+$msg.getMessage("email.common.signatureTeam")
+</p>

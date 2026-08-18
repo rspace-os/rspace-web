@@ -1,5 +1,6 @@
 package com.researchspace.webapp.integrations.dmptool;
 
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.dmptool.model.DMPToolDMP;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
@@ -17,7 +18,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /** Common methods to both stub and real implementations */
@@ -51,7 +51,7 @@ public abstract class AbstractDMPToolDMPProvider implements DMPToolDMPProvider {
   }
 
   private String abbreviateTitle(String title) {
-    return title.length() > 3 ? StringUtils.abbreviate(title, 250) : title;
+    return title.length() > 3 ? StringAbbreviationUtils.abbreviate(title, 250) : title;
   }
 
   private DMPUser saveNewDMP(DMPToolDMP dmp, String title, User user, EcatDocumentFile dmpJson) {

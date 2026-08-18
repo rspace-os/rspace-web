@@ -1,7 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import i18n from "@/modules/common/i18n";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { type Alert, mkAlert } from "../../../stores/contexts/Alert";
 import type * as FetchingData from "../../../util/fetchingData";
@@ -10,77 +9,6 @@ import Result from "../../../util/result";
 
 const firstResult = <T>(items: ReadonlyArray<T>): Result<T> =>
   Result.fromNullable(items.at(0), new Error("Array is empty"));
-
-function handleErrors(response: unknown, successMessage: string, partialFailureMessage: string): Alert {
-  const data = Parsers.objectPath(["data"], response).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
-
-  return data
-    .flatMap(Parsers.getValueWithKey("numFilesInput"))
-    .flatMap(Parsers.isNumber)
-    .flatMap((numFilesInput) =>
-      data
-        .flatMap(Parsers.getValueWithKey("numFilesSucceed"))
-        .flatMap(Parsers.isNumber)
-        .flatMap((numFilesSucceed) => {
-          if (numFilesInput === numFilesSucceed)
-            return Result.Ok(
-              mkAlert({
-                variant: "success",
-                message: successMessage,
-              }),
-            );
-          return data
-            .flatMap(Parsers.getValueWithKey("fileInfoDetails"))
-            .flatMap(Parsers.isArray)
-            .flatMap((fileInfoDetails) =>
-              Result.all(
-                ...fileInfoDetails.map((d) =>
-                  Parsers.isObject(d)
-                    .flatMap(Parsers.isNotNull)
-                    .flatMap((obj) => {
-                      const succeeded = Parsers.getValueWithKey("succeeded")(obj)
-                        .flatMap(Parsers.isBoolean)
-                        .flatMap(Parsers.isTrue);
-
-                      return succeeded
-                        .flatMap(() =>
-                          Parsers.getValueWithKey("fileName")(obj)
-                            .flatMap(Parsers.isString)
-                            .map((filename) => ({
-                              variant: "success" as const,
-                              title: filename,
-                            })),
-                        )
-                        .orElseTry(() =>
-                          Result.lift2((filename: string, reason: string) => ({
-                            variant: "error" as const,
-                            title: filename,
-                            help: reason,
-                          }))(
-                            Parsers.getValueWithKey("fileName")(obj).flatMap(Parsers.isString),
-                            Parsers.getValueWithKey("reason")(obj).flatMap(Parsers.isString),
-                          ),
-                        );
-                    }),
-                ),
-              ).map((details) =>
-                mkAlert({
-                  variant: "warning",
-                  message: partialFailureMessage,
-                  details,
-                  isInfinite: true,
-                }),
-              ),
-            );
-        }),
-    )
-    .orElse(
-      mkAlert({
-        variant: "error",
-        message: i18n.t("gallery:errors.parseResponse"),
-      }),
-    );
-}
 
 export type S3TransferSource = {
   sourceFilestoreId: number;
@@ -114,6 +42,77 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const { t } = useTranslation("gallery");
+
+  const handleErrors = (response: unknown, successMessage: string, partialFailureMessage: string): Alert => {
+    const data = Parsers.objectPath(["data"], response).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
+
+    return data
+      .flatMap(Parsers.getValueWithKey("numFilesInput"))
+      .flatMap(Parsers.isNumber)
+      .flatMap((numFilesInput) =>
+        data
+          .flatMap(Parsers.getValueWithKey("numFilesSucceed"))
+          .flatMap(Parsers.isNumber)
+          .flatMap((numFilesSucceed) => {
+            if (numFilesInput === numFilesSucceed)
+              return Result.Ok(
+                mkAlert({
+                  variant: "success",
+                  message: successMessage,
+                }),
+              );
+            return data
+              .flatMap(Parsers.getValueWithKey("fileInfoDetails"))
+              .flatMap(Parsers.isArray)
+              .flatMap((fileInfoDetails) =>
+                Result.all(
+                  ...fileInfoDetails.map((d) =>
+                    Parsers.isObject(d)
+                      .flatMap(Parsers.isNotNull)
+                      .flatMap((obj) => {
+                        const succeeded = Parsers.getValueWithKey("succeeded")(obj)
+                          .flatMap(Parsers.isBoolean)
+                          .flatMap(Parsers.isTrue);
+
+                        return succeeded
+                          .flatMap(() =>
+                            Parsers.getValueWithKey("fileName")(obj)
+                              .flatMap(Parsers.isString)
+                              .map((filename) => ({
+                                variant: "success" as const,
+                                title: filename,
+                              })),
+                          )
+                          .orElseTry(() =>
+                            Result.lift2((filename: string, reason: string) => ({
+                              variant: "error" as const,
+                              title: filename,
+                              help: reason,
+                            }))(
+                              Parsers.getValueWithKey("fileName")(obj).flatMap(Parsers.isString),
+                              Parsers.getValueWithKey("reason")(obj).flatMap(Parsers.isString),
+                            ),
+                          );
+                      }),
+                  ),
+                ).map((details) =>
+                  mkAlert({
+                    variant: "warning",
+                    message: partialFailureMessage,
+                    details,
+                    isInfinite: true,
+                  }),
+                ),
+              );
+          }),
+      )
+      .orElse(
+        mkAlert({
+          variant: "error",
+          message: t("errors.parseResponse"),
+        }),
+      );
+  };
   const [loading, setLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
   const [filestores, setFilestores] = React.useState<Result<ReadonlyArray<S3Filestore>>>(Result.Ok([]));

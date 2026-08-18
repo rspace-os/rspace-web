@@ -42,6 +42,20 @@ type ToastMessageProps = Pick<ToastConfig, "callback" | "id" | "open" | "variant
 
 type CloseHandler = (event?: React.SyntheticEvent<unknown> | Event, reason?: SnackbarCloseReason) => void;
 
+/*
+ * Snackbars only starts listening in a useEffect, after React commits, so toasts
+ * dispatched earlier (e.g. from jQuery document-ready handlers) would be lost.
+ * Module scripts run before DOMContentLoaded, so this buffer catches them;
+ * Snackbars drains it on mount.
+ */
+const preMountToasts: Array<Event> = [];
+const bufferPreMountToast = (event: Event) => {
+  preMountToasts.push(event);
+};
+document.addEventListener("show-toast-message", bufferPreMountToast);
+
+let nextToastId = 0;
+
 type MySnackbarContentWrapperProps = {
   message: string;
   onClose: CloseHandler;
@@ -81,7 +95,7 @@ export default function Snackbars() {
       const e = event as CustomEvent<ToastEventDetail>;
       if (isMountedRef.current) {
         const config: ToastConfig = {
-          id: Date.now(),
+          id: nextToastId++,
           message: e.detail.message,
           variant: e.detail.variant || "notice", // success/warning/error/notice
           duration: e.detail.duration || 4000,
@@ -93,11 +107,14 @@ export default function Snackbars() {
       }
     };
 
+    document.removeEventListener("show-toast-message", bufferPreMountToast);
     document.addEventListener("show-toast-message", handleShowToastMessage);
+    preMountToasts.splice(0).forEach(handleShowToastMessage);
 
     return () => {
       isMountedRef.current = false;
       document.removeEventListener("show-toast-message", handleShowToastMessage);
+      document.addEventListener("show-toast-message", bufferPreMountToast);
     };
   }, [addToast]);
 

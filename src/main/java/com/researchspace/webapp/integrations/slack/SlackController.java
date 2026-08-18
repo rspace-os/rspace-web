@@ -1,5 +1,7 @@
 package com.researchspace.webapp.integrations.slack;
 
+import static com.researchspace.session.SessionAttributeUtils.getSessionAttribute;
+
 import com.researchspace.analytics.service.AnalyticsEvent;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.core.util.ISearchResults;
@@ -9,19 +11,21 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.ChatBotFunctionalityHandler;
 import com.researchspace.service.UserAppConfigManager;
+import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.slack.SlackAttachment;
 import com.researchspace.slack.SlackAuthToken;
 import com.researchspace.slack.SlackMessage;
 import com.researchspace.slack.SlackUser;
 import com.researchspace.webapp.controller.AjaxReturnObject;
-import com.researchspace.webapp.controller.BaseController;
+import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.List;
@@ -48,11 +52,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 /** Class responsible for handling connection between RSpace and Slack */
 @Controller
 @RequestMapping("/slack")
-public class SlackController extends BaseController {
+public class SlackController extends BaseOAuth2Controller {
   private static final String USER_ID = "user_id";
   private static final String TEAM_ID = "team_id";
   private static final String SAVE_CONVO_ERROR_GENERIC_MSG =
-      "apps.slack.saveconversation.genericDefault";
+      "apps.slack.saveConversation.genericDefault";
   private static final String EXPORT_MESSAGES_DOCUMENT_NAME = "Exported Slack Messages";
   private static final long MAX_REQUESTED_DURATION_MILLIS = 90 * 24 * 3600 * 1000L; // 90 days
 
@@ -100,23 +104,53 @@ public class SlackController extends BaseController {
   @GetMapping("/oauthUrl")
   @ResponseBody
   public AjaxReturnObject<String> oauthUrl() {
+    String state = generateState();
     var url =
         slackOauthAuthorizeUrl
             + "?scope=incoming-webhook,commands,channels:history,users:read,files:read,groups:history,im:history,mpim:history&client_id="
-            + this.clientId;
+            + this.clientId
+            + "&redirect_uri="
+            + encodedRedirectUri()
+            + "&state="
+            + state;
     return new AjaxReturnObject<>(url, null);
+  }
+
+  /**
+   * Slack's oauth.access rejects the token exchange with {@code bad_redirect_uri} unless it is
+   * given the same redirect_uri that was sent to the authorize endpoint, so both callers build it
+   * here.
+   */
+  private String encodedRedirectUri() {
+    return URLEncoder.encode(props.getServerUrl() + "/slack/redirect_uri", StandardCharsets.UTF_8);
   }
 
   @GetMapping("/redirect_uri")
   public String handleSlackRedirect(
-      @RequestParam Map<String, String> params, Model model, HttpSession session) {
+      @RequestParam Map<String, String> params, Model model, HttpServletRequest request) {
     ConnectionResultPage.addConnectionAttributes(
         model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
+
+    try {
+      if (getSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE) == null) {
+        throw new IllegalStateException(getText("connect.authorizationError.stateMismatch"));
+      }
+      verifyStateParameter(request);
+    } catch (IllegalStateException e) {
+      log.warn("Slack OAuth state mismatch");
+      OauthAuthorizationError error =
+          getAuthErrorBuilder()
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {APP_DISPLAY_NAME}))
+              .errorDetails(e.getMessage())
+              .build();
+      model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error));
+      return CONNECTED_VIEW;
+    }
 
     if (params.containsKey("error")) {
       OauthAuthorizationError error =
           getAuthErrorBuilder()
-              .errorMsg("Error connecting to Slack")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {APP_DISPLAY_NAME}))
               .errorDetails(params.get("error"))
               .build();
       model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error));
@@ -132,7 +166,9 @@ public class SlackController extends BaseController {
               + "&client_secret="
               + clientSecret
               + "&code="
-              + authorizationCode;
+              + authorizationCode
+              + "&redirect_uri="
+              + encodedRedirectUri();
       String content = IOUtils.toString(new URL(slackUrl), StandardCharsets.UTF_8);
       model.addAttribute("connectionResponse", content);
       log.info("slack response retrieved fine");
@@ -184,7 +220,7 @@ public class SlackController extends BaseController {
 
       // Format results as a SlackMessage
       if (docSearchResults.getHits() == 0) {
-        return new SlackMessage(getText("search.noresults"), null);
+        return new SlackMessage(getText("search.noResults"), null);
       } else {
         SlackMessage message = new SlackMessage("Found these documents:");
         for (BaseRecord doc : docSearchResults.getResults())
@@ -198,7 +234,7 @@ public class SlackController extends BaseController {
   }
 
   private SlackMessage getSearchHelpMessage() {
-    return new SlackMessage(getText("app.slack.search.help"));
+    return new SlackMessage(getText("apps.slack.search.help"));
   }
 
   @Data
@@ -218,7 +254,7 @@ public class SlackController extends BaseController {
 
     if (requestedDurationInMillis > MAX_REQUESTED_DURATION_MILLIS) {
       throw new SlackCommandParseException(
-          getText("apps.slack.saveconversation.maxtimeperiod", new String[] {"90"}));
+          getText("apps.slack.saveConversation.maxTimePeriod", new String[] {"90"}));
     } else if (requestedDurationInMillis == 0) {
       throw new SlackCommandParseException(getText(SAVE_CONVO_ERROR_GENERIC_MSG));
     } else if (requestedDurationInMillis < 0) {
@@ -318,7 +354,7 @@ public class SlackController extends BaseController {
 
       String accessToken = getAccessToken(user, params.get(USER_ID), params.get(TEAM_ID));
       if (accessToken == null) {
-        throw new IllegalStateException(getText("apps.slack.error.noAccessToken"));
+        throw new IllegalStateException(getText("apps.slack.errors.noAccessToken"));
       }
 
       slackService.saveConversation(
@@ -332,7 +368,7 @@ public class SlackController extends BaseController {
           EXPORT_MESSAGES_DOCUMENT_NAME);
 
       return new SlackMessage(
-          getText("apps.slack.saveconversation.ok", new String[] {EXPORT_MESSAGES_DOCUMENT_NAME}));
+          getText("apps.slack.saveConversation.ok", new String[] {EXPORT_MESSAGES_DOCUMENT_NAME}));
     } catch (IllegalArgumentException | IllegalStateException | SlackCommandParseException e) {
       return new SlackMessage(e.getMessage());
     }
@@ -340,12 +376,12 @@ public class SlackController extends BaseController {
 
   private void assertVerificationCode(Map<String, String> params) {
     if (!params.get("token").equals(verificationToken)) {
-      throw new IllegalArgumentException(getText("apps.slack.error.verificationCodeMismatch"));
+      throw new IllegalArgumentException(getText("apps.slack.errors.verificationCodeMismatch"));
     }
   }
 
   private SlackMessage getSaveConversationHelp() {
-    return new SlackMessage(getText("app.slack.saveconversation.help"));
+    return new SlackMessage(getText("apps.slack.saveConversation.help"));
   }
 
   private String getAccessToken(User user, String userId, String teamId) {
@@ -369,11 +405,11 @@ public class SlackController extends BaseController {
             userAppCfgMgr.findByAppConfigValue("SLACK_TEAM_ID", slackTeamId));
 
     if (users.isEmpty()) {
-      throw new IllegalStateException(getText("apps.slack.error.noconnecteduser"));
+      throw new IllegalStateException(getText("apps.slack.errors.noConnectedUser"));
     } else if (users.size() > 1) {
       throw new IllegalStateException(
           getText(
-              "apps.slack.error.tooManyconnectedusers",
+              "apps.slack.errors.tooManyConnectedUsers",
               new String[] {users.get(0).getUsername(), users.get(1).getUsername()}));
 
     } else {

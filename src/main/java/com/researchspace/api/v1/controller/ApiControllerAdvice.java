@@ -11,6 +11,7 @@ import com.researchspace.apiutils.RestControllerAdvice;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
@@ -43,10 +44,13 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   // 401
   @ExceptionHandler({AuthorizationException.class, ApiAuthenticationException.class})
   public ResponseEntity<Object> handleAuth(final Exception ex, final WebRequest request) {
-    final String error = "Authorisation error";
+    final String error = messages.getMessage("errors.authorization.apiError");
+    final String message =
+        ex instanceof ApiAuthenticationException authException
+            ? messages.getMessage(authException.getMessageKey(), authException.getArgs())
+            : ex.getLocalizedMessage();
     final ApiError apiError =
-        new ApiError(
-            HttpStatus.UNAUTHORIZED, ApiErrorCodes.AUTH.getCode(), ex.getLocalizedMessage(), error);
+        new ApiError(HttpStatus.UNAUTHORIZED, ApiErrorCodes.AUTH.getCode(), message, error);
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
@@ -129,6 +133,22 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
+  // 422 with errorCode
+  @ExceptionHandler({MediaContentMismatchException.class})
+  public ResponseEntity<Object> handleMediaContentMismatch(
+      final MediaContentMismatchException ex, final WebRequest request) {
+    log.warn("rejected upload: {}", StringUtils.join(ex.getArgs(), ", "));
+    String resolvedMessage = messages.getMessage(ex.getErrorCode(), ex.getArgs());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
+            resolvedMessage,
+            ex.getErrorCode(),
+            resolvedMessage);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
   // 429
   @ExceptionHandler({TooManyRequestsException.class})
   public ResponseEntity<Object> handleUnsupported(
@@ -160,7 +180,8 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   @ExceptionHandler({ExportFailureException.class})
   public ResponseEntity<Object> handleUnsupported(
       final ExportFailureException ex, final WebRequest request) {
-    return handle500Error(ex, ApiErrorCodes.BATCH_LAUNCH, "Export batch job launch failure");
+    return handle500Error(
+        ex, ApiErrorCodes.BATCH_LAUNCH, messages.getMessage("export.errors.batchLaunchFailure"));
   }
 
   @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -181,7 +202,8 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleChemistryClientException(
       ChemistryClientException ex, WebRequest request) {
     HttpStatus status = ex.getStatus() != null ? ex.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-    ApiError apiError = new ApiError(status, 50001, ex.getMessage(), "");
+    String resolvedMessage = messages.getMessage(ex.getMessageKey(), ex.getArgs());
+    ApiError apiError = new ApiError(status, 50001, resolvedMessage, "");
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
@@ -206,7 +228,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
 
     for (ObjectError error : ex.getBindingResult().getGlobalErrors()) {
       String resolvedMessage = messages.getMessage(error);
-      errors.add(error.getObjectName() + ": " + messages.getMessage(error));
+      errors.add(error.getObjectName() + ": " + resolvedMessage);
       bindErrors.add(new BindError(error, () -> resolvedMessage));
     }
     BindErrorList errorList = new BindErrorList(bindErrors);
@@ -215,7 +237,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
         new ApiError(
             HttpStatus.BAD_REQUEST,
             ApiErrorCodes.INVALID_FIELD.getCode(),
-            "Errors detected : " + ex.getErrorCount(),
+            messages.getMessage("api.errors.detected", new Object[] {ex.getErrorCount()}),
             errors,
             errorList);
     return apiError;

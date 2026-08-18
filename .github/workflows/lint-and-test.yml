@@ -27,6 +27,10 @@ on:
         type: string
         default: 'temurin'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -57,9 +61,13 @@ jobs:
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
+              - '.github/workflows/**'
             java:
               - 'src/main/java/**'
               - 'src/test/java/**'
+              - 'src/main/resources/**'
+              - 'src/test/resources/**'
+              - 'src/main/webapp/WEB-INF/**'
               - 'pom.xml'
 
   fast-junit-tests:
@@ -74,7 +82,6 @@ jobs:
         java-version: [17]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
-      github.event_name == 'pull_request' ||
       inputs.fast_java_tests ||
       needs.changed-files.outputs.java == 'true'
     steps:
@@ -198,9 +205,11 @@ jobs:
       # independent job from frontend-checks, so it runs in parallel and a
       # Spotless failure here fails the overall CI run without stopping the
       # frontend checks (and vice versa).
+      # -DspotlessStrict adds the CleanThat checks. Plain spotless:apply will not
+      # fix those; use `./mvnw -DspotlessStrict spotless:apply`.
       - name: Spotless check
         run: |
-          ./mvnw -q spotless:check \
+          ./mvnw -q spotless:check -DspotlessStrict \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
@@ -221,7 +230,6 @@ jobs:
         shard: [1, 2]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
-      github.event_name == 'pull_request' ||
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
@@ -292,7 +300,6 @@ jobs:
       !cancelled() &&
       (
         (github.event_name == 'push' && github.ref_name == 'main') ||
-        github.event_name == 'pull_request' ||
         inputs.frontend_tests ||
         needs.changed-files.outputs.frontend == 'true'
       )
@@ -350,7 +357,6 @@ jobs:
         browser: [ chromium, firefox, webkit ]
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
-      github.event_name == 'pull_request' ||
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:

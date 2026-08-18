@@ -12,11 +12,11 @@
       </td>
   </tr>
   <tr>
-      <td><form:label path="recipientnames">To</form:label></td>
+      <td><form:label path="recipientnames"><spring:message code="dashboard.message.recipientsLabel"/></form:label></td>
       <td><form:textarea class="recipientsMessageArea form-control" path="recipientnames" rows="1" spellcheck="false"/></td>
   </tr>
   <tr>
-      <td><form:label path="messageType">Request Type</form:label></td>
+      <td><form:label path="messageType"><spring:message code="dashboard.message.requestTypeLabel"/></form:label></td>
       <td>
           <form:select  class="msgTypes form-control" path="messageType">
               <form:options items="${request.allMessageTypes}"  itemLabel="label"/>
@@ -24,13 +24,13 @@
       </td>
   </tr>
   <tr>
-      <td><form:label path="optionalMessage"> Optional Message<br/><br/>
+      <td><form:label path="optionalMessage"> <spring:message code="dashboard.message.optionalMessageLabel"/><br/><br/>
           <span id="optionalMessageCounter"></span>/2000 </form:label>
       </td>
       <td><form:textarea class="optionalMessageArea form-control" path="optionalMessage" rows="6" /></td>
   </tr>
   <tr>
-      <td><form:label class="date" path="requestedCompletionDate"> Completion Date?</form:label></td>
+      <td><form:label class="date" path="requestedCompletionDate"> <spring:message code="dashboard.message.completionDateLabel"/></form:label></td>
       <td><form:input style="position:relative; z-index: 0;" class="date datepickerz-index form-control" 
           path="requestedCompletionDate"/>
       </td>

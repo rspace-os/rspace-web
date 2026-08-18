@@ -12,8 +12,8 @@ public class VerificationPasswordResetByEmailHandler extends PasswordResetByEmai
   private static final String resetLinkFormat = "%s/vfpwd/verificationPasswordResetReply?token=%s";
   private static final String passwordType = PasswordType.VERIFICATION_PASSWORD.toString();
   private static final String completionEmailSubjectKey =
-      "email.verification.password.reset.complete.subject";
-  private static final String emailSubjectKey = "email.password.reset.request.subject";
+      "email.account.verificationPasswordResetComplete.subject";
+  private static final String emailSubjectKey = "email.account.passwordResetMessage.subject";
 
   @Override
   TokenBasedVerification applyPasswordChange(PasswordResetCommand cmd) {

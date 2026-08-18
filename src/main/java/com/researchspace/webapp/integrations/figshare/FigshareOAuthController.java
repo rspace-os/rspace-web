@@ -120,7 +120,7 @@ public class FigshareOAuthController extends BaseOAuth2Controller {
     try {
       ResponseEntity<FigshareOAuthController.AccessToken> accessToken =
           getAccessToken(authorizationCode);
-      log.info("Got access token {}", accessToken);
+      log.info("Received Figshare access token for user {}", subject.getUsername());
       UserConnection conn = new UserConnection();
       AccessToken token = accessToken.getBody();
       String accessTokenStr = token.getAccessToken();
@@ -131,7 +131,6 @@ public class FigshareOAuthController extends BaseOAuth2Controller {
       conn.setId(new UserConnectionId(subject.getUsername(), FIGSHARE_APP_NAME, id + ""));
       conn.setRank(1);
       conn.setRefreshToken(token.getRefreshToken());
-      log.info("Plain text access token is {}", accessTokenStr);
       userConnectionManager.save(conn);
       ConnectionResultPage.addConnectionAttributes(
           model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
@@ -140,7 +139,7 @@ public class FigshareOAuthController extends BaseOAuth2Controller {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
               .appName("Figshare")
-              .errorMsg("Exception during token exchange")
+              .errorMsg(getText("apps.oauth.errors.tokenExchange"))
               .errorDetails(e.getResponseBodyAsString())
               .build();
       ConnectionResultPage.addError(

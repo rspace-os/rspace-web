@@ -1,6 +1,5 @@
 package com.researchspace.model.dtos;
 
-import com.researchspace.model.field.NumberFieldForm;
 import java.math.BigInteger;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.Errors;
@@ -14,14 +13,15 @@ public class NumberFieldDTOValidator extends AbstractFieldFormValidator implemen
 
   @Override
   public boolean supports(Class<?> clazz) {
-    return clazz.isAssignableFrom(NumberFieldDTO.class);
+    return NumberFieldDTO.class.isAssignableFrom(clazz);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void validate(Object target, Errors errors) {
+    if (!(target instanceof NumberFieldDTO<?> dto)) {
+      throw new IllegalArgumentException("Target must be a NumberFieldDTO");
+    }
     super.validate(target, errors);
-    NumberFieldDTO<NumberFieldForm> dto = (NumberFieldDTO<NumberFieldForm>) target;
 
     boolean decimalOK = true;
     if (!StringUtils.isEmpty(dto.getDecimalPlaces())) {
@@ -59,7 +59,7 @@ public class NumberFieldDTOValidator extends AbstractFieldFormValidator implemen
       Double max = Double.parseDouble(dto.getMaxNumberValue());
 
       if (min > max) {
-        errors.reject("errors.min_gt_max");
+        errors.reject("errors.minGtMax");
       }
       if (hasDef) {
         Double defaultVal = Double.parseDouble(dto.getDefaultNumberValue());
@@ -86,15 +86,15 @@ public class NumberFieldDTOValidator extends AbstractFieldFormValidator implemen
     }
   }
 
-  private boolean hasDefaultValue(NumberFieldDTO<NumberFieldForm> dto) {
+  private boolean hasDefaultValue(NumberFieldDTO<?> dto) {
     return !StringUtils.isEmpty(dto.getDefaultNumberValue());
   }
 
-  private boolean hasMinValue(NumberFieldDTO<NumberFieldForm> dto) {
+  private boolean hasMinValue(NumberFieldDTO<?> dto) {
     return !StringUtils.isEmpty(dto.getMinNumberValue());
   }
 
-  private boolean hasMaxValue(NumberFieldDTO<NumberFieldForm> dto) {
+  private boolean hasMaxValue(NumberFieldDTO<?> dto) {
     return !StringUtils.isEmpty(dto.getMaxNumberValue());
   }
 

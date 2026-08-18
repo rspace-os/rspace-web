@@ -67,14 +67,14 @@
 
                     <div class="pswp__counter"></div>
 
-                    <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                    <button class="pswp__button pswp__button--close" title="<spring:message code='photoswipe.closeTitle'/>"></button>
 
                     <!-- hiding 'Share' button for RSpace -->
                     <!--  <button class="pswp__button pswp__button--share" title="Share"></button> -->
 
-                    <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                    <button class="pswp__button pswp__button--fs" title="<spring:message code='photoswipe.fullscreenTitle'/>"></button>
 
-                    <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                    <button class="pswp__button pswp__button--zoom" title="<spring:message code='photoswipe.zoomTitle'/>"></button>
 
                     <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
                     <!-- element will get class pswp__preloader--active when preloader is running -->
@@ -91,10 +91,10 @@
                     <div class="pswp__share-tooltip"></div>
                 </div>
 
-                <button class="pswp__button pswp__button--arrow--left " title="Previous (arrow left)">
+                <button class="pswp__button pswp__button--arrow--left " title="<spring:message code='photoswipe.prevTitle'/>">
                 </button>
 
-                <button class="pswp__button pswp__button--arrow--right " title="Next (arrow right)">
+                <button class="pswp__button pswp__button--arrow--right " title="<spring:message code='photoswipe.nextTitle'/>">
                 </button>
 
                 <div class="pswp__caption">

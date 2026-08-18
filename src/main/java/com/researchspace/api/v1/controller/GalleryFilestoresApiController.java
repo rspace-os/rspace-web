@@ -8,6 +8,8 @@ import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFile;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFileRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.User;
@@ -26,7 +28,10 @@ import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.FilestoreWriteManager;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.RecordDeletionManager;
+import com.researchspace.service.metadata.GeneratedSidecarFile;
+import com.researchspace.service.metadata.S3SidecarFileService;
 import com.researchspace.webapp.controller.DeploymentProperty;
+import com.researchspace.webapp.controller.ResponseHeaders;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -43,6 +48,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -62,6 +68,10 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   @Autowired @Setter NfsFactory nfsFactory;
   @Autowired RecordDeletionManager deletionManager;
   @Autowired FilestoreWriteManager filestoreWriteManager;
+  @Autowired S3SidecarFileService s3SidecarFileService;
+
+  @Value("${gallery.actions.metadata.sidecarFile.enabled}")
+  boolean metadataSidecarFileEnabled;
 
   @Override
   public List<NfsFileStoreInfo> getUserFilestores(@RequestAttribute(name = "user") User user) {
@@ -136,7 +146,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     assertFilestoresApiEnabled(user);
     if (StringUtils.isBlank(remotePath) && remoteId == null) {
-      throw new IllegalArgumentException("Neither 'remotePath' nor 'remoteId' param is provided");
+      throw new IllegalArgumentException(getMessage("netFileStores.errors.missingRemotePathOrId"));
     }
 
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
@@ -149,7 +159,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     File downloadedFile = nfsFileDetails.getLocalFile();
     log.info("downloaded to: " + downloadedFile.getCanonicalPath());
 
-    response.setContentType("application/octet-stream");
+    ResponseHeaders.setContentTypeAndPreventSniffing(response, "application/octet-stream");
     response.setContentLength((int) downloadedFile.length());
     response.setHeader(
         "Content-Disposition", "attachment; filename=\"" + downloadedFile.getName() + "\"");
@@ -172,9 +182,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     boolean filestoreNameUnique = nfsManager.verifyFileStoreNameUniqueForUser(filestoreName, user);
     if (!filestoreNameUnique) {
       throw new IllegalArgumentException(
-          "User already has a filestore named '"
-              + filestoreName
-              + "' - filestore name must be unique");
+          getMessage("netFileStores.errors.filestoreNameNotUnique", new Object[] {filestoreName}));
     }
 
     NfsFileStore userStore =
@@ -352,5 +360,39 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     assertFilestoresApiEnabled(user);
     throwBindExceptionIfErrors(errors);
     return filestoreWriteManager.transferBetweenFilestores(filestoreId, request, errors, user);
+  }
+
+  @Override
+  public ApiGalleryFilestoreSidecarFile previewSidecarFile(
+      @PathVariable Long filestoreId,
+      @RequestBody @Valid ApiGalleryFilestoreSidecarFileRequest request,
+      @RequestAttribute(name = "user") User user) {
+
+    assertFilestoresApiEnabled(user);
+    assertSidecarFileEnabled();
+    return toApiSidecarFile(s3SidecarFileService.preview(filestoreId, request.getPath(), user));
+  }
+
+  @Override
+  public ApiGalleryFilestoreSidecarFile saveSidecarFile(
+      @PathVariable Long filestoreId,
+      @RequestBody @Valid ApiGalleryFilestoreSidecarFileRequest request,
+      @RequestAttribute(name = "user") User user) {
+
+    assertFilestoresApiEnabled(user);
+    assertSidecarFileEnabled();
+    return toApiSidecarFile(s3SidecarFileService.save(filestoreId, request.getPath(), user));
+  }
+
+  // Honour the feature flag on the backend too, so a disabled sidecar feature is off end to end.
+  private void assertSidecarFileEnabled() {
+    if (!metadataSidecarFileEnabled) {
+      throw new UnsupportedOperationException(
+          getMessage("netFileStores.sidecarFile.errors.notEnabled"));
+    }
+  }
+
+  private static ApiGalleryFilestoreSidecarFile toApiSidecarFile(GeneratedSidecarFile sidecarFile) {
+    return new ApiGalleryFilestoreSidecarFile(sidecarFile.getFilename(), sidecarFile.getContent());
   }
 }

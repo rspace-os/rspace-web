@@ -1,9 +1,9 @@
-Your export $!name is completed and generated an archive of size $size.
+$msg.format("email.notification.exportCompleteNotification.completedWithSize", [$!name, $size])
 $exportedRecordsSummary
 <br/><br/>
-More details available on <a href='$exportReportLink'>export report page</a>.
+$msg.format("email.notification.exportCompleteNotification.moreDetails", [$exportReportLink])
 <br/><br/>
-Please click on, or copy the link into a browser to access the export:
+$msg.getMessage("email.notification.exportCompleteNotification.clickOrCopy")
 <br/>
 <a href='$link'>$linkText</a>.
 <br/>$removalPolicyMessage

@@ -26,7 +26,7 @@ import org.springframework.ui.Model;
  */
 @Log4j
 @Service
-public class WorkspacePermissionsDTOBuilder implements IWorkspacePermissionsDTOBuilder {
+public class WorkspacePermissionsDTOBuilder {
 
   private FolderManager fMger;
   private RecordManager recMgr;

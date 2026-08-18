@@ -346,7 +346,6 @@ public class SDocControllerMVCIT extends MVCTestBase {
     return idArray;
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void testListRevisions() throws Exception {
     final int ntimes = 12;
@@ -771,7 +770,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertNotNull(result.getResolvedException());
     assertEquals(
-        "description too long, should be max 250 chars",
+        "description cannot be greater than 250 characters.",
         result.getResolvedException().getMessage());
     assertEquals(
         longDesc, baseRecordMgr.get(doc.getId(), u).getDescription()); // stays with previous value
@@ -859,7 +858,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     ErrorList errors = getErrorListFromAjaxReturnObject(res1);
     assertTrue(errors.hasErrorMessages());
     assertTrue(
-        errors.getErrorMessages().get(0).contains("Only the  record owner can sign the record"));
+        errors.getErrorMessages().get(0).contains("Only the record owner can sign the record."));
   }
 
   @Test

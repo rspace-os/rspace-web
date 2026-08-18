@@ -1,8 +1,8 @@
 tinymce.PluginManager.add("videoembed", function (editor) {
   const FEEDBACK_ELEMENT_ID = "rspace-video-url-feedback";
-  const HELP_MESSAGE = "Paste a supported video URL.";
+  const HELP_MESSAGE = RS.msg("legacyjs.tinymce.video.help");
   const PROVIDER_MESSAGE =
-    "Supported providers: YouTube, YouTube Privacy-Enhanced Mode, JoVE, TIB AV-Portal.";
+    RS.msg("legacyjs.tinymce.video.supportedProviders");
 
   function isHost(hostname, domain) {
     return hostname.toLowerCase() === domain || hostname.toLowerCase().endsWith("." + domain);
@@ -48,7 +48,7 @@ tinymce.PluginManager.add("videoembed", function (editor) {
         src: "https://www.youtube.com/embed/" + videoId,
         width: "560",
         height: "315",
-        title: "YouTube video player",
+        title: RS.msg("legacyjs.tinymce.video.youtubePlayerTitle"),
         frameborder: "0",
         allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
         allowfullscreen: "",
@@ -74,7 +74,7 @@ tinymce.PluginManager.add("videoembed", function (editor) {
         src: "https://www.youtube-nocookie.com/embed/" + videoId,
         width: "560",
         height: "315",
-        title: "YouTube video player",
+        title: RS.msg("legacyjs.tinymce.video.youtubePlayerTitle"),
         frameborder: "0",
         allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
         allowfullscreen: "",
@@ -147,11 +147,11 @@ tinymce.PluginManager.add("videoembed", function (editor) {
     try {
       parsedUrl = new URL(value.trim());
     } catch (_error) {
-      return { valid: false, message: "Enter a valid HTTP or HTTPS URL." };
+      return { valid: false, message: RS.msg("legacyjs.tinymce.video.validHttpUrl") };
     }
 
     if (!isHttpUrl(parsedUrl)) {
-      return { valid: false, message: "Video URLs must start with http:// or https://." };
+      return { valid: false, message: RS.msg("legacyjs.tinymce.video.httpOrHttps") };
     }
 
     const parsedVideo =
@@ -160,7 +160,7 @@ tinymce.PluginManager.add("videoembed", function (editor) {
       parseJove(parsedUrl) ||
       parseTibAvPortal(parsedUrl);
 
-    return parsedVideo || { valid: false, message: "Enter a URL from a supported video provider." };
+    return parsedVideo || { valid: false, message: RS.msg("legacyjs.tinymce.video.supportedProviderUrl") };
   }
 
   function buildEmbedHtml(iframeAttributes) {
@@ -191,7 +191,7 @@ tinymce.PluginManager.add("videoembed", function (editor) {
   function syncDialogValidation(dialogApi) {
     const validation = getVideoEmbedFromUrl(dialogApi.getData().videoUrl);
     const message = validation.valid
-      ? validation.provider + " video detected."
+      ? RS.msg("legacyjs.tinymce.video.detected", validation.provider)
       : validation.message;
     if (validation.valid) {
       dialogApi.enable("submit");
@@ -204,7 +204,7 @@ tinymce.PluginManager.add("videoembed", function (editor) {
 
   editor.addCommand("cmdVideoEmbed", function () {
     const dialogConfig = {
-      title: "Embed video",
+      title: RS.msg("legacyjs.tinymce.video.embed"),
       size: "normal",
       body: {
         type: "panel",
@@ -212,7 +212,7 @@ tinymce.PluginManager.add("videoembed", function (editor) {
           {
             type: "input",
             name: "videoUrl",
-            label: "Video URL",
+            label: RS.msg("legacyjs.tinymce.video.urlLabel"),
             placeholder: "https://www.youtube.com/watch?v=...",
           },
           {
@@ -236,12 +236,12 @@ tinymce.PluginManager.add("videoembed", function (editor) {
       buttons: [
         {
           type: "cancel",
-          text: "Cancel",
+          text: RS.msg("legacyjs.common.cancel"),
         },
         {
           type: "submit",
           name: "submit",
-          text: "Insert",
+          text: RS.msg("legacyjs.tinymce.command.insert"),
           primary: true,
           enabled: false,
         },
@@ -272,12 +272,12 @@ tinymce.PluginManager.add("videoembed", function (editor) {
 
   editor.ui.registry.addButton("videoembed", {
     icon: "embed",
-    tooltip: "Embed video",
+    tooltip: RS.msg("legacyjs.tinymce.video.embed"),
     onAction: openVideoEmbedDialog,
   });
 
   editor.ui.registry.addMenuItem("optVideoEmbed", {
-    text: "Video",
+    text: RS.msg("legacyjs.tinymce.video.video"),
     icon: "embed",
     onAction: openVideoEmbedDialog,
   });
@@ -286,7 +286,7 @@ tinymce.PluginManager.add("videoembed", function (editor) {
     window.insertActions = new Map();
   }
   window.insertActions.set("optVideoEmbed", {
-    text: "Video",
+    text: RS.msg("legacyjs.tinymce.video.video"),
     icon: "embed",
     action: openVideoEmbedDialog,
   });

@@ -71,7 +71,8 @@ public class CommunityPostSignupVerification implements IPostUserSignup {
     model.put("verifyLink", createVerifyLink(upc.getToken()));
 
     EmailContent content =
-        emailContentGenerator.render("email.welcome.subject", SIGNUP_VERIFICATION_TEMPLATE, model);
+        emailContentGenerator.render(
+            "email.cloud.signupVerification.subject", SIGNUP_VERIFICATION_TEMPLATE, model);
     log.info("Sending mail to " + newUser.getUsername() + " at " + newUser.getEmail());
     emailSender.sendEmail(content, List.of(newUser.getEmail()), null);
   }

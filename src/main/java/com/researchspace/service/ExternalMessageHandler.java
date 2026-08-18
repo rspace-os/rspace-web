@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 public interface ExternalMessageHandler {
 
   /** Message bundle key for the generic 'could not send message' error shown to users. */
-  String SEND_FAILED_MSG_KEY = "external.messaging.send.failed";
+  String SEND_FAILED_MSG_KEY = "external.messaging.send.failedDefault";
 
   /**
    * Sends an external message, and creates a {@link MessageOrRequest} object recording the

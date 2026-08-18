@@ -488,10 +488,10 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
     // This replaces all _epochMilli timestamps that have been added to the filename previously
     result = originalFileName.replaceAll("_\\d{13,}", "");
     result =
-        result.substring(0, result.lastIndexOf("."))
+        result.substring(0, result.lastIndexOf('.'))
             + "_"
             + date.getTime()
-            + result.substring(result.lastIndexOf("."));
+            + result.substring(result.lastIndexOf('.'));
     return result;
   }
 

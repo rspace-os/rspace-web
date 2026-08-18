@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,6 +22,8 @@ import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFile;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarFileRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
@@ -45,6 +48,8 @@ import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.impl.FilestoreWriteManagerImpl;
+import com.researchspace.service.metadata.GeneratedSidecarFile;
+import com.researchspace.service.metadata.S3SidecarFileService;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.io.IOException;
 import java.time.Instant;
@@ -75,6 +80,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   @Mock private NfsFileHandler nfsFileHandler;
   @Mock private NfsFactory nfsFactory;
   @Mock private IPropertyHolder propertyHolder;
+  @Mock private S3SidecarFileService s3SidecarFileService;
   @Mock private User user;
 
   private final Long validFilestorePathId = 1L;
@@ -110,6 +116,9 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     controller.setNfsFileHandler(nfsFileHandler);
     controller.setNfsFactory(nfsFactory);
     controller.properties = propertyHolder;
+    controller.s3SidecarFileService = s3SidecarFileService;
+    controller.metadataSidecarFileEnabled = true;
+    controller.messages = mock(com.researchspace.service.MessageSourceUtils.class);
 
     when(propertyHolder.isNetFileStoresEnabled()).thenReturn(true);
     when(nfsManager.getNfsFileStore(validFilestorePathId))
@@ -550,6 +559,9 @@ class GalleryFilestoresApiControllerWriteOpsTest {
                     user));
 
     assertEquals(1, ex.getAllErrors().size());
+    assertEquals("recordIds", ex.getGlobalError().getObjectName());
+    assertEquals("gallery.filestore.folder.uploadRejected", ex.getGlobalError().getCode());
+    assertNull(ex.getGlobalError().getDefaultMessage());
   }
 
   @Test
@@ -757,5 +769,42 @@ class GalleryFilestoresApiControllerWriteOpsTest {
             controller.deleteFromFilestore(
                 5L, request, new BeanPropertyBindingResult(request, "request"), user));
     verify(s3Client, never()).deleteByKey(any());
+  }
+
+  @Test
+  void previewSidecarFile_delegatesToServiceAndMapsResponse() {
+    GeneratedSidecarFile generated =
+        new GeneratedSidecarFile("XRD-Experiments.sidecar.yaml", "yaml-body");
+    when(s3SidecarFileService.preview(1L, "XRD-Experiments", user)).thenReturn(generated);
+
+    ApiGalleryFilestoreSidecarFile result =
+        controller.previewSidecarFile(
+            1L, new ApiGalleryFilestoreSidecarFileRequest("XRD-Experiments"), user);
+
+    assertEquals("XRD-Experiments.sidecar.yaml", result.getFilename());
+    assertEquals("yaml-body", result.getContent());
+  }
+
+  @Test
+  void saveSidecarFile_delegatesToServiceSave() {
+    GeneratedSidecarFile generated =
+        new GeneratedSidecarFile("XRD-Experiments.sidecar.yaml", "yaml-body");
+    when(s3SidecarFileService.save(1L, "XRD-Experiments", user)).thenReturn(generated);
+
+    controller.saveSidecarFile(
+        1L, new ApiGalleryFilestoreSidecarFileRequest("XRD-Experiments"), user);
+
+    verify(s3SidecarFileService).save(1L, "XRD-Experiments", user);
+  }
+
+  @Test
+  void sidecarFileEndpointsRejectedWhenFeatureDisabled() {
+    controller.metadataSidecarFileEnabled = false;
+    ApiGalleryFilestoreSidecarFileRequest req =
+        new ApiGalleryFilestoreSidecarFileRequest("XRD-Experiments");
+    assertThrows(
+        UnsupportedOperationException.class, () -> controller.previewSidecarFile(1L, req, user));
+    assertThrows(
+        UnsupportedOperationException.class, () -> controller.saveSidecarFile(1L, req, user));
   }
 }

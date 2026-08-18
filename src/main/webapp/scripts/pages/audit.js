@@ -52,7 +52,7 @@ $(document).ready(function() {
     	$(this).closest(".auditRow").appendTo('#storedRowSet');
     });
     $(document).on('click', '.downloadAudit', function(e) {
-    	RS.blockPage("Querying audit table..");
+	RS.blockPage(RS.msg("legacyjs.audit.queryingAuditTable"));
     	e.preventDefault();
         resetSort();
 		if ($(this).hasClass('action')) {
@@ -81,7 +81,7 @@ $(document).ready(function() {
      *Form submission function 
      */
     $(document).on('click', '.getAudit', function(e) {
-        RS.blockPage("Querying audit table..");
+        RS.blockPage(RS.msg("legacyjs.audit.queryingAuditTable"));
         e.preventDefault();
         resetSort();
 		if ($(this).hasClass('action')) {
@@ -131,7 +131,7 @@ $(document).ready(function() {
         });
         jxqr.fail(function(){
             RS.unblockPage();
-            RS.ajaxFailed("Querying audit trail",false,jxqr);
+            RS.ajaxFailed(RS.msg("legacyjs.audit.queryingAuditTrail"),false,jxqr);
         });
     });
 
@@ -159,7 +159,7 @@ $(document).ready(function() {
                 RS.webResultCache.put(requestUrl, resultsHTML, 30 * 1000 );//30 seconds
             });
             jxqr.fail(function() {
-                RS.ajaxFailed("Getting user activity information", false, jxqr);
+                RS.ajaxFailed(RS.msg("legacyjs.admin.gettingUserActivity"), false, jxqr);
             });
         }
         $(".pagination.new").parent().animate({opacity: 0}, fadeTime, function(){
@@ -181,12 +181,18 @@ function _convertAuditTrailResults (xhr){
      		var resultObj = result.data.data.data;
      		var desc = "";
      		if(resultObj.exported) { // is an archive operation
-     		    desc = resultObj.exported.length  + " item(s) exported";
      		  if(resultObj.configuration) {
-     			desc = desc + " as " +resultObj.configuration.exportScope + " to " + resultObj.configuration.archiveType;
+			desc = RS.msg(
+			  "legacyjs.audit.itemsExportedWithConfiguration",
+			  resultObj.exported.length,
+			  resultObj.configuration.exportScope,
+			  resultObj.configuration.archiveType
+			);
+		  } else {
+			desc = RS.msg("legacyjs.audit.itemsExported", resultObj.exported.length);
      		  }
      		} else if (resultObj.scope) {
-     			desc = desc + "Items exported as " + resultObj.scope + " to " + resultObj.format;
+			desc = RS.msg("legacyjs.audit.itemsExportedAs", resultObj.scope, resultObj.format);
      		}
      		result.event.description = desc; 
      	}
@@ -194,7 +200,13 @@ function _convertAuditTrailResults (xhr){
      		var resultObj = result.data.data.data;
      		var desc = result.data.description;
      		if (!desc) {
-     		    desc = `from ${resultObj.from.data.name} (${resultObj.from.data.id}) to   ${resultObj.to.data.name} (${resultObj.to.data.id})`;
+		    desc = RS.msg(
+		      "legacyjs.audit.movedFromTo",
+		      resultObj.from.data.name,
+		      resultObj.from.data.id,
+		      resultObj.to.data.name,
+		      resultObj.to.data.id
+		    );
      		}
      		result.event.description = desc; 
      	}

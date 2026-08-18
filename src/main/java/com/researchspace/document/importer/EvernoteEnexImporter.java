@@ -24,6 +24,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RecordManager;
 import java.io.File;
@@ -127,6 +128,8 @@ public class EvernoteEnexImporter implements ExternalFileImporter {
                 fis, null, displayName, displayName, null, imageFolder, null, creator);
         replaceCurrImageTagWithRSpaceImgTag(textField, resourceEl, ecatMedia);
         fieldMgr.addMediaFileLink(ecatMedia.getId(), creator, textField.getId(), true);
+      } catch (MediaContentMismatchException e) {
+        log.warn("Resource {} could not be saved to RSpace, skipping: {}", src, e.getMessage());
       }
     }
     textField.setFieldData(jsoupDoc.body().html());

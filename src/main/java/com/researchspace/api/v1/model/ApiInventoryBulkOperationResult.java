@@ -25,7 +25,7 @@ public class ApiInventoryBulkOperationResult {
     ApiError error;
   }
 
-  public static enum InventoryBulkOperationStatus {
+  public enum InventoryBulkOperationStatus {
     NOT_STARTED,
     PREVALIDATED,
     PREVALIDATION_ERROR,

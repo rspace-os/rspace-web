@@ -15,7 +15,7 @@ public interface FileSearchStrategy {
    * @return
    * @throws IOException
    */
-  public List<FileSearchResult> searchFiles(String searchStr, User subject) throws IOException;
+  List<FileSearchResult> searchFiles(String searchStr, User subject) throws IOException;
 
   /**
    * Set the number of search hits to limit search to

@@ -112,7 +112,7 @@ public class ClustermarketOAuthService {
     String redirectUri = properties.getServerUrl() + "/apps/clustermarket/redirect_uri";
     kv.put("redirect_uri", redirectUri);
     ResponseEntity<AccessToken> accessToken = getAccessToken(kv);
-    log.info("Got access token {}", accessToken);
+    log.info("Received Clustermarket access token for user {}", subject.getUsername());
     UserConnection conn = new UserConnection();
     conn.setDisplayName("RSpace Clustermarket access token");
     conn.setId(
@@ -131,9 +131,6 @@ public class ClustermarketOAuthService {
         new HttpEntity<>(kv, getApiHeaders());
     log.info(
         "Sending access token request to: " + clustermarketWebUrl + CLUSTERMARKET_ACCESS_TOKEN_URL);
-    for (String key : kv.keySet()) {
-      log.info("Access token request had key " + key + " with value: " + kv.get(key));
-    }
     ResponseEntity<AccessToken> accessToken =
         restTemplate.exchange(
             clustermarketWebUrl + CLUSTERMARKET_ACCESS_TOKEN_URL,

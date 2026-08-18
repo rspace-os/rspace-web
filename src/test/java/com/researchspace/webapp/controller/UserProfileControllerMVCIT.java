@@ -283,7 +283,8 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     String result2Response = result2.getResponse().getContentAsString();
     assertTrue(
         "unexpected: " + result2Response,
-        result2Response.contains(getMsgFromResourceBundler("errors.invalidpwd").substring(0, 10)));
+        result2Response.contains(
+            getMsgFromResourceBundler("errors.invalidPassword").substring(0, 10)));
 
     String newPassword3 = RandomStringUtils.randomAlphanumeric(10);
     MvcResult result3 =
@@ -458,7 +459,8 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
 
     assertThat(
         result.getResponse().getContentAsString(),
-        containsString(getMsgFromResourceBundler("userProfile.messageSettingsChanged.msg")));
+        containsString(
+            getMsgFromResourceBundler("userProfile.messageSettingsChanged.confirmation")));
 
     Set<UserPreference> prefs = userMgr.getUserAndPreferencesForUser(piUser.getUsername());
 
@@ -1055,7 +1057,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     ErrorList errorList = getErrorListFromAjaxReturnObject(result);
     assertNotNull(errorList);
     assertEquals(
-        "Self-declaring PI not enabled", errorList.getAllErrorMessagesAsStringsSeparatedBy(";"));
+        "Self-declaring PI not enabled.", errorList.getAllErrorMessagesAsStringsSeparatedBy(";"));
 
     // enable deployment property & try again
     propertyHolder.setSSOSelfDeclarePiEnabled(true);

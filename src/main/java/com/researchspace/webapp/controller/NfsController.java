@@ -60,8 +60,8 @@ public class NfsController extends BaseController {
   protected static final String SESSION_NFS_CLIENTS = "SESSION_NFS_CLIENTS";
   protected static final String SESSION_NFS_DOWNLOAD_PATH = "SESSION_NFS_DOWNLOAD_PATH";
 
-  private static final String NO_FILE_PATHS_IN_DIR_NAME =
-      "netfilestores.login.no.file.paths.in.dir";
+  private static final String NO_FILE_PATHS_IN_DIRECTORY_KEY =
+      "netFileStores.login.noFilePathsInDirectory";
   private static final int DOWNLOAD_BUFFER_SIZE = 1024;
 
   @Autowired private NfsManager nfsManager;
@@ -137,8 +137,8 @@ public class NfsController extends BaseController {
       @RequestBody NfsLoginData nfsLoginData, HttpServletRequest request, Principal p) {
     String targetDirectory = nfsLoginData.getNfsuserdir();
     if (targetDirectory != null) {
-      if (targetDirectory.indexOf("/") != -1 || targetDirectory.indexOf("\\") != -1)
-        return getText(NO_FILE_PATHS_IN_DIR_NAME);
+      if (targetDirectory.indexOf('/') != -1 || targetDirectory.indexOf("\\") != -1)
+        return getText(NO_FILE_PATHS_IN_DIRECTORY_KEY);
     }
     User user = getPrincipalUser(p);
     aclChecker.assertCanRead(user, nfsManager.getFileSystem(nfsLoginData.getFileSystemId()));
@@ -206,7 +206,8 @@ public class NfsController extends BaseController {
       Principal p) {
 
     if (StringUtils.isEmpty(namePath) || !namePath.contains(":")) {
-      throw new IllegalArgumentException("wrong format of namePath: " + namePath);
+      throw new IllegalArgumentException(
+          getText("netFileStores.errors.invalidNamePathFormat", new Object[] {namePath}));
     }
 
     User user = getPrincipalUser(p);
@@ -221,7 +222,8 @@ public class NfsController extends BaseController {
 
     NfsFileStore fileStore = nfsManager.getNfsFileStore(fileStoreId);
     if (fileStore == null) {
-      throw new IllegalArgumentException("could not find file store with id: " + fileStoreId);
+      throw new IllegalArgumentException(
+          getText("netFileStores.errors.fileStoreNotFound", new Object[] {fileStoreId}));
     }
     aclChecker.assertCanRead(user, fileStore.getFileSystem());
 
@@ -254,7 +256,8 @@ public class NfsController extends BaseController {
       Principal p) {
 
     if (StringUtils.isEmpty(namePath) || !namePath.contains(":")) {
-      throw new IllegalArgumentException("wrong format of namePath: " + namePath);
+      throw new IllegalArgumentException(
+          getText("netFileStores.errors.invalidNamePathFormat", new Object[] {namePath}));
     }
 
     User user = getPrincipalUser(p);
@@ -268,11 +271,12 @@ public class NfsController extends BaseController {
 
     NfsFileStore fileStore = nfsManager.getNfsFileStore(fileStoreId);
     if (fileStore == null) {
-      throw new IllegalArgumentException("could not find file store with id: " + fileStoreId);
+      throw new IllegalArgumentException(
+          getText("netFileStores.errors.fileStoreNotFound", new Object[] {fileStoreId}));
     }
     aclChecker.assertCanRead(user, fileStore.getFileSystem());
     if (fileStore.getFileSystem().isDisabled()) {
-      return getText("net.filestores.error.disabled");
+      return getText("netFileStores.errors.disabled");
     }
 
     Long fileSystemId = fileStore.getFileSystem().getId();
@@ -290,7 +294,7 @@ public class NfsController extends BaseController {
 
     } catch (IOException ex) {
       log.warn(ex.getMessage(), ex);
-      return getText("net.filestores.error.download");
+      return getText("netFileStores.errors.download");
     }
 
     return SUCCESS_MSG;
@@ -314,7 +318,7 @@ public class NfsController extends BaseController {
     File parentDir = file.getParentFile();
 
     try (FileInputStream in = new FileInputStream(file)) {
-      response.setContentType("application/octet-stream");
+      ResponseHeaders.setContentTypeAndPreventSniffing(response, "application/octet-stream");
       response.setContentLength((int) file.length());
       response.setHeader(
           "Content-Disposition", String.format("attachment; filename=\"%s\"", file.getName()));
@@ -345,10 +349,19 @@ public class NfsController extends BaseController {
   }
 
   /** Retrieves map of NfsClients users is logged into. */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings("unchecked") // Every entry is validated before exposing the session map.
   public Map<Long, NfsClient> retrieveNfsClientsMapFromSession(HttpServletRequest request) {
-    Map<Long, NfsClient> nfsClients =
-        (Map<Long, NfsClient>) request.getSession().getAttribute(SESSION_NFS_CLIENTS);
+    Object attribute = request.getSession().getAttribute(SESSION_NFS_CLIENTS);
+    if (attribute != null
+        && (!(attribute instanceof Map<?, ?> map)
+            || map.entrySet().stream()
+                .anyMatch(
+                    entry ->
+                        !(entry.getKey() instanceof Long)
+                            || !(entry.getValue() instanceof NfsClient)))) {
+      throw new IllegalStateException("Invalid NFS clients session attribute");
+    }
+    Map<Long, NfsClient> nfsClients = (Map<Long, NfsClient>) attribute;
     if (nfsClients == null) {
       nfsClients = new HashMap<>();
       request.getSession().setAttribute(SESSION_NFS_CLIENTS, nfsClients);

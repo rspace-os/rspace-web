@@ -7,7 +7,7 @@ var currentFolderId;
 function submit() {
   var $selected = $('#createFromTemplateDlg .active:first');
   if ($selected.length === 0) {
-    apprise('Please select a template by clicking on it');
+    apprise(RS.msg("legacyjs.core.template.selectPrompt"));
     return;
   }
 
@@ -15,7 +15,7 @@ function submit() {
   var docName = $("#createFromTemplateNameInput").val();
 
   if (!docName || docName.trim().length === 0 || docName.match(/\//) ) {
-    apprise("Please enter a name - excluding '/' characters.");
+    apprise(RS.msg("legacyjs.core.template.nameRequired"));
     return false;
   }
 
@@ -34,20 +34,20 @@ function submit() {
   
   RS.trackEvent("user:create:from_template:workspace");
 
-  RS.blockPage('Creating a document...');
+  RS.blockPage(RS.msg("legacyjs.core.document.creating"));
 }
 
 function initCreateFromTemplateDlg() {
   $('#createFromTemplateDlg').dialog({
     modal : true,
     autoOpen: false,
-    title: "Select a template",
+    title: RS.msg("legacyjs.core.template.selectTitle"),
     width: 500,
     height: 600,
     buttons: {
-      Cancel: function() { $(this).dialog('close') },
-      Create: {
-        text: 'Create',
+      [RS.msg("legacyjs.common.cancel")]: function() { $(this).dialog('close') },
+      [RS.msg("legacyjs.core.action.create")]: {
+        text: RS.msg("legacyjs.core.action.create"),
         id: 'createFromTemplateDlgCreateBtn',
         click: function() { 
           submit();
@@ -118,7 +118,8 @@ function loadTemplatesIntoTable($tab, url) {
   jqxhr.done(function(result) {
     var templates = result.data;
     if (!templates || templates.length === 0) {
-      $tab.html('<div style="width: 100%; text-align: center; margin-top: 50px;">No templates found</div>');
+      $tab.html('<div style="width: 100%; text-align: center; margin-top: 50px;">' +
+          RS.msg("legacyjs.core.template.noneFound") + '</div>');
       return;
     }
     $.each(templates, function(i, temp) {

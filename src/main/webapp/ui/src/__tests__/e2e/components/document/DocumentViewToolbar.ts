@@ -7,7 +7,7 @@ export class DocumentViewToolbar {
   readonly actions: ToolbarCommonActions;
 
   constructor(page: Page) {
-    this.saveAsTemplateButton = page.getByRole("button", { name: "Save as Template", exact: true });
+    this.saveAsTemplateButton = page.getByRole("button", { name: "Save as Template" });
     this.signButton = page.getByRole("button", { name: "Sign", exact: true });
     this.actions = new ToolbarCommonActions(page);
   }

@@ -56,12 +56,12 @@ $(document).ready(function () {
     var stockConcentrationUnit = $('#stockConcentrationUnitInput').val();
 
     if (!finalConcentration || !finalVolume || !stockConcentration) {
-      alert('Please provide values for all fields');
+      alert(RS.msg("legacyjs.tinymce.tools.valuesRequired"));
       return;
     }
 
     if (stockConcentration == 0) {
-      alert('Stock concentration must be larger than 0');
+      alert(RS.msg("legacyjs.tinymce.tools.stockPositive"));
       return;
     }
 
@@ -70,7 +70,7 @@ $(document).ready(function () {
     var scu = math.unit(math.bignumber(stockConcentration), stockConcentrationUnit);
 
     if (math.compare(fcu, scu) > 0) {
-      alert('Desired concentration cannot be larger than stock concentration');
+      alert(RS.msg("legacyjs.tinymce.tools.desiredNotLargerThanStock"));
       return;
     }
 

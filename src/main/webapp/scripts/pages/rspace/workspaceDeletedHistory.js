@@ -20,7 +20,7 @@ $(document).ready(function () {
 	setUpRestoreHandler();
 	var noOfRows = parseInt($("#noOfRows").val());
 	if (noOfRows <= 0) {
-		$("#searchModePanel #message").text("There are no deleted items to view.");
+		$("#searchModePanel #message").text(RS.msg("legacyjs.trash.noDeletedItemsToView"));
 		$("#searchModePanel").addClass("searchError").slideDown(fadeTime).find("#resetSearch").hide();
 		$("#deletedItemsList").hide();
 	}
@@ -44,14 +44,14 @@ $(document).on('change', '#numberRecordsId', function(e){
 
 $(document).on('click', '#applyNumberRecords', function(e){
     e.preventDefault();
-    RS.blockPage("Changing the number of records per page...", false, $(tableElement));
+    RS.blockPage(RS.msg("legacyjs.common.changingRecordsPerPage"), false, $(tableElement));
     settings.urlParams.pageNumber = 0;
     settings.urlParams.resultsPerPage = $('#numberRecordsId').val();
     displayData(settings.searchTerm);
 });
 
 function searchDeleted() {
-	RS.blockPage("Searching in deleted items...", false, $(tableElement));
+	RS.blockPage(RS.msg("legacyjs.trash.searchingDeletedItems"), false, $(tableElement));
 	var searchTerm = $("#searchDeletedListInput").val();
 	settings.searchMode = searchTerm.length > 0;
 	settings.searchTerm = searchTerm;
@@ -61,7 +61,7 @@ function searchDeleted() {
 // Ordering buttons handler
 $('body').on('click', '.orderByLink', function(e) {
 	e.preventDefault();
-	RS.blockPage("Reordering deleted items...", false, $(tableElement));
+	RS.blockPage(RS.msg("legacyjs.trash.reorderingDeletedItems"), false, $(tableElement));
 	settings.orderBy = $(this).attr('data-orderby');
 	settings.sortOrder = $(this).attr('data-sortOrder');
 	settings.orderByActive = true;
@@ -71,7 +71,7 @@ $('body').on('click', '.orderByLink', function(e) {
 $(document).on("click", "#resetSearch", function() {
 	if (!settings.searchMode) return;
 	document.dispatchEvent(new Event('reset-search-input'));
-	RS.blockPage("Abandoning search...", false, $(tableElement));
+	RS.blockPage(RS.msg("legacyjs.common.abandoningSearch"), false, $(tableElement));
 	settings.searchMode = false;
 	resetOrdering();
 	displayData("");
@@ -104,7 +104,7 @@ function setUpRestoreHandler() {
 		$.post(url,data, function(rc) {
 			if(rc.data == 'EDIT_MODE') {
 				$().toastmessage('showToast', {
-	        text     : "Restored",
+	        text     : RS.msg("legacyjs.trash.restored"),
 	        sticky   : false,
 	        position : 'top-right',
 	        type     : 'success',
@@ -121,12 +121,12 @@ function setUpRestoreHandler() {
 				window.location.href=createURL('/notebookEditor/'+recordid);
 			}else if (rc.data.indexOf("Media") != -1) {
 				//rspac429
-				RS.confirm("Restored deleted media file into the Gallery...", "success", 3000);
+				RS.confirm(RS.msg("legacyjs.trash.restoredMediaFile"), "success", 3000);
 				// at the moment we can't show the user the restored image in the gallery
 				// so we just remove the row - this removed in the DB and will refresh OK
 				link$.closest('tr').remove(); // remove the row, stay in view
 			}else {
-				RS.confirm("Restored deleted document...", "success", 3000);
+				RS.confirm(RS.msg("legacyjs.trash.restoredDocument"), "success", 3000);
 				window.location.href=createURL('/workspace/editor/structuredDocument/' + rc.data);
 			}
 		});
@@ -140,7 +140,7 @@ function resetOrdering() {
 	settings.orderBy = "deletedDate";
 }
 var paginationEventHandler = function(source, e) {
-    RS.blockPage("Loading the chosen page...", false, $(tableElement));
+    RS.blockPage(RS.msg("legacyjs.common.loadingChosenPage"), false, $(tableElement));
     var url = source.attr('id').split("_")[1];
     var params = RS.getJsonParamsFromUrl(url);
     settings.urlParams.pageNumber = params.pageNumber;
@@ -157,7 +157,7 @@ function displayData(searchTerm) {
 	if (settings.searchMode) {
 		if (searchTerm.length < RS.minSearchTermLength) {
 			RS.unblockPage($(tableElement));
-			apprise("Please enter at least three characters.");
+			apprise(RS.msg("legacyjs.common.searchTermTooShort"));
 			return;
 		} else {
 			requestData.name = searchTerm;
@@ -178,7 +178,7 @@ function displayData(searchTerm) {
 	}).always(function() {
 		RS.unblockPage($(tableElement));
 	}).fail(function() {
-		RS.ajaxFailed("Getting list of deleted items", false, jqxhr);
+		RS.ajaxFailed(RS.msg("legacyjs.trash.actionGettingDeletedItemsList"), false, jqxhr);
 	});
 }
 
@@ -187,7 +187,7 @@ function insertData(html) {
 	if (noOfRows > 0) {
 		$("#searchModePanel").removeClass("searchError").addClass("searchSuccess");
 		if (settings.searchMode) {
-			var message = "Showing deleted items for search term '" + settings.searchTerm + "'.";
+			var message = RS.msg("legacyjs.trash.showingDeletedItemsForSearchTerm", settings.searchTerm);
 			$("#searchModePanel #message").text(message);
 			$("#resetSearch").show();
 			$("#searchModePanel").slideDown(fadeTime);
@@ -208,11 +208,10 @@ function insertData(html) {
 		$("#searchModePanel").removeClass("searchSuccess").addClass("searchError");
 
 		if (settings.searchMode) {
-			$("#searchModePanel #message").text("Your search for '" + settings.searchTerm +
-				"' returned no results. Please search again or");
+			$("#searchModePanel #message").text(RS.msg("legacyjs.common.noResultsForSearchTerm", settings.searchTerm));
 			$("#resetSearch").show();
 		} else {
-			$("#searchModePanel #message").text("There are no deleted items to view.");
+			$("#searchModePanel #message").text(RS.msg("legacyjs.trash.noDeletedItemsToView"));
 			$("#resetSearch").hide();
 		}
 		$("#searchModePanel").slideDown(fadeTime);

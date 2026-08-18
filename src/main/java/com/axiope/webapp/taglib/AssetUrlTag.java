@@ -73,19 +73,26 @@ public class AssetUrlTag extends TagSupport {
   private Map<String, String> getProductionUrlCache() {
     ServletContext servletContext = pageContext.getServletContext();
     Object existing = servletContext.getAttribute(PRODUCTION_URL_CACHE_ATTR);
-    if (existing instanceof Map) {
-      @SuppressWarnings("unchecked")
-      Map<String, String> cached = (Map<String, String>) existing;
-      return cached;
+    if (existing instanceof ProductionUrlCache cache) {
+      return cache.urls;
     }
-    Map<String, String> created = new ConcurrentHashMap<>();
+    ProductionUrlCache created = new ProductionUrlCache();
     servletContext.setAttribute(PRODUCTION_URL_CACHE_ATTR, created);
-    return created;
+    return created.urls;
   }
 
   private String appendVersion(String resolved, String version) {
     char separator = resolved.indexOf('?') >= 0 ? '&' : '?';
     return resolved + separator + "v=" + version;
+  }
+
+  /**
+   * Holder for the resolved-URL cache. A dedicated type lets {@link #getProductionUrlCache} recover
+   * the cache from the {@link ServletContext} with a checked cast instead of an unchecked cast to
+   * {@code Map<String, String>}.
+   */
+  static final class ProductionUrlCache {
+    final Map<String, String> urls = new ConcurrentHashMap<>();
   }
 
   private boolean isLegacyAsset(String assetPath) {

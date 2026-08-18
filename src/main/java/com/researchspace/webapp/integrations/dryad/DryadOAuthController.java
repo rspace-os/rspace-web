@@ -102,10 +102,8 @@ public class DryadOAuthController extends BaseOAuth2Controller {
     try {
       ResponseEntity<DryadAccessToken> response =
           restTemplate.postForEntity(baseUrl + "/oauth/token", entity, DryadAccessToken.class);
-      log.debug("Response: {}", response.getBody());
       log.debug("Response status: {}", response.getStatusCode());
       DryadAccessToken accessToken = response.getBody();
-      log.debug("Got access token: " + accessToken.getAccessToken());
       UserConnection conn = new UserConnection();
       String accessTokenStr = accessToken.getAccessToken();
       conn.setAccessToken(accessTokenStr);
@@ -117,14 +115,13 @@ public class DryadOAuthController extends BaseOAuth2Controller {
       // This is null for now as dryad doesn't currently provide a proper OAuth flow to refresh the
       // token.
       conn.setRefreshToken(null);
-      log.debug("Plain text access token is {}", accessTokenStr);
       userConnectionManager.save(conn);
 
     } catch (HttpStatusCodeException e) {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
               .appName("Dryad")
-              .errorMsg("Exception during token exchange")
+              .errorMsg(getText("apps.oauth.errors.tokenExchange"))
               .errorDetails(e.getResponseBodyAsString())
               .build();
       ConnectionResultPage.addError(

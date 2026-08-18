@@ -10,6 +10,7 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.AbstractForm;
 import com.researchspace.model.record.FormType;
 import com.researchspace.service.AbstractFormManager;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -23,10 +24,13 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
   @Autowired IPermissionUtils permissionUtils;
   @Autowired FieldFormDao fieldFormDao;
   @Autowired protected RecordEditorTracker formTracker;
+  @Autowired protected MessageSourceUtils messageSourceUtils;
+  private final Class<T> formType;
 
-  public AbstractFormManagerImpl(AbstractFormDao<T, Long> dao) {
+  public AbstractFormManagerImpl(AbstractFormDao<T, Long> dao, Class<T> formType) {
     super(dao);
     this.absFormdao = dao;
+    this.formType = formType;
     this.formTracker = new RecordEditorTracker();
   }
 
@@ -37,7 +41,8 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
     form.setDescription("No description");
     form.setName("Untitled");
     if (!permissionUtils.isPermitted(form, PermissionType.CREATE, user)) {
-      throw new AuthorizationException("You do not have permission to create a form");
+      throw new AuthorizationException(
+          messageSourceUtils.getMessage("form.errors.createUnauthorized"));
     }
     return form;
   }
@@ -55,7 +60,8 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
       U dto, long formId, User subject) {
     T form = absFormdao.get(formId);
     if (!hasWritePermission(subject, form)) {
-      throw new AuthorizationException("Create field form unauthorised");
+      throw new AuthorizationException(
+          messageSourceUtils.getMessage("form.errors.fieldCreateUnauthorized"));
     }
     F field = dto.createFieldForm();
     form.setModificationDate(new Date());
@@ -82,14 +88,14 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
     return form;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <F extends FieldForm, U extends FormFieldSource<F>> F updateFieldForm(
       U dto, Long fieldFormID, User subject) {
-    F fieldform = (F) fieldFormDao.get(fieldFormID);
-    T form = (T) fieldform.getForm();
+    F fieldform = checkedFieldForm(dto, fieldFormDao.get(fieldFormID));
+    T form = formType.cast(fieldform.getForm());
     if (!hasWritePermission(subject, form)) {
-      throw new AuthorizationException("Updating a field");
+      throw new AuthorizationException(
+          messageSourceUtils.getMessage("form.errors.fieldUpdateUnauthorized"));
     }
     dto.copyValuesIntoFieldForm(fieldform);
     Date currTime = new Date();
@@ -101,6 +107,16 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
     return fieldform;
   }
 
+  @SuppressWarnings("unchecked") // The DTO-created form's concrete class is checked first.
+  private static <F extends FieldForm> F checkedFieldForm(
+      FormFieldSource<F> source, FieldForm stored) {
+    FieldForm expected = source.createFieldForm();
+    if (!expected.getClass().isInstance(stored)) {
+      throw new IllegalArgumentException("Field DTO does not match the stored field type");
+    }
+    return (F) stored;
+  }
+
   protected boolean hasWritePermission(User user, T rc) {
     return permissionUtils.isPermitted(rc, PermissionType.WRITE, user);
   }
@@ -109,9 +125,11 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
   public void deleteFieldFromForm(Long fieldId, User subject) {
 
     FieldForm fieldToRemove = getField(fieldId);
-    T form = (T) fieldToRemove.getForm();
+    T form = formType.cast(fieldToRemove.getForm());
     if (!permissionUtils.isPermitted(form, PermissionType.WRITE, subject)) {
-      throw new AuthorizationException("Not permitted to delete field [" + fieldId + "]");
+      throw new AuthorizationException(
+          messageSourceUtils.getMessage(
+              "form.errors.fieldDeleteUnauthorized", new Object[] {fieldId}));
     }
 
     fieldToRemove.setDeleted(true);

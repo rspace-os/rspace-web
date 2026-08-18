@@ -231,7 +231,7 @@ public class RecordEditorTracker {
     synchronized (viewlock) {
       Set<String> viewers = recordViewing.get(r.getId());
       viewers.remove(username);
-      if (viewers.size() == 0) {
+      if (viewers.isEmpty()) {
         recordViewing.remove(r.getId());
       }
     }
@@ -247,11 +247,10 @@ public class RecordEditorTracker {
    * @param r
    * @return A <code>Set </code> of the current list of viewers.
    */
-  @SuppressWarnings("unchecked")
   public Set<String> getViewersForRecord(Long recordId) {
     Set<String> viewers = recordViewing.get(recordId);
     if (viewers == null) {
-      return Collections.unmodifiableSet(Collections.EMPTY_SET);
+      return Collections.emptySet();
     }
     return Collections.unmodifiableSet(viewers);
   }

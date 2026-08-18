@@ -509,11 +509,10 @@ const FileCard = observer(
             }
           : {}),
       };
+      const activeFileBeingMoved = dndContext.active?.data.current?.fileBeingMoved as GalleryFile | undefined;
       const inGroupBeingDraggedStyle =
-        dndContext.active?.data.current?.fileBeingMoved &&
-        (selection.includes(dndContext.active?.data.current?.fileBeingMoved as GalleryFile)
-          ? selection.includes(file)
-          : file.id === (dndContext.active?.data.current?.fileBeingMoved as GalleryFile).id)
+        activeFileBeingMoved &&
+        (selection.includes(activeFileBeingMoved) ? selection.includes(file) : file.id === activeFileBeingMoved.id)
           ? {
               opacity: 0.2,
             }
@@ -1447,7 +1446,7 @@ function GalleryMainPanel({
               role="region"
               aria-label={t("mainPanel.filesListingControlsLabel")}
             >
-              <ActionsMenu refreshListing={refreshListing} section={selectedSection} folderId={folderId} />
+              <ActionsMenu refreshListing={refreshListing} section={selectedSection} folderId={folderId} path={path} />
               <Box
                 sx={{
                   flexGrow: 1,

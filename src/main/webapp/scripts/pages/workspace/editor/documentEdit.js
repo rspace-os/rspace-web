@@ -100,7 +100,7 @@ function requestEditStatus(editable, recordId) {
     editable == "VIEW_MODE" ||
     editable == "CANNOT_EDIT_OTHER_EDITING"
   ) {
-    RS.blockPage("Requesting edit lock");
+    RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.requestingEditLock"));
     var jqxhr = $.post(
       createURL("/workspace/editor/structuredDocument/ajax/requestEdit"),
       { recordId: recordId },
@@ -113,11 +113,14 @@ function requestEditStatus(editable, recordId) {
           hasEditLock = true;
           deferred.resolve();
         } else {
-          var cantEditMsg = "Sorry, you can't edit the document";
+          var cantEditMsg;
           if (data == "CANNOT_EDIT_OTHER_EDITING") {
-            cantEditMsg +=
-              " now - it is currently being edited by " +
-              (editor ? editor : "someone else");
+            cantEditMsg = RS.msg(
+              "legacyjs.workspace.documentEdit.cannotEditOtherEditing",
+              editor ? editor : RS.msg("legacyjs.workspace.documentEdit.someoneElse")
+            );
+          } else {
+            cantEditMsg = RS.msg("legacyjs.workspace.documentEdit.cannotEdit");
           }
           apprise(cantEditMsg);
           deferred.reject();
@@ -128,7 +131,7 @@ function requestEditStatus(editable, recordId) {
       RS.unblockPage();
     });
     jqxhr.fail(function () {
-      RS.ajaxFailed("Request for edit lock", false, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.workspace.documentEdit.requestEditLockAction"), false, jqxhr);
     });
   }
   return promise;
@@ -278,7 +281,7 @@ function updateFieldsContentFromServer(forceUpdate) {
     modificationDate: modificationDate,
   };
 
-  RS.blockPage("Retrieving latest field content");
+  RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.retrievingFieldContent"));
   var jqxhr = $.get(
     createURL("/workspace/editor/structuredDocument/ajax/getUpdatedFields"),
     data
@@ -567,7 +570,7 @@ function _autosaveFields() {
     }
 
     $fieldName = $("#field-name-" + currentId);
-    showFieldNotification($fieldName, "Autosaving...");
+    showFieldNotification($fieldName, RS.msg("legacyjs.workspace.documentEdit.autosaving"));
     wasAutosaved = true;
   }); // end of .field loop
 
@@ -666,11 +669,11 @@ function _postAutosave(dataValue, $field) {
   jqxhr.done(function (data) {
     //console.log('autosave complete');
     if (data.data !== true) {
-      apprise("Errors: " + getValidationErrorString(data.errorMsg, ";", true));
+      apprise(RS.msg("legacyjs.workspace.documentEdit.autosaveErrors", getValidationErrorString(data.errorMsg, ";", true)));
     }
     if (autoSaveFailureCount > 0) {
       // let user know that autosave recovered after connection failure
-      RS.defaultConfirm("Autosave was successful");
+      RS.defaultConfirm(RS.msg("legacyjs.workspace.documentEdit.autosaveRecovered"));
       _resetAutosaveErrorHandling();
     }
   });
@@ -679,11 +682,11 @@ function _postAutosave(dataValue, $field) {
     var errorStatus = jqxhr.status;
     if (errorStatus !== autoSaveLastErrorStatus) {
       // new problem with autosave, showing apprise to the user
-      RS.ajaxFailed("Autosave ", false, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.workspace.documentEdit.autosaveAction"), false, jqxhr);
     } else {
       // user already acknowledged that particular autosave problem, so just show a toast
       RS.confirm(
-        "Autosave attempt failed again (status: " + errorStatus + ")",
+        RS.msg("legacyjs.workspace.documentEdit.autosaveFailedAgain", errorStatus),
         "warning",
         4000
       );
@@ -780,11 +783,11 @@ function checkNumber(element) {
   // if the minValue maxValue is valid then do default value validation,
   // otherwise the user will be confused
   if (isNaN(value)) {
-    error = "Value [" + value + "] is not a number!";
+    error = RS.msg("legacyjs.workspace.documentEdit.valueNotANumber", value);
   } else if (value != "" && maxValue != "" && numberData > maxNumber) {
-    error = "Value greater than max value (" + maxValue + ").";
+    error = RS.msg("legacyjs.workspace.documentEdit.valueGreaterThanMax", maxValue);
   } else if (value != "" && minValue != "" && numberData < minNumber) {
-    error = "Value less than min value (" + minValue + "). ";
+    error = RS.msg("legacyjs.workspace.documentEdit.valueLessThanMin", minValue);
   }
   return error;
 }
@@ -816,14 +819,18 @@ function checkAndMarkNumber(element) {
 
 function cancelAutosavedEdits() {
   if (editable !== "EDIT_MODE") {
-    apprise("You cannot cancel the current document");
+    apprise(RS.msg("legacyjs.workspace.documentEdit.cannotCancelDocument"));
     return;
   }
   apprise(
-    "Cancelling will revert the document's content back to its state at the last save - please confirm that you want to proceed.",
-    { confirm: true, textOk: "Yes, cancel", textCancel: "No, don't" },
+    RS.msg("legacyjs.workspace.documentEdit.cancelConfirm"),
+    {
+      confirm: true,
+      textOk: RS.msg("legacyjs.workspace.documentEdit.cancelConfirmYes"),
+      textCancel: RS.msg("legacyjs.workspace.documentEdit.cancelConfirmNo"),
+    },
     function () {
-      RS.blockPage("Cancelling autosaved document edits");
+      RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.cancellingEdits"));
       var jqxhr = $.post(
         createURL(
           "/workspace/editor/structuredDocument/ajax/cancelAutosavedEdits"
@@ -835,7 +842,7 @@ function cancelAutosavedEdits() {
           if (success.data !== null) {
             var url = success.data;
             wasAutosaved = false;
-            RS.confirmAndNavigateTo("Edits cancelled", "success", 1000, url);
+            RS.confirmAndNavigateTo(RS.msg("legacyjs.workspace.documentEdit.editsCancelled"), "success", 1000, url);
           }
         },
         "json"
@@ -844,7 +851,7 @@ function cancelAutosavedEdits() {
         RS.unblockPage();
       });
       jqxhr.fail(function () {
-        RS.ajaxFailed("Cancel autosaved document edits", false, jqxhr);
+        RS.ajaxFailed(RS.msg("legacyjs.workspace.documentEdit.cancelEditsAction"), false, jqxhr);
       });
     }
   );
@@ -852,7 +859,7 @@ function cancelAutosavedEdits() {
 
 function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
   if (editable !== "EDIT_MODE") {
-    apprise("You cannot save the current document");
+    apprise(RS.msg("legacyjs.workspace.documentEdit.cannotSaveDocument"));
     displayStatus(editable);
     return;
   }
@@ -867,7 +874,7 @@ function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
   $.when(renamePromise).done(function () {
     // wait for the renaming promise
     saveInProgress = true;
-    RS.blockPage("Autosaving...");
+    RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.autosaving"));
     var autosavePromise = autosave(true);
     autosavePromise.always(function () {
       RS.unblockPage();
@@ -877,7 +884,7 @@ function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
     });
 
     $.when(autosavePromise).done(function () {
-      RS.blockPage("Saving...");
+      RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.saving"));
       var postData = {
         structuredDocumentId: recordId,
         unlock: unlock,
@@ -905,7 +912,7 @@ function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
             hasEditLock = false;
           }
 
-          var msgToDisplay = "Document saved";
+          var msgToDisplay = RS.msg("legacyjs.workspace.documentEdit.documentSaved");
           var msgType = "success";
           var msgTime = 1000;
 
@@ -914,8 +921,7 @@ function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
             response.error.errorMessages[0] === "content.not.changed"
           ) {
             unchangedContentCounter++;
-            msgToDisplay =
-              "Document saved, but no change in content was detected";
+            msgToDisplay = RS.msg("legacyjs.workspace.documentEdit.documentSavedNoChange");
             msgType = "warning";
             msgTime = 1500;
           } else {
@@ -933,13 +939,7 @@ function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
             // stay on the page, display a toast unless nothing changed after implicit save
             if (!implicitSave || !unchangedContentCounter) {
               if (unchangedContentCounter > 2) {
-                apprise(
-                  "The last few save actions didn't detect any changes to document content, is this expected? <br><br>" +
-                    "If you <em>did</em> make changes to the content, then there may be a  communication problem between your " +
-                    "browser and RSpace server, and your latest changes may be lost. Please copy and save your content outside " +
-                    "RSpace, close and reopen the document, and check if everything is there.<br><br>" +
-                    "If some content is missing, or if you keep seeing this message, please contact your System Admin."
-                );
+                apprise(RS.msg("legacyjs.workspace.documentEdit.unchangedContentWarning"));
               }
               RS.confirm(msgToDisplay, msgType, msgTime * 3);
             }
@@ -959,7 +959,7 @@ function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
         }
       });
       jqxhr.fail(function () {
-        RS.ajaxFailed("Save document", false, jqxhr);
+        RS.ajaxFailed(RS.msg("legacyjs.workspace.documentEdit.saveDocumentAction"), false, jqxhr);
       });
       displayStatus(editable);
     });
@@ -968,9 +968,7 @@ function saveStructuredDocument(close, unlock, implicitSave, urlToOpen) {
 
 function saveCopyStructuredDocument() {
   if (editable != "EDIT_MODE" || canCopy != true) {
-    apprise(
-      "You cannot perform 'Save and Copy' here - maybe you don't have  permission to create a document here"
-    );
+    apprise(RS.msg("legacyjs.workspace.documentEdit.cannotSaveAndCopy"));
     return;
   }
   if (saveInProgress) {
@@ -985,7 +983,7 @@ function saveCopyStructuredDocument() {
   $.when(renamePromise).done(function () {
     // wait for the renaming promise
     saveInProgress = true;
-    RS.blockPage("Autosaving...");
+    RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.autosaving"));
     var autosavePromise = autosave(true);
     autosavePromise.always(function () {
       RS.unblockPage();
@@ -995,7 +993,7 @@ function saveCopyStructuredDocument() {
     });
 
     $.when(autosavePromise).done(function () {
-      RS.blockPage("Saving and copying...");
+      RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.savingAndCopying"));
       var jqxhr = $.post(
         createURL(
           "/workspace/editor/structuredDocument/ajax/saveCopyStructuredDocument"
@@ -1009,7 +1007,7 @@ function saveCopyStructuredDocument() {
             var url = success.data;
             wasAutosaved = false;
             hasEditLock = false;
-            RS.confirmAndNavigateTo("Document saved", "success", 1000, url);
+            RS.confirmAndNavigateTo(RS.msg("legacyjs.workspace.documentEdit.documentSaved"), "success", 1000, url);
           }
         },
         "json"
@@ -1019,7 +1017,7 @@ function saveCopyStructuredDocument() {
         saveInProgress = false;
       });
       jqxhr.fail(function () {
-        RS.ajaxFailed("Save document", false, jqxhr);
+        RS.ajaxFailed(RS.msg("legacyjs.workspace.documentEdit.saveDocumentAction"), false, jqxhr);
       });
     });
   });
@@ -1027,9 +1025,7 @@ function saveCopyStructuredDocument() {
 
 function saveNewStructuredDocument() {
   if (editable != "EDIT_MODE" || canCopy != true) {
-    apprise(
-      "You cannot perform 'Save and New' here - maybe you don't have permission to create a document here"
-    );
+    apprise(RS.msg("legacyjs.workspace.documentEdit.cannotSaveAndNew"));
     return;
   }
   if (saveInProgress) {
@@ -1044,7 +1040,7 @@ function saveNewStructuredDocument() {
   $.when(renamePromise).done(function () {
     // wait for the renaming promise
     saveInProgress = true;
-    RS.blockPage("Autosaving...");
+    RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.autosaving"));
     var autosavePromise = autosave(true);
     autosavePromise.always(function () {
       RS.unblockPage();
@@ -1054,7 +1050,7 @@ function saveNewStructuredDocument() {
     });
 
     $.when(autosavePromise).done(function () {
-      RS.blockPage("Saving and creating new...");
+      RS.blockPage(RS.msg("legacyjs.workspace.documentEdit.savingAndCreatingNew"));
       var jqxhr = $.post(
         createURL(
           "/workspace/editor/structuredDocument/ajax/saveNewStructuredDocument"
@@ -1065,7 +1061,7 @@ function saveNewStructuredDocument() {
             var url = success.data;
             wasAutosaved = false;
             hasEditLock = false;
-            RS.confirmAndNavigateTo("Document saved", "success", 1000, url);
+            RS.confirmAndNavigateTo(RS.msg("legacyjs.workspace.documentEdit.documentSaved"), "success", 1000, url);
           } else if (success.errorMsg != null) {
             apprise(getValidationErrorString(success.errorMsg));
           }
@@ -1077,7 +1073,7 @@ function saveNewStructuredDocument() {
         saveInProgress = false;
       });
       jqxhr.fail(function () {
-        RS.ajaxFailed("Save document", false, jqxhr);
+        RS.ajaxFailed(RS.msg("legacyjs.workspace.documentEdit.saveDocumentAction"), false, jqxhr);
       });
     });
   });
@@ -1113,8 +1109,9 @@ $(document).ready(function () {
 
     $(window).bind("beforeunload", function (e) {
       if (checkForUnsavedChanges()) {
-        var confirmationMsg =
-          "Are you sure you want to exit without saving changes?";
+        var confirmationMsg = RS.msg(
+          "legacyjs.workspace.documentEdit.exitWithoutSavingConfirm"
+        );
         e.returnValue = confirmationMsg;
         return confirmationMsg;
       }

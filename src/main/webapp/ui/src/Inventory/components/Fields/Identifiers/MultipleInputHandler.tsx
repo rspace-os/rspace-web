@@ -4,6 +4,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { format } from "date-fns";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ComponentType, ReactNode } from "react";
@@ -108,11 +109,12 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
               {v.value instanceof Date ? (
                 <DateField
                   variant="outlined"
-                  value={v.value.toString()}
+                  value={v.value}
                   disabled={false}
                   onChange={({ target: { value } }) => {
                     if (value) handleUpdateValue(i, "value", value);
                   }}
+                  disableWidthLimit
                   data-test-id={`IdentifierRecommendedField-${field.key}-${i}`}
                 />
               ) : (
@@ -198,7 +200,7 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
             </FormControl>
           ) : (
             <>
-              <Grid>{v.value instanceof Date ? v.value.toISOString().split("T")[0] : String(v.value)}</Grid>
+              <Grid>{v.value instanceof Date ? format(v.value, "yyyy-MM-dd") : String(v.value)}</Grid>
               {
                 // @ts-expect-error - subFields accepts field.value[i]
                 subFields(field.value[i]).length > 0 &&
@@ -294,6 +296,7 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
                 editable={editable}
                 handleUpdateValue={handleUpdateValue}
                 doUpdateIdentifiers={doUpdateIdentifiers}
+                recordTypeName={activeResult.recordType === "instrument" ? "instrument" : "sample"}
               />
             ) : (
               // @ts-expect-error - v is a field

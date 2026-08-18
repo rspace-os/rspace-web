@@ -90,7 +90,9 @@ public class NotebookEditorController extends BaseController {
 
       if (showWholeNotebook) {
         String msg =
-            authGenerator.getFailedMessage(user.getUsername(), "notebook " + notebook.getId());
+            getText(
+                "errors.authorization.failure.openNotebook",
+                new Object[] {user.getUsername(), notebook.getId()});
         throw new AuthorizationException(msg);
       }
     }
@@ -181,7 +183,9 @@ public class NotebookEditorController extends BaseController {
     EditStatus es = recordManager.requestRecordEdit(recordid, user, users);
     if (EditStatus.ACCESS_DENIED.equals(es) || EditStatus.CANNOT_EDIT_OTHER_EDITING.equals(es)) {
       throw new RecordAccessDeniedException(
-          getText("error.authorization.failure.polite", new Object[] {" delete this document."}));
+          getText(
+              "errors.authorization.failure.polite",
+              new Object[] {getText("label.deleteDocumentAction")}));
     }
     try {
       CompositeRecordOperationResult result =

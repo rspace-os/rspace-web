@@ -35,13 +35,10 @@ const CreateAction = forwardRef<React.ElementRef<typeof MenuItem>, CreateActionA
 
     const disabledHelp = match<void, string>([
       [() => disabled !== "", disabled],
-      [() => selectedResults.length === 0, "Nothing is selected."],
-      [() => selectedResults.length > 1, "Can only create from a single item."],
-      [
-        () => !selectedResults[0].permittedActions.has("READ"),
-        "You do not have permission to create new items from this item.",
-      ],
-      [() => isFullContainer(), "This Container has no free available locations."],
+      [() => selectedResults.length === 0, t("contextMenu.create.nothingSelected")],
+      [() => selectedResults.length > 1, t("contextMenu.create.singleItemOnly")],
+      [() => !selectedResults[0].permittedActions.has("READ"), t("contextMenu.create.noPermission")],
+      [() => isFullContainer(), t("contextMenu.create.containerFull")],
       [() => true, ""],
     ])();
 

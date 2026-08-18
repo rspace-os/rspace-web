@@ -4,7 +4,7 @@ import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.comms.MessageOrRequest;
-import com.researchspace.service.OperationFailedMessageGenerator;
+import com.researchspace.service.MessageSourceUtils;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -27,7 +27,7 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 public abstract class AbstractExternalWebhookMessageSender implements ExternalMessageSender {
 
-  protected @Autowired OperationFailedMessageGenerator authMsgGen;
+  protected @Autowired MessageSourceUtils messages;
   protected @Autowired AnalyticsManager analyticsMgr;
 
   @Override
@@ -39,7 +39,9 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
 
     if (!subject.equals(messageConfig.getUserAppConfig().getUser())) {
       throw new AuthorizationException(
-          authMsgGen.getFailedMessage(subject, " send message MsTeams"));
+          messages.getMessage(
+              "errors.authorization.failure.sendExternalMessage",
+              new Object[] {subject.getUsername()}));
     }
     String jsonMessage = createMessage(message);
 

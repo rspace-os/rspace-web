@@ -28,10 +28,10 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.record.IActiveUserStrategy;
-import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.model.views.UserView;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IVerificationPasswordValidator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
 import com.researchspace.session.SessionAttributeUtils;
@@ -79,9 +79,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   @Autowired private IPropertyHolder properties;
 
   private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
-
-  @SuppressWarnings("unused") // unused but required for spring ApplicationContext to load properly
-  private @Autowired IRecordFactory recordFactory;
+  private @Autowired MessageSourceUtils messages;
 
   /** {@inheritDoc} */
   public User getUser(String userId) {
@@ -271,7 +269,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
     final int minLength = 3;
     if (StringUtils.isBlank(term) || term.trim().length() < minLength) {
       throw new IllegalArgumentException(
-          "Search term [" + term + "] must be at least 3 characters");
+          messages.getMessage("errors.searchTermMinLength", new Object[] {minLength}));
     }
     return userDao.searchUsers(term);
   }
@@ -372,7 +370,9 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   public TokenBasedVerification createTokenBasedVerificationRequest(
       User user, String email, String remoteHost, TokenBasedVerificationType type) {
     if (StringUtils.isBlank(email)) {
-      throw new IllegalArgumentException("email cannot be empty!");
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "errors.emptyString.polite", new Object[] {messages.getMessage("label.email")}));
     }
     if (user == null) {
       List<User> found = userDao.getUserByEmail(email);
@@ -389,7 +389,9 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   @Override
   public TokenBasedVerification getUserVerificationToken(String token) {
     if (StringUtils.isBlank(token)) {
-      throw new IllegalArgumentException("Token cannot be empty");
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "errors.emptyString.polite", new Object[] {messages.getMessage("label.token")}));
     }
     TokenBasedVerification upc = userDao.getByToken(token);
     return upc;

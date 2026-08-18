@@ -57,7 +57,7 @@ public class ApiDocumentInfo extends IdentifiableNameableApiObject {
   private Boolean signed = null;
 
   @JsonProperty("tags")
-  @Size(max = 8000, message = "Document tags cannot be longer than 8000 characters")
+  @Size(max = 8000, message = "{document.validation.tagsTooLong}")
   private String tags = null;
 
   @JsonProperty("tagMetaData")

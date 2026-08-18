@@ -1,8 +1,8 @@
 package com.researchspace.service.impl;
 
+import static com.researchspace.core.util.StringAbbreviationUtils.abbreviate;
 import static com.researchspace.session.SessionAttributeUtils.FIRST_LOGIN;
 import static com.researchspace.session.SessionAttributeUtils.FIRST_LOGIN_HANDLED;
-import static org.apache.commons.lang3.StringUtils.abbreviate;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 

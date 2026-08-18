@@ -4,6 +4,18 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.25.0-RC2 2026-08-17 (Release Candidate 2) 
+
+- RSpace application is [migrated to Spring 6](../DeveloperNotes/UpgradingToSpring6.md),
+  which is a major update and requires upgrading Tomcat server from version 9 to 10
+
+### ELN Features
+... tbc
+
+### Inventory Features
+... tbc
+
+
 # 2.24.0 2026-07-06
 
 ### ELN Features

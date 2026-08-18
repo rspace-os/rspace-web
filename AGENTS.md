@@ -155,7 +155,7 @@ part of the change. Logs and internal-only developer messages are exempt.
 Frontend English catalogs live in
 `src/main/webapp/ui/src/modules/common/i18n/locales/en-US/`; finished code
 uses semantic keys, not literal English strings (see
-`DevDocs/DeveloperNotes/FrontendI18nKeys.md` for naming and namespace rules).
+`DevDocs/DeveloperNotes/i18n.md` for naming and namespace rules).
 To author English inline while developing, pass a literal `defaultValue` to
 `t()`, then run `pnpm run i18n:extract --sync-primary` from the repo root,
 review the catalog diff, remove `defaultValue`, and run `pnpm run i18n:types`,

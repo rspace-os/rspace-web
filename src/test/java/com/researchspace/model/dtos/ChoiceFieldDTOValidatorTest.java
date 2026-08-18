@@ -52,7 +52,7 @@ public class ChoiceFieldDTOValidatorTest {
     Errors errors = new BeanPropertyBindingResult(NO_NAME, "MyObject");
     validator.validate(NO_NAME, errors);
     assertTrue(errors.hasErrors());
-    assertTrue(ValidationTestUtils.hasError("no.name", errors));
+    assertTrue(ValidationTestUtils.hasError("errors.noValue.name", errors));
   }
 
   @Test
@@ -77,12 +77,12 @@ public class ChoiceFieldDTOValidatorTest {
     dto.setChoiceValues("a-b");
 
     validator.validate(dto, errors);
-    assertTrue(ValidationTestUtils.hasError("choiceoptions.invalidformat", errors));
+    assertTrue(ValidationTestUtils.hasError("form.choiceOptions.invalidFormat", errors));
 
     errors = new BeanPropertyBindingResult(VALID, "MyObject");
     dto = INVALID_CHARS_IN_NAME;
     validator.validate(dto, errors);
-    assertTrue(ValidationTestUtils.hasError("choiceoptions.invalidformat", errors));
+    assertTrue(ValidationTestUtils.hasError("form.choiceOptions.invalidFormat", errors));
   }
 
   @Test

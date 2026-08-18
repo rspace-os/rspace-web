@@ -68,7 +68,6 @@ public class SampleRadioChoiceFieldOptionsFormatChange_1_73 extends AbstractCust
     logger.info("Choice field definitions and selected options converted fine");
   }
 
-  @SuppressWarnings({"deprecation", "unchecked"})
   protected List<InventoryRadioField> getRadioFields() {
     return sessionFactory
         .getCurrentSession()
@@ -76,7 +75,6 @@ public class SampleRadioChoiceFieldOptionsFormatChange_1_73 extends AbstractCust
         .list();
   }
 
-  @SuppressWarnings({"deprecation", "unchecked"})
   protected List<InventoryChoiceField> getChoiceFields() {
     return sessionFactory
         .getCurrentSession()
@@ -92,7 +90,7 @@ public class SampleRadioChoiceFieldOptionsFormatChange_1_73 extends AbstractCust
 
   private List<String> convertOldOptionsStringToOptionList(String oldOptions) {
     // in content like: "fieldName=valueA&fieldName=valueB" find what "fieldName" is
-    String fieldNameInContent = oldOptions.substring(0, oldOptions.indexOf("="));
+    String fieldNameInContent = oldOptions.substring(0, oldOptions.indexOf('='));
     // change string like "fieldName=valueA&fieldName=valueB" to
     // "&fieldName=valueA&fieldName=valueB"
     String oldOptionsPrefixed = "&" + oldOptions;

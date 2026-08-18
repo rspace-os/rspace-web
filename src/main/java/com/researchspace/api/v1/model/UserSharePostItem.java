@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserSharePostItem {
 
-  @NotNull(message = "Must specify id of the user")
+  @NotNull(message = "{sharing.errors.userIdRequired}")
   private Long id;
 
   @Pattern(regexp = "(READ|EDIT|read|edit)")

@@ -51,7 +51,9 @@ public class UserController extends BaseController {
     velocityModel.put("fullName", user.getFullName());
     EmailContent content =
         contentGenerator.render(
-            "email.account.activated.subject", "genericAccountActivation.vm", velocityModel);
+            "email.account.genericAccountActivation.subject",
+            "genericAccountActivation.vm",
+            velocityModel);
     emailer.sendEmail(content, List.of(user.getEmail()), null);
     return "accountActivated";
   }
@@ -71,7 +73,8 @@ public class UserController extends BaseController {
 
     rc.put("fullName", user.getFullName());
     EmailContent content =
-        contentGenerator.render("email.account.denied.subject", "genericAccountDenial.vm", rc);
+        contentGenerator.render(
+            "email.account.genericAccountDenial.subject", "genericAccountDenial.vm", rc);
     emailer.sendEmail(content, List.of(user.getEmail()), null);
     return "accountDenied";
   }

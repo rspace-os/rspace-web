@@ -1099,7 +1099,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> subSampleApiMgr.updateApiSubSample(moveRequest, testUser));
-    assertEquals("move.failure.cannot.locate.target.container", iae.getMessage());
+    assertEquals("errors.inventory.move.targetContainer.unavailable", iae.getMessage());
   }
 
   @Test

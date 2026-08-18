@@ -23,6 +23,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.RSChemElementManager;
+import com.researchspace.webapp.controller.ResponseHeaders;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -116,7 +117,7 @@ public class FilesApiController extends BaseApiController implements FilesApi {
     }
     FileProperty fileProp = mediaFile.getFileProperty();
 
-    response.setContentType(mediaFile.getContentType());
+    ResponseHeaders.setContentTypeAndPreventSniffing(response, mediaFile.getContentType());
     response.setHeader(
         "Content-Disposition", "attachment; filename=\"" + mediaFile.getFileName() + "\"");
     Optional<FileInputStream> fis = fileStore.retrieve(fileProp);
@@ -181,7 +182,9 @@ public class FilesApiController extends BaseApiController implements FilesApi {
   private void validateCaptionMaxLength(String caption) {
     Validate.isTrue(
         caption.length() <= EditInfo.DESCRIPTION_LENGTH,
-        getMessage("errors.maxlength", new Object[] {"caption", EditInfo.DESCRIPTION_LENGTH}));
+        getMessage(
+            "errors.maxLength",
+            new Object[] {getMessage("label.caption", null), EditInfo.DESCRIPTION_LENGTH}));
   }
 
   @Override

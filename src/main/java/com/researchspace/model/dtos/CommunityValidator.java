@@ -2,6 +2,7 @@ package com.researchspace.model.dtos;
 
 import com.researchspace.model.Community;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -20,14 +21,25 @@ public class CommunityValidator implements Validator {
     Community community = (Community) target;
 
     if (StringUtils.isBlank(community.getDisplayName())) {
-      errors.rejectValue("displayName", "errors.required", new Object[] {"Display name"}, null);
+      errors.rejectValue(
+          "displayName",
+          "errors.required",
+          new Object[] {new DefaultMessageSourceResolvable("label.displayName")},
+          null);
     }
     if (StringUtils.isBlank(community.getUniqueName())) {
-      errors.rejectValue("uniqueName", "errors.required", new Object[] {"Unique name"}, null);
+      errors.rejectValue(
+          "uniqueName",
+          "errors.required",
+          new Object[] {new DefaultMessageSourceResolvable("label.uniqueName")},
+          null);
     }
     if (community.getAdminIds() == null || community.getAdminIds().isEmpty()) {
       errors.rejectValue(
-          "adminIds", "errors.required", new Object[] {"Choosing an administrator"}, null);
+          "adminIds",
+          "errors.required",
+          new Object[] {new DefaultMessageSourceResolvable("label.choosingAdministrator")},
+          null);
     }
   }
 }

@@ -87,7 +87,7 @@ public class InstrumentTemplatePostValidatorTest extends InventoryRecordValidati
 
     assertTrue(e.getErrorCount() >= 1);
     assertEquals("fields[0].name", e.getFieldError().getField());
-    assertEquals("errors.inventory.template.empty.field.name", e.getFieldError().getCode());
+    assertEquals("errors.inventory.template.emptyFieldName", e.getFieldError().getCode());
   }
 
   @Test
@@ -104,7 +104,7 @@ public class InstrumentTemplatePostValidatorTest extends InventoryRecordValidati
     assertTrue(e.getErrorCount() >= 1);
     assertTrue(
         e.getAllErrors().stream()
-            .anyMatch(err -> "errors.inventory.template.empty.field.type".equals(err.getCode())));
+            .anyMatch(err -> "errors.inventory.template.emptyFieldType".equals(err.getCode())));
   }
 
   // @Test

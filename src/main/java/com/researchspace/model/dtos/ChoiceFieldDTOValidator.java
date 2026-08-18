@@ -1,6 +1,5 @@
 package com.researchspace.model.dtos;
 
-import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.FieldUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -10,22 +9,25 @@ public class ChoiceFieldDTOValidator extends AbstractFieldFormValidator implemen
 
   @Override
   public boolean supports(Class<?> clazz) {
-    return clazz.isAssignableFrom(ChoiceFieldDTO.class);
+    return ChoiceFieldDTO.class.isAssignableFrom(clazz);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void validate(Object target, Errors errors) {
-    ChoiceFieldDTO<ChoiceFieldForm> dto = (ChoiceFieldDTO<ChoiceFieldForm>) target;
-    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fieldName", "no.name");
-    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "multipleChoice", "no.multiplechoice");
-    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "choiceValues", "no.multiplechoice");
+    if (!(target instanceof ChoiceFieldDTO<?> dto)) {
+      throw new IllegalArgumentException("Target must be a ChoiceFieldDTO");
+    }
+    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fieldName", "errors.noValue.name");
+    ValidationUtils.rejectIfEmptyOrWhitespace(
+        errors, "multipleChoice", "errors.noValue.multipleChoice");
+    ValidationUtils.rejectIfEmptyOrWhitespace(
+        errors, "choiceValues", "errors.noValue.multipleChoice");
     if (isNameTooLong(dto.getFieldName())) {
       rejectTooLong(errors);
     }
     String vals = dto.getChoiceValues();
     if (!FieldUtils.isValidRadioOrChoiceString(vals)) {
-      errors.rejectValue("choiceValues", "choiceoptions.invalidformat");
+      errors.rejectValue("choiceValues", "form.choiceOptions.invalidFormat");
     }
   }
 }

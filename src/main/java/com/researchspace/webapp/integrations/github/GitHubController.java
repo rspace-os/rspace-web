@@ -1,17 +1,22 @@
 package com.researchspace.webapp.integrations.github;
 
+import static com.researchspace.session.SessionAttributeUtils.getSessionAttribute;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.field.ErrorList;
-import com.researchspace.service.IntegrationsHandler;
-import com.researchspace.service.UserManager;
+import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -23,7 +28,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -46,7 +50,7 @@ import org.springframework.web.client.RestTemplate;
 @Controller
 @RequestMapping("/github")
 @Slf4j
-public class GitHubController {
+public class GitHubController extends BaseOAuth2Controller {
 
   protected static final String GITHUB_VIEW_NAME = "connect/github/gitHubTreeView";
 
@@ -64,9 +68,6 @@ public class GitHubController {
 
   @Value("${github.secret}")
   private String clientSecret;
-
-  private @Autowired IntegrationsHandler integrationsHandler;
-  private @Autowired UserManager userManager;
 
   private RestTemplate restTemplate;
 
@@ -199,7 +200,18 @@ public class GitHubController {
   @GetMapping("/oauthUrl")
   @ResponseBody
   public AjaxReturnObject<String> oauthUrl() {
-    var url = githubAuthorizeUrl + "?scope=repo,user&client_id=" + this.clientId;
+    String redirectUri =
+        URLEncoder.encode(
+            properties.getServerUrl() + "/github/redirect_uri", StandardCharsets.UTF_8);
+    String state = generateState();
+    var url =
+        githubAuthorizeUrl
+            + "?scope=repo,user&client_id="
+            + this.clientId
+            + "&redirect_uri="
+            + redirectUri
+            + "&state="
+            + state;
     return new AjaxReturnObject<>(url, null);
   }
 
@@ -217,7 +229,31 @@ public class GitHubController {
 
   @GetMapping("/redirect_uri")
   public String onAuthorization(
-      @RequestParam Map<String, String> params, Model model, Principal principal) {
+      @RequestParam Map<String, String> params,
+      Model model,
+      Principal principal,
+      HttpServletRequest request) {
+    try {
+      // oauthUrl() always issues a state param, so a callback with no cached state is a forged or
+      // replayed request. verifyStateParameter only compares when a cached state exists (it passes
+      // when there is none), so require its presence here to keep the CSRF check fail-closed.
+      if (getSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE) == null) {
+        throw new IllegalStateException(getText("connect.authorizationError.stateMismatch"));
+      }
+      verifyStateParameter(request);
+    } catch (IllegalStateException e) {
+      log.error("GitHub OAuth state mismatch", e);
+      OauthAuthorizationError error =
+          getAuthorizationBuilder()
+              .errorMsg(
+                  messages.getMessage("apps.oauth.errors.connection", new Object[] {"GitHub"}))
+              .errorDetails(e.getMessage())
+              .build();
+      ConnectionResultPage.addError(
+          model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
+    }
+
     String authorizationCode = params.get("code");
     String accessToken;
     try {
@@ -226,7 +262,8 @@ public class GitHubController {
       log.error("GitHub access denied", e);
       OauthAuthorizationError error =
           getAuthorizationBuilder()
-              .errorMsg("GitHub access denied")
+              .errorMsg(
+                  messages.getMessage("apps.oauth.errors.accessDenied", new Object[] {"GitHub"}))
               .errorDetails(e.getMessage())
               .build();
       ConnectionResultPage.addError(
@@ -236,7 +273,7 @@ public class GitHubController {
       log.error("Exception during GitHub token exchange", e);
       OauthAuthorizationError error =
           getAuthorizationBuilder()
-              .errorMsg("Exception during token exchange")
+              .errorMsg(messages.getMessage("apps.oauth.errors.tokenExchange"))
               .errorDetails(e.getMessage())
               .build();
       ConnectionResultPage.addError(
@@ -250,7 +287,7 @@ public class GitHubController {
       log.error("Getting GitHub repositories list failed", e);
       OauthAuthorizationError error =
           getAuthorizationBuilder()
-              .errorMsg("Getting repositories list failed")
+              .errorMsg(messages.getMessage("apps.oauth.errors.repositoryList"))
               .errorDetails(e.getMessage())
               .build();
       ConnectionResultPage.addError(
@@ -271,13 +308,17 @@ public class GitHubController {
   }
 
   // Map is from repository name to access code
-  @SuppressWarnings("unchecked")
   private Map<String, String> getConfiguredRepositoriesWithTokens(Principal principal) {
     Map<String, String> hashMap = new HashMap<>();
     User user = userManager.getUserByUsername(principal.getName());
     IntegrationInfo integration = integrationsHandler.getIntegration(user, "GITHUB");
     for (Object propertySetObject : integration.getOptions().values()) {
-      Map<String, String> propertySet = (Map<String, String>) propertySetObject;
+      if (!(propertySetObject instanceof Map<?, ?> values)) {
+        throw new IllegalStateException("GitHub integration options must be objects");
+      }
+      Map<String, String> propertySet = new HashMap<>();
+      values.forEach(
+          (key, value) -> propertySet.put(String.class.cast(key), String.class.cast(value)));
       String repositoryName = propertySet.get("GITHUB_REPOSITORY_FULL_NAME");
       String accessToken = propertySet.get("GITHUB_ACCESS_TOKEN");
       hashMap.put(repositoryName, accessToken);
@@ -294,7 +335,7 @@ public class GitHubController {
       dir = java.net.URLDecoder.decode(dir, "UTF-8");
     } catch (UnsupportedEncodingException e) {
       log.error("Error while parsing a GitHub tree view request", e);
-      model.addAttribute("error", "Error while parsing the request");
+      model.addAttribute("error", messages.getMessage("apps.github.errors.parseTreeRequest"));
       model.addAttribute("treeNodes", nodes);
       return GITHUB_VIEW_NAME;
     }
@@ -322,7 +363,7 @@ public class GitHubController {
         model.addAttribute("error", "");
       } catch (Exception e) {
         log.error("GitHub tree view request failed", e);
-        model.addAttribute("error", "Error while getting GitHub folder contents");
+        model.addAttribute("error", messages.getMessage("apps.github.errors.getFolderContents"));
       }
     }
     model.addAttribute("treeNodes", nodes);

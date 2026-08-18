@@ -170,7 +170,7 @@ public interface MediaManager {
   /**
    * Saves input stream as a file in File Store Gallery, and creates (or updates) EcatMediaFile
    * entity. When creating new entity the type is decided based on file extension. <br>
-   * The method normally closes the input stream passed in.
+   * The method owns and closes the input stream on every outcome.
    *
    * @param mediaFileId (optional) id of EcatMediaFile this upload should update. If provided,
    *     method will call {@link #updateMediaFile(Long, InputStream, String, User, String)}.
@@ -183,6 +183,9 @@ public interface MediaManager {
    * @param user
    * @return subclass of EcatMediaFile (decided on file extension)
    * @throws IOException
+   * @throws MediaContentMismatchException if the content is not the type the file extension claims.
+   *     The input stream is closed before this is thrown, as it is on a normal return. Nothing is
+   *     written, so a caller handling several files can report this one and carry on.
    */
   EcatMediaFile saveMediaFile(
       InputStream inputStream,
@@ -205,6 +208,8 @@ public interface MediaManager {
    * @param lockId (optional) if current operation owns edit lock on the file, it can pass it
    * @return
    * @throws IOException
+   * @throws MediaContentMismatchException if the content is not the type the file extension claims
+   *     The input stream is closed before this is thrown, as it is on a normal return.
    */
   EcatMediaFile updateMediaFile(
       Long mediaFileId, InputStream inputStream, String updatedFileName, User user, String lockId)

@@ -81,6 +81,7 @@ type GeoLocationFieldArgs = {
   editable: boolean;
   handleUpdateValue: (index: number, key: string, value: string | Date) => void;
   doUpdateIdentifiers: () => void;
+  recordTypeName?: "sample" | "instrument";
 };
 
 const GeoLocationField = ({
@@ -89,6 +90,7 @@ const GeoLocationField = ({
   editable,
   handleUpdateValue: _handleUpdateValue,
   doUpdateIdentifiers,
+  recordTypeName,
 }: GeoLocationFieldArgs) => {
   const { t } = useTranslation("inventory");
   const polygonMessages: PolygonMessages = {
@@ -547,6 +549,7 @@ const GeoLocationField = ({
           editable={editable}
           geoLocation={geoLocation}
           doUpdateIdentifiers={doUpdateIdentifiers}
+          recordTypeName={recordTypeName}
         />
       )}
     </Grid>

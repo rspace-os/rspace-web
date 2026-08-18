@@ -250,7 +250,9 @@ public class SearchManagerImpl implements SearchManager {
           options.add(SearchConstants.INVENTORY_PARENT_SAMPLE_ID_OPTION);
         } else {
           throw new IllegalArgumentException(
-              "unsupported parent oid prefix: " + parentOid.getPrefix());
+              messages.getMessage(
+                  "errors.inventory.globalId.unsupportedParentPrefix",
+                  new Object[] {parentOid.getPrefix()}));
         }
         terms.add(parentOid.getDbId().toString());
       }

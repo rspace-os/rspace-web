@@ -60,7 +60,7 @@ public class SignupCaptchaVerifierTest extends SpringTransactionalTest {
     /* captcha enabled, but token not provided in request */
     when(propHolder.getSignupCaptchaEnabled()).thenReturn("true");
     assertEquals(
-        SignupCaptchaVerifier.ERROR_NO_CAPTCHA_IN_REQUEST,
+        SignupCaptchaVerifier.ERROR_CAPTCHA_RESPONSE_MISSING,
         captchaVerifier.verifyCaptchaFromRequest(mockRequest));
 
     /* Captcha enabled and provided, but google site key or secret key not in deployment properties.

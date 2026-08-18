@@ -153,7 +153,7 @@ public class ImageController extends BaseController {
     }
 
     final HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.IMAGE_PNG);
+    ResponseHeaders.setContentTypeAndPreventSniffing(headers, MediaType.IMAGE_PNG);
     // we couldn't make a thumbnail, use default icon
     if (byteSupplier == null) {
       byte[] bytes = mediaFactory.getFileSuffixIcon(ecatDocumentFile.getFileName());
@@ -260,17 +260,17 @@ public class ImageController extends BaseController {
 
   private void validateComposedId(String idComposed) {
     if (StringUtils.isEmpty(idComposed)) {
-      throw new IllegalArgumentException(" no id to retrieve");
+      throw new IllegalArgumentException(getText("errors.composedId.missing"));
     }
     if (!idComposed.matches("\\d+\\-\\d+")) {
       throw new IllegalArgumentException(
-          "Incorrect id format - should be '\\d+\\-\\d+' but was '" + idComposed + "'");
+          getText("errors.composedId.invalidFormat", new Object[] {idComposed}));
     }
   }
 
   private ResponseEntity<byte[]> returnBytesAsResponseEntity(byte[] data) {
     final HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.IMAGE_PNG);
+    ResponseHeaders.setContentTypeAndPreventSniffing(headers, MediaType.IMAGE_PNG);
     return new ResponseEntity<>(data, headers, HttpStatus.OK);
   }
 
@@ -282,11 +282,12 @@ public class ImageController extends BaseController {
     String imgExtension = ecatImage.getExtension();
     byte[] data = null;
     final HttpHeaders headers = new HttpHeaders();
+    MediaType responseContentType = ResponseHeaders.getContentTypeForImageExtension(imgExtension);
     if (ImageUtils.isTiff(imgExtension) && convertTiff && returnFullImage) {
       Optional<byte[]> tiffFileBytes = getTiffFileBytes(ecatImage);
       if (tiffFileBytes.isPresent()) {
         data = tiffFileBytes.get();
-        headers.setContentType(MediaType.IMAGE_PNG);
+        responseContentType = MediaType.IMAGE_PNG;
       }
     } else {
       try (InputStream is = getInputStreamForImageBytes(ecatImage, returnFullImage)) {
@@ -302,13 +303,7 @@ public class ImageController extends BaseController {
       return createEmptyByte500Response(headers);
     }
 
-    if (imgExtension.equals("jpeg") || imgExtension.equals("jpg")) {
-      headers.setContentType(MediaType.IMAGE_JPEG);
-    } else if (imgExtension.equals("gif")) {
-      headers.setContentType(MediaType.IMAGE_GIF);
-    } else if (imgExtension.equals("png")) {
-      headers.setContentType(MediaType.IMAGE_PNG);
-    }
+    ResponseHeaders.setContentTypeAndPreventSniffing(headers, responseContentType);
     return new ResponseEntity<>(data, headers, HttpStatus.CREATED);
   }
 
@@ -364,7 +359,7 @@ public class ImageController extends BaseController {
     long id = Long.parseLong(idComposed.split("-")[1]);
 
     final HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.IMAGE_PNG);
+    ResponseHeaders.setContentTypeAndPreventSniffing(headers, MediaType.IMAGE_PNG);
 
     EcatImage ecatImage = recordManager.getEcatImage(id, true);
     User subject = userManager.getAuthenticatedUserInSession();
@@ -579,6 +574,7 @@ public class ImageController extends BaseController {
   public void getIconImage(@PathVariable("id") Long id, HttpServletResponse response) {
     try {
       byte[] data = null;
+      String extension = "png";
       if (id < 0) {
         InputStream in = getIconImageFromFolder("icons/text.png");
         data = IOUtils.toByteArray(in);
@@ -589,11 +585,13 @@ public class ImageController extends BaseController {
           data = IOUtils.toByteArray(in);
         } else {
           data = iconEntity.getIconImage();
+          extension = iconEntity.getImgType();
         }
       }
       // setup caching for icon image in browser.
       new ResponseUtil().setCacheTimeInBrowser(3600 * 24 * 65, new Date(), response);
-      response.setContentType("image/jpeg");
+      ResponseHeaders.setContentTypeAndPreventSniffing(
+          response, ResponseHeaders.getContentTypeForImageExtension(extension).toString());
       response.setContentLength(data.length);
       response.getOutputStream().write(data);
     } catch (IOException ex) {

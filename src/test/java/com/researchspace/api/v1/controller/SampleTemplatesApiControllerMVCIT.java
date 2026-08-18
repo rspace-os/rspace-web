@@ -168,7 +168,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertEquals("Errors detected : 2", error.getMessage());
+    assertEquals("Errors detected: 2", error.getMessage());
     assertEquals(
         "subSampleAlias.alias: subSampleAlias.alias cannot be greater than 30 characters.",
         error.getErrors().get(0));
@@ -201,7 +201,7 @@ public class SampleTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andExpect(status().is4xxClientError())
             .andReturn();
     error = getErrorFromJsonResponseBody(result, ApiError.class);
-    assertEquals("Errors detected : 2", error.getMessage());
+    assertEquals("Errors detected: 2", error.getMessage());
     assertEquals(
         "subSampleAlias.alias: subSampleAlias.alias cannot be less than 2 characters.",
         error.getErrors().get(0));

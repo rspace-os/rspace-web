@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 /** Sends a message to an external messaging system e.g. Slack */
 public interface ExternalMessageSender {
 
-  public static final String RSPACE_BLUE = "#0c7cd5";
+  String RSPACE_BLUE = "#0c7cd5";
 
   /**
    * Boolean test as to whether the implementation supports sending messages to the supplied App

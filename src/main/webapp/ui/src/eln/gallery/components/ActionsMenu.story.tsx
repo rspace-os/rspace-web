@@ -6,7 +6,8 @@ import { LandmarksProvider } from "@/components/LandmarksContext";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/irods";
 import Result from "../../../util/result";
-import { Description, dummyId, type GalleryFile } from "../useGalleryListing";
+import type { GallerySection } from "../common";
+import { Description, dummyId, Filestore, type GalleryFile } from "../useGalleryListing";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
 import ActionsMenu from "./ActionsMenu";
 
@@ -177,7 +178,10 @@ function sharedFolderInPath({
   };
 }
 
-function renderWithProviders(files: Array<GalleryFile>) {
+function renderWithProviders(
+  files: Array<GalleryFile>,
+  opts?: { path?: ReadonlyArray<GalleryFile>; section?: GallerySection },
+) {
   return (
     <QueryClientProvider client={queryClient}>
       <React.Suspense fallback={null}>
@@ -185,7 +189,7 @@ function renderWithProviders(files: Array<GalleryFile>) {
           <Alerts>
             <LandmarksProvider>
               <GallerySelection>
-                <ActionsMenuWrapper files={files} />
+                <ActionsMenuWrapper files={files} path={opts?.path ?? null} section={opts?.section ?? "Images"} />
               </GallerySelection>
             </LandmarksProvider>
           </Alerts>
@@ -195,7 +199,15 @@ function renderWithProviders(files: Array<GalleryFile>) {
   );
 }
 
-function ActionsMenuWrapper({ files }: { files: Array<GalleryFile> }) {
+function ActionsMenuWrapper({
+  files,
+  path,
+  section,
+}: {
+  files: Array<GalleryFile>;
+  path: ReadonlyArray<GalleryFile> | null;
+  section: GallerySection;
+}) {
   const selection = useGallerySelection();
   React.useEffect(() => {
     selection.clear();
@@ -206,10 +218,29 @@ function ActionsMenuWrapper({ files }: { files: Array<GalleryFile> }) {
   return (
     <ActionsMenu
       refreshListing={() => Promise.reject(new Error("not implemented"))}
-      section="Images"
+      section={section}
       folderId={{ tag: "success", value: -1 }}
+      path={path}
     />
   );
+}
+
+const writableS3Filestore = new Filestore({
+  id: dummyId(),
+  name: "lrz-rs-experiments",
+  filesystemId: 1,
+  filesystemName: "LRZ filestore",
+  filesystemType: "S3",
+  canWrite: true,
+  ownerName: "Joe Bloggs",
+});
+
+export function ActionsMenuInWritableS3Filestore() {
+  return renderWithProviders([], { path: [writableS3Filestore], section: "NetworkFiles" });
+}
+
+export function ActionsMenuWithNoSelection() {
+  return renderWithProviders([]);
 }
 
 export function ActionsMenuWithNonFolder() {

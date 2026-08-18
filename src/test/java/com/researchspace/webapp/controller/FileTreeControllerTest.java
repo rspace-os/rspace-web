@@ -97,9 +97,12 @@ public class FileTreeControllerTest {
     when(folderMgr.getRootFolderForUser(any)).thenReturn(root1);
   }
 
-  @SuppressWarnings("unchecked")
   private <T> List<T> getListFromModel(ExtendedModelMap model, String property, Class<T> clazz) {
-    return (List<T>) model.get(property);
+    Object value = model.get(property);
+    if (!(value instanceof List<?> list)) {
+      throw new AssertionError(property + " is not a list");
+    }
+    return list.stream().map(clazz::cast).toList();
   }
 
   ISearchResults<TreeViewItem> noGallery() {
@@ -107,7 +110,7 @@ public class FileTreeControllerTest {
     return new SearchResultsImpl<>(TransformerUtils.toList(res1), 0, 1L);
   }
 
-  private ISearchResults galleryFolderPlusNormalItem() {
+  private ISearchResults<TreeViewItem> galleryFolderPlusNormalItem() {
     TreeViewItem res1 = normalDoc(1L);
     TreeViewItem galleryFolder = galleryFolder(3L);
     return new SearchResultsImpl<>(TransformerUtils.toList(res1, galleryFolder), 0, 2L);

@@ -20,7 +20,7 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = {ValidRoRID.class})
 @Documented
 public @interface ValidRoR {
-  String message() default "Not a valid RoR";
+  String message() default "{validation.ror.invalid}";
 
   Class<?>[] groups() default {};
 

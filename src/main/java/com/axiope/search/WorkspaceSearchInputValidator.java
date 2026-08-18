@@ -5,10 +5,11 @@ import static com.axiope.search.SearchConstants.CREATION_DATE_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.FULL_TEXT_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.MODIFICATION_DATE_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
-import static org.apache.commons.lang3.StringUtils.join;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
+import com.researchspace.service.ListFormatUtils;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
@@ -57,13 +58,13 @@ public class WorkspaceSearchInputValidator extends SearchInputValidator {
     for (int i = 0; i < terms.length; i++) {
       if (options[i].equals(FULL_TEXT_SEARCH_OPTION) || options[i].equals(ALL_SEARCH_OPTION)) {
         if (terms[i].startsWith("*") || terms[i].startsWith("?")) {
-          errors.reject("errors.textquerywildcardstartdisallowed", new String[] {terms[i]}, null);
+          errors.reject("errors.textQueryWildcardStartDisallowed", new String[] {terms[i]}, null);
           return;
         }
       }
       if (options[i].equals(RECORDS_SEARCH_OPTION)) {
         if (options.length < 2 || allOptionsAreRecords(options)) {
-          errors.reject("errors.recordFilterMustIncludeTerm", null);
+          errors.reject("errors.recordFilterMustIncludeTerm");
           return;
         }
         String[] recordList = terms[i].split("\\s*[,;]\\s*");
@@ -71,19 +72,19 @@ public class WorkspaceSearchInputValidator extends SearchInputValidator {
           for (String recordId : recordList) {
             // examples of valid recordIds: FL420, NB1337, SD80085
             if (recordId.length() <= 2) {
-              errors.reject("errors.termcannotparse", new String[] {terms[i]}, null);
+              errors.reject("errors.termCannotParse", new String[] {terms[i]}, null);
               return;
             }
             String docType = recordId.substring(0, 2);
             if (!SELECTABLE_RECORD_PREFIXES.contains(docType)) {
-              errors.reject("errors.termcannotparse", new String[] {terms[i]}, null);
+              errors.reject("errors.termCannotParse", new String[] {terms[i]}, null);
               return;
             }
             String globalId = recordId.substring(2);
             Long.parseLong(globalId);
           }
         } catch (NumberFormatException e) {
-          errors.reject("errors.termcannotparse", new String[] {terms[i]}, null);
+          errors.reject("errors.termCannotParse", new String[] {terms[i]}, null);
           return;
         }
       }
@@ -94,7 +95,7 @@ public class WorkspaceSearchInputValidator extends SearchInputValidator {
         String[] toAndFrom =
             terms[i].split("\\s*[,;]\\s*", -1); // -1 makes sure we also catch empty strings
         if (toAndFrom.length != 2) {
-          errors.reject("errors.termcannotparse", new String[] {terms[i]}, null);
+          errors.reject("errors.termCannotParse", new String[] {terms[i]}, null);
           return;
         }
         try {
@@ -105,7 +106,7 @@ public class WorkspaceSearchInputValidator extends SearchInputValidator {
             OffsetDateTime.parse(toAndFrom[1]);
           }
         } catch (DateTimeParseException e) {
-          errors.reject("errors.termcannotparse", new String[] {terms[i]}, null);
+          errors.reject("errors.termCannotParse", new String[] {terms[i]}, null);
           return;
         }
       }
@@ -114,8 +115,12 @@ public class WorkspaceSearchInputValidator extends SearchInputValidator {
     if (orderBy != null) {
       if (!WorkspaceListingConfig.PERMITTED_ORDERBY_FIELDS.contains(orderBy)) {
         errors.reject(
-            "errors.invalidorderbyclause",
-            new Object[] {orderBy, join(WorkspaceListingConfig.PERMITTED_ORDERBY_FIELDS, ",")},
+            "errors.invalidOrderByClause",
+            new Object[] {
+              orderBy,
+              ListFormatUtils.formatList(
+                  WorkspaceListingConfig.PERMITTED_ORDERBY_FIELDS, ListFormatter.Type.OR)
+            },
             null);
       }
     }

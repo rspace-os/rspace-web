@@ -161,6 +161,85 @@ public class BundleTagTest {
   }
 
   @Test
+  public void i18nMessagesTagRendersClassicViteBundle() throws JspException {
+    manifest =
+        BundleTag.ChunkManifest.fromBundles(
+            Collections.singletonMap(
+                "legacyI18n",
+                new BundleTag.ChunkManifest.BundleAssets(
+                    List.of(), List.of(), List.of("/ui/dist/legacyI18n-abc123.js"))));
+    I18nMessagesTag i18nTag =
+        new I18nMessagesTag() {
+          @Override
+          ChunkManifest getManifestCache() {
+            return manifest;
+          }
+
+          @Override
+          Set<String> getRenderedAssetKeys() {
+            return renderedAssets;
+          }
+        };
+    i18nTag.setPageContext(pageContext);
+
+    assertEquals(TagSupport.SKIP_BODY, i18nTag.doStartTag());
+    // The catalogue comes first only because it is written first; RS.msg reads both at call time.
+    assertEquals(
+        "<script src=\"/ui/dist/legacyMessages.en-US.js\"></script>"
+            + "<script src=\"/ui/dist/legacyI18n-abc123.js\"></script>",
+        output.toString());
+  }
+
+  @Test
+  public void i18nMessagesTagCacheBustsTheCatalogueUrl() throws JspException {
+    servletContext.setAttribute(FrontendCacheVersion.CACHE_VERSION_ATTR, "1.2.3");
+    I18nMessagesTag i18nTag =
+        new I18nMessagesTag() {
+          @Override
+          ChunkManifest getManifestCache() {
+            return manifest;
+          }
+
+          @Override
+          Set<String> getRenderedAssetKeys() {
+            return renderedAssets;
+          }
+        };
+    i18nTag.setPageContext(pageContext);
+
+    assertEquals("/ui/dist/legacyMessages.en-US.js?v=1.2.3", i18nTag.catalogueUrl());
+  }
+
+  @Test
+  public void i18nMessagesTagRendersClassicEntrypointInHmrMode() throws JspException {
+    I18nMessagesTag i18nTag =
+        new I18nMessagesTag() {
+          @Override
+          boolean isReactDevMode() {
+            return true;
+          }
+
+          @Override
+          Map<String, String> getEntrypoints() {
+            return Collections.singletonMap("legacyI18n", "src/modules/common/i18n/legacyI18n.ts");
+          }
+
+          @Override
+          Set<String> getRenderedAssetKeys() {
+            return renderedAssets;
+          }
+        };
+    i18nTag.setPageContext(pageContext);
+
+    assertEquals(TagSupport.SKIP_BODY, i18nTag.doStartTag());
+    assertTrue(output.toString().contains("type=\"module\" src=\"/ui/dist/@vite/client\""));
+    assertTrue(
+        output
+            .toString()
+            .contains("<script src=\"/ui/dist/src/modules/common/i18n/legacyI18n.ts\"></script>"));
+  }
+
+  @Test
   public void renderingSameBundleTwiceDeduplicatesAssets() throws JspException {
     manifest =
         BundleTag.ChunkManifest.fromBundles(

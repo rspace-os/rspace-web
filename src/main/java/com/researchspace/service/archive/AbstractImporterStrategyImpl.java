@@ -8,7 +8,6 @@ import static com.researchspace.core.util.FieldParserConstants.DATA_CHEM_FILE_ID
 import static com.researchspace.core.util.FieldParserConstants.IMAGE_DROPPED_CLASS_NAME;
 import static com.researchspace.core.util.FieldParserConstants.MATH_CLASSNAME;
 import static com.researchspace.core.util.MediaUtils.extractFileType;
-import static java.lang.String.format;
 
 import com.researchspace.archive.ArchivalDocument;
 import com.researchspace.archive.ArchivalDocumentParserRef;
@@ -55,7 +54,9 @@ import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.ExternalWorkFlowDataManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.MediaContentMismatchException;
 import com.researchspace.service.MediaManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
@@ -97,6 +98,7 @@ abstract class AbstractImporterStrategyImpl {
   @Autowired FormManager formManager;
   @Autowired FieldManager fieldManager;
   @Autowired MediaManager mediaManager;
+  @Autowired MessageSourceUtils messages;
   @Autowired RSChemElementManager rsChemElementManager;
   @Autowired @Lazy StoichiometryService stoichiometryService;
   @Autowired InternalLinkDao internalLinkDao;
@@ -142,7 +144,8 @@ abstract class AbstractImporterStrategyImpl {
           "Importing document {} with name '{}'",
           ref.getArchivalDocument().getDocId(),
           ref.getArchivalDocument().getName());
-      monitor.setDescription(String.format("Importing document %s", ref.getName()));
+      monitor.setDescription(
+          messages.getMessage("archiveImport.progress.document", new Object[] {ref.getName()}));
       try {
         insertToDatabase(
             ref,
@@ -158,7 +161,8 @@ abstract class AbstractImporterStrategyImpl {
         // file that may be modified or inconsistent
       } catch (Exception e) {
         String errMsg =
-            format("Archive item %s could not be imported: %s", ref.getName(), e.getMessage());
+            messages.getMessage(
+                "archiveImport.errors.itemFailed", new Object[] {ref.getName(), e.getMessage()});
         report.getErrorList().addErrorMsg(errMsg);
         log.error(errMsg, e);
       } finally {
@@ -178,7 +182,7 @@ abstract class AbstractImporterStrategyImpl {
 
     Map<String, EcatMediaFile> oldId2MediaFile = new LinkedHashMap<>();
     log.info("Importing {} media records...", galleryMetaData.size());
-    monitor.setDescription("Importing Gallery documents");
+    monitor.setDescription(messages.getMessage("archiveImport.progress.galleryDocuments"));
     for (ArchivalGalleryMetaDataParserRef galleryRef : galleryMetaData) {
       ArchivalGalleryMetadata galleryMeta = galleryRef.getGalleryXML();
       ImportOverride importOverride = getGalleryMetaImportOverride(galleryMeta);
@@ -221,7 +225,17 @@ abstract class AbstractImporterStrategyImpl {
               "Error processing image {}: {} - continuing with import",
               galleryMetaFileName,
               e.getMessage());
-          report.getInfoList().addErrorMsg("Importing Gallery item " + e.getMessage());
+          report
+              .getInfoList()
+              .addErrorMsg(
+                  messages.getMessage(
+                      "archiveImport.info.importingGalleryItem", new Object[] {e.getMessage()}));
+        } catch (MediaContentMismatchException e) {
+          log.warn(
+              "Rejected Gallery item {} during import: {} - continuing with import",
+              galleryMetaFileName,
+              e.getMessage());
+          report.getInfoList().addErrorMsg(messages.getMessage(e.getErrorCode(), e.getArgs()));
         }
       }
       monitor.worked((monitor.getTotalWorkUnits() / numElements));
@@ -350,8 +364,8 @@ abstract class AbstractImporterStrategyImpl {
       report.addImportedRecord(newDoc);
     } else {
       String msg =
-          String.format(
-              "Could not create document from archive document: %s", archivalDoc.getName());
+          messages.getMessage(
+              "archiveImport.errors.createDocumentFailed", new Object[] {archivalDoc.getName()});
       report.getErrorList().addErrorMsg(msg);
       log.warn(msg);
     }

@@ -43,7 +43,9 @@ public class BarcodesApiController extends BaseApiInventoryController implements
               barcodeRequest.getImageWidth(),
               barcodeRequest.getImageHeight());
     } else {
-      throw new IllegalArgumentException("unsupported code type: " + requestedCodeType);
+      throw new IllegalArgumentException(
+          getMessage(
+              "errors.inventory.barcode.unsupportedCodeType", new Object[] {requestedCodeType}));
     }
     response.setContentType("image/png");
     ImageIO.write(codeImage, "png", response.getOutputStream());

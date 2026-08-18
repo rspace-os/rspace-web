@@ -45,7 +45,7 @@ public class InventoryEditLocksControllerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> locksController.lockItemForEdit("SD123", testUser));
-    assertEquals("unsupported global id type: SD123", iae.getMessage());
+    assertEquals("Unsupported global id type: SD123", iae.getMessage());
   }
 
   @Test

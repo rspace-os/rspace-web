@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = {ValidNumberFormFieldPostValidator.class})
 @Documented
 public @interface ValidNumberFormFieldPost {
-  String message() default "Min must be < max";
+  String message() default "{form.validation.numberRange}";
 
   Class<?>[] groups() default {};
 

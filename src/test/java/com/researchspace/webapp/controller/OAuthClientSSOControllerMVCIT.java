@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
@@ -12,6 +12,7 @@ import com.researchspace.service.OAuthAppManager;
 import com.researchspace.testutils.SSOTestContext;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.After;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.ResultActions;
@@ -20,6 +21,16 @@ import org.springframework.test.web.servlet.ResultActions;
 public class OAuthClientSSOControllerMVCIT extends MVCTestBase {
   @Autowired private OAuthAppManager oAuthAppManager;
   private @Autowired VerificationPasswordResetHandler verificationPasswordhandler;
+
+  /**
+   * This test disables API and OAuth access mid-method, and the system property outlives the test,
+   * so without this every later API test is unauthorised.
+   */
+  @After
+  public void restoreApiAccess() {
+    enableGlobalApiAccess();
+    enableApiOAuthAuthentication();
+  }
 
   @Test
   public void ssoSignupUserUsesVerificationPassword() throws Exception {
@@ -37,11 +48,10 @@ public class OAuthClientSSOControllerMVCIT extends MVCTestBase {
     OAuthAppInfo app = oAuthAppManager.addApp(user, "newApp").getEntity();
     postOauthAccessTokenRequest(username, password, app)
         .andExpect(status().isUnauthorized())
+        // The advice renders the exception's key into the response; assert on what callers see.
         .andExpect(
-            result ->
-                assertEquals(
-                    "Access to API has been disabled by RSpace administrator.",
-                    result.getResolvedException().getMessage()));
+            jsonPath("$.message")
+                .value("Access to API has been disabled by RSpace administrator."));
 
     // user1234 now fails
     enableGlobalApiAccess();
@@ -49,10 +59,7 @@ public class OAuthClientSSOControllerMVCIT extends MVCTestBase {
     app = oAuthAppManager.addApp(user, "newApp").getEntity();
     postOauthAccessTokenRequest(username, password, app)
         .andExpect(status().isUnauthorized())
-        .andExpect(
-            result ->
-                assertEquals(
-                    "Invalid user credentials.", result.getResolvedException().getMessage()));
+        .andExpect(jsonPath("$.message").value("Invalid user credentials."));
 
     // save verification password
     password = "abcdefghi";

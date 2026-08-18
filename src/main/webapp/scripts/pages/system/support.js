@@ -11,16 +11,16 @@ function addForceRefreshLicenseHandler (){
 		$('#mainArea').empty();
 		var jxqr =  $.post('/system/support/ajax/forceRefreshLicense', {}, function(response) {
 			if(response.data != null &&  response.data == true) {
-				RS.confirm("License refresh successful ", "success", 3000);
+				RS.confirm(RS.msg("legacyjs.system.support.licenseRefreshSuccessful"), "success", 3000);
 			} 
 			else if (response.data != null &&  response.data == false){
-				RS.confirm("License refresh failed, still using cached version. Please check server logs. ", "error", 3000);
+				RS.confirm(RS.msg("legacyjs.system.support.licenseRefreshFailed"), "error", 3000);
 			}else if (response.errorMsg != null){
 				apprise(getValidationErrorString(response.errorMsg));
 			}
 		});
 		jxqr.fail(function () {
-			 RS.ajaxFailed("Refreshing license", false, jxqr);
+			 RS.ajaxFailed(RS.msg("legacyjs.system.support.refreshingLicenseAction"), false, jxqr);
 		});		
 	});
 }
@@ -40,7 +40,7 @@ function addViewLicenseHandler(){
 			}
 		});
 		jxqr.fail(function () {
-			 RS.ajaxFailed("Refreshing license", false, jxqr);
+			 RS.ajaxFailed(RS.msg("legacyjs.system.support.refreshingLicenseAction"), false, jxqr);
 		});		
 	});
 }
@@ -57,13 +57,13 @@ function addMailLogHandler() {
 		var jxqr =  $.post('/system/support/ajax/mailLog', formData, function(response) {
 			if(response.data != null) {
 				$('#mainArea').empty();
-				RS.confirm("Log files mailed to RSpace support!", "success", 3000);
+				RS.confirm(RS.msg("legacyjs.system.support.logFilesMailed"), "success", 3000);
 			} else if (response.errorMsg != null){
 				apprise(getValidationErrorString(response.errorMsg));
 			}
 		});
 		jxqr.fail(function () {
-			 RS.ajaxFailed("Mailing log files to RSpace support", false, jxqr);
+			 RS.ajaxFailed(RS.msg("legacyjs.system.support.mailingLogFilesAction"), false, jxqr);
 		});
 	});
 }
@@ -85,7 +85,7 @@ function addViewLogHandler() {
 			}
 		});
 		jxqr.fail(function () {
-			 RS.ajaxFailed("Retrieving logs",false,jxqr);
+			 RS.ajaxFailed(RS.msg("legacyjs.system.support.retrievingLogsAction"),false,jxqr);
 		});
 	});
 }
