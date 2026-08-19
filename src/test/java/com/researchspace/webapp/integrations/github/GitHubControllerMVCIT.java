@@ -2,6 +2,8 @@ package com.researchspace.webapp.integrations.github;
 
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
@@ -15,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.Constants;
 import com.researchspace.model.User;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
 import com.researchspace.webapp.integrations.github.GitHubController.TreeNode;
 import java.util.HashMap;
@@ -70,6 +73,9 @@ public class GitHubControllerMVCIT extends MVCTestBase {
     initUsers(user);
     logoutAndLoginAs(user);
 
+    String state = "test-oauth-state";
+    SessionAttributeUtils.setSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE, state);
+
     String authorizationCode = RandomStringUtils.randomAlphabetic(20);
 
     server
@@ -99,11 +105,34 @@ public class GitHubControllerMVCIT extends MVCTestBase {
             .perform(
                 get("/github/redirect_uri")
                     .param("code", authorizationCode)
+                    .param("state", state)
                     .principal(user::getUsername))
             .andExpect(status().isOk())
             .andExpect(view().name("connect/connected"))
             .andReturn();
     assertThat(result.getModelAndView().getModel().get("connectionToken"), is(GITHUB_ACCESS_TOKEN));
+  }
+
+  @Test
+  public void testAuthorizationRejectedWhenNoStateEstablished() throws Exception {
+    User user = createAndSaveUser(getRandomAlphabeticString("user"), Constants.USER_ROLE);
+    initUsers(user);
+    logoutAndLoginAs(user);
+
+    // No RS_OAUTH_STATE seeded, so the CSRF check must fail closed and never exchange the code.
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                get("/github/redirect_uri")
+                    .param("code", RandomStringUtils.randomAlphabetic(20))
+                    .param("state", "forged-state")
+                    .principal(user::getUsername))
+            .andExpect(status().isOk())
+            .andExpect(view().name("connect/connected"))
+            .andReturn();
+    assertNull(result.getModelAndView().getModel().get("connectionToken"));
+    assertNotNull(result.getModelAndView().getModel().get("connectionError"));
+    server.verify();
   }
 
   private void addExampleRepositories(User user) {

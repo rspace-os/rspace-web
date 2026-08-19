@@ -86,6 +86,8 @@ export function createApiDocsConfiguration(baseUrl: string): Partial<ApiReferenc
     hideClientButton: true,
     // Hide the "Generate MCP server" button.
     mcp: { disabled: true },
+    // Explicitly opt out if Scalar's optional analytics plugin is ever loaded.
+    telemetry: false,
     // Do not pull fonts from fonts.scalar.com; RSpace installs may be air-gapped.
     withDefaultFonts: false,
     // Hide the "Powered by Scalar" attribution link (see HIDE_POWERED_BY_CSS).

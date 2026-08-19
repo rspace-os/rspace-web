@@ -391,6 +391,8 @@
           placeholders resolve from deployment.properties at runtime. -->
         <excludes>
           <exclude>applicationContext-dao.xml</exclude>
+          <!-- seed template for the git-ignored deployment.properties; never packaged -->
+          <exclude>deployments/*/deployment.properties.example</exclude>
         </excludes>
       </resource>
 

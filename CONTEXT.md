@@ -64,6 +64,44 @@ resolved during design. This file is a glossary only — no implementation detai
   again. Instruments carrying no conforming field are untouched, and templates
   are never filled, since one instrument's address must not be stamped onto every
   instrument later created from that template.
+- **Identity-bound field** — a field whose value names exactly one concrete
+  Instrument, so deriving a new record from an existing one must not carry it
+  over. The Landing page is identity-bound. Three derivation paths enforce this
+  today: duplicating an instrument, duplicating a template, and creating an
+  instrument from a template all start the derived record's Landing page blank,
+  whether the source value was system-filled or typed by a user. On a concrete
+  instrument the blank is then an ordinary materialised default (filled with the
+  new record's own address, or left blank when no public server address is
+  configured — blank being the recoverable state); on a template it stays blank,
+  since templates are never filled. A value the user supplies directly *on the
+  new record itself* (e.g. typed into the creation form, or sent in the creation
+  request) is theirs and is kept: it is derivation that discards a landing page,
+  never user input. The one value that does *not* count as user input on the new
+  record is the source template's own Landing page echoed back unchanged in the
+  creation request, which is what a client posting a template's fields verbatim
+  sends; it is discarded like any other inherited value, so the guarantee is a
+  property of the service rather than of client cooperation. Because the rule
+  spans layers, the field is recognised by the same name-and-type test in the
+  service layer (`PidinstFields`, shared with the PIDINST mapping) and in the
+  Inventory UI (`InstrumentModel.tsx`), and those two must be changed together.
+  Both resolve a single field, so a record with two conforming fields has only
+  its first treated as identity-bound.
+  Three things are deliberately out of RSDEV-1307's scope. Syncing an instrument
+  to a newer template version keeps the instrument's existing Landing page
+  (correct — it is that instrument's own address) but a Landing page field newly
+  added by the sync stays blank until the next ordinary save, because that path
+  alone does not run the fill. Creating a *template from an instrument* copies
+  the instrument's Landing page into the new template only when the user
+  explicitly ticks that field in the create dialog (content is opt-in per field,
+  and defaults to off), which still leaves a reusable definition holding one
+  instrument's address. And records derived *before* this rule existed are not
+  backfilled: they keep their source's Landing page, and will not self-heal,
+  because the fill only ever writes into a blank field. A migration was not
+  written because a blanket update cannot distinguish an inherited value from
+  one the user legitimately typed.
+  Finally, the rule keys off the English display label "Landing page". If seeded
+  template field labels are ever localised, or a user names the field in another
+  language, every derivation path silently stops clearing it.
 - **Provider record page** — the registered record's own page on the issuing
   provider, distinct from a citable public URL: it exists from registration
   onwards and may require signing in to that provider, so it is never presented

@@ -46,7 +46,8 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
   private static final String FIELD_COMMISSIONED = "Commissioned";
   private static final String FIELD_DECOMMISSIONED = "Decommissioned";
   private static final String FIELD_MEASURED_QUANTITY = "Measured quantity";
-  private static final String FIELD_LANDING_PAGE = "Landing page";
+  // shared with the service layer's landing-page rules, which must resolve the same field
+  private static final String FIELD_LANDING_PAGE = PidinstFields.LANDING_PAGE;
   private static final String FIELD_ALTERNATE_IDENTIFIER = "Alternate Identifier";
 
   // PIDINST controlled values ("DeCommissioned" deliberately differs from the field name).
@@ -164,17 +165,9 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
     return measuredVariables;
   }
 
-  private Optional<InventoryEntityField> mappedField(
-      InstrumentEntity instrument, String canonicalName, FieldType expectedType) {
-    return instrument.getActiveFields().stream()
-        .filter(f -> f.getType() == expectedType)
-        .filter(f -> f.getName() != null && canonicalName.equalsIgnoreCase(f.getName().trim()))
-        .findFirst();
-  }
-
   private Optional<String> mappedFieldData(
       InstrumentEntity instrument, String canonicalName, FieldType expectedType) {
-    return mappedField(instrument, canonicalName, expectedType)
+    return PidinstFields.mappedField(instrument, canonicalName, expectedType)
         .map(InventoryEntityField::getFieldData)
         .filter(StringUtils::isNotBlank)
         .map(String::trim);

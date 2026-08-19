@@ -72,6 +72,9 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${googledrive.client.id}")
   private String googleDriveClientId;
 
+  @Value("${googledrive.app.id}")
+  private String googleDriveAppId;
+
   @Value("${clustermarket.api.url}")
   private String clustermarketApiUrl;
 
@@ -164,6 +167,8 @@ public class DeploymentPropertiesController extends BaseController {
         return googleDriveDevKey;
       case "googledrive.client.id":
         return googleDriveClientId;
+      case "googledrive.app.id":
+        return googleDriveAppId;
       case "aspose.enabled":
         return String.valueOf(isAsposeEnabled());
       case "sysadmin.delete.user":
@@ -250,6 +255,7 @@ public class DeploymentPropertiesController extends BaseController {
 
     properties.put("googledrive.developer.key", googleDriveDevKey);
     properties.put("googledrive.client.id", googleDriveClientId);
+    properties.put("googledrive.app.id", googleDriveAppId);
 
     properties.put("server.urls.prefix", baseURL);
     properties.put("aspose.enabled", String.valueOf(isAsposeEnabled()));

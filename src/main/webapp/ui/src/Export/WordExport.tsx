@@ -54,40 +54,38 @@ export default function WordExport({
           data-test-id="word-title"
         />
       </Grid>
-      <Grid container>
-        <Grid size={5}>
-          <InputLabel htmlFor={pageSizeId}>{t("export.format.word.pageFormatLabel")}</InputLabel>
-          <Select
-            variant="standard"
-            fullWidth
-            value={pageSize}
-            onChange={({ target: { value } }) => updateExportDetails("pageSize", value)}
-            inputProps={{ id: pageSizeId }}
-            data-test-id="word-size"
-          >
-            <MenuItem value={"A4"} data-test-id="word-size-a4">
-              {t("export.format.word.pageSize.a4")}
-            </MenuItem>
-            <MenuItem value={"LETTER"} data-test-id="word-size-letter">
-              {t("export.format.word.pageSize.letter")}
-            </MenuItem>
-          </Select>
-          {pageSize !== defaultPageSize && (
-            <FormControlLabel
-              control={
-                <Checkbox
-                  onChange={({ target: { checked } }) => {
-                    updateExportDetails("setPageSizeAsDefault", checked);
-                  }}
-                  color="primary"
-                  checked={setPageSizeAsDefault}
-                  data-test-id="set-size-default"
-                />
-              }
-              label={t("export.format.word.setDefault", { pageSize })}
-            />
-          )}
-        </Grid>
+      <Grid size={5}>
+        <InputLabel htmlFor={pageSizeId}>{t("export.format.word.pageFormatLabel")}</InputLabel>
+        <Select
+          variant="standard"
+          fullWidth
+          value={pageSize}
+          onChange={({ target: { value } }) => updateExportDetails("pageSize", value)}
+          inputProps={{ id: pageSizeId }}
+          data-test-id="word-size"
+        >
+          <MenuItem value={"A4"} data-test-id="word-size-a4">
+            {t("export.format.word.pageSize.a4")}
+          </MenuItem>
+          <MenuItem value={"LETTER"} data-test-id="word-size-letter">
+            {t("export.format.word.pageSize.letter")}
+          </MenuItem>
+        </Select>
+        {pageSize !== defaultPageSize && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                onChange={({ target: { checked } }) => {
+                  updateExportDetails("setPageSizeAsDefault", checked);
+                }}
+                color="primary"
+                checked={setPageSizeAsDefault}
+                data-test-id="set-size-default"
+              />
+            }
+            label={t("export.format.word.setDefault", { pageSize })}
+          />
+        )}
       </Grid>
     </Grid>
   );
