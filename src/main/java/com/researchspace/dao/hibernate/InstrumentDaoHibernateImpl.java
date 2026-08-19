@@ -4,10 +4,15 @@ import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +25,10 @@ import org.springframework.stereotype.Repository;
 public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument, Long>
     implements InstrumentDao {
 
+  private static final CollectionQueryExecutor<Instrument> COLLECTION_QUERY =
+      new CollectionQueryExecutor<>(
+          Instrument.class, ApiV2InstrumentResource.DESCRIPTION, "collectionInstrument");
+
   private String defaultTemplateOwner;
 
   public InstrumentDaoHibernateImpl(Class<Instrument> persistentClass) {
@@ -28,6 +37,17 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   public InstrumentDaoHibernateImpl() {
     super(Instrument.class);
+  }
+
+  @Override
+  public ResourcePage<Instrument> getReadableResources(
+      ResourceRequest request, AccessResult access) {
+    return readableResourcePage(COLLECTION_QUERY, request, access);
+  }
+
+  @Override
+  public long countReadableResources(ResourceRequest request, AccessResult access) {
+    return countReadableResources(COLLECTION_QUERY, request, access);
   }
 
   @Override

@@ -5,6 +5,9 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import java.util.List;
 
@@ -22,6 +25,17 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
       InventorySearchDeletedOption deletedOption,
       String searchTerm,
       User user);
+
+  /**
+   * Returns one REST API v2 collection page of the instruments the user may read.
+   *
+   * <p>The filter, the sort, the permission rules, and the page are all applied by the database, so
+   * the page and the total agree and no caller has to read the whole collection.
+   */
+  ResourcePage<Instrument> getReadableResources(ResourceRequest request, AccessResult access);
+
+  /** Counts the instruments the user may read that match a REST API v2 collection request. */
+  long countReadableResources(ResourceRequest request, AccessResult access);
 
   /** Returns all instruments whose image or thumbnail is the given file property. */
   List<Instrument> getAllUsingImage(FileProperty fileProperty);
