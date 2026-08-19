@@ -5,6 +5,7 @@ import { HttpResponse, http } from "msw";
 import { type ComponentProps, type ReactElement, Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import AccountMenu, { formatFullName, logoutHrefForSession } from "@/modules/common/app/AccountMenu";
 import NewAppBar from "@/modules/common/app/AppBar";
 import HelpMenu from "@/modules/common/app/HelpMenu";
@@ -21,6 +22,10 @@ vi.mock("@/modules/common/hooks/auth", () => ({
 
 vi.mock("@/modules/common/app/lighthouse", () => ({
   useLighthouseSdk: vi.fn(),
+}));
+
+vi.mock("@/featureFlags/queries", () => ({
+  useIsFeatureFlagEnabled: vi.fn(),
 }));
 
 vi.mock("@/modules/common/ui/avatar", () => ({
@@ -58,7 +63,13 @@ const currentUser: CurrentUser = {
   orcid: { available: true, id: null },
   capabilities: { canUseInventory: true, canPublish: true, canViewSystem: false },
   livechat: { enabled: false, serverKey: null },
-  session: { operatedAs: false, lastSession: null },
+  session: {
+    operatedAs: false,
+    lastSession: null,
+    canUseDevtools: false,
+    canOverrideFeatureFlags: false,
+    canChangeFeatureFlagBaselines: false,
+  },
 };
 
 const appConfig = {
@@ -92,6 +103,7 @@ beforeEach(() => {
   server.use(...defaultHandlers);
   vi.mocked(useOauthTokenQuery).mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);
   vi.mocked(useLighthouseSdk).mockReturnValue({ lighthouseReady: false, showLighthouse: vi.fn() });
+  vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(true);
 });
 
 function renderAppBar() {
@@ -132,6 +144,17 @@ describe("NewAppBar (MSW-driven)", () => {
       within(navigation).queryByRole("link", { name: "common:appBar.sections.inventory.title" }),
     ).not.toBeInTheDocument();
     expect(within(navigation).getByRole("link", { name: "common:appBar.sections.system.title" })).toBeInTheDocument();
+  });
+
+  it("hides the booking nav link when the booking feature flag is disabled", async () => {
+    vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(false);
+
+    renderAppBar();
+
+    const navigation = await screen.findByRole("navigation", { name: "common:appBar.mainLinks" });
+    expect(
+      within(navigation).queryByRole("link", { name: "common:appBar.sections.booking.title" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the maintenance notice when /api/v2/maintenances carries a scheduled window", async () => {

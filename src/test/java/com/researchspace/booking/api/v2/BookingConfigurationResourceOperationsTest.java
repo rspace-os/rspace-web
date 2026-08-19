@@ -1,14 +1,17 @@
 package com.researchspace.booking.api.v2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
+import com.researchspace.featureflags.FeatureFlags;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
@@ -18,18 +21,28 @@ import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResolvedResourceReference;
 import com.researchspace.model.collection.ResourceReference;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.service.FeatureFlagManager;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.shiro.authz.AuthorizationException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class BookingConfigurationResourceOperationsTest {
 
   private final BookingConfigurationManager manager = mock(BookingConfigurationManager.class);
+  private final FeatureFlagManager featureFlags = mock(FeatureFlagManager.class);
   private final BookingConfigurationResourceOperations operations =
-      new BookingConfigurationResourceOperations(manager);
+      new BookingConfigurationResourceOperations(manager, featureFlags);
   private final User actor = mock(User.class);
+
+  @BeforeEach
+  void enableBooking() {
+    when(featureFlags.isFeatureFlagEnabled(FeatureFlags.BOOKING_ENABLED, actor)).thenReturn(true);
+  }
 
   @Test
   void translatesRestCreatesToTheSharedManagerInterface() {
@@ -55,6 +68,7 @@ class BookingConfigurationResourceOperationsTest {
   void authorizesAsTheSubjectAndRetainsTheOriginatingActorForWrites() {
     User subject = mock(User.class);
     User originatingActor = mock(User.class);
+    when(featureFlags.isFeatureFlagEnabled(FeatureFlags.BOOKING_ENABLED, subject)).thenReturn(true);
     ParsedDocument document = ParsedDocument.update(Map.of("enabled", true));
 
     operations.update(42L, document, new ApiV2Caller(subject, originatingActor));
@@ -121,6 +135,26 @@ class BookingConfigurationResourceOperationsTest {
             .orElseThrow());
 
     verify(manager).updateConfiguration(42L, new Patch(null, null, target), actor, actor);
+  }
+
+  @Test
+  void doesNotCallBookingManagerWhenBookingIsDisabled() {
+    when(featureFlags.isFeatureFlagEnabled(FeatureFlags.BOOKING_ENABLED, actor)).thenReturn(false);
+    ParsedDocument document = ParsedDocument.update(Map.of("enabled", true));
+    ResourceRequest request = ResourceRequest.unpaged(null);
+
+    assertEquals(List.of(), operations.find(request, actor).resources());
+    assertEquals(0, operations.count(request, actor));
+    assertEquals(Optional.empty(), operations.findById(42L, actor));
+    ApiV2Caller caller = ApiV2Caller.direct(actor);
+    assertThrows(AuthorizationException.class, () -> operations.create(document, caller));
+    assertThrows(
+        AuthorizationException.class, () -> operations.createMany(List.of(document), caller));
+    assertEquals(Optional.empty(), operations.update(42L, document, caller));
+    assertEquals(List.of(), operations.updateMany(request, document, caller));
+    assertEquals(Optional.empty(), operations.delete(42L, caller));
+    assertEquals(List.of(), operations.deleteMany(request, caller));
+    verifyNoInteractions(manager);
   }
 
   private static ResolvedResourceReference<BookableTargetType, Long> resolved(long id) {
