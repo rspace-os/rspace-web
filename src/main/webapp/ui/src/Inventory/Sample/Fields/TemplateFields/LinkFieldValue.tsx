@@ -31,6 +31,12 @@ type LinkFieldValueArgs = {
    * entered in the Name field just above and repeating it here is noise.
    */
   showFieldName?: boolean;
+  /**
+   * Overrides the editor's "Target" group heading. The template editor passes "Default link target",
+   * since inside the Default link section the target being chosen belongs to the default, not to the
+   * record. Left unset on an item, where "Target" is right.
+   */
+  targetHeading?: string;
 };
 
 /**
@@ -48,6 +54,7 @@ function LinkFieldValue({
   disabled,
   onChange,
   showFieldName = true,
+  targetHeading,
 }: LinkFieldValueArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
   const committedRelationType = field.link?.relationType ?? "";
@@ -213,6 +220,7 @@ function LinkFieldValue({
         relationOptions={relationOptions}
         relationFreeSolo={false}
         relationLabel={t("fields.extraFields.fields.relationType")}
+        targetHeading={targetHeading}
         targetGlobalId={stagedTargetGlobalId}
         onTargetChange={(globalId) => setStagedTarget(globalId)}
         targetError={Boolean(targetExistenceError) || !targetValidity.ok}

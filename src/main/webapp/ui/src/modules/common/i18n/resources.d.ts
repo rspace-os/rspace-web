@@ -3203,6 +3203,7 @@ export default interface Resources {
           "pinnedVersion": "Pinned to v{version}",
           "target": "Target",
           "targetGlobalId": "Target Global ID",
+          "targetPlaceholder": "e.g. SA123",
           "version": "Version"
         },
         "elnFolderBrowser": {
@@ -3394,8 +3395,9 @@ export default interface Resources {
           "allowedRelationshipTypes": "Allowed relationship types",
           "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
           "allowedRelationshipTypesExplanationInstrument": "The DataCite relationship types that links may use on instruments created from this template. Leave empty to allow all relationship types.",
-          "defaultLink": "Default link",
+          "defaultLink": "Default Link (optional)",
           "defaultLinkExplanation": "An optional link applied to every item created from this template. Its relationship type must be one of the allowed types above. Items can change or remove it afterwards.",
+          "defaultLinkTarget": "Default link target",
           "none": "None"
         },
         "move": {

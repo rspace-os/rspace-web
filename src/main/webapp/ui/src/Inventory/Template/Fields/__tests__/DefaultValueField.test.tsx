@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -182,5 +182,68 @@ describe("DefaultValueField", () => {
         screen.queryByRole("combobox", { name: "inventory:fields.extraFields.fields.relationType" }),
       ).not.toBeInTheDocument();
     });
+  });
+});
+
+describe("DefaultValueField default-link section", () => {
+  function renderLinkField() {
+    const field = makeMockField({ type: "link", allowedRelationTypes: ["IsCitedBy"] });
+    return render(
+      <ThemeProvider theme={materialTheme}>
+        <DefaultValueField field={field} editing />
+      </ThemeProvider>,
+    );
+  }
+
+  function section(container: HTMLElement): HTMLElement {
+    const found = container.querySelector<HTMLElement>('[data-test-id="DefaultLinkSection"]');
+    if (!found) throw new Error('no element with data-test-id="DefaultLinkSection"');
+    return found;
+  }
+
+  it("calls the target group 'Default link target' rather than the bare 'Target'", () => {
+    renderLinkField();
+
+    expect(
+      screen.getByRole("heading", { name: "inventory:fields.templateFields.defaultValue.defaultLinkTarget" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "inventory:fields.link.editor.target" })).not.toBeInTheDocument();
+  });
+
+  it("puts that subheading after the Default link heading and its explanation", () => {
+    renderLinkField();
+
+    const defaultLink = screen.getByRole("heading", {
+      name: "inventory:fields.templateFields.defaultValue.defaultLink",
+    });
+    const explanation = screen.getByText("inventory:fields.templateFields.defaultValue.defaultLinkExplanation");
+    const target = screen.getByRole("heading", {
+      name: "inventory:fields.templateFields.defaultValue.defaultLinkTarget",
+    });
+
+    expect(defaultLink.compareDocumentPosition(explanation) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(explanation.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("delineates the whole default-link section, which holds the heading and the editor", () => {
+    const { container } = renderLinkField();
+
+    const delineated = section(container);
+    expect(
+      within(delineated).getByRole("heading", {
+        name: "inventory:fields.templateFields.defaultValue.defaultLink",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(delineated).getByRole("heading", {
+        name: "inventory:fields.templateFields.defaultValue.defaultLinkTarget",
+      }),
+    ).toBeInTheDocument();
+    // the allowed-types control belongs to the section above, not inside the delineated one
+    expect(
+      within(delineated).queryByRole("combobox", {
+        name: "inventory:fields.templateFields.defaultValue.allowedRelationshipTypes",
+      }),
+    ).not.toBeInTheDocument();
   });
 });

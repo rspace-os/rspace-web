@@ -115,3 +115,38 @@ describe("LinkEditor layout", () => {
     expect(window.getComputedStyle(field as HTMLElement).width).toBe("11em");
   });
 });
+
+describe("LinkEditor target heading", () => {
+  it("labels the target group 'Target' by default", () => {
+    renderEditor();
+
+    expect(screen.getByRole("heading", { name: "inventory:fields.link.editor.target" })).toBeInTheDocument();
+  });
+
+  it("lets the caller name the target group, so a template can call it a default link target", () => {
+    // the same editor serves an item's own link, an extra-field link and a template's default; only
+    // the template's copy is a "default link target"
+    renderEditor({ targetHeading: "Default link target" });
+
+    expect(screen.getByRole("heading", { name: "Default link target" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "inventory:fields.link.editor.target" })).not.toBeInTheDocument();
+  });
+});
+
+describe("LinkEditor target row alignment", () => {
+  it("gives the target field no floating label, so its input line starts level with the buttons", () => {
+    // jsdom has no layout, so this asserts the structural cause rather than the pixels: a
+    // variant="standard" TextField with a label stacks the label above the input, dropping the
+    // input ~16px below the neighbouring buttons. Without one they share a top edge. The group
+    // heading and the helper text carry the naming instead.
+    const { container } = renderEditor();
+
+    const targetRow = row(container, "LinkEditor-targetRow");
+    expect(targetRow.querySelector("label")).toBeNull();
+
+    const input = within(targetRow).getByRole("textbox", {
+      name: "inventory:fields.link.editor.targetGlobalId",
+    });
+    expect(input).toHaveAttribute("placeholder", "inventory:fields.link.editor.targetPlaceholder");
+  });
+});
