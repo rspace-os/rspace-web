@@ -139,9 +139,9 @@ const PrimaryActionButton = ({
             return {
               label: t("common:actions.edit"),
               act: () => {
-                window.open(action.url);
+                window.open(action.url, "_blank", "noopener,noreferrer");
                 trackEvent("user:opens:document:collabora");
-              },
+              }
             };
           case "officeonline":
             return {
