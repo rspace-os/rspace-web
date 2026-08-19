@@ -2,43 +2,43 @@ import "@/stores/stores/RootStore";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
+import NavigateContext from "../../../../stores/contexts/Navigate";
 import SearchContext from "../../../../stores/contexts/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import Search from "../../../../stores/models/Search";
 import materialTheme from "../../../../theme";
-import { visitUrl } from "../../../../util/Util";
 import Searchbar from "../Searchbar";
 
 import "@/__tests__/__mocks__/resizeObserver";
 import { setMockScannedBarcode } from "@/__tests__/__mocks__/barcode-detection-api";
 
-/*
- * jsdom's window.location is not configurable, so full-page navigation is
- * asserted by mocking the visitUrl wrapper instead.
- */
-vi.mock("../../../../util/Util", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../../../util/Util")>();
-  return { ...actual, visitUrl: vi.fn() };
-});
-
 function renderSearchbar({
   search,
   handleSearch = () => {},
+  navigate = () => {},
 }: {
   search: Search;
   handleSearch?: (query: string) => void;
+  navigate?: (url: string) => void;
 }) {
   return render(
     <ThemeProvider theme={materialTheme}>
-      <SearchContext.Provider
+      <NavigateContext.Provider
         value={{
-          search,
-          differentSearchForSettingActiveResult: search,
+          useNavigate: () => navigate,
+          useLocation: () => ({ hash: "", pathname: "", search: "", state: {}, key: "" }),
         }}
       >
-        <Searchbar handleSearch={handleSearch} />
-      </SearchContext.Provider>
+        <SearchContext.Provider
+          value={{
+            search,
+            differentSearchForSettingActiveResult: search,
+          }}
+        >
+          <Searchbar handleSearch={handleSearch} />
+        </SearchContext.Provider>
+      </NavigateContext.Provider>
     </ThemeProvider>,
   );
 }
@@ -56,10 +56,6 @@ async function openScanner(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("Searchbar barcode scanning", () => {
-  beforeEach(() => {
-    vi.mocked(visitUrl).mockClear();
-  });
-
   test("When the SCAN module is allowed, the scan button and scan placeholder are shown.", () => {
     const search = new Search({
       factory: mockFactory(),
@@ -110,14 +106,15 @@ describe("Searchbar barcode scanning", () => {
     const permalink = `${window.location.origin}/inventory/sample/123`;
     setMockScannedBarcode(permalink);
     const handleSearch = vi.fn<(query: string) => void>();
+    const navigate = vi.fn<(url: string) => void>();
     const search = new Search({
       factory: mockFactory(),
     });
-    renderSearchbar({ search, handleSearch });
+    renderSearchbar({ search, handleSearch, navigate });
 
     await openScanner(user);
 
-    await waitFor(() => expect(vi.mocked(visitUrl)).toHaveBeenCalledWith(permalink), DETECTION_TIMEOUT);
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith("/inventory/sample/123"), DETECTION_TIMEOUT);
     expect(handleSearch).not.toHaveBeenCalled();
   });
 
@@ -126,10 +123,11 @@ describe("Searchbar barcode scanning", () => {
     vi.spyOn(HTMLVideoElement.prototype, "play").mockImplementation(() => Promise.resolve());
     setMockScannedBarcode("https://evil.example/inventory/sample/123");
     const handleSearch = vi.fn<(query: string) => void>();
+    const navigate = vi.fn<(url: string) => void>();
     const search = new Search({
       factory: mockFactory(),
     });
-    renderSearchbar({ search, handleSearch });
+    renderSearchbar({ search, handleSearch, navigate });
 
     await openScanner(user);
 
@@ -137,6 +135,6 @@ describe("Searchbar barcode scanning", () => {
       () => expect(handleSearch).toHaveBeenCalledWith("https://evil.example/inventory/sample/123"),
       DETECTION_TIMEOUT,
     );
-    expect(vi.mocked(visitUrl)).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

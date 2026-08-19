@@ -16,8 +16,9 @@ import SearchBarcodeIcon from "../../../assets/graphics/SearchBarcode";
 import CustomTooltip from "../../../components/CustomTooltip";
 import SearchDialog from "../../../components/SearchDialog";
 import useIsTextWiderThanField from "../../../hooks/ui/useIsTextWiderThanField";
+import NavigateContext from "../../../stores/contexts/Navigate";
 import SearchContext from "../../../stores/contexts/Search";
-import { isInventoryPermalink, visitUrl } from "../../../util/Util";
+import { isInventoryPermalink } from "../../../util/Util";
 import BarcodeScanner from "../../components/BarcodeScanner/BarcodeScanner";
 import type { BarcodeInput } from "../../components/BarcodeScanner/BarcodeScannerSkeleton";
 
@@ -28,6 +29,8 @@ type FormArgs = {
 const Form = observer(({ handleSearch }: FormArgs) => {
   const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
+  const { useNavigate } = useContext(NavigateContext);
+  const navigate = useNavigate();
 
   const handleChange = ({ target: { value } }: { target: { value: string } }) => {
     runInAction(() => {
@@ -50,7 +53,12 @@ const Form = observer(({ handleSearch }: FormArgs) => {
 
   const handleScan = (barcode: BarcodeInput) => {
     if (isInventoryPermalink(barcode.rawValue)) {
-      visitUrl(barcode.rawValue);
+      /*
+       * isInventoryPermalink guarantees a same-origin URL, so navigating by
+       * pathname through the navigation context keeps this a normal in-app
+       * navigation that host contexts (e.g. dialogs) can intercept.
+       */
+      navigate(new URL(barcode.rawValue).pathname);
     } else {
       runInAction(() => {
         search.fetcher.query = barcode.rawValue;

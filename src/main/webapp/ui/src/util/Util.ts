@@ -145,15 +145,6 @@ export const isInventoryPermalink = (str: string): boolean => {
 };
 
 /**
- * Navigates the browser to a URL with a full page load, as opposed to an
- * in-app route change. Centralising this also gives tests a seam to stub,
- * since jsdom cannot intercept assignments to window.location.
- */
-export const visitUrl = (url: string): void => {
-  window.location.assign(url);
-};
-
-/**
  * Applies a function to a value if it is not null or undefined.
  * Note that you probably want to use Optional (./optional.ts) or Result
  * (./result.ts) instead.
