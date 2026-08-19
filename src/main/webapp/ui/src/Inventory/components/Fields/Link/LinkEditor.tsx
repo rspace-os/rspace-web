@@ -95,6 +95,8 @@ export default function LinkEditor({
   const [browserOpen, setBrowserOpen] = useState(false);
   const [elnOpen, setElnOpen] = useState(false);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
+  const targetIcon = targetGlobalId ? iconForGlobalId(targetGlobalId) : null;
+  const groupHeadingSx = { fontWeight: 700, fontSize: "1rem" } as const;
 
   return (
     // The group headings descend from whatever level the caller's own label sits at, rather than
@@ -103,7 +105,7 @@ export default function LinkEditor({
     // enclosing field label rather than its siblings.
     <HeadingContext>
       <Box>
-        <Heading variant="h6" sx={{ fontWeight: 700, fontSize: "1rem" }}>
+        <Heading variant="h6" sx={groupHeadingSx}>
           {targetHeading ?? t("fields.link.editor.target")}
         </Heading>
         <Stack
@@ -151,33 +153,28 @@ export default function LinkEditor({
         {/* The selected target sits below the id field and pickers, not beside them: it is the
           outcome of using them, and in the row it competed for width and had its delete icon
           clipped (MuiChip-label is overflow: hidden, so a shrunk chip loses the X). */}
-        {targetGlobalId
-          ? (() => {
-              const iconData = iconForGlobalId(targetGlobalId);
-              return (
-                <Box sx={{ mt: 1 }}>
-                  <Chip
-                    // Match the committed (non-edit) LinkField pill. size="small"
-                    // gives the same geometry; the pl restores the left padding
-                    // the accented theme strips from deletable chips
-                    // (`&.MuiChip-deletable { padding: 0 }`). Without it the type
-                    // icon — which gets no MuiChip-icon margin because
-                    // RecordTypeIcon wraps it in a tooltip — sits flush against
-                    // the left edge instead of the non-edit pill's 4px
-                    // (spacing(0.5)). The selector is repeated to out-specify the
-                    // theme's two-class `.MuiChip-deletable` rule. The cancel
-                    // button just widens the chip.
-                    size="small"
-                    sx={{ "&.MuiChip-deletable": { pl: 0.5 } }}
-                    icon={iconData ? <RecordTypeIcon record={iconData} aria-hidden /> : undefined}
-                    label={targetName ? `${targetGlobalId} — ${targetName}` : targetGlobalId}
-                    onDelete={() => onTargetChange("", "")}
-                    data-test-id="LinkTarget-globalId"
-                  />
-                </Box>
-              );
-            })()
-          : null}
+        {targetGlobalId ? (
+          <Box sx={{ mt: 1 }}>
+            <Chip
+              // Match the committed (non-edit) LinkField pill. size="small"
+              // gives the same geometry; the pl restores the left padding
+              // the accented theme strips from deletable chips
+              // (`&.MuiChip-deletable { padding: 0 }`). Without it the type
+              // icon — which gets no MuiChip-icon margin because
+              // RecordTypeIcon wraps it in a tooltip — sits flush against
+              // the left edge instead of the non-edit pill's 4px
+              // (spacing(0.5)). The selector is repeated to out-specify the
+              // theme's two-class `.MuiChip-deletable` rule. The cancel
+              // button just widens the chip.
+              size="small"
+              sx={{ "&.MuiChip-deletable": { pl: 0.5 } }}
+              icon={targetIcon ? <RecordTypeIcon record={targetIcon} aria-hidden /> : undefined}
+              label={targetName ? `${targetGlobalId} — ${targetName}` : targetGlobalId}
+              onDelete={() => onTargetChange("", "")}
+              data-test-id="LinkTarget-globalId"
+            />
+          </Box>
+        ) : null}
         {validationMessage ? <FormHelperText error>{validationMessage}</FormHelperText> : null}
         <Box sx={{ mt: 2 }}>
           <Autocomplete
@@ -207,7 +204,7 @@ export default function LinkEditor({
             }}
           />
         </Box>
-        <Heading variant="h6" sx={{ mt: 2, fontWeight: 700, fontSize: "1rem" }}>
+        <Heading variant="h6" sx={{ mt: 2, ...groupHeadingSx }}>
           {t("fields.link.editor.version")}
         </Heading>
         <Stack direction="row" spacing={1} sx={{ mt: 0.5, alignItems: "center" }} data-test-id="LinkEditor-versionRow">
