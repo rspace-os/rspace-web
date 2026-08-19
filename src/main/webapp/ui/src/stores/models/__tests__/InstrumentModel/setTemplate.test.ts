@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
+import { LANDING_PAGE_FIELD_NAME } from "../../InstrumentModel";
 import { makeMockInstrumentTemplate } from "../InstrumentTemplateModel/mocking";
 import { makeMockInstrument } from "./mocking";
 
@@ -187,6 +188,233 @@ describe("InstrumentModel.setTemplate", () => {
       expect(fetchSpy).toHaveBeenCalledOnce();
     });
 
+    test("blanks the Landing page field but keeps other template defaults", async () => {
+      const template = makeMockInstrumentTemplate({
+        fields: [
+          {
+            id: 1,
+            globalId: "IF1",
+            name: LANDING_PAGE_FIELD_NAME,
+            type: "uri",
+            content: "https://lab.example.org/original",
+            selectedOptions: null,
+            definition: null,
+            columnIndex: 1,
+            attachment: null,
+            mandatory: false,
+          },
+          {
+            id: 2,
+            globalId: "IF2",
+            name: "Manufacturer",
+            type: "text",
+            content: "Acme Instruments",
+            selectedOptions: null,
+            definition: null,
+            columnIndex: 2,
+            attachment: null,
+            mandatory: false,
+          },
+        ],
+      });
+      vi.spyOn(template, "fetchAdditionalInfo").mockResolvedValue(undefined);
+      const instrument = makeUnsavedInstrument();
+      await instrument.setTemplate(template);
+
+      const landingPage = instrument.fields.find((f) => f.name === LANDING_PAGE_FIELD_NAME);
+      expect(landingPage?.content).toBe("");
+      expect(landingPage?.hasContent).toBe(false);
+      expect(instrument.fields.find((f) => f.name === "Manufacturer")?.content).toBe("Acme Instruments");
+    });
+
+    test("blanks only the first Landing page field, as the backend resolves only one", async () => {
+      const template = makeMockInstrumentTemplate({
+        fields: [
+          {
+            id: 1,
+            globalId: "IF1",
+            name: LANDING_PAGE_FIELD_NAME,
+            type: "uri",
+            content: "https://lab.example.org/first",
+            selectedOptions: null,
+            definition: null,
+            columnIndex: 1,
+            attachment: null,
+            mandatory: false,
+          },
+          {
+            id: 2,
+            globalId: "IF2",
+            // differs only by case, so the name-distinctness check does not reject it while the
+            // case-insensitive predicate still matches it
+            name: "landing page",
+            type: "uri",
+            content: "https://lab.example.org/second",
+            selectedOptions: null,
+            definition: null,
+            columnIndex: 2,
+            attachment: null,
+            mandatory: false,
+          },
+        ],
+      });
+      vi.spyOn(template, "fetchAdditionalInfo").mockResolvedValue(undefined);
+      const instrument = makeUnsavedInstrument();
+      await instrument.setTemplate(template);
+
+      // the backend clears and refills exactly one field; blanking both here would leave the
+      // second permanently empty, since nothing would ever fill it
+      expect(instrument.fields[0].content).toBe("");
+      expect(instrument.fields[1].content).toBe("https://lab.example.org/second");
+    });
+
+    test("matches the Landing page field ignoring case and surrounding whitespace", async () => {
+      const template = makeMockInstrumentTemplate({
+        fields: [
+          {
+            id: 1,
+            globalId: "IF1",
+            name: "  landing PAGE ",
+            type: "uri",
+            content: "https://lab.example.org/original",
+            selectedOptions: null,
+            definition: null,
+            columnIndex: 1,
+            attachment: null,
+            mandatory: false,
+          },
+        ],
+      });
+      vi.spyOn(template, "fetchAdditionalInfo").mockResolvedValue(undefined);
+      const instrument = makeUnsavedInstrument();
+      await instrument.setTemplate(template);
+      expect(instrument.fields[0].content).toBe("");
+    });
+
+    test("does not blank a non-URI field named Landing page", async () => {
+      const template = makeMockInstrumentTemplate({
+        fields: [
+          {
+            id: 1,
+            globalId: "IF1",
+            name: LANDING_PAGE_FIELD_NAME,
+            type: "text",
+            content: "see the lab handbook",
+            selectedOptions: null,
+            definition: null,
+            columnIndex: 1,
+            attachment: null,
+            mandatory: false,
+          },
+        ],
+      });
+      vi.spyOn(template, "fetchAdditionalInfo").mockResolvedValue(undefined);
+      const instrument = makeUnsavedInstrument();
+      await instrument.setTemplate(template);
+      expect(instrument.fields[0].content).toBe("see the lab handbook");
+    });
+
+    test("does not blank a URI field with a different name", async () => {
+      const template = makeMockInstrumentTemplate({
+        fields: [
+          {
+            id: 1,
+            globalId: "IF1",
+            name: "Manual",
+            type: "uri",
+            content: "https://lab.example.org/manual",
+            selectedOptions: null,
+            definition: null,
+            columnIndex: 1,
+            attachment: null,
+            mandatory: false,
+          },
+        ],
+      });
+      vi.spyOn(template, "fetchAdditionalInfo").mockResolvedValue(undefined);
+      const instrument = makeUnsavedInstrument();
+      await instrument.setTemplate(template);
+      expect(instrument.fields[0].content).toBe("https://lab.example.org/manual");
+    });
+
+    test("preserves everything else about the Landing page field", async () => {
+      const template = makeMockInstrumentTemplate({
+        fields: [
+          {
+            id: 1,
+            globalId: "IF1",
+            name: LANDING_PAGE_FIELD_NAME,
+            type: "uri",
+            content: "https://lab.example.org/original",
+            selectedOptions: null,
+            definition: null,
+            columnIndex: 1,
+            attachment: null,
+            mandatory: true,
+          },
+        ],
+      });
+      vi.spyOn(template, "fetchAdditionalInfo").mockResolvedValue(undefined);
+      const instrument = makeUnsavedInstrument();
+      await instrument.setTemplate(template);
+      const field = instrument.fields[0];
+      expect(field.name).toBe(LANDING_PAGE_FIELD_NAME);
+      expect(field.type).toBe("uri");
+      expect(field.mandatory).toBe(true);
+    });
+
+    test("blanking a mandatory Landing page still leaves the instrument submittable", async () => {
+      const template = makeMockInstrumentTemplate({
+        fields: [
+          {
+            id: 1,
+            globalId: "IF1",
+            name: LANDING_PAGE_FIELD_NAME,
+            type: "uri",
+            content: "https://lab.example.org/original",
+            selectedOptions: null,
+            definition: null,
+            columnIndex: 1,
+            attachment: null,
+            mandatory: true,
+          },
+        ],
+      });
+      vi.spyOn(template, "fetchAdditionalInfo").mockResolvedValue(undefined);
+      const instrument = makeUnsavedInstrument();
+      instrument.setAttributes({ name: "New Instrument" });
+      await instrument.setTemplate(template);
+
+      // blanking is only safe because instrument structured fields are not validated client-side;
+      // if that ever changes, a mandatory Landing page would silently block creation in the form
+      expect(instrument.fields[0].content).toBe("");
+      expect(instrument.submittable.isOk).toBe(true);
+    });
+
+    test("a landing page typed after choosing the template is kept", async () => {
+      const template = makeMockInstrumentTemplate({
+        fields: [
+          {
+            id: 1,
+            globalId: "IF1",
+            name: LANDING_PAGE_FIELD_NAME,
+            type: "uri",
+            content: "https://lab.example.org/original",
+            selectedOptions: null,
+            definition: null,
+            columnIndex: 1,
+            attachment: null,
+            mandatory: false,
+          },
+        ],
+      });
+      vi.spyOn(template, "fetchAdditionalInfo").mockResolvedValue(undefined);
+      const instrument = makeUnsavedInstrument();
+      await instrument.setTemplate(template);
+      instrument.fields[0].setAttributesDirty({ content: "https://lab.example.org/mine" });
+      expect(instrument.fields[0].content).toBe("https://lab.example.org/mine");
+    });
+
     test("preserves user-added extra fields when changing templates", async () => {
       const templateA = makeMockInstrumentTemplate({
         extraFields: [
@@ -298,6 +526,46 @@ describe("InstrumentModel.setTemplate", () => {
       const instrument = makeMockInstrument({ id: 99, globalId: "IN99" });
       await instrument.setTemplate(template);
       expect(instrument.fields).toHaveLength(0);
+    });
+
+    test("does not blank an existing Landing page field", async () => {
+      const template = makeMockInstrumentTemplate({
+        fields: [
+          {
+            id: 1,
+            globalId: "IF1",
+            name: LANDING_PAGE_FIELD_NAME,
+            type: "uri",
+            content: "https://lab.example.org/template",
+            selectedOptions: null,
+            definition: null,
+            columnIndex: 1,
+            attachment: null,
+            mandatory: false,
+          },
+        ],
+      });
+      vi.spyOn(template, "fetchAdditionalInfo").mockResolvedValue(undefined);
+      const instrument = makeMockInstrument({
+        id: 99,
+        globalId: "IN99",
+        fields: [
+          {
+            id: 5,
+            globalId: "IF5",
+            name: LANDING_PAGE_FIELD_NAME,
+            type: "uri",
+            content: "https://lab.example.org/IN99",
+            selectedOptions: null,
+            definition: null,
+            columnIndex: 1,
+            attachment: null,
+            mandatory: false,
+          },
+        ],
+      });
+      await instrument.setTemplate(template);
+      expect(instrument.fields[0].content).toBe("https://lab.example.org/IN99");
     });
 
     test("still sets templateId and templateVersion", async () => {
