@@ -1,11 +1,14 @@
 import MenuItem from "@mui/material/MenuItem";
 import { render } from "@testing-library/react";
 import React from "react";
-import { describe, expect, test } from "vitest";
+import { afterAll, describe, expect, test } from "vitest";
 import { DialogBoundary, Menu } from "../DialogBoundary";
 
 const anchor = document.createElement("button");
 document.body.appendChild(anchor);
+afterAll(() => {
+  anchor.remove();
+});
 
 /**
  * PRT-1135. MUI's Portal keys a layout effect on its `container` prop and

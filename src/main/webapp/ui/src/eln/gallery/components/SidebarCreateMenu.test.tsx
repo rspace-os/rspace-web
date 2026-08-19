@@ -1,11 +1,14 @@
 import MenuItem from "@mui/material/MenuItem";
 import { modalClasses } from "@mui/material/Modal";
 import { render } from "@testing-library/react";
-import { describe, expect, test } from "vitest";
+import { afterAll, describe, expect, test } from "vitest";
 import SidebarCreateMenu from "./SidebarCreateMenu";
 
 const anchor = document.createElement("button");
 document.body.appendChild(anchor);
+afterAll(() => {
+  anchor.remove();
+});
 
 /**
  * PRT-1135. Clicking Close on a DMP import dialog clears the menu's anchor, so
