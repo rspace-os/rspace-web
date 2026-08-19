@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -41,6 +42,8 @@ import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.model.record.RecordFactory;
+import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
@@ -49,6 +52,7 @@ import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
+import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -762,6 +766,46 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
     assertFalse(changed);
     assertEquals(otherPage, landingPageFieldData(instrument));
+  }
+
+  @Test
+  void theTemplateFieldDeleteErrorsResolveToRealMessages() {
+    // ApiRuntimeException carries a bare string literal, so a code that no longer matches the
+    // catalogue compiles, passes every lint and fails only against a live server. A rebase across
+    // the JSON-catalogue migration left both of these pointing at renamed keys. Taking the code
+    // from the production path, rather than restating it, is what makes this a guard.
+    ApiInstrumentTemplate apiTemplate = new ApiInstrumentTemplate();
+    ApiInventoryEntityField deleteWithoutId = new ApiInventoryEntityField();
+    deleteWithoutId.setDeleteFieldRequest(true);
+    apiTemplate.setFields(List.of(deleteWithoutId));
+
+    ApiRuntimeException missingId =
+        assertThrows(
+            ApiRuntimeException.class,
+            () ->
+                manager.createDeleteRequestedFieldsInDbInstrumentTemplate(
+                    apiTemplate, new InstrumentTemplate(), user));
+
+    ApiInventoryEntityField deleteUnknownId = new ApiInventoryEntityField();
+    deleteUnknownId.setDeleteFieldRequest(true);
+    deleteUnknownId.setId(404L);
+    apiTemplate.setFields(List.of(deleteUnknownId));
+
+    ApiRuntimeException unknownId =
+        assertThrows(
+            ApiRuntimeException.class,
+            () ->
+                manager.createDeleteRequestedFieldsInDbInstrumentTemplate(
+                    apiTemplate, new InstrumentTemplate(), user));
+
+    JsonMessageSource messages = new JsonMessageSource();
+    Locale enUs = Locale.forLanguageTag("en-US");
+    assertDoesNotThrow(
+        () -> messages.getMessage(missingId.getErrorCode(), new Object[] {1L}, enUs),
+        () -> missingId.getErrorCode() + " resolves to no message");
+    assertDoesNotThrow(
+        () -> messages.getMessage(unknownId.getErrorCode(), new Object[] {1L}, enUs),
+        () -> unknownId.getErrorCode() + " resolves to no message");
   }
 
   @Test

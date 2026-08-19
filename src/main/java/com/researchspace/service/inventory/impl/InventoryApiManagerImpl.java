@@ -8,6 +8,8 @@ import com.researchspace.api.v1.model.ApiBarcode;
 import com.researchspace.api.v1.model.ApiGroupBasicInfo;
 import com.researchspace.api.v1.model.ApiInventoryEditLock;
 import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockStatus;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiGroupInfoWithSharedFlag;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
@@ -42,9 +44,11 @@ import com.researchspace.service.impl.DocumentTagManagerImpl;
 import com.researchspace.service.inventory.ApiBarcodesHelper;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.ApiIdentifiersHelper;
+import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InventoryApiManager;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryLinkManager;
+import com.researchspace.service.inventory.InventoryLinkValidator;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -166,6 +170,183 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
       if (link != null && !link.isDeleted()) {
         inventoryLinkManager.deleteLink(link, user);
       }
+    }
+  }
+
+  /**
+   * Applies a record's chosen link value to its structured link field, going through the {@link
+   * InventoryLinkManager} so the target is parsed/validated and the Envers revision captured (the
+   * same path used by extra-field links). An unchanged payload is a no-op (previously every save
+   * replaced the row, resetting its identity and creation date); a changed payload updates the
+   * field's existing InventoryLink row in place; clearing the value dereferences the row, which the
+   * field's {@code orphanRemoval} mapping hard-deletes at flush (an Envers DEL revision keeps the
+   * history in {@code InventoryLink_AUD}; a prior soft-delete write would be collapsed into that
+   * same DEL revision, so none is attempted). This differs deliberately from the extra-field delete
+   * path, where the FIELD itself is soft-deleted and its link row therefore survives soft-deleted
+   * alongside it. The chosen relation type must be permitted by the template field's
+   * allowed-relation-types whitelist (an empty whitelist permits all).
+   *
+   * <p>Item semantics: an omitted link clears. See the four-argument overload.
+   */
+  boolean applyLinkFieldValue(
+      InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
+    return applyLinkFieldValue(field, apiField, user, false);
+  }
+
+  /**
+   * @param omittedLinkPreservesExisting how to read a payload that carries no {@code link} key at
+   *     all. True for a <b>template</b> field, whose PUT accepts a partial field list: a
+   *     whitelist-only edit or a rename must not destroy the default link. False for an <b>item</b>
+   *     field, whose field list always arrives complete, so an absent link means the user cleared
+   *     it (RSDEV-1131, pinned by {@code
+   *     InstrumentEntityApiManagerTest.linkFieldValue_clearedWhenInstrumentUpdated}). An explicit
+   *     {@code "link": null} clears in both cases.
+   */
+  boolean applyLinkFieldValue(
+      InventoryLinkField field,
+      ApiInventoryEntityField apiField,
+      User user,
+      boolean omittedLinkPreservesExisting) {
+    ApiInventoryLink apiLink = apiField.getLink();
+    String target = apiLink == null ? null : apiLink.getTargetGlobalId();
+    InventoryLink existing = field.getLink();
+    if (target == null || target.trim().isEmpty()) {
+      if (existing == null) {
+        return false; // no link before, none requested now
+      }
+      if (omittedLinkPreservesExisting && !apiField.isLinkProvided()) {
+        // a partial template update that never mentions the link: leave it alone
+        return false;
+      }
+      field.setLink(null); // orphanRemoval hard-deletes the dereferenced row at flush
+      return true;
+    }
+    Long effectivePin =
+        apiLink.derivedVersionPin() != null ? apiLink.derivedVersionPin() : apiLink.getVersionPin();
+    // compare on the parsed base id, not the raw string: the stored row holds the
+    // unsuffixed id (the pin lives in versionPin), so a suffixed incoming id like
+    // "SA2v4" would otherwise never compare equal and every save would fire a
+    // spurious update (and Envers revision). Mirrors ApiExtraFieldsHelper.linkChanged.
+    GlobalIdentifier incoming = parseTargetOrNull(target);
+    if (existing != null
+        && incoming != null
+        && incoming.getPrefix() == existing.getTargetPrefix()
+        && Objects.equals(incoming.getDbId(), existing.getTargetDbId())
+        && Objects.equals(effectivePin, existing.getVersionPin())
+        && Objects.equals(apiLink.getRelationType(), existing.getRelationType())) {
+      return false; // unchanged
+    }
+    assertRelationAllowed(field, apiLink.getRelationType());
+    if (existing != null) {
+      field.setLink(inventoryLinkManager.updateLink(existing, apiLink, user));
+    } else {
+      field.setLink(inventoryLinkManager.createLink(apiLink, user));
+    }
+    return true;
+  }
+
+  /**
+   * Applies link values to an existing record's structured link fields (the update path). The DTO
+   * apply loop leaves link fields untouched because it cannot reach the service-layer {@link
+   * InventoryLinkManager}; this matches each modified link field by id and applies it here.
+   *
+   * <p>Templates go through this same path as items: a template's link field carries an editable
+   * default link of its own (RSDEV-1246). Callers pass the pieces rather than their own record
+   * type, because {@code isTemplate()} lives on the sample and instrument entities rather than on
+   * {@link InventoryRecord}.
+   */
+  boolean applyLinkFieldValuesOnUpdate(
+      List<ApiInventoryEntityField> apiFields,
+      List<InventoryEntityField> dbActiveFields,
+      InventoryRecord dbRecord,
+      boolean isTemplate,
+      User user) {
+    if (apiFields == null) {
+      return false;
+    }
+    boolean changed = false;
+    for (ApiInventoryEntityField apiField : apiFields) {
+      if (apiField.isNewFieldRequest()
+          || apiField.isDeleteFieldRequest()
+          || apiField.getId() == null) {
+        continue;
+      }
+      Optional<InventoryEntityField> dbFieldOpt =
+          dbActiveFields.stream()
+              .filter(
+                  f ->
+                      f instanceof InventoryLinkField
+                          && Objects.equals(f.getId(), apiField.getId()))
+              .findFirst();
+      if (dbFieldOpt.isPresent()) {
+        rejectSelfLink(apiField.getLink(), dbRecord);
+        changed |=
+            applyLinkFieldValue((InventoryLinkField) dbFieldOpt.get(), apiField, user, isTemplate);
+      }
+    }
+    return changed;
+  }
+
+  /**
+   * Applies a template link field's optional default link (RSDEV-1246). The stateless {@code
+   * ApiFieldToModelFieldFactory} sets only the allowed-relation-types whitelist, so the default has
+   * to be created here, through the same {@link InventoryLinkManager} write path an item's link
+   * uses: validated against the DataCite vocabulary and the field's own whitelist, with the Envers
+   * revision captured. Items created from the template are then stamped with a copy of it by {@code
+   * InventoryLinkField#shallowCopy()}, needing no further code. No-op for any other field type, and
+   * for a link field whose payload carries no link.
+   */
+  void applyDefaultLinkOfNewTemplateField(
+      InventoryEntityField toAdd,
+      ApiInventoryEntityField apiField,
+      InventoryRecord dbTemplate,
+      User user) {
+    if (toAdd instanceof InventoryLinkField) {
+      // the same self-link rejection the edit path applies: adding a link field to an already-saved
+      // template must not be a way in for a default that targets that very template
+      rejectSelfLink(apiField.getLink(), dbTemplate);
+      applyLinkFieldValue((InventoryLinkField) toAdd, apiField, user, true);
+    }
+  }
+
+  private void assertRelationAllowed(InventoryLinkField field, String relationType) {
+    // a chosen relation must be a real DataCite relation type, even when the whitelist is empty.
+    // ApiRuntimeException maps to a 422 with the resolved bundle message, where a raw
+    // IllegalArgumentException would surface as an unmapped 500.
+    if (!DataCiteRelationType.isValid(relationType)) {
+      throw new ApiRuntimeException("errors.inventory.field.linkRelationTypeInvalid", relationType);
+    }
+    if (!isRelationPermitted(field, relationType)) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.linkRelationTypeNotPermitted", relationType, field.getName());
+    }
+  }
+
+  private void rejectSelfLink(ApiInventoryLink apiLink, InventoryRecord dbRecord) {
+    // getId() first: getOid() throws rather than returning null on an unsaved record, and this is
+    // reached while creating a template, which has no id yet (and so nothing to self-link to).
+    // Returning early there is not a hole: the template is not in the database yet either, so
+    // InventoryLinkManager.createLink's target-exists-and-readable check rejects its own future
+    // Global ID before any link row is written. Every path where a self-link IS reachable (a
+    // template or item that already exists) passes a saved record and so runs the check below.
+    if (apiLink == null || dbRecord.getId() == null || dbRecord.getOid() == null) {
+      return;
+    }
+    GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
+    if (target == null) {
+      return; // malformed/blank targets are handled by the manager / clear path
+    }
+    if (InventoryLinkValidator.isSelfLink(target, dbRecord.getOid().toString())) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
+    }
+  }
+
+  private GlobalIdentifier parseTargetOrNull(String targetGlobalId) {
+    try {
+      return new GlobalIdentifier(targetGlobalId);
+    } catch (IllegalArgumentException | NullPointerException ex) {
+      return null;
     }
   }
 
