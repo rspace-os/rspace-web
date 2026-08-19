@@ -145,20 +145,89 @@ jobs:
       - name: Start RSpace (prebuilt WAR)
         env:
           PYRAT_SERVER_TOKEN: ${{ inputs.mode == 'real' && secrets.PYRAT_SERVER_TOKEN || '' }}
+          CALIRA_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.CALIRA_CLIENT_ID || '' }}
+          CALIRA_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.CALIRA_CLIENT_SECRET || '' }}
+          NEXTCLOUD_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.NEXTCLOUD_CLIENT_ID || '' }}
+          NEXTCLOUD_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.NEXTCLOUD_CLIENT_SECRET || '' }}
+          OWNCLOUD_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.OWNCLOUD_CLIENT_ID || '' }}
+          OWNCLOUD_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.OWNCLOUD_CLIENT_SECRET || '' }}
+          BOX_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.BOX_CLIENT_ID || '' }}
+          BOX_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.BOX_CLIENT_SECRET || '' }}
+          PROTOCOLIO_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.PROTOCOLIO_CLIENT_ID || '' }}
+          PROTOCOLIO_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.PROTOCOLIO_CLIENT_SECRET || '' }}
+          ORCID_CLIENT_ID: ${{ inputs.mode == 'real' && secrets.ORCID_CLIENT_ID || '' }}
+          ORCID_CLIENT_SECRET: ${{ inputs.mode == 'real' && secrets.ORCID_CLIENT_SECRET || '' }}
         run: |
           set -euo pipefail
           if [ "${{ inputs.mode }}" = "mock" ]; then
             INTEGRATION_ARGS=(
               "-Dpubchem.base.url=http://localhost:$E2E_MOCK_PORT"
               "-Dfieldmark.api.url=http://localhost:$E2E_MOCK_PORT"
+              "-Dsnapgene.web.url=http://localhost:$E2E_MOCK_PORT"
               "-Dzenodo.url=http://localhost:$E2E_MOCK_PORT"
               "-Dgalaxy.server.config=[{\"alias\":\"mock\",\"url\":\"http://localhost:$E2E_MOCK_PORT\"}]"
               "-Dpyrat.server.config={\"mock\":{\"url\":\"http://localhost:$E2E_MOCK_PORT\",\"token\":\"mock-server-token\"}}"
               "-Domero.api.url=http://localhost:$E2E_MOCK_PORT"
+              "-Ddmptool.base.url=http://localhost:$E2E_MOCK_PORT"
+              "-Ddmpassistant.base.url=http://localhost:$E2E_MOCK_PORT/dmpassistant"
+              "-Ddmponline.base.url=http://localhost:$E2E_MOCK_PORT/dmponline"
+              "-Draid.server.config={\"mock\":{\"url\":\"http://localhost:$E2E_MOCK_PORT/raid-api\",\"authUrl\":\"http://localhost:$E2E_MOCK_PORT/raid-auth\",\"servicePointId\":1,\"clientId\":\"mock-client\",\"clientSecret\":\"mock-secret\"}}"
+              "-Ddryad.base.url=http://localhost:$E2E_MOCK_PORT/dryad"
+              "-Ddryad.client.id=mock-client"
+              "-Ddryad.client.secret=mock-secret"
+              "-Dclustermarket.api.url=http://localhost:$E2E_MOCK_PORT/calira-api/"
+              "-Dclustermarket.web.url=http://localhost:$E2E_MOCK_PORT/calira-web/"
+              "-Dclustermarket.client.id=mock-client"
+              "-Dclustermarket.secret=mock-secret"
+              "-Dargos.url=http://localhost:$E2E_MOCK_PORT/argos-api/public"
+              "-Ddcd.base.url=http://localhost:$E2E_MOCK_PORT/dcd"
+              "-Ddcd.client.id=mock-client"
+              "-Ddcd.client.secret=mock-secret"
+              "-Degnyte.client.id=mock-client"
+              "-Downcloud.url=http://localhost:$E2E_MOCK_PORT/owncloud"
+              "-Downcloud.client.id=mock-client"
+              "-Downcloud.secret=mock-secret"
+              "-Dnextcloud.url=http://localhost:$E2E_MOCK_PORT/nextcloud"
+              "-Dnextcloud.client.id=mock-client"
+              "-Dnextcloud.secret=mock-secret"
+              "-Dnextcloud.server.name=Nextcloud"
+              "-Dprotocolsio.client.id=mock-client"
+              "-Dprotocolsio.secret=mock-secret"
+              "-Dprotocolsio.oauth.authorize.url=http://localhost:$E2E_MOCK_PORT/protocolsio/oauth/authorize"
+              "-Dprotocolsio.oauth.token.url=http://localhost:$E2E_MOCK_PORT/protocolsio/oauth/token"
+              "-Dgithub.client.id=mock-client"
+              "-Dgithub.secret=mock-secret"
+              "-Dgithub.oauth.authorize.url=http://localhost:$E2E_MOCK_PORT/github/oauth/authorize"
+              "-Dgithub.oauth.access.token.url=http://localhost:$E2E_MOCK_PORT/github/oauth/token"
+              "-Dgithub.api.base.url=http://localhost:$E2E_MOCK_PORT/github-api"
+              "-Dorcid.oauth.token.url=http://localhost:$E2E_MOCK_PORT/orcid/oauth/token"
+              "-Dslack.client.id=mock-client"
+              "-Dslack.secret=mock-secret"
+              "-Dslack.verification.token=mock-verification-token"
+              "-Dslack.oauth.authorize.url=http://localhost:$E2E_MOCK_PORT/slack/oauth/authorize"
+              "-Dslack.api.base.url=http://localhost:$E2E_MOCK_PORT/slack-api"
             )
           else
             INTEGRATION_ARGS=(
               "-Dpyrat.server.config={\"default-server\":{\"url\":\"https://demo.pyrat.cloud/rspace511/api/v3/\",\"token\":\"$PYRAT_SERVER_TOKEN\"}}"
+              "-Dclustermarket.api.url=https://api.clustermarket.dev/v1/"
+              "-Dclustermarket.web.url=https://app.clustermarket.dev/"
+              "-Dclustermarket.client.id=$CALIRA_CLIENT_ID"
+              "-Dclustermarket.secret=$CALIRA_CLIENT_SECRET"
+              "-Dnextcloud.url=https://nextcloud-testing.researchspace.com"
+              "-Dnextcloud.client.id=$NEXTCLOUD_CLIENT_ID"
+              "-Dnextcloud.secret=$NEXTCLOUD_CLIENT_SECRET"
+              "-Dnextcloud.server.name=Nextcloud"
+              "-Downcloud.url=https://owncloud-test.researchspace.com"
+              "-Downcloud.client.id=$OWNCLOUD_CLIENT_ID"
+              "-Downcloud.secret=$OWNCLOUD_CLIENT_SECRET"
+              "-Downcloud.server.name=ownCloud"
+              "-Dbox.client.id=$BOX_CLIENT_ID"
+              "-Dbox.client.secret=$BOX_CLIENT_SECRET"
+              "-Dprotocolsio.client.id=$PROTOCOLIO_CLIENT_ID"
+              "-Dprotocolsio.secret=$PROTOCOLIO_CLIENT_SECRET"
+              "-Dorcid.client.id=$ORCID_CLIENT_ID"
+              "-Dorcid.secret=$ORCID_CLIENT_SECRET"
             )
           fi
           nohup ./mvnw jetty:run-war \
@@ -209,16 +278,28 @@ jobs:
           PYRAT_API_KEY: ${{ inputs.mode == 'real' && secrets.PYRAT_API_KEY || '' }}
           OMERO_USERNAME: ${{ inputs.mode == 'real' && secrets.OMERO_USERNAME || '' }}
           OMERO_PASSWORD: ${{ inputs.mode == 'real' && secrets.OMERO_PASSWORD || '' }}
+          CALIRA_USERNAME: ${{ inputs.mode == 'real' && secrets.CALIRA_USERNAME || '' }}
+          CALIRA_PASSWORD: ${{ inputs.mode == 'real' && secrets.CALIRA_PASSWORD || '' }}
+          NEXTCLOUD_USERNAME: ${{ inputs.mode == 'real' && secrets.NEXTCLOUD_USERNAME || '' }}
+          NEXTCLOUD_PASS: ${{ inputs.mode == 'real' && secrets.NEXTCLOUD_PASS || '' }}
+          OWNCLOUD_USERNAME: ${{ inputs.mode == 'real' && secrets.OWNCLOUD_USERNAME || '' }}
+          OWNCLOUD_PASS: ${{ inputs.mode == 'real' && secrets.OWNCLOUD_PASS || '' }}
+          MSTEAMS_WEBHOOK_URL: ${{ inputs.mode == 'real' && secrets.MSTEAMS_WEBHOOK_URL || '' }}
+          BOX_USERNAME: ${{ inputs.mode == 'real' && secrets.BOX_USERNAME || '' }}
+          BOX_PASSWD: ${{ inputs.mode == 'real' && secrets.BOX_PASSWD || '' }}
           IGSN_ACCOUNT_ID: ${{ inputs.mode == 'real' && secrets.IGSN_ACCOUNT_ID || '' }}
           IGSN_PASSWORD: ${{ inputs.mode == 'real' && secrets.IGSN_PASSWORD || '' }}
           IGSN_REPO_PREFIX: ${{ inputs.mode == 'real' && secrets.IGSN_REPO_PREFIX || '' }}
+          PROTOCOLIO_USERNAME: ${{ inputs.mode == 'real' && secrets.PROTOCOLIO_USERNAME || '' }}
+          PROTOCOLIO_PASSWORD: ${{ inputs.mode == 'real' && secrets.PROTOCOLIO_PASSWORD || '' }}
+          RSPACE_DEV_ORCID_EMAIL: ${{ inputs.mode == 'real' && secrets.RSPACE_DEV_ORCID_EMAIL || '' }}
+          RSPACE_DEV_ORCID_PASS: ${{ inputs.mode == 'real' && secrets.RSPACE_DEV_ORCID_PASS || '' }}
         run: pnpm run test-e2e --shard=${{ matrix.shard }}/${{ env.E2E_SHARD_OF }}
 
       - name: Dump server log on failure
         if: failure()
         run: |
           echo "=== Jetty stdout (last 100 lines) ===" && tail -100 /tmp/jetty.log || true
-          echo "=== RSpace error.log (last 200 lines) ===" && tail -200 error.log || true
 
       - name: Upload Jetty log on failure
         if: failure()
@@ -227,7 +308,6 @@ jobs:
           name: jetty-log-${{ inputs.mode }}-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             /tmp/jetty.log
-            error.log
             httpRequests.log
           retention-days: 3
 

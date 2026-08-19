@@ -5,6 +5,10 @@ import type { GallerySection } from "@/__tests__/e2e/components/gallery/GalleryS
 import { GallerySidebar } from "@/__tests__/e2e/components/gallery/GallerySidebar";
 import { GallerySortMenu } from "@/__tests__/e2e/components/gallery/GallerySortMenu";
 import { GalleryViewsMenu } from "@/__tests__/e2e/components/gallery/GalleryViewsMenu";
+import { ArgosImportDialogComponent } from "@/modules/argos/__tests__/pageObjects/ArgosImportDialogComponent";
+import { DMPAssistantImportDialogComponent } from "@/modules/dmpassistant/__tests__/pageObjects/DMPAssistantImportDialogComponent";
+import { DMPOnlineImportDialogComponent } from "@/modules/dmponline/__tests__/pageObjects/DMPOnlineImportDialogComponent";
+import { DMPToolImportDialogComponent } from "@/modules/dmptool/__tests__/pageObjects/DMPToolImportDialogComponent";
 import { DSWImportDialogComponent } from "@/modules/dsw/__tests__/pageObjects/DSWImportDialogComponent";
 import { BasePage } from "../BasePage";
 
@@ -67,8 +71,10 @@ export class GalleryPage extends BasePage {
 
   async selectFile(name: string): Promise<void> {
     const cell = this.fileCell(name);
-    await cell.click();
-    await expect(cell).toHaveAttribute("aria-selected", "true");
+    await expect(async () => {
+      await cell.click();
+      await expect(cell).toHaveAttribute("aria-selected", "true", { timeout: 1_000 });
+    }).toPass({ timeout: 15_000 });
     await this.infoPanel.waitUntilSelected(name);
   }
 
@@ -84,11 +90,36 @@ export class GalleryPage extends BasePage {
     await this.searchInput.fill(name);
   }
 
-  async openDSWImport(alias: string): Promise<DSWImportDialogComponent> {
+  /** Opens the Create menu, clicks the named import menu item, then waits for its dialog to open. */
+  private async openCreateMenuImport<T extends { waitForOpen(): Promise<void> }>(
+    menuItemName: string,
+    DialogCtor: new (page: Page) => T,
+    exact = true,
+  ): Promise<T> {
     await this.sidebar.createButton.click();
-    await this.page.getByRole("menuitem", { name: `${alias} DSW / FAIR Wizard` }).click();
-    const dialog = new DSWImportDialogComponent(this.page);
+    await this.page.getByRole("menuitem", { name: menuItemName, exact }).click();
+    const dialog = new DialogCtor(this.page);
     await dialog.waitForOpen();
     return dialog;
+  }
+
+  async openDSWImport(alias: string): Promise<DSWImportDialogComponent> {
+    return this.openCreateMenuImport(`${alias} DSW / FAIR Wizard`, DSWImportDialogComponent, false);
+  }
+
+  async openDMPToolImport(): Promise<DMPToolImportDialogComponent> {
+    return this.openCreateMenuImport("DMPTool", DMPToolImportDialogComponent);
+  }
+
+  async openDMPAssistantImport(): Promise<DMPAssistantImportDialogComponent> {
+    return this.openCreateMenuImport("DMP Assistant", DMPAssistantImportDialogComponent);
+  }
+
+  async openDMPOnlineImport(): Promise<DMPOnlineImportDialogComponent> {
+    return this.openCreateMenuImport("DMPonline", DMPOnlineImportDialogComponent);
+  }
+
+  async openArgosImport(): Promise<ArgosImportDialogComponent> {
+    return this.openCreateMenuImport("Argos", ArgosImportDialogComponent);
   }
 }
