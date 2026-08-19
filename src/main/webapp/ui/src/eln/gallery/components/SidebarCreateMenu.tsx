@@ -10,27 +10,23 @@ type SidebarCreateMenuArgs = {
 
 /**
  * The Gallery sidebar's create menu.
+ *
+ * A closed menu renders nothing, so a cancelled exit transition
+ * (mui/material-ui#32286) cannot leave it painted and undismissable.
+ * See PRT-1118 and PRT-1135.
+ *
+ * ponytail: this gives up the close animation.
  */
 export default function SidebarCreateMenu({ anchorEl, onClose, children }: SidebarCreateMenuArgs): React.ReactNode {
+  if (!anchorEl) return null;
   return (
     <Menu
-      open={Boolean(anchorEl)}
+      open
       anchorEl={anchorEl}
       onClose={onClose}
       sx={{
-        /*
-         * In production builds (-DgenerateReactDist) a re-render during this
-         * Menu's exit can cancel react-transition-group's onExited
-         * (mui/material-ui#32286), leaving the Modal mounted with its
-         * invisible backdrop still intercepting every click -- the page
-         * freezes until reload. Since we cannot make onExited fire reliably,
-         * make the closed menu click-through instead. pointer-events is
-         * inherited and MUI sets it on neither backdrop nor paper, so this
-         * root rule covers both; the open menu (anchorEl set) is unaffected.
-         */
-        ...(anchorEl ? {} : { pointerEvents: "none" }),
         [`& .${paperClasses.root}`]: {
-          ...(anchorEl ? { transform: "translate(-4px, 4px) !important" } : {}),
+          transform: "translate(-4px, 4px) !important",
         },
       }}
       slotProps={{
