@@ -80,6 +80,7 @@ src/main/webapp/ui/coverage
 
 # other tooling
 /.claude/
+.playwright-mcp/
 .worktrees/
 
 .pnpm-store

@@ -124,7 +124,9 @@ services:
     # stdin; the entrypoint feeds it from a FIFO for `rspace-dev reload`.
     stdin_open: true
     tty: true
-    restart: unless-stopped
+    # No auto-restart: a JVM crash (e.g. OOM, a bad hot-swap) should surface as a
+    # stopped container so `logs app` shows the failure, not silently loop.
+    restart: "no"
 
   # ---------------------------------------------------------------------------
   # Frontend: Vite dev server. Runs `pnpm run serve` from the repo root, where

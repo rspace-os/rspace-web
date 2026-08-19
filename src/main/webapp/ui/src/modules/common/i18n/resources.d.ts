@@ -2,7 +2,11 @@
 export default interface Resources {
   "about": {
     "copyright": "© 2026 ResearchSpace",
-    "license": "RSpace is open-source under AGPL, and powered by open-source libraries.",
+    "description": "RSpace is open-source software for collaborative research data management, built around electronic lab notebooks, inventory, and external integrations.",
+    "license": "RSpace is powered by open-source libraries and distributed under the AGPL.",
+    "licensing": {
+      "heading": "Licensing"
+    },
     "links": {
       "changelog": "Changelog",
       "sourceCode": "Source Code",
@@ -12,11 +16,14 @@ export default interface Resources {
       "alt": "RSpace Logo"
     },
     "support": {
-      "accountLabel": "For account and group queries, email:",
-      "generalLabel": "For general support, email:"
+      "accountsLink": "Accounts and groups",
+      "generalLink": "General support",
+      "heading": "Support"
     },
+    "tagline": "RSpace - Research Data Platform",
     "title": "About RSpace",
     "version": {
+      "label": "Version {version}",
       "loading": "Loading version...",
       "unavailable": "Version unavailable"
     }
@@ -753,6 +760,96 @@ export default interface Resources {
       "insertButton": "Insert"
     }
   },
+  "booking": {
+    "bookableItems": {
+      "actions": {
+        "add": "Add",
+        "delete": "Delete {item}",
+        "edit": "Edit {item}",
+        "save": "Save changes",
+        "submit": "Submit"
+      },
+      "addError": "Could not add the bookable item. Try again.",
+      "addTitle": "Add Bookable Item",
+      "availability": {
+        "alreadyConfigured": "This inventory item already has a bookable item configuration.",
+        "checkFailed": "RSpace could not check whether this instrument can be added. Select it again or try another instrument.",
+        "checking": "Checking whether this instrument can be added.",
+        "editExisting": "Edit the existing configuration",
+        "instrumentRequired": "The selected inventory item is not an instrument and cannot be added as a bookable item."
+      },
+      "bulk": {
+        "actions": {
+          "delete": "Delete selected",
+          "disable": "Disable",
+          "enable": "Enable"
+        },
+        "deleteDialog": {
+          "description": "This action cannot be undone.",
+          "title": "Delete {count, plural, one {# bookable item} other {# bookable items}}?"
+        },
+        "errors": {
+          "delete": "Could not delete the selected rows. No rows changed. Try again.",
+          "disable": "Could not disable the selected rows. No rows changed. Try again.",
+          "enable": "Could not enable the selected rows. No rows changed. Try again."
+        }
+      },
+      "deleteDialog": {
+        "description": "Delete {item}? This action cannot be undone.",
+        "error": "Could not delete {item}. Try again.",
+        "title": "Delete bookable item?"
+      },
+      "editError": "Could not update the bookable item. Try again.",
+      "editTitle": "Edit Bookable Item",
+      "fields": {
+        "actions": "Actions",
+        "enabled": "Enabled",
+        "id": "ID",
+        "target": "Bookable item",
+        "targetName": "Bookable item name",
+        "timezone": "Time zone",
+        "updatedAt": "Last updated"
+      },
+      "plural": "Bookable Items",
+      "singular": "Bookable item"
+    },
+    "dayTimeline": {
+      "event": {
+        "busy": "Busy",
+        "hideDetails": "Hide details for {title}, {period}",
+        "label": "{title}, {period}",
+        "labelWithNotes": "{title}, {period}. {notes}",
+        "showDetails": "Show details for {title}, {period}"
+      },
+      "now": {
+        "afterWindow": "Now {time}, after visible window",
+        "current": "Now {time}"
+      },
+      "scrollLabel": "24-hour calendar for {date} in {timezone}",
+      "zoom": {
+        "in": "Zoom in",
+        "legend": "Timeline zoom",
+        "out": "Zoom out"
+      }
+    },
+    "sample": {
+      "check": "Sample check {number}.",
+      "maintenance": {
+        "notes": "Laser alignment and safety inspection.",
+        "title": "Scheduled maintenance"
+      }
+    },
+    "sidebar": {
+      "administration": "Administration",
+      "approvalQueue": "Approval Queue",
+      "bookableItems": "Bookable Items",
+      "calendar": "Calendar",
+      "dashboard": "Dashboard",
+      "label": "Booking",
+      "myBookings": "My Bookings",
+      "settings": "Settings"
+    }
+  },
   "common": {
     "accessibilityTips": {
       "buttonLabel": "Accessibility tips",
@@ -821,6 +918,7 @@ export default interface Resources {
       "none": "None",
       "ok": "OK",
       "open": "Open",
+      "previous": "Previous",
       "publish": "Publish",
       "remove": "Remove",
       "republish": "Republish",
@@ -854,9 +952,11 @@ export default interface Resources {
       "warningTitle": "Could not authenticate via API"
     },
     "apiDocs": {
+      "pageTitle": "RSpace API Documentation | ResearchSpace",
       "sources": {
         "eln": "RSpace ELN",
-        "inventory": "RSpace Inventory"
+        "inventory": "RSpace Inventory",
+        "v2": "RSpace v2 (beta)"
       }
     },
     "apiErrors": {
@@ -898,6 +998,7 @@ export default interface Resources {
       "dialogHeader": "dialog header",
       "errorLoadingDetails": "Error loading your details",
       "goTo": "Go to...",
+      "logIn": "Log In",
       "logOut": "Log Out",
       "mainLinks": "main links",
       "mainNavigation": "Main Navigation",
@@ -912,6 +1013,10 @@ export default interface Resources {
       "published": "Published",
       "release": "Release",
       "sections": {
+        "booking": {
+          "subheader": "Reserve instruments and equipment",
+          "title": "Booking"
+        },
         "gallery": {
           "subheader": "Your files in RSpace and connected filestores",
           "title": "Gallery"
@@ -932,6 +1037,24 @@ export default interface Resources {
           "subheader": "Notebooks and documents",
           "title": "Workspace"
         }
+      },
+      "switchSection": "Switch section",
+      "userIdentity": "{fullName} ({username})"
+    },
+    "collectionForm": {
+      "actions": {
+        "clear": "Clear {field}",
+        "openOptions": "Show options for {field}"
+      },
+      "examples": {
+        "inventoryItem": "Inventory item",
+        "recordDetails": "Record details",
+        "relationships": "Relationships"
+      },
+      "relationship": {
+        "empty": "No options found",
+        "remove": "Remove {item} from {field}",
+        "search": "Search {field}"
       }
     },
     "confirmationDialog": {
@@ -1051,6 +1174,7 @@ export default interface Resources {
       "zenodo": "8i37k8kjqz-zenodo-integration"
     },
     "helpDocs": {
+      "brand": "Support",
       "chatWithUs": "Chat with us",
       "documentation": "RSpace Documentation",
       "openHelp": "Open Help",
@@ -1126,6 +1250,23 @@ export default interface Resources {
       "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
     },
     "loading": "Loading",
+    "maintenanceMode": {
+      "description": "Scheduled maintenance is in progress now. Please try again later.",
+      "heading": "Maintenance mode",
+      "recheckNotice": "This page rechecks automatically every 30 seconds, or you can <internalLink to=\"/login\">check the status now</internalLink>."
+    },
+    "notFound": {
+      "message": "Page not found"
+    },
+    "pageTitles": {
+      "withProduct": "{pageTitle} | RSpace"
+    },
+    "pagination": {
+      "label": "Pagination",
+      "morePages": "More pages",
+      "nextPage": "Go to next page",
+      "previousPage": "Go to previous page"
+    },
     "profile": {
       "accountActivity": {
         "action": "Action",
@@ -1374,6 +1515,18 @@ export default interface Resources {
         "singular": "Record"
       }
     },
+    "relationshipPicker": {
+      "availabilityChecking": "Checking whether this item can be added.",
+      "availabilityFailed": "RSpace could not check this item. Search again.",
+      "clear": "Clear the selection",
+      "empty": "No matching records found",
+      "enterSearchTerm": "Enter a search term",
+      "failed": "Search is unavailable. Try again.",
+      "openOptions": "Show matching records",
+      "openRecord": "Open record {globalId}",
+      "remove": "Remove {item}",
+      "search": "Search by name or global ID"
+    },
     "search": {
       "clearTooltip": "Clear search",
       "placeholder": "Search..."
@@ -1446,6 +1599,11 @@ export default interface Resources {
       "titleSingle": "Share <strong>{name}</strong>",
       "unknownFolder": "Unknown folder",
       "updatedSuccessfully": "Shares updated successfully."
+    },
+    "sidebar": {
+      "description": "Displays the mobile sidebar.",
+      "title": "Sidebar",
+      "toggle": "Toggle sidebar"
     },
     "stoichiometry": {
       "addReagent": {
@@ -1590,6 +1748,136 @@ export default interface Resources {
         "exportToCsv": "Export to CSV"
       }
     },
+    "tableList": {
+      "actions": {
+        "addFilter": "Add filter",
+        "applyFilters": "Apply filters",
+        "clearAll": "Clear all",
+        "closeColumns": "Close columns",
+        "closeFilters": "Close filters",
+        "closeSorting": "Close sorting",
+        "createNew": "Create new",
+        "hideColumn": "Hide {column} column",
+        "moveColumn": "Drag {column} column",
+        "moveFilter": "Drag filter {number}",
+        "moveSort": "Drag sort rule {number}",
+        "nextPage": "Next page",
+        "previousPage": "Previous page",
+        "removeFilter": "Remove filter {number}",
+        "removeSort": "Remove {column} from sorting",
+        "resetColumns": "Reset columns",
+        "resetToDefaults": "Reset filters, sorting, and columns to defaults",
+        "resizeColumn": "Resize column",
+        "sortBy": "Sort by {column}"
+      },
+      "columns": {
+        "customised": "Columns, {count} of {total} shown",
+        "hidden": "Hidden",
+        "hiddenEmpty": "Drag a shown column here to hide it",
+        "shown": "Shown",
+        "shownEmpty": "Drop a hidden column here",
+        "title": "Arrange columns"
+      },
+      "empty": {
+        "description": "Try changing the search or filter criteria.",
+        "title": "No records found"
+      },
+      "error": {
+        "description": "The records could not be loaded.",
+        "title": "Something went wrong"
+      },
+      "examples": {
+        "description": "Find notebooks, protocols, and datasets across your workspace.",
+        "fields": {
+          "collaborators": "Collaborators",
+          "draft": "Draft",
+          "enabled": "Enabled",
+          "id": "ID",
+          "modified": "Modified",
+          "notes": "Notes",
+          "owner": "Owner",
+          "published": "Published",
+          "score": "Score",
+          "status": "Status",
+          "targetName": "Bookable item name",
+          "title": "Title",
+          "titleDescription": "The human-readable name of the record."
+        },
+        "record": "Research record",
+        "records": "Research records"
+      },
+      "filters": {
+        "and": "And",
+        "applied": "Filters, {count} applied",
+        "field": "Field for filter {number}",
+        "missing": "is missing",
+        "multiSelect": {
+          "customPlaceholder": "Type a value and press Enter",
+          "empty": "No matching values found",
+          "enterValue": "Enter a value",
+          "remove": "Remove {value}",
+          "selectPlaceholder": "Select values"
+        },
+        "noneApplied": "Filters, none applied",
+        "openRecord": "Open {globalId}",
+        "operator": "Operator for filter {number}",
+        "operators": {
+          "contains": "contains",
+          "equals": "equals",
+          "exists": "exists",
+          "greaterThan": "is greater than",
+          "greaterThanOrEqual": "is at least",
+          "in": "is one of",
+          "lessThan": "is less than",
+          "lessThanOrEqual": "is at most",
+          "matches": "matches pattern",
+          "notEquals": "does not equal",
+          "notIn": "is not one of"
+        },
+        "placeholders": {
+          "pattern": "Use * as a wildcard",
+          "value": "Enter a value"
+        },
+        "present": "is present",
+        "title": "Filter records",
+        "value": "Value for filter {number}",
+        "where": "Where"
+      },
+      "loading": "Loading records",
+      "page": "Page {page} of {pages}",
+      "refreshing": "Refreshing records",
+      "results": "{first}–{last} of {total} records",
+      "rows": "Rows",
+      "rowsPerPage": "Rows per page",
+      "search": {
+        "clear": "Clear search",
+        "label": "Search {collection}",
+        "placeholder": "Search records"
+      },
+      "selection": {
+        "clear": "Clear selection",
+        "count": "{count, plural, one {# row selected} other {# rows selected}}",
+        "limit": "You can select up to {count, number} rows.",
+        "regionLabel": "Selected rows actions",
+        "selectAllPage": "Select all rows on this page",
+        "selectRow": "Select {row}"
+      },
+      "sorting": {
+        "applied": "Sort, {count} rules active",
+        "ascending": "Ascending",
+        "descending": "Descending",
+        "direction": "Direction for {column}",
+        "empty": "Select a column header to add a sort rule.",
+        "title": "Sort priority"
+      },
+      "toolbar": {
+        "columns": "Columns",
+        "filters": "Filters",
+        "sorting": "Sort"
+      },
+      "tooltip": "About {column}",
+      "view": "{collection} table"
+    },
     "tags": {
       "addTag": "Add Tag",
       "checkOntologyFiles": "Please check that the ontology files are correctly configured.",
@@ -1689,7 +1977,8 @@ export default interface Resources {
     "values": {
       "noValue": "No Value",
       "none": "None",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "unknownItem": "Unknown item"
     },
     "versionLockPicker": {
       "columns": {
