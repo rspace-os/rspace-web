@@ -33,6 +33,11 @@ export interface LinkEditorProps {
   relationError?: boolean;
   relationHelperText?: string;
 
+  /**
+   * Heading for the target group. Defaults to "Target"; a template's default-link editor overrides
+   * it, since there the target being chosen is the default's, not the record's own.
+   */
+  targetHeading?: string;
   /** Current target Global ID (controlled). */
   targetGlobalId: string;
   /** Optional display name shown in the target chip ("GID — name"). */
@@ -54,10 +59,12 @@ export interface LinkEditorProps {
 /**
  * The shared link-editor UI used by both the extra-field editor (UpdateField)
  * and the template-field editor (LinkFieldValue), in three labelled groups:
- * "Target" (the target chip, the Target Global ID field and the two Browse
- * buttons, all on one wrapping row), then the relation-type field, then
- * "Version" (the version pill and version-pin control). Plus the three
- * picker/version dialogs.
+ * the target group (the Global ID field and the two Browse buttons on one
+ * wrapping row, with the selected target's chip beneath), then the
+ * relation-type field, then "Version" (the version pill and version-pin
+ * control). Plus the three picker/version dialogs. The target group is headed
+ * "Target" unless the caller renames it via `targetHeading`, which the
+ * template's default-link editor does.
  *
  * Controlled and presentational: it owns only the open-state of its three
  * dialogs and a neutral vertical layout. All staged values, validation, the
@@ -73,6 +80,7 @@ export default function LinkEditor({
   relationLabel,
   relationError,
   relationHelperText,
+  targetHeading,
   targetGlobalId,
   targetName,
   onTargetChange,
@@ -96,7 +104,7 @@ export default function LinkEditor({
     <HeadingContext>
       <Box>
         <Heading variant="h6" sx={{ fontWeight: 700, fontSize: "1rem" }}>
-          {t("fields.link.editor.target")}
+          {targetHeading ?? t("fields.link.editor.target")}
         </Heading>
         <Stack
           direction="row"
@@ -108,7 +116,10 @@ export default function LinkEditor({
           data-test-id="LinkEditor-targetRow"
         >
           <TextField
-            label={t("fields.link.editor.targetGlobalId")}
+            // no floating label: variant="standard" stacks one above the input, which drops the
+            // input below the neighbouring Browse buttons. The group heading above names this
+            // control, the helper text says what to put in it, and aria-label keeps it announced.
+            placeholder={t("fields.link.editor.targetPlaceholder")}
             value={targetGlobalId}
             onChange={(e) => onTargetChange(e.target.value, "")}
             size="small"

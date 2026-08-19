@@ -92,21 +92,36 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
             }}
           />
         </InputWrapper>
-        <InputWrapper
-          label={t("fields.templateFields.defaultValue.defaultLink")}
-          explanation={t("fields.templateFields.defaultValue.defaultLinkExplanation")}
+        {/* The default link is a whole sub-form (heading, explanation, target group, relationship
+          type, version), so without a boundary it reads as a continuation of the allowed-types
+          control above it. The border and inset give it one. */}
+        <Box
+          data-test-id="DefaultLinkSection"
+          sx={(theme) => ({
+            mt: 2,
+            p: 2,
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 1,
+          })}
         >
-          <LinkFieldValue
-            field={field}
-            // on an unsaved template this is "", which leaves the client-side self-link check inert.
-            // Harmless: a template with no Global ID has nothing to self-link to yet, and the server
-            // rejects it either way once the template exists.
-            sourceGlobalId={field.owner.globalId ?? ""}
-            disabled={!editing}
-            // the name is already entered in the Name field above
-            showFieldName={false}
-          />
-        </InputWrapper>
+          <InputWrapper
+            label={t("fields.templateFields.defaultValue.defaultLink")}
+            explanation={t("fields.templateFields.defaultValue.defaultLinkExplanation")}
+          >
+            <LinkFieldValue
+              field={field}
+              // on an unsaved template this is "", which leaves the client-side self-link check
+              // inert. Harmless: a template with no Global ID has nothing to self-link to yet, and
+              // the server rejects it either way once the template exists.
+              sourceGlobalId={field.owner.globalId ?? ""}
+              disabled={!editing}
+              // the name is already entered in the Name field above
+              showFieldName={false}
+              // inside this section "Target" alone would be ambiguous against the item's own link
+              targetHeading={t("fields.templateFields.defaultValue.defaultLinkTarget")}
+            />
+          </InputWrapper>
+        </Box>
       </>
     );
   }
