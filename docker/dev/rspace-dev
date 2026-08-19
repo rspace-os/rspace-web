@@ -96,6 +96,17 @@ path_offset() {
   printf '%s' "$((sum % 200))"
 }
 
+# The dev property file is git-ignored (it holds local credentials) and Spring will not start
+# without it, so seed it from the checked-in template.
+ensure_deployment_properties() {
+  local dir="${RSPACE_SRC}/src/main/resources/deployments/dev"
+  if [ -f "${dir}/deployment.properties" ]; then
+    return 0
+  fi
+  cp "${dir}/deployment.properties.example" "${dir}/deployment.properties"
+  echo "rspace-dev: created ${dir}/deployment.properties from the .example template" >&2
+}
+
 ensure_env() {
   if [ -f "${ENV_FILE}" ]; then
     return 0
@@ -137,6 +148,7 @@ env_get() { grep -E "^$1=" "${ENV_FILE}" 2>/dev/null | head -n1 | cut -d= -f2-; 
 
 compose() {
   ensure_env
+  ensure_deployment_properties
   # Activate the optional chemistry profile when enabled in .env, so every
   # compose subcommand (up/down/ps/logs/...) consistently includes the service.
   local profiles=""
