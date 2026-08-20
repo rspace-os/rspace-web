@@ -89,7 +89,9 @@ public class XMLReadWriteUtils {
 	}
 
 	private static Transformer configureTransformer() throws TransformerConfigurationException {
-		TransformerFactory factory = TransformerFactory.newInstance();
+		// the JDK built-in factory, not ServiceLoader lookup: third-party factories on the
+		// classpath (e.g. xalan) do not support the external-access hardening attributes below
+		TransformerFactory factory = TransformerFactory.newDefaultInstance();
 		factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
 		factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
 		Transformer transformer = factory.newTransformer();
