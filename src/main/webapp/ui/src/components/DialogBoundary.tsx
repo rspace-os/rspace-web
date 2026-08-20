@@ -104,6 +104,49 @@ export function DialogBoundary({ children }: { children: React.ReactNode }): Rea
   );
 }
 
+/*
+ * Nested modals share one body scroll lock.
+ *
+ * Each of Dialog/Menu/Drawer previously ran its own effect that set
+ * `document.body.style.overflow` to "hidden" while open and "unset" while
+ * closed, with no cleanup. Consequences, all real: nested modals fought over
+ * the value, closing an inner one unlocked the page while an outer one was
+ * still open, "unset" clobbered whatever the page had set rather than restoring
+ * it, and a modal unmounted while open left the page permanently unscrollable.
+ *
+ * RSDEV-1317 suggests deleting the effect outright, on the grounds that MUI
+ * locks scrolling itself. That does not hold here: MUI locks the scroll
+ * container derived from the modal's `container` prop, and these components
+ * deliberately re-parent modals into the DialogBoundary div, so MUI locks that
+ * div rather than the body. Measured on the Gallery with two modals open,
+ * `document.body.style.overflow` was empty while MUI had applied
+ * `overflow: hidden` to the boundary div. The Gallery itself is not scrollable
+ * so nothing would break there, but the legacy JSP pages hosting ShareDialog,
+ * RenameDialog, TagDialog and CompareDialog do scroll. So the lock is kept and
+ * made correct instead: reference-counted across nested modals, restoring the
+ * original value, and released on unmount.
+ */
+let scrollLockCount = 0;
+let overflowBeforeLock: string | null = null;
+
+function useBodyScrollLock(open: boolean | undefined): void {
+  React.useEffect(() => {
+    if (!open) return;
+    if (scrollLockCount === 0) {
+      overflowBeforeLock = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    }
+    scrollLockCount += 1;
+    return () => {
+      scrollLockCount -= 1;
+      if (scrollLockCount === 0) {
+        document.body.style.overflow = overflowBeforeLock ?? "";
+        overflowBeforeLock = null;
+      }
+    };
+  }, [open]);
+}
+
 /**
  * A Dialog that is rendered within the boundary defined by DialogBoundary.
  *
@@ -117,15 +160,7 @@ export function Dialog(props: Omit<React.ComponentProps<typeof MuiDialog>, "cont
   const { modalContainer } = useContext(DialogBoundaryContext);
   const { children, open, ...rest } = props;
 
-  React.useEffect(() => {
-    if (document.body) {
-      if (open) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "unset";
-      }
-    }
-  }, [open]);
+  useBodyScrollLock(open);
 
   return (
     <MuiDialog container={() => modalContainer.current} open={open} {...rest}>
@@ -141,15 +176,7 @@ export function Menu(props: Omit<React.ComponentProps<typeof MuiMenu>, "containe
   const { modalContainer } = useContext(DialogBoundaryContext);
   const { children, open, ...rest } = props;
 
-  React.useEffect(() => {
-    if (document.body) {
-      if (open) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "unset";
-      }
-    }
-  }, [open]);
+  useBodyScrollLock(open);
 
   return (
     <MuiMenu container={() => modalContainer.current} open={open} {...rest}>
@@ -165,15 +192,7 @@ export function Drawer(props: Omit<React.ComponentProps<typeof MuiDrawer>, "cont
   const { modalContainer } = useContext(DialogBoundaryContext);
   const { children, open, ...rest } = props;
 
-  React.useEffect(() => {
-    if (document.body) {
-      if (open) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "unset";
-      }
-    }
-  }, [open]);
+  useBodyScrollLock(open);
 
   return (
     <MuiDrawer

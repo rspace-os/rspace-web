@@ -28,12 +28,13 @@
  * present.
  */
 import Button from "@mui/material/Button";
+import DialogContent from "@mui/material/DialogContent";
 import MenuItem from "@mui/material/MenuItem";
 import { cleanup, render } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
-import { DialogBoundary, Menu } from "./DialogBoundary";
+import { Dialog, DialogBoundary, Menu } from "./DialogBoundary";
 
 /** Wide enough that the perturbation reliably lands inside the exit. */
 const EXIT_MS = 3000;
@@ -42,6 +43,10 @@ const PERTURB_AT_MS = 150;
 const CREATE_LABEL = "Create";
 const IMPORT_LABEL = "Import";
 const FALLBACK_LABEL = "loading";
+const OUTER_LABEL = "outer modal";
+const INNER_LABEL = "inner modal";
+/* A distinctive pre-existing value, so "restored" is provably not just "cleared". */
+const SENTINEL_OVERFLOW = "clip";
 
 afterEach(cleanup);
 
@@ -172,5 +177,56 @@ describe("a modal rendered through DialogBoundary always unmounts after its exit
     await new Promise((r) => setTimeout(r, EXIT_MS + 1500));
 
     await expectNothingStranded();
+  });
+});
+
+/*
+ * The body scroll lock is reference-counted and restores the value it found.
+ * Previously each of Dialog/Menu/Drawer set `overflow` directly with no
+ * cleanup, so nested modals fought over it and a modal unmounted while open
+ * left the page permanently unscrollable.
+ */
+describe("the body scroll lock", () => {
+  function Nested({ outer, inner }: { outer: boolean; inner: boolean }): React.ReactNode {
+    return (
+      <DialogBoundary>
+        <Dialog open={outer}>
+          <DialogContent>{OUTER_LABEL}</DialogContent>
+        </Dialog>
+        <Dialog open={inner}>
+          <DialogContent>{INNER_LABEL}</DialogContent>
+        </Dialog>
+      </DialogBoundary>
+    );
+  }
+
+  test("stays locked while an outer modal is still open, then restores", async () => {
+    document.body.style.overflow = SENTINEL_OVERFLOW;
+
+    const screen = render(<Nested outer={true} inner={true} />);
+    await expect.element(page.getByText(INNER_LABEL)).toBeVisible();
+    expect(document.body.style.overflow).toBe("hidden");
+
+    // closing the inner one must NOT unlock while the outer is open
+    screen.rerender(<Nested outer={true} inner={false} />);
+    await expect.poll(() => document.body.style.overflow).toBe("hidden");
+
+    screen.rerender(<Nested outer={false} inner={false} />);
+    await expect.poll(() => document.body.style.overflow).toBe(SENTINEL_OVERFLOW);
+
+    document.body.style.overflow = "";
+  });
+
+  test("releases the lock when a modal unmounts while still open", async () => {
+    document.body.style.overflow = SENTINEL_OVERFLOW;
+
+    const screen = render(<Nested outer={true} inner={false} />);
+    await expect.element(page.getByText(OUTER_LABEL)).toBeVisible();
+    expect(document.body.style.overflow).toBe("hidden");
+
+    screen.unmount();
+    await expect.poll(() => document.body.style.overflow).toBe(SENTINEL_OVERFLOW);
+
+    document.body.style.overflow = "";
   });
 });
