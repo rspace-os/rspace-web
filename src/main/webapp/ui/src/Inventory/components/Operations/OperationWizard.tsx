@@ -41,12 +41,13 @@ import { normalizeProcessValues, type ProcessValues, processValuesAfterPerform }
 import { derivedSampleName, firstAvailableName } from "./sampleNaming";
 import TemplateStep, { type TemplateSelection } from "./TemplateStep";
 import {
+  initialTemplateSelection,
   resolveTemplateId,
   templateSelectionFor,
   templateSelectionToDefault,
   templateStepValid,
 } from "./templateResolution";
-import type { AmountMode, OperationInputs, OperationOrigin, PerSubsampleAmounts } from "./types";
+import type { AmountMode, OperationInputs, OperationOrigin, OperationQuantity, PerSubsampleAmounts } from "./types";
 import { UNSET_UNIT } from "./types";
 
 // How long to wait after the process name settles before querying existing names to de-duplicate the
@@ -77,15 +78,17 @@ function buildInitialValues(operation: InventoryOperation, origin: SubSampleMode
 
 /**
  * The amount fields for a fresh amounts step: count and both amounts default to 1, and the quantity
- * units are left unset (a blank dropdown) so the step is blocked until the user picks a unit in the
- * amount's category.
+ * units are prefilled from the origin subsample's own unit (the overwhelmingly common choice), which
+ * the user may change to any unit in the amount's category. A template picked in a different
+ * measurement category resets the created amount's unit (see onTemplateSelectionChange).
  */
-function blankAmounts(operation: InventoryOperation): OperationInputs {
+function blankAmounts(operation: InventoryOperation, origin: SubSampleModel): OperationInputs {
   const out: OperationInputs = {};
+  const unitId = getUnitId(origin.quantity);
   // A terminal operation (Destroy) declares no count/each-amount; only set those that exist.
   if (operation.effect.countFrom) out[operation.effect.countFrom] = 1;
-  if (operation.effect.eachAmountFrom) out[operation.effect.eachAmountFrom] = { numericValue: 1, unitId: UNSET_UNIT };
-  if (operation.effect.amountTakenFrom) out[operation.effect.amountTakenFrom] = { numericValue: 1, unitId: UNSET_UNIT };
+  if (operation.effect.eachAmountFrom) out[operation.effect.eachAmountFrom] = { numericValue: 1, unitId };
+  if (operation.effect.amountTakenFrom) out[operation.effect.amountTakenFrom] = { numericValue: 1, unitId };
   return out;
 }
 
@@ -94,7 +97,7 @@ function blankAmounts(operation: InventoryOperation): OperationInputs {
  * every input at its config default, amounts blank (unset units), keeping only the current names.
  */
 function freshValues(operation: InventoryOperation, origin: SubSampleModel, current: OperationInputs): OperationInputs {
-  const values = { ...buildInitialValues(operation, origin), ...blankAmounts(operation) };
+  const values = { ...buildInitialValues(operation, origin), ...blankAmounts(operation, origin) };
   const nameFrom = operation.effect.nameFrom;
   if (nameFrom) values[nameFrom] = current[nameFrom] ?? "";
   const pnFrom = operation.effect.processNameFrom;
@@ -249,7 +252,8 @@ function OperationWizard({
     }
     return {
       values: base,
-      templateSelection: templateSelectionFor(undefined),
+      // First-time run: preselect the parent's own template when it has one (DevDocs/adr/0008).
+      templateSelection: initialTemplateSelection(parentHasTemplate),
       documentation: null,
       amountMode: resolveDefaultAmountMode(op),
       perSubsampleAmounts: {},
@@ -323,11 +327,28 @@ function OperationWizard({
       }
     } else {
       setValues((v) => freshValues(operation, origin, v));
-      setTemplateSelection(templateSelectionFor(undefined));
+      setTemplateSelection(initialTemplateSelection(parentHasTemplate));
       setDocumentation(null);
       setAmountMode("same");
       setPerSubsampleAmounts({});
     }
+  };
+
+  // Template-step edits flow through here so a template picked in a DIFFERENT measurement category
+  // resets the created amount's prefilled unit (the amounts step will offer the new category's units,
+  // and a stale unit from the old category must not survive into the request). The amount taken FROM
+  // the origin always stays in the origin's own category, so its unit is kept.
+  const onTemplateSelectionChange = (next: TemplateSelection) => {
+    const eachAmountFrom = operation?.effect.eachAmountFrom;
+    const previousCategory = templateSelection.quantityCategory ?? origin.quantityCategory;
+    const nextCategory = next.quantityCategory ?? origin.quantityCategory;
+    if (eachAmountFrom && nextCategory !== previousCategory) {
+      setValues((v) => {
+        const each = v[eachAmountFrom] as OperationQuantity | undefined;
+        return { ...v, [eachAmountFrom]: { numericValue: each?.numericValue ?? 1, unitId: UNSET_UNIT } };
+      });
+    }
+    setTemplateSelection(next);
   };
 
   // Auto-derive the sample name "<origin> <process>" and de-duplicate it against existing sample
@@ -531,10 +552,6 @@ function OperationWizard({
           processNameOptions={
             operation.effect.processNameFrom ? (processNames?.[operation.key] ?? []).filter((n) => n.trim() !== "") : []
           }
-          remember={remember}
-          // A terminal operation (Destroy) has nothing to remember (no template/amounts/documentation),
-          // so passing no handler hides the "remember" checkbox.
-          onRememberChange={operation.noOutput ? undefined : onRememberChange}
         />
       );
     }
@@ -542,7 +559,7 @@ function OperationWizard({
       return (
         <TemplateStep
           value={templateSelection}
-          onChange={setTemplateSelection}
+          onChange={onTemplateSelectionChange}
           originSampleName={origin.sample.name}
           parentHasTemplate={parentHasTemplate}
         />
@@ -587,6 +604,11 @@ function OperationWizard({
         amountMode={amountMode}
         perSubsampleAmounts={perSubsampleAmounts}
         origins={origins.map((o) => ({ globalId: o.globalId ?? "", name: o.name ?? "" }))}
+        remember={remember}
+        // The single "remember" checkbox sits with the summary (this card), on both the confirm step
+        // and the step-one fast path. A terminal operation (Destroy) has nothing to remember (no
+        // template/amounts/documentation), so passing no handler hides it.
+        onRememberChange={operation.noOutput ? undefined : onRememberChange}
       />
     );
   };
