@@ -204,19 +204,20 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
     assertEquals(List.of("Air temperature"), sent.getMeasuredVariable());
     /*
      * The one template field that deliberately does NOT copy across: a landing page names exactly
-     * one physical instrument, so the new instrument gets its own address instead of the template's
-     * (RSDEV-1307). That own address is what gets registered.
+     * one physical instrument, so a landing page inherited from the source instrument must never be
+     * registered for the copy (RSDEV-1307). The copy's own field therefore holds nothing but the
+     * materialised globalId default, which is login-walled and never registered either, so what
+     * reaches B2INST is the identifier's own public landing page (RSDEV-1254, ADR 0006).
      *
-     * Note this assertion no longer discriminates the landing page mapping itself: the mapped-field
-     * branch and the GlobalIdUrls fallback both produce this same "/globalId/..." string, so it
-     * would still pass if the field mapping were dropped. The mapping is pinned discriminatingly by
-     * the unit tests in RspaceToExternalProviderAdapterImplTest (see
-     * landingPageFromTheFieldSurvivesAnUnsetServerUrl); what this MVCIT pins is that a landing page
-     * reaches B2INST at all on the create-from-template path.
+     * The precedence rules themselves are pinned discriminatingly by the unit tests in
+     * RspaceToExternalProviderAdapterImplTest (userTypedLandingPageWinsOverThePublicLandingPage,
+     * materialisedDefaultLandingPageIsSupersededByThePublicLandingPage); what this MVCIT pins is
+     * that a landing page reaches B2INST at all on the create-from-template path, and that it is
+     * the public one rather than the inherited or login-walled address.
      */
     assertTrue(
-        sent.getLandingPage().endsWith("/globalId/" + instrumentGlobalId),
-        "expected the instrument's own landing page, got: " + sent.getLandingPage());
+        sent.getLandingPage().contains("/public/inventory/"),
+        "expected the identifier's public landing page, got: " + sent.getLandingPage());
     assertEquals("Other", sent.getAlternateIdentifier().get(0).getAlternateIdentifierType());
     assertEquals(
         "INV-2025-0042", sent.getAlternateIdentifier().get(0).getAlternateIdentifierValue());

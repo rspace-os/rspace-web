@@ -63,7 +63,9 @@ resolved during design. This file is a glossary only — no implementation detai
   ordinary field value the user may edit, and clearing it and saving fills it
   again. Instruments carrying no conforming field are untouched, and templates
   are never filled, since one instrument's address must not be stamped onto every
-  instrument later created from that template.
+  instrument later created from that template. The default is the value the
+  field shows inside RSpace; it is not what gets registered with a PID provider
+  (see Registered landing page).
 - **Identity-bound field** — a field whose value names exactly one concrete
   Instrument, so deriving a new record from an existing one must not carry it
   over. The Landing page is identity-bound. Three derivation paths enforce this
@@ -106,6 +108,27 @@ resolved during design. This file is a glossary only — no implementation detai
   provider, distinct from a citable public URL: it exists from registration
   onwards and may require signing in to that provider, so it is never presented
   as the identifier's public address.
+- **Public link suffix** — the unguessable random token that names an
+  identifier's public landing page. Generated when a new identifier registration
+  begins — before any provider is called, so the page's address can be part of
+  the registered metadata — and immutable for the identifier's lifetime. Every
+  identifier has one, whichever provider registers it.
+- **Public landing page** — the page RSpace serves anonymously for a published
+  identifier, addressed by the public link suffix
+  (`/public/inventory/<suffix>`). Distinct from the instrument's Landing page
+  field (a field value on the record), from the provider record page (the
+  record's page on the provider's site), and from the record's globalId address
+  (which needs an RSpace sign-in). The address exists from the moment
+  registration begins; the page itself resolves only once the identifier is
+  published.
+- **Registered landing page** — the LandingPage value RSpace sends to a PID
+  provider when registering an instrument identifier: the Landing page field
+  when it holds a value the user typed themselves, otherwise the identifier's
+  public landing page. A materialised default is never registered — it is a
+  login-walled address, and a landing page is baked into a citable PID once a
+  curator accepts — so when there is neither a typed value nor a public address
+  the property is omitted, a missing property being recoverable where a wrong
+  published one is not.
 
 ## Record version history
 

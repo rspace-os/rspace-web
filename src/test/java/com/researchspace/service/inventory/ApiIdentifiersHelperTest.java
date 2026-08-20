@@ -78,4 +78,31 @@ public class ApiIdentifiersHelperTest {
     DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
     assertEquals(IdentifierType.IGSN_DATACITE, result.getType());
   }
+
+  /**
+   * The invariant RSDEV-1254 exists for: the suffix registered with the provider (carried on the
+   * DTO) is the one the entity's publicLink adopts, so the registered address and the page RSpace
+   * serves can never diverge. See ADR 0006.
+   */
+  @Test
+  public void createDoiToSaveUsesDtoSuffixAsEntityPublicLink() {
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.generatePublicLinkSuffix();
+
+    DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
+
+    assertEquals(apiDoi.getPublicLinkSuffix(), result.getPublicLink());
+    assertEquals(
+        "https://localhost:8080/public/inventory/" + apiDoi.getPublicLinkSuffix(),
+        result.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
+  }
+
+  @Test
+  public void createDoiToSaveStillGeneratesPublicLinkWhenDtoCarriesNoSuffix() {
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+
+    DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
+
+    assertNotNull(result.getPublicLink()); // entity fallback keeps suffix-less callers safe
+  }
 }

@@ -2,11 +2,15 @@ package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -33,6 +37,7 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class InventoryIdentifierApiManagerImplUnitTest {
@@ -82,7 +87,8 @@ class InventoryIdentifierApiManagerImplUnitTest {
     User user = mock(User.class);
     when(user.getFullName()).thenReturn("Jane Doe");
     when(properties.getCustomerName()).thenReturn("Acme");
-    when(adapter.buildB2instDoi(instrument)).thenReturn(new B2instDoi());
+    when(adapter.buildB2instDoi(eq(instrument), nullable(String.class)))
+        .thenReturn(new B2instDoi());
     B2instDraftRecord draft = new B2instDraftRecord();
     draft.setId("k2j9p-7yh21");
     when(b2instConnector.registerDoi(any(B2instDoi.class))).thenReturn(draft);
@@ -97,6 +103,48 @@ class InventoryIdentifierApiManagerImplUnitTest {
     assertEquals("draft", result.getState());
     assertEquals(IdentifierType.PIDINST_B2INST.name(), result.getDoiType());
     assertEquals("Instrument", result.getResourceType());
+  }
+
+  /**
+   * The point of RSDEV-1254: the landing page address exists BEFORE the provider call, is built
+   * from the DTO's own suffix, and the same suffix stays on the DTO so the entity later adopts it.
+   * The URL is payload-only: publicUrl keeps its publish-time semantics (ADR 0006).
+   */
+  @Test
+  void createNewB2instDoiBuildsLandingPageFromGeneratedSuffixBeforeRegistering() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    RspaceToExternalProviderAdapter adapter = mock(RspaceToExternalProviderAdapter.class);
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    ReflectionTestUtils.setField(mgr, "rspaceToExternalProviderAdapter", adapter);
+    ReflectionTestUtils.setField(mgr, "properties", properties);
+
+    InventoryRecord instrument = mock(InventoryRecord.class);
+    User user = mock(User.class);
+    when(user.getFullName()).thenReturn("Jane Doe");
+    when(properties.getCustomerName()).thenReturn("Acme");
+    when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
+    when(adapter.buildB2instDoi(eq(instrument), nullable(String.class)))
+        .thenReturn(new B2instDoi());
+    B2instDraftRecord draft = new B2instDraftRecord();
+    draft.setId("k2j9p-7yh21");
+    when(b2instConnector.registerDoi(any(B2instDoi.class))).thenReturn(draft);
+
+    Method createNewB2instDoi =
+        InventoryIdentifierApiManagerImpl.class.getDeclaredMethod(
+            "createNewB2instDoi", InventoryRecord.class, User.class);
+    createNewB2instDoi.setAccessible(true);
+    ApiInventoryDOI result = (ApiInventoryDOI) createNewB2instDoi.invoke(mgr, instrument, user);
+
+    assertNotNull(result.getPublicLinkSuffix());
+    ArgumentCaptor<String> landingPage = ArgumentCaptor.forClass(String.class);
+    verify(adapter).buildB2instDoi(eq(instrument), landingPage.capture());
+    assertEquals(
+        "https://rspace.example.com/public/inventory/" + result.getPublicLinkSuffix(),
+        landingPage.getValue());
+    assertNull(
+        result.getPublicUrl(), "payload-only: the landing page URL is not persisted as publicUrl");
   }
 
   /**
@@ -213,7 +261,8 @@ class InventoryIdentifierApiManagerImplUnitTest {
     User user = mock(User.class);
     when(user.getFullName()).thenReturn("Jane Doe");
     when(properties.getCustomerName()).thenReturn("Acme");
-    when(adapter.buildB2instDoi(instrument)).thenReturn(new B2instDoi());
+    when(adapter.buildB2instDoi(eq(instrument), nullable(String.class)))
+        .thenReturn(new B2instDoi());
     B2instDraftRecord draft = new B2instDraftRecord();
     draft.setId("k2j9p-7yh21");
     when(b2instConnector.registerDoi(any(B2instDoi.class))).thenReturn(draft);

@@ -7,8 +7,10 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Builds the public RSpace address of an inventory record from its global id.
  *
- * <p>Shared deliberately: the landing page RSpace stores on an instrument and the LandingPage it
- * registers with a PID provider describe the same page, so they must not be able to drift apart.
+ * <p>Shared deliberately: the instrument's materialised Landing page default and the check that
+ * recognises that default at PID registration (so it is superseded by the identifier's public
+ * landing page rather than registered — see ADR 0006) must be built the same way, or the check
+ * silently stops recognising the fill.
  */
 final class GlobalIdUrls {
 

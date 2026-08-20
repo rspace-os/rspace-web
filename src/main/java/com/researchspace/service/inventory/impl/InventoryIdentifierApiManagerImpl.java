@@ -377,6 +377,9 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
 
     ApiInventoryDOI newDoi = new ApiInventoryDOI(user, createdDoi);
+    // same invariant as the B2INST path: the entity adopts a DTO-generated suffix (RSDEV-1254);
+    // for DataCite nothing consumes it before entity creation, so behavior is unchanged
+    newDoi.generatePublicLinkSuffix();
     newDoi.setRegisterIdentifierRequest(true);
     newDoi.setCreatorName(user.getFullName());
     newDoi.setCreatorType("Personal");
@@ -416,9 +419,22 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
    * Registers a draft instrument record with B2INST and returns the RSpace DOI representation,
    * persisting the B2INST record id (RID) as the identifier. The Handle PID is minted only on
    * publish.
+   *
+   * <p>The identifier's public landing page address is generated before the registration call and
+   * registered as its LandingPage, unless the instrument carries a landing page the user typed
+   * themselves (RSDEV-1254, ADR 0006).
    */
   private ApiInventoryDOI createNewB2instDoi(InventoryRecord invRec, User user) {
-    B2instDoi b2instDoi = rspaceToExternalProviderAdapter.buildB2instDoi(invRec);
+    ApiInventoryDOI newDoi = new ApiInventoryDOI();
+    // the public landing page address must exist before the provider call so it can be part of
+    // the registered metadata; the same suffix later becomes the entity's publicLink, so the
+    // registered address and the page RSpace serves can never diverge (RSDEV-1254, ADR 0006)
+    newDoi.generatePublicLinkSuffix();
+    String publicLandingPageUrl =
+        newDoi.getPublicLandingPageUrl(properties.getServerUrl()).orElse(null);
+
+    B2instDoi b2instDoi =
+        rspaceToExternalProviderAdapter.buildB2instDoi(invRec, publicLandingPageUrl);
     B2instDraftRecord draft;
     try {
       draft = b2instConnector.registerDoi(b2instDoi);
@@ -433,7 +449,6 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       throw new IllegalStateException("B2INST registration failed");
     }
 
-    ApiInventoryDOI newDoi = new ApiInventoryDOI();
     newDoi.setRegisterIdentifierRequest(true);
     newDoi.setDoi(draft.getId()); // the draft RID; the Handle PID is minted on publish
     newDoi.setState("draft");

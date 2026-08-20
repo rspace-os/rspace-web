@@ -58,12 +58,22 @@ public class ApiIdentifiersHelper {
     return changed;
   }
 
-  private void addRecordIdentifierForRegisteredApiIdentifier(
-      ApiInventoryDOI apiIdentifier, InventoryRecord parentInvRec) {
-    DigitalObjectIdentifier newDoi = new DigitalObjectIdentifier(null, null);
+  /**
+   * Records this RSpace's own public landing page for the identifier as its LOCAL_URL, built from
+   * whichever suffix the entity ended up with: the one pre-generated on the DTO before the provider
+   * was called, or the entity's own when the caller carried none (RSDEV-1254, ADR 0006).
+   */
+  private void addPublicLandingPageUrl(DigitalObjectIdentifier newDoi) {
     newDoi.addOtherData(
         DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL,
-        properties.getServerUrl() + "/public/inventory/" + newDoi.getPublicLink());
+        properties.getServerUrl() + ApiInventoryDOI.PUBLIC_PAGE_PATH + newDoi.getPublicLink());
+  }
+
+  private void addRecordIdentifierForRegisteredApiIdentifier(
+      ApiInventoryDOI apiIdentifier, InventoryRecord parentInvRec) {
+    DigitalObjectIdentifier newDoi =
+        new DigitalObjectIdentifier(null, null, apiIdentifier.getPublicLinkSuffix());
+    addPublicLandingPageUrl(newDoi);
     newDoi.setOwner(parentInvRec.getOwner());
     apiIdentifier.applyChangesToDatabaseDOI(newDoi);
     parentInvRec.addIdentifier(newDoi);
@@ -78,10 +88,9 @@ public class ApiIdentifiersHelper {
   }
 
   public DigitalObjectIdentifier createDoiToSave(ApiInventoryDOI apiIdentifier, User creator) {
-    DigitalObjectIdentifier newDoi = new DigitalObjectIdentifier(null, null);
-    newDoi.addOtherData(
-        DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL,
-        properties.getServerUrl() + "/public/inventory/" + newDoi.getPublicLink());
+    DigitalObjectIdentifier newDoi =
+        new DigitalObjectIdentifier(null, null, apiIdentifier.getPublicLinkSuffix());
+    addPublicLandingPageUrl(newDoi);
     newDoi.setOwner(creator);
     apiIdentifier.applyChangesToDatabaseDOI(newDoi);
     return newDoi;

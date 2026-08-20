@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 class RspaceToExternalProviderAdapterImplTest {
 
   private static final String SERVER = "https://rspace.example.com";
+  private static final String PUBLIC_PAGE = SERVER + "/public/inventory/abc123XYZ_-456789";
 
   private IPropertyHolder properties;
   private RspaceToExternalProviderAdapterImpl adapter;
@@ -116,7 +117,7 @@ class RspaceToExternalProviderAdapterImplTest {
     addField(instrument, uriField("Landing page", "https://lab.example.org/aws-42"));
     addField(instrument, stringField("Alternate Identifier", "INV-2025-0042"));
 
-    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument).getMetadata();
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
 
     assertEquals("Microscope X", md.getName());
     assertEquals("1.0", md.getSchemaVersion());
@@ -144,29 +145,74 @@ class RspaceToExternalProviderAdapterImplTest {
     Instrument instrument = templateShapedInstrument();
     addField(instrument, stringField("Owner", "   "));
 
-    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument).getMetadata();
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
 
     assertEquals("Jane Doe", md.getOwner().get(0).getOwnerName());
     assertEquals("jane@example.org", md.getOwner().get(0).getOwnerContact());
   }
 
   @Test
-  void landingPageFallsBackToOwnGlobalIdUrl() {
+  void landingPageFallsBackToThePublicLandingPage() {
     Instrument instrument = templateShapedInstrument();
 
-    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument).getMetadata();
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
 
-    assertEquals(SERVER + "/globalId/" + instrument.getGlobalIdentifier(), md.getLandingPage());
+    assertEquals(PUBLIC_PAGE, md.getLandingPage());
+  }
+
+  /**
+   * Slash handling on the server URL now lives in {@code ApiInventoryDOI.getPublicLandingPageUrl}
+   * (covered by ApiInventoryDOITest); here the adapter must pass a provided URL through untouched.
+   */
+  @Test
+  void providedPublicLandingPageIsRegisteredVerbatim() {
+    Instrument instrument = templateShapedInstrument();
+
+    B2instInstrumentMetadata md =
+        adapter
+            .buildB2instDoi(instrument, "https://other.example.org/public/inventory/x")
+            .getMetadata();
+
+    assertEquals("https://other.example.org/public/inventory/x", md.getLandingPage());
+  }
+
+  /** The materialised globalId default is not a user's landing page and never gets registered. */
+  @Test
+  void materialisedDefaultLandingPageIsSupersededByThePublicLandingPage() {
+    Instrument instrument = templateShapedInstrument();
+    addField(
+        instrument,
+        uriField("Landing page", SERVER + "/globalId/" + instrument.getGlobalIdentifier()));
+
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
+
+    assertEquals(PUBLIC_PAGE, md.getLandingPage());
   }
 
   @Test
-  void landingPageFallbackToleratesTrailingSlashOnServerUrl() {
-    when(properties.getServerUrl()).thenReturn(SERVER + "/");
+  void userTypedLandingPageWinsOverThePublicLandingPage() {
     Instrument instrument = templateShapedInstrument();
+    addField(instrument, uriField("Landing page", "https://lab.example.org/aws-42"));
 
-    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument).getMetadata();
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
 
-    assertEquals(SERVER + "/globalId/" + instrument.getGlobalIdentifier(), md.getLandingPage());
+    assertEquals("https://lab.example.org/aws-42", md.getLandingPage());
+  }
+
+  /**
+   * A default-valued field with no public URL available: omitted. Registering the login-walled
+   * default would bake a wrong URL into a citable PID; a missing property is recoverable.
+   */
+  @Test
+  void landingPageIsOmittedWhenOnlyTheDefaultAndNoPublicUrlExist() {
+    Instrument instrument = templateShapedInstrument();
+    addField(
+        instrument,
+        uriField("Landing page", SERVER + "/globalId/" + instrument.getGlobalIdentifier()));
+
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
+
+    assertNull(md.getLandingPage());
   }
 
   /**
@@ -180,7 +226,7 @@ class RspaceToExternalProviderAdapterImplTest {
     when(properties.getServerUrl()).thenReturn(null);
     Instrument instrument = templateShapedInstrument();
 
-    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument).getMetadata();
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
 
     assertNull(md.getLandingPage());
   }
@@ -192,7 +238,7 @@ class RspaceToExternalProviderAdapterImplTest {
     Instrument instrument = templateShapedInstrument();
     addField(instrument, uriField("Landing page", "https://lab.example.org/aws-42"));
 
-    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument).getMetadata();
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
 
     assertEquals("https://lab.example.org/aws-42", md.getLandingPage());
   }
@@ -207,10 +253,10 @@ class RspaceToExternalProviderAdapterImplTest {
     bogusLanding.setFieldData("my lab bench");
     addField(instrument, bogusLanding);
 
-    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument).getMetadata();
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
 
     assertNull(md.getDate());
-    assertEquals(SERVER + "/globalId/" + instrument.getGlobalIdentifier(), md.getLandingPage());
+    assertEquals(PUBLIC_PAGE, md.getLandingPage());
   }
 
   @Test
@@ -218,7 +264,7 @@ class RspaceToExternalProviderAdapterImplTest {
     Instrument instrument = templateShapedInstrument();
     addField(instrument, stringField("  MANUFACTURER  ", "Acme Instruments"));
 
-    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument).getMetadata();
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
 
     assertEquals("Acme Instruments", md.getManufacturer().get(0).getManufacturerName());
   }
@@ -230,7 +276,7 @@ class RspaceToExternalProviderAdapterImplTest {
     addField(instrument, linkField("Calibration", "IsCalibratedBy", "SD202"));
     addField(instrument, dateField("Last calibrated", "2026-01-15"));
 
-    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument).getMetadata();
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
 
     // fully populated, and still nothing: these three fields feed no PIDINST property
     assertNull(md.getMeasuredVariable());
@@ -241,7 +287,7 @@ class RspaceToExternalProviderAdapterImplTest {
     Instrument instrument = templateShapedInstrument();
     addField(instrument, stringField("Measured quantity", "  Air temperature  "));
 
-    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument).getMetadata();
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
 
     assertEquals(List.of("Air temperature"), md.getMeasuredVariable());
   }
@@ -251,7 +297,7 @@ class RspaceToExternalProviderAdapterImplTest {
     Instrument instrument = templateShapedInstrument();
     addField(instrument, stringField("Measured quantity", "   "));
 
-    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument).getMetadata();
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
 
     assertNull(md.getMeasuredVariable());
   }
@@ -260,7 +306,7 @@ class RspaceToExternalProviderAdapterImplTest {
   void nonTemplateInstrumentKeepsBaselinePayloadPlusLandingPage() {
     Instrument instrument = templateShapedInstrument();
 
-    B2instDoi doi = adapter.buildB2instDoi(instrument);
+    B2instDoi doi = adapter.buildB2instDoi(instrument, PUBLIC_PAGE);
     B2instInstrumentMetadata md = doi.getMetadata();
 
     assertEquals("Microscope X", md.getName());
@@ -273,7 +319,7 @@ class RspaceToExternalProviderAdapterImplTest {
     assertNull(md.getDate());
     assertNull(md.getMeasuredVariable());
     assertNull(md.getAlternateIdentifier());
-    assertEquals(SERVER + "/globalId/" + instrument.getGlobalIdentifier(), md.getLandingPage());
+    assertEquals(PUBLIC_PAGE, md.getLandingPage());
     assertEquals("public", doi.getAccess().getRecord());
     assertFalse(doi.getFiles().getEnabled());
   }
@@ -284,7 +330,7 @@ class RspaceToExternalProviderAdapterImplTest {
     addField(instrument, dateField("Commissioned", "2024-02-21"));
     addField(instrument, stringField("Alternate Identifier", "INV-1"));
 
-    JsonNode root = new ObjectMapper().valueToTree(adapter.buildB2instDoi(instrument));
+    JsonNode root = new ObjectMapper().valueToTree(adapter.buildB2instDoi(instrument, null));
 
     assertEquals("Microscope X", root.at("/metadata/Name").asText());
     assertEquals("1.0", root.at("/metadata/SchemaVersion").asText());
@@ -314,7 +360,7 @@ class RspaceToExternalProviderAdapterImplTest {
     addField(instrument, uriField("Landing page", "https://lab.example.org/aws-42"));
 
     JsonNode md =
-        new ObjectMapper().valueToTree(adapter.buildB2instDoi(instrument)).at("/metadata");
+        new ObjectMapper().valueToTree(adapter.buildB2instDoi(instrument, null)).at("/metadata");
 
     assertEquals("An automatic weather station.", md.at("/Description").asText());
     assertEquals("Arctic Research Institute", md.at("/Owner/0/ownerName").asText());
@@ -335,7 +381,7 @@ class RspaceToExternalProviderAdapterImplTest {
   void wireFormatOmitsPropertiesWithNoContentRatherThanSendingThemEmpty() throws Exception {
     JsonNode md =
         new ObjectMapper()
-            .valueToTree(adapter.buildB2instDoi(templateShapedInstrument()))
+            .valueToTree(adapter.buildB2instDoi(templateShapedInstrument(), PUBLIC_PAGE))
             .at("/metadata");
 
     assertTrue(md.at("/Description").isMissingNode());
@@ -345,7 +391,8 @@ class RspaceToExternalProviderAdapterImplTest {
     assertTrue(md.at("/Date").isMissingNode());
     assertTrue(md.at("/MeasuredVariable").isMissingNode());
     assertTrue(md.at("/AlternateIdentifier").isMissingNode());
-    // Name, SchemaVersion, Owner and LandingPage always resolve, so they must still be present
+    // Name, SchemaVersion and Owner always resolve, and LandingPage does here because a public
+    // landing page was supplied, so all four must still be present
     assertFalse(md.at("/Name").isMissingNode());
     assertFalse(md.at("/SchemaVersion").isMissingNode());
     assertFalse(md.at("/Owner").isMissingNode());
@@ -357,7 +404,8 @@ class RspaceToExternalProviderAdapterImplTest {
     InventoryRecord notAnInstrument = mock(InventoryRecord.class);
     when(notAnInstrument.isInstrument()).thenReturn(false);
 
-    assertThrows(IllegalArgumentException.class, () -> adapter.buildB2instDoi(notAnInstrument));
+    assertThrows(
+        IllegalArgumentException.class, () -> adapter.buildB2instDoi(notAnInstrument, null));
   }
 
   @Test

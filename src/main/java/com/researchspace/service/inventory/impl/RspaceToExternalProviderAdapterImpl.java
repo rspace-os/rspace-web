@@ -79,7 +79,7 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
    */
   @Override
   @Transactional(propagation = Propagation.MANDATORY)
-  public B2instDoi buildB2instDoi(InventoryRecord instrument) {
+  public B2instDoi buildB2instDoi(InventoryRecord instrument, String publicLandingPageUrl) {
     if (instrument == null || !instrument.isInstrument()) {
       throw new IllegalArgumentException(
           "B2INST instrument PIDs can only be built for Instrument records (IN*)");
@@ -102,13 +102,19 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
     metadata.setDate(nullIfEmpty(dates(source)));
     metadata.setMeasuredVariable(nullIfEmpty(measuredVariables(source)));
     /*
-     * Omitted rather than sent site-relative when no server URL is configured: a LandingPage is baked
-     * into a citable PID once a curator accepts the record, and RSpace has no way to update a
-     * published B2INST record afterwards. A missing property is recoverable; a wrong published URL is
-     * not. See GlobalIdUrls.globalIdUrl.
+     * The registered landing page: the user's own value when they typed one, otherwise the
+     * identifier's public landing page. The materialised globalId default is recognised by
+     * comparison with GlobalIdUrls and never registered: it needs an RSpace sign-in, and a
+     * LandingPage is baked into a citable PID once a curator accepts, with no way to update the
+     * published record afterwards. With neither a typed value nor a public URL the property is
+     * omitted: a missing property is recoverable, a wrong published URL is not. See ADR 0006 and
+     * CONTEXT.md ("Registered landing page").
      */
+    Optional<String> materialisedDefault =
+        GlobalIdUrls.globalIdUrl(properties, source.getGlobalIdentifier());
     mappedFieldData(source, FIELD_LANDING_PAGE, FieldType.URI)
-        .or(() -> GlobalIdUrls.globalIdUrl(properties, source.getGlobalIdentifier()))
+        .filter(fieldValue -> materialisedDefault.filter(fieldValue::equals).isEmpty())
+        .or(() -> Optional.ofNullable(publicLandingPageUrl))
         .ifPresent(metadata::setLandingPage);
     mappedFieldData(source, FIELD_ALTERNATE_IDENTIFIER, FieldType.STRING)
         .ifPresent(
