@@ -1585,27 +1585,19 @@ paths:
 
         | Operation | Origins | Link relationType | Origin amount | Notes |
 
-
         | --- | --- | --- | --- | --- |
-
 
         | Aliquot | one | IsPartOf | decrement | N equal subsamples |
 
-
         | Passage | one | IsDerivedFrom | 0 (link only) | "Passage number" text field on the new sample |
-
 
         | Pool | two or more | HasPart (one link per origin) | per origin (default: empty each) | origins must share a measurement category |
 
-
         | Derive | one | IsDerivedFrom | decrement | user-named process |
-
 
         | Cryopreserve | one | IsDerivedFrom | decrement | "Cryomedium" text field; storageTempMin/Max |
 
-
         | Revive | one | IsDerivedFrom | decrement | storageTempMin/Max |
-
 
         | Destroy | one | none | empty the origin | no newSample; "Disposed" ISO-date text field on the origin |
       tags:
