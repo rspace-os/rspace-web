@@ -13,6 +13,7 @@ import Analytics from "@/components/Analytics";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import DMPToolAccentMenuItem from "@/eln-dmp-integration/DMPTool/DMPToolAccentMenuItem";
+import DmpImportDialogs, { type DmpImportTarget } from "@/eln-dmp-integration/DmpImportDialogs";
 import { UiPreferences } from "@/hooks/api/useUiPreference";
 import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
@@ -92,6 +93,7 @@ export function CreateMenuStory(): React.ReactNode {
 
 export function DMPToolCreateMenuStory({ isPicker }: { isPicker: boolean }): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
+  const [dmpTarget, setDmpTarget] = React.useState<DmpImportTarget | null>(null);
   const { t } = useTranslation("common");
   return (
     <BrowserRouter>
@@ -110,8 +112,20 @@ export function DMPToolCreateMenuStory({ isPicker }: { isPicker: boolean }): Rea
             >
               <Button onClick={(event) => setAnchorEl(event.currentTarget)}>{t("actions.create")}</Button>
               <SidebarCreateMenu anchorEl={anchorEl} onClose={() => setAnchorEl(null)}>
-                <DMPToolAccentMenuItem onDialogClose={() => setAnchorEl(null)} />
+                <DMPToolAccentMenuItem
+                  onSelect={() => {
+                    setDmpTarget({ source: "dmptool" });
+                  }}
+                />
               </SidebarCreateMenu>
+              {/* Rendered outside the menu, mirroring the real Sidebar. */}
+              <DmpImportDialogs
+                target={dmpTarget}
+                onClose={() => {
+                  setDmpTarget(null);
+                  setAnchorEl(null);
+                }}
+              />
             </ThemeProvider>
           </Alerts>
         </UiPreferences>

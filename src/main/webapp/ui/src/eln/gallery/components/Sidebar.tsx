@@ -20,6 +20,7 @@ import { observer } from "mobx-react-lite";
 import React, { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import DmpImportDialogs, { type DmpImportTarget } from "@/eln-dmp-integration/DmpImportDialogs";
 import DSWAccentMenuItem from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { Drawer } from "../../../components/DialogBoundary";
@@ -342,10 +343,10 @@ const AddFilestoreMenuItem = ({
   );
 };
 type DmpMenuSectionArgs = {
-  onDialogClose: () => void;
+  onSelect: (target: DmpImportTarget) => void;
   showDmpPanel: () => void;
 };
-const DmpMenuSection = ({ onDialogClose, showDmpPanel }: DmpMenuSectionArgs) => {
+const DmpMenuSection = ({ onSelect, showDmpPanel }: DmpMenuSectionArgs) => {
   /*
    * One /allIntegrations call covers every DMP source. Cached because the
    * menu remounts this component on every open.
@@ -382,13 +383,19 @@ const DmpMenuSection = ({ onDialogClose, showDmpPanel }: DmpMenuSectionArgs) => 
       <Divider textAlign="left" aria-label={t("sidebar.dmpsLabel")}>
         {t("sidebar.dmpImport")}
       </Divider>
-      {showArgos && <ArgosAccentMenuItem onDialogClose={onDialogClose} />}
-      {showDmpAssistant && <DMPAssistantAccentMenuItem onDialogClose={onDialogClose} />}
-      {showDmponline && <DMPOnlineAccentMenuItem onDialogClose={onDialogClose} />}
-      {showDmptool && <DMPToolAccentMenuItem onDialogClose={onDialogClose} />}
+      {showArgos && <ArgosAccentMenuItem onSelect={() => onSelect({ source: "argos" })} />}
+      {showDmpAssistant && <DMPAssistantAccentMenuItem onSelect={() => onSelect({ source: "dmpAssistant" })} />}
+      {showDmponline && <DMPOnlineAccentMenuItem onSelect={() => onSelect({ source: "dmponline" })} />}
+      {showDmptool && <DMPToolAccentMenuItem onSelect={() => onSelect({ source: "dmptool" })} />}
       {showDsw &&
         dswConnections.map((connection) => {
-          return <DSWAccentMenuItem key={connection.optionsId} onDialogClose={onDialogClose} connection={connection} />;
+          return (
+            <DSWAccentMenuItem
+              key={connection.optionsId}
+              onSelect={() => onSelect({ source: "dsw", connection })}
+              connection={connection}
+            />
+          );
         })}
     </>
   );
@@ -415,6 +422,7 @@ const Sidebar = ({
 }: SidebarArgs): React.ReactNode => {
   const sidebarRef = useLandmark("Navigation");
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState<HTMLElement | null>(null);
+  const [dmpImportTarget, setDmpImportTarget] = React.useState<DmpImportTarget | null>(null);
   const viewport = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   const { t } = useTranslation(["gallery", "common"]);
@@ -521,9 +529,8 @@ const Sidebar = ({
            */}
           <Suspense fallback={null}>
             <DmpMenuSection
-              onDialogClose={() => {
-                setNewMenuAnchorEl(null);
-                if (viewport.isViewportSmall) setDrawerOpen(false);
+              onSelect={(target) => {
+                setDmpImportTarget(target);
               }}
               showDmpPanel={() => {
                 if (selectedSection === "DMPs") {
@@ -535,6 +542,21 @@ const Sidebar = ({
             />
           </Suspense>
         </SidebarCreateMenu>
+        {/*
+         * Rendered as a sibling of the create menu, not inside it. The menu is
+         * still dismissed when the dialog closes, exactly as before -- what
+         * changes is only that the dialog is no longer a child of the menu in
+         * the React tree, so the menu's teardown cannot take an open dialog
+         * with it.
+         */}
+        <DmpImportDialogs
+          target={dmpImportTarget}
+          onClose={() => {
+            setDmpImportTarget(null);
+            setNewMenuAnchorEl(null);
+            if (viewport.isViewportSmall) setDrawerOpen(false);
+          }}
+        />
       </Box>
       <Divider />
       <Box

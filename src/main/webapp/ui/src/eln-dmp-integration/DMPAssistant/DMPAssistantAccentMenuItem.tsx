@@ -1,45 +1,32 @@
 import CardMedia from "@mui/material/CardMedia";
-import React from "react";
+import type React from "react";
 import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "../../assets/branding/dmpassistant";
 import DMPAssistantIcon from "../../assets/branding/dmpassistant/logo.svg";
 import AccentMenuItem from "../../components/AccentMenuItem";
-import EventBoundary from "../../components/EventBoundary";
-import DMPDialog from "./DMPDialog";
 
 type DMPAssistantAccentMenuItemArgs = {
-  onDialogClose: () => void;
+  /** Called when the user picks this source; the caller opens the dialog. */
+  onSelect: () => void;
 };
 
 /**
  * The menu item for the create menu for importing DMPs from DMP Assistant.
  */
-export default function DMPAssistantAccentMenuItem({ onDialogClose }: DMPAssistantAccentMenuItemArgs): React.ReactNode {
+export default function DMPAssistantAccentMenuItem({ onSelect }: DMPAssistantAccentMenuItemArgs): React.ReactNode {
   const { t } = useTranslation("apps");
-  const [showDialog, setShowDialog] = React.useState(false);
 
   return (
-    <>
-      <AccentMenuItem
-        title={t("dmpIntegrations.dmpAssistant")}
-        avatar={<CardMedia image={DMPAssistantIcon} />}
-        backgroundColor={LOGO_COLOR}
-        foregroundColor={{ ...LOGO_COLOR, lightness: 30 }}
-        onClick={() => {
-          setShowDialog(true);
-        }}
-        aria-haspopup="dialog"
-        compact
-      />
-      <EventBoundary>
-        <DMPDialog
-          open={showDialog}
-          setOpen={(b) => {
-            setShowDialog(b);
-            if (!b) onDialogClose();
-          }}
-        />
-      </EventBoundary>
-    </>
+    <AccentMenuItem
+      title={t("dmpIntegrations.dmpAssistant")}
+      avatar={<CardMedia image={DMPAssistantIcon} />}
+      backgroundColor={LOGO_COLOR}
+      foregroundColor={{ ...LOGO_COLOR, lightness: 30 }}
+      onClick={() => {
+        onSelect();
+      }}
+      aria-haspopup="dialog"
+      compact
+    />
   );
 }
