@@ -7,12 +7,6 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.UniquelyIdentifiable;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Inheritance;
@@ -22,6 +16,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Transient;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,9 +32,7 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
 
-/**
- * Represents RSpace Inventory InstrumentEntity (that is Instrument or InstrumentTemplate)
- */
+/** Represents RSpace Inventory InstrumentEntity (that is Instrument or InstrumentTemplate) */
 @Entity(name = "InstrumentEntity")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @Audited
@@ -43,21 +41,19 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDe
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @AuditTrailData(auditDomain = AuditDomain.INV_INSTRUMENT)
 @Indexed
-public abstract class InstrumentEntity extends MovableInventoryRecord implements Serializable,
-    UniquelyIdentifiable {
+public abstract class InstrumentEntity extends MovableInventoryRecord
+    implements Serializable, UniquelyIdentifiable {
 
   private static final long serialVersionUID = 186726698891360705L;
 
   private User owner;
 
-  @IndexedEmbedded
-  private List<InventoryEntityField> fields = new ArrayList<>();
+  @IndexedEmbedded private List<InventoryEntityField> fields = new ArrayList<>();
 
   @IndexedEmbedded(name = "extraFields")
   private List<ExtraField> extraFields = new ArrayList<>();
 
-  @IndexedEmbedded
-  private List<Barcode> barcodes = new ArrayList<>();
+  @IndexedEmbedded private List<Barcode> barcodes = new ArrayList<>();
 
   private List<DigitalObjectIdentifier> identifiers = new ArrayList<>();
 
@@ -68,9 +64,7 @@ public abstract class InstrumentEntity extends MovableInventoryRecord implements
 
   protected int currMaxColIndex = 0;
 
-  public InstrumentEntity() {
-  }
-
+  public InstrumentEntity() {}
 
   @OneToMany(mappedBy = "instrumentEntity", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "columnIndex")
@@ -84,12 +78,11 @@ public abstract class InstrumentEntity extends MovableInventoryRecord implements
   @Transient
   public List<InventoryEntityField> getActiveFields() {
     if (activeFields == null) {
-      activeFields = getFields().stream().filter(sf -> !sf.isDeleted())
-          .sorted().collect(Collectors.toList());
+      activeFields =
+          getFields().stream().filter(sf -> !sf.isDeleted()).sorted().collect(Collectors.toList());
     }
     return activeFields;
   }
-
 
   /**
    * Resets column index property for active fields, so they start from 1 and end with
@@ -125,18 +118,15 @@ public abstract class InstrumentEntity extends MovableInventoryRecord implements
     return getActiveFields();
   }
 
-
   protected void setExtraFields(List<ExtraField> extraFields) {
     this.extraFields = extraFields;
     refreshActiveExtraFields();
   }
 
-
   protected void setBarcodes(List<Barcode> barcodes) {
     this.barcodes = barcodes;
     refreshActiveBarcodes();
   }
-
 
   @OneToMany(mappedBy = "instrumentEntity", cascade = CascadeType.ALL, orphanRemoval = true)
   @OrderBy(value = "id")
@@ -177,7 +167,6 @@ public abstract class InstrumentEntity extends MovableInventoryRecord implements
     refreshActiveIdentifiers();
   }
 
-
   protected void setFiles(List<InventoryFile> files) {
     this.files = files;
     refreshActiveAttachedFiles();
@@ -185,7 +174,6 @@ public abstract class InstrumentEntity extends MovableInventoryRecord implements
 
   @Transient
   public abstract GlobalIdPrefix getGlobalIdPrefix();
-
 
   /**
    * Convenience copy method to make a template from a intrument. This is the inverse operation of
@@ -197,28 +185,29 @@ public abstract class InstrumentEntity extends MovableInventoryRecord implements
   public abstract InstrumentEntity copyToTemplate(User currentUser);
 
   /**
-   * Convenience copy method to make a normal instrument from a template. Validates that this
-   * object <em>is</em> a template, also sets the template and its version into copied instrument.
+   * Convenience copy method to make a normal instrument from a template. Validates that this object
+   * <em>is</em> a template, also sets the template and its version into copied instrument.
    *
    * @return a copy of a template, a regular instrument.
    * @throws IllegalArgumentException if this Instrument is not a template
    */
   public abstract InstrumentEntity copyFromTemplate(User currentUser);
 
-
   /**
    * @param nameMapper A custom name-mapper to generate name for the new copy.
    * @return
    * @see InstrumentEntity#copy(User)
    */
-  protected <T extends InstrumentEntity> T copy(Function<InstrumentEntity, String> nameMapper,
-      User currentUser) {
+  protected <T extends InstrumentEntity> T copy(
+      Function<InstrumentEntity, String> nameMapper, User currentUser) {
     T instrumentCopy = this.shallowCopy();
     copy(this, instrumentCopy, nameMapper, currentUser);
     return instrumentCopy;
   }
 
-  static void copy(InstrumentEntity origin, InstrumentEntity destination,
+  static void copy(
+      InstrumentEntity origin,
+      InstrumentEntity destination,
       Function<InstrumentEntity, String> nameMapper,
       User currentUser) {
     destination.setName(nameMapper.apply(origin));
@@ -236,7 +225,8 @@ public abstract class InstrumentEntity extends MovableInventoryRecord implements
   protected InventoryEntityField copyAndAddInstrumentField(InventoryEntityField originalField) {
     InventoryEntityField copiedField = originalField.shallowCopy();
     copiedField.setTemplateField(
-        originalField.getInstrumentEntity().isTemplate() ? originalField
+        originalField.getInstrumentEntity().isTemplate()
+            ? originalField
             : originalField.getTemplateField());
     verifyFieldNameAllowed(copiedField.getName());
     currMaxColIndex++;
@@ -251,6 +241,4 @@ public abstract class InstrumentEntity extends MovableInventoryRecord implements
 
   @Transient
   public abstract boolean isTemplate();
-
 }
-

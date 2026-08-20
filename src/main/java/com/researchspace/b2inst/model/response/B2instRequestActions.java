@@ -8,10 +8,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * State-transition action links on a {@link B2instRequestLinks} block. Which fields are
- * present depends on the request status: a {@code created} request exposes
- * {@link #submit}; once {@code submitted} the curator actions {@link #accept},
- * {@link #decline} and {@link #cancel} are exposed instead.
+ * State-transition action links on a {@link B2instRequestLinks} block. Which fields are present
+ * depends on the request status: a {@code created} request exposes {@link #submit}; once {@code
+ * submitted} the curator actions {@link #accept}, {@link #decline} and {@link #cancel} are exposed
+ * instead.
  */
 @Data
 @NoArgsConstructor

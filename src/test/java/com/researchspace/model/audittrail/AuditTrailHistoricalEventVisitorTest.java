@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,8 +20,8 @@ public class AuditTrailHistoricalEventVisitorTest {
 
   static HistoricData createExampleHistoryData(Person subject) {
     AuditData data = getAuditDataForTestObject();
-    return new HistoricData(AuditDomain.FORM, AuditAction.CREATE, subject.getFullName(), data,
-        subject.getUniqueName());
+    return new HistoricData(
+        AuditDomain.FORM, AuditAction.CREATE, subject.getFullName(), data, subject.getUniqueName());
   }
 
   private static AuditData getAuditDataForTestObject() {
@@ -72,18 +71,27 @@ public class AuditTrailHistoricalEventVisitorTest {
   public void testSubClassWithOverridingAuditDomainAnnotationOverridesBaseClass() {
     AuditData data = getAuditDataForTestObject();
     auditTestObject = new AuditTrailTestObjectSubClassWithOverridingDomain();
-    HistoricData expectedhData = new HistoricData(AuditDomain.COMMUNITY, AuditAction.CREATE,
-        subject.getFullName(), data, subject.getUniqueName());
+    HistoricData expectedhData =
+        new HistoricData(
+            AuditDomain.COMMUNITY,
+            AuditAction.CREATE,
+            subject.getFullName(),
+            data,
+            subject.getUniqueName());
     GenericEvent event = new GenericEvent(subject, auditTestObject, AuditAction.CREATE);
     event.accept(visitor);
     Assertions.assertEquals(expectedhData, visitor.getHistoryData().get(0));
-
   }
 
   @Test
   public void testVisitAuditCreateEventWithClassNotObject() {
-    HistoricData expectedhData = new HistoricData(AuditDomain.FORM, AuditAction.CREATE,
-        subject.getFullName(), null, subject.getUniqueName());
+    HistoricData expectedhData =
+        new HistoricData(
+            AuditDomain.FORM,
+            AuditAction.CREATE,
+            subject.getFullName(),
+            null,
+            subject.getUniqueName());
     // data  field will be null, as it is a class argument.
     GenericEvent event = new GenericEvent(subject, auditTestObject.getClass(), AuditAction.CREATE);
     event.accept(visitor);
@@ -101,8 +109,13 @@ public class AuditTrailHistoricalEventVisitorTest {
 
   @Test
   public void testVisitAuditCreateEventWithAnnotationUsesDefaultData() {
-    HistoricData hData = new HistoricData(AuditDomain.UNKNOWN, AuditAction.CREATE,
-        subject.getFullName(), new AuditData(), subject.getUniqueName());
+    HistoricData hData =
+        new HistoricData(
+            AuditDomain.UNKNOWN,
+            AuditAction.CREATE,
+            subject.getFullName(),
+            new AuditData(),
+            subject.getUniqueName());
 
     NotAnnotatedForAuditing object = new NotAnnotatedForAuditing();
     GenericEvent event = new GenericEvent(subject, object, AuditAction.CREATE);
@@ -116,11 +129,17 @@ public class AuditTrailHistoricalEventVisitorTest {
 
   @Test
   public void searchEvent() {
-    AuditSearchEvent srchEvent = new AuditSearchEvent(subject, auditTestObject,
-        BasicPaginationCriteria.createDefaultForClass(Object.class));
+    AuditSearchEvent srchEvent =
+        new AuditSearchEvent(
+            subject, auditTestObject, BasicPaginationCriteria.createDefaultForClass(Object.class));
     srchEvent.accept(visitor);
-    HistoricData EXPECTEDlogged = new HistoricData(AuditDomain.FORM, AuditAction.SEARCH,
-        subject.getFullName(), new AuditData(), subject.getUniqueName());
+    HistoricData EXPECTEDlogged =
+        new HistoricData(
+            AuditDomain.FORM,
+            AuditAction.SEARCH,
+            subject.getFullName(),
+            new AuditData(),
+            subject.getUniqueName());
     Assertions.assertEquals(EXPECTEDlogged, visitor.getHistoryData().get(0));
   }
 
@@ -128,13 +147,15 @@ public class AuditTrailHistoricalEventVisitorTest {
   public void testDuplicateEvent() {
     Map<Object, Object> someResult = new HashMap<>();
     someResult.put("from", new AuditTrailTestObject());
-    DuplicateAuditEvent copyEvent = new DuplicateAuditEvent(subject, someResult, auditTestObject,
-        "originalFile", "originalFile_Copy");
+    DuplicateAuditEvent copyEvent =
+        new DuplicateAuditEvent(
+            subject, someResult, auditTestObject, "originalFile", "originalFile_Copy");
     copyEvent.accept(visitor);
-    Assertions.assertEquals("from: \"originalFile\" to: \"originalFile_Copy\"",
+    Assertions.assertEquals(
+        "from: \"originalFile\" to: \"originalFile_Copy\"",
         visitor.getHistoryData().get(0).getDescription());
-    Assertions.assertEquals("originalFile",
-        visitor.getHistoryData().get(0).getData().getData().get("name"));
+    Assertions.assertEquals(
+        "originalFile", visitor.getHistoryData().get(0).getData().getData().get("name"));
   }
 
   @Test
@@ -146,14 +167,10 @@ public class AuditTrailHistoricalEventVisitorTest {
     Assertions.assertTrue(json.contains("\"id\":2"));
   }
 
-  class AuditTrailTestObjectSubClass extends AuditTrailTestObject {
-
-  }
+  class AuditTrailTestObjectSubClass extends AuditTrailTestObject {}
 
   @AuditTrailData(auditDomain = AuditDomain.COMMUNITY)
-  class AuditTrailTestObjectSubClassWithOverridingDomain extends AuditTrailTestObject {
-
-  }
+  class AuditTrailTestObjectSubClassWithOverridingDomain extends AuditTrailTestObject {}
 
   @AuditTrailData(auditDomain = AuditDomain.COMMUNITY, delegateToCollection = "exampleCollection")
   public class DelegatingToCollectionSubclass {
@@ -176,7 +193,5 @@ public class AuditTrailHistoricalEventVisitorTest {
     }
   }
 
-  class NotAnnotatedForAuditing {
-
-  }
+  class NotAnnotatedForAuditing {}
 }

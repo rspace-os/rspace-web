@@ -190,7 +190,8 @@ public class SampleTemplateTest {
   @DisplayName("Duplicating a template with an attachment carries the attachment to the copy")
   public void copyTemplateWithAttachmentCarriesAttachment() throws IOException {
     // getFiles().add() bypasses doAddAttachedFile(), so the inventoryRecord link and
-    // the active-files cache must be set up manually - the same state shallowCopyBasicFields() produces.
+    // the active-files cache must be set up manually - the same state shallowCopyBasicFields()
+    // produces.
     InventoryFile invFile = buildAttachment(anyUser);
     invFile.setInventoryRecord(template);
     template.getFiles().add(invFile);
@@ -203,7 +204,8 @@ public class SampleTemplateTest {
   }
 
   @Test
-  @DisplayName("copyToTemplate on a sample with an attachment carries the attachment to the template")
+  @DisplayName(
+      "copyToTemplate on a sample with an attachment carries the attachment to the template")
   public void copyToTemplateWithAttachmentCarriesAttachment() throws IOException {
     Sample sample = TestFactory.createBasicSampleInContainer(anyUser);
     InventoryFile invFile = buildAttachment(anyUser);

@@ -35,5 +35,4 @@ public class AuditSearchEventTest {
   public void testAuditSearchEventThrowsIAEIfPagCritIsNull() {
     assertThrows(IllegalArgumentException.class, () -> new AuditSearchEvent(user, input, null));
   }
-
 }

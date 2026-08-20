@@ -9,23 +9,21 @@ import org.junit.Test;
 
 public class GroupConstraintTest {
 
-	GroupConstraint g1, g2,g3;
-	@Before
-	public void setUp() throws Exception {
-	}
+  GroupConstraint g1, g2, g3;
 
-	@After
-	public void tearDown() throws Exception {
-	}
+  @Before
+  public void setUp() throws Exception {}
 
-	@Test
-	public void testSatisfies() {
-		g1 = new GroupConstraint("g1");
-		g2 = new GroupConstraint("g1");
-		g3 = new GroupConstraint("g3");
-		assertTrue(g1.satisfies(g2));
-		assertTrue(g2.satisfies(g1));
-		assertFalse(g2.satisfies(g3));
-	}
+  @After
+  public void tearDown() throws Exception {}
 
+  @Test
+  public void testSatisfies() {
+    g1 = new GroupConstraint("g1");
+    g2 = new GroupConstraint("g1");
+    g3 = new GroupConstraint("g3");
+    assertTrue(g1.satisfies(g2));
+    assertTrue(g2.satisfies(g1));
+    assertFalse(g2.satisfies(g3));
+  }
 }

@@ -3,20 +3,6 @@ package com.researchspace.model.record;
 import static org.apache.commons.lang3.StringUtils.abbreviate;
 import static org.apache.commons.lang3.StringUtils.trim;
 
-import com.researchspace.model.inventory.Basket;
-import com.researchspace.model.inventory.DigitalObjectIdentifier;
-import com.researchspace.model.inventory.field.InventoryTimeField;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.function.Supplier;
-
-import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.StringUtils;
-
 import com.researchspace.model.DefaultGroupNamingStrategy;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
@@ -35,8 +21,10 @@ import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.field.StringFieldForm;
 import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.field.TimeFieldForm;
+import com.researchspace.model.inventory.Basket;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryFile;
@@ -60,13 +48,21 @@ import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
 import com.researchspace.model.inventory.field.InventoryReferenceField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryTextField;
+import com.researchspace.model.inventory.field.InventoryTimeField;
 import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.function.Supplier;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 
-/**
- * Factory class for creation of domain objects
- */
+/** Factory class for creation of domain objects */
 public class RecordFactory implements IRecordFactory {
 
   public static final String BASIC_DOCUMENT_FORM_NAME = "Basic Document";
@@ -81,24 +77,23 @@ public class RecordFactory implements IRecordFactory {
     Validate.noNullElements(notNullArgs);
   }
 
-  public StructuredDocument createStructuredDocument(String name, User createdBy,
-      final RSForm form) {
+  public StructuredDocument createStructuredDocument(
+      String name, User createdBy, final RSForm form) {
     checkArgs(name, createdBy);
     StructuredDocument rc = new StructuredDocument(form);
     return addFieldsToStrucDocument(name, createdBy, form, rc);
   }
 
-
   @Override
-  public StructuredDocument createStructuredDocument(String name, User createdBy, final RSForm form,
-      ImportOverride override) {
+  public StructuredDocument createStructuredDocument(
+      String name, User createdBy, final RSForm form, ImportOverride override) {
     checkArgs(name, createdBy);
     StructuredDocument rc = new StructuredDocument(form, override);
     return addFieldsToStrucDocument(name, createdBy, form, rc);
   }
 
-  private StructuredDocument addFieldsToStrucDocument(String name, User createdBy,
-      final RSForm form, StructuredDocument rc) {
+  private StructuredDocument addFieldsToStrucDocument(
+      String name, User createdBy, final RSForm form, StructuredDocument rc) {
     for (FieldForm ft : form.getFieldForms()) {
       Field field = ft.createNewFieldFromForm();
       rc.addField(field);
@@ -120,9 +115,10 @@ public class RecordFactory implements IRecordFactory {
     RSForm form = new RSForm(formName, desc, createdBy);
     form.setCurrent(true);
 
-    String[] fnames = new String[]{"Method", "Objective", "Procedure", "Results", "Discussion",
-        "Conclusion",
-        "Comment"};
+    String[] fnames =
+        new String[] {
+          "Method", "Objective", "Procedure", "Results", "Discussion", "Conclusion", "Comment"
+        };
     int colindx = 0;
     for (String fName : fnames) {
       FieldForm fld = new TextFieldForm(fName);
@@ -266,12 +262,12 @@ public class RecordFactory implements IRecordFactory {
   @Override
   public Folder createCommunalGroupFolder(Group grp, User createdBy) {
     IGroupNamingStrategy namingStrgy = new DefaultGroupNamingStrategy();
-    return createACommunalGroupFolderUsingANamingStrategy(createdBy,
-        () -> namingStrgy.getSharedGroupName(grp));
+    return createACommunalGroupFolderUsingANamingStrategy(
+        createdBy, () -> namingStrgy.getSharedGroupName(grp));
   }
 
-  private Folder createACommunalGroupFolderUsingANamingStrategy(User createdBy,
-      Supplier<String> folderNamingStrategy) {
+  private Folder createACommunalGroupFolderUsingANamingStrategy(
+      User createdBy, Supplier<String> folderNamingStrategy) {
     Folder folder = createFolder(folderNamingStrategy.get(), createdBy);
     folder.addType(RecordType.SHARED_GROUP_FOLDER_ROOT);
     folder.setSystemFolder(true);
@@ -281,8 +277,8 @@ public class RecordFactory implements IRecordFactory {
   @Override
   public Folder createCommunalGroupSnippetFolder(Group grp, User createdBy) {
     IGroupNamingStrategy namingStrgy = new DefaultGroupNamingStrategy();
-    return createACommunalGroupFolderUsingANamingStrategy(createdBy,
-        () -> namingStrgy.getSharedGroupSnippetName(grp));
+    return createACommunalGroupFolderUsingANamingStrategy(
+        createdBy, () -> namingStrgy.getSharedGroupSnippetName(grp));
   }
 
   public Record createAnyRecord(User user, String name) {
@@ -292,8 +288,8 @@ public class RecordFactory implements IRecordFactory {
     return strucDoc;
   }
 
-  public Folder createAnIndividualSharedFolderUsingANamingStrategy(User sharer,
-      Supplier<String> namingStrategy) {
+  public Folder createAnIndividualSharedFolderUsingANamingStrategy(
+      User sharer, Supplier<String> namingStrategy) {
     Folder folder = createFolder(namingStrategy.get(), sharer);
     folder.setSystemFolder(true);
     folder.addType(RecordType.INDIVIDUAL_SHARED_FOLDER_ROOT);
@@ -303,20 +299,18 @@ public class RecordFactory implements IRecordFactory {
   @Override
   public Folder createIndividualSharedFolder(User sharer, User sharee) {
     IGroupNamingStrategy namingStrgy = new DefaultGroupNamingStrategy();
-    return createAnIndividualSharedFolderUsingANamingStrategy(sharer,
-        () -> namingStrgy.getIndividualSharedFolderName(sharer, sharee));
+    return createAnIndividualSharedFolderUsingANamingStrategy(
+        sharer, () -> namingStrgy.getIndividualSharedFolderName(sharer, sharee));
   }
 
   @Override
   public Folder createIndividualSharedSnippetsFolder(User sharer, User sharee) {
     IGroupNamingStrategy namingStrgy = new DefaultGroupNamingStrategy();
-    return createAnIndividualSharedFolderUsingANamingStrategy(sharer,
-        () -> namingStrgy.getIndividualSharedSnippetsFolderName(sharer, sharee));
+    return createAnIndividualSharedFolderUsingANamingStrategy(
+        sharer, () -> namingStrgy.getIndividualSharedSnippetsFolderName(sharer, sharee));
   }
 
-  /**
-   * Creates a media root folder with correct properties set.
-   */
+  /** Creates a media root folder with correct properties set. */
   @Override
   public Folder createRootMediaFolder(User subject) {
     Folder mediaFolder = createSystemCreatedFolder(Folder.MEDIAROOT, subject);
@@ -339,7 +333,8 @@ public class RecordFactory implements IRecordFactory {
   }
 
   @Override
-  public SampleTemplate createComplexSampleTemplate(String templateName, String desc, User createdBy) {
+  public SampleTemplate createComplexSampleTemplate(
+      String templateName, String desc, User createdBy) {
 
     Calendar formDate = Calendar.getInstance();
     formDate.set(2020, 4, 4, 6, 55, 15);
@@ -438,10 +433,9 @@ public class RecordFactory implements IRecordFactory {
     return template;
   }
 
-
   @Override
-  public Instrument createInstrument(String name, User createdBy,
-      InstrumentTemplate instrumentTemplate) {
+  public Instrument createInstrument(
+      String name, User createdBy, InstrumentTemplate instrumentTemplate) {
     checkArgs(name, createdBy);
     if (instrumentTemplate == null) {
       return createInstrument(name, createdBy);
@@ -451,7 +445,6 @@ public class RecordFactory implements IRecordFactory {
     instrument.setModifiedBy(createdBy.getUsername(), modifiedByStrategy);
     return instrument;
   }
-
 
   private Instrument createInstrument(String name, User createdBy) {
     checkArgs(name, createdBy);
@@ -463,7 +456,6 @@ public class RecordFactory implements IRecordFactory {
 
     return instrument;
   }
-
 
   @Override
   public Sample createSample(String name, User createdBy, SampleTemplate sampleTemplate) {
@@ -506,7 +498,8 @@ public class RecordFactory implements IRecordFactory {
     } else if (sample.getQuantityInfo() != null) {
       subSampleUnit = RSUnitDef.getUnitById(sample.getQuantityInfo().getUnitId());
     } else {
-      subSampleUnit = RSUnitDef.MILLI_LITRE; // fallback default when no template or quantity info is available
+      subSampleUnit =
+          RSUnitDef.MILLI_LITRE; // fallback default when no template or quantity info is available
     }
     return QuantityInfo.of(BigDecimal.ONE, subSampleUnit);
   }
@@ -539,8 +532,8 @@ public class RecordFactory implements IRecordFactory {
   }
 
   @Override
-  public ExtraField createExtraField(String name, FieldType type, User createdBy,
-      InventoryRecord invRec) {
+  public ExtraField createExtraField(
+      String name, FieldType type, User createdBy, InventoryRecord invRec) {
     checkArgs(type, createdBy, invRec);
 
     ExtraField extraField = createExtraField(type);
@@ -580,8 +573,8 @@ public class RecordFactory implements IRecordFactory {
   }
 
   @Override
-  public MaterialUsage createMaterialUsage(ListOfMaterials parentLom, InventoryRecord invRec,
-      QuantityInfo usedQuantity) {
+  public MaterialUsage createMaterialUsage(
+      ListOfMaterials parentLom, InventoryRecord invRec, QuantityInfo usedQuantity) {
     return new MaterialUsage(parentLom, invRec, usedQuantity);
   }
 
@@ -594,8 +587,8 @@ public class RecordFactory implements IRecordFactory {
   }
 
   @Override
-  public InventoryFile createInventoryFile(String fileName, FileProperty fileProperty,
-      User createdBy) {
+  public InventoryFile createInventoryFile(
+      String fileName, FileProperty fileProperty, User createdBy) {
     InventoryFile inventoryFile = new InventoryFile(fileName, fileProperty);
     inventoryFile.setCreatedBy(createdBy.getUsername());
     return inventoryFile;
@@ -605,5 +598,4 @@ public class RecordFactory implements IRecordFactory {
   public DigitalObjectIdentifier createDoiIdentifier(String identifier) {
     return new DigitalObjectIdentifier(identifier, null);
   }
-
 }

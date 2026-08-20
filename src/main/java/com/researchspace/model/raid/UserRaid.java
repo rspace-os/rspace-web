@@ -22,8 +22,8 @@ import lombok.ToString;
 @Data
 @EqualsAndHashCode(of = {"raidServerAlias", "raidIdentifier"})
 @NoArgsConstructor
-@Table(uniqueConstraints = @UniqueConstraint(
-    columnNames = {"raid_server_alias", "raid_natural_key"}))
+@Table(
+    uniqueConstraints = @UniqueConstraint(columnNames = {"raid_server_alias", "raid_natural_key"}))
 @ToString(of = {"raidServerAlias", "raidIdentifier"})
 public class UserRaid {
 
@@ -50,8 +50,13 @@ public class UserRaid {
   @OneToOne(fetch = FetchType.LAZY, mappedBy = "raid")
   private Group groupAssociated;
 
-  public UserRaid(User owner, Group groupAssociated, String raidServerAlias, String raidTitle,
-      String raidIdentifier, String raidAgencyUrl) {
+  public UserRaid(
+      User owner,
+      Group groupAssociated,
+      String raidServerAlias,
+      String raidTitle,
+      String raidIdentifier,
+      String raidAgencyUrl) {
     this.owner = owner;
     this.groupAssociated = groupAssociated;
     this.raidServerAlias = raidServerAlias;
@@ -59,5 +64,4 @@ public class UserRaid {
     this.raidIdentifier = raidIdentifier;
     this.raidAgencyUrl = raidAgencyUrl;
   }
-
 }

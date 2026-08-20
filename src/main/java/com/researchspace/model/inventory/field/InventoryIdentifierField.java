@@ -4,9 +4,9 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
-import java.util.regex.Pattern;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 
@@ -30,8 +30,7 @@ public class InventoryIdentifierField extends InventoryEntityField {
     super(FieldType.IDENTIFIER, name);
   }
 
-  /**
-   * Fails if is not empty and is not a valid DOI format   */
+  /** Fails if is not empty and is not a valid DOI format */
   @Override
   public ErrorList validate(String fieldData) {
     ErrorList errorList = super.validate(fieldData);
@@ -53,9 +52,7 @@ public class InventoryIdentifierField extends InventoryEntityField {
     return !validate(data).hasErrorMessages();
   }
 
-
   public static boolean isValidDOI(String identifier) {
     return doiPattern.matcher(identifier).matches();
   }
-
 }

@@ -7,9 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Persistent identifier of the instrument itself (PIDINST {@code Identifier}).
- */
+/** Persistent identifier of the instrument itself (PIDINST {@code Identifier}). */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

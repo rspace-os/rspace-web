@@ -1,80 +1,75 @@
 package com.researchspace.model;
 
-import java.io.Serializable;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.Transient;
-
-import org.hibernate.envers.Audited;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
-
 import com.researchspace.model.record.DOCUMENT_CATEGORIES;
 import com.researchspace.model.record.ImportOverride;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
+import java.io.Serializable;
+import org.hibernate.envers.Audited;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 @Entity
 @Audited
 @Indexed
 public class EcatVideo extends EcatMediaFile implements Serializable {
-	
-	public EcatVideo () {}
 
-	public EcatVideo (ImportOverride override) {
-		super(override);
-	}
+  public EcatVideo() {}
 
-	@Override
-	public String toString() {
-		return "EcatVideo [width=" + width + ", height=" + height + ", editInfo=" + getEditInfo() + "]";
-	}
+  public EcatVideo(ImportOverride override) {
+    super(override);
+  }
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private int width;
-	private int height;
+  @Override
+  public String toString() {
+    return "EcatVideo [width=" + width + ", height=" + height + ", editInfo=" + getEditInfo() + "]";
+  }
 
-	public int getWidth() {
-		return width;
-	}
+  /** */
+  private static final long serialVersionUID = 1L;
 
-	public void setWidth(int width) {
-		this.width = width;
-	}
+  private int width;
+  private int height;
 
-	public int getHeight() {
-		return height;
-	}
+  public int getWidth() {
+    return width;
+  }
 
-	public void setHeight(int height) {
-		this.height = height;
-	}
+  public void setWidth(int width) {
+    this.width = width;
+  }
 
-	@Transient
-	@Override
-	public String getRecordInfoType() {
-		return DOCUMENT_CATEGORIES.ECATVIDEO;
-	}
+  public int getHeight() {
+    return height;
+  }
 
-	@Override
-	public EcatVideo copy() {
-		EcatVideo copy = new EcatVideo();
-		copy.setWidth(this.getWidth());
-		copy.setHeight(this.getHeight());
-		this.shallowCopyEcatMedia(copy);
-		return copy;
-	}
+  public void setHeight(int height) {
+    this.height = height;
+  }
 
-	@Override
-	@Transient
-	public boolean isAV() {
-		return true;
-	}
-	
-	@Transient
-	@Override
-	public boolean isVideo(){
-		return true;
-	}
+  @Transient
+  @Override
+  public String getRecordInfoType() {
+    return DOCUMENT_CATEGORIES.ECATVIDEO;
+  }
 
+  @Override
+  public EcatVideo copy() {
+    EcatVideo copy = new EcatVideo();
+    copy.setWidth(this.getWidth());
+    copy.setHeight(this.getHeight());
+    this.shallowCopyEcatMedia(copy);
+    return copy;
+  }
+
+  @Override
+  @Transient
+  public boolean isAV() {
+    return true;
+  }
+
+  @Transient
+  @Override
+  public boolean isVideo() {
+    return true;
+  }
 }

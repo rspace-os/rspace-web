@@ -1,9 +1,8 @@
 package com.researchspace.model.views.search;
 
+import java.util.List;
 import lombok.Data;
 import lombok.NonNull;
-
-import java.util.List;
 
 /**
  * Class to represent the json data being sent and received for searches in the workspace. Isn't
@@ -12,21 +11,13 @@ import java.util.List;
 @Data
 public class SearchData {
 
-	@NonNull
-	private boolean advancedSearch;
+  @NonNull private boolean advancedSearch;
 
-	/**
-	 * true = AND selected for queries, false = OR
-	 */
-	@NonNull
-	private boolean fulfillAll;
+  /** true = AND selected for queries, false = OR */
+  @NonNull private boolean fulfillAll;
 
-	/**
-	 * Name for saved searches.
-	 */
-	@NonNull
-	private String label;
+  /** Name for saved searches. */
+  @NonNull private String label;
 
-	@NonNull
-	private List<SearchQuery> queries;
+  @NonNull private List<SearchQuery> queries;
 }

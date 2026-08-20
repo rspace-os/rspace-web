@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 /**
  * A commissioning/decommissioning date of the instrument (PIDINST {@code Date}).
  *
- * <p>Wire format note: the EUDAT docs do not specify the entry's inner keys; the {@code Date}/{@code
- * dateType} names below were verified against production b2inst.gwdg.de records (July 2026), where
- * the inner date key is {@code Date} (PascalCase, same as the outer list property).
+ * <p>Wire format note: the EUDAT docs do not specify the entry's inner keys; the {@code
+ * Date}/{@code dateType} names below were verified against production b2inst.gwdg.de records (July
+ * 2026), where the inner date key is {@code Date} (PascalCase, same as the outer list property).
  */
 @Data
 @NoArgsConstructor

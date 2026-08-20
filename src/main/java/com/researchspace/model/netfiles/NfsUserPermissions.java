@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class NfsUserPermissions implements Serializable {
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	private boolean canRead;
-	private boolean canWrite;
+  private boolean canRead;
+  private boolean canWrite;
 }

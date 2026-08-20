@@ -86,9 +86,9 @@ import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Common class for hibernate-based tests.
- * <p>
- * To run these tests add this line (the tests use same DB credentials as for RSpace) mysql > grant
- * all on hibtest.* to 'rspacedbuser'@'localhost';
+ *
+ * <p>To run these tests add this line (the tests use same DB credentials as for RSpace) mysql >
+ * grant all on hibtest.* to 'rspacedbuser'@'localhost';
  */
 public abstract class HibernateTest {
 
@@ -173,41 +173,97 @@ public abstract class HibernateTest {
     dao.save(sample.getSTemplate(), SampleTemplate.class);
   }
 
-  //util method to save radio/choice definitions
+  // util method to save radio/choice definitions
   protected void saveRadioAndChoiceDefinitions(TestDao dao2, SampleEntity complexSample) {
-    complexSample.getActiveFields().stream().filter(f -> FieldType.CHOICE.equals(f.getType()))
+    complexSample.getActiveFields().stream()
+        .filter(f -> FieldType.CHOICE.equals(f.getType()))
         .map(field -> (InventoryChoiceField) field)
         .forEach(cf -> dao2.save(cf.getChoiceDef(), InventoryChoiceFieldDef.class));
-    complexSample.getActiveFields().stream().filter(f -> FieldType.RADIO.equals(f.getType()))
+    complexSample.getActiveFields().stream()
+        .filter(f -> FieldType.RADIO.equals(f.getType()))
         .map(field -> (InventoryRadioField) field)
         .forEach(cf -> dao2.save(cf.getRadioDef(), InventoryRadioFieldDef.class));
   }
-
 
   // these classes must all be mapped for hibernate to work with any of them
   // but it's quicker to run than searching packages for entities.
   // add new classes as needed.
   static Class<?>[] recordClasses() {
-    return new Class[]{DateFieldForm.class, NumberFieldForm.class, TextFieldForm.class,
-        StringFieldForm.class, TimeFieldForm.class, RadioFieldForm.class, ChoiceFieldForm.class,
-        ReferenceFieldForm.class, DateField.class, TextField.class, Field.class,
-        UserPreference.class, Community.class, UserGroup.class, Group.class, RecordAttachment.class,
-        RecordToFolder.class, FileProperty.class, FileStoreRoot.class, EcatMediaFile.class,
-        EcatImage.class, EcatDocumentFile.class, ImageBlob.class, Record.class,
-        FieldAttachment.class, ExternalStorageLocation.class, NfsFileSystem.class,
-        NfsFileStore.class, Folder.class, Role.class, BaseRecord.class, RSForm.class,
-        FieldForm.class, StructuredDocument.class, AbstractUserOrGroupImpl.class, User.class,
-        InventoryEntityField.class, InventoryNumberField.class, InventoryStringField.class,
-        InventoryDateField.class, InventoryTimeField.class, InventoryReferenceField.class,
-        InventoryTextField.class, InventoryChoiceField.class, InventoryRadioField.class,
-        InventoryAttachmentField.class, AttachmentFieldForm.class, URIFieldForm.class,
-        UriField.class, InventoryUriField.class, SampleEntity.class, SampleTemplate.class,
-        Sample.class, SubSample.class, AbstractForm.class,
-        Barcode.class, DigitalObjectIdentifier.class, ExtraNumberField.class, ExtraTextField.class,
-        SubSampleNote.class, Container.class, ContainerLocation.class, InventoryFile.class,
-        InventoryRadioFieldDef.class, InventoryChoiceFieldDef.class, ListOfMaterials.class,
-        MaterialUsage.class, DMPUser.class, Basket.class, BasketItem.class, UserRaid.class,
-        InstrumentEntity.class, InstrumentTemplate.class, Instrument.class };
+    return new Class[] {
+      DateFieldForm.class,
+      NumberFieldForm.class,
+      TextFieldForm.class,
+      StringFieldForm.class,
+      TimeFieldForm.class,
+      RadioFieldForm.class,
+      ChoiceFieldForm.class,
+      ReferenceFieldForm.class,
+      DateField.class,
+      TextField.class,
+      Field.class,
+      UserPreference.class,
+      Community.class,
+      UserGroup.class,
+      Group.class,
+      RecordAttachment.class,
+      RecordToFolder.class,
+      FileProperty.class,
+      FileStoreRoot.class,
+      EcatMediaFile.class,
+      EcatImage.class,
+      EcatDocumentFile.class,
+      ImageBlob.class,
+      Record.class,
+      FieldAttachment.class,
+      ExternalStorageLocation.class,
+      NfsFileSystem.class,
+      NfsFileStore.class,
+      Folder.class,
+      Role.class,
+      BaseRecord.class,
+      RSForm.class,
+      FieldForm.class,
+      StructuredDocument.class,
+      AbstractUserOrGroupImpl.class,
+      User.class,
+      InventoryEntityField.class,
+      InventoryNumberField.class,
+      InventoryStringField.class,
+      InventoryDateField.class,
+      InventoryTimeField.class,
+      InventoryReferenceField.class,
+      InventoryTextField.class,
+      InventoryChoiceField.class,
+      InventoryRadioField.class,
+      InventoryAttachmentField.class,
+      AttachmentFieldForm.class,
+      URIFieldForm.class,
+      UriField.class,
+      InventoryUriField.class,
+      SampleEntity.class,
+      SampleTemplate.class,
+      Sample.class,
+      SubSample.class,
+      AbstractForm.class,
+      Barcode.class,
+      DigitalObjectIdentifier.class,
+      ExtraNumberField.class,
+      ExtraTextField.class,
+      SubSampleNote.class,
+      Container.class,
+      ContainerLocation.class,
+      InventoryFile.class,
+      InventoryRadioFieldDef.class,
+      InventoryChoiceFieldDef.class,
+      ListOfMaterials.class,
+      MaterialUsage.class,
+      DMPUser.class,
+      Basket.class,
+      BasketItem.class,
+      UserRaid.class,
+      InstrumentEntity.class,
+      InstrumentTemplate.class,
+      Instrument.class
+    };
   }
-
 }

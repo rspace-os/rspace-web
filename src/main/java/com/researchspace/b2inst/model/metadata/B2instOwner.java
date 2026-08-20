@@ -7,9 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Organisation that owns the instrument (PIDINST {@code Owner}).
- */
+/** Organisation that owns the instrument (PIDINST {@code Owner}). */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

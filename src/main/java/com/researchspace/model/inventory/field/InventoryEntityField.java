@@ -9,9 +9,6 @@ import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.SampleEntity;
-import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -28,6 +25,9 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.TableGenerator;
 import jakarta.persistence.Transient;
 import jakarta.validation.ConstraintViolationException;
+import java.io.Serializable;
+import java.util.Date;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,17 +40,15 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDe
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
-/**
- * Inventory Entity field is used to hold field data for Samples.
- */
+/** Inventory Entity field is used to hold field data for Samples. */
 @Entity
 @Setter
 @Getter
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Audited
-public abstract class InventoryEntityField implements Serializable, ValidatingField,
-    Comparable<InventoryEntityField> {
+public abstract class InventoryEntityField
+    implements Serializable, ValidatingField, Comparable<InventoryEntityField> {
 
   private static final long serialVersionUID = 6951489345943609794L;
 
@@ -69,16 +67,14 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
   private SampleEntity sample;
   private InstrumentEntity instrumentEntity;
 
-
   /**
    * The template field that was used for creating this InstrumentEntity field.
-   * <p>
-   * The template can be modified independently of samples/instruments created from it,
-   * so unless the sample/instrument points to the latest template definition its field properties
-   * may differ from template field properties.
+   *
+   * <p>The template can be modified independently of samples/instruments created from it, so unless
+   * the sample/instrument points to the latest template definition its field properties may differ
+   * from template field properties.
    */
   private InventoryEntityField templateField;
-
 
   InventoryEntityField(FieldType type, String fieldName) {
     this.type = type;
@@ -118,6 +114,7 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
         throw new IllegalArgumentException(String.format("Unsupported field type %s", fieldType));
     }
   }
+
   @ManyToOne
   @JoinColumn
   public SampleEntity getSample() {
@@ -133,10 +130,9 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
   /**
    * The template field that was used for creating this inventory entity field.
    *
-   * The template can be modified independently of inventory entities created from it,
-   * so unless the inventory entities points to the latest template definition its field
-   * properties may differ from template field properties.
-   *
+   * <p>The template can be modified independently of inventory entities created from it, so unless
+   * the inventory entities points to the latest template definition its field properties may differ
+   * from template field properties.
    */
   @ManyToOne
   public InventoryEntityField getTemplateField() {
@@ -145,8 +141,12 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
 
   @Id
   @GeneratedValue(strategy = GenerationType.TABLE, generator = "inventory_entity_field_gen")
-  @TableGenerator(name = "inventory_entity_field_gen", table = "hibernate_sequences",
-      pkColumnName = "sequence_name", valueColumnName = "next_val", allocationSize = 50)
+  @TableGenerator(
+      name = "inventory_entity_field_gen",
+      table = "hibernate_sequences",
+      pkColumnName = "sequence_name",
+      valueColumnName = "next_val",
+      allocationSize = 50)
   public Long getId() {
     return id;
   }
@@ -199,16 +199,18 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
   public void assertFieldDataValid(String fieldData) {
     ErrorList el = validate(fieldData);
     if (el.hasErrorMessages()) {
-      throw new IllegalArgumentException(String.format("[%s] is invalid for field type %s: %s",
-          fieldData, getType().getType(), el.getAllErrorMessagesAsStringsSeparatedBy(",")));
+      throw new IllegalArgumentException(
+          String.format(
+              "[%s] is invalid for field type %s: %s",
+              fieldData, getType().getType(), el.getAllErrorMessagesAsStringsSeparatedBy(",")));
     }
   }
 
   /**
    * Clears this field's value without running validation, used when a field is added to an existing
    * sample during a template-version update and must start empty. The default clears the shared
-   * {@code data} column; field types that hold their value in an association (e.g.
-   * {@link InventoryLinkField}) override this to clear that association too.
+   * {@code data} column; field types that hold their value in an association (e.g. {@link
+   * InventoryLinkField}) override this to clear that association too.
    */
   public void clearValue() {
     setData(null);
@@ -272,15 +274,16 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
 
   /**
    * Subclasses can override with validation. this implementation only checks if field is not
-   * mandatory and empty. This method can be invoked by client code and is also invoked via
-   * {@code setFieldData(data)}
+   * mandatory and empty. This method can be invoked by client code and is also invoked via {@code
+   * setFieldData(data)}
    *
    * @param fieldData
    */
   public ErrorList validate(String fieldData) {
     ErrorList result = new ErrorList();
-    boolean isTemplateField = (getSample() != null && getSample().isTemplate()) ||
-        getInstrumentEntity() != null && getInstrumentEntity().isTemplate();
+    boolean isTemplateField =
+        (getSample() != null && getSample().isTemplate())
+            || getInstrumentEntity() != null && getInstrumentEntity().isTemplate();
     if (isMandatory() && !isTemplateField && !isValidValueForMandatoryField(fieldData)) {
       result.addErrorMsg("Field [" + getName() + "] is mandatory, but no content is provided");
     }
@@ -315,8 +318,8 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
   }
 
   /**
-   * Should this inventory entity field be suggested as a best match for incoming data? To be used for
-   * guessing field type out of incoming string.
+   * Should this inventory entity field be suggested as a best match for incoming data? To be used
+   * for guessing field type out of incoming string.
    *
    * @param data
    * @return
@@ -330,9 +333,7 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
     return columnIndex.compareTo(other.columnIndex);
   }
 
-  /**
-   * Template method for copying data of a Field. Does not copy relationships or ids.
-   */
+  /** Template method for copying data of a Field. Does not copy relationships or ids. */
   protected void copyFields(InventoryEntityField copy) {
     copy.setName(getName());
     copy.setType(getType());
@@ -375,8 +376,9 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
       fieldUpdated = true;
     }
     // apply field deletion
-    if (!isDeleted() && templateField.isDeleted() &&
-        (templateField.isDeleteOnSampleUpdate() || templateField.isDeleteOnInstrumentUpdate() )) {
+    if (!isDeleted()
+        && templateField.isDeleted()
+        && (templateField.isDeleteOnSampleUpdate() || templateField.isDeleteOnInstrumentUpdate())) {
       setDeleted(true);
       fieldUpdated = true;
     }
@@ -384,15 +386,17 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
       setMandatory(templateField.isMandatory());
       if (requiresValueWhenBecomingMandatoryOnTemplateUpdate()
           && !isValidValueForMandatoryField(getFieldData())) {
-        throw new IllegalStateException("Field [" + getName() + "] is empty, but "
-            + "is mandatory in latest template field definition");
+        throw new IllegalStateException(
+            "Field ["
+                + getName()
+                + "] is empty, but "
+                + "is mandatory in latest template field definition");
       }
       fieldUpdated = true;
     }
 
     return fieldUpdated;
   }
-
 
   /* Managing Sample or Instrument references */
 
@@ -409,9 +413,7 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
     return null;
   }
 
-  /**
-   * Sets parent.
-   */
+  /** Sets parent. */
   public void setInventoryRecord(InventoryRecord invRec) {
     if (invRec instanceof SampleEntity) {
       sample = (SampleEntity) invRec;
@@ -442,9 +444,11 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
     parentCount = sample == null ? parentCount : ++parentCount;
     parentCount = instrumentEntity == null ? parentCount : ++parentCount;
     if (parentCount != 1) {
-      throw new ConstraintViolationException(this.getClass().getSimpleName()
-          + " needs to be connected always to one and only one of the following inventory entity: "
-          + "sample, sample template, instrument, instrument template", null);
+      throw new ConstraintViolationException(
+          this.getClass().getSimpleName()
+              + " needs to be connected always to one and only one of the following inventory"
+              + " entity: sample, sample template, instrument, instrument template",
+          null);
     }
   }
 
@@ -452,5 +456,4 @@ public abstract class InventoryEntityField implements Serializable, ValidatingFi
   protected int getNonInventoryRecordParentCount() {
     return 0;
   }
-
 }

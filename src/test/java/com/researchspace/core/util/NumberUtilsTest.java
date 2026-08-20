@@ -8,19 +8,16 @@ import org.junit.Test;
 
 public class NumberUtilsTest {
 
-	@Before
-	public void setUp() throws Exception {
-	}
+  @Before
+  public void setUp() throws Exception {}
 
-	@After
-	public void tearDown() throws Exception {
-	}
+  @After
+  public void tearDown() throws Exception {}
 
-	@Test
-	public void testStringToInt() {
-		assertEquals(23, NumberUtils.stringToInt("23", 1));
-		assertEquals(1, NumberUtils.stringToInt("25.3", 1));
-		assertEquals(1, NumberUtils.stringToInt("abcd", 1));
-	}
-
+  @Test
+  public void testStringToInt() {
+    assertEquals(23, NumberUtils.stringToInt("23", 1));
+    assertEquals(1, NumberUtils.stringToInt("25.3", 1));
+    assertEquals(1, NumberUtils.stringToInt("abcd", 1));
+  }
 }

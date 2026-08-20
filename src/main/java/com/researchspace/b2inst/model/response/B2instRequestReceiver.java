@@ -8,8 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Receiver of a {@link B2instRequestResponse}. For a community submission the
- * {@link #community} field holds the target community id.
+ * Receiver of a {@link B2instRequestResponse}. For a community submission the {@link #community}
+ * field holds the target community id.
  */
 @Data
 @NoArgsConstructor

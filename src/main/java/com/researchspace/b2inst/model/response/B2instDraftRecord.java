@@ -13,12 +13,11 @@ import lombok.NoArgsConstructor;
 /**
  * Response of {@code POST /api/records}: the freshly created draft record.
  *
- * <p>The connector reads {@link #id} from this response and threads it through the
- * later calls as the record id (RID). The commonly used fields are modelled
- * explicitly; the heavier bookkeeping blocks ({@link #parent}, {@link #versions},
- * {@link #pids}, {@link #stats}, {@link #customFields}, {@link #deletionStatus})
- * are kept loosely typed so the wrapper stays faithful without a large number of
- * rarely used classes.</p>
+ * <p>The connector reads {@link #id} from this response and threads it through the later calls as
+ * the record id (RID). The commonly used fields are modelled explicitly; the heavier bookkeeping
+ * blocks ({@link #parent}, {@link #versions}, {@link #pids}, {@link #stats}, {@link #customFields},
+ * {@link #deletionStatus}) are kept loosely typed so the wrapper stays faithful without a large
+ * number of rarely used classes.
  */
 @Data
 @NoArgsConstructor

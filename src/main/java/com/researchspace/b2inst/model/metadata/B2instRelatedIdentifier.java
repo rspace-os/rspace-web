@@ -8,8 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Identifier of a resource related to the instrument
- * (PIDINST {@code RelatedIdentifier}), such as a manual, dataset or publication.
+ * Identifier of a resource related to the instrument (PIDINST {@code RelatedIdentifier}), such as a
+ * manual, dataset or publication.
  */
 @Data
 @NoArgsConstructor
@@ -27,8 +27,8 @@ public class B2instRelatedIdentifier {
   private String relatedIdentifierValue;
 
   /**
-   * Nature of the relation between the instrument and the related resource,
-   * for example {@code "IsDescribedBy"}.
+   * Nature of the relation between the instrument and the related resource, for example {@code
+   * "IsDescribedBy"}.
    */
   @JsonProperty("relationType")
   private String relationType;

@@ -1,46 +1,33 @@
 package com.researchspace.model.views.search;
 
-/**
- * Type for a search query.
- */
+/** Type for a search query. */
 public enum SearchType {
 
-	/**
-	 * What text to search for
-	 */
-	TEXT,
+  /** What text to search for */
+  TEXT,
 
-	TAG,
-	/**
-	 * What file name to search for
-	 */
-	NAME,
+  TAG,
+  /** What file name to search for */
+  NAME,
 
-	FORM,
+  FORM,
 
-	TEMPLATE,
+  TEMPLATE,
 
-	CREATION_DATE,
+  CREATION_DATE,
 
-	LAST_MODIFIED,
+  LAST_MODIFIED,
 
-	USER,
+  USER,
 
-	ATTACHMENT,
+  ATTACHMENT,
 
-	/**
-	 * Search in these selected folders
-	 */
-	FOLDERS,
+  /** Search in these selected folders */
+  FOLDERS,
 
-	/**
-	 * Search in these selected documents.
-	 */
-	DOCUMENTS,
+  /** Search in these selected documents. */
+  DOCUMENTS,
 
-	/**
-	 * Filter files and only return templates, or starred files, or shared with me
-	 */
-	FILTER
+  /** Filter files and only return templates, or starred files, or shared with me */
+  FILTER
 }
-

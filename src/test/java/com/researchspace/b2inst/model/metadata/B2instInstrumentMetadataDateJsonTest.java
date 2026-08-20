@@ -36,8 +36,7 @@ class B2instInstrumentMetadataDateJsonTest {
     B2instInstrumentMetadata metadata = new B2instInstrumentMetadata();
     metadata.setDate(
         List.of(
-            b2instDate("2024-02-21", "Commissioned"),
-            b2instDate("2025-04-23", "DeCommissioned")));
+            b2instDate("2024-02-21", "Commissioned"), b2instDate("2025-04-23", "DeCommissioned")));
 
     Map<String, Object> json = mapper.readValue(mapper.writeValueAsString(metadata), JSON_OBJECT);
 

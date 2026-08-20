@@ -11,12 +11,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Request body for {@code POST /api/records}, which creates the draft
- * instrument record.
+ * Request body for {@code POST /api/records}, which creates the draft instrument record.
  *
  * <p>Carries the access settings, the PIDINST {@link B2instInstrumentMetadata} and the
- * file-handling option. The response is modelled by
- * {@code com.researchspace.b2inst.model.response.B2instDraftRecord}.</p>
+ * file-handling option. The response is modelled by {@code
+ * com.researchspace.b2inst.model.response.B2instDraftRecord}.
  */
 @Data
 @NoArgsConstructor

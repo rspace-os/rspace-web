@@ -1,10 +1,6 @@
 package com.researchspace.model;
 
-import java.io.File;
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
+import com.researchspace.core.util.EscapeReplacement;
 import jakarta.persistence.Cacheable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,20 +13,19 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.Transient;
-
+import java.io.File;
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import lombok.Builder;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.ColumnDefault;
 
-import com.researchspace.core.util.EscapeReplacement;
-
-import lombok.Builder;
-
 /**
  * File Property
- * <p>
- * This is metadata describing the file. Its properties are also used to
- * construct the path that the file is stored in, so <strong>don't alter these
- * properties</strong>
+ *
+ * <p>This is metadata describing the file. Its properties are also used to construct the path that
+ * the file is stored in, so <strong>don't alter these properties</strong>
  */
 @Entity
 @Cacheable
@@ -38,285 +33,311 @@ import lombok.Builder;
 @Table(indexes = {@Index(columnList = "contentsHash", name = "contentsHash_idx")})
 public class FileProperty implements Serializable {
 
-	@Override
-	public String toString() {
-		return "FileProperty{" +
-				"sdf=" + sdf +
-				", fileCategory='" + fileCategory + '\'' +
-				", fileGroup='" + fileGroup + '\'' +
-				", fileUser='" + fileUser + '\'' +
-				", fileVersion='" + fileVersion + '\'' +
-				", root=" + root +
-				", createDate=" + createDate +
-				", updateDate=" + updateDate +
-				", fileName='" + fileName + '\'' +
-				", fileSize='" + fileSize + '\'' +
-				", fileOwner='" + fileOwner + '\'' +
-				", relPath='" + relPath + '\'' +
-				", external=" + external +
-				", contentsHash='" + contentsHash + '\'' +
-				", id=" + id +
-				'}';
-	}
+  @Override
+  public String toString() {
+    return "FileProperty{"
+        + "sdf="
+        + sdf
+        + ", fileCategory='"
+        + fileCategory
+        + '\''
+        + ", fileGroup='"
+        + fileGroup
+        + '\''
+        + ", fileUser='"
+        + fileUser
+        + '\''
+        + ", fileVersion='"
+        + fileVersion
+        + '\''
+        + ", root="
+        + root
+        + ", createDate="
+        + createDate
+        + ", updateDate="
+        + updateDate
+        + ", fileName='"
+        + fileName
+        + '\''
+        + ", fileSize='"
+        + fileSize
+        + '\''
+        + ", fileOwner='"
+        + fileOwner
+        + '\''
+        + ", relPath='"
+        + relPath
+        + '\''
+        + ", external="
+        + external
+        + ", contentsHash='"
+        + contentsHash
+        + '\''
+        + ", id="
+        + id
+        + '}';
+  }
 
-	@Transient
-	private static final long serialVersionUID = 1L;
+  @Transient private static final long serialVersionUID = 1L;
 
-	@Transient
-	private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+  @Transient private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-	private String fileCategory;
-	private String fileGroup;
-	private String fileUser;
-	private String fileVersion;
-	private FileStoreRoot root;
+  private String fileCategory;
+  private String fileGroup;
+  private String fileUser;
+  private String fileVersion;
+  private FileStoreRoot root;
 
-	private Date createDate;
-	private Date updateDate;
+  private Date createDate;
+  private Date updateDate;
 
-	private String fileName;
-	private String fileSize;
-	private String fileOwner;
-	// relative path from within filestore, for 1.34
-	private String relPath;
-	private boolean external = false;
-	private String contentsHash;
+  private String fileName;
+  private String fileSize;
+  private String fileOwner;
+  // relative path from within filestore, for 1.34
+  private String relPath;
+  private boolean external = false;
+  private String contentsHash;
 
-	/**
-	 * This is a temp column so that we can safely refactor the table and
-	 * generate relative paths without losing the fileUri functionality.
-	 * 
-	 * @return
-	 */
-	@Column(length = 400, columnDefinition = "varchar(400)", nullable = false)
-	public String getRelPath() {
-		return relPath;
-	}
+  /**
+   * This is a temp column so that we can safely refactor the table and generate relative paths
+   * without losing the fileUri functionality.
+   *
+   * @return
+   */
+  @Column(length = 400, columnDefinition = "varchar(400)", nullable = false)
+  public String getRelPath() {
+    return relPath;
+  }
 
-	public void setRelPath(String relPath) {
-		this.relPath = relPath;
-	}
+  public void setRelPath(String relPath) {
+    this.relPath = relPath;
+  }
 
-	private Long id;
+  private Long id;
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	public Long getId() {
-		return id;
-	}
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  public Long getId() {
+    return id;
+  }
 
-	void setId(Long id) {
-		this.id = id;
-	}
+  void setId(Long id) {
+    this.id = id;
+  }
 
-	public FileProperty() {
-		Date today = new Date();
-		this.createDate = today;
-		this.updateDate = today;
-		fileCategory = "General";
-		fileGroup = "Research";
-		fileUser = "Anyone";
-		fileVersion = "V1";
-		fileSize = "0";
-	}
-	
-	/**
-	 * Builder for supplying the essential properties needed to construct a file path in the FileStore.
-	 */
-	@Builder
-	public FileProperty(String fileCategory, String fileGroup, String fileUser, String fileOwner,
-			String fileVersion, String contentsHash) {
-		this();
-		this.fileCategory = fileCategory;
-		this.fileGroup= fileGroup;
-		this.fileUser = fileUser;
-		this.fileOwner = fileOwner;
-		this.fileVersion = fileVersion;
-		this.contentsHash = contentsHash;
-	}
+  public FileProperty() {
+    Date today = new Date();
+    this.createDate = today;
+    this.updateDate = today;
+    fileCategory = "General";
+    fileGroup = "Research";
+    fileUser = "Anyone";
+    fileVersion = "V1";
+    fileSize = "0";
+  }
 
-	/**
-	 * Main method to retrieve the absolute path to a FileStore resource. This
-	 * just generates the string, it doesn't check if the File actually exists
-	 * or not.
-	 * @return An absolute path
-	 */
-	@Transient
-	public String getAbsolutePathUri() {
-		String rc = getRoot().getFileStoreRoot();
-		if (!rc.endsWith("/") && relPath != null) {
-			rc = rc + "/";
-		}
-		if (relPath != null) {
-			rc = rc + relPath;
-		}
-		rc = rc.replaceAll("\\\\", "/");
-		return rc;
-	}
+  /**
+   * Builder for supplying the essential properties needed to construct a file path in the
+   * FileStore.
+   */
+  @Builder
+  public FileProperty(
+      String fileCategory,
+      String fileGroup,
+      String fileUser,
+      String fileOwner,
+      String fileVersion,
+      String contentsHash) {
+    this();
+    this.fileCategory = fileCategory;
+    this.fileGroup = fileGroup;
+    this.fileUser = fileUser;
+    this.fileOwner = fileOwner;
+    this.fileVersion = fileVersion;
+    this.contentsHash = contentsHash;
+  }
 
-	public String getFileCategory() {
-		return fileCategory;
-	}
+  /**
+   * Main method to retrieve the absolute path to a FileStore resource. This just generates the
+   * string, it doesn't check if the File actually exists or not.
+   *
+   * @return An absolute path
+   */
+  @Transient
+  public String getAbsolutePathUri() {
+    String rc = getRoot().getFileStoreRoot();
+    if (!rc.endsWith("/") && relPath != null) {
+      rc += "/";
+    }
+    if (relPath != null) {
+      rc += relPath;
+    }
+    rc = rc.replaceAll("\\\\", "/");
+    return rc;
+  }
 
-	public void setFileCategory(String fileCategory) {
-		this.fileCategory = fileCategory;
-	}
+  public String getFileCategory() {
+    return fileCategory;
+  }
 
-	public String getFileGroup() {
-		return fileGroup;
-	}
+  public void setFileCategory(String fileCategory) {
+    this.fileCategory = fileCategory;
+  }
 
-	public void setFileGroup(String fileGroup) {
-		this.fileGroup = fileGroup;
-	}
+  public String getFileGroup() {
+    return fileGroup;
+  }
 
-	public String getFileUser() {
-		return fileUser;
-	}
+  public void setFileGroup(String fileGroup) {
+    this.fileGroup = fileGroup;
+  }
 
-	public void setFileUser(String fileUser) {
-		this.fileUser = fileUser;
-	}
+  public String getFileUser() {
+    return fileUser;
+  }
 
-	public String getFileVersion() {
-		return fileVersion;
-	}
+  public void setFileUser(String fileUser) {
+    this.fileUser = fileUser;
+  }
 
-	public void setFileVersion(String fileVersion) {
-		this.fileVersion = fileVersion;
-	}
+  public String getFileVersion() {
+    return fileVersion;
+  }
 
-	@Temporal(TemporalType.DATE)
-	public Date getCreateDate() {
-		return createDate;
-	}
+  public void setFileVersion(String fileVersion) {
+    this.fileVersion = fileVersion;
+  }
 
-	public void setCreateDate(Date createDate) {
-		this.createDate = createDate;
-	}
+  @Temporal(TemporalType.DATE)
+  public Date getCreateDate() {
+    return createDate;
+  }
 
-	@Temporal(TemporalType.DATE)
-	public Date getUpdateDate() {
-		return updateDate;
-	}
+  public void setCreateDate(Date createDate) {
+    this.createDate = createDate;
+  }
 
-	public void setUpdateDate(Date dt) {
-		this.updateDate = dt;
-	}
+  @Temporal(TemporalType.DATE)
+  public Date getUpdateDate() {
+    return updateDate;
+  }
 
-	public String getFileName() {
-		return fileName;
-	}
+  public void setUpdateDate(Date dt) {
+    this.updateDate = dt;
+  }
 
-	public void setFileName(String fileName) {
-		this.fileName = fileName;
-	}
+  public String getFileName() {
+    return fileName;
+  }
 
-	public String getFileSize() {
-		return fileSize;
-	}
+  public void setFileName(String fileName) {
+    this.fileName = fileName;
+  }
 
-	public void setFileSize(String fileSize) {
-		this.fileSize = fileSize;
-	}
+  public String getFileSize() {
+    return fileSize;
+  }
 
-	public String getFileOwner() {
-		return fileOwner;
-	}
+  public void setFileSize(String fileSize) {
+    this.fileSize = fileSize;
+  }
 
-	public void setFileOwner(String fileOwner) {
-		this.fileOwner = fileOwner;
-	}
+  public String getFileOwner() {
+    return fileOwner;
+  }
 
-	public void setContentsHash(String contentsHash) {
-		this.contentsHash = contentsHash;
-	}
+  public void setFileOwner(String fileOwner) {
+    this.fileOwner = fileOwner;
+  }
 
-	public String getContentsHash() {
-		return contentsHash;
-	}
+  public void setContentsHash(String contentsHash) {
+    this.contentsHash = contentsHash;
+  }
 
-	/**
-	 * This generates the target path for storing and looking up from the
-	 * filesystem - <strong> don't change this!!</strong> <br/>
-	 * Doesn't modify this FileProperty at all.
-	 * 
-	 * @param includeFile
-	 *            boolean as to whether to include the filename as the last
-	 *            element
-	 * @return A String of the relative path in the FileStore that this
-	 *         FileProperties should be stored.
-	 */
-	@Transient
-	public final String makeTargetPath(boolean includeFile) {
+  public String getContentsHash() {
+    return contentsHash;
+  }
 
-		StringBuffer sbf = new StringBuffer();
-		sbf.append(EscapeReplacement.replaceChars(getFileCategory()) + File.separator);
-		sbf.append(EscapeReplacement.replaceChars(getFileGroup()) + File.separator);
-		sbf.append(EscapeReplacement.replaceChars(getFileUser()) + File.separator);
-		sbf.append(EscapeReplacement.replaceChars(getFileVersion()) + File.separator);
-		if (includeFile) {
-			sbf.append(EscapeReplacement.replaceChars(getFileName()));
-		}
-		return sbf.toString();
-	}
+  /**
+   * This generates the target path for storing and looking up from the filesystem - <strong> don't
+   * change this!!</strong> <br>
+   * Doesn't modify this FileProperty at all.
+   *
+   * @param includeFile boolean as to whether to include the filename as the last element
+   * @return A String of the relative path in the FileStore that this FileProperties should be
+   *     stored.
+   */
+  @Transient
+  public final String makeTargetPath(boolean includeFile) {
 
-	/**
-	 * Uses the file properties to create a relative path string, stored in
-	 * 'relPath'
-	 * 
-	 * @param base
-	 */
-	@Transient
-	public void generateURIFromProperties(File base) {
-		String pth = makeTargetPath(true);
-		this.relPath = pth;
-	}
+    StringBuffer sbf = new StringBuffer();
+    sbf.append(EscapeReplacement.replaceChars(getFileCategory()) + File.separator);
+    sbf.append(EscapeReplacement.replaceChars(getFileGroup()) + File.separator);
+    sbf.append(EscapeReplacement.replaceChars(getFileUser()) + File.separator);
+    sbf.append(EscapeReplacement.replaceChars(getFileVersion()) + File.separator);
+    if (includeFile) {
+      sbf.append(EscapeReplacement.replaceChars(getFileName()));
+    }
+    return sbf.toString();
+  }
 
-	@Transient
-	public String parseFileKey() {
-		int idx = relPath.lastIndexOf(File.separator);
-		return relPath.substring(idx + 1);
-	}
+  /**
+   * Uses the file properties to create a relative path string, stored in 'relPath'
+   *
+   * @param base
+   */
+  @Transient
+  public void generateURIFromProperties(File base) {
+    String pth = makeTargetPath(true);
+    this.relPath = pth;
+  }
 
-	@Transient
-	public FileProperty copy() {
-		FileProperty fps = new FileProperty();
-		fps.relPath = this.relPath;
-		fps.fileCategory = this.fileCategory;
-		fps.fileGroup = this.fileGroup;
-		fps.fileUser = this.fileUser;
-		fps.fileVersion = this.fileVersion;
-		fps.createDate = this.createDate;
-		fps.updateDate = this.updateDate;
-		fps.fileName = this.fileName;
-		fps.fileSize = this.fileSize;
-		fps.fileOwner = this.fileOwner;
-		fps.root = this.root;
-		fps.contentsHash = this.contentsHash;
-		return fps;
-	}
+  @Transient
+  public String parseFileKey() {
+    int idx = relPath.lastIndexOf(File.separator);
+    return relPath.substring(idx + 1);
+  }
 
-	@ManyToOne
-	public FileStoreRoot getRoot() {
-		return root;
-	}
+  @Transient
+  public FileProperty copy() {
+    FileProperty fps = new FileProperty();
+    fps.relPath = this.relPath;
+    fps.fileCategory = this.fileCategory;
+    fps.fileGroup = this.fileGroup;
+    fps.fileUser = this.fileUser;
+    fps.fileVersion = this.fileVersion;
+    fps.createDate = this.createDate;
+    fps.updateDate = this.updateDate;
+    fps.fileName = this.fileName;
+    fps.fileSize = this.fileSize;
+    fps.fileOwner = this.fileOwner;
+    fps.root = this.root;
+    fps.contentsHash = this.contentsHash;
+    return fps;
+  }
 
-	public void setRoot(FileStoreRoot root) {
-		this.root = root;
-	}
-	
-	/**
-	 * Boolean as to whether file is stored externally ( e.g. on Egnyte) or not. This will always be <code>false</code> if
-	 *  an external FS is not used.
-	 * @return a boolean
-	 */
-	@ColumnDefault("false")
-	public boolean isExternal() {
-		return external;
-	}
+  @ManyToOne
+  public FileStoreRoot getRoot() {
+    return root;
+  }
 
-	public void setExternal(boolean external) {
-		this.external = external;
-	}
+  public void setRoot(FileStoreRoot root) {
+    this.root = root;
+  }
+
+  /**
+   * Boolean as to whether file is stored externally ( e.g. on Egnyte) or not. This will always be
+   * <code>false</code> if an external FS is not used.
+   *
+   * @return a boolean
+   */
+  @ColumnDefault("false")
+  public boolean isExternal() {
+    return external;
+  }
+
+  public void setExternal(boolean external) {
+    this.external = external;
+  }
 }

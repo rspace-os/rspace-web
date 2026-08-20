@@ -8,8 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Persistent identifier for a {@link B2instManufacturer}
- * (PIDINST {@code manufacturerIdentifier}).
+ * Persistent identifier for a {@link B2instManufacturer} (PIDINST {@code manufacturerIdentifier}).
  */
 @Data
 @NoArgsConstructor

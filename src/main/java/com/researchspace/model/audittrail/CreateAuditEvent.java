@@ -4,10 +4,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import com.researchspace.model.core.Person;
 
-/**
- * Audits a duplicate event when an object is copied.
- *
- */
+/** Audits a duplicate event when an object is copied. */
 public class CreateAuditEvent extends RenameAuditEvent {
 
   public CreateAuditEvent(Person subject, Object auditedObject, String newName) {
@@ -30,5 +27,4 @@ public class CreateAuditEvent extends RenameAuditEvent {
   void accept(AuditEventVisitor visitor) {
     visitor.visit(this);
   }
-
 }

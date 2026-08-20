@@ -8,8 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Creator of a {@link B2instRequestResponse}. Exactly one field is populated depending
- * on whether the request was created by a user or on behalf of a community.
+ * Creator of a {@link B2instRequestResponse}. Exactly one field is populated depending on whether
+ * the request was created by a user or on behalf of a community.
  */
 @Data
 @NoArgsConstructor

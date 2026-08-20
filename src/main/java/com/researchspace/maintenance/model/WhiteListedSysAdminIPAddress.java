@@ -4,7 +4,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -13,83 +12,82 @@ import org.apache.commons.lang3.StringUtils;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class WhiteListedSysAdminIPAddress {
 
-	private String ipAddress;
-	
-	private String description ="";
+  private String ipAddress;
 
-	private Long id;
+  private String description = "";
 
-	public WhiteListedSysAdminIPAddress(String ipAddress) {
-		this.ipAddress = ipAddress;
-	}
+  private Long id;
 
-	/**
-	 * @param ipAddress
-	 * @param description
-	 */
-	public WhiteListedSysAdminIPAddress(String ipAddress, String description) {
-		this.ipAddress = ipAddress;
-		this.description = description;
-	}
+  public WhiteListedSysAdminIPAddress(String ipAddress) {
+    this.ipAddress = ipAddress;
+  }
 
-	/**
-	 * Human readable description for this IP address
-	 * @return
-	 */
-	public String getDescription() {
-		return description;
-	}
+  /**
+   * @param ipAddress
+   * @param description
+   */
+  public WhiteListedSysAdminIPAddress(String ipAddress, String description) {
+    this.ipAddress = ipAddress;
+    this.description = description;
+  }
 
-	public void setDescription(String description) {
-		this.description = StringUtils.abbreviate(description, 255);
-	}
+  /**
+   * Human readable description for this IP address
+   *
+   * @return
+   */
+  public String getDescription() {
+    return description;
+  }
 
-	@Override
-	public String toString() {
-		return "WhiteListedSysAdminIPAddress [ipAddress=" + ipAddress + ", description=" + description + "]";
-	}
+  public void setDescription(String description) {
+    this.description = StringUtils.abbreviate(description, 255);
+  }
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((ipAddress == null) ? 0 : ipAddress.hashCode());
-		return result;
-	}
+  @Override
+  public String toString() {
+    return "WhiteListedSysAdminIPAddress [ipAddress="
+        + ipAddress
+        + ", description="
+        + description
+        + "]";
+  }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		WhiteListedSysAdminIPAddress other = (WhiteListedSysAdminIPAddress) obj;
-		if (ipAddress == null) {
-			if (other.ipAddress != null)
-				return false;
-		} else if (!ipAddress.equals(other.ipAddress))
-			return false;
-		return true;
-	}
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((ipAddress == null) ? 0 : ipAddress.hashCode());
+    return result;
+  }
 
-	public String getIpAddress() {
-		return ipAddress;
-	}
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null) return false;
+    if (getClass() != obj.getClass()) return false;
+    WhiteListedSysAdminIPAddress other = (WhiteListedSysAdminIPAddress) obj;
+    if (ipAddress == null) {
+      if (other.ipAddress != null) return false;
+    } else if (!ipAddress.equals(other.ipAddress)) return false;
+    return true;
+  }
 
-	public void setIpAddress(String ipAddress) {
-		this.ipAddress = StringUtils.abbreviate(ipAddress, 255);
-	}
+  public String getIpAddress() {
+    return ipAddress;
+  }
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	public Long getId() {
-		return id;
-	}
+  public void setIpAddress(String ipAddress) {
+    this.ipAddress = StringUtils.abbreviate(ipAddress, 255);
+  }
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  public Long getId() {
+    return id;
+  }
 
+  public void setId(Long id) {
+    this.id = id;
+  }
 }

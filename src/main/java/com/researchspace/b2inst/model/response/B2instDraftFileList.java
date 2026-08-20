@@ -10,11 +10,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Response of {@code POST /api/records/{id}/draft/files}: the listing of
- * declared draft file entries.
+ * Response of {@code POST /api/records/{id}/draft/files}: the listing of declared draft file
+ * entries.
  *
- * <p>Each entry starts in {@code pending} status until its bytes are uploaded
- * and committed.</p>
+ * <p>Each entry starts in {@code pending} status until its bytes are uploaded and committed.
  */
 @Data
 @NoArgsConstructor

@@ -28,6 +28,4 @@ public class InventoryIdentifierFieldTest {
     assertFalse(isValidDOI("10.123/ety"));
     assertFalse(isValidDOI("10.12345a"));
   }
-
-
 }

@@ -7,23 +7,22 @@ import org.junit.Test;
 
 public class SnippetTest {
 
-    private Snippet snippet;
+  private Snippet snippet;
 
-    @Before
-    public void setUp() {
-        snippet = new Snippet();
-    }
+  @Before
+  public void setUp() {
+    snippet = new Snippet();
+  }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetSetNameCantBeEmptyName() {
-        snippet.setName(" ");
-    }
+  @Test(expected = IllegalArgumentException.class)
+  public void testGetSetNameCantBeEmptyName() {
+    snippet.setName(" ");
+  }
 
-    @Test
-    public void testInititalProperties() {
-        snippet = new Snippet();
-        assertNotNull(snippet.getModificationDate());
-        assertNotNull(snippet.getCreationDate());
-    }
-
+  @Test
+  public void testInititalProperties() {
+    snippet = new Snippet();
+    assertNotNull(snippet.getModificationDate());
+    assertNotNull(snippet.getCreationDate());
+  }
 }

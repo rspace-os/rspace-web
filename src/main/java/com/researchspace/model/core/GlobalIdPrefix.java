@@ -1,111 +1,107 @@
 package com.researchspace.model.core;
 
-/**
- * 2-letter id codes to prefix database IDs, to generate global IDs across
- * RSpace.
- */
+/** 2-letter id codes to prefix database IDs, to generate global IDs across RSpace. */
 public enum GlobalIdPrefix {
 
-	/** Folder resource */
-	FL,
+  /** Folder resource */
+  FL,
 
-	/** Notebook */
-	NB,
-	
-	/** Record ( a structured document or notebook entry) */
-	SD,
+  /** Notebook */
+  NB,
 
-	/** Message */
-	MG,
+  /** Record ( a structured document or notebook entry) */
+  SD,
 
-	/** Gallery record (media file) */
-	GL,
+  /** Message */
+  MG,
 
-	/** Gallery Folder */
-	GF,
+  /** Gallery record (media file) */
+  GL,
 
-	/** Form */
-	FM,
+  /** Gallery Folder */
+  GF,
 
-	/** Field */
-	FD,
+  /** Form */
+  FM,
 
-	/** Snippet */
-	ST,
+  /** Field */
+  FD,
 
-	/** User */
-	US,
+  /** Snippet */
+  ST,
 
-	/** Group */
-	GP,
+  /** User */
+  US,
 
-	/** Chemistry structure */
-	CH,
+  /** Group */
+  GP,
 
-	/** ImageAnnotation */
-	IA,
+  /** Chemistry structure */
+  CH,
 
-	/** Field form */
-	FF,
+  /** ImageAnnotation */
+  IA,
 
-	/** Comment item */
-	CM,
+  /** Field form */
+  FF,
 
-	/** Comment (collection of comment items) */
-	CT,
+  /** Comment item */
+  CM,
 
-	/** Thumbnail */
-	TH,
+  /** Comment (collection of comment items) */
+  CT,
 
-	/** Math */
-	MA,
+  /** Thumbnail */
+  TH,
 
-	/** NetFileStore */
-	NF,
+  /** Math */
+  MA,
 
-	/** Inventory Sample */
-	SA,
+  /** NetFileStore */
+  NF,
 
-	/** Inventory SubSample */
-	SS,
+  /** Inventory Sample */
+  SA,
 
-	/** Inventory Field */
-	SF,
-	
-	/** Extra (ad-hoc) Field */
-	EF,
+  /** Inventory SubSample */
+  SS,
 
-	/** (Inventory) SampleTemplate */
-	IT,
-	
-	/** (Inventory) Container */
-	IC,
+  /** Inventory Field */
+  SF,
 
-	/** (Inventory) Workbench */
-	BE,
+  /** Extra (ad-hoc) Field */
+  EF,
 
-	/** (Inventory) File */
-	IF,
-	
-	/** (Inventory) Instrument */
-	IN,
+  /** (Inventory) SampleTemplate */
+  IT,
 
-	/** (Inventory) InstrumentTemplate */
-	NT,
+  /** (Inventory) Container */
+  IC,
 
-	/** List of Materials */
-	LM,
-	
-	/** (Inventory) Basket */
-	BA,
-	
-	/*
-	 * ================
-	 *   for testing
-	 * ================
-	 */
-	
-	/** Linked folder - testing only */
-	LF
+  /** (Inventory) Workbench */
+  BE,
 
+  /** (Inventory) File */
+  IF,
+
+  /** (Inventory) Instrument */
+  IN,
+
+  /** (Inventory) InstrumentTemplate */
+  NT,
+
+  /** List of Materials */
+  LM,
+
+  /** (Inventory) Basket */
+  BA,
+
+  /*
+   * ================
+   *   for testing
+   * ================
+   */
+
+  /** Linked folder - testing only */
+  LF
 }

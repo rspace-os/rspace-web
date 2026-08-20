@@ -4,9 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * A view of basic user metrics of numbers of people per role, retrieved from the DB.
- */
+/** A view of basic user metrics of numbers of people per role, retrieved from the DB. */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,8 +22,8 @@ public class UserStatistics {
 
   private int totalEnabledRSpaceAdmins;
 
-  public UserStatistics(int totalUsers, int totalEnabledUsers, int totalLockedUsers,
-      int totalActiveUsers) {
+  public UserStatistics(
+      int totalUsers, int totalEnabledUsers, int totalLockedUsers, int totalActiveUsers) {
     this.totalUsers = totalUsers;
     this.totalEnabledUsers = totalEnabledUsers;
     this.totalLockedUsers = totalLockedUsers;
@@ -38,16 +36,23 @@ public class UserStatistics {
    * @return
    */
   public int getUsedLicenseSeats() {
-    return getTotalEnabledUsers() -
-        (getTotalEnabledRSpaceAdmins() + getTotalEnabledSysAdmins());
+    return getTotalEnabledUsers() - (getTotalEnabledRSpaceAdmins() + getTotalEnabledSysAdmins());
   }
 
   @Override
   public String toString() {
-    return "UserStatistics [totalUsers=" + totalUsers + ", totalEnabledUsers=" + totalEnabledUsers
-        + ", totalLockedUsers=" + totalLockedUsers + ", totalActiveUsers=" + totalActiveUsers
-        + ", totalEnabledSysAdmins=" + totalEnabledSysAdmins + ", totalEnabledRSpaceAdmins="
-        + totalEnabledRSpaceAdmins + "]";
+    return "UserStatistics [totalUsers="
+        + totalUsers
+        + ", totalEnabledUsers="
+        + totalEnabledUsers
+        + ", totalLockedUsers="
+        + totalLockedUsers
+        + ", totalActiveUsers="
+        + totalActiveUsers
+        + ", totalEnabledSysAdmins="
+        + totalEnabledSysAdmins
+        + ", totalEnabledRSpaceAdmins="
+        + totalEnabledRSpaceAdmins
+        + "]";
   }
-
 }

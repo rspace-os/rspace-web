@@ -2,13 +2,10 @@ package com.researchspace.core.util.version;
 
 import com.researchspace.core.util.IDescribable;
 
-/**
- * RSpace services that are versionable.
- */
+/** RSpace services that are versionable. */
 public interface Versionable extends IDescribable {
 
-	SemanticVersion getVersion();
+  SemanticVersion getVersion();
 
-	String getVersionMessage();
-
+  String getVersionMessage();
 }

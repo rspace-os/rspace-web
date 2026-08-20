@@ -9,26 +9,24 @@ import org.junit.Test;
 
 public class StringFieldTest {
 
-	StringField nf;
-	@Before
-	public void setUp() throws Exception {
-		nf = new StringField(new StringFieldForm());
-		nf.setColumnIndex(0);
-		nf.setName("Name");
-		nf.setFieldData("data");
-		nf.setId(5L);
-	}
+  StringField nf;
 
-	@After
-	public void tearDown() throws Exception {
-	}
+  @Before
+  public void setUp() throws Exception {
+    nf = new StringField(new StringFieldForm());
+    nf.setColumnIndex(0);
+    nf.setName("Name");
+    nf.setFieldData("data");
+    nf.setId(5L);
+  }
 
-	@Test
-	public void testShallowCopy() {
-		StringField copy = nf.shallowCopy();
-		assertNull(copy.getId());
-		assertEquals(nf.getFieldData(),copy.getFieldData());
-		
-	}
+  @After
+  public void tearDown() throws Exception {}
 
+  @Test
+  public void testShallowCopy() {
+    StringField copy = nf.shallowCopy();
+    assertNull(copy.getId());
+    assertEquals(nf.getFieldData(), copy.getFieldData());
+  }
 }

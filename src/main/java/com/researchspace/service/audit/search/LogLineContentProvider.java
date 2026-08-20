@@ -7,9 +7,9 @@ import java.util.Collection;
 import java.util.List;
 
 public interface LogLineContentProvider {
-	
-	void  removeFiles(Collection<File> allLogs);
-	
-	 List<LogLine> getLinesFromFile(AuditTrailSearchElement searchConfig, File logFile) throws IOException, ParseException;
 
+  void removeFiles(Collection<File> allLogs);
+
+  List<LogLine> getLinesFromFile(AuditTrailSearchElement searchConfig, File logFile)
+      throws IOException, ParseException;
 }

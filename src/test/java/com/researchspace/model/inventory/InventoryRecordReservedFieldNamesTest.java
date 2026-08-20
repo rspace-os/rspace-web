@@ -28,8 +28,7 @@ class InventoryRecordReservedFieldNamesTest {
   void subSampleReservedFieldNames() {
     SubSample subSample = new SubSample();
     assertEquals(
-        union(BASE_RESERVED, "quantity", "sample", "notes"),
-        subSample.getReservedFieldNames());
+        union(BASE_RESERVED, "quantity", "sample", "notes"), subSample.getReservedFieldNames());
   }
 
   @Test
@@ -86,8 +85,8 @@ class InventoryRecordReservedFieldNamesTest {
     allSets.addAll(new InstrumentTemplate().getReservedFieldNames());
 
     for (String name : allSets) {
-      assertEquals(name.toLowerCase(), name,
-          "Reserved name '" + name + "' should be stored lowercase");
+      assertEquals(
+          name.toLowerCase(), name, "Reserved name '" + name + "' should be stored lowercase");
     }
   }
 
@@ -162,7 +161,8 @@ class InventoryRecordReservedFieldNamesTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"Subsample Alias", "subsample alias", "SUBSAMPLE ALIAS", "Quantity Units"})
+  @ValueSource(
+      strings = {"Subsample Alias", "subsample alias", "SUBSAMPLE ALIAS", "Quantity Units"})
   void sampleTemplateRejectsTemplateLabelInAnyCase(String fieldName) {
     SampleTemplate template = new SampleTemplate();
     ExtraTextField field = new ExtraTextField();

@@ -3,7 +3,6 @@ package com.researchspace.model.field;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Transient;
-
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 
@@ -12,75 +11,79 @@ import org.hibernate.envers.Audited;
 @Audited
 public class StringFieldForm extends FieldForm {
 
-	public StringFieldForm(String name) {
-		super(name);
-		setType(FieldType.STRING);
-	}
+  public StringFieldForm(String name) {
+    super(name);
+    setType(FieldType.STRING);
+  }
 
-	public StringFieldForm() {
-		setType(FieldType.STRING);
-	}
+  public StringFieldForm() {
+    setType(FieldType.STRING);
+  }
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -1027880121882290768L;
-	private String defaultStringValue = "";
-	private boolean ifPassword;
+  /** */
+  private static final long serialVersionUID = -1027880121882290768L;
 
-	public String getDefaultStringValue() {
-		return defaultStringValue;
-	}
+  private String defaultStringValue = "";
+  private boolean ifPassword;
 
-	public void setDefaultStringValue(String defaultStringValue) {
-		this.defaultStringValue = defaultStringValue;
-	}
+  public String getDefaultStringValue() {
+    return defaultStringValue;
+  }
 
-	public boolean isIfPassword() {
-		return ifPassword;
-	}
+  public void setDefaultStringValue(String defaultStringValue) {
+    this.defaultStringValue = defaultStringValue;
+  }
 
-	public void setIfPassword(boolean ifPassword) {
-		this.ifPassword = ifPassword;
-	}
+  public boolean isIfPassword() {
+    return ifPassword;
+  }
 
-	@Override
-	public String toString() {
-		return "StringFieldTemplate [defaultStringValue=" + defaultStringValue + ", ifPassword=" + ifPassword + "]"
-				+ super.toString();
-	}
+  public void setIfPassword(boolean ifPassword) {
+    this.ifPassword = ifPassword;
+  }
 
-	public StringFieldForm shallowCopy() {
-		StringFieldForm nft = new StringFieldForm();
-		copyPropertiesToCopy(nft);
-		nft.defaultStringValue = defaultStringValue;
-		nft.ifPassword = ifPassword;
-		return nft;
-	}
+  @Override
+  public String toString() {
+    return "StringFieldTemplate [defaultStringValue="
+        + defaultStringValue
+        + ", ifPassword="
+        + ifPassword
+        + "]"
+        + super.toString();
+  }
 
-	public StringField _createNewFieldFromForm() {
-		StringField cf = new StringField(this);
-		return cf;
-	}
+  public StringFieldForm shallowCopy() {
+    StringFieldForm nft = new StringFieldForm();
+    copyPropertiesToCopy(nft);
+    nft.defaultStringValue = defaultStringValue;
+    nft.ifPassword = ifPassword;
+    return nft;
+  }
 
-	@Transient
-	public String getSummary() {
-		StringBuffer sb = new StringBuffer();
-		String def = StringUtils.isEmpty(getDefaultStringValue()) ? "Unspecified" : getDefaultStringValue();
-		sb.append("Type: [" + getType() + "], ").append("Is password: [" + isIfPassword() + "], ")
-				.append("Default : [" + def + "] ");
-		return sb.toString();
-	}
+  public StringField _createNewFieldFromForm() {
+    StringField cf = new StringField(this);
+    return cf;
+  }
 
-	@Override
-	public ErrorList validate(String data) {
-		return new ErrorList();
-	}
+  @Transient
+  public String getSummary() {
+    StringBuffer sb = new StringBuffer();
+    String def =
+        StringUtils.isEmpty(getDefaultStringValue()) ? "Unspecified" : getDefaultStringValue();
+    sb.append("Type: [" + getType() + "], ")
+        .append("Is password: [" + isIfPassword() + "], ")
+        .append("Default : [" + def + "] ");
+    return sb.toString();
+  }
 
-	@Override
-	@Transient
-	public String getDefault() {
-		return getDefaultStringValue();
-	}
+  @Override
+  public ErrorList validate(String data) {
+    return new ErrorList();
+  }
 
+  @Override
+  @Transient
+  public String getDefault() {
+    return getDefaultStringValue();
+  }
 }

@@ -13,9 +13,7 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.envers.Audited;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
-/**
- * Represents RSpace Inventory Instrument Template
- */
+/** Represents RSpace Inventory Instrument Template */
 @Entity
 @DiscriminatorValue("InstrumentTemplate")
 @Audited
@@ -54,7 +52,8 @@ public class InstrumentTemplate extends InstrumentEntity {
    * property up automatically via the class-level {@code @Audited}.
    */
   @Column(name = "isEditable", nullable = false)
-  @ColumnDefault("1") // sibling Instrument inserts omit this template-only column, so DB needs a default
+  @ColumnDefault(
+      "1") // sibling Instrument inserts omit this template-only column, so DB needs a default
   public boolean isEditable() {
     return editable;
   }
@@ -62,7 +61,6 @@ public class InstrumentTemplate extends InstrumentEntity {
   public void setEditable(boolean editable) {
     this.editable = editable;
   }
-
 
   @Override
   public InstrumentEntity copyToTemplate(User currentUser) {
@@ -90,13 +88,11 @@ public class InstrumentTemplate extends InstrumentEntity {
     return GlobalIdPrefix.NT;
   }
 
-
   @Transient
   @Override
   public InventoryRecordType getType() {
     return InventoryRecordType.INSTRUMENT_TEMPLATE;
   }
-
 
   protected InstrumentEntity shallowCopy() {
     InstrumentEntity copy = new InstrumentTemplate();
@@ -136,6 +132,4 @@ public class InstrumentTemplate extends InstrumentEntity {
     }
     super.setLastNonWorkbenchParent(null);
   }
-
-
 }

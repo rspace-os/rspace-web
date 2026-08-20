@@ -7,9 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Persistent identifier for a {@link B2instModel} (PIDINST {@code modelIdentifier}).
- */
+/** Persistent identifier for a {@link B2instModel} (PIDINST {@code modelIdentifier}). */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

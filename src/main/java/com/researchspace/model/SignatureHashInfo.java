@@ -4,12 +4,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(of="id")
+@EqualsAndHashCode(of = "id")
 public class SignatureHashInfo {
 
-    private Long id;
-    private String hexValue;
-    private String type;
-    private Long filePropertyId;
-    
+  private Long id;
+  private String hexValue;
+  private String type;
+  private Long filePropertyId;
 }

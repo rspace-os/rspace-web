@@ -3,18 +3,18 @@ package com.researchspace.model.inventory;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Transient;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -27,9 +27,7 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDe
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
-/**
- * Represents RSpace Inventory Sample.
- */
+/** Represents RSpace Inventory Sample. */
 @Entity
 @DiscriminatorValue("Sample")
 @Audited
@@ -41,32 +39,27 @@ public class Sample extends SampleEntity {
 
   private static final long serialVersionUID = 1L;
 
-  /**
-   * Template on which this sample is based on.
-   */
+  /** Template on which this sample is based on. */
   private SampleTemplate sTemplate;
 
-  /**
-   * Version of the template on which this sample is based on.
-   */
+  /** Version of the template on which this sample is based on. */
   @Setter(value = AccessLevel.PROTECTED)
   private Long sTemplateLinkedVersion;
 
-  static final Set<String> RESERVED_FIELD_NAMES = Collections.unmodifiableSet(
-      Stream.concat(
-              InventoryRecord.RESERVED_FIELD_NAMES.stream(),
-              Stream.of(
-                  "source",
-                  "expiry date",
-                  "sample template",
-                  "storage temperature",
-                  "total quantity",
-                  "subsamples"))
-          .collect(Collectors.toSet()));
+  static final Set<String> RESERVED_FIELD_NAMES =
+      Collections.unmodifiableSet(
+          Stream.concat(
+                  InventoryRecord.RESERVED_FIELD_NAMES.stream(),
+                  Stream.of(
+                      "source",
+                      "expiry date",
+                      "sample template",
+                      "storage temperature",
+                      "total quantity",
+                      "subsamples"))
+              .collect(Collectors.toSet()));
 
-  /**
-   * for hibernate, record factory & pagination criteria
-   */
+  /** for hibernate, record factory & pagination criteria */
   public Sample() {
     super();
   }
@@ -110,11 +103,11 @@ public class Sample extends SampleEntity {
 
   /**
    * If this sample was created from a template, returns the template, else {@code null}.
-   * <p>
-   * This will be {@code null} if this Sample is a free-form sample created from scratch, not
+   *
+   * <p>This will be {@code null} if this Sample is a free-form sample created from scratch, not
    * using a template.
-   * <p>
-   * This association is lazy-loaded.
+   *
+   * <p>This association is lazy-loaded.
    *
    * @return
    */
@@ -131,13 +124,14 @@ public class Sample extends SampleEntity {
     return getSTemplate();
   }
 
-  // for hibernate, does not perform validation so as to support setting lazy proxies with null values.
+  // for hibernate, does not perform validation so as to support setting lazy proxies with null
+  // values.
   void setSTemplate(SampleTemplate template) {
     this.sTemplate = template;
   }
 
   /**
-   * Public setter for the  template used to create this sample
+   * Public setter for the template used to create this sample
    *
    * @param template
    */
@@ -173,10 +167,10 @@ public class Sample extends SampleEntity {
     boolean sampleUpdated = false;
 
     // 1. update some sample properties directly
-    if (!isSubSampleAliasEqualTo(getSTemplate().getSubSampleAlias(),
-        getSTemplate().getSubSampleAliasPlural())) {
-      setSubSampleAliases(getSTemplate().getSubSampleAlias(),
-          getSTemplate().getSubSampleAliasPlural());
+    if (!isSubSampleAliasEqualTo(
+        getSTemplate().getSubSampleAlias(), getSTemplate().getSubSampleAliasPlural())) {
+      setSubSampleAliases(
+          getSTemplate().getSubSampleAlias(), getSTemplate().getSubSampleAliasPlural());
       sampleUpdated = true;
     }
 
@@ -217,8 +211,11 @@ public class Sample extends SampleEntity {
 
   private Optional<InventoryEntityField> getFieldByTemplateFieldId(Long id) {
     return getFields().stream()
-        .filter(sf -> id != null && sf.getTemplateField() != null && id.equals(
-            sf.getTemplateField().getId()))
+        .filter(
+            sf ->
+                id != null
+                    && sf.getTemplateField() != null
+                    && id.equals(sf.getTemplateField().getId()))
         .findFirst();
   }
 
@@ -231,8 +228,8 @@ public class Sample extends SampleEntity {
   }
 
   /**
-   * Duplicates this sample, including fields, core properties, icons and images. Does
-   * not copy subsamples, but creates a single sample with same quantity as original.
+   * Duplicates this sample, including fields, core properties, icons and images. Does not copy
+   * subsamples, but creates a single sample with same quantity as original.
    *
    * @param currentUser user to set as a creator and owner of the copy
    * @return the newly duplicated sample.
@@ -244,5 +241,4 @@ public class Sample extends SampleEntity {
     copiedSample.setSTemplateLinkedVersion(getSTemplateLinkedVersion());
     return copiedSample;
   }
-
 }

@@ -24,17 +24,15 @@ public class DuplicateAuditEventTest {
     assertEquals(user, event.getSubject());
     assertEquals(DOCUMENT_ID, event.getAuditData().getData().get("id"));
     assertEquals("sourceFilename", event.getAuditData().getData().get("name"));
-    assertEquals("from: \"sourceFilename\" to: \"sourceFilename_Copy\"",
-        event.getDescription());
+    assertEquals("from: \"sourceFilename\" to: \"sourceFilename_Copy\"", event.getDescription());
   }
 
   private DuplicateAuditEvent getValidDuplicateEvent() {
-    return new DuplicateAuditEvent(user, new HashMap<>(), new AuditTrailTestObject(),
-        "sourceFilename","sourceFilename_Copy" );
+    return new DuplicateAuditEvent(
+        user, new HashMap<>(), new AuditTrailTestObject(), "sourceFilename", "sourceFilename_Copy");
   }
 
   private DuplicateAuditEvent getInvalidDuplicateEvent() {
-    return new DuplicateAuditEvent(user, null, null,
-        null, "_Copy");
+    return new DuplicateAuditEvent(user, null, null, null, "_Copy");
   }
 }

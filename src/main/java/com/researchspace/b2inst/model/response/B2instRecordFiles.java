@@ -10,12 +10,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * The {@code files} (and {@code media_files}) container carried on a
- * {@link B2instDraftRecord}.
+ * The {@code files} (and {@code media_files}) container carried on a {@link B2instDraftRecord}.
  *
- * <p>Unlike the draft file-listing returned by the upload endpoints (see
- * {@link B2instDraftFileList}), the record-level container keys its {@link #entries} by
- * file name and reports aggregate counts. On a freshly created draft it is enabled but empty.</p>
+ * <p>Unlike the draft file-listing returned by the upload endpoints (see {@link
+ * B2instDraftFileList}), the record-level container keys its {@link #entries} by file name and
+ * reports aggregate counts. On a freshly created draft it is enabled but empty.
  */
 @Data
 @NoArgsConstructor

@@ -161,7 +161,8 @@ public class InstrumentTemplateTest {
     assertEquals(TEMPLATE_MOVE_NOT_ALLOWED, iae.getMessage());
   }
 
-  private InventoryTextField buildTextField(Long id, Integer columnIndex, String name, String data) {
+  private InventoryTextField buildTextField(
+      Long id, Integer columnIndex, String name, String data) {
     InventoryTextField field = new InventoryTextField(name);
     field.setId(id);
     field.setColumnIndex(columnIndex);
@@ -175,4 +176,3 @@ public class InstrumentTemplateTest {
     instrumentEntity.refreshActiveFieldsAndColumnIndex();
   }
 }
-

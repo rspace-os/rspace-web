@@ -10,9 +10,8 @@ import lombok.NoArgsConstructor;
 /**
  * Controlled-vocabulary instrument type (PIDINST {@code InstrumentType}).
  *
- * <p>Only {@code instrumentTypeName} is used by the current payloads; any
- * optional type-identifier fields returned by the server are tolerated through
- * {@link JsonIgnoreProperties}.</p>
+ * <p>Only {@code instrumentTypeName} is used by the current payloads; any optional type-identifier
+ * fields returned by the server are tolerated through {@link JsonIgnoreProperties}.
  */
 @Data
 @NoArgsConstructor

@@ -14,14 +14,6 @@ import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.model.units.ValidTemperature;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.CascadeType;
@@ -40,6 +32,14 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -53,9 +53,7 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
 
-/**
- * Represents RSpace Inventory SampleEntity (that is Sample or SampleTemplate)
- */
+/** Represents RSpace Inventory SampleEntity (that is Sample or SampleTemplate) */
 @Entity(name = "SampleEntity")
 @Table(name = "Sample")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -72,8 +70,8 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDe
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @AuditTrailData(auditDomain = AuditDomain.INV_SAMPLE)
 @Indexed
-public abstract class SampleEntity extends InventoryRecord implements Serializable,
-    UniquelyIdentifiable, Quantifiable {
+public abstract class SampleEntity extends InventoryRecord
+    implements Serializable, UniquelyIdentifiable, Quantifiable {
 
   private static final long serialVersionUID = 1867269597891360704L;
 
@@ -87,14 +85,12 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
   private List<SubSample> subSamples = new ArrayList<>();
   private int activeSubSamplesCount;
 
-  @IndexedEmbedded
-  private List<InventoryEntityField> fields = new ArrayList<>();
+  @IndexedEmbedded private List<InventoryEntityField> fields = new ArrayList<>();
 
   @IndexedEmbedded(name = "extraFields")
   private List<ExtraField> extraFields = new ArrayList<>();
 
-  @IndexedEmbedded
-  private List<Barcode> barcodes = new ArrayList<>();
+  @IndexedEmbedded private List<Barcode> barcodes = new ArrayList<>();
 
   private List<DigitalObjectIdentifier> identifiers = new ArrayList<>();
 
@@ -107,20 +103,18 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
 
   @Setter(value = AccessLevel.PRIVATE)
   private String subSampleName = SubSampleName.SUBSAMPLE.getDisplayName();
+
   @Setter(value = AccessLevel.PRIVATE)
   private String subSampleNamePlural = SubSampleName.SUBSAMPLE.getDisplayNamePlural();
 
-  /**
-   * 1st field has index = 1
-   */
+  /** 1st field has index = 1 */
   private int currMaxColIndex = 0;
 
   private Integer defaultUnitId;
 
   private QuantityInfo quantityInfo;
 
-  public SampleEntity() {
-  }
+  public SampleEntity() {}
 
   @Transient
   public abstract boolean isTemplate();
@@ -151,15 +145,18 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
    * @return
    * @see SampleEntity#copy(User)
    */
-  protected <T extends SampleEntity> T copy(Function<SampleEntity, String> nameMapper,
-      User currentUser) {
+  protected <T extends SampleEntity> T copy(
+      Function<SampleEntity, String> nameMapper, User currentUser) {
     T sampleCopy = this.shallowCopy();
     copy(this, sampleCopy, nameMapper, currentUser);
     return sampleCopy;
   }
 
-  static void copy(SampleEntity origin, SampleEntity destination,
-      Function<SampleEntity, String> nameMapper, User currentUser) {
+  static void copy(
+      SampleEntity origin,
+      SampleEntity destination,
+      Function<SampleEntity, String> nameMapper,
+      User currentUser) {
     QuantityInfo toCopyTotal = origin.getTotalQuantity();
     destination.setExpiryDate(origin.getExpiryDate());
     destination.setName(nameMapper.apply(origin));
@@ -202,16 +199,18 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
     return copiedField;
   }
 
-  private void createSubSample(Function<SampleEntity, String> nameMapper, QuantityInfo toCopyTotal,
-      SampleEntity sample) {
+  private void createSubSample(
+      Function<SampleEntity, String> nameMapper, QuantityInfo toCopyTotal, SampleEntity sample) {
     SubSample singleSS = new SubSample(sample);
     sample.addSubSample(singleSS);
-    String ssName = InventorySeriesNamingHelper.getSerialNameForSubSample(nameMapper.apply(this), 1,
-        1);
+    String ssName =
+        InventorySeriesNamingHelper.getSerialNameForSubSample(nameMapper.apply(this), 1, 1);
     singleSS.setName(ssName);
 
-    QuantityInfo newQuantity = toCopyTotal != null ? toCopyTotal.copy()
-        : QuantityInfo.zero(RSUnitDef.getUnitById(getDefaultUnitId()));
+    QuantityInfo newQuantity =
+        toCopyTotal != null
+            ? toCopyTotal.copy()
+            : QuantityInfo.zero(RSUnitDef.getUnitById(getDefaultUnitId()));
     singleSS.setQuantity(newQuantity);
     singleSS.setCreatedBy(sample.getCreatedBy());
     singleSS.setModifiedBy(sample.getModifiedBy());
@@ -241,8 +240,11 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
 
   @Embedded
   @AttributeOverrides({
-      @AttributeOverride(name = "unitId", column = @Column(name = "storageTempMinUnitId")),
-      @AttributeOverride(name = "numericValue", column = @Column(name = "storageTempMinNumericValue", precision = 19, scale = 3))})
+    @AttributeOverride(name = "unitId", column = @Column(name = "storageTempMinUnitId")),
+    @AttributeOverride(
+        name = "numericValue",
+        column = @Column(name = "storageTempMinNumericValue", precision = 19, scale = 3))
+  })
   @ValidTemperature
   public QuantityInfo getStorageTempMin() {
     return storageTempMin;
@@ -250,8 +252,11 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
 
   @Embedded
   @AttributeOverrides({
-      @AttributeOverride(name = "unitId", column = @Column(name = "storageTempMaxUnitId")),
-      @AttributeOverride(name = "numericValue", column = @Column(name = "storageTempMaxNumericValue", precision = 19, scale = 3))})
+    @AttributeOverride(name = "unitId", column = @Column(name = "storageTempMaxUnitId")),
+    @AttributeOverride(
+        name = "numericValue",
+        column = @Column(name = "storageTempMaxNumericValue", precision = 19, scale = 3))
+  })
   @ValidTemperature
   public QuantityInfo getStorageTempMax() {
     return storageTempMax;
@@ -277,9 +282,10 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
   @Transient
   public List<SubSample> getActiveSubSamples() {
     if (activeSubSamples == null) {
-      activeSubSamples = subSamples.stream()
-          .filter(ss -> !ss.isDeleted() || (isDeleted() && ss.isDeletedOnSampleDeletion()))
-          .collect(Collectors.toList());
+      activeSubSamples =
+          subSamples.stream()
+              .filter(ss -> !ss.isDeleted() || (isDeleted() && ss.isDeletedOnSampleDeletion()))
+              .collect(Collectors.toList());
     }
     return activeSubSamples;
   }
@@ -292,17 +298,14 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
 
   @Transient
   public List<SubSample> getDeletedSubSamples() {
-    return subSamples.stream().filter(ss -> ss.isDeleted())
-        .collect(Collectors.toList());
+    return subSamples.stream().filter(ss -> ss.isDeleted()).collect(Collectors.toList());
   }
 
   public boolean hasExactlyOneSubSample() {
     return getActiveSubSamples().size() == 1;
   }
 
-  /**
-   * If sample has just one subSample, retrieve it. Otherwise return empty optional.
-   */
+  /** If sample has just one subSample, retrieve it. Otherwise return empty optional. */
   @Transient
   public Optional<SubSample> getOnlySubSample() {
     return hasExactlyOneSubSample() ? Optional.of(getActiveSubSamples().get(0)) : Optional.empty();
@@ -329,15 +332,15 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
   @Transient
   public List<InventoryEntityField> getActiveFields() {
     if (activeFields == null) {
-      activeFields = getFields().stream().filter(sf -> !sf.isDeleted())
-          .sorted().collect(Collectors.toList());
+      activeFields =
+          getFields().stream().filter(sf -> !sf.isDeleted()).sorted().collect(Collectors.toList());
     }
     return activeFields;
   }
 
   /**
-   * Appends a new InventoryEntityField to the list of this sample's fields, incrementing
-   * {@code currMaxColIndex} as a side-effect.
+   * Appends a new InventoryEntityField to the list of this sample's fields, incrementing {@code
+   * currMaxColIndex} as a side-effect.
    *
    * @param toAdd
    */
@@ -429,8 +432,10 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
 
   @Embedded
   @AttributeOverrides({
-      @AttributeOverride(name = "unitId", column = @Column(name = "quantityUnitId")),
-      @AttributeOverride(name = "numericValue", column = @Column(name = "quantityNumericValue", precision = 19, scale = 3))
+    @AttributeOverride(name = "unitId", column = @Column(name = "quantityUnitId")),
+    @AttributeOverride(
+        name = "numericValue",
+        column = @Column(name = "quantityNumericValue", precision = 19, scale = 3))
   })
   public QuantityInfo getQuantityInfo() {
     return quantityInfo;
@@ -484,9 +489,11 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
 
   public void recalculateTotalQuantity() {
     QuantityUtils quantityUtils = new QuantityUtils();
-    List<QuantityInfo> subSampleQuantities = getActiveSubSamples().stream()
-        .filter(ss -> ss.getQuantity() != null)
-        .map(ss -> ss.getQuantity()).collect(Collectors.toList());
+    List<QuantityInfo> subSampleQuantities =
+        getActiveSubSamples().stream()
+            .filter(ss -> ss.getQuantity() != null)
+            .map(ss -> ss.getQuantity())
+            .collect(Collectors.toList());
 
     if (subSampleQuantities.isEmpty()) {
       setQuantityInfo(null);
@@ -568,12 +575,9 @@ public abstract class SampleEntity extends InventoryRecord implements Serializab
     refreshActiveSubSamples();
   }
 
-  /**
-   * Checks if provided alias singular and plural are equal to ones set in this Sample.
-   */
+  /** Checks if provided alias singular and plural are equal to ones set in this Sample. */
   public boolean isSubSampleAliasEqualTo(String subSampleAlias, String subSampleAliasPlural) {
-    return getSubSampleAlias().equals(subSampleAlias) && getSubSampleAliasPlural().equals(
-        subSampleAliasPlural);
+    return getSubSampleAlias().equals(subSampleAlias)
+        && getSubSampleAliasPlural().equals(subSampleAliasPlural);
   }
-
 }

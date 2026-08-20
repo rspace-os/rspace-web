@@ -3,60 +3,57 @@ package com.researchspace.model.field;
 import com.researchspace.model.record.AbstractForm;
 
 /**
- * A definition of read-only methods on a FieldForm, which can be publicly
- * accessed. <br/>
+ * A definition of read-only methods on a FieldForm, which can be publicly accessed. <br>
  * See {@link FieldForm} for more detail on these methods.
  */
 public interface IFieldForm {
 
-	String getSummary();
+  String getSummary();
 
-	/**
-	 * This method validates input that will be stored in the data's field.
-	 * 
-	 * @param data
-	 * @return An {@link ErrorList} which has validated successfully if it has no
-	 *         messages contained in it.
-	 */
-	ErrorList validate(String data);
+  /**
+   * This method validates input that will be stored in the data's field.
+   *
+   * @param data
+   * @return An {@link ErrorList} which has validated successfully if it has no messages contained
+   *     in it.
+   */
+  ErrorList validate(String data);
 
-	FieldForm shallowCopy();
+  FieldForm shallowCopy();
 
-	boolean isTemporary();
+  boolean isTemporary();
 
-	boolean isMandatory();
+  boolean isMandatory();
 
-	IFieldForm getTempFieldForm();
+  IFieldForm getTempFieldForm();
 
-	AbstractForm getForm();
+  AbstractForm getForm();
 
-	Field createNewFieldFromForm();
+  Field createNewFieldFromForm();
 
-	String getDefault();
+  String getDefault();
 
-	String getName();
+  String getName();
 
-	int getColumnIndex();
+  int getColumnIndex();
 
-	Long getModificationDate();
+  Long getModificationDate();
 
-	FieldType getType();
+  FieldType getType();
 
-	/**
-	 * Persistence ID
-	 * 
-	 * @return
-	 */
-	Long getId();
+  /**
+   * Persistence ID
+   *
+   * @return
+   */
+  Long getId();
 
-	/**
-	 * 
-	 * @param template
-	 */
-	void setForm(AbstractForm template);
+  /**
+   * @param template
+   */
+  void setForm(AbstractForm template);
 
-	void setTempFieldForm(IFieldForm fieldCpy);
+  void setTempFieldForm(IFieldForm fieldCpy);
 
-	void setTemporary(boolean b);
-
+  void setTemporary(boolean b);
 }

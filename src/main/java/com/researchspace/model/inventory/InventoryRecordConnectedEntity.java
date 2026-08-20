@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory;
 
+import com.researchspace.model.core.GlobalIdentifier;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
@@ -9,17 +10,11 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Transient;
 import jakarta.validation.ConstraintViolationException;
-
-import org.hibernate.envers.Audited;
-
-import com.researchspace.model.core.GlobalIdentifier;
-
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.envers.Audited;
 
-/**
- * Abstract class inherited by entities connected to Inventory Records
- */
+/** Abstract class inherited by entities connected to Inventory Records */
 @MappedSuperclass
 @Getter
 @Setter
@@ -56,9 +51,7 @@ public abstract class InventoryRecordConnectedEntity {
     return null;
   }
 
-  /**
-   * Sets parent
-   */
+  /** Sets parent */
   public void setInventoryRecord(InventoryRecord invRec) {
     if (invRec instanceof SampleEntity) {
       sample = (SampleEntity) invRec;
@@ -95,8 +88,10 @@ public abstract class InventoryRecordConnectedEntity {
     parentCount = container == null ? parentCount : ++parentCount;
     parentCount = instrumentEntity == null ? parentCount : ++parentCount;
     if (parentCount > 1) {
-      throw new ConstraintViolationException(this.getClass().getSimpleName()
-          + " cannot be connected to more than one inventory record", null);
+      throw new ConstraintViolationException(
+          this.getClass().getSimpleName()
+              + " cannot be connected to more than one inventory record",
+          null);
     }
   }
 
@@ -124,5 +119,4 @@ public abstract class InventoryRecordConnectedEntity {
   protected int getNonInventoryRecordParentCount() {
     return 0;
   }
-
 }

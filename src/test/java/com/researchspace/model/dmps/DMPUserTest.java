@@ -11,8 +11,10 @@ class DMPUserTest {
 
   @Test
   void timestampAutoCreated() {
-    DMPUser dmpUser = new DMPUser(createAnyUser(getRandomName(10)),
-        new DmpDto("dmpID", "Title", DMPSource.UNKNOWN, "doiLink", "dmpLink"));
+    DMPUser dmpUser =
+        new DMPUser(
+            createAnyUser(getRandomName(10)),
+            new DmpDto("dmpID", "Title", DMPSource.UNKNOWN, "doiLink", "dmpLink"));
     assertNotNull(dmpUser.getUser());
     assertNull(dmpUser.getId());
     assertNotNull(dmpUser.getDmpId());

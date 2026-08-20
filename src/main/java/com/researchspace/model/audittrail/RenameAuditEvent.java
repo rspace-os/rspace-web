@@ -4,9 +4,7 @@ import com.researchspace.model.core.Person;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
 
-/**
- * Audits a rename event when an object is copied.
- */
+/** Audits a rename event when an object is copied. */
 @EqualsAndHashCode(callSuper = false)
 public class RenameAuditEvent extends MoveAuditEvent {
 
@@ -15,8 +13,8 @@ public class RenameAuditEvent extends MoveAuditEvent {
     super.description = buildDescriptionFromParameters();
   }
 
-  public RenameAuditEvent(Person subject, Object item, String oldName, String newName,
-      String desc) {
+  public RenameAuditEvent(
+      Person subject, Object item, String oldName, String newName, String desc) {
     super(subject, item, oldName, newName, desc);
   }
 
@@ -50,5 +48,4 @@ public class RenameAuditEvent extends MoveAuditEvent {
     desc.append("\"");
     return desc.toString();
   }
-
 }

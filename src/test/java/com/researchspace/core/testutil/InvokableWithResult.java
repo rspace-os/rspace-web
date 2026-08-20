@@ -1,6 +1,7 @@
 package com.researchspace.core.testutil;
-@FunctionalInterface
-public interface  InvokableWithResult <T>{
 
-	T invokeWithResult();
+@FunctionalInterface
+public interface InvokableWithResult<T> {
+
+  T invokeWithResult();
 }

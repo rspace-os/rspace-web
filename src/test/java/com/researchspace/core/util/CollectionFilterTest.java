@@ -7,10 +7,9 @@ import org.junit.Test;
 
 public class CollectionFilterTest {
 
-	@Test
-	public void testFilterOfNoopsImplmentations() {
-		assertTrue(CollectionFilter.NO_FILTER.filter(new Object()));
-		assertFalse(CollectionFilter.NULLFILTER.filter(new Object()));
-	}
-
+  @Test
+  public void testFilterOfNoopsImplmentations() {
+    assertTrue(CollectionFilter.NO_FILTER.filter(new Object()));
+    assertFalse(CollectionFilter.NULLFILTER.filter(new Object()));
+  }
 }

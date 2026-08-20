@@ -5,7 +5,6 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,10 +16,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 class TestXMLRootObject {
-	
-	@XmlAttribute(required = true)
-	private Long id;
-	
-	private String data;
 
+  @XmlAttribute(required = true)
+  private Long id;
+
+  private String data;
 }

@@ -2,22 +2,20 @@ package com.researchspace.model.inventory;
 
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Transient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
-/**
- * Represents RSpace Inventory Sample Template
- */
+/** Represents RSpace Inventory Sample Template */
 @Entity
 @DiscriminatorValue("SampleTemplate")
 @Audited
@@ -32,21 +30,22 @@ public class SampleTemplate extends SampleEntity {
   /**
    * Reserved names for a Sample Template. Mirrors {@code TemplateModel.fieldNamesInUse} in the
    * React UI: the template view is its own namespace. It reserves the base names plus the
-   * template-specific labels ({@code source}, {@code expiry date}, {@code subsample alias},
-   * {@code quantity units}, {@code fields}, {@code samples}) and, unlike a live Sample, does not
-   * reserve the sample-instance labels such as {@code sample template} or {@code subsamples}.
+   * template-specific labels ({@code source}, {@code expiry date}, {@code subsample alias}, {@code
+   * quantity units}, {@code fields}, {@code samples}) and, unlike a live Sample, does not reserve
+   * the sample-instance labels such as {@code sample template} or {@code subsamples}.
    */
-  static final Set<String> SAMPLE_TEMPLATE_RESERVED_FIELD_NAMES = Collections.unmodifiableSet(
-      Stream.concat(
-              InventoryRecord.RESERVED_FIELD_NAMES.stream(),
-              Stream.of(
-                  "source",
-                  "expiry date",
-                  "subsample alias",
-                  "quantity units",
-                  "fields",
-                  "samples"))
-          .collect(Collectors.toSet()));
+  static final Set<String> SAMPLE_TEMPLATE_RESERVED_FIELD_NAMES =
+      Collections.unmodifiableSet(
+          Stream.concat(
+                  InventoryRecord.RESERVED_FIELD_NAMES.stream(),
+                  Stream.of(
+                      "source",
+                      "expiry date",
+                      "subsample alias",
+                      "quantity units",
+                      "fields",
+                      "samples"))
+              .collect(Collectors.toSet()));
 
   public SampleTemplate() {
     super();
@@ -110,5 +109,4 @@ public class SampleTemplate extends SampleEntity {
   protected void assertCanStoreAttachments() {
     throw new IllegalArgumentException("Sample Templates don't support file attachments yet");
   }
-
 }

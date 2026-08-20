@@ -1,23 +1,20 @@
 package com.researchspace.model;
-/**
- * The format that the 'chemElements' column is stored in.
- */
+
+/** The format that the 'chemElements' column is stored in. */
 public enum ChemElementsFormat {
-	MOL("mol"),
-	MRV("mrv"),
-	KET("ket"),
-	CDXML("cdxml"),
-	SMI("smi");
-	
-	public String getLabel() {
-		return label;
-	}
+  MOL("mol"),
+  MRV("mrv"),
+  KET("ket"),
+  CDXML("cdxml"),
+  SMI("smi");
 
-	private String label;
+  public String getLabel() {
+    return label;
+  }
 
-	private ChemElementsFormat(String label) {
-		this.label = label;
-	}
-	
+  private String label;
 
+  private ChemElementsFormat(String label) {
+    this.label = label;
+  }
 }

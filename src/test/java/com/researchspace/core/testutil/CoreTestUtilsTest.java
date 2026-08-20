@@ -10,28 +10,28 @@ import org.opentest4j.AssertionFailedError;
 
 class CoreTestUtilsTest {
 
-	static class Testclass {
-		void doSomething() {
-			throw new IllegalArgumentException("message");
-		}
-	}
+  static class Testclass {
+    void doSomething() {
+      throw new IllegalArgumentException("message");
+    }
+  }
 
-	@Test
-	void testOK() throws Exception {
-		Testclass testclass = new Testclass();
-		assertExceptionThrown(testclass::doSomething, IllegalArgumentException.class);
-		Matcher<String> matcher = containsString("essage");
-		assertExceptionThrown(testclass::doSomething, IllegalArgumentException.class, matcher);
-	}
+  @Test
+  void testOK() throws Exception {
+    Testclass testclass = new Testclass();
+    assertExceptionThrown(testclass::doSomething, IllegalArgumentException.class);
+    Matcher<String> matcher = containsString("essage");
+    assertExceptionThrown(testclass::doSomething, IllegalArgumentException.class, matcher);
+  }
 
-	@Test
-	void testExceptionThrown() throws Exception {
-		Testclass testclass = new Testclass();
-		assertExceptionThrown(testclass::doSomething, IllegalArgumentException.class);
-		Matcher<String> matcher = containsString("nomatch");
-		assertThrows(AssertionFailedError.class,
-				() -> assertExceptionThrown(testclass::doSomething, IllegalArgumentException.class, matcher));
-
-	}
-
+  @Test
+  void testExceptionThrown() throws Exception {
+    Testclass testclass = new Testclass();
+    assertExceptionThrown(testclass::doSomething, IllegalArgumentException.class);
+    Matcher<String> matcher = containsString("nomatch");
+    assertThrows(
+        AssertionFailedError.class,
+        () ->
+            assertExceptionThrown(testclass::doSomething, IllegalArgumentException.class, matcher));
+  }
 }

@@ -8,12 +8,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * The {@code files} option block sent when creating a draft record,
- * declaring whether the record will carry file attachments.
+ * The {@code files} option block sent when creating a draft record, declaring whether the record
+ * will carry file attachments.
  *
- * <p>This is distinct from the richer {@code files} object returned on a record
- * (see {@code com.researchspace.b2inst.model.response.B2instRecordFiles}), which also
- * lists entries and byte totals.</p>
+ * <p>This is distinct from the richer {@code files} object returned on a record (see {@code
+ * com.researchspace.b2inst.model.response.B2instRecordFiles}), which also lists entries and byte
+ * totals.
  */
 @Data
 @NoArgsConstructor

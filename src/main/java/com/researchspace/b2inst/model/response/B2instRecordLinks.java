@@ -10,9 +10,8 @@ import lombok.NoArgsConstructor;
 /**
  * HATEOAS links carried on a {@link B2instDraftRecord}.
  *
- * <p>Only the commonly used links are modelled; the server returns additional
- * links (archive, IIIF, access grants and so on) which are tolerated via
- * {@link JsonIgnoreProperties}.</p>
+ * <p>Only the commonly used links are modelled; the server returns additional links (archive, IIIF,
+ * access grants and so on) which are tolerated via {@link JsonIgnoreProperties}.
  */
 @Data
 @NoArgsConstructor

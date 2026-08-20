@@ -10,10 +10,9 @@ import lombok.NoArgsConstructor;
 /**
  * Access settings of a record.
  *
- * <p>On a create-record request only {@link #record} and {@link #files} are sent; the
- * response additionally carries {@link #embargo} and a derived
- * {@link #status}. Both directions share this single type, with the
- * response-only fields left {@code null} when building a request.</p>
+ * <p>On a create-record request only {@link #record} and {@link #files} are sent; the response
+ * additionally carries {@link #embargo} and a derived {@link #status}. Both directions share this
+ * single type, with the response-only fields left {@code null} when building a request.
  */
 @Data
 @NoArgsConstructor
@@ -35,8 +34,8 @@ public class B2instAccess {
   private B2instEmbargo embargo;
 
   /**
-   * Server-derived access status (response only), for example
-   * {@code "metadata-only"}, {@code "open"} or {@code "embargoed"}.
+   * Server-derived access status (response only), for example {@code "metadata-only"}, {@code
+   * "open"} or {@code "embargoed"}.
    */
   @JsonProperty("status")
   private String status;

@@ -1,7 +1,6 @@
 package com.researchspace.model.audit;
 
 import java.util.Date;
-
 import org.hibernate.envers.RevisionType;
 
 /**
@@ -11,134 +10,126 @@ import org.hibernate.envers.RevisionType;
  */
 public class AuditedEntity<T> {
 
-	T entity;
+  T entity;
 
-	Number revision;
+  Number revision;
 
-	private RevisionType revType = RevisionType.MOD;// will be the default
-	
-	protected Date deletedDate;
+  private RevisionType revType = RevisionType.MOD; // will be the default
 
-	/**
-	 * Neither argument should be <code>null</code>.
-	 * 
-	 * @param entity
-	 *            An entity that has been retrieved from an audit table.
-	 * @param revision
-	 *            A revision number
-	 */
-	public AuditedEntity(T entity, Number revision) {
-		this.entity = entity;
-		this.revision = revision;
-	}
+  protected Date deletedDate;
 
-	/**
-	 * Public no-args constructor for reflection; not to be used in regular
-	 * code.
-	 */
-	public AuditedEntity() { }
+  /**
+   * Neither argument should be <code>null</code>.
+   *
+   * @param entity An entity that has been retrieved from an audit table.
+   * @param revision A revision number
+   */
+  public AuditedEntity(T entity, Number revision) {
+    this.entity = entity;
+    this.revision = revision;
+  }
 
-	/**
-	 * Alternative constructor that takes a {@link RevisionType} a 3rd argument.
-	 */
-	public AuditedEntity(T entity, Number revision, RevisionType revType) {
-		this(entity, revision);
-		this.revType = revType;
-	}
-	
-	/**
-	 * Alternative constructor that takes a deletedDate as 4th argument (can be null if not deleted).
-	 */
-	public AuditedEntity(T entity, Number revision, RevisionType revType, Date deletedDate) {
-		this(entity, revision, revType);
-		this.deletedDate = deletedDate != null ? new Date(deletedDate.getTime()) : null;
-	}
+  /** Public no-args constructor for reflection; not to be used in regular code. */
+  public AuditedEntity() {}
 
-	public T getEntity() {
-		return entity;
-	}
+  /** Alternative constructor that takes a {@link RevisionType} a 3rd argument. */
+  public AuditedEntity(T entity, Number revision, RevisionType revType) {
+    this(entity, revision);
+    this.revType = revType;
+  }
 
-	public void setEntity(T entity) {
-		this.entity = entity;
-	}
+  /**
+   * Alternative constructor that takes a deletedDate as 4th argument (can be null if not deleted).
+   */
+  public AuditedEntity(T entity, Number revision, RevisionType revType, Date deletedDate) {
+    this(entity, revision, revType);
+    this.deletedDate = deletedDate != null ? new Date(deletedDate.getTime()) : null;
+  }
 
-	/**
-	 * Gets the revision number of this document. Revisions are global, so
-	 * revision numbers may not be consecutive for an entity.
-	 */
-	public Number getRevision() {
-		return revision;
-	}
+  public T getEntity() {
+    return entity;
+  }
 
-	public void setRevision(Number revision) {
-		this.revision = revision;
-	}
+  public void setEntity(T entity) {
+    this.entity = entity;
+  }
 
-	public RevisionType getRevType() {
-		return revType;
-	}
+  /**
+   * Gets the revision number of this document. Revisions are global, so revision numbers may not be
+   * consecutive for an entity.
+   */
+  public Number getRevision() {
+    return revision;
+  }
 
-	public void setRevType(RevisionType revType) {
-		this.revType = revType;
-	}
+  public void setRevision(Number revision) {
+    this.revision = revision;
+  }
 
-	/**
-	 * One of MOD, DEL, ADD
-	 * 
-	 * @return
-	 */
-	public String getRevisionTypeString() {
-		return revType.toString();
-	}
+  public RevisionType getRevType() {
+    return revType;
+  }
 
-		/**
-	 * Returns a copy of the deleted date or null if record is not deleted.
-	 * @return a possibly null Date
-	 */
-	public Date getDeletedDate() {
-	   return (deletedDate!= null)?new Date(deletedDate.getTime()):null;	
-	}
-	
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		return "AuditedEntity [entity=" + entity + ", revision=" + revision + ", revType=" + revType + "]";
-	}
+  public void setRevType(RevisionType revType) {
+    this.revType = revType;
+  }
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((entity == null) ? 0 : entity.hashCode());
-		result = prime * result + ((revision.intValue() == 0) ? 0 : revision.hashCode());
-		return result;
-	}
+  /**
+   * One of MOD, DEL, ADD
+   *
+   * @return
+   */
+  public String getRevisionTypeString() {
+    return revType.toString();
+  }
 
-	@SuppressWarnings("rawtypes")
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		AuditedEntity other = (AuditedEntity) obj;
-		if (entity == null) {
-			if (other.entity != null)
-				return false;
-		} else if (!entity.equals(other.entity))
-			return false;
-		if (revision == null) {
-			if (other.revision != null)
-				return false;
-		} else if (revision.intValue() != other.revision.intValue())
-			return false;
-		return true;
-	}
+  /**
+   * Returns a copy of the deleted date or null if record is not deleted.
+   *
+   * @return a possibly null Date
+   */
+  public Date getDeletedDate() {
+    return (deletedDate != null) ? new Date(deletedDate.getTime()) : null;
+  }
 
+  /*
+   * (non-Javadoc)
+   *
+   * @see java.lang.Object#toString()
+   */
+  @Override
+  public String toString() {
+    return "AuditedEntity [entity="
+        + entity
+        + ", revision="
+        + revision
+        + ", revType="
+        + revType
+        + "]";
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((entity == null) ? 0 : entity.hashCode());
+    result = prime * result + ((revision.intValue() == 0) ? 0 : revision.hashCode());
+    return result;
+  }
+
+  @SuppressWarnings("rawtypes")
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null) return false;
+    if (getClass() != obj.getClass()) return false;
+    AuditedEntity other = (AuditedEntity) obj;
+    if (entity == null) {
+      if (other.entity != null) return false;
+    } else if (!entity.equals(other.entity)) return false;
+    if (revision == null) {
+      if (other.revision != null) return false;
+    } else if (revision.intValue() != other.revision.intValue()) return false;
+    return true;
+  }
 }

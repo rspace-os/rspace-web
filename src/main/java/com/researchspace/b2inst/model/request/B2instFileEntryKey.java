@@ -10,10 +10,9 @@ import lombok.NoArgsConstructor;
 /**
  * A single declared file entry for {@code POST /api/records/{id}/draft/files}.
  *
- * <p>The request body is a JSON array of these objects, so the wire payload is a
- * {@code List<B2instFileEntryKey>}. To attach
- * several files, send one element per file, for example
- * {@code [{"key":"figure.png"},{"key":"article.pdf"}]}.</p>
+ * <p>The request body is a JSON array of these objects, so the wire payload is a {@code
+ * List<B2instFileEntryKey>}. To attach several files, send one element per file, for example {@code
+ * [{"key":"figure.png"},{"key":"article.pdf"}]}.
  */
 @Data
 @NoArgsConstructor

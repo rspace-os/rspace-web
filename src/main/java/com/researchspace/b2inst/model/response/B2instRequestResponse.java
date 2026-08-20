@@ -10,11 +10,10 @@ import lombok.NoArgsConstructor;
 /**
  * The community-submission request object, returned by the review and submit calls.
  *
- * <p>Creating the review ({@code PUT /api/records/{id}/draft/review}) returns it in
- * {@code "created"} status carrying the {@code submit} action link the connector
- * extracts from {@code links.actions.submit}. Posting that submit link
- * returns the same object in {@code "submitted"} status with the
- * curator actions ({@code accept}, {@code decline}, {@code cancel}) instead.</p>
+ * <p>Creating the review ({@code PUT /api/records/{id}/draft/review}) returns it in {@code
+ * "created"} status carrying the {@code submit} action link the connector extracts from {@code
+ * links.actions.submit}. Posting that submit link returns the same object in {@code "submitted"}
+ * status with the curator actions ({@code accept}, {@code decline}, {@code cancel}) instead.
  */
 @Data
 @NoArgsConstructor

@@ -8,17 +8,6 @@ import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.ExtraField;
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,6 +24,17 @@ import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -44,14 +44,12 @@ import org.apache.commons.lang3.Validate;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
 import org.hibernate.envers.RelationTargetAuditMode;
+import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
-import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
 
-/**
- * Represents RSpace Inventory Container.
- */
+/** Represents RSpace Inventory Container. */
 @Entity
 @Audited
 @Getter
@@ -65,35 +63,40 @@ public class Container extends MovableInventoryRecord implements Serializable {
   private static final long serialVersionUID = 1015505407767174705L;
 
   public enum ContainerType {
-    LIST, GRID, IMAGE, WORKBENCH
+    LIST,
+    GRID,
+    IMAGE,
+    WORKBENCH
   }
 
   private ContainerType containerType = ContainerType.LIST;
 
   private User owner;
 
-	@IndexedEmbedded(name = "extraFields")
-	private List<ExtraField> extraFields = new ArrayList<>();
+  @IndexedEmbedded(name = "extraFields")
+  private List<ExtraField> extraFields = new ArrayList<>();
 
-  @IndexedEmbedded
-  private List<Barcode> barcodes = new ArrayList<>();
+  @IndexedEmbedded private List<Barcode> barcodes = new ArrayList<>();
 
   private List<DigitalObjectIdentifier> identifiers = new ArrayList<>();
 
-	@IndexedEmbedded(name = "files")
-	private List<InventoryFile> files = new ArrayList<>();
+  @IndexedEmbedded(name = "files")
+  private List<InventoryFile> files = new ArrayList<>();
 
-	private FileProperty locationsImageFileProperty;
+  private FileProperty locationsImageFileProperty;
 
   private List<ContainerLocation> locations = new ArrayList<>();
   private int locationsCount;
 
   @Setter(AccessLevel.PRIVATE)
   private int contentCount;
+
   @Setter(AccessLevel.PRIVATE)
   private int contentCountSubSamples;
+
   @Setter(AccessLevel.PRIVATE)
   private int contentCountContainers;
+
   @Setter(AccessLevel.PRIVATE)
   private int contentCountInstruments;
 
@@ -110,7 +113,10 @@ public class Container extends MovableInventoryRecord implements Serializable {
   private int gridLayoutRowsNumber;
 
   public enum GridLayoutAxisLabelEnum {
-    ABC, CBA, N123, N321
+    ABC,
+    CBA,
+    N123,
+    N321
   }
 
   private GridLayoutAxisLabelEnum gridLayoutColumnsLabelType = GridLayoutAxisLabelEnum.N123;
@@ -129,7 +135,6 @@ public class Container extends MovableInventoryRecord implements Serializable {
     this.containerType = type;
   }
 
-
   /**
    * Makes a valid ListContainer with no content
    *
@@ -138,8 +143,8 @@ public class Container extends MovableInventoryRecord implements Serializable {
    * @param canStoreInstruments
    * @return
    */
-  public static Container createListContainer(boolean canStoreContainers, boolean canStoreSamples,
-      boolean canStoreInstruments) {
+  public static Container createListContainer(
+      boolean canStoreContainers, boolean canStoreSamples, boolean canStoreInstruments) {
     Container rc = new Container(ContainerType.LIST);
     rc.setAllowedStoredTypes(canStoreContainers, canStoreSamples, canStoreInstruments);
     return rc;
@@ -155,8 +160,12 @@ public class Container extends MovableInventoryRecord implements Serializable {
    * @param canStoreInstruments
    * @return
    */
-  public static Container createGridContainer(int columns, int rows, boolean canStoreContainers,
-      boolean canStoreSamples, boolean canStoreInstruments) {
+  public static Container createGridContainer(
+      int columns,
+      int rows,
+      boolean canStoreContainers,
+      boolean canStoreSamples,
+      boolean canStoreInstruments) {
     Validate.isTrue(rows > 0 && columns > 0);
     Container rc = new Container(ContainerType.GRID);
     rc.configureAsGridLayoutContainer(columns, rows);
@@ -172,15 +181,15 @@ public class Container extends MovableInventoryRecord implements Serializable {
    * @param canStoreInstruments
    * @return
    */
-  public static Container createImageContainer(boolean canStoreContainers,
-      boolean canStoreSamples, boolean canStoreInstruments) {
+  public static Container createImageContainer(
+      boolean canStoreContainers, boolean canStoreSamples, boolean canStoreInstruments) {
     Container rc = new Container(ContainerType.IMAGE);
     rc.setAllowedStoredTypes(canStoreContainers, canStoreSamples, canStoreInstruments);
     return rc;
   }
 
-  private void setAllowedStoredTypes(boolean canStoreContainers, boolean canStoreSamples,
-      boolean canStoreInstruments) {
+  private void setAllowedStoredTypes(
+      boolean canStoreContainers, boolean canStoreSamples, boolean canStoreInstruments) {
     Validate.isTrue(canStoreContainers || canStoreSamples || canStoreInstruments);
     setCanStoreContainers(canStoreContainers);
     setCanStoreSamples(canStoreSamples);
@@ -201,21 +210,21 @@ public class Container extends MovableInventoryRecord implements Serializable {
     return gridLayoutColumnsLabelType;
   }
 
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 20)
-	@NotNull
-	public GridLayoutAxisLabelEnum getGridLayoutRowsLabelType() {
-		return gridLayoutRowsLabelType;
-	}
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  @NotNull
+  public GridLayoutAxisLabelEnum getGridLayoutRowsLabelType() {
+    return gridLayoutRowsLabelType;
+  }
 
-	@ManyToOne
-	@JoinColumn(nullable = false)
-	@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-	@IndexedEmbedded
-	@IndexingDependency(reindexOnUpdate = ReindexOnUpdate.SHALLOW)
-	public User getOwner() {
-		return owner;
-	}
+  @ManyToOne
+  @JoinColumn(nullable = false)
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  @IndexedEmbedded
+  @IndexingDependency(reindexOnUpdate = ReindexOnUpdate.SHALLOW)
+  public User getOwner() {
+    return owner;
+  }
 
   /**
    * @return the list of extra fields of this Container, including deleted fields.
@@ -267,16 +276,16 @@ public class Container extends MovableInventoryRecord implements Serializable {
     return files;
   }
 
-	protected void setFiles(List<InventoryFile> files) {
-		this.files = files;
-		refreshActiveAttachedFiles();
-	}
+  protected void setFiles(List<InventoryFile> files) {
+    this.files = files;
+    refreshActiveAttachedFiles();
+  }
 
-	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-	@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-	public FileProperty getLocationsImageFileProperty() {
-		return locationsImageFileProperty;
-	}
+  @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  public FileProperty getLocationsImageFileProperty() {
+    return locationsImageFileProperty;
+  }
 
   @NotAudited
   @OneToMany(cascade = CascadeType.ALL, mappedBy = "container", orphanRemoval = true)
@@ -295,20 +304,26 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   @Transient
   public List<Container> getStoredContainers() {
-    return locations.stream().map(ContainerLocation::getStoredContainer)
-        .filter(Objects::nonNull).collect(toCollection(() -> new ArrayList<>()));
+    return locations.stream()
+        .map(ContainerLocation::getStoredContainer)
+        .filter(Objects::nonNull)
+        .collect(toCollection(() -> new ArrayList<>()));
   }
 
   @Transient
   public List<SubSample> getStoredSubSamples() {
-    return locations.stream().map(ContainerLocation::getStoredSubSample)
-        .filter(Objects::nonNull).collect(toCollection(() -> new ArrayList<>()));
+    return locations.stream()
+        .map(ContainerLocation::getStoredSubSample)
+        .filter(Objects::nonNull)
+        .collect(toCollection(() -> new ArrayList<>()));
   }
 
   @Transient
   public List<Instrument> getStoredInstruments() {
-    return locations.stream().map(ContainerLocation::getStoredInstrument)
-        .filter(Objects::nonNull).collect(toCollection(() -> new ArrayList<>()));
+    return locations.stream()
+        .map(ContainerLocation::getStoredInstrument)
+        .filter(Objects::nonNull)
+        .collect(toCollection(() -> new ArrayList<>()));
   }
 
   @Transient
@@ -325,16 +340,17 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   public ContainerLocation addToNewLocation(MovableInventoryRecord record) {
     if (!isListLayoutContainer() && !isWorkbench()) {
-      throw new IllegalArgumentException(getContainerType()
-          + " container cannot store content without providing specific coordinates");
+      throw new IllegalArgumentException(
+          getContainerType()
+              + " container cannot store content without providing specific coordinates");
     }
     ContainerLocation newLocation = createOrRetrieveLocationWithCoords(locations.size() + 1, 1);
     setRecordInLocation(record, newLocation);
     return newLocation;
   }
 
-  public ContainerLocation addToNewLocationWithCoords(MovableInventoryRecord record, Integer coordX,
-      Integer coordY) {
+  public ContainerLocation addToNewLocationWithCoords(
+      MovableInventoryRecord record, Integer coordX, Integer coordY) {
     if (isListLayoutContainer() || isWorkbench()) {
       throw new IllegalArgumentException(
           getContainerType() + " container can't use explicit location coordinates");
@@ -362,8 +378,8 @@ public class Container extends MovableInventoryRecord implements Serializable {
     validateNewCoordinates(coordX, coordY);
 
     // if location already exists, return it
-    Optional<ContainerLocation> existingLocation = findSavedLocationByIdOrCoordinates(null, coordX,
-        coordY);
+    Optional<ContainerLocation> existingLocation =
+        findSavedLocationByIdOrCoordinates(null, coordX, coordY);
     if (existingLocation.isPresent()) {
       return existingLocation.get();
     }
@@ -378,21 +394,27 @@ public class Container extends MovableInventoryRecord implements Serializable {
     return newLocation;
   }
 
-  public Optional<ContainerLocation> findSavedLocationByIdOrCoordinates(Long id, Integer coordX,
-      Integer coordY) {
+  public Optional<ContainerLocation> findSavedLocationByIdOrCoordinates(
+      Long id, Integer coordX, Integer coordY) {
     return locations.stream()
-        .filter(l -> (id != null && id.equals(l.getId())) ||
-            (coordX != null && coordX.equals(l.getCoordX()) && coordY != null && coordY.equals(
-                l.getCoordY())))
+        .filter(
+            l ->
+                (id != null && id.equals(l.getId()))
+                    || (coordX != null
+                        && coordX.equals(l.getCoordX())
+                        && coordY != null
+                        && coordY.equals(l.getCoordY())))
         .findAny();
   }
 
   private void validateNewCoordinates(Integer coordX, Integer coordY) {
     if (isGridLayoutContainer()) {
       if (coordX > getGridLayoutColumnsNumber() || coordY > getGridLayoutRowsNumber()) {
-        throw new IllegalArgumentException(String.format("Requested new location (%d,%d) "
-                + "is outside grid container dimensions (columns:%d, rows:%d)", coordX, coordY,
-            getGridLayoutColumnsNumber(), getGridLayoutRowsNumber()));
+        throw new IllegalArgumentException(
+            String.format(
+                "Requested new location (%d,%d) "
+                    + "is outside grid container dimensions (columns:%d, rows:%d)",
+                coordX, coordY, getGridLayoutColumnsNumber(), getGridLayoutRowsNumber()));
       }
     }
   }
@@ -422,7 +444,9 @@ public class Container extends MovableInventoryRecord implements Serializable {
     InventoryRecord currentlyStoredRecord = location.getStoredRecord();
     if (currentlyStoredRecord != null && !currentlyStoredRecord.equals(record)) {
       throw new IllegalArgumentException(
-          "Location: " + location.getId() + " is already taken by the record: "
+          "Location: "
+              + location.getId()
+              + " is already taken by the record: "
               + currentlyStoredRecord.getGlobalIdentifier());
     }
     location.addStoredRecord(record);
@@ -476,8 +500,9 @@ public class Container extends MovableInventoryRecord implements Serializable {
       }
     }
 
-    if (!(record.isContainer() && canStoreContainers) && !(record.isSubSample()
-        && canStoreSamples) && !(record.isInstrument() && canStoreInstruments)) {
+    if (!(record.isContainer() && canStoreContainers)
+        && !(record.isSubSample() && canStoreSamples)
+        && !(record.isInstrument() && canStoreInstruments)) {
       throw new IllegalArgumentException(
           "Container " + getGlobalIdentifier() + " can't hold record of type: " + record.getType());
     }
@@ -519,8 +544,8 @@ public class Container extends MovableInventoryRecord implements Serializable {
     }
   }
 
-  public void configureAsGridLayoutContainer(int gridLayoutColumnsNumber,
-      int gridLayoutRowsNumber) {
+  public void configureAsGridLayoutContainer(
+      int gridLayoutColumnsNumber, int gridLayoutRowsNumber) {
     this.gridLayoutColumnsNumber = gridLayoutColumnsNumber;
     this.gridLayoutRowsNumber = gridLayoutRowsNumber;
 
@@ -563,7 +588,8 @@ public class Container extends MovableInventoryRecord implements Serializable {
     if (!canStoreContainers && !canStoreSamples && !canStoreInstruments) {
       throw new ConstraintViolationException(
           "Container cannot have all \"canStoreSamples\", \"canStoreContainers\" and "
-              + "\"canStoreInstruments\" set to false", null);
+              + "\"canStoreInstruments\" set to false",
+          null);
     }
     if (!canStoreContainers && !getStoredContainers().isEmpty()) {
       throw new ConstraintViolationException(
@@ -579,7 +605,6 @@ public class Container extends MovableInventoryRecord implements Serializable {
           "Container has \"canStoreInstruments\" set to false, but also has a stored instrument",
           null);
     }
-
   }
 
   @Override
@@ -637,4 +662,3 @@ public class Container extends MovableInventoryRecord implements Serializable {
     return RESERVED_FIELD_NAMES;
   }
 }
-

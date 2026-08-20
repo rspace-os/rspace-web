@@ -7,10 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Topic of a {@link B2instRequestResponse}: identifies the draft record the request
- * concerns.
- */
+/** Topic of a {@link B2instRequestResponse}: identifies the draft record the request concerns. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

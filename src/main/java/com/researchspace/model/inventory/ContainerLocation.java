@@ -1,7 +1,5 @@
 package com.researchspace.model.inventory;
 
-import java.io.Serializable;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,7 +11,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Transient;
 import jakarta.validation.ConstraintViolationException;
-
+import java.io.Serializable;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -39,16 +37,19 @@ public class ContainerLocation implements Serializable {
   @ManyToOne(optional = false, cascade = CascadeType.MERGE) // cannot be null
   private Container container;
 
-  @OneToOne(mappedBy = "parentLocation", cascade = {CascadeType.PERSIST, CascadeType.MERGE,
-      CascadeType.REFRESH})
+  @OneToOne(
+      mappedBy = "parentLocation",
+      cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
   private Container storedContainer;
 
-  @OneToOne(mappedBy = "parentLocation", cascade = {CascadeType.PERSIST, CascadeType.MERGE,
-      CascadeType.REFRESH})
+  @OneToOne(
+      mappedBy = "parentLocation",
+      cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
   private SubSample storedSubSample;
 
-  @OneToOne(mappedBy = "parentLocation", cascade = {CascadeType.PERSIST, CascadeType.MERGE,
-      CascadeType.REFRESH})
+  @OneToOne(
+      mappedBy = "parentLocation",
+      cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
   private Instrument storedInstrument;
 
   private int coordX;
@@ -57,7 +58,6 @@ public class ContainerLocation implements Serializable {
   public ContainerLocation(Container parentContainer) {
     container = parentContainer;
   }
-
 
   @Transient
   public InventoryRecord getStoredRecord() {
@@ -72,8 +72,8 @@ public class ContainerLocation implements Serializable {
   }
 
   /**
-   * Shouldn't be called directly, use
-   * {@link Container#setRecordInLocation(MovableInventoryRecord, ContainerLocation)}
+   * Shouldn't be called directly, use {@link Container#setRecordInLocation(MovableInventoryRecord,
+   * ContainerLocation)}
    *
    * @param record
    */
@@ -94,9 +94,7 @@ public class ContainerLocation implements Serializable {
     }
   }
 
-  /**
-   * Shouldn't be called directly, use {@link Container#removeStoredRecord(ContainerLocation)}
-   */
+  /** Shouldn't be called directly, use {@link Container#removeStoredRecord(ContainerLocation)} */
   void removeStoredRecord() {
     setStoredContainer(null);
     setStoredSubSample(null);
@@ -112,13 +110,15 @@ public class ContainerLocation implements Serializable {
     parentCount = storedInstrument == null ? parentCount : ++parentCount;
     if (parentCount > 1) {
       throw new ConstraintViolationException(
-          "Location cannot store more than one item of the following: container, subsample, instrument",
+          "Location cannot store more than one item of the following: container, subsample,"
+              + " instrument",
           null);
     }
     if (coordY < 1 || coordX < 1) {
-      throw new ConstraintViolationException(String.format(
-          "Valid location coordinates start at (1,1), cannot be (%d,%d)", coordX, coordY), null);
+      throw new ConstraintViolationException(
+          String.format(
+              "Valid location coordinates start at (1,1), cannot be (%d,%d)", coordX, coordY),
+          null);
     }
   }
-
 }

@@ -5,9 +5,10 @@ package com.researchspace.model;
  * @sunny
  */
 
-import java.io.Serializable;
-import java.util.Date;
-
+import com.researchspace.core.util.DateUtil;
+import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.session.SessionTimeZoneUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -21,18 +22,12 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlType;
-
+import java.io.Serializable;
+import java.util.Date;
 import org.hibernate.envers.Audited;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.KeywordField;
-
-import com.researchspace.core.util.DateUtil;
-import com.researchspace.model.core.GlobalIdPrefix;
-import com.researchspace.model.core.GlobalIdentifier;
-import com.researchspace.session.SessionTimeZoneUtils;
-
-
 
 @Entity
 @Audited
@@ -41,160 +36,158 @@ import com.researchspace.session.SessionTimeZoneUtils;
 @XmlType
 @XmlAccessorType(XmlAccessType.NONE)
 public class EcatCommentItem implements Serializable, IFieldLinkableElement {
-	@Transient
-	private static final long serialVersionUID = BaseEntity.serialVersionUID;
+  @Transient private static final long serialVersionUID = BaseEntity.serialVersionUID;
 
-	private Long itemId;
-	private Long comId;
-	@FullTextField(analyzer = "structureAnalyzer")
-	private String itemName;
-	@FullTextField(analyzer = "structureAnalyzer", name = "fields_fieldData")
-	private String itemContent;
-	@KeywordField(name = "owner_username")
-	private String lastUpdater;
-	private Date createDate;
-	private Date updateDate;
-	private int gmt_offset;
+  private Long itemId;
+  private Long comId;
 
-	private EcatComment ecatComment;
+  @FullTextField(analyzer = "structureAnalyzer")
+  private String itemName;
 
-	/**
-	 * Default constructor for hibernate
-	 */
-	public EcatCommentItem() {
-		itemName = "NONE";
-		lastUpdater = "NONE";
-		createDate = new Date();
-		updateDate = new Date();
-	}
+  @FullTextField(analyzer = "structureAnalyzer", name = "fields_fieldData")
+  private String itemContent;
 
-	/**
-	 * Public constructor for test/prod usage
-	 */
-	public EcatCommentItem(EcatComment parentComment, String comment, User user) {
-		this();
-		setComId(parentComment.getComId());
-		setItemContent(comment);
-		setLastUpdater(user.getUsername());
-		setGmt_offset(DateUtil.getRealGMT(gmt_offset));
-	}
+  @KeywordField(name = "owner_username")
+  private String lastUpdater;
 
-	public EcatCommentItem shallowCopy() {
-		EcatCommentItem copy = new EcatCommentItem();
-		copy.setCreateDate(new Date(getCreateDate().getTime()));
-		copy.setGmt_offset(gmt_offset);
-		copy.setItemContent(itemContent);
-		copy.setItemName(itemName);
+  private Date createDate;
+  private Date updateDate;
+  private int gmt_offset;
 
-		copy.setUpdateDate(new Date(getCreateDate().getTime()));
-		copy.setLastUpdater(lastUpdater);
-		return copy;
-	}
+  private EcatComment ecatComment;
 
-	@Id
-	@Column(name = "item_id")
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	public Long getItemId() {
-		return itemId;
-	}
+  /** Default constructor for hibernate */
+  public EcatCommentItem() {
+    itemName = "NONE";
+    lastUpdater = "NONE";
+    createDate = new Date();
+    updateDate = new Date();
+  }
 
-	public void setItemId(Long itemId) {
-		this.itemId = itemId;
-	}
+  /** Public constructor for test/prod usage */
+  public EcatCommentItem(EcatComment parentComment, String comment, User user) {
+    this();
+    setComId(parentComment.getComId());
+    setItemContent(comment);
+    setLastUpdater(user.getUsername());
+    setGmt_offset(DateUtil.getRealGMT(gmt_offset));
+  }
 
-	@Column(name = "com_id")
-	public Long getComId() {
-		return comId;
-	}
+  public EcatCommentItem shallowCopy() {
+    EcatCommentItem copy = new EcatCommentItem();
+    copy.setCreateDate(new Date(getCreateDate().getTime()));
+    copy.setGmt_offset(gmt_offset);
+    copy.setItemContent(itemContent);
+    copy.setItemName(itemName);
 
-	public void setComId(Long comId) {
-		this.comId = comId;
-	}
+    copy.setUpdateDate(new Date(getCreateDate().getTime()));
+    copy.setLastUpdater(lastUpdater);
+    return copy;
+  }
 
-	@Column(name = "item_name")
-	public String getItemName() {
-		return itemName;
-	}
+  @Id
+  @Column(name = "item_id")
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  public Long getItemId() {
+    return itemId;
+  }
 
-	public void setItemName(String itemName) {
-		this.itemName = itemName;
-	}
+  public void setItemId(Long itemId) {
+    this.itemId = itemId;
+  }
 
-	@Column(name = "item_content", length = 1000)
-	@XmlElement
-	public String getItemContent() {
-		return itemContent;
-	}
+  @Column(name = "com_id")
+  public Long getComId() {
+    return comId;
+  }
 
-	public void setItemContent(String itemContent) {
-		this.itemContent = itemContent;
-	}
+  public void setComId(Long comId) {
+    this.comId = comId;
+  }
 
-	@Column(name = "updater_id")
-	@XmlElement
-	public String getLastUpdater() {
-		return lastUpdater;
-	}
+  @Column(name = "item_name")
+  public String getItemName() {
+    return itemName;
+  }
 
-	public void setLastUpdater(String lastUpdater) {
-		this.lastUpdater = lastUpdater;
-	}
+  public void setItemName(String itemName) {
+    this.itemName = itemName;
+  }
 
-	@Column(name = "create_date")
-	@XmlElement
-	public Date getCreateDate() {
-		return createDate == null ? null : new Date(createDate.getTime());
-	}
+  @Column(name = "item_content", length = 1000)
+  @XmlElement
+  public String getItemContent() {
+    return itemContent;
+  }
 
-	public void setCreateDate(Date createDate) {
-		this.createDate = createDate == null ? null : new Date(createDate.getTime());
-	}
+  public void setItemContent(String itemContent) {
+    this.itemContent = itemContent;
+  }
 
-	@Column(name = "update_date")
-	@XmlElement
-	public Date getUpdateDate() {
-		return updateDate == null ? null : new Date(updateDate.getTime());
-	}
+  @Column(name = "updater_id")
+  @XmlElement
+  public String getLastUpdater() {
+    return lastUpdater;
+  }
 
-	public void setUpdateDate(Date updateDate) {
-		this.updateDate = updateDate == null ? null : new Date(updateDate.getTime());
-	}
+  public void setLastUpdater(String lastUpdater) {
+    this.lastUpdater = lastUpdater;
+  }
 
-	@Column(name = "gmt_offset")
-	public int getGmt_offset() {
-		return gmt_offset;
-	}
+  @Column(name = "create_date")
+  @XmlElement
+  public Date getCreateDate() {
+    return createDate == null ? null : new Date(createDate.getTime());
+  }
 
-	public void setGmt_offset(int gmt_offset) {
-		this.gmt_offset = gmt_offset;
-	}
+  public void setCreateDate(Date createDate) {
+    this.createDate = createDate == null ? null : new Date(createDate.getTime());
+  }
 
-	@ManyToOne
-	@JoinColumn(name = "com_id", insertable = false, updatable = false, nullable = false)
-	public EcatComment getEcatComment() {
-		return ecatComment;
-	}
+  @Column(name = "update_date")
+  @XmlElement
+  public Date getUpdateDate() {
+    return updateDate == null ? null : new Date(updateDate.getTime());
+  }
 
-	public void setEcatComment(EcatComment ecatComment) {
-		this.ecatComment = ecatComment;
-	}
+  public void setUpdateDate(Date updateDate) {
+    this.updateDate = updateDate == null ? null : new Date(updateDate.getTime());
+  }
 
-	@Transient
-	public String getFormatDate() {
-		String out = new SessionTimeZoneUtils().formatDateTimeForClient(createDate);
-		return out;
-	}
+  @Column(name = "gmt_offset")
+  public int getGmt_offset() {
+    return gmt_offset;
+  }
 
-	@Override
-	@Transient
-	public Long getId() {
-		return getItemId();
-	}
+  public void setGmt_offset(int gmt_offset) {
+    this.gmt_offset = gmt_offset;
+  }
 
-	@Override
-	@Transient
-	public GlobalIdentifier getOid() {
-		return new GlobalIdentifier(GlobalIdPrefix.CM, getId());
-	}
+  @ManyToOne
+  @JoinColumn(name = "com_id", insertable = false, updatable = false, nullable = false)
+  public EcatComment getEcatComment() {
+    return ecatComment;
+  }
 
+  public void setEcatComment(EcatComment ecatComment) {
+    this.ecatComment = ecatComment;
+  }
+
+  @Transient
+  public String getFormatDate() {
+    String out = new SessionTimeZoneUtils().formatDateTimeForClient(createDate);
+    return out;
+  }
+
+  @Override
+  @Transient
+  public Long getId() {
+    return getItemId();
+  }
+
+  @Override
+  @Transient
+  public GlobalIdentifier getOid() {
+    return new GlobalIdentifier(GlobalIdPrefix.CM, getId());
+  }
 }

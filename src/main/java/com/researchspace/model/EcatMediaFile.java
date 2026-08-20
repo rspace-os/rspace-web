@@ -1,20 +1,4 @@
-
 package com.researchspace.model;
-
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Transient;
-import jakarta.xml.bind.annotation.XmlRootElement;
-
-import org.hibernate.envers.Audited;
-import org.hibernate.envers.RelationTargetAuditMode;
 
 import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.model.core.GlobalIdPrefix;
@@ -23,177 +7,183 @@ import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.ImportOverride;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordInformation;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Transient;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
-/**
- * Basic model used to represent all media Files (images,video,audio,documents).
- * 
- */
+/** Basic model used to represent all media Files (images,video,audio,documents). */
 @Entity
 @Audited
 @XmlRootElement
 public abstract class EcatMediaFile extends Record implements Serializable, Convertible {
 
-	private static final long serialVersionUID = 427646974518947698L;
+  private static final long serialVersionUID = 427646974518947698L;
 
-	private String fileName;
-	private String contentType;
-	private String extension;
-	private long size;
-	private long version = 1;
+  private String fileName;
+  private String contentType;
+  private String extension;
+  private long size;
+  private long version = 1;
 
-	private Set<FieldAttachment> linkedFields = new HashSet<>();
-	private Set<RecordAttachment> linkedRecords = new HashSet<>();
-	private FileProperty fileProperty;
+  private Set<FieldAttachment> linkedFields = new HashSet<>();
+  private Set<RecordAttachment> linkedRecords = new HashSet<>();
+  private FileProperty fileProperty;
 
-	public EcatMediaFile() {
-		addType(RecordType.MEDIA_FILE);
-	}
-	
-	public EcatMediaFile(ImportOverride override) {
-		super(override);
-		addType(RecordType.MEDIA_FILE);
-	}
+  public EcatMediaFile() {
+    addType(RecordType.MEDIA_FILE);
+  }
 
-	@Transient
-	protected GlobalIdPrefix getGlobalIdPrefix() {
-		return GlobalIdPrefix.GL;
-	}
+  public EcatMediaFile(ImportOverride override) {
+    super(override);
+    addType(RecordType.MEDIA_FILE);
+  }
 
-	@Transient
-	public abstract String getRecordInfoType();
+  @Transient
+  protected GlobalIdPrefix getGlobalIdPrefix() {
+    return GlobalIdPrefix.GL;
+  }
 
-	public String getFileName() {
-		return fileName;
-	}
+  @Transient
+  public abstract String getRecordInfoType();
 
-	public void setFileName(String fileName) {
-		this.fileName = fileName;
-	}
+  public String getFileName() {
+    return fileName;
+  }
 
-	@Transient
-	@Override
-	public boolean isMediaRecord() {
-		return true;
-	}
+  public void setFileName(String fileName) {
+    this.fileName = fileName;
+  }
 
-	public String getContentType() {
-		return contentType;
-	}
+  @Transient
+  @Override
+  public boolean isMediaRecord() {
+    return true;
+  }
 
-	public void setContentType(String contentType) {
-		this.contentType = contentType;
-	}
+  public String getContentType() {
+    return contentType;
+  }
 
-	/**
-	 * Delegates to FileProperty to find URI of underlying file in file store
-	 */
-	@Transient
-	public String getFileUri() {
-		if (getFileProperty() != null) {
-			return getFileProperty().getAbsolutePathUri();
-		} else {
-			return "unknown";
-		}
-	}
+  public void setContentType(String contentType) {
+    this.contentType = contentType;
+  }
 
-	public String getExtension() {
-		return extension;
-	}
+  /** Delegates to FileProperty to find URI of underlying file in file store */
+  @Transient
+  public String getFileUri() {
+    if (getFileProperty() != null) {
+      return getFileProperty().getAbsolutePathUri();
+    } else {
+      return "unknown";
+    }
+  }
 
-	public void setExtension(String extension) {
-		this.extension = extension;
-	}
+  public String getExtension() {
+    return extension;
+  }
 
-	public long getVersion() {
-		return version;
-	}
+  public void setExtension(String extension) {
+    this.extension = extension;
+  }
 
-	public void setVersion(long version) {
-		this.version = version;
-	}
+  public long getVersion() {
+    return version;
+  }
 
-	public EcatMediaFile shallowCopyEcatMedia(EcatMediaFile copy) {
-		copy.setContentType(this.getContentType());
-		copy.setExtension(this.getExtension());
-		copy.setSize(this.size);
-		this.shallowCopyRecordInfo(copy);
-		return copy;
-	}
+  public void setVersion(long version) {
+    this.version = version;
+  }
 
-	public long getSize() {
-		return size;
-	}
+  public EcatMediaFile shallowCopyEcatMedia(EcatMediaFile copy) {
+    copy.setContentType(this.getContentType());
+    copy.setExtension(this.getExtension());
+    copy.setSize(this.size);
+    this.shallowCopyRecordInfo(copy);
+    return copy;
+  }
 
-	public void setSize(long size) {
-		this.size = size;
-	}
+  public long getSize() {
+    return size;
+  }
 
-	@OneToMany(fetch = FetchType.LAZY, mappedBy = "mediaFile")
-	public Set<FieldAttachment> getLinkedFields() {
-		return linkedFields;
-	}
+  public void setSize(long size) {
+    this.size = size;
+  }
 
-	void setLinkedFields(Set<FieldAttachment> linkedFields) {
-		this.linkedFields = linkedFields;
-	}
+  @OneToMany(fetch = FetchType.LAZY, mappedBy = "mediaFile")
+  public Set<FieldAttachment> getLinkedFields() {
+    return linkedFields;
+  }
 
-	@OneToMany(fetch = FetchType.LAZY, mappedBy = "mediaFile")
-	public Set<RecordAttachment> getLinkedRecords() {
-		return linkedRecords;
-	}
+  void setLinkedFields(Set<FieldAttachment> linkedFields) {
+    this.linkedFields = linkedFields;
+  }
 
-	void setLinkedRecords(Set<RecordAttachment> linkedRecords) {
-		this.linkedRecords = linkedRecords;
-	}
+  @OneToMany(fetch = FetchType.LAZY, mappedBy = "mediaFile")
+  public Set<RecordAttachment> getLinkedRecords() {
+    return linkedRecords;
+  }
 
-	public RecordInformation toRecordInfo() {
-		RecordInformation info = super.toRecordInfo();
-		info.setExtension(getExtension());
-		info.setSize(getSize());
-		info.setType(getRecordInfoType());
-		info.setVersion(getVersion());
-		return info;
-	}
+  void setLinkedRecords(Set<RecordAttachment> linkedRecords) {
+    this.linkedRecords = linkedRecords;
+  }
 
-	/**
-	 * Boolean test for whether records is an Audio/Video file or not.
-	 * 
-	 * @return
-	 */
-	@Transient
-	public boolean isAV() {
-		return false;
-	}
-	
-	@Transient
-	public boolean isAudio(){
-		return false;
-	}
-	
-	@Transient
-	public boolean isVideo(){
-		return false;
-	}
+  public RecordInformation toRecordInfo() {
+    RecordInformation info = super.toRecordInfo();
+    info.setExtension(getExtension());
+    info.setSize(getSize());
+    info.setType(getRecordInfoType());
+    info.setVersion(getVersion());
+    return info;
+  }
 
-	@Transient
-	public boolean isChemistryFile(){
-		return false;
-	}
+  /**
+   * Boolean test for whether records is an Audio/Video file or not.
+   *
+   * @return
+   */
+  @Transient
+  public boolean isAV() {
+    return false;
+  }
 
-	@Override
-	@Transient
-	public GlobalIdentifier getOidWithVersion() {
-		return new GlobalIdentifier(getGlobalIdPrefix(), getId(), getVersion());
-	}
+  @Transient
+  public boolean isAudio() {
+    return false;
+  }
 
-	@ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-	@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-	public FileProperty getFileProperty() {
-		return fileProperty;
-	}
+  @Transient
+  public boolean isVideo() {
+    return false;
+  }
 
-	public void setFileProperty(FileProperty fileProperty) {
-		this.fileProperty = fileProperty;
-	}
+  @Transient
+  public boolean isChemistryFile() {
+    return false;
+  }
 
+  @Override
+  @Transient
+  public GlobalIdentifier getOidWithVersion() {
+    return new GlobalIdentifier(getGlobalIdPrefix(), getId(), getVersion());
+  }
+
+  @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  public FileProperty getFileProperty() {
+    return fileProperty;
+  }
+
+  public void setFileProperty(FileProperty fileProperty) {
+    this.fileProperty = fileProperty;
+  }
 }

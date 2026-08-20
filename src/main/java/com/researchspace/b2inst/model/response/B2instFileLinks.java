@@ -7,9 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Per-entry links carried on a {@link B2instDraftFile}.
- */
+/** Per-entry links carried on a {@link B2instDraftFile}. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

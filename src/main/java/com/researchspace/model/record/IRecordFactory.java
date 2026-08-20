@@ -27,7 +27,6 @@ import com.researchspace.model.units.QuantityInfo;
  */
 public interface IRecordFactory {
 
-
   StructuredDocument createStructuredDocument(String name, User createdBy, RSForm form);
 
   /**
@@ -38,9 +37,8 @@ public interface IRecordFactory {
    * @param form
    * @param override
    */
-  StructuredDocument createStructuredDocument(String name, User createdBy, final RSForm form,
-      ImportOverride override);
-
+  StructuredDocument createStructuredDocument(
+      String name, User createdBy, final RSForm form, ImportOverride override);
 
   Folder createFolder(String name, User createdBy);
 
@@ -139,8 +137,8 @@ public interface IRecordFactory {
   /**
    * Creates new Inventory Sample, with a default empty SubSample, owner and expiry date set.
    *
-   * @param name           sample name
-   * @param createdBy      creator and owner of the sample
+   * @param name sample name
+   * @param createdBy creator and owner of the sample
    * @param sampleTemplate template to create sample from.
    */
   Sample createSample(String name, User createdBy, SampleTemplate sampleTemplate);
@@ -148,14 +146,14 @@ public interface IRecordFactory {
   /**
    * Creates new Inventory Sample, with no fields and a default empty SubSample.
    *
-   * @param name      sample name
+   * @param name sample name
    * @param createdBy creator and owner of the sample
    */
   Sample createSample(String name, User createdBy);
 
   /**
-   * Creates a new SubSample attached to the given {@link SampleEntity}
-   * (a {@link Sample}, or a {@link SampleTemplate} when building a template's default subsample).
+   * Creates a new SubSample attached to the given {@link SampleEntity} (a {@link Sample}, or a
+   * {@link SampleTemplate} when building a template's default subsample).
    *
    * @param name subsample name
    * @param createdBy creator and owner
@@ -168,7 +166,7 @@ public interface IRecordFactory {
   /**
    * Creates new Inventory Sample Template, with no fields and a default empty SubSample.
    *
-   * @param name      template name
+   * @param name template name
    * @param createdBy creator and owner of the template
    */
   SampleTemplate createSampleTemplate(String name, User createdBy);
@@ -176,11 +174,10 @@ public interface IRecordFactory {
   /**
    * Creates new Inventory instrument, with no fields
    *
-   * @param name      instrument name
+   * @param name instrument name
    * @param createdBy creator and owner of the instrument
    */
   Instrument createInstrument(String name, User createdBy, InstrumentTemplate instrumentTemplate);
-
 
   Container createListContainer(String name, User createdBy);
 
@@ -189,16 +186,16 @@ public interface IRecordFactory {
   /**
    * Creates extra field of given type, assigned to provided inventory record.
    *
-   * @param name      optional field name (if empty, default will be used)
-   * @param type      currently supported are FieldType.STRING and NUMBER
+   * @param name optional field name (if empty, default will be used)
+   * @param type currently supported are FieldType.STRING and NUMBER
    * @param createdBy creating user
-   * @param invRec    sample/subsample
+   * @param invRec sample/subsample
    */
   ExtraField createExtraField(String name, FieldType type, User createdBy, InventoryRecord invRec);
 
   /**
-   * Creates extra field of given type. See also
-   * {{@link #createExtraField(String, FieldType, User, InventoryRecord)}.
+   * Creates extra field of given type. See also {{@link #createExtraField(String, FieldType, User,
+   * InventoryRecord)}.
    *
    * @param type currently supported are FieldType.STRING and NUMBER
    */
@@ -206,13 +203,12 @@ public interface IRecordFactory {
 
   ListOfMaterials createListOfMaterials(String name, Field field);
 
-  MaterialUsage createMaterialUsage(ListOfMaterials parentLom, InventoryRecord invRec,
-      QuantityInfo usedQuantity);
+  MaterialUsage createMaterialUsage(
+      ListOfMaterials parentLom, InventoryRecord invRec, QuantityInfo usedQuantity);
 
   Basket createBasket(String name, User owner);
 
   InventoryFile createInventoryFile(String fileName, FileProperty fileProperty, User createdBy);
 
   DigitalObjectIdentifier createDoiIdentifier(String identifier);
-
 }

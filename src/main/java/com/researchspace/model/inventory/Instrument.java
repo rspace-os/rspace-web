@@ -3,14 +3,14 @@ package com.researchspace.model.inventory;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import java.util.Date;
-import java.util.Optional;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Transient;
+import java.util.Date;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -23,9 +23,7 @@ import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDe
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.ObjectPath;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.PropertyValue;
 
-/**
- * Represents RSpace Inventory Instrument
- */
+/** Represents RSpace Inventory Instrument */
 @Entity
 @DiscriminatorValue("Instrument")
 @Audited
@@ -37,21 +35,21 @@ public class Instrument extends InstrumentEntity {
 
   /**
    * If this instrument was created from a template, returns the template, else {@code null}.
-   * <p>
-   * This will be {@code null} if any of the following are true:
+   *
+   * <p>This will be {@code null} if any of the following are true:
+   *
    * <ul>
-   * <li> This Instrument <em>is</em> a template
-   * <li> This Instrument is a free-form instrument created from scratch, not using a template.
+   *   <li>This Instrument <em>is</em> a template
+   *   <li>This Instrument is a free-form instrument created from scratch, not using a template.
    * </ul>
+   *
    * This association is lazy-loaded.
    *
    * @return
    */
   private InstrumentTemplate instrumentTemplate;
 
-  /**
-   * Version of the template on which this instrument is based on.
-   */
+  /** Version of the template on which this instrument is based on. */
   @Setter(value = AccessLevel.PROTECTED)
   private Long templateLinkedVersion;
 
@@ -84,7 +82,6 @@ public class Instrument extends InstrumentEntity {
     return false;
   }
 
-
   @Transient
   @Override
   public GlobalIdPrefix getGlobalIdPrefix() {
@@ -110,14 +107,14 @@ public class Instrument extends InstrumentEntity {
 
   @Transient
   @GenericField
-  @IndexingDependency(derivedFrom = @ObjectPath(@PropertyValue(propertyName = "instrumentTemplate")))
+  @IndexingDependency(
+      derivedFrom = @ObjectPath(@PropertyValue(propertyName = "instrumentTemplate")))
   public Long getParentTemplateId() {
     if (getInstrumentTemplate() != null) {
       return getInstrumentTemplate().getId();
     }
     return null;
   }
-
 
   public boolean updateToLatestTemplateVersion() {
     if (getInstrumentTemplate() == null) {
@@ -160,8 +157,11 @@ public class Instrument extends InstrumentEntity {
 
   private Optional<InventoryEntityField> getFieldByTemplateFieldId(Long id) {
     return getFields().stream()
-        .filter(sf -> id != null && sf.getTemplateField() != null && id.equals(
-            sf.getTemplateField().getId()))
+        .filter(
+            sf ->
+                id != null
+                    && sf.getTemplateField() != null
+                    && id.equals(sf.getTemplateField().getId()))
         .findFirst();
   }
 
@@ -179,5 +179,4 @@ public class Instrument extends InstrumentEntity {
     copiedInstrument.setTemplateLinkedVersion(getTemplateLinkedVersion());
     return copiedInstrument;
   }
-
 }

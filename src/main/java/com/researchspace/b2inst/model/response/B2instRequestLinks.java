@@ -8,8 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Links carried on a {@link B2instRequestResponse}, including the
- * {@link #actions} block whose {@code submit} link submits the request to the community.
+ * Links carried on a {@link B2instRequestResponse}, including the {@link #actions} block whose
+ * {@code submit} link submits the request to the community.
  */
 @Data
 @NoArgsConstructor

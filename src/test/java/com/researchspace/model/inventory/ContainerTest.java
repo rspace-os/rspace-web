@@ -44,13 +44,16 @@ public class ContainerTest {
     listContainer.setId(1L);
 
     // try creating locations explicitly - only allowed for image container
-    IllegalArgumentException iae = Assertions.assertThrows(IllegalArgumentException.class,
-        () -> listContainer.createNewImageContainerLocation(2, 2));
+    IllegalArgumentException iae =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> listContainer.createNewImageContainerLocation(2, 2));
     assertEquals("LIST container cannot add locations directly", iae.getMessage());
     assertEquals(0, listContainer.getLocations().size());
     assertEquals(0, listContainer.getLocationsCount());
 
-    // try adding subsample to unspecified location for each container - only allowed for list container
+    // try adding subsample to unspecified location for each container - only allowed for list
+    // container
     SubSample subSample = new SubSample();
     listContainer.addToNewLocation(new SubSample());
     assertEquals(1, listContainer.getContentCount());
@@ -59,9 +62,12 @@ public class ContainerTest {
     assertEquals(1, listContainer.getLocations().size());
     assertEquals(0, listContainer.getLocationsCount());
 
-    // try adding subsample to location with coordinates for each container - allowed for grid/image containers
-    iae = Assertions.assertThrows(IllegalArgumentException.class,
-        () -> listContainer.addToNewLocationWithCoords(subSample, 2, 2));
+    // try adding subsample to location with coordinates for each container - allowed for grid/image
+    // containers
+    iae =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> listContainer.addToNewLocationWithCoords(subSample, 2, 2));
     assertEquals("LIST container can't use explicit location coordinates", iae.getMessage());
     assertEquals(1, listContainer.getContentCount()); // previously added
     assertEquals(1, listContainer.getLocations().size());
@@ -76,39 +82,49 @@ public class ContainerTest {
     assertTrue(gridContainer6by4.isCanStoreContainers());
 
     // try creating locations explicitly - only allowed for image container
-    IllegalArgumentException iae = Assertions.assertThrows(IllegalArgumentException.class,
-        () -> gridContainer6by4.createNewImageContainerLocation(2, 2));
+    IllegalArgumentException iae =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> gridContainer6by4.createNewImageContainerLocation(2, 2));
     assertEquals("GRID container cannot add locations directly", iae.getMessage());
     assertEquals(0, gridContainer6by4.getLocations().size());
     assertEquals(24, gridContainer6by4.getLocationsCount());
 
-    // try adding subsample to unspecified location for each container - only allowed for list container
+    // try adding subsample to unspecified location for each container - only allowed for list
+    // container
     SubSample subSample = new SubSample();
-    iae = Assertions.assertThrows(IllegalArgumentException.class,
-        () -> gridContainer6by4.addToNewLocation(subSample));
-    assertEquals("GRID container cannot store content without providing specific coordinates",
+    iae =
+        Assertions.assertThrows(
+            IllegalArgumentException.class, () -> gridContainer6by4.addToNewLocation(subSample));
+    assertEquals(
+        "GRID container cannot store content without providing specific coordinates",
         iae.getMessage());
     assertEquals(0, gridContainer6by4.getContentCount());
     assertEquals(0, gridContainer6by4.getLocations().size());
 
     // for grid container: try adding subsample to location with wrong coordinates
-    iae = Assertions.assertThrows(IllegalArgumentException.class,
-        () -> gridContainer6by4.addToNewLocationWithCoords(subSample, 7, 2));
+    iae =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> gridContainer6by4.addToNewLocationWithCoords(subSample, 7, 2));
     assertEquals(
         "Requested new location (7,2) is outside grid container dimensions (columns:6, rows:4)",
         iae.getMessage());
     assertEquals(0, gridContainer6by4.getContentCount());
     assertEquals(0, gridContainer6by4.getLocations().size());
 
-    iae = Assertions.assertThrows(IllegalArgumentException.class,
-        () -> gridContainer6by4.addToNewLocationWithCoords(subSample, 2, 5));
+    iae =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> gridContainer6by4.addToNewLocationWithCoords(subSample, 2, 5));
     assertEquals(
         "Requested new location (2,5) is outside grid container dimensions (columns:6, rows:4)",
         iae.getMessage());
     assertEquals(0, gridContainer6by4.getContentCount());
     assertEquals(0, gridContainer6by4.getLocations().size());
 
-    // try adding subsample to location with coordinates for each container - allowed for grid/image containers
+    // try adding subsample to location with coordinates for each container - allowed for grid/image
+    // containers
     gridContainer6by4.addToNewLocationWithCoords(subSample, 2, 2);
     assertEquals(1, gridContainer6by4.getContentCount());
     assertEquals(1, gridContainer6by4.getContentCountSubSamples());
@@ -127,20 +143,26 @@ public class ContainerTest {
     assertEquals(1, imageContainer.getLocations().size());
     assertEquals(1, imageContainer.getLocationsCount());
 
-    // try adding subsample to unspecified location for each container - only allowed for list container
+    // try adding subsample to unspecified location for each container - only allowed for list
+    // container
     SubSample subSample = new SubSample();
-    IllegalArgumentException iae = Assertions.assertThrows(IllegalArgumentException.class,
-        () -> imageContainer.addToNewLocation(subSample));
-    assertEquals("IMAGE container cannot store content without providing specific coordinates",
+    IllegalArgumentException iae =
+        Assertions.assertThrows(
+            IllegalArgumentException.class, () -> imageContainer.addToNewLocation(subSample));
+    assertEquals(
+        "IMAGE container cannot store content without providing specific coordinates",
         iae.getMessage());
     assertEquals(0, imageContainer.getContentCount());
     assertEquals(1, imageContainer.getLocations().size());
 
-    // try adding subsample to location with coordinates for each container - allowed for grid/image containers
-    iae = Assertions.assertThrows(IllegalArgumentException.class,
-        () -> imageContainer.addToNewLocationWithCoords(subSample, 2, 2));
-    assertEquals("Image container must provide target location id, not coordinates",
-        iae.getMessage());
+    // try adding subsample to location with coordinates for each container - allowed for grid/image
+    // containers
+    iae =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> imageContainer.addToNewLocationWithCoords(subSample, 2, 2));
+    assertEquals(
+        "Image container must provide target location id, not coordinates", iae.getMessage());
     assertEquals(0, imageContainer.getContentCount());
     assertEquals(1, imageContainer.getLocations().size());
     // image container can add using location though
@@ -192,8 +214,10 @@ public class ContainerTest {
 
     subSample.moveToNewParentWithCoords(gridContainer6by4, 2, 2);
     assertEquals(gridContainer6by4.getId(), subSample.getParentId());
-    IllegalArgumentException iae = Assertions.assertThrows(IllegalArgumentException.class,
-        () -> movingContainer.moveToNewParentWithCoords(gridContainer6by4, 2, 3));
+    IllegalArgumentException iae =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> movingContainer.moveToNewParentWithCoords(gridContainer6by4, 2, 3));
     assertEquals("Container IC3 can't hold record of type: CONTAINER", iae.getMessage());
     assertEquals(0, listContainer2.getContentCount());
     assertEquals(0, listContainer2.getLocations().size());
@@ -278,12 +302,26 @@ public class ContainerTest {
     // copy is unattached, has no parent.
     assertNull(copy.getParentLocation());
     assertNull(copy.getId());
-    Set<String> toIgnore = TransformerUtils.toSet("id",
-        "activeExtraFields", "extraFields", "activeBarcodes", "barcodes",
-        "attachedFiles", "files", "parentLocation", "editInfo", "locations",
-        "contentCount", "contentCountSubSamples", "contentCountContainers");
+    Set<String> toIgnore =
+        TransformerUtils.toSet(
+            "id",
+            "activeExtraFields",
+            "extraFields",
+            "activeBarcodes",
+            "barcodes",
+            "attachedFiles",
+            "files",
+            "parentLocation",
+            "editInfo",
+            "locations",
+            "contentCount",
+            "contentCountSubSamples",
+            "contentCountContainers");
 
-    ModelTestUtils.assertCopiedFieldsAreEqual(copy, listContainer, toIgnore,
+    ModelTestUtils.assertCopiedFieldsAreEqual(
+        copy,
+        listContainer,
+        toIgnore,
         TransformerUtils.toList(Container.class, InventoryRecord.class));
   }
 
@@ -305,7 +343,7 @@ public class ContainerTest {
 
     Container copy = imgContainer.copy(anyUser);
     assertTrue(copy.getName().contains("_COPY"));
-    //locations are copied, but are empty
+    // locations are copied, but are empty
     assertEquals(0, copy.getContentCount());
     assertEquals(2, copy.getLocations().size());
     // container locations are new:
@@ -314,12 +352,26 @@ public class ContainerTest {
     // copy is unattached, has no parent.
     assertNull(copy.getParentLocation());
     assertNull(copy.getId());
-    Set<String> toIgnore = TransformerUtils.toSet("id",
-        "activeExtraFields", "extraFields", "activeBarcodes", "barcodes",
-        "attachedFiles", "files", "parentLocation", "editInfo", "locations",
-        "contentCount", "contentCountSubSamples", "contentCountContainers");
+    Set<String> toIgnore =
+        TransformerUtils.toSet(
+            "id",
+            "activeExtraFields",
+            "extraFields",
+            "activeBarcodes",
+            "barcodes",
+            "attachedFiles",
+            "files",
+            "parentLocation",
+            "editInfo",
+            "locations",
+            "contentCount",
+            "contentCountSubSamples",
+            "contentCountContainers");
 
-    ModelTestUtils.assertCopiedFieldsAreEqual(copy, imgContainer, toIgnore,
+    ModelTestUtils.assertCopiedFieldsAreEqual(
+        copy,
+        imgContainer,
+        toIgnore,
         TransformerUtils.toList(Container.class, InventoryRecord.class));
   }
 
@@ -352,11 +404,25 @@ public class ContainerTest {
     assertNull(copy.getParentLocation());
     assertEquals(40, copy.getLocationsCount());
 
-    Set<String> toIgnore = TransformerUtils.toSet("id", "activeExtraFields",
-        "extraFields", "activeBarcodes", "barcodes", "attachedFiles", "files",
-        "parentLocation", "editInfo", "locations",
-        "contentCount", "contentCountSubSamples", "contentCountContainers");
-    ModelTestUtils.assertCopiedFieldsAreEqual(copy, gridContainer, toIgnore,
+    Set<String> toIgnore =
+        TransformerUtils.toSet(
+            "id",
+            "activeExtraFields",
+            "extraFields",
+            "activeBarcodes",
+            "barcodes",
+            "attachedFiles",
+            "files",
+            "parentLocation",
+            "editInfo",
+            "locations",
+            "contentCount",
+            "contentCountSubSamples",
+            "contentCountContainers");
+    ModelTestUtils.assertCopiedFieldsAreEqual(
+        copy,
+        gridContainer,
+        toIgnore,
         TransformerUtils.toList(Container.class, InventoryRecord.class));
   }
 
@@ -395,8 +461,8 @@ public class ContainerTest {
     assertNotNull(containerToMove.getLastMoveDate());
 
     // try moving workbench
-    IllegalArgumentException iae = assertThrows(IllegalArgumentException.class,
-        () -> workbench.moveToNewParent(topContainer));
+    IllegalArgumentException iae =
+        assertThrows(IllegalArgumentException.class, () -> workbench.moveToNewParent(topContainer));
     assertEquals("Workbench cannot be moved into other container", iae.getMessage());
 
     // try copy workbench
@@ -404,15 +470,17 @@ public class ContainerTest {
     assertEquals("Workbench cannot be copied", iae.getMessage());
 
     // try setting last non-workbench parent to workbench
-    iae = assertThrows(IllegalArgumentException.class,
-        () -> containerToMove.setLastNonWorkbenchParent(workbench));
+    iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> containerToMove.setLastNonWorkbenchParent(workbench));
     assertEquals("Can't set workbench as lastNonWorkbenchParent", iae.getMessage());
 
     // try attaching a file to workbench
-    iae = assertThrows(IllegalArgumentException.class,
-        () -> workbench.addAttachedFile(new InventoryFile(null, null)));
+    iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> workbench.addAttachedFile(new InventoryFile(null, null)));
     assertEquals("Can't attach files to Workbench", iae.getMessage());
   }
-
-
 }

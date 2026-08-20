@@ -2,25 +2,22 @@ package com.researchspace.model.core;
 
 import java.util.Date;
 
-/**
- * Core methods supported by all record-like objects in RSpace.
- */
+/** Core methods supported by all record-like objects in RSpace. */
 public interface IRSpaceDoc {
 
-	String getName();
+  String getName();
 
-	Long getId();
-	
-	String getGlobalIdentifier();
+  Long getId();
 
-	boolean isMediaRecord();
+  String getGlobalIdentifier();
 
-	boolean isStructuredDocument();
+  boolean isMediaRecord();
 
-	Person getOwner();
+  boolean isStructuredDocument();
 
-	Date getCreationDate();
+  Person getOwner();
 
-	Date getModificationDateAsDate();
+  Date getCreationDate();
 
+  Date getModificationDateAsDate();
 }

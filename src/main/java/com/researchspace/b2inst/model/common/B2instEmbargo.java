@@ -7,9 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * B2instEmbargo settings attached to a record's {@link B2instAccess}.
- */
+/** B2instEmbargo settings attached to a record's {@link B2instAccess}. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

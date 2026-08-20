@@ -14,8 +14,9 @@ import org.hibernate.envers.Audited;
 
 /**
  * A structured Sample template field of type 'link'. It holds a single optional {@link
- * InventoryLink} value (one target + relation + optional version pin) and a pipe-delimited whitelist
- * of permitted DataCite relation types. A null/empty whitelist means all relation types are allowed.
+ * InventoryLink} value (one target + relation + optional version pin) and a pipe-delimited
+ * whitelist of permitted DataCite relation types. A null/empty whitelist means all relation types
+ * are allowed.
  *
  * <p>Distinct from {@link ExtraLinkField}, which is the record-level extra-field link; this is part
  * of the {@link InventoryEntityField} single-table hierarchy used to define template fields.
@@ -71,11 +72,11 @@ public class InventoryLinkField extends InventoryEntityField {
   }
 
   /**
-   * A link is legitimately left unfilled when existing samples are synced to a template version that
-   * newly marks the link mandatory; it is populated by a later, separate link update (where {@link
-   * #isValidValueForMandatoryField} does enforce a real target + relation type). So an empty
-   * mandatory link must not abort the bulk "update samples to latest template version" run, unlike a
-   * data-column field, which would still require a value.
+   * A link is legitimately left unfilled when existing samples are synced to a template version
+   * that newly marks the link mandatory; it is populated by a later, separate link update (where
+   * {@link #isValidValueForMandatoryField} does enforce a real target + relation type). So an empty
+   * mandatory link must not abort the bulk "update samples to latest template version" run, unlike
+   * a data-column field, which would still require a value.
    */
   @Override
   @Transient
@@ -83,7 +84,9 @@ public class InventoryLinkField extends InventoryEntityField {
     return false;
   }
 
-  /** Also clears the link association, where this field type holds its value (not the data column). */
+  /**
+   * Also clears the link association, where this field type holds its value (not the data column).
+   */
   @Override
   public void clearValue() {
     super.clearValue();

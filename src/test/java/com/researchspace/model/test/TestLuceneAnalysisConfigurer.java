@@ -4,12 +4,13 @@ import org.hibernate.search.backend.lucene.analysis.LuceneAnalysisConfigurationC
 import org.hibernate.search.backend.lucene.analysis.LuceneAnalysisConfigurer;
 
 /**
- * Test-only mirror of the production analysis configurer (which lives in rspace-web and is therefore
- * not on the core-model classpath). Hibernate Search 7 bootstraps strictly, so every analyzer /
- * normalizer referenced by an indexed entity must be defined before the SessionFactory can be built.
- * Defines the analyzers referenced by the core-model entity annotations: {@code structureAnalyzer}
- * (used both as an analyzer and, on {@code User}, as a normalizer), {@code axiopeanalyzer} and
- * {@code aclAnalyzer}. Keep in sync with {@code RSpaceLuceneAnalysisConfigurer} in rspace-web.
+ * Test-only mirror of the production analysis configurer (which lives in rspace-web and is
+ * therefore not on the core-model classpath). Hibernate Search 7 bootstraps strictly, so every
+ * analyzer / normalizer referenced by an indexed entity must be defined before the SessionFactory
+ * can be built. Defines the analyzers referenced by the core-model entity annotations: {@code
+ * structureAnalyzer} (used both as an analyzer and, on {@code User}, as a normalizer), {@code
+ * axiopeanalyzer} and {@code aclAnalyzer}. Keep in sync with {@code RSpaceLuceneAnalysisConfigurer}
+ * in rspace-web.
  */
 public class TestLuceneAnalysisConfigurer implements LuceneAnalysisConfigurer {
 

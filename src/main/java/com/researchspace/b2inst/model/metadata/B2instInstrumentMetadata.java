@@ -12,12 +12,11 @@ import lombok.NoArgsConstructor;
 /**
  * PIDINST core metadata profile for a B2INST instrument record.
  *
- * <p>This object is the {@code metadata} block sent when creating a draft record
- * and echoed back, with a server-populated {@link #communityExtension},
- * inside the draft record. The JSON keys follow the PIDINST
- * PascalCase convention (except the server-populated {@code community_extension},
- * which is snake_case) and are mapped to idiomatic Java field names via
- * {@link JsonProperty}.</p>
+ * <p>This object is the {@code metadata} block sent when creating a draft record and echoed back,
+ * with a server-populated {@link #communityExtension}, inside the draft record. The JSON keys
+ * follow the PIDINST PascalCase convention (except the server-populated {@code
+ * community_extension}, which is snake_case) and are mapped to idiomatic Java field names via
+ * {@link JsonProperty}.
  */
 @Data
 @NoArgsConstructor
@@ -83,8 +82,8 @@ public class B2instInstrumentMetadata {
   private List<B2instRelatedIdentifier> relatedIdentifier;
 
   /**
-   * Community-specific schema extension. Omitted (or empty) on creation and
-   * populated by the server with any community extension fields when read back.
+   * Community-specific schema extension. Omitted (or empty) on creation and populated by the server
+   * with any community extension fields when read back.
    */
   @JsonProperty("community_extension")
   private Map<String, Object> communityExtension;

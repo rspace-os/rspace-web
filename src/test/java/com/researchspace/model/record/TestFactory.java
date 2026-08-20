@@ -51,9 +51,7 @@ import java.util.Random;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 
-/**
- * Utility class for creating test fixtures .
- */
+/** Utility class for creating test fixtures . */
 public class TestFactory {
 
   static RecordFactory rf = new RecordFactory();
@@ -100,7 +98,7 @@ public class TestFactory {
   /**
    * Creates a group and populates it with users
    *
-   * @param pi     The group PI
+   * @param pi The group PI
    * @param others optionally, Any other group members.
    * @return
    */
@@ -217,9 +215,9 @@ public class TestFactory {
   public static DateFieldForm createDateFieldForm() {
     DateFieldForm dft = new DateFieldForm();
     dft.setFormat("yyyy-MM-dd");
-    dft.setMinValue(5000000);//01 Jan 1970
-    dft.setMaxValue(10000000000000L);//20 Nov 2286
-    dft.setDefaultDate(100000000);//02 Jan 1970
+    dft.setMinValue(5000000); // 01 Jan 1970
+    dft.setMaxValue(10000000000000L); // 20 Nov 2286
+    dft.setDefaultDate(100000000); // 02 Jan 1970
     dft.setName("datefield");
     return dft;
   }
@@ -269,9 +267,13 @@ public class TestFactory {
     User u = createAnyUser(uname);
     Role role = new Role(roleName);
     u.addRole(role);
-    Set<String> perms = TransformerUtils.toSet("FORM:READ:property_global=true",
-        "COMMS:READ:property_name=SIMPLEMESSAGE", "COMMS:READ:property_name=REQUESTRECORDREVIEW",
-        "FORM:CREATE,READ,WRITE,SHARE,DELETE:property_owner=${self}", "FORM:CREATE");
+    Set<String> perms =
+        TransformerUtils.toSet(
+            "FORM:READ:property_global=true",
+            "COMMS:READ:property_name=SIMPLEMESSAGE",
+            "COMMS:READ:property_name=REQUESTRECORDREVIEW",
+            "FORM:CREATE,READ,WRITE,SHARE,DELETE:property_owner=${self}",
+            "FORM:CREATE");
     ConstraintPermissionResolver parser = new ConstraintPermissionResolver();
     for (String perm : perms) {
       role.addPermission(parser.resolvePermission(perm));
@@ -348,8 +350,8 @@ public class TestFactory {
    * @param fileRoot
    * @return
    */
-  public static FileProperty createAFileProperty(File actualFile, User owner,
-      FileStoreRoot fileRoot) {
+  public static FileProperty createAFileProperty(
+      File actualFile, User owner, FileStoreRoot fileRoot) {
     FileProperty fp = new FileProperty();
     fp.setRoot(fileRoot);
     fp.setFileName(actualFile.getName());
@@ -370,12 +372,10 @@ public class TestFactory {
     return sft;
   }
 
-  /**
-   * creates a thumnnail with all fields id and parent ID, and a real image set in its ImageBlob
-   */
+  /** creates a thumnnail with all fields id and parent ID, and a real image set in its ImageBlob */
   public static Thumbnail createThumbnail(int width, int height) throws IOException {
-    InputStream inputStream = RSpaceModelTestUtils.getInputStreamOnFromTestResourcesFolder(
-        "tester-core-model.png");
+    InputStream inputStream =
+        RSpaceModelTestUtils.getInputStreamOnFromTestResourcesFolder("tester-core-model.png");
     byte[] imageBytes = IOUtils.toByteArray(inputStream);
 
     Thumbnail thumbnail1 = new Thumbnail();
@@ -403,7 +403,7 @@ public class TestFactory {
   }
 
   /**
-   * Creates a  RSMath object with a real SVG content for 'x^2'. ID is not set.
+   * Creates a RSMath object with a real SVG content for 'x^2'. ID is not set.
    *
    * @return
    * @throws IOException
@@ -468,7 +468,8 @@ public class TestFactory {
 
   public static Sample createComplexSampleInContainer(User user) {
     Container cont = rf.createListContainer("test", user);
-    SampleTemplate sampleTemplate = rf.createComplexSampleTemplate("complex template", "for tests", user);
+    SampleTemplate sampleTemplate =
+        rf.createComplexSampleTemplate("complex template", "for tests", user);
     Sample sample = rf.createSample("test complex sample", user, sampleTemplate);
     sample.getSubSamples().get(0).moveToNewParent(cont);
     return sample;
@@ -505,11 +506,12 @@ public class TestFactory {
     FileProperty f3 = createAnyTransientFileProperty(user);
     InventoryFile invFile = new InventoryFile("testFileName.txt", f3);
     sample.addAttachedFile(invFile);
-    DigitalObjectIdentifier igsnIdentifier = new DigitalObjectIdentifier("testIGSN",
-        "testIGSN title");
-    igsnIdentifier.addOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.CREATOR_NAME,
-        "testCreator");
-    igsnIdentifier.addOtherListData(DigitalObjectIdentifier.IdentifierOtherListProperty.SUBJECTS,
+    DigitalObjectIdentifier igsnIdentifier =
+        new DigitalObjectIdentifier("testIGSN", "testIGSN title");
+    igsnIdentifier.addOtherData(
+        DigitalObjectIdentifier.IdentifierOtherProperty.CREATOR_NAME, "testCreator");
+    igsnIdentifier.addOtherListData(
+        DigitalObjectIdentifier.IdentifierOtherListProperty.SUBJECTS,
         List.of("subject1", "subject2"));
     sample.addIdentifier(igsnIdentifier);
 
@@ -529,8 +531,8 @@ public class TestFactory {
     return sample;
   }
 
-  private static List<SubSample> createBasicSubSamples(User user, Sample sample,
-      int numSubSamples) {
+  private static List<SubSample> createBasicSubSamples(
+      User user, Sample sample, int numSubSamples) {
     List<SubSample> result = new ArrayList<>();
     Container container = sample.getSubSamples().get(0).getParentContainer();
     for (int i = 0; i < numSubSamples; i++) {
@@ -541,13 +543,13 @@ public class TestFactory {
     return result;
   }
 
-  public static ExtraNumberField createExtraNumberField(String name,
-      User createdBy, InventoryRecord invRec) {
+  public static ExtraNumberField createExtraNumberField(
+      String name, User createdBy, InventoryRecord invRec) {
     return (ExtraNumberField) rf.createExtraField(name, FieldType.NUMBER, createdBy, invRec);
   }
 
-  public static ExtraTextField createExtraTextField(String name,
-      User createdBy, InventoryRecord invRec) {
+  public static ExtraTextField createExtraTextField(
+      String name, User createdBy, InventoryRecord invRec) {
     return (ExtraTextField) rf.createExtraField(name, FieldType.TEXT, createdBy, invRec);
   }
 
@@ -612,5 +614,4 @@ public class TestFactory {
     container.setImageFileProperty(f1);
     container.setThumbnailFileProperty(f2);
   }
-
 }

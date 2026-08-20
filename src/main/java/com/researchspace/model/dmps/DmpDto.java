@@ -40,8 +40,7 @@ public class DmpDto {
       return false;
     }
     DmpDto dmpDto = (DmpDto) o;
-    return Objects.equals(dmpId, dmpDto.dmpId) &&
-        Objects.equals(source, dmpDto.source);
+    return Objects.equals(dmpId, dmpDto.dmpId) && Objects.equals(source, dmpDto.source);
   }
 
   @Override

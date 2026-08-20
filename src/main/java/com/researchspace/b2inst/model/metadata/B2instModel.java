@@ -7,9 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Manufacturer model of the instrument (PIDINST {@code Model}).
- */
+/** Manufacturer model of the instrument (PIDINST {@code Model}). */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

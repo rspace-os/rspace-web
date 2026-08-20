@@ -1,9 +1,7 @@
 package com.researchspace.model.stoichiometry;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import com.researchspace.model.RSChemElement;
+import com.researchspace.model.record.Record;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,9 +16,10 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
-
-import com.researchspace.model.RSChemElement;
-import com.researchspace.model.record.Record;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -46,8 +45,10 @@ public class Stoichiometry {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  // there's no natural key for ensuring uniqueness before Stoichiometry entities are persisted to the db,
-  // therefore use this UUID. We need to ensure uniqueness in the case where Stoichiometry entities are
+  // there's no natural key for ensuring uniqueness before Stoichiometry entities are persisted to
+  // the db,
+  // therefore use this UUID. We need to ensure uniqueness in the case where Stoichiometry entities
+  // are
   // exported to another rspace instance before they're persisted.
   @Builder.Default
   @Column(unique = true, nullable = false, length = 36)
@@ -57,7 +58,8 @@ public class Stoichiometry {
   // owning Record has its own eagerly-reachable folder-membership collection (RecordToFolder). If
   // these to-one associations were join-fetched in the same query, that collection would join too
   // and produce a `molecules x folderMemberships` Cartesian product, so once the document is shared
-  // (and therefore lives in more than one folder) every molecule row is returned duplicated. Loading
+  // (and therefore lives in more than one folder) every molecule row is returned duplicated.
+  // Loading
   // these to-one associations via a separate select keeps them out of the molecules join. The
   // persisted rows are unaffected; this only governs how the eager graph is read back.
   @ManyToOne
@@ -72,10 +74,10 @@ public class Stoichiometry {
 
   @Builder.Default
   @OneToMany(
-          mappedBy = "stoichiometry",
-          cascade = CascadeType.ALL,
-          orphanRemoval = true,
-          fetch = jakarta.persistence.FetchType.EAGER)
+      mappedBy = "stoichiometry",
+      cascade = CascadeType.ALL,
+      orphanRemoval = true,
+      fetch = jakarta.persistence.FetchType.EAGER)
   private List<StoichiometryMolecule> molecules = new ArrayList<>();
 
   @Column(name = "last_modified")

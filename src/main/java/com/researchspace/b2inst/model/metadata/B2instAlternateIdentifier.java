@@ -7,10 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Local or alternate identifier of the instrument
- * (PIDINST {@code AlternateIdentifier}).
- */
+/** Local or alternate identifier of the instrument (PIDINST {@code AlternateIdentifier}). */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

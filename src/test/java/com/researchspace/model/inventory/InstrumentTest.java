@@ -79,7 +79,8 @@ public class InstrumentTest {
     assertFalse(justCopy.isTemplate());
     IllegalStateException iae =
         assertThrows(IllegalStateException.class, () -> justCopy.copyFromTemplate(anyUser));
-    assertEquals("Only an InstrumentTemplate can be used to copy from a template", iae.getMessage());
+    assertEquals(
+        "Only an InstrumentTemplate can be used to copy from a template", iae.getMessage());
 
     InstrumentTemplate anotherTemplate = (InstrumentTemplate) justCopy.copyToTemplate(anyUser);
     assertTrue(anotherTemplate.isTemplate());
@@ -162,7 +163,8 @@ public class InstrumentTest {
     assertNotNull(instrument.getParentLocation());
     assertTrue(instrument.isStoredInContainer());
     assertNotNull(instrument.getLastMoveDate());
-    assertNull(instrument.getLastNonWorkbenchParent()); // first move, no previous non-workbench parent
+    assertNull(
+        instrument.getLastNonWorkbenchParent()); // first move, no previous non-workbench parent
     assertEquals(1, container.getContentCount());
 
     instrument.removeFromCurrentParent();
@@ -217,8 +219,9 @@ public class InstrumentTest {
   @Test
   public void setLastNonWorkbenchParentRejectsWorkbench() {
     Container workbench = TestFactory.createWorkbench(anyUser);
-    IllegalArgumentException iae = assertThrows(IllegalArgumentException.class,
-        () -> instrument.setLastNonWorkbenchParent(workbench));
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class, () -> instrument.setLastNonWorkbenchParent(workbench));
     assertEquals("Can't set workbench as lastNonWorkbenchParent", iae.getMessage());
   }
 
@@ -236,7 +239,8 @@ public class InstrumentTest {
     assertFalse(copy.isStoredInContainer());
   }
 
-  private InventoryTextField buildTextField(Long id, Integer columnIndex, String name, String data) {
+  private InventoryTextField buildTextField(
+      Long id, Integer columnIndex, String name, String data) {
     InventoryTextField field = new InventoryTextField(name);
     field.setId(id);
     field.setColumnIndex(columnIndex);
@@ -250,9 +254,3 @@ public class InstrumentTest {
     instrumentEntity.refreshActiveFieldsAndColumnIndex();
   }
 }
-
-
-
-
-
-

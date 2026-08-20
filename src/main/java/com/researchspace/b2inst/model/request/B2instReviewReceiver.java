@@ -8,8 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Receiver of a {@link B2instReviewRequest}: identifies the community the draft is
- * being submitted to.
+ * Receiver of a {@link B2instReviewRequest}: identifies the community the draft is being submitted
+ * to.
  */
 @Data
 @NoArgsConstructor

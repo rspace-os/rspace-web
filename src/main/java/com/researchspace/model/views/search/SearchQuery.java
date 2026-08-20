@@ -3,15 +3,11 @@ package com.researchspace.model.views.search;
 import lombok.Data;
 import lombok.NonNull;
 
-/**
- * Class represents the query fields for advanced searches in JSON format.
- */
+/** Class represents the query fields for advanced searches in JSON format. */
 @Data
 public class SearchQuery {
 
-	@NonNull
-	private SearchType searchType;
+  @NonNull private SearchType searchType;
 
-	@NonNull
-	private String searchTerm;
+  @NonNull private String searchTerm;
 }
