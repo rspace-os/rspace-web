@@ -50,7 +50,9 @@ class LimitedBytesFromURLRetrieverTest {
   }
 
   @Test
-  @Timeout(1)
+  // DNS resolution of the invalid host is not bounded by the retriever's connect
+  // timeout and can stall for seconds when the suite runs under load
+  @Timeout(10)
   void timeoutTriggeredForInvalidURL() {
     int timeoutMillis = 100;
     LimitedBytesFromURLRetriever urlRetriever = new LimitedBytesFromURLRetriever(timeoutMillis, 10);
