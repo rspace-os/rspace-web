@@ -769,6 +769,16 @@
       <version>5.4.3</version>
     </dependency>
     <dependency>
+      <!-- architecture fence: keeps the sources imported from the absorbed
+           core-util/audit/core-model repositories from depending on
+           rspace-web-owned code, preserving the layering the repo split used
+           to enforce at compile time -->
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit</artifactId>
+      <version>1.5.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
     </dependency>
