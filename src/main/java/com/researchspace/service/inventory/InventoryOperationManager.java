@@ -20,6 +20,12 @@ import com.researchspace.model.User;
 public interface InventoryOperationManager {
 
   /**
+   * Precondition: the request must already have passed the structural validation the operations
+   * endpoint applies (InventoryOperationPostValidator): every origin carries a non-null id and a
+   * non-null, unit-bearing amountTaken, and origin ids are unique. The implementation dereferences
+   * these without guards, so a future non-controller caller that skips validation would fail
+   * mid-transaction instead of cleanly.
+   *
    * @return the newly created sample (with its subsamples), as returned by the sample-creation
    *     manager, or {@code null} for a terminal operation that creates nothing (noOutput, e.g.
    *     Destroy, which only acts on its origins). See DevDocs/adr/0013.

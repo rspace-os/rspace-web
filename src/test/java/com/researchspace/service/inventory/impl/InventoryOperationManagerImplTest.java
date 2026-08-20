@@ -171,6 +171,30 @@ class InventoryOperationManagerImplTest {
     verify(subSampleApiMgr).updateApiSubSample(update.capture(), eq(user));
     assertEquals(Long.valueOf(100L), update.getValue().getId());
     assertEquals("disposed", update.getValue().getExtraFields().get(0).getName());
+    // The sparse update DTO must carry null tags: a non-null empty list means "clear all tags" in
+    // applyChangesToDatabaseInventoryRecord, which would silently wipe a tagged origin's tags.
+    assertNull(update.getValue().getTags());
+  }
+
+  @Test
+  void decrementsOriginsInAscendingIdOrderToAvoidLockOrderDeadlocks() {
+    // Two concurrent multi-origin operations over overlapping origins must acquire row locks in a
+    // consistent order; the manager therefore mutates origins sorted by id, not in request order.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOrigins(
+        List.of(
+            origin(200L, new ApiQuantityInfo(new BigDecimal("1.5"), 3)),
+            origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Derived material");
+    request.setNewSample(newSample);
+    when(sampleApiMgr.createNewApiSample(newSample, user))
+        .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
+
+    manager.performOperation(request, user);
+
+    InOrder inOrder = inOrder(subSampleApiMgr);
+    inOrder.verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
+    inOrder.verify(subSampleApiMgr).registerApiSubSampleUsage(eq(200L), any(), eq(user));
   }
 
   @Test

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -20,7 +21,9 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.DTOControllerValidatorImpl;
 import com.researchspace.service.inventory.InventoryOperationManager;
+import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,12 +44,16 @@ class InventoryOperationsApiControllerTest {
   private final InventoryOperationManager operationManager = mock(InventoryOperationManager.class);
   private final User user = mock(User.class);
 
+  private final SampleApiManager sampleApiMgr = mock(SampleApiManager.class);
+
   @BeforeEach
   void wireController() {
     controller.subSampleApiMgr = subSampleApiMgr;
+    controller.sampleApiMgr = sampleApiMgr;
     controller.inputValidator = new DTOControllerValidatorImpl();
     controller.operationPostValidator = InventoryOperationPostValidatorTest.newValidator();
     controller.operationConfigs = new InventoryOperationConfigRegistry();
+    controller.sampleApiPostFullValidator = new SampleApiPostFullValidator();
     controller.inventoryOperationManager = operationManager;
   }
 
@@ -128,6 +135,42 @@ class InventoryOperationsApiControllerTest {
     controller.performOperation(request, new BeanPropertyBindingResult(request, "request"), user);
 
     verify(operationManager).performOperation(request, user);
+  }
+
+  @Test
+  void assertsEditPermissionBeforeReadingOriginState() throws Exception {
+    // getApiSubSampleById never throws for an under-permissioned caller; it returns a
+    // field-stripped copy with a null quantity, which would misreport a full origin as "empty".
+    // The permission assert must therefore run first, so the caller gets an authorization error.
+    ApiInventoryOperationPost request = aliquotRequest();
+    doThrow(new NotFoundException("no such subsample"))
+        .when(subSampleApiMgr)
+        .assertUserCanEditSubSample(100L, user);
+
+    assertThrows(
+        NotFoundException.class,
+        () ->
+            controller.performOperation(
+                request, new BeanPropertyBindingResult(request, "request"), user));
+
+    verify(subSampleApiMgr, never()).getApiSubSampleById(anyLong(), any());
+    verifyNoInteractions(operationManager);
+  }
+
+  @Test
+  void rejectsATemplateIdThatDoesNotResolveToAReadableTemplate() {
+    // Mirrors POST /samples: a bogus templateId must be a clean 400 here, not a failure inside
+    // the manager transaction after the origins were already decremented.
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().setTemplateId(999L);
+    when(sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(999L, user))
+        .thenThrow(new NotFoundException("no template"));
+
+    BindException rejection = performExpectingRejection(request);
+    assertEquals(
+        "errors.inventory.sample.templateNotFound",
+        rejection.getFieldErrors("newSample.templateId").get(0).getCode());
+    verifyNoInteractions(subSampleApiMgr);
   }
 
   @Test

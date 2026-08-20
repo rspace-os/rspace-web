@@ -1,6 +1,5 @@
 import type { ReactElement } from "react";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import SubSampleModel from "../../../stores/models/SubSampleModel";
 import { menuIDs } from "../../../util/menuIDs";
 import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import AddToBasketAction from "./AddToBasketAction";
@@ -12,7 +11,7 @@ import EditAction from "./EditAction";
 import ExportAction from "./ExportAction";
 import MoveAction from "./MoveAction";
 import PrintBarcodeAction from "./PrintBarcodeAction";
-import ProcessAction from "./ProcessAction";
+import ProcessAction, { isProcessableSelection } from "./ProcessAction";
 import RemoveFromBasketAction from "./RemoveFromBasketAction";
 import RestoreAction from "./RestoreAction";
 import SelectAction from "./SelectAction";
@@ -101,10 +100,7 @@ const contextActions = ({
             closeMenu={closeMenu}
           />
         ),
-        hidden:
-          hideInPickerAndWhenNotAllCurrent ||
-          selectedResults.length < 1 ||
-          !selectedResults.every((r) => r instanceof SubSampleModel),
+        hidden: hideInPickerAndWhenNotAllCurrent || !isProcessableSelection(selectedResults),
       },
       {
         component: (
