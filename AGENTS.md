@@ -36,7 +36,11 @@ MariaDB:
 - Frontend: `src/main/webapp/ui/src`
 - Configuration and Liquibase: `src/main/resources`
 - Developer documentation: `DevDocs/DeveloperNotes`
-- Core domain models may live in the sibling `rspace-core-model` repository.
+- Core domain models, core utilities, and the audit-trail model live in-tree
+  (absorbed from the former `rspace-core-model`, `rspace-core-util`,
+  `rspace-audit`, and `rspace-test-util` repositories). An ArchUnit test
+  (`ImportedCoreDependenciesTest`) keeps those imported sources from depending
+  on the rest of the application.
 
 Backend dependencies flow downward:
 
