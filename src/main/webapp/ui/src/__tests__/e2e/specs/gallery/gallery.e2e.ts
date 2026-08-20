@@ -1,4 +1,4 @@
-import { expect } from "@playwright/test";
+import { expect, type Frame } from "@playwright/test";
 import { test } from "@/__tests__/e2e/fixtures/flows";
 import { uniqueName } from "@/__tests__/e2e/testData";
 import { MOBILE_DEVICE } from "@/__tests__/e2e/viewports";
@@ -42,6 +42,35 @@ test.describe("Gallery", () => {
     await pageGallery.infoPanel.waitUntilSelected(fileName);
 
     await expect.poll(() => pageGallery.infoPanel.detail("Global ID")).toBe(uploaded.globalId);
+  });
+
+  /*
+   * The Create button opens a menu; it must never navigate. A stray `href`, or
+   * a default `type="submit"` inside one of the surrounding legacy JSP forms,
+   * would submit/reload the page and destroy the menu (and any unsaved state)
+   * instead. `framenavigated` covers both a full document load and a
+   * same-document SPA route change, so this catches either regression.
+   */
+  test("As a user, clicking Create opens the menu without navigating", async ({ pageGallery, page }) => {
+    await pageGallery.open();
+    await pageGallery.isLoaded();
+
+    const urlBefore = page.url();
+    const navigations: string[] = [];
+    const recordNavigation = (frame: Frame) => {
+      if (frame === page.mainFrame()) navigations.push(frame.url());
+    };
+    page.on("framenavigated", recordNavigation);
+
+    try {
+      await pageGallery.openCreateMenu();
+
+      await expect(page.getByRole("menu")).toBeVisible();
+      expect(navigations).toEqual([]);
+      expect(page.url()).toBe(urlBefore);
+    } finally {
+      page.off("framenavigated", recordNavigation);
+    }
   });
 
   test("As a user, I can switch to Tree view", async ({ pageGallery, page }) => {
