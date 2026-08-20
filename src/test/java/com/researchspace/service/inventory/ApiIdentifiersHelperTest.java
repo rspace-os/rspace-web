@@ -2,6 +2,7 @@ package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -104,5 +105,34 @@ public class ApiIdentifiersHelperTest {
     DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
 
     assertNotNull(result.getPublicLink()); // entity fallback keeps suffix-less callers safe
+  }
+
+  /**
+   * Same rule as {@code GlobalIdUrls} and {@code ApiInventoryDOI.getPublicLandingPageUrl}: with no
+   * server URL configured the address is omitted rather than persisted as the literal
+   * "null/public/inventory/...", which would surface as the identifier's url over the API.
+   */
+  @Test
+  public void createDoiToSaveOmitsLocalUrlWhenNoServerUrlIsConfigured() {
+    when(properties.getServerUrl()).thenReturn(null);
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.generatePublicLinkSuffix();
+
+    DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
+
+    assertNull(result.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
+  }
+
+  @Test
+  public void createDoiToSaveToleratesTrailingSlashOnServerUrl() {
+    when(properties.getServerUrl()).thenReturn("https://localhost:8080/");
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.generatePublicLinkSuffix();
+
+    DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
+
+    assertEquals(
+        "https://localhost:8080/public/inventory/" + apiDoi.getPublicLinkSuffix(),
+        result.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
   }
 }

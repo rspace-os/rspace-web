@@ -216,6 +216,44 @@ class RspaceToExternalProviderAdapterImplTest {
   }
 
   /**
+   * The default is recognised by its {@code /globalId/<globalId>} tail, not only by equality with
+   * the currently configured address. A deployment that has since been renamed, or that has lost
+   * its server URL setting, must not start registering the login-walled default it filled in
+   * earlier: that is the exact outcome ADR 0006 exists to prevent, and it cannot be undone once a
+   * curator accepts the record.
+   */
+  @Test
+  void materialisedDefaultIsRecognisedAfterTheServerUrlChanged() {
+    when(properties.getServerUrl()).thenReturn(null);
+    Instrument instrument = templateShapedInstrument();
+    addField(
+        instrument,
+        uriField(
+            "Landing page",
+            "https://old-name.example.com/globalId/" + instrument.getGlobalIdentifier()));
+
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
+
+    assertEquals(PUBLIC_PAGE, md.getLandingPage());
+  }
+
+  /** The same recognition with nothing to fall back to: omitted, never the login-walled default. */
+  @Test
+  void materialisedDefaultFromAnOldServerUrlIsOmittedWhenNoPublicUrlExists() {
+    when(properties.getServerUrl()).thenReturn("https://new-name.example.com");
+    Instrument instrument = templateShapedInstrument();
+    addField(
+        instrument,
+        uriField(
+            "Landing page",
+            "https://old-name.example.com/globalId/" + instrument.getGlobalIdentifier()));
+
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
+
+    assertNull(md.getLandingPage());
+  }
+
+  /**
    * With no server URL configured there is no correct address to send, and a LandingPage is baked
    * into a citable PID the moment a curator accepts the record, with no way for RSpace to update a
    * published B2INST record afterwards. So the property is omitted rather than sent site-relative:

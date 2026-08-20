@@ -34,10 +34,16 @@ address with the provider.
    when given no suffix, so callers that never carry one stay correct.
 2. The **registered landing page** sent to B2INST is the Landing page field
    when it holds a value the user typed themselves; otherwise it is the public
-   landing page built from the suffix. The materialised globalId default
-   (recognised by comparing the field against `GlobalIdUrls.globalIdUrl`) is
-   never registered. With no server URL configured the property is omitted, as
-   before: a missing property is recoverable, a wrong published URL is not.
+   landing page built from the suffix. The materialised globalId default is
+   never registered. It is recognised by its `/globalId/<globalId>` tail
+   (`GlobalIdUrls.GLOBAL_ID_PATH`, shared with the default-fill) rather than by
+   equality with the currently configured address: the tail is what the fill
+   produces and names one record, while the host part is only whatever the
+   server URL said at fill time, so whole-address comparison would stop
+   recognising the fill as soon as the deployment was renamed or lost its server
+   URL setting — and would then register the login-walled default. With no
+   server URL configured the property is omitted, as before: a missing property
+   is recoverable, a wrong published URL is not.
 3. The generated URL is used for the outbound payload only. The identifier's
    `publicUrl` (PUBLIC_URL) keeps its publish-time semantics: the Inventory UI
    links an identifier row to `publicUrl` whenever it is present, and a draft

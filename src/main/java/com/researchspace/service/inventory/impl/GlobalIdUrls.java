@@ -9,10 +9,18 @@ import org.apache.commons.lang3.StringUtils;
  *
  * <p>Shared deliberately: the instrument's materialised Landing page default and the check that
  * recognises that default at PID registration (so it is superseded by the identifier's public
- * landing page rather than registered — see ADR 0006) must be built the same way, or the check
- * silently stops recognising the fill.
+ * landing page rather than registered — see ADR 0006) must be built from the same {@link
+ * #GLOBAL_ID_PATH}, or the check silently stops recognising the fill.
  */
 final class GlobalIdUrls {
+
+  /**
+   * The path segment that marks an address as a record's globalId page. Shared so that the
+   * default-fill and the registration-time check that recognises that fill cannot drift apart: the
+   * check matches on this tail alone, because a deployment whose server URL has since changed (or
+   * been unset) must still recognise the default it wrote earlier.
+   */
+  static final String GLOBAL_ID_PATH = "/globalId/";
 
   private GlobalIdUrls() {}
 
@@ -31,6 +39,6 @@ final class GlobalIdUrls {
     if (serverUrl.isEmpty()) {
       return Optional.empty();
     }
-    return Optional.of(StringUtils.removeEnd(serverUrl, "/") + "/globalId/" + globalId);
+    return Optional.of(StringUtils.removeEnd(serverUrl, "/") + GLOBAL_ID_PATH + globalId);
   }
 }

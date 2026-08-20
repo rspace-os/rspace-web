@@ -103,17 +103,14 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
     metadata.setMeasuredVariable(nullIfEmpty(measuredVariables(source)));
     /*
      * The registered landing page: the user's own value when they typed one, otherwise the
-     * identifier's public landing page. The materialised globalId default is recognised by
-     * comparison with GlobalIdUrls and never registered: it needs an RSpace sign-in, and a
-     * LandingPage is baked into a citable PID once a curator accepts, with no way to update the
-     * published record afterwards. With neither a typed value nor a public URL the property is
-     * omitted: a missing property is recoverable, a wrong published URL is not. See ADR 0006 and
-     * CONTEXT.md ("Registered landing page").
+     * identifier's public landing page. The materialised globalId default is recognised and never
+     * registered: it needs an RSpace sign-in, and a LandingPage is baked into a citable PID once a
+     * curator accepts, with no way to update the published record afterwards. With neither a typed
+     * value nor a public URL the property is omitted: a missing property is recoverable, a wrong
+     * published URL is not. See ADR 0006 and CONTEXT.md ("Registered landing page").
      */
-    Optional<String> materialisedDefault =
-        GlobalIdUrls.globalIdUrl(properties, source.getGlobalIdentifier());
     mappedFieldData(source, FIELD_LANDING_PAGE, FieldType.URI)
-        .filter(fieldValue -> materialisedDefault.filter(fieldValue::equals).isEmpty())
+        .filter(fieldValue -> !isMaterialisedGlobalIdDefault(fieldValue, source))
         .or(() -> Optional.ofNullable(publicLandingPageUrl))
         .ifPresent(metadata::setLandingPage);
     mappedFieldData(source, FIELD_ALTERNATE_IDENTIFIER, FieldType.STRING)
@@ -131,6 +128,19 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
     doi.setAccess(access);
     doi.setFiles(new B2instFilesOptions(false));
     return doi;
+  }
+
+  /**
+   * Whether the Landing page field is holding RSpace's own materialised default rather than a value
+   * the user typed. Matched on the {@code /globalId/<globalId>} tail alone, not on equality with
+   * the currently configured address: the tail is what the default-fill produces and names this one
+   * record, while the host part is whatever the server URL said at fill time. Comparing whole
+   * addresses would stop recognising the fill as soon as the deployment was renamed or lost its
+   * server URL setting, and would then register the login-walled default — irreversibly, once a
+   * curator accepts. See {@link GlobalIdUrls} and ADR 0006.
+   */
+  private boolean isMaterialisedGlobalIdDefault(String fieldValue, InstrumentEntity source) {
+    return fieldValue.endsWith(GlobalIdUrls.GLOBAL_ID_PATH + source.getGlobalIdentifier());
   }
 
   /**

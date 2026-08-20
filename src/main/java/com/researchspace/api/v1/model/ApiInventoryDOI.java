@@ -204,11 +204,22 @@ public class ApiInventoryDOI extends LinkableApiObject {
    * repaired once a curator accepts the record.
    */
   public Optional<String> getPublicLandingPageUrl(String serverUrl) {
+    return publicLandingPageUrl(serverUrl, publicLinkSuffix);
+  }
+
+  /**
+   * The public landing page address for any suffix, or empty when either part is missing. Shared
+   * with the persistence side (ApiIdentifiersHelper builds the identifier's LOCAL_URL from the
+   * entity's own publicLink) so the address RSpace registers and the address it stores are built
+   * the same way: same trailing-slash handling, and the same refusal to produce a wrong absolute
+   * URL from a blank server setting rather than emitting "null/public/inventory/...".
+   */
+  public static Optional<String> publicLandingPageUrl(String serverUrl, String suffix) {
     String trimmed = StringUtils.trimToEmpty(serverUrl);
-    if (trimmed.isEmpty() || StringUtils.isBlank(publicLinkSuffix)) {
+    if (trimmed.isEmpty() || StringUtils.isBlank(suffix)) {
       return Optional.empty();
     }
-    return Optional.of(StringUtils.removeEnd(trimmed, "/") + PUBLIC_PAGE_PATH + publicLinkSuffix);
+    return Optional.of(StringUtils.removeEnd(trimmed, "/") + PUBLIC_PAGE_PATH + suffix);
   }
 
   /**

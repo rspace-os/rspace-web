@@ -62,11 +62,19 @@ public class ApiIdentifiersHelper {
    * Records this RSpace's own public landing page for the identifier as its LOCAL_URL, built from
    * whichever suffix the entity ended up with: the one pre-generated on the DTO before the provider
    * was called, or the entity's own when the caller carried none (RSDEV-1254, ADR 0006).
+   *
+   * <p>Built through {@link ApiInventoryDOI#publicLandingPageUrl}, the same builder the registered
+   * address goes through, so the stored and the registered address cannot be normalised
+   * differently. With no server URL configured the property is left unset rather than stored as the
+   * literal "null/public/inventory/...", which would then surface as the identifier's {@code url}
+   * over the API; a missing value can still be filled in later.
    */
   private void addPublicLandingPageUrl(DigitalObjectIdentifier newDoi) {
-    newDoi.addOtherData(
-        DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL,
-        properties.getServerUrl() + ApiInventoryDOI.PUBLIC_PAGE_PATH + newDoi.getPublicLink());
+    ApiInventoryDOI.publicLandingPageUrl(properties.getServerUrl(), newDoi.getPublicLink())
+        .ifPresent(
+            url ->
+                newDoi.addOtherData(
+                    DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL, url));
   }
 
   private void addRecordIdentifierForRegisteredApiIdentifier(
