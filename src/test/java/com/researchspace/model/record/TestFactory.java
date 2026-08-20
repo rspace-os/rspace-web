@@ -375,7 +375,7 @@ public class TestFactory {
    */
   public static Thumbnail createThumbnail(int width, int height) throws IOException {
     InputStream inputStream = RSpaceModelTestUtils.getInputStreamOnFromTestResourcesFolder(
-        "tester.png");
+        "tester-core-model.png");
     byte[] imageBytes = IOUtils.toByteArray(inputStream);
 
     Thumbnail thumbnail1 = new Thumbnail();

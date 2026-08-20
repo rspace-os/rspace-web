@@ -43,7 +43,7 @@ public class RSpaceModelTestUtils {
 	 * @return
 	 */
 	public static File getAnyImage() {
-		return getResource("tester.png");
+		return getResource("tester-core-model.png");
 	}
 	
 
