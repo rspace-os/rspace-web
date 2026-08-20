@@ -47,7 +47,7 @@ public class BasicLogQuerySearcherTest {
 	
 	@Test
 	 void testFullSearchResultOrdering() throws ParseException {
-		searcher.setLogFolder(new File("src/test/resources/TestResources"));
+		searcher.setLogFolder(new File("src/test/resources/TestResources/auditLogSearch"));
 		searcher.setLogFilePrefix("RSLogs");
 		AuditTrailSearchElement cfg = new AuditTrailSearchElement();
 		pgCrit.setGetAllResults();
@@ -113,7 +113,7 @@ public class BasicLogQuerySearcherTest {
 	
 	@Test
 	 void bothOperatorAndOperatedAsCanSeeAuditLog () {
-		searcher.setLogFolder(new File("src/test/resources/TestResources"));
+		searcher.setLogFolder(new File("src/test/resources/TestResources/auditLogSearch"));
 		searcher.setLogFilePrefix("RSLogs");
 		AuditTrailSearchElement cfg = new AuditTrailSearchElement();
 		cfg.addUsernameTerm("sysadmin1");
@@ -134,7 +134,7 @@ public class BasicLogQuerySearcherTest {
 	@Test
 	 void testFullSearch() {
 
-		searcher.setLogFolder(new File("src/test/resources/TestResources"));
+		searcher.setLogFolder(new File("src/test/resources/TestResources/auditLogSearch"));
 		searcher.setLogFilePrefix("RSLogs");
 		AuditTrailSearchElement cfg = new AuditTrailSearchElement();
 		cfg.addUsernameTerm("user1a");
@@ -201,7 +201,7 @@ public class BasicLogQuerySearcherTest {
 	
 	@Test
 	 void searchReturnsTimeStampsInISO601UTC() {
-		searcher.setLogFolder(new File("src/test/resources/TestResources"));
+		searcher.setLogFolder(new File("src/test/resources/TestResources/auditLogSearch"));
 		searcher.setLogFilePrefix("RSLogs");
 		AuditTrailSearchElement cfg = new AuditTrailSearchElement();
 		ISearchResults<AuditTrailSearchResult> results4 = searcher.search(pgCrit, cfg);
