@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
@@ -21,6 +21,10 @@ vi.mock("../../../../hooks/api/integrationHelpers", () => ({
 
 const mockAxios = new MockAdapter(axios);
 describe("Sidebar", () => {
+  beforeEach(() => {
+    mockAxios.reset();
+  });
+
   test("Should have no axe violations.", async () => {
     mockAxios.onGet("livechatProperties").reply(200, {
       livechatEnabled: false,
@@ -100,7 +104,9 @@ describe("Sidebar", () => {
 
     await user.click(screen.getByRole("button", { name: "inventory:recordTypes.instrument.plural" }));
 
-    expect(navFn).toHaveBeenCalledWith(expect.stringMatching(/^\/inventory\/search\?/) as string);
+    expect(navFn).toHaveBeenCalledTimes(1);
+    const [url] = navFn.mock.calls[0];
+    expect(url).toMatch(/^\/inventory\/search\?/);
     expect(setVisiblePanel).not.toHaveBeenCalled();
   });
 });
