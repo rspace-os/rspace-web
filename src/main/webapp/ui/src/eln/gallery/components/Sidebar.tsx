@@ -17,7 +17,7 @@ import TextField from "@mui/material/TextField";
 import { useQuery } from "@tanstack/react-query";
 import { autorun } from "mobx";
 import { observer } from "mobx-react-lite";
-import React from "react";
+import React, { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import DSWAccentMenuItem from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
@@ -510,19 +510,30 @@ const Sidebar = ({
               if (viewport.isViewportSmall) setDrawerOpen(false);
             }}
           />
-          <DmpMenuSection
-            onDialogClose={() => {
-              setNewMenuAnchorEl(null);
-              if (viewport.isViewportSmall) setDrawerOpen(false);
-            }}
-            showDmpPanel={() => {
-              if (selectedSection === "DMPs") {
-                void refreshListing();
-              } else {
-                setSelectedSection("DMPs");
-              }
-            }}
-          />
+          {/*
+           * DmpMenuSection suspends in its own hook body: useIntegrationsEndpoint
+           * calls useTranslation("apps"), and the Gallery only preloads
+           * "gallery", "common" and "about". A boundary *inside* the component
+           * cannot catch that, so it has to wrap it from here. Without this the
+           * boundary in DialogBoundary's Menu catches it instead and its
+           * fallback withholds the whole menu, leaving Upload Files / New Folder
+           * / Add a Filestore missing for as long as the namespace takes to load.
+           */}
+          <Suspense fallback={null}>
+            <DmpMenuSection
+              onDialogClose={() => {
+                setNewMenuAnchorEl(null);
+                if (viewport.isViewportSmall) setDrawerOpen(false);
+              }}
+              showDmpPanel={() => {
+                if (selectedSection === "DMPs") {
+                  void refreshListing();
+                } else {
+                  setSelectedSection("DMPs");
+                }
+              }}
+            />
+          </Suspense>
         </SidebarCreateMenu>
       </Box>
       <Divider />

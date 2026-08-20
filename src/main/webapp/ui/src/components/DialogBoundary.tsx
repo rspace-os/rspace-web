@@ -1,7 +1,7 @@
 import MuiDialog from "@mui/material/Dialog";
 import MuiDrawer from "@mui/material/Drawer";
 import MuiMenu from "@mui/material/Menu";
-import React, { createContext, useContext, useRef } from "react";
+import React, { createContext, Suspense, useContext, useRef } from "react";
 
 /**
  * This file contains a number of components that collectively provide a
@@ -55,6 +55,23 @@ import React, { createContext, useContext, useRef } from "react";
  * Then, when a UI component is needed in the code, simply use the UI component
  * exported from this module rather than the one exported by MUI. In all other
  * respects, they behave exactly the same.
+ *
+ * Each of these components also wraps its children in a local Suspense
+ * boundary. i18next runs with `useSuspense: true` and lazily loaded
+ * namespaces, so the first `useTranslation` for a namespace the page did not
+ * preload suspends. Without a boundary here that suspension reaches the page's
+ * `I18nRoot`, which replaces the *entire page* with its fallback -- clicking
+ * the Gallery's Create button blanked the whole Gallery for ~540ms behind a
+ * spinner, because the DMP menu items pull the `apps` namespace and the Gallery
+ * only preloads `gallery`, `common` and `about`. Overlays are how most
+ * interaction-revealed UI appears, so containing the suspension here fixes the
+ * class rather than each call site: a briefly empty menu or dialog body is a
+ * far better failure mode than a blank page.
+ *
+ * The boundary also sits below the Modal's own transition, so a suspension in
+ * the content cannot disconnect that transition's effects -- the mechanism
+ * behind the stranded modals in PRT-1118 and PRT-1135. That is defence in depth
+ * behind the @mui/material 9.3.1 fix rather than a substitute for it.
  *
  * And that it's it. The fact that a context is being used is purely an
  * implementation detail. That's why its declared inside this module and not
@@ -112,7 +129,7 @@ export function Dialog(props: Omit<React.ComponentProps<typeof MuiDialog>, "cont
 
   return (
     <MuiDialog container={() => modalContainer.current} open={open} {...rest}>
-      {children}
+      <Suspense fallback={null}>{children}</Suspense>
     </MuiDialog>
   );
 }
@@ -136,7 +153,7 @@ export function Menu(props: Omit<React.ComponentProps<typeof MuiMenu>, "containe
 
   return (
     <MuiMenu container={() => modalContainer.current} open={open} {...rest}>
-      {children}
+      <Suspense fallback={null}>{children}</Suspense>
     </MuiMenu>
   );
 }
@@ -169,7 +186,7 @@ export function Drawer(props: Omit<React.ComponentProps<typeof MuiDrawer>, "cont
       open={open}
       {...rest}
     >
-      {children}
+      <Suspense fallback={null}>{children}</Suspense>
     </MuiDrawer>
   );
 }
