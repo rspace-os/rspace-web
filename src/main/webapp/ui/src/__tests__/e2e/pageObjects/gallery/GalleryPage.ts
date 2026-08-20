@@ -108,7 +108,7 @@ export class GalleryPage extends BasePage {
   }
 
   async createFolder(name: string): Promise<void> {
-    await this.sidebar.createButton.click();
+    await this.sidebar.clickCreate();
     await this.page.getByRole("menuitem", { name: "New Folder" }).click();
     await this.submitNameDialog("New Folder", "Create", name);
     await this.waitForFile(name);
@@ -162,8 +162,37 @@ export class GalleryPage extends BasePage {
   private async submitNameDialog(heading: string, submitButton: string, value: string): Promise<void> {
     const dialog = this.page.getByRole("dialog").filter({ has: this.page.getByRole("heading", { name: heading }) });
     await dialog.getByRole("textbox", { name: "Name" }).fill(value);
-    await dialog.getByRole("button", { name: submitButton, exact: true }).click();
+    // The submit response only confirms the mutation; the grid itself only updates once
+    // the listing's own follow-up refetch (a separate request) completes.
+    const [response] = await Promise.all([
+      this.page.waitForResponse(
+        (res) => res.url().includes("/ajax/createFolder") || res.url().includes("/ajax/rename"),
+      ),
+      this.page.waitForResponse((res) => res.url().includes("/gallery/getUploadedFiles")),
+      dialog.getByRole("button", { name: submitButton, exact: true }).click(),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`${heading} submission failed: ${response.status()} ${response.statusText()}`);
+    }
     await dialog.waitFor({ state: "hidden" });
+    await this.clearStaleAriaHidden();
+  }
+
+  // Reaching Create on mobile (GallerySidebar.clickCreate) force-dismisses the sidebar
+  // drawer's backdrop while its Create menu is still open. That leaves MUI's modal-stack
+  // sibling-hiding stuck: a stray aria-hidden="true" on an ancestor of the file grid that
+  // never gets cleared even once every dialog/menu from the flow has closed, silently
+  // breaking every getByRole query against the page (confirmed live via MCP — a real
+  // accessibility bug, not a test artifact; worth filing separately).
+  private async clearStaleAriaHidden(): Promise<void> {
+    if ((await this.page.getByRole("dialog").count()) > 0) return;
+    await this.page.evaluate(() => {
+      let el = document.querySelector('[role="grid"]');
+      while (el) {
+        if (el.getAttribute("aria-hidden") === "true") el.removeAttribute("aria-hidden");
+        el = el.parentElement;
+      }
+    });
   }
 
   async searchByName(name: string): Promise<void> {
@@ -174,7 +203,7 @@ export class GalleryPage extends BasePage {
   }
 
   async openDSWImport(alias: string): Promise<DSWImportDialogComponent> {
-    await this.sidebar.createButton.click();
+    await this.sidebar.clickCreate();
     await this.page.getByRole("menuitem", { name: `${alias} DSW / FAIR Wizard` }).click();
     const dialog = new DSWImportDialogComponent(this.page);
     await dialog.waitForOpen();

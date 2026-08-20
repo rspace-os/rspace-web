@@ -1,8 +1,9 @@
 import { expect } from "@playwright/test";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
+import { tags } from "@/__tests__/e2e/tags";
 import { TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 
-test.describe("Gallery folder and file operations", () => {
+test.describe("Gallery folder and file operations", { tag: tags.MOBILE }, () => {
   test("As a user, I can create a folder, rename a file, move it in, and delete it", async ({
     pageGallery,
     clientFiles,

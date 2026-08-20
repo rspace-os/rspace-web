@@ -1,8 +1,9 @@
 import { expect } from "@playwright/test";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
+import { tags } from "@/__tests__/e2e/tags";
 import { TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 
-test.describe("Gallery sorting and views", () => {
+test.describe("Gallery sorting and views", { tag: tags.MOBILE }, () => {
   test("As a user, I can sort files by Modification Date and by Name, in either direction", async ({
     pageGallery,
     clientFiles,

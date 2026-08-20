@@ -2,6 +2,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect } from "@playwright/test";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
+import { tags } from "@/__tests__/e2e/tags";
 import { TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
@@ -10,10 +11,9 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 const REPLACEMENT_IMAGE_PATH = resolve(currentDir, "../inventory/fixtures/container_preview.png");
 
 test.describe("Gallery image versioning", () => {
-  test("As a user, I can upload a new version of an image and see both versions in its history", async ({
-    pageGallery,
-    clientFiles,
-  }) => {
+  test("As a user, I can upload a new version of an image and see both versions in its history", {
+    tag: tags.MOBILE,
+  }, async ({ pageGallery, clientFiles }) => {
     const originalName = `${uniqueName("e2e-gallery-version")}.png`;
 
     await test.step("Given an uploaded image", async () => {

@@ -46,10 +46,10 @@ export class TinyMceEditor {
   }
 
   async insertFileAttachment(file: string | { name: string; mimeType: string; buffer: Buffer }): Promise<void> {
-    const [chooser] = await Promise.all([
-      this.page.waitForEvent("filechooser"),
-      this.clickToolbarButton("Insert file from computer"),
-    ]);
+    const uploadButton = this.container
+      .getByRole("button", { name: "Insert file from computer" })
+      .or(this.container.getByRole("button", { name: "Upload a file from your mobile device" }));
+    const [chooser] = await Promise.all([this.page.waitForEvent("filechooser"), uploadButton.click()]);
     await chooser.setFiles(file);
   }
 

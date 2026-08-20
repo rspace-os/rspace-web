@@ -1,25 +1,14 @@
 import { expect } from "@playwright/test";
 import { test } from "@/__tests__/e2e/fixtures/flows";
+import { tags } from "@/__tests__/e2e/tags";
 import { TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
-import { MOBILE_DEVICE } from "@/__tests__/e2e/viewports";
 
-test.describe("Gallery", () => {
+test.describe("Gallery", { tag: tags.MOBILE }, () => {
   test("As a user, I can navigate to the Images section and browse the Examples folder", async ({ pageGallery }) => {
     await pageGallery.openInSection("Images");
     await pageGallery.openFolder("Examples");
 
     await pageGallery.waitForFile("anaphase.jpg");
-  });
-
-  test.describe("mobile", () => {
-    test.use(MOBILE_DEVICE);
-
-    test("As a user, I can navigate to the Images section on a mobile viewport", async ({ pageGallery }) => {
-      await pageGallery.openInSection("Images");
-      await pageGallery.openFolder("Examples");
-
-      await pageGallery.waitForFile("anaphase.jpg");
-    });
   });
 
   test("As a user, I can see a selected file's Global ID in the info panel", async ({ clientFiles, pageGallery }) => {

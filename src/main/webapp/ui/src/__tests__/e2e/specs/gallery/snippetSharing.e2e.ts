@@ -3,11 +3,12 @@ import { SnippetsClient } from "@/__tests__/e2e/api/clients/SnippetsClient";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { LoginPage } from "@/__tests__/e2e/pageObjects/auth/LoginPage";
 import { GalleryPage } from "@/__tests__/e2e/pageObjects/gallery/GalleryPage";
+import { tags } from "@/__tests__/e2e/tags";
 import { alphaNumericUnique, TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 
 const CREATED_USER_PASSWORD = "Passw0rd!23";
 
-test.describe("Gallery snippet sharing", () => {
+test.describe("Gallery snippet sharing", { tag: tags.MOBILE }, () => {
   test("Share is disabled for non-snippet gallery items such as images", async ({ pageGallery, clientFiles }) => {
     const name = `${uniqueName("e2e-snippet-share-disabled")}.png`;
 
