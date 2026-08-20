@@ -23,7 +23,7 @@ type TemplateOption = { id: number; name: string; globalId: string; record: Temp
 
 /**
  * The wizard's "choose an existing template" control: a single-select, server-backed autocomplete
- * (adr/0003). It mirrors the process-name dropdown, except the user cannot enter free text - typing
+ * (DevDocs/adr/0008). It mirrors the process-name dropdown, except the user cannot enter free text - typing
  * re-queries the backend (debounced) and only a returned template can be chosen. Selecting one hands
  * the record to the parent, which validates it (a template with mandatory, defaultless fields is
  * blocked there). It reuses the shared Search model so it fetches the same permission-filtered

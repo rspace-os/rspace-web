@@ -15,14 +15,14 @@ import com.researchspace.model.User;
  * applicationContext-service.xml}), whose pointcut matches this interface - it is in {@code
  * service.inventory} and named {@code *Manager}. Calls through it, including the implementation in
  * {@code service.inventory.impl}, run in one transaction that the coordinated sub-manager calls
- * join (see adr/0001).
+ * join (see DevDocs/adr/0006).
  */
 public interface InventoryOperationManager {
 
   /**
    * @return the newly created sample (with its subsamples), as returned by the sample-creation
    *     manager, or {@code null} for a terminal operation that creates nothing (noOutput, e.g.
-   *     Destroy, which only acts on its origins). See adr/0008.
+   *     Destroy, which only acts on its origins). See DevDocs/adr/0013.
    */
   ApiSampleWithFullSubSamples performOperation(ApiInventoryOperationPost request, User user);
 }
