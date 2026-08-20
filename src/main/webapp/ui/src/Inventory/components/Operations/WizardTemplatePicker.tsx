@@ -6,6 +6,7 @@ import { debounce } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import GlobalId from "@/components/GlobalId";
 import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
 import Search from "@/stores/models/Search";
 import type TemplateModel from "@/stores/models/TemplateModel";
@@ -119,15 +120,14 @@ function WizardTemplatePicker({
       }}
       renderOption={(props, option) => (
         <li {...props} key={option.id}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          {/* Name on the left, the standard GlobalId pill (record-type icon + id chip) on the right,
+              matching how Inventory presents records and their ids everywhere else. The pill needs
+              the underlying record, so the pre-filled placeholder (record null) shows the name only. */}
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between", flex: 1 }}>
             <Typography variant="body2" component="span">
               {option.name}
             </Typography>
-            {option.globalId ? (
-              <Typography variant="caption" component="span" color="text.secondary">
-                {option.globalId}
-              </Typography>
-            ) : null}
+            {option.record ? <GlobalId record={option.record} /> : null}
           </Stack>
         </li>
       )}
