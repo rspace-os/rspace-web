@@ -234,6 +234,24 @@ public class ApiInventoryDOI extends LinkableApiObject {
   }
 
   /**
+   * Whether an address names the public landing page of the identifier with this suffix, i.e.
+   * whether RSpace itself wrote it. Lets a caller undo that write — clearing an instrument's
+   * Landing page when its identifier is deleted — without touching an address a user chose (ADR
+   * 0006).
+   *
+   * <p>Matched on the {@code /public/inventory/<suffix>} tail rather than by equality with the
+   * address {@link #publicLandingPageUrl} would build today, for the same reason the globalId check
+   * matches a tail: the deployment's server URL may have changed since, and the question is what
+   * RSpace wrote, not what it would write now. A blank suffix matches nothing rather than
+   * everything.
+   */
+  public static boolean namesPublicLandingPage(String address, String suffix) {
+    return StringUtils.isNotBlank(suffix)
+        && StringUtils.endsWithIgnoreCase(
+            StringUtils.stripEnd(StringUtils.trimToEmpty(address), "/"), PUBLIC_PAGE_PATH + suffix);
+  }
+
+  /**
    * The citable, publicly resolvable address of the identifier, set when it is published.
    *
    * <p>Server-owned for the same reason as {@link #providerUrl}, and more importantly so: this one

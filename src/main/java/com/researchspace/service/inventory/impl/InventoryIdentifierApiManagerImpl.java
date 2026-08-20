@@ -9,6 +9,7 @@ import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.api.v1.model.ApiSample;
@@ -23,7 +24,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RoRService;
@@ -46,6 +49,7 @@ import java.util.stream.Collectors;
 import javax.naming.InvalidNameException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -354,7 +358,64 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     instrument.setId(invRec.getId());
     instrument.getIdentifiers().add(identifier);
     instrument.setTags(null); // skip tags update
+    seedLandingPageForNewPidinst(instrument, invRec, identifier);
     return instrument;
+  }
+
+  /**
+   * Puts the identifier's public landing page into the instrument's own Landing page field, so the
+   * field shows the address that was registered instead of drifting from it (RSDEV-1254, ADR 0006
+   * item 4). Rides this same update, so the value goes through the field's ordinary validation,
+   * Envers revision and save rather than a second write path of its own.
+   *
+   * <p>Only for a brand-new PIDINST registration, and only when the field holds nothing the user
+   * typed: a value of theirs is what PIDINST's LandingPage is for and is registered as-is, so
+   * overwriting it would both destroy their input and register something the field never showed. A
+   * landing page the retired auto-fill wrote counts as untyped, so registering replaces it.
+   *
+   * <p>Applied on the DataCite PIDINST path too, even though DataCite has no LandingPage property
+   * and so transmits it nowhere: the same user action should leave the instrument looking the same
+   * whichever provider a deployment has enabled.
+   *
+   * <p>Called while building the post-registration update, so the provider has already accepted: a
+   * failed registration never reaches here and leaves the field as it was.
+   */
+  private void seedLandingPageForNewPidinst(
+      ApiInstrument update, InventoryRecord invRec, ApiInventoryDOI identifier) {
+    if (!identifier.isRegisterIdentifierRequest() || !invRec.isInstrument()) {
+      return;
+    }
+    IdentifierType type = EnumUtils.getEnum(IdentifierType.class, identifier.getDoiType());
+    if (!InventorySettingType.PIDINST.equals(settingTypeFor(type))) {
+      return;
+    }
+    InstrumentEntity source = (InstrumentEntity) invRec;
+    Optional<InventoryEntityField> field = PidinstFields.landingPage(source);
+    if (field.isEmpty() || PidinstFields.userTypedLandingPage(source).isPresent()) {
+      return;
+    }
+    /*
+     * Guarded by the same rule the adapter applies to what it registers: the address is built from
+     * the deployment's server URL, which nothing validates for a scheme, and the field's own
+     * validation is lenient enough to store a scheme-less value. Storing one would leave the
+     * instrument permanently showing an address nobody can follow, so the field is left as it was
+     * and the operator gets a reason.
+     */
+    Optional<String> publicLandingPage =
+        identifier
+            .getPublicLandingPageUrl(properties.getServerUrl())
+            .filter(PidinstFields::isResolvableAddress);
+    if (publicLandingPage.isEmpty()) {
+      log.warn(
+          "Leaving the Landing page of {} as it was: no usable public landing page could be built,"
+              + " which means no server URL is configured or it carries no http(s) scheme.",
+          invRec.getGlobalIdentifier());
+      return;
+    }
+    ApiInventoryEntityField fieldUpdate = new ApiInventoryEntityField();
+    fieldUpdate.setId(field.get().getId());
+    fieldUpdate.setContent(publicLandingPage.get());
+    update.getFields().add(fieldUpdate);
   }
 
   private ApiInventoryDOI createNewDoi(User user) {

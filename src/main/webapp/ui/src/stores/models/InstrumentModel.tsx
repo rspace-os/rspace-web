@@ -329,13 +329,13 @@ export default class InstrumentModel
    * Blanks the Landing page field of an instrument whose fields were just copied from a template.
    * The landing page names exactly one physical instrument, so a record derived from another record
    * must never start out pointing at its source's page (RSDEV-1307). The backend clears it on
-   * creation and then fills it with the new instrument's own address; blanking it here keeps the
-   * form showing what will actually be saved. Anything the user types into the creation form
-   * afterwards is their own input and is left alone.
+   * creation and leaves it blank; blanking it here keeps the form showing what will actually be
+   * saved. Anything the user types into the creation form afterwards is their own input and is left
+   * alone, and registering a PIDINST later fills a still-blank field with the identifier's public
+   * landing page.
    *
    * Only the first matching field is blanked, mirroring the backend, which resolves a single
-   * Landing page and refills only that one. Blanking a second match would leave it permanently
-   * empty, since nothing would ever fill it.
+   * Landing page.
    *
    * Note that this deliberately blanks a field the template may mark mandatory. That is safe only
    * because instrument structured fields are not validated client-side: `InventoryBaseRecord`

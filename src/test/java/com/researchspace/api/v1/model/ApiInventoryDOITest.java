@@ -162,4 +162,36 @@ class ApiInventoryDOITest {
         doi.getPublicLandingPageUrl(" ").isEmpty(),
         "no server URL -> empty, never site-relative (same rule as GlobalIdUrls)");
   }
+
+  /**
+   * Recognising RSpace's own public landing page in a field value, so deleting an identifier can
+   * clear the address it wrote without touching one a user chose (ADR 0006 item 5).
+   *
+   * <p>Matched on the tail rather than by equality with the address we would build today: the
+   * deployment's server URL may have changed since the value was written, and the point is to
+   * recognise what RSpace wrote, not what it would write now.
+   */
+  @Test
+  void namesPublicLandingPageRecognisesOnlyRSpacesOwnAddressForThatSuffix() {
+    assertTrue(
+        ApiInventoryDOI.namesPublicLandingPage(
+            "https://rspace.example.com/public/inventory/abc123XYZ", "abc123XYZ"));
+    assertTrue(
+        ApiInventoryDOI.namesPublicLandingPage(
+            "https://renamed.example.org/public/inventory/abc123XYZ/", "abc123XYZ"),
+        "a renamed deployment, and a trailing slash, still name the same page");
+
+    assertFalse(
+        ApiInventoryDOI.namesPublicLandingPage("https://lab.example.org/aws-42", "abc123XYZ"),
+        "a landing page the user typed must never be mistaken for ours");
+    assertFalse(
+        ApiInventoryDOI.namesPublicLandingPage(
+            "https://rspace.example.com/public/inventory/someoneElse", "abc123XYZ"),
+        "another identifier's public page belongs to that identifier, not this one");
+    assertFalse(ApiInventoryDOI.namesPublicLandingPage(null, "abc123XYZ"));
+    assertFalse(
+        ApiInventoryDOI.namesPublicLandingPage(
+            "https://rspace.example.com/public/inventory/abc123XYZ", " "),
+        "no suffix means nothing to recognise, never a blanket match");
+  }
 }

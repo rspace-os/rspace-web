@@ -16,7 +16,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
@@ -26,7 +28,9 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -36,6 +40,7 @@ import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -309,5 +314,123 @@ class InventoryIdentifierApiManagerImplUnitTest {
     assertEquals("You can only delete an identifier that you own.", exception.getMessage());
     verify(doiDao, never()).save(any());
     verify(doi, never()).setDeleted(true);
+  }
+
+  /**
+   * A real Instrument carrying one "Landing page" URI field with the given content, since the
+   * landing-page rules read getActiveFields(), which a mock cannot exercise.
+   */
+  private static Instrument instrumentWithLandingPage(String content) {
+    Instrument instrument = new Instrument();
+    instrument.setId(5L);
+    instrument.setName("Microscope X");
+    InventoryUriField field = new InventoryUriField("Landing page");
+    field.setId(77L);
+    field.setFieldData(content);
+    field.setInventoryRecord(instrument);
+    field.setColumnIndex(1);
+    instrument.getFields().add(field);
+    instrument.refreshActiveFieldsAndColumnIndex();
+    return instrument;
+  }
+
+  private static ApiInventoryDOI newPidinstRegistration() {
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.generatePublicLinkSuffix();
+    doi.setRegisterIdentifierRequest(true);
+    doi.setDoiType(IdentifierType.PIDINST_B2INST.name());
+    return doi;
+  }
+
+  private static ApiInstrument instrumentUpdateFor(
+      InventoryIdentifierApiManagerImpl mgr, InventoryRecord invRec, ApiInventoryDOI doi)
+      throws Exception {
+    Method m =
+        InventoryIdentifierApiManagerImpl.class.getDeclaredMethod(
+            "getApiInstrumentUpdateWithIdentifier", InventoryRecord.class, ApiInventoryDOI.class);
+    m.setAccessible(true);
+    return (ApiInstrument) m.invoke(mgr, invRec, doi);
+  }
+
+  private static InventoryIdentifierApiManagerImpl mgrWithServerUrl(String serverUrl) {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    when(properties.getServerUrl()).thenReturn(serverUrl);
+    ReflectionTestUtils.setField(mgr, "properties", properties);
+    return mgr;
+  }
+
+  private static Optional<ApiInventoryEntityField> landingPageUpdate(ApiInstrument update) {
+    return update.getFields().stream().filter(f -> Long.valueOf(77L).equals(f.getId())).findFirst();
+  }
+
+  /**
+   * The behaviour RSDEV-1254 was reopened for: registering a PIDINST writes the address that was
+   * registered into the instrument's own Landing page field, so the field and the registered value
+   * cannot drift apart (ADR 0006 item 4).
+   */
+  @Test
+  void newPidinstRegistrationWritesThePublicLandingPageIntoABlankField() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = mgrWithServerUrl("https://rspace.example.com");
+    Instrument instrument = instrumentWithLandingPage(null);
+    ApiInventoryDOI doi = newPidinstRegistration();
+
+    ApiInstrument update = instrumentUpdateFor(mgr, instrument, doi);
+
+    assertEquals(
+        "https://rspace.example.com/public/inventory/" + doi.getPublicLinkSuffix(),
+        landingPageUpdate(update).orElseThrow().getContent());
+  }
+
+  /** ADR 0006 item 4: a value the user typed is theirs and survives registration untouched. */
+  @Test
+  void newPidinstRegistrationLeavesAUserTypedLandingPageAlone() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = mgrWithServerUrl("https://rspace.example.com");
+    Instrument instrument = instrumentWithLandingPage("https://lab.example.org/aws-42");
+
+    ApiInstrument update = instrumentUpdateFor(mgr, instrument, newPidinstRegistration());
+
+    assertTrue(landingPageUpdate(update).isEmpty(), "a typed landing page must not be overwritten");
+  }
+
+  /**
+   * A value the retired auto-fill wrote reads as an empty field, so registration replaces it: it is
+   * login-walled, and leaving it would put a different address in the field than was registered.
+   */
+  @Test
+  void newPidinstRegistrationOverwritesALegacyAutoFilledLandingPage() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = mgrWithServerUrl("https://rspace.example.com");
+    Instrument instrument =
+        instrumentWithLandingPage("https://old-name.example.com/globalId/IN5?from=email");
+    ApiInventoryDOI doi = newPidinstRegistration();
+
+    ApiInstrument update = instrumentUpdateFor(mgr, instrument, doi);
+
+    assertEquals(
+        "https://rspace.example.com/public/inventory/" + doi.getPublicLinkSuffix(),
+        landingPageUpdate(update).orElseThrow().getContent());
+  }
+
+  /** Only a brand-new registration seeds the field; publish, assign and delete updates must not. */
+  @Test
+  void anIdentifierUpdateThatIsNotANewRegistrationLeavesTheFieldAlone() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = mgrWithServerUrl("https://rspace.example.com");
+    ApiInventoryDOI publishUpdate = new ApiInventoryDOI();
+    publishUpdate.setDoiType(IdentifierType.PIDINST_B2INST.name());
+
+    ApiInstrument update = instrumentUpdateFor(mgr, instrumentWithLandingPage(null), publishUpdate);
+
+    assertTrue(landingPageUpdate(update).isEmpty());
+  }
+
+  /** No server URL means no public address to write; the field is left blank rather than junk. */
+  @Test
+  void newPidinstRegistrationLeavesTheFieldBlankWhenNoServerUrlIsConfigured() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = mgrWithServerUrl(null);
+
+    ApiInstrument update =
+        instrumentUpdateFor(mgr, instrumentWithLandingPage(null), newPidinstRegistration());
+
+    assertTrue(landingPageUpdate(update).isEmpty());
   }
 }
