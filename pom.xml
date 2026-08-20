@@ -796,17 +796,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-audit</artifactId>
-      <version>1.0.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.github.rspace-os</groupId>
-          <artifactId>rspace-core-util</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>org.reflections</groupId>
       <artifactId>reflections</artifactId>
       <version>0.9.12</version>
@@ -1629,6 +1618,10 @@
         <exclusion>
           <groupId>com.github.rspace-os</groupId>
           <artifactId>rspace-core-util</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rspace-audit</artifactId>
         </exclusion>
         <exclusion>
           <groupId>commons-io</groupId>
