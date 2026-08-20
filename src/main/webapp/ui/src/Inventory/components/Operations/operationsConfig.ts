@@ -141,11 +141,7 @@ const OperationSchema = v.object({
 });
 
 export type OperationInputConfig = v.InferOutput<typeof InputSchema>;
-export type OperationLinkSpec = v.InferOutput<typeof LinkSpecSchema>;
-export type OperationOriginFieldSpec = v.InferOutput<typeof OriginFieldSpecSchema>;
-export type OperationStep = v.InferOutput<typeof StepSchema>;
 export type ComputedArgSource = v.InferOutput<typeof ArgSourceSchema>;
-export type ComputedValueSpec = v.InferOutput<typeof ComputedSchema>;
 export type ConfirmSummaryField = v.InferOutput<typeof ConfirmSummaryFieldSchema>;
 export type InventoryOperation = v.InferOutput<typeof OperationSchema>;
 

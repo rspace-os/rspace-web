@@ -221,6 +221,64 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         "origin quantity must be unchanged when over-removal is rejected");
   }
 
+  @Test
+  public void rollsBackOriginDecrementWhenSampleCreationFailsInsideTheTransaction()
+      throws Exception {
+    // The atomicity claim (DevDocs/adr/0006) rests on InventoryOperationManager matching the
+    // service.inventory.*Manager AOP pointcut; only a real transaction can prove it. Trigger an
+    // in-transaction failure AFTER the origin decrement: the documentation link targets a document
+    // that does not exist, so link creation (assertTargetExistsAndReadable) throws while the new
+    // sample is being assembled, after registerApiSubSampleUsage already ran. Without a working
+    // transaction the origin would silently lose quantity with no sample created.
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    Long originId = origin.getId();
+    String originGlobalId = origin.getGlobalId();
+    Integer unitId = origin.getQuantity().getUnitId();
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+
+    String provenanceLink =
+        "{\"name\":\"Is Derived From using process:"
+            + " PCR\",\"type\":\"link\",\"newFieldRequest\":true,"
+            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
+            + originGlobalId
+            + "\",\"versionPin\":null}}";
+    String brokenDocumentationLink =
+        "{\"name\":\"SOP\",\"type\":\"link\",\"newFieldRequest\":true,"
+            + "\"link\":{\"relationType\":\"IsDocumentedBy\",\"targetGlobalId\":\"SD999999999\","
+            + "\"versionPin\":null}}";
+    String operationJson =
+        "{\"operationType\":\"derive\","
+            + "\"origins\":[{\"id\":"
+            + originId
+            + ",\"amountTaken\":{\"numericValue\":0.6,\"unitId\":"
+            + unitId
+            + "}}],"
+            + "\"newSample\":{\"name\":\"Rollback probe\",\"extraFields\":["
+            + provenanceLink
+            + ","
+            + brokenDocumentationLink
+            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
+            + unitId
+            + "},\"extraFields\":[]}]}}";
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+            .andReturn();
+    assertTrue(
+        result.getResponse().getStatus() >= 400,
+        "a failing in-transaction link creation must not report success, was: "
+            + result.getResponse().getStatus());
+
+    // the origin's quantity is unchanged: the decrement was rolled back with the failed creation
+    ApiSubSample reloadedOrigin = subSampleApiManager.getApiSubSampleById(originId, anyUser);
+    assertTrue(
+        originalAmount.compareTo(reloadedOrigin.getQuantity().getNumericValue()) == 0,
+        "origin quantity must be restored when the operation fails mid-transaction");
+  }
+
   private ApiExtraField findLinkField(List<ApiExtraField> extraFields) {
     return extraFields.stream().filter(ef -> ef.getLink() != null).findFirst().orElse(null);
   }

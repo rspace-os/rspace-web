@@ -62,25 +62,21 @@ describe("filterProcessNames", () => {
 });
 
 describe("processNameDefaultAfterPerform", () => {
-  it("stores the trimmed name as the operation's default when remember is on", () => {
-    expect(processNameDefaultAfterPerform({}, "derive", "  dna extraction  ", true)).toEqual({
+  // The wizard calls this only for a remembered Perform, so there is no "remember off" branch:
+  // unticking never deletes what was saved (grill Q1).
+  it("stores the trimmed name as the operation's default", () => {
+    expect(processNameDefaultAfterPerform({}, "derive", "  dna extraction  ")).toEqual({
       derive: "dna extraction",
     });
   });
 
-  it("forgets any previous default for the operation when remember is off", () => {
-    expect(processNameDefaultAfterPerform({ derive: "boil", cryopreserve: "x" }, "derive", "boil", false)).toEqual({
-      cryopreserve: "x",
-    });
-  });
-
-  it("forgets the operation when remember is on but the name is blank", () => {
-    expect(processNameDefaultAfterPerform({ derive: "boil" }, "derive", "   ", true)).toEqual({});
+  it("defensively drops the stored default rather than storing a blank name", () => {
+    expect(processNameDefaultAfterPerform({ derive: "boil" }, "derive", "   ")).toEqual({});
   });
 
   it("does not mutate the input map", () => {
     const current = { derive: "boil" };
-    processNameDefaultAfterPerform(current, "derive", "dna", true);
+    processNameDefaultAfterPerform(current, "derive", "dna");
     expect(current).toEqual({ derive: "boil" });
   });
 });
