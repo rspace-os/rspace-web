@@ -168,7 +168,7 @@ describe("buildOperationRequest (operation-specific fields)", () => {
 
 // An operation with no amountTakenFrom (e.g. Passage) must NOT send an empty origins array - the
 // backend rejects that. It sends the origin with a zero amount (a no-op decrement), so the origin
-// is still linked and permission-checked but its quantity is unchanged. See adr/0002.
+// is still linked and permission-checked but its quantity is unchanged. See DevDocs/adr/0007.
 describe("buildOperationRequest (operation that does not decrement the origin)", () => {
   const passageOperation: InventoryOperation = {
     key: "passage",
@@ -195,7 +195,7 @@ describe("buildOperationRequest (operation that does not decrement the origin)",
   });
 });
 
-// Pool (adr/0007) is multi-origin: it decrements every selected origin by the same shared amount and
+// Pool (DevDocs/adr/0012) is multi-origin: it decrements every selected origin by the same shared amount and
 // links the new sample back to each with a HasPart link.
 describe("buildOperationRequest (Pool - multi-origin)", () => {
   const poolOperation: InventoryOperation = {
@@ -253,7 +253,7 @@ describe("buildOperationRequest (Pool - multi-origin)", () => {
   });
 });
 
-// Destroy (adr/0008) is a terminal operation: noOutput (no new sample), it empties the origin (takes
+// Destroy (DevDocs/adr/0013) is a terminal operation: noOutput (no new sample), it empties the origin (takes
 // its full current quantity) and adds a custom field to the origin itself (the disposed date).
 describe("buildOperationRequest (Destroy - terminal, no output)", () => {
   const destroyOperation: InventoryOperation = {
@@ -300,7 +300,7 @@ describe("buildOperationRequest (Destroy - terminal, no output)", () => {
   });
 });
 
-// Amount modes for a multi-origin operation (adr/0009): "same" removes one shared amount from every
+// Amount modes for a multi-origin operation (DevDocs/adr/0014): "same" removes one shared amount from every
 // origin; "all" empties each origin to zero; "per subsample" removes a per-origin chosen amount.
 describe("buildOperationRequest (amount modes, multi-origin)", () => {
   const poolOp: InventoryOperation = {

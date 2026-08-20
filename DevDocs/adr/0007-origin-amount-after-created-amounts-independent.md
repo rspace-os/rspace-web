@@ -1,10 +1,10 @@
-# 2. Operations reduce the origin by the amount taken; created amounts are independent
+# 7. Operations reduce the origin by the amount taken; created amounts are independent
 
 Date: 2026-07-10 (revised 2026-07-14)
 
 ## Status
 
-Accepted. The over-taking behaviour (clamp at zero) is revised by ADR-0005, which
+Accepted. The over-taking behaviour (clamp at zero) is revised by ADR-0010, which
 rejects over-removal instead of silently clamping.
 
 ## Context

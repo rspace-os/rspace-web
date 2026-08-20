@@ -43,9 +43,9 @@ const MAX_QUANTITY = 1e9;
  * derived sample name and the single "remember" checkbox first ("details"), then the quantities on a
  * later step ("amounts") with the count full-width and the two amounts sharing a row. Quantity inputs
  * default to the origin's unit but the user may pick any unit in the same category; the amount-taken
- * input stays in the origin's own category (adr/0002). The process-name input is a free-solo
+ * input stays in the origin's own category (DevDocs/adr/0007). The process-name input is a free-solo
  * autocomplete of previously-saved names, and the derived sample name is disabled until a process
- * name is entered (adr/0004).
+ * name is entered (DevDocs/adr/0009).
  */
 function OperationDetailsStep({
   operation,
@@ -79,9 +79,9 @@ function OperationDetailsStep({
   remember?: boolean;
   /** When provided, the single "remember" checkbox is shown (on the details section). */
   onRememberChange?: (remember: boolean) => void;
-  /** Every selected origin, for the "per subsample" amounts list (adr/0009); defaults to [origin]. */
+  /** Every selected origin, for the "per subsample" amounts list (DevDocs/adr/0014); defaults to [origin]. */
   origins?: Array<SubSampleModel>;
-  /** The amount mode for a multi-origin operation (adr/0009); "same" for single-origin operations. */
+  /** The amount mode for a multi-origin operation (DevDocs/adr/0014); "same" for single-origin operations. */
   amountMode?: AmountMode;
   onAmountModeChange?: (mode: AmountMode) => void;
   /** Per-origin amounts (by origin global id) for "perSubsample" mode. */
@@ -176,7 +176,7 @@ function OperationDetailsStep({
         ? [origin.quantityCategory]
         : (unitCategories ?? [origin.quantityCategory]);
     const numericValue = (raw: number) => (isTemperature ? raw : Math.min(MAX_QUANTITY, Math.max(0, raw)));
-    // The amount taken cannot exceed what the origin currently holds (adr/0005). Flag it inline on the
+    // The amount taken cannot exceed what the origin currently holds (DevDocs/adr/0010). Flag it inline on the
     // amount-taken field; the wizard blocks Next on the same condition.
     const overRemoval =
       input.key === operation.effect.amountTakenFrom &&
@@ -230,7 +230,7 @@ function OperationDetailsStep({
 
   // One amount field for a single origin in "per subsample" mode: blank until entered, with the unit
   // prefilled to that subsample's own unit (Pool subsamples share a category, so no unit-picking is
-  // needed) and its own over-removal check against that subsample's quantity (adr/0009).
+  // needed) and its own over-removal check against that subsample's quantity (DevDocs/adr/0014).
   const renderPerSubsampleAmount = (sub: SubSampleModel): React.ReactNode => {
     const globalId = sub.globalId ?? "";
     const current = perSubsampleAmounts[globalId];
@@ -276,9 +276,9 @@ function OperationDetailsStep({
     const taken = amountTakenFrom ? byKey.get(amountTakenFrom) : undefined;
     const count = countFrom ? byKey.get(countFrom) : undefined;
 
-    // Multi-origin operations offer the "amount to take" modes (adr/0009): "same" keeps the single
+    // Multi-origin operations offer the "amount to take" modes (DevDocs/adr/0014): "same" keeps the single
     // shared amount-taken field; "all" empties every origin (no field); "per subsample" shows one
-    // amount field per origin. The created-sample count/each-amount stay above and independent (adr/0002).
+    // amount field per origin. The created-sample count/each-amount stay above and independent (DevDocs/adr/0007).
     if (usesAmountModes(operation)) {
       const originsList = origins ?? [origin];
       return (
@@ -288,7 +288,7 @@ function OperationDetailsStep({
           <FormControl>
             <FormLabel>{label("operations.fields.amountMode")}</FormLabel>
             <RadioGroup value={amountMode} onChange={(e) => onAmountModeChange?.(e.target.value as AmountMode)}>
-              {/* "Take all" is listed first as the common default (adr/0009). */}
+              {/* "Take all" is listed first as the common default (DevDocs/adr/0014). */}
               <FormControlLabel value="all" control={<Radio />} label={label("operations.fields.amountModeAll")} />
               <FormControlLabel value="same" control={<Radio />} label={label("operations.fields.amountModeSame")} />
               <FormControlLabel

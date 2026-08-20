@@ -1,5 +1,5 @@
 /**
- * Pure helper for the wizard's optional documentation step (adr/0003). The chosen document is
+ * Pure helper for the wizard's optional documentation step (DevDocs/adr/0008). The chosen document is
  * remembered as part of the single per-process "remember" bundle (see processValues.ts); this only
  * guards a stored value back into shape.
  */

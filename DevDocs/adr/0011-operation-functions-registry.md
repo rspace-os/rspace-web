@@ -1,4 +1,4 @@
-# 6. Operation functions: a dev-authored code registry for effects config cannot express
+# 11. Operation functions: a dev-authored code registry for effects config cannot express
 
 Date: 2026-07-18
 
@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-Operations are declared as data (adr/0001): a config entry plus i18n, no per-operation
+Operations are declared as data (DevDocs/adr/0006): a config entry plus i18n, no per-operation
 Java or wizard code. The declarative vocabulary covers a fixed set of effects - create a
 sample + subsamples, links, text fields, storage temperature, an origin decrement.
 
@@ -71,5 +71,5 @@ code change in one file, not with a DSL.
   with a real security surface (executable logic from config), and unnecessary - operations
   are authored by developers, so a code registry gives the same power with none of the risk.
 - **Hardcode the computation in the wizard, branching on the operation key.** Rejected:
-  violates adr/0001's operation-agnostic wizard; the wizard must never know an operation by
+  violates DevDocs/adr/0006's operation-agnostic wizard; the wizard must never know an operation by
   name.
