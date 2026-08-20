@@ -18,21 +18,20 @@ beforeEach(() => {
 afterEach(cleanup);
 
 /*
- * PRT-1118. With a DMP integration enabled, dismissing the Gallery create menu
- * froze the page: a re-render landing while the menu was mid-exit cancelled
- * react-transition-group's `onExited` (mui/material-ui#32286), so the menu's
- * Modal never unmounted and its invisible (opacity-0) backdrop kept intercepting
- * every click. The fix (SidebarCreateMenu.tsx) makes the closed menu click-through.
+ * PRT-1118 / PRT-1135. With a DMP integration enabled, the Gallery create menu
+ * could survive its own exit transition: the Modal stayed mounted with an
+ * invisible backdrop intercepting every click (PRT-1118), and the aria-hidden
+ * it had applied to the rest of the page was never lifted (PRT-1135). Root
+ * cause was mui/material-ui#32286, fixed upstream in @mui/material 9.3.1 by
+ * PR #48881; see components/DialogBoundary.spec.tsx for the A/B that verifies
+ * it. The `pointerEvents: "none"` workaround this file used to guard has been
+ * removed now that the exit completes reliably.
  *
- * The freeze only manifests under a production React build (`-DgenerateReactDist`,
- * not `-DreactDevMode`, which StrictMode-masks it) and the underlying race is too
- * timing-dependent to reproduce deterministically here, so there is no automated
- * test for the frozen state. This spec guards the deterministic half in the
- * normal browser suite: the OPEN menu must stay interactive (the pointer-events
- * condition must never be inverted onto the open state).
+ * These tests remain the regression gate for that removal: the OPEN menu must
+ * stay interactive, and the menu must unmount once the DMP dialog closes.
  */
 describe("Gallery create menu (DMP enabled)", () => {
-  test("the open menu and its DMP option are interactive (pointer-events not disabled)", async () => {
+  test("the open menu and its DMP option are interactive", async () => {
     render(<CreateMenuStory />);
 
     await sidebar.openCreateMenu();
