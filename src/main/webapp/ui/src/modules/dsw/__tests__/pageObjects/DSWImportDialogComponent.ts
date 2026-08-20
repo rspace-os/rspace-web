@@ -3,10 +3,19 @@ import type { Locator, Page } from "@playwright/test";
 export class DSWImportDialogComponent {
   readonly root: Locator;
   readonly importButton: Locator;
+  /**
+   * The dismiss button. Its label depends on state -- "Cancel" while a plan is
+   * selected, "Close" otherwise -- but a successful import calls
+   * setSelectedPlan(null) in the same commit that raises the success toast, so
+   * by the time `dismiss()` is reachable the label is deterministically
+   * "Close".
+   */
+  readonly dismissButton: Locator;
 
   constructor(private readonly page: Page) {
     this.root = page.getByRole("dialog", { name: "Import a DMP into the Gallery" });
     this.importButton = this.root.getByRole("button", { name: "Import" });
+    this.dismissButton = this.root.getByRole("button", { name: "Close", exact: true });
   }
 
   planRadio(name: string): Locator {
@@ -29,6 +38,11 @@ export class DSWImportDialogComponent {
     if (!label?.startsWith("Select plan: ")) throw new Error("The first DSW plan has no accessible name.");
     await radio.click();
     return label.replace("Select plan: ", "");
+  }
+
+  async dismiss(): Promise<void> {
+    await this.dismissButton.click();
+    await this.root.waitFor({ state: "detached" });
   }
 
   async clickImport(): Promise<void> {
