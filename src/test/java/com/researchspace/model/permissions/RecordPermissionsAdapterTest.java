@@ -55,6 +55,8 @@ public class RecordPermissionsAdapterTest {
 
 	@After
 	public void tearDown() throws Exception {
+		// unbind the mock Subject so it cannot leak into later tests on the same thread
+		subjectThreadState.clear();
 	}
 	//RSPAC-625
 	@Test

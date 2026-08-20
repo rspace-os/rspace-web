@@ -42,6 +42,12 @@ public class AllToStringMethodsTest {
 		scanner.addIncludeFilter(new RegexPatternTypeFilter(Pattern.compile(packageRoot + ".*")));
 		scanner.addExcludeFilter(new RegexPatternTypeFilter(Pattern
 				.compile("com.researchspace.recordsandbox.*")));
+		// external client libraries on the classpath share the com.researchspace root but
+		// cannot be fixed from this repository
+		scanner.addExcludeFilter(new RegexPatternTypeFilter(Pattern
+				.compile("com.researchspace.fieldmark.*")));
+		scanner.addExcludeFilter(new RegexPatternTypeFilter(Pattern
+				.compile("com.researchspace.raid.*")));
 
 		for (BeanDefinition bd : scanner.findCandidateComponents(packageRoot)) {
 			String className = bd.getBeanClassName();
