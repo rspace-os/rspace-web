@@ -13,7 +13,9 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <version>3.0.1</version>
+    <!-- jitpack commit pin: parent branch with Shiro 3; move to the next tagged
+         parent release once that branch is merged -->
+    <version>0d7221d476</version>
   </parent>
 
   <repositories>
@@ -2690,9 +2692,6 @@
     <hibernate.logLevel>ERROR</hibernate.logLevel>
 
     <javax.cache.version>1.1.1</javax.cache.version>
-
-    <!-- overrides rspace-parent (2.1.0, EOSL); fold into the parent pom later -->
-    <shiro.version>3.0.0</shiro.version>
 
     <hibernate.search.index>FTsearchIndices</hibernate.search.index>
     <lucene.attachment.searchIndex>LuceneFTsearchIndices</lucene.attachment.searchIndex>
