@@ -4,6 +4,7 @@ import { DocumentsClient } from "../api/clients/DocumentsClient";
 import { FilesClient } from "../api/clients/FilesClient";
 import { FoldersClient } from "../api/clients/FoldersClient";
 import { InventoryClient } from "../api/clients/InventoryClient";
+import { SnippetsClient } from "../api/clients/SnippetsClient";
 import { SysadminClient } from "../api/clients/SysadminClient";
 import { env } from "../env";
 import { SYSADMIN } from "../users";
@@ -15,6 +16,7 @@ type ApiFixtures = {
   clientFiles: FilesClient;
   clientFolders: FoldersClient;
   clientInventory: InventoryClient;
+  clientSnippets: SnippetsClient;
   clientSysadmin: SysadminClient;
 };
 
@@ -36,6 +38,9 @@ export const apiTest = uiTest.extend<ApiFixtures>({
   },
   clientInventory: async ({ apiContext, appUser }, use) => {
     await use(new InventoryClient(apiContext, appUser.apiKey));
+  },
+  clientSnippets: async ({ page }, use) => {
+    await use(new SnippetsClient(page));
   },
   clientSysadmin: async ({ apiContext }, use) => {
     const client = new SysadminClient(apiContext, SYSADMIN.apiKey);
