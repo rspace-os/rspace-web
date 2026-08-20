@@ -72,16 +72,15 @@ export function normalizeProcessValues(stored: unknown): ProcessValues | null {
 }
 
 /**
- * The bundle store after Perform. When "remember" is ticked, store this run's bundle under the key;
- * when it is not, leave the store untouched (the previously-saved bundle, if any, is kept - unticking
- * means "do not save this run", never "delete what was saved"; grill Q1). Persisted only on Perform.
+ * The bundle store after a remembered Perform: this run's bundle stored under the key. The wizard
+ * calls this only when "remember" is ticked; an unremembered Perform never reaches it, so the
+ * previously-saved bundle (if any) is kept - unticking means "do not save this run", never "delete
+ * what was saved" (grill Q1). Persisted only on Perform.
  */
 export function processValuesAfterPerform(
   current: Record<string, ProcessValues>,
   key: string,
   bundle: ProcessValues,
-  remember: boolean,
 ): Record<string, ProcessValues> {
-  if (!remember) return current;
   return { ...current, [key]: bundle };
 }

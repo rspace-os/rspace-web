@@ -29,10 +29,11 @@ vi.mock("../operationsApi", () => ({
 }));
 
 const performSearch = vi.fn();
+const addAlert = vi.fn();
 vi.mock("@/stores/stores/getRootStore", () => ({
   default: () => ({
     searchStore: { search: { performSearch } },
-    uiStore: { addAlert: vi.fn() },
+    uiStore: { addAlert },
     unitStore: { getUnit: () => ({ label: "ml" }) },
   }),
 }));
@@ -61,12 +62,16 @@ vi.mock("../OperationDetailsStep", () => ({
     section,
     unitCategories,
     onRememberChange,
+    onAmountModeChange,
+    onPerSubsampleAmountsChange,
   }: {
     values: Record<string, unknown>;
     onChange: (v: Record<string, unknown>) => void;
     section?: string;
     unitCategories?: Array<string>;
     onRememberChange?: (r: boolean) => void;
+    onAmountModeChange?: (mode: string) => void;
+    onPerSubsampleAmountsChange?: (amounts: Record<string, { numericValue: number; unitId: number }>) => void;
   }) => (
     <div>
       <span data-testid="section">{String(section)}</span>
@@ -110,6 +115,22 @@ vi.mock("../OperationDetailsStep", () => ({
       <span data-testid="count">{String(values.count ?? "")}</span>
       <span data-testid="each-amount">{JSON.stringify(values.eachAmount ?? null)}</span>
       <span data-testid="amount-taken">{JSON.stringify(values.amountTaken ?? null)}</span>
+      <button type="button" data-testid="mode-per" onClick={() => onAmountModeChange?.("perSubsample")} />
+      <button
+        type="button"
+        data-testid="fill-per-first"
+        onClick={() => onPerSubsampleAmountsChange?.({ SS1: { numericValue: 1, unitId: 3 } })}
+      />
+      <button
+        type="button"
+        data-testid="fill-per-both"
+        onClick={() =>
+          onPerSubsampleAmountsChange?.({
+            SS1: { numericValue: 1, unitId: 3 },
+            SS2: { numericValue: 1, unitId: 3 },
+          })
+        }
+      />
     </div>
   ),
 }));
@@ -170,6 +191,7 @@ beforeEach(() => {
   for (const k of Object.keys(prefs.store)) delete prefs.store[k];
   performOperation.mockClear();
   performSearch.mockClear();
+  addAlert.mockClear();
   sampleNameAvailable.mockClear();
   sampleNameAvailable.mockResolvedValue(true);
 });
@@ -361,6 +383,65 @@ describe("OperationWizard step flow", () => {
     expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
   });
 
+  it("surfaces a rejected Perform as an alert and keeps the wizard open for retry", async () => {
+    performOperation.mockRejectedValueOnce(new Error("backend rejected the request"));
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await reachConfirm(user, "boom");
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    // the wizard stays open on the confirmation so the user can retry; nothing is lost
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByTestId("confirm")).toBeInTheDocument();
+  });
+
+  it("sends a Destroy request with no new sample and the computed disposed date on the origin", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await user.click(screen.getByRole("button", { name: /operations\.destroy\.label/i }));
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    const request = performOperation.mock.calls[0][0] as {
+      operationType: string;
+      newSample: unknown;
+      origins: Array<{
+        amountTaken: { numericValue: number; unitId: number };
+        extraFields?: Array<{ newFieldRequest: boolean; content: string }>;
+      }>;
+    };
+    expect(request.operationType).toBe("destroy");
+    expect(request.newSample).toBeNull();
+    // Destroy empties the origin: the amount taken is its full current quantity
+    expect(request.origins[0].amountTaken).toEqual({ numericValue: 1, unitId: 3 });
+    // ... and stamps the computed ISO disposal date as a new origin field
+    expect(request.origins[0].extraFields?.[0]).toEqual(
+      expect.objectContaining({ newFieldRequest: true, content: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) }),
+    );
+  });
+
+  it("blocks the amounts step in per-subsample mode until every origin has an amount", async () => {
+    const user = userEvent.setup();
+    const first = makeMockSubSample({});
+    const second = makeMockSubSample({ id: 2, globalId: "SS2" });
+    render(<OperationWizard open onClose={vi.fn()} origins={[first, second]} />);
+    await user.click(screen.getByRole("button", { name: /operations\.pool\.label/i }));
+    await user.click(nextButton()); // details -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // template -> amounts
+    await user.click(screen.getByTestId("mode-per"));
+    expect(nextButton()).toBeDisabled(); // no per-origin amounts entered yet
+    await user.click(screen.getByTestId("fill-per-first"));
+    expect(nextButton()).toBeDisabled(); // the second origin still has no amount
+    await user.click(screen.getByTestId("fill-per-both"));
+    expect(nextButton()).toBeEnabled();
+  });
+
   it("names the operation and its process name in the heading; just the operation for a fixed one", async () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
@@ -409,6 +490,28 @@ describe("OperationWizard remember bundle", () => {
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+    // Pin the assembled request: the wizard must hand buildOperationRequest's output to the API
+    // with the chosen template and the optional documentation link included.
+    const request = performOperation.mock.calls[0][0] as {
+      operationType: string;
+      origins: Array<{ id: number; amountTaken: { numericValue: number; unitId: number } }>;
+      newSample: {
+        templateId: number | null;
+        extraFields: Array<{ link?: { relationType: string; targetGlobalId: string } }>;
+      } | null;
+    };
+    expect(request.operationType).toBe("derive");
+    expect(request.origins).toEqual([expect.objectContaining({ id: 1, amountTaken: { numericValue: 1, unitId: 3 } })]);
+    expect(request.newSample?.templateId).toBe(5);
+    const links = (request.newSample?.extraFields ?? [])
+      .filter((field) => field.link)
+      .map((field) => [field.link?.relationType, field.link?.targetGlobalId]);
+    expect(links).toEqual(
+      expect.arrayContaining([
+        ["IsDerivedFrom", "SS1"],
+        ["IsDocumentedBy", "SD1"],
+      ]),
+    );
     expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES).toEqual({
       "derive dna extraction": {
         values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },

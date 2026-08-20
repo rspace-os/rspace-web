@@ -1,13 +1,16 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.InventoryOperationsApi;
+import com.researchspace.api.v1.controller.SamplesApiController.ApiSampleFullPost;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -26,6 +29,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
   @Autowired InventoryOperationManager inventoryOperationManager;
   @Autowired InventoryOperationPostValidator operationPostValidator;
   @Autowired InventoryOperationConfigRegistry operationConfigs;
+  @Autowired SampleApiPostFullValidator sampleApiPostFullValidator;
 
   @Override
   public ApiSampleWithFullSubSamples performOperation(
@@ -34,6 +38,32 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       @RequestAttribute(name = "user") User user)
       throws BindException {
     inputValidator.validate(request, operationPostValidator, errors);
+    // Template conformance, mirroring POST /samples
+    // (SamplesApiController.validateCreateSampleInput):
+    // a template-based new sample must reference a readable template, and its fields and quantity
+    // unit must match that template. Without this pass, a mismatched field list would surface as a
+    // 500 inside the manager transaction instead of a clean 400 here.
+    if (!errors.hasErrors() && request.getNewSample() != null) {
+      ApiSampleWithFullSubSamples newSample = request.getNewSample();
+      SampleTemplate template = null;
+      if (newSample.getTemplateId() != null) {
+        try {
+          template =
+              sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(
+                  newSample.getTemplateId(), user);
+        } catch (NotFoundException e) {
+          errors.rejectValue(
+              "newSample.templateId",
+              "errors.inventory.sample.templateNotFound",
+              new Object[] {newSample.getTemplateId()},
+              null);
+        }
+      }
+      if (!errors.hasErrors()) {
+        inputValidator.validate(
+            new ApiSampleFullPost(newSample, user, template), sampleApiPostFullValidator, errors);
+      }
+    }
     // Live-state checks (DevDocs/adr/0010, DevDocs/adr/0015): every origin must currently hold
     // something, the amount taken may not exceed what an origin holds, and an origin-emptying
     // operation (e.g. Destroy) must take exactly what the origin holds. These need each origin's
@@ -60,6 +90,11 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
         // (missing origin / permission edge cases); otherwise a thrown read would leave the
         // BindingResult's path stack unbalanced.
         try {
+          // Assert edit permission BEFORE reading state: getApiSubSampleById never throws for an
+          // under-permissioned caller, it returns a field-stripped copy whose quantity is null,
+          // which would misreport a full origin as "empty" (a 400) instead of an authorization
+          // failure. The manager re-asserts inside the transaction (defence in depth).
+          subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
           ApiSubSample current = subSampleApiMgr.getApiSubSampleById(origin.getId(), user);
           if (InventoryOperationPostValidator.originHoldsNothing(current.getQuantity())) {
             errors.rejectValue(

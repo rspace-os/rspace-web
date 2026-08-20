@@ -18,10 +18,11 @@ export type AmountMode = "same" | "all" | "perSubsample";
 export type PerSubsampleAmounts = Record<string, OperationQuantity>;
 
 /**
- * Sentinel unitId meaning "no unit chosen yet". The unit is part of an amount, so when amounts are
- * cleared for a new process name the unit clears too (rather than snapping back to the origin's
- * default); an amount carrying this unit is incomplete and blocks the details step (see detailsValid).
- * Real unit ids from the store are positive, so 0 is safe as the unset marker.
+ * Sentinel unitId meaning "no unit chosen yet". Fresh amounts are prefilled with the origin
+ * subsample's own unit; this marker appears when a picked template changes the measurement
+ * category, which clears the created amount's unit. An amount carrying it is incomplete and blocks
+ * the step (see detailsValid). Real unit ids from the store are positive, so 0 is safe as the
+ * unset marker.
  */
 export const UNSET_UNIT = 0;
 
@@ -93,3 +94,12 @@ export type OperationOrigin = {
 
 /** i18next-style resolver, injected so the builder stays pure and unit-testable. */
 export type ResolveLabel = (key: string, params?: Record<string, unknown>) => string;
+
+/**
+ * The one sanctioned escape hatch from i18next's typed `t` to the dynamic-key resolver the
+ * config-driven components need: operation labels/field names come from operations_config.json at
+ * runtime, so their keys cannot be statechecked. Keep the cast here, in one commented place.
+ */
+export function resolveLabelFrom(t: unknown): ResolveLabel {
+  return t as ResolveLabel;
+}
