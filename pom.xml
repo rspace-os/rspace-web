@@ -1610,7 +1610,9 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>3.2.1</version>
+      <!-- jitpack commit pin: core-model built with Shiro 3 via parent 3.1.0; move to
+           the next core-model release once its branch is merged -->
+      <version>2af3f34891</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
@@ -1623,12 +1625,6 @@
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-        <!-- core-model builds against Shiro 2.1.0; rspace-web supplies Shiro 3
-             (the class names core-model uses are identical in both lines) -->
-        <exclusion>
-          <groupId>org.apache.shiro</groupId>
-          <artifactId>*</artifactId>
         </exclusion>
         <!-- core-model (>= 2.26.1) re-introduces ical4j (calendar/ICS), which drags in older
              slf4j-api:1.7.25 and commons-lang3:3.8.1 and breaks dependency convergence (the rest
