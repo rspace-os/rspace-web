@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * Runs a configured Inventory operation (see the frontend {@code operations_config.json}). A single
  * generic, atomic endpoint: it creates one new sample (with its subsamples, custom fields and
  * relation links) and sets the origin subsamples' quantities, all in one transaction. There is no
- * per-operation endpoint or logic; a new operation is a new frontend config entry. See adr/0001.
+ * per-operation endpoint or logic; a new operation is a new frontend config entry. See
+ * DevDocs/adr/0006.
  */
 @RequestMapping("/api/inventory/v1/operations")
 public interface InventoryOperationsApi {
