@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import appTheme from "@/theme";
 import OperationConfirmation from "../OperationConfirmation";
@@ -39,6 +40,8 @@ const renderConf = (overrides: {
   op?: InventoryOperation;
   values?: OperationInputs;
   originHasAmount?: boolean;
+  remember?: boolean;
+  onRememberChange?: (remember: boolean) => void;
 }) =>
   render(
     // ThemeProvider supplies the app theme so the confirmation card can read palette.record.sample.
@@ -51,6 +54,8 @@ const renderConf = (overrides: {
         originSampleName="S1"
         originName="S1.01"
         originHasAmount={overrides.originHasAmount ?? true}
+        remember={overrides.remember ?? false}
+        onRememberChange={overrides.onRememberChange}
       />
     </ThemeProvider>,
   );
@@ -59,6 +64,35 @@ describe("OperationConfirmation", () => {
   it("shows the new sample name as the card title", () => {
     renderConf({ templateSelection: { mode: "none", templateId: null, remember: false } });
     expect(screen.getByText("New material")).toBeInTheDocument();
+  });
+
+  it("shows the remember checkbox (naming the process) and toggles it", async () => {
+    const onRememberChange = vi.fn();
+    render(
+      <ThemeProvider theme={appTheme}>
+        <OperationConfirmation
+          operation={operation}
+          values={{ ...values, processName: "dna" }}
+          documentation={null}
+          templateSelection={{ mode: "none", templateId: null, remember: false }}
+          originSampleName="S1"
+          originName="S1.01"
+          remember={false}
+          onRememberChange={onRememberChange}
+        />
+      </ThemeProvider>,
+    );
+    // the label references the chosen process name (values are remembered per process name);
+    // anchor the match so it hits the label, not the sibling rememberProcessValuesHelp helper text
+    expect(screen.getByText(/rememberProcessValues$/)).toBeInTheDocument();
+    expect(screen.getByText(/rememberProcessValuesHelp/)).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("checkbox"));
+    expect(onRememberChange).toHaveBeenCalledWith(true);
+  });
+
+  it("omits the remember checkbox when no handler is provided (terminal operations)", () => {
+    renderConf({ templateSelection: { mode: "none", templateId: null, remember: false } });
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
   it("summarises a picked template, the amount taken, and a linked document", () => {

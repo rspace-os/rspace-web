@@ -233,8 +233,9 @@ Confirm step as an info panel, and its "cannot operate on an empty subsample" gu
 enforced there too (Perform is blocked with the reason shown).
 
 1. **Details** — the **process name** (a free-solo autocomplete of the user's saved
-   names for this operation; fixed and non-editable for operations without one), the
-   **derived sample name**, and the single **remember** checkbox (below). The sample
+   names for this operation; fixed and non-editable for operations without one) and the
+   **derived sample name** (the single **remember** checkbox lives on the Confirm step,
+   below). The sample
    name is auto-derived as `"<origin sample name> <process name>"` — but if the process
    name is already the tail of the origin name (ignoring any `_N` dedup and `.NN`
    subsample-serial suffixes, matched case-insensitively) it is **not** appended again,
@@ -254,14 +255,19 @@ enforced there too (Perform is blocked with the reason shown).
    amount** (0, or a quantity never set), this step shows an error
    (`operations.fields.originAmountZero`) and blocks Next: you cannot operate on an empty
    subsample.
-2. **Template** — its own step now (see below). Next is disabled until a choice is made.
+2. **Template** — its own step now (see below). For a first-time run the parent
+   sample's own template is preselected when it has one
+   (`initialTemplateSelection`); otherwise Next is disabled until a choice is made.
 3. **Amounts** — the number of new subsamples (full width) and the two quantities
    (each-amount and amount-taken, sharing a row). For a fresh process name (nothing
-   remembered), the numeric fields default to 1 and the unit dropdowns start **blank**,
-   which blocks Next until the user picks a unit. Unit categories differ per field: the
+   remembered), the numeric fields default to 1 and the unit dropdowns are
+   **prefilled with the origin subsample's own unit** (the user may pick another in
+   the category). Unit categories differ per field: the
    **created** amount (each-amount) uses the chosen template's category when a specific
    template is picked, otherwise the origin subsample's — so deriving a volume sample
-   from a mass subsample offers volume units. The **amount taken from the origin** always
+   from a mass subsample offers volume units (picking a template in a different
+   category resets the created amount's prefilled unit to blank, so a stale unit
+   cannot survive into the request). The **amount taken from the origin** always
    uses the origin subsample's own category (you remove mass from a mass sample),
    regardless of the template, and must not exceed the origin's current quantity
    (DevDocs/adr/0010): over-removal is flagged inline and blocks Next
@@ -274,7 +280,9 @@ validates each step's own inputs.
 
 ### Remembered process values (single checkbox)
 
-One "Remember values for this process: {name}" checkbox on the Details step (a plain
+One "Remember values for this process: {name}" checkbox beneath the summary card on
+the Confirm step — and on the step-one fast path, which renders the same
+confirmation — (a plain
 checkbox with explanatory helper text beneath it, `rememberProcessValuesHelp`) governs
 everything kept for a process name — the template choice, the
 documentation link, and the collected amounts — as a single bundle

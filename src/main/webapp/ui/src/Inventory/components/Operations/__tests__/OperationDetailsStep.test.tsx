@@ -196,45 +196,14 @@ describe("OperationDetailsStep", () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ processName: "x" }));
   });
 
-  it("shows the single remember checkbox (naming the process) and toggles it", async () => {
-    const onRemember = vi.fn();
+  it("renders no remember checkbox: it lives on the summary and confirm step", () => {
     render(
       <OperationDetailsStep
         operation={processOperation}
         origin={origin}
         values={{ ...values, processName: "dna" }}
         onChange={() => undefined}
-        remember={false}
-        onRememberChange={onRemember}
       />,
-    );
-    // the label references the chosen process name (values are remembered per process name);
-    // anchor the match so it hits the label, not the sibling rememberProcessValuesHelp helper text
-    expect(screen.getByText(/rememberProcessValues$/)).toBeInTheDocument();
-    await userEvent.setup().click(screen.getByRole("checkbox"));
-    expect(onRemember).toHaveBeenCalledWith(true);
-  });
-
-  it("presents the remember checkbox as a plain control with helper text, not inside an info alert", () => {
-    render(
-      <OperationDetailsStep
-        operation={processOperation}
-        origin={origin}
-        values={{ ...values, processName: "dna" }}
-        onChange={() => undefined}
-        remember={false}
-        onRememberChange={vi.fn()}
-      />,
-    );
-    // no coloured info panel (hence no non-interactive info icon) wrapping the checkbox
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    // the explanatory helper text carries the emphasis instead
-    expect(screen.getByText(/rememberProcessValuesHelp/)).toBeInTheDocument();
-  });
-
-  it("omits the remember checkbox when no handler is provided (e.g. the amounts section)", () => {
-    render(
-      <OperationDetailsStep operation={processOperation} origin={origin} values={values} onChange={() => undefined} />,
     );
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
