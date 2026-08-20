@@ -13,9 +13,7 @@
   <parent>
     <groupId>com.github.rspace-os</groupId>
     <artifactId>rspace-parent</artifactId>
-    <!-- jitpack commit pin: parent branch with Shiro 3; move to the next tagged
-         parent release once that branch is merged -->
-    <version>0d7221d476</version>
+    <version>3.1.0</version>
   </parent>
 
   <repositories>
