@@ -2,6 +2,10 @@ import Alert from "@mui/material/Alert";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
+import Checkbox from "@mui/material/Checkbox";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormHelperText from "@mui/material/FormHelperText";
 import Stack from "@mui/material/Stack";
 import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
@@ -11,7 +15,12 @@ import DescriptionList from "@/components/DescriptionList";
 import useStores from "@/stores/use-stores";
 import { applyComputedValues } from "./computedValues";
 import type { DocumentationSelection } from "./DocumentationStep";
-import { type ConfirmSummaryField, type InventoryOperation, usesAmountModes } from "./operationsConfig";
+import {
+  type ConfirmSummaryField,
+  type InventoryOperation,
+  resolveProcessName,
+  usesAmountModes,
+} from "./operationsConfig";
 import type { TemplateSelection } from "./TemplateStep";
 import type { AmountMode, OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./types";
 
@@ -32,6 +41,8 @@ function OperationConfirmation({
   amountMode = "same",
   perSubsampleAmounts = {},
   origins = [],
+  remember = false,
+  onRememberChange,
 }: {
   operation: InventoryOperation;
   values: OperationInputs;
@@ -51,6 +62,11 @@ function OperationConfirmation({
   perSubsampleAmounts?: PerSubsampleAmounts;
   /** Every selected origin (name + global id), for the "per subsample" amount breakdown. */
   origins?: Array<{ globalId: string; name: string }>;
+  /** Whether this run's values should be remembered for the process name (the single checkbox). */
+  remember?: boolean;
+  /** When provided, the single "remember" checkbox is shown beneath the summary card. A terminal
+   *  operation (Destroy) has nothing to remember, so the wizard passes no handler for it. */
+  onRememberChange?: (remember: boolean) => void;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const theme = useTheme();
@@ -227,6 +243,25 @@ function OperationConfirmation({
           <DescriptionList content={content} dividers />
         </CardContent>
       </Card>
+      {onRememberChange ? (
+        // One checkbox governs everything remembered for this process name (template, amounts,
+        // documentation). It sits with the summary so the user ticks it while reviewing exactly what
+        // will be remembered. A plain checkbox with helper text beneath: the explanatory line, not a
+        // coloured panel, conveys what "remember" does (see the operation-wizard dev note).
+        <FormControl>
+          <FormControlLabel
+            control={<Checkbox checked={remember} onChange={(e) => onRememberChange(e.target.checked)} />}
+            label={resolveLabel("operations.fields.rememberProcessValues", {
+              // resolveProcessName also covers a fixed process name (e.g. Cryopreserve's), which the
+              // row-level processName above deliberately leaves blank.
+              name: resolveProcessName(operation, values),
+            })}
+          />
+          <FormHelperText sx={{ mt: 0, ml: "34px" }}>
+            {resolveLabel("operations.fields.rememberProcessValuesHelp")}
+          </FormHelperText>
+        </FormControl>
+      ) : null}
     </Stack>
   );
 }

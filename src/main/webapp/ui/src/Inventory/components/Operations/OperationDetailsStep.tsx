@@ -1,9 +1,7 @@
 import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
-import Checkbox from "@mui/material/Checkbox";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import FormHelperText from "@mui/material/FormHelperText";
 import FormLabel from "@mui/material/FormLabel";
 import InputAdornment from "@mui/material/InputAdornment";
 import Radio from "@mui/material/Radio";
@@ -39,9 +37,10 @@ import type { AmountMode, OperationInputs, OperationInputValue, OperationQuantit
 const MAX_QUANTITY = 1e9;
 
 /**
- * Renders a slice of the operation's declared inputs generically. The wizard shows the process name,
- * derived sample name and the single "remember" checkbox first ("details"), then the quantities on a
- * later step ("amounts") with the count full-width and the two amounts sharing a row. Quantity inputs
+ * Renders a slice of the operation's declared inputs generically. The wizard shows the process name
+ * and derived sample name first ("details"; the single "remember" checkbox lives on the confirmation
+ * step), then the quantities on a later step ("amounts") with the count full-width and the two
+ * amounts sharing a row. Quantity inputs
  * default to the origin's unit but the user may pick any unit in the same category; the amount-taken
  * input stays in the origin's own category (DevDocs/adr/0007). The process-name input is a free-solo
  * autocomplete of previously-saved names, and the derived sample name is disabled until a process
@@ -55,8 +54,6 @@ function OperationDetailsStep({
   section = "details",
   unitCategories,
   processNameOptions = [],
-  remember = false,
-  onRememberChange,
   origins,
   amountMode = "same",
   onAmountModeChange,
@@ -75,10 +72,6 @@ function OperationDetailsStep({
   unitCategories?: Array<string>;
   /** Saved process names for this operation, offered in the process-name autocomplete. */
   processNameOptions?: Array<string>;
-  /** Whether this run's values should be remembered for the process name (the single checkbox). */
-  remember?: boolean;
-  /** When provided, the single "remember" checkbox is shown (on the details section). */
-  onRememberChange?: (remember: boolean) => void;
   /** Every selected origin, for the "per subsample" amounts list (DevDocs/adr/0014); defaults to [origin]. */
   origins?: Array<SubSampleModel>;
   /** The amount mode for a multi-origin operation (DevDocs/adr/0014); "same" for single-origin operations. */
@@ -330,20 +323,6 @@ function OperationDetailsStep({
     <Stack spacing={1}>
       {originHasNoAmount ? <Alert severity="error">{label("operations.fields.originAmountZero")}</Alert> : null}
       {operation.inputs.filter((input) => !amountKeys.has(input.key)).map(renderInput)}
-      {onRememberChange ? (
-        // One checkbox governs everything remembered for this process name (template, amounts,
-        // documentation). A plain checkbox with helper text beneath: the explanatory line, not a
-        // coloured panel, conveys what "remember" does (see the operation-wizard dev note).
-        <FormControl>
-          <FormControlLabel
-            control={<Checkbox checked={remember} onChange={(e) => onRememberChange(e.target.checked)} />}
-            label={label("operations.fields.rememberProcessValues", { name: processName })}
-          />
-          <FormHelperText sx={{ mt: 0, ml: "34px" }}>
-            {label("operations.fields.rememberProcessValuesHelp")}
-          </FormHelperText>
-        </FormControl>
-      ) : null}
     </Stack>
   );
 }

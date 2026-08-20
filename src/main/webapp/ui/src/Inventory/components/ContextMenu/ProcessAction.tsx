@@ -1,4 +1,5 @@
-import ScienceIcon from "@mui/icons-material/Science";
+import { faCodeBranch } from "@fortawesome/free-solid-svg-icons/faCodeBranch";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type MenuItem from "@mui/material/MenuItem";
 import { Observer } from "mobx-react-lite";
 import React, { forwardRef } from "react";
@@ -44,7 +45,9 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
         {() => (
           <ContextMenuAction
             onClick={() => setOpen(true)}
-            icon={<ScienceIcon />}
+            // The same code-branch icon the picker shows for Derive (operations_config.json), so the
+            // menu entry and the wizard it opens share one visual identity.
+            icon={<FontAwesomeIcon icon={faCodeBranch} size="lg" />}
             label={t("operations.action.process")}
             disabledHelp={disabledHelp}
             as={as}
