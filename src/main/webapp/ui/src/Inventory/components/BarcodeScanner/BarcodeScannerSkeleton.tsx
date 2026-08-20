@@ -5,7 +5,7 @@ import CardActions from "@mui/material/CardActions";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import type React from "react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
@@ -47,7 +47,7 @@ export default function BarcodeScannerSkeleton({
   const { uiStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
 
-  function handleOnSubmit() {
+  const handleOnSubmit = useCallback(() => {
     try {
       if (!barcode || typeof barcode.rawValue !== "string") {
         uiStore.addAlert(
@@ -74,7 +74,7 @@ export default function BarcodeScannerSkeleton({
     } finally {
       onClose();
     }
-  }
+  }, [barcode, onScan, onClose, uiStore, t]);
 
   /*
    * The ref guards against the camera re-detecting the same code on a later
@@ -86,7 +86,7 @@ export default function BarcodeScannerSkeleton({
       submitted.current = true;
       handleOnSubmit();
     }
-  });
+  }, [submitOnScan, barcode, handleOnSubmit]);
 
   const alertContent = loading ? (
     t("barcodeScanner.loading")
