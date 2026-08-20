@@ -147,6 +147,42 @@ function useBodyScrollLock(open: boolean | undefined): void {
   }, [open]);
 }
 
+/*
+ * Why the container is handed over as a *stable* getter, and why RSDEV-1317
+ * phase 5 (state plus a callback ref) is not used.
+ *
+ * MUI's Portal resolves `container` inside an effect keyed on the prop itself.
+ * The three shapes behave very differently here:
+ *
+ *   1. An inline `() => ref.current` arrow, as this file had. New identity
+ *      every render, so the effect re-runs constantly and the mount node can
+ *      move out from under an open modal -- the mui/material-ui#32286 territory
+ *      behind PRT-1118 and PRT-1135.
+ *   2. State plus a callback ref (phase 5). The container goes null -> div
+ *      deterministically, so the portal always relocates once. Where a boundary
+ *      is already mounted that is harmless, but where a boundary and an ALREADY
+ *      OPEN dialog mount in the same commit the dialog portals to
+ *      document.body, ModalManager aria-hides the other body children, and the
+ *      relocation then moves the dialog inside that hidden subtree. Measured
+ *      when trying it: 42 failures across ShareDialog, pubchem/ImportDialog and
+ *      FieldmarkImportDialog, all "Unable to find role=dialog".
+ *   3. The stable getter below. React attaches the boundary div's ref after its
+ *      descendants' layout effects, so a same-commit dialog reads null and
+ *      portals to document.body -- and because the prop identity never changes,
+ *      the effect does not re-run and it STAYS there: reachable, no relocation.
+ *      Where the boundary mounted earlier (the normal case, <Alerts> at app
+ *      level) the first read already returns the div, so toasts still render
+ *      above dialogs as intended.
+ *
+ * Note the same-commit shape is not limited to a nested <DialogBoundary>, which
+ * is all RSDEV-1317 groups A and B removed: any tree mounting <Alerts> together
+ * with an open dialog has it too, because Alerts contains a boundary.
+ */
+function useStableContainerGetter(): () => HTMLElement | null {
+  const { modalContainer } = useContext(DialogBoundaryContext);
+  return React.useCallback(() => modalContainer.current, [modalContainer]);
+}
+
 /**
  * A Dialog that is rendered within the boundary defined by DialogBoundary.
  *
@@ -157,13 +193,13 @@ function useBodyScrollLock(open: boolean | undefined): void {
  * the logic for wiring up the `aria-labelledby` attribute correctly.
  */
 export function Dialog(props: Omit<React.ComponentProps<typeof MuiDialog>, "container">): React.ReactNode {
-  const { modalContainer } = useContext(DialogBoundaryContext);
+  const getModalContainer = useStableContainerGetter();
   const { children, open, ...rest } = props;
 
   useBodyScrollLock(open);
 
   return (
-    <MuiDialog container={() => modalContainer.current} open={open} {...rest}>
+    <MuiDialog container={getModalContainer} open={open} {...rest}>
       <Suspense fallback={null}>{children}</Suspense>
     </MuiDialog>
   );
@@ -173,13 +209,13 @@ export function Dialog(props: Omit<React.ComponentProps<typeof MuiDialog>, "cont
  * A Menu that is rendered within the boundary defined by DialogBoundary.
  */
 export function Menu(props: Omit<React.ComponentProps<typeof MuiMenu>, "container">): React.ReactNode {
-  const { modalContainer } = useContext(DialogBoundaryContext);
+  const getModalContainer = useStableContainerGetter();
   const { children, open, ...rest } = props;
 
   useBodyScrollLock(open);
 
   return (
-    <MuiMenu container={() => modalContainer.current} open={open} {...rest}>
+    <MuiMenu container={getModalContainer} open={open} {...rest}>
       <Suspense fallback={null}>{children}</Suspense>
     </MuiMenu>
   );
@@ -189,7 +225,7 @@ export function Menu(props: Omit<React.ComponentProps<typeof MuiMenu>, "containe
  * A Drawer that is rendered within the boundary defined by DialogBoundary.
  */
 export function Drawer(props: Omit<React.ComponentProps<typeof MuiDrawer>, "container">): React.ReactNode {
-  const { modalContainer } = useContext(DialogBoundaryContext);
+  const getModalContainer = useStableContainerGetter();
   const { children, open, ...rest } = props;
 
   useBodyScrollLock(open);
@@ -201,7 +237,7 @@ export function Drawer(props: Omit<React.ComponentProps<typeof MuiDrawer>, "cont
        * Including the superfluous prop otherwise results in a console error.
        * See https://mui.com/material-ui/api/drawer/
        */
-      {...(props.variant === "temporary" ? { container: () => modalContainer.current } : {})}
+      {...(props.variant === "temporary" ? { container: getModalContainer } : {})}
       open={open}
       {...rest}
     >
