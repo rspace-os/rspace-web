@@ -28,11 +28,6 @@ type BarcodeScannerSkeletonArgs = {
   warning?: React.ReactNode;
   videoElem: React.RefObject<HTMLVideoElement | null>;
   error: boolean;
-  /*
-   * When set, the first detected barcode is submitted immediately: no confirm
-   * button, no manual-entry field, just Cancel. Used by the search bar for
-   * 1-click scan-and-search.
-   */
   submitOnScan?: boolean;
 };
 
