@@ -212,7 +212,7 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Origin** — the existing subsample(s) selected as input to an Operation. Only
   subsamples are eligible; never a Sample, Container, or Instrument. An Operation
   may decrement or leave unchanged an Origin's quantity (never increase it;
-  adr/0002), and may add a field to the Origin (an Origin field).
+  DevDocs/adr/0007), and may add a field to the Origin (an Origin field).
 - **Origin field** — a custom field an Operation adds to an Origin subsample itself
   (as distinct from a field on the Derived Sample), e.g. Destroy's disposal date.
   _Avoid_: origin annotation, in-place field.
@@ -257,7 +257,9 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Operation definition** — the declarative description of one Operation: its
   applicability, wizard inputs, and effects. Authored as data; effects that the
   declarative vocabulary cannot express are supplied by an Operation function
-  (below), keeping the definition itself data.
+  (below), keeping the definition itself data. Authoritative on both sides of the
+  API: the wizard renders and gates from it, and the backend rejects an operation
+  request that does not conform to the definition its operation key names.
 - **Computed value** — a value an Operation produces at submit by applying an
   Operation function to configured arguments, written into a named input slot that
   the Operation's effect wiring then consumes. Declared in the Operation definition.

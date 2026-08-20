@@ -86,7 +86,8 @@ class InventoryOperationManagerImplTest {
   @Test
   void decrementsOriginBeforeCreatingTheNewSample() {
     // The new subsample must end up most-recently-modified, so the origin is decremented (which
-    // stamps its modification date) BEFORE the new sample + subsample are created (adr/0005).
+    // stamps its modification date) BEFORE the new sample + subsample are created
+    // (DevDocs/adr/0010).
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
     ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Derived material");
@@ -103,7 +104,8 @@ class InventoryOperationManagerImplTest {
 
   @Test
   void abortsBeforeAnyMutationWhenAnOriginIsNotEditable() {
-    // Validate-before-mutate (adr/0001): if the permission check on any origin fails, nothing must
+    // Validate-before-mutate (DevDocs/adr/0006): if the permission check on any origin fails,
+    // nothing must
     // be written - neither the new sample created nor any origin reduced.
     ApiInventoryOperationPost request = new ApiInventoryOperationPost();
     request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
@@ -121,7 +123,7 @@ class InventoryOperationManagerImplTest {
   @Test
   void abortsBeforeAnyMutationWhenALaterOriginIsNotEditable() {
     // Multi-origin (Pool): permission is asserted on EVERY origin before ANY origin is mutated
-    // (adr/0001). If a later origin fails the check, an earlier origin must NOT have been
+    // (DevDocs/adr/0006). If a later origin fails the check, an earlier origin must NOT have been
     // decremented.
     // A single-origin test cannot catch a refactor that merges the assert and mutate loops; this
     // one
@@ -148,7 +150,7 @@ class InventoryOperationManagerImplTest {
     // origin
     // itself. The manager must create no sample, return null, and apply the origin's extra fields
     // via
-    // the subsample-edit path (adr/0008).
+    // the subsample-edit path (DevDocs/adr/0013).
     ApiExtraField disposed = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
     disposed.setName("disposed");
     disposed.setContent("2026-07-20");

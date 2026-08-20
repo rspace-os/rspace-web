@@ -1,6 +1,6 @@
 /**
  * Loads and validates the declarative operation definitions. Operations are data, not code: adding
- * one is a new entry in operations_config.json, with no change here or in the backend (see adr/0001).
+ * one is a new entry in operations_config.json, with no change here or in the backend (see DevDocs/adr/0006).
  * The valibot schema is the single source of truth for the config shape; the InventoryOperation type
  * is inferred from it, and the JSON is validated at module load so an authoring mistake fails fast.
  */
@@ -45,7 +45,7 @@ const OriginFieldSpecSchema = v.object({
   type: v.optional(v.picklist(["text", "number"])),
 });
 
-// An argument handed to an Operation function (adr/0006), sourced one of three ways: the content of a
+// An argument handed to an Operation function (DevDocs/adr/0011), sourced one of three ways: the content of a
 // named field on the origin's parent sample (resolved in the user's locale via the i18n key), a
 // literal constant, or the current value of another wizard input. The wizard resolves these at submit.
 const ArgSourceSchema = v.union([
@@ -81,7 +81,7 @@ const EffectSchema = v.object({
   // per process name (see processNames.ts) and the field becomes an autocomplete of saved names.
   processNameFrom: v.optional(v.string()),
   storageTempFrom: v.optional(v.string()),
-  // Values computed at submit by applying an Operation function (adr/0006) to configured arguments,
+  // Values computed at submit by applying an Operation function (DevDocs/adr/0011) to configured arguments,
   // each written into a named input the effect wiring then consumes (e.g. Passage's passage number).
   computed: v.optional(v.array(ComputedSchema)),
   links: v.array(LinkSpecSchema),
@@ -118,14 +118,14 @@ const OperationSchema = v.object({
   // one). Optional; an operation without it renders no icon.
   iconKey: v.optional(v.string()),
   // Whether the operation consumes multiple origin subsamples (Pool); omitted/false = single-origin.
-  // Drives which selection sizes enable it in the picker (see operationAvailability and adr/0007).
+  // Drives which selection sizes enable it in the picker (see operationAvailability and DevDocs/adr/0012).
   requiresMultiple: v.optional(v.boolean()),
   // Whether the amounts step offers the per-origin "amount to take" modes (same / take all / per
   // subsample). Only meaningful for a multi-origin operation that takes an amount; for those it
-  // defaults to true. Ignored for single-origin operations, which always take one amount. See adr/0009.
+  // defaults to true. Ignored for single-origin operations, which always take one amount. See DevDocs/adr/0014.
   takeAmountPerSubsample: v.optional(v.boolean()),
   // The amount mode a multi-origin operation starts on, before the user changes it or a remembered
-  // bundle supplies one. Defaults to "same" when omitted; Pool sets "all". See adr/0009.
+  // bundle supplies one. Defaults to "same" when omitted; Pool sets "all". See DevDocs/adr/0014.
   defaultAmountMode: v.optional(v.picklist(["same", "all", "perSubsample"])),
   // When true the operation produces no new sample/subsamples (it only acts on its origins, e.g.
   // Destroy). The wizard omits the new-sample effect wiring and the backend creates nothing.
@@ -154,7 +154,7 @@ export const operations: Array<InventoryOperation> = v.parse(v.array(OperationSc
 /**
  * Fail fast, like the valibot parse above: every computed value must name an Operation function that
  * exists in the registry and bind exactly that function's declared parameters. An authoring mistake
- * throws at module load rather than at submit. See adr/0006.
+ * throws at module load rather than at submit. See DevDocs/adr/0011.
  */
 function assertComputedValuesValid(ops: Array<InventoryOperation>): void {
   for (const op of ops) {
@@ -191,7 +191,7 @@ assertComputedValuesValid(operations);
  * nameFrom, the amount/temperature sources, each text/origin field's contentFrom, and each computed
  * `{ input }` argument - must name either a declared input or a computed `into`, otherwise a config
  * typo silently produces empty content or a malformed quantity at submit instead of failing when the
- * config loads. See adr/0001.
+ * config loads. See DevDocs/adr/0006.
  */
 export function assertEffectReferencesValid(ops: Array<InventoryOperation>): void {
   for (const op of ops) {
@@ -227,7 +227,7 @@ assertEffectReferencesValid(operations);
 
 /**
  * Whether the amounts step should offer the per-origin "amount to take" modes for this operation
- * (adr/0009): only a multi-origin operation that actually takes an amount, and only when its config
+ * (DevDocs/adr/0014): only a multi-origin operation that actually takes an amount, and only when its config
  * has not opted out (`takeAmountPerSubsample` defaults to true for such operations). Single-origin
  * operations always take a single amount, so this is false for them regardless of config.
  */
@@ -241,7 +241,7 @@ export function usesAmountModes(operation: InventoryOperation): boolean {
 
 /**
  * The amount mode a multi-origin operation starts on before the user changes it or a remembered bundle
- * supplies one (adr/0009): the operation's configured `defaultAmountMode`, or "same" when unset (e.g.
+ * supplies one (DevDocs/adr/0014): the operation's configured `defaultAmountMode`, or "same" when unset (e.g.
  * Pool defaults to "all"). Always "same" for an operation that does not use amount modes, so a stray
  * config value can never empty a single-origin operation's origin.
  */
@@ -253,7 +253,7 @@ export type OperationAvailability = { enabled: boolean; reasonKey?: string };
 
 /**
  * Whether an operation is enabled for the current subsample selection, and if not, the i18n key
- * explaining why (shown greyed-out in the picker; see adr/0007). A multi-origin operation (Pool)
+ * explaining why (shown greyed-out in the picker; see DevDocs/adr/0012). A multi-origin operation (Pool)
  * needs two or more subsamples that share a measurement category; a single-origin operation needs
  * exactly one. Every operation is always shown - only its enabled state and reason change.
  */
@@ -272,7 +272,7 @@ export function operationAvailability(
 }
 
 /**
- * Every operation has a process name (adr/0004). An operation that declares a process-name input
+ * Every operation has a process name (DevDocs/adr/0009). An operation that declares a process-name input
  * (Derive) resolves to the user's trimmed entry (which may be empty until they type one); one that
  * does not (Cryopreserve) resolves to a fixed name, its own operation key. The process name is the
  * single key for remembered values and the seed for the derived sample name.

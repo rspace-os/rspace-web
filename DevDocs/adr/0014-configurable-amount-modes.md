@@ -1,15 +1,15 @@
-# 9. Configurable amount modes for multi-origin operations
+# 14. Configurable amount modes for multi-origin operations
 
 Date: 2026-07-21
 
 ## Status
 
-Accepted. Extends adr/0007 (multi-origin operations), which deferred per-origin amounts
+Accepted. Extends DevDocs/adr/0012 (multi-origin operations), which deferred per-origin amounts
 ("rejected for now... deferred until a real need appears"). That need has arrived.
 
 ## Context
 
-adr/0007 gave Pool a single **shared** amount taken from every origin, and built the
+DevDocs/adr/0012 gave Pool a single **shared** amount taken from every origin, and built the
 wizard's "representative origin" (the smallest) shortcut on that assumption: because the
 same amount is removed from each, the smallest origin is the binding constraint, so the
 single-origin over-removal / empty checks are correct against it alone. That is only true
@@ -32,12 +32,12 @@ single-origin operations completely unchanged.
   (always Same amount), so a stray value can never empty their origin.
 - **Three amount modes** (a per-run choice on the amounts step; initial choice per the
   operation's `defaultAmountMode`, above):
-  - **Same amount** — the existing UI and behaviour (adr/0007): one shared amount taken
+  - **Same amount** — the existing UI and behaviour (DevDocs/adr/0012): one shared amount taken
     from every origin, checked against the smallest origin. Unchanged.
   - **Take all** — the shared amount-taken input is disabled and **every origin is emptied
     to zero** (each origin's amount taken is its own full current quantity). The Derived
     Sample's Created amount (count x each-amount) stays independent and its inputs remain
-    enabled (adr/0002).
+    enabled (DevDocs/adr/0007).
   - **Per subsample** — the shared amount-taken input is disabled and the step shows **one
     amount field per origin**, each starting blank with the unit prefilled to that origin's
     own unit, each validated against **that origin's** own current quantity (per-origin
@@ -83,7 +83,7 @@ single-origin operations completely unchanged.
   that a re-run on differently-named-but-same-material subsamples recalls nothing, which is
   the safe default.
 - **Take-all also drives the pooled sample's amount to the total taken.** Rejected: it
-  conflates the Origin decrement with the Created amount, which adr/0002 keeps independent;
+  conflates the Origin decrement with the Created amount, which DevDocs/adr/0007 keeps independent;
   the count/each-amount inputs stay in control of the Created amount.
 - **Restrict the step-one fast path to multi-origin operations.** Rejected: a remembered
   single-origin run (e.g. a repeated Derive) benefits equally; the trigger is "a complete,
