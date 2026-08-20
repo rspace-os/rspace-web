@@ -141,7 +141,7 @@ const PrimaryActionButton = ({
               act: () => {
                 window.open(action.url, "_blank", "noopener,noreferrer");
                 trackEvent("user:opens:document:collabora");
-              }
+              },
             };
           case "officeonline":
             return {
