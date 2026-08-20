@@ -799,6 +799,12 @@
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-audit</artifactId>
       <version>1.0.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rspace-core-util</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>
@@ -1600,21 +1606,30 @@
       <version>2.0.11</version>
     </dependency>
     <dependency>
-      <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-core-util</artifactId>
-      <version>2.0.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.shiro</groupId>
-          <artifactId>shiro-core</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>1.28.0</version>
+    </dependency>
+    <dependency>
+      <!-- barcode/QR generation and decoding, used by com.researchspace.core.util.imageutils.BarcodeUtils -->
+      <groupId>com.google.zxing</groupId>
+      <artifactId>core</artifactId>
+      <version>3.5.4</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>javase</artifactId>
+      <version>3.5.4</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
       <version>3.2.1</version>
       <exclusions>
+        <exclusion>
+          <groupId>com.github.rspace-os</groupId>
+          <artifactId>rspace-core-util</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>commons-io</groupId>
           <artifactId>commons-io</artifactId>
