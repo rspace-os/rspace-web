@@ -26,6 +26,12 @@ vi.mock("@/stores/models/Search", () => ({
   },
 }));
 vi.mock("@/stores/models/Factory/AlwaysNewFactory", () => ({ default: class {} }));
+// The shared GlobalId pill drags in record-type icons and navigation; the boundary is enough here.
+vi.mock("@/components/GlobalId", () => ({
+  default: ({ record }: { record: { globalId: string | null } }) => (
+    <span data-testid="global-id-pill">{record.globalId}</span>
+  ),
+}));
 
 beforeEach(() => {
   performInitialSearch.mockClear();
@@ -42,15 +48,16 @@ describe("WizardTemplatePicker", () => {
     expect(performInitialSearch).toHaveBeenCalled();
   });
 
-  it("shows each template as an option with its name and its global id as plain (non-link) text", async () => {
+  it("shows each template as an option with its name and the standard GlobalId pill", async () => {
     const user = userEvent.setup();
     render(<WizardTemplatePicker setTemplate={vi.fn()} />);
     await user.click(screen.getByRole("combobox"));
     const listbox = screen.getByRole("listbox");
     expect(within(listbox).getByText("Cells")).toBeInTheDocument();
-    expect(within(listbox).getByText("IT5")).toBeInTheDocument();
-    // the clickable open-in-new-window pill is gone: the option carries no link
-    expect(within(listbox).queryByRole("link")).not.toBeInTheDocument();
+    // the id renders through the shared GlobalId pill (record icon + id chip), matching how
+    // Inventory presents records and their ids everywhere else
+    const pills = within(listbox).getAllByTestId("global-id-pill");
+    expect(pills.map((pill) => pill.textContent)).toEqual(["IT5", "IT7"]);
   });
 
   it("reports the chosen template through setTemplate", async () => {
