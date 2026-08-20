@@ -1,6 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
+import { CreateSnippetDialogComponent } from "@/__tests__/e2e/components/document/CreateSnippetDialogComponent";
 import { resolveFieldId } from "@/__tests__/e2e/components/document/DocumentFieldHelpers";
 import { DocumentToolbar } from "@/__tests__/e2e/components/document/DocumentToolbar";
+import { InternalLinkDialogComponent } from "@/__tests__/e2e/components/document/InternalLinkDialogComponent";
 import { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor";
 import { GalleryPickerComponent } from "@/__tests__/e2e/components/shared/GalleryPickerComponent";
 import { ExternalWorkflowDialogComponent } from "@/modules/galaxy/__tests__/pageObjects/ExternalWorkflowDialogComponent";
@@ -18,6 +20,8 @@ export class DocumentEditorPage extends DocumentPage {
   readonly externalWorkflowDialog: ExternalWorkflowDialogComponent;
   readonly pyratDialog: PyratDialogComponent;
   readonly omeroDialog: OmeroDialogComponent;
+  readonly createSnippetDialog: CreateSnippetDialogComponent;
+  readonly internalLinkDialog: InternalLinkDialogComponent;
 
   constructor(page: Page) {
     super(page);
@@ -28,6 +32,8 @@ export class DocumentEditorPage extends DocumentPage {
     this.externalWorkflowDialog = new ExternalWorkflowDialogComponent(page);
     this.pyratDialog = new PyratDialogComponent(page);
     this.omeroDialog = new OmeroDialogComponent(page);
+    this.createSnippetDialog = new CreateSnippetDialogComponent(page);
+    this.internalLinkDialog = new InternalLinkDialogComponent(page);
   }
 
   override async isLoaded(): Promise<void> {
@@ -113,5 +119,25 @@ export class DocumentEditorPage extends DocumentPage {
     await this.omeroToolbarButton.click();
     await this.omeroDialog.waitForOpen();
     return this.omeroDialog;
+  }
+
+  get createSnippetButton(): Locator {
+    return this.page.getByRole("button", { name: "Create a snippet" });
+  }
+
+  async openCreateSnippetDialog(): Promise<CreateSnippetDialogComponent> {
+    await this.createSnippetButton.click();
+    await this.createSnippetDialog.waitForOpen();
+    return this.createSnippetDialog;
+  }
+
+  get insertInternalLinkButton(): Locator {
+    return this.page.getByRole("button", { name: "Insert internal link" });
+  }
+
+  async openInsertInternalLinkDialog(): Promise<InternalLinkDialogComponent> {
+    await this.insertInternalLinkButton.click();
+    await this.internalLinkDialog.waitForOpen();
+    return this.internalLinkDialog;
   }
 }
