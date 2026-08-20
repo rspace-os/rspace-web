@@ -1,11 +1,11 @@
-# 7. Multi-origin operations (Pool): a shared amount from each, disabled-with-reason picker
+# 12. Multi-origin operations (Pool): a shared amount from each, disabled-with-reason picker
 
 Date: 2026-07-20
 
 ## Status
 
 Accepted. The shared-amount simplification below (one amount from every origin, checked
-against the smallest "representative" origin) is **extended by adr/0009**, which makes the
+against the smallest "representative" origin) is **extended by DevDocs/adr/0014**, which makes the
 amount across origins a per-run choice (same amount / take all / per subsample). "Same
 amount" keeps this decision unchanged; the other modes take a per-origin amount and so
 validate every origin rather than only the representative one.
@@ -17,7 +17,7 @@ subsample, `buildOperationRequest` emitted one origin and one link, and the amou
 checked over-removal against that one origin. Pool combines **two or more** subsamples into
 one new pooled sample, decrementing each and linking the new sample back to every source.
 
-The backend was already multi-origin ready (adr/0001): `origins` is an array the validator,
+The backend was already multi-origin ready (DevDocs/adr/0006): `origins` is an array the validator,
 over-removal check, and manager all loop over. Only the frontend was single-origin. Three
 questions shaped the design: how the amount taken is expressed across origins, how the
 config marks an operation multi-origin, and how the picker presents an operation that does

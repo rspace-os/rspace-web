@@ -1,5 +1,5 @@
 /**
- * Pure helpers for the derived sample name (adr/0004). The new sample's name is seeded from the
+ * Pure helpers for the derived sample name (DevDocs/adr/0009). The new sample's name is seeded from the
  * origin sample's name and the operation's process name, then de-duplicated with a numeric suffix so
  * repeated runs of the same process do not all land on an identical name. Inventory sample names are
  * not uniqueness-constrained, so the suffix is a usability nicety, not an integrity requirement; the

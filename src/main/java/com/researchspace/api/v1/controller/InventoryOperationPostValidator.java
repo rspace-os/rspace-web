@@ -1,28 +1,49 @@
 package com.researchspace.api.v1.controller;
 
+import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
+import com.researchspace.model.units.RSUnitDef;
 import java.math.BigDecimal;
 import java.util.HashSet;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 
 /**
- * Validates an {@link ApiInventoryOperationPost}. Operation-agnostic: it only enforces the
- * invariants every operation shares. The new sample is optional - a terminal operation (noOutput,
- * e.g. Destroy) creates nothing, so newSample may be null; when present it must be named. Each
- * origin must identify a subsample with a non-negative amount-taken - zero meaning "act on but do
- * not decrement this origin", e.g. Passage. See adr/0002, adr/0008. Operation-specific shaping
- * lives in the frontend config, not here.
+ * Validates an {@link ApiInventoryOperationPost} against the operation definition its {@code
+ * operationType} names (DevDocs/adr/0015). The rules are interpreted generically from the shared
+ * {@code operations_config.json} (no per-operation Java): origin cardinality, new-sample presence
+ * (a noOutput operation like Destroy creates nothing), per-origin amount semantics (positive for a
+ * decrementing operation, exactly zero for one that only links, e.g. Passage), configured
+ * storage-temperature bounds (unit-aware), and a provenance link from the new sample back to every
+ * origin. The new sample is also run through the same {@link SampleApiPostValidator} the public
+ * samples endpoint uses. Checks needing an origin's live quantity are static helpers here, called
+ * by the controller (DevDocs/adr/0007, DevDocs/adr/0010, DevDocs/adr/0013).
  */
 @Component
 public class InventoryOperationPostValidator implements Validator {
+
+  private final InventoryOperationConfigRegistry operationConfigs;
+  private final SampleApiPostValidator sampleApiPostValidator;
+
+  public InventoryOperationPostValidator(
+      InventoryOperationConfigRegistry operationConfigs,
+      SampleApiPostValidator sampleApiPostValidator) {
+    this.operationConfigs = operationConfigs;
+    this.sampleApiPostValidator = sampleApiPostValidator;
+  }
 
   @Override
   public boolean supports(Class<?> clazz) {
@@ -33,14 +54,19 @@ public class InventoryOperationPostValidator implements Validator {
   public void validate(Object target, Errors errors) {
     ApiInventoryOperationPost request = (ApiInventoryOperationPost) target;
 
-    // newSample is optional: a terminal operation (noOutput, e.g. Destroy) creates nothing. When a
-    // sample is provided it must be named.
-    if (request.getNewSample() != null && !StringUtils.hasText(request.getNewSample().getName())) {
+    // The operation key names the definition every other rule comes from, so an unknown key is
+    // rejected alone: there is nothing meaningful to validate the rest of the request against.
+    Optional<InventoryOperationConfig> configForKey =
+        operationConfigs.get(request.getOperationType());
+    if (configForKey.isEmpty()) {
       errors.rejectValue(
-          "newSample.name",
-          "errors.inventory.operation.sampleNameRequired",
-          "The new sample must have a name.");
+          "operationType",
+          "errors.inventory.operation.unknownType",
+          new Object[] {request.getOperationType()},
+          "Unknown operation type.");
+      return;
     }
+    InventoryOperationConfig config = configForKey.get();
 
     if (CollectionUtils.isEmpty(request.getOrigins())) {
       errors.rejectValue(
@@ -49,11 +75,31 @@ public class InventoryOperationPostValidator implements Validator {
           "At least one origin subsample must be provided for the operation.");
       return;
     }
+    if (config.requiresMultiple() && request.getOrigins().size() < 2) {
+      errors.rejectValue(
+          "origins",
+          "errors.inventory.operation.originCountMinimum",
+          new Object[] {config.key()},
+          "This operation requires at least two origin subsamples.");
+    } else if (!config.requiresMultiple() && request.getOrigins().size() != 1) {
+      errors.rejectValue(
+          "origins",
+          "errors.inventory.operation.originCountExact",
+          new Object[] {config.key()},
+          "This operation requires exactly one origin subsample.");
+    }
 
+    validateOrigins(request, config, errors);
+    validateNewSample(request, config, errors);
+  }
+
+  private void validateOrigins(
+      ApiInventoryOperationPost request, InventoryOperationConfig config, Errors errors) {
     // A subsample may appear at most once: each origin's amount taken is validated against that
     // origin's original quantity, but the manager applies the decrements in order, so the same id
     // listed twice would be checked twice against the full quantity yet decremented twice (two 6 mL
-    // entries could drain a 10 mL origin past what the over-removal check permits). See adr/0002.
+    // entries could drain a 10 mL origin past what the over-removal check permits). See
+    // DevDocs/adr/0007.
     Set<Long> seenIds = new HashSet<>();
     int index = 0;
     for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
@@ -74,8 +120,198 @@ public class InventoryOperationPostValidator implements Validator {
             "amountTaken",
             "errors.inventory.operation.amountTakenInvalid",
             "Each origin must specify a non-negative amount, with a unit, to take from it.");
+      } else if (!config.effect().emptiesOrigin()) {
+        // What the amount taken must be follows the operation's effect (DevDocs/adr/0015): an
+        // operation that decrements its origins (amountTakenFrom configured) must take a positive
+        // amount from each; one that only links to them (e.g. Passage) must take exactly zero. An
+        // origin-emptying operation (Destroy) is checked live in the controller instead, where the
+        // amount must equal the origin's current quantity.
+        int amountSignum = origin.getAmountTaken().getNumericValue().signum();
+        if (config.effect().amountTakenFrom() != null && amountSignum <= 0) {
+          errors.rejectValue(
+              "amountTaken",
+              "errors.inventory.operation.amountTakenPositive",
+              new Object[] {config.key()},
+              "This operation takes from each origin, so the amount taken must be greater than"
+                  + " zero.");
+        } else if (config.effect().amountTakenFrom() == null && amountSignum != 0) {
+          errors.rejectValue(
+              "amountTaken",
+              "errors.inventory.operation.amountTakenZero",
+              new Object[] {config.key()},
+              "This operation does not take from its origins, so the amount taken must be zero.");
+        }
       }
       errors.popNestedPath();
+    }
+  }
+
+  private void validateNewSample(
+      ApiInventoryOperationPost request, InventoryOperationConfig config, Errors errors) {
+    if (config.noOutput()) {
+      if (request.getNewSample() != null) {
+        errors.rejectValue(
+            "newSample",
+            "errors.inventory.operation.newSampleForbidden",
+            new Object[] {config.key()},
+            "This operation does not create a sample, so newSample must be omitted.");
+      }
+      return;
+    }
+    if (request.getNewSample() == null) {
+      errors.rejectValue(
+          "newSample",
+          "errors.inventory.operation.newSampleRequired",
+          new Object[] {config.key()},
+          "This operation creates a sample, so newSample is required.");
+      return;
+    }
+    ApiSampleWithFullSubSamples newSample = request.getNewSample();
+
+    // The operations path bypasses SamplesApiController, so delegate the new sample to the exact
+    // validator the public samples endpoint uses (name, tags, storage-temperature sanity, extra
+    // fields including link payloads, subsample quantity units); its errors surface under
+    // newSample.* (gap closed by DevDocs/adr/0015).
+    errors.pushNestedPath("newSample");
+    try {
+      ValidationUtils.invokeValidator(sampleApiPostValidator, newSample, errors);
+    } finally {
+      errors.popNestedPath();
+    }
+
+    // Stricter than the samples endpoint (which allows quantity-less subsamples): an operation's
+    // created subsamples represent material taken from the origins, so each must hold a positive
+    // amount with a real unit, and there must be at least one of them.
+    if (CollectionUtils.isEmpty(newSample.getSubSamples())) {
+      errors.rejectValue(
+          "newSample.subSamples",
+          "errors.inventory.operation.subSamplesRequired",
+          new Object[] {config.key()},
+          "The new sample must include at least one subsample.");
+      return;
+    }
+    int index = 0;
+    for (ApiSubSample subSample : newSample.getSubSamples()) {
+      ApiQuantityInfo quantity = subSample.getQuantity();
+      boolean positiveWithUnit =
+          quantity != null
+              && quantity.getNumericValue() != null
+              && quantity.getNumericValue().signum() > 0
+              && quantity.getUnitId() != null
+              && quantity.getUnitId() > 0;
+      if (!positiveWithUnit) {
+        errors.rejectValue(
+            String.format("newSample.subSamples[%d].quantity", index),
+            "errors.inventory.operation.subSampleQuantityInvalid",
+            "Each new subsample must hold a quantity greater than zero, with a unit.");
+      }
+      index++;
+    }
+
+    validateConfiguredTemperatures(newSample, config, errors);
+    validateProvenanceLinks(request, newSample, config, errors);
+  }
+
+  /**
+   * An operation with a temperature input (e.g. Cryopreserve, Revive) stores it as the new sample's
+   * storage temperature, and the config bounds it in Celsius (DevDocs/adr/0015). Both storage
+   * temperatures are required and each is compared unit-aware against the configured bounds, so a
+   * value sent in Kelvin or Fahrenheit is judged on the temperature it denotes, not its number.
+   */
+  private void validateConfiguredTemperatures(
+      ApiSampleWithFullSubSamples newSample, InventoryOperationConfig config, Errors errors) {
+    for (InventoryOperationConfig.Input input : config.inputs()) {
+      if (!"temperature".equals(input.type()) || config.effect().storageTempFrom() == null) {
+        continue;
+      }
+      checkConfiguredTemperature(
+          newSample.getStorageTempMin(), "newSample.storageTempMin", input, config, errors);
+      checkConfiguredTemperature(
+          newSample.getStorageTempMax(), "newSample.storageTempMax", input, config, errors);
+    }
+  }
+
+  private void checkConfiguredTemperature(
+      ApiQuantityInfo temperature,
+      String field,
+      InventoryOperationConfig.Input input,
+      InventoryOperationConfig config,
+      Errors errors) {
+    if (temperature == null || temperature.getNumericValue() == null) {
+      errors.rejectValue(
+          field,
+          "errors.inventory.operation.storageTempRequired",
+          new Object[] {config.key()},
+          "This operation requires a storage temperature on the new sample.");
+      return;
+    }
+    // A non-temperature unit is already rejected by the delegated samples-endpoint rules; the
+    // configured bounds can only be checked against a real temperature.
+    if (temperature.getUnitId() == null
+        || !RSUnitDef.exists(temperature.getUnitId())
+        || !RSUnitDef.getUnitById(temperature.getUnitId()).isTemperature()) {
+      return;
+    }
+    QuantityInfo value = temperature.toQuantityInfo();
+    QuantityUtils quantityUtils = new QuantityUtils();
+    if (input.maxCelsius() != null) {
+      QuantityInfo maximum = QuantityInfo.of(input.maxCelsius(), RSUnitDef.CELSIUS);
+      if (quantityUtils.getComparatorFor(maximum).compare(value, maximum) > 0) {
+        errors.rejectValue(
+            field,
+            "errors.inventory.operation.storageTempAboveMax",
+            new Object[] {input.maxCelsius()},
+            "The storage temperature is above this operation's maximum.");
+      }
+    }
+    if (input.minCelsius() != null) {
+      QuantityInfo minimum = QuantityInfo.of(input.minCelsius(), RSUnitDef.CELSIUS);
+      if (quantityUtils.getComparatorFor(minimum).compare(value, minimum) < 0) {
+        errors.rejectValue(
+            field,
+            "errors.inventory.operation.storageTempBelowMin",
+            new Object[] {input.minCelsius()},
+            "The storage temperature is below this operation's minimum.");
+      }
+    }
+  }
+
+  /**
+   * The new sample must link back to every origin with the operation's configured relation type
+   * (e.g. Aliquot's IsPartOf, Pool's one HasPart per pooled subsample): the links are the
+   * provenance record the operation exists to create (DevDocs/adr/0012, DevDocs/adr/0015). Extra
+   * fields beyond the required links (the optional IsDocumentedBy link, text fields) are the
+   * wizard's own output and are allowed; the link payloads themselves are validated by the
+   * delegated samples-endpoint rules.
+   */
+  private void validateProvenanceLinks(
+      ApiInventoryOperationPost request,
+      ApiSampleWithFullSubSamples newSample,
+      InventoryOperationConfig config,
+      Errors errors) {
+    for (InventoryOperationConfig.Link linkSpec : config.effect().links()) {
+      for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
+        if (origin.getId() == null) {
+          continue; // already rejected as originIdRequired
+        }
+        String target = GlobalIdPrefix.SS.name() + origin.getId();
+        boolean linked =
+            newSample.getExtraFields() != null
+                && newSample.getExtraFields().stream()
+                    .map(ApiExtraField::getLink)
+                    .filter(Objects::nonNull)
+                    .anyMatch(
+                        link ->
+                            linkSpec.relationType().equals(link.getRelationType())
+                                && target.equalsIgnoreCase(link.getTargetGlobalId()));
+        if (!linked) {
+          errors.rejectValue(
+              "newSample.extraFields",
+              "errors.inventory.operation.linkToOriginRequired",
+              new Object[] {linkSpec.relationType(), target},
+              "The new sample must link back to every origin subsample.");
+        }
+      }
     }
   }
 
@@ -96,14 +332,14 @@ public class InventoryOperationPostValidator implements Validator {
   }
 
   /**
-   * Whether the amount taken from an origin exceeds that origin's current quantity (adr/0005). The
-   * comparison is unit-aware within a measurement category (e.g. 0.006 kg against a 5 g origin), so
-   * a cross-unit entry in the same category is compared correctly. This needs the origin's live
-   * quantity, which the stateless {@link Validator} contract cannot load, so the controller loads
-   * each origin and calls this. A null amount, or a pair in different categories (which the UI
-   * never produces), is not treated as over-removal. A null/absent origin quantity means the origin
-   * holds nothing (a subsample whose quantity was never set), so any positive amount taken from it
-   * is over-removal.
+   * Whether the amount taken from an origin exceeds that origin's current quantity
+   * (DevDocs/adr/0010). The comparison is unit-aware within a measurement category (e.g. 0.006 kg
+   * against a 5 g origin), so a cross-unit entry in the same category is compared correctly. This
+   * needs the origin's live quantity, which the stateless {@link Validator} contract cannot load,
+   * so the controller loads each origin and calls this. A null amount, or a pair in different
+   * categories (which the UI never produces), is not treated as over-removal. A null/absent origin
+   * quantity means the origin holds nothing (a subsample whose quantity was never set), so any
+   * positive amount taken from it is over-removal.
    */
   public static boolean amountTakenExceedsOrigin(
       ApiQuantityInfo amountTaken, ApiQuantityInfo originQuantity) {
@@ -119,5 +355,40 @@ public class InventoryOperationPostValidator implements Validator {
       return false;
     }
     return quantityUtils.getComparatorFor(originQuantity).compare(amountTaken, originQuantity) > 0;
+  }
+
+  /**
+   * Whether an origin currently holds nothing: a null quantity (never set), a quantity without a
+   * numeric value, or a non-positive amount. No operation may act on such an origin
+   * (DevDocs/adr/0015): there is nothing to take, pool, preserve or destroy. Like {@link
+   * #amountTakenExceedsOrigin} this needs the origin's live quantity, so the controller loads each
+   * origin and calls this.
+   */
+  public static boolean originHoldsNothing(ApiQuantityInfo originQuantity) {
+    return originQuantity == null
+        || originQuantity.getNumericValue() == null
+        || originQuantity.getNumericValue().signum() <= 0;
+  }
+
+  /**
+   * Whether the amount taken equals the origin's current quantity, unit-aware within a measurement
+   * category (0.005 kg empties a 5 g origin). An origin-emptying operation (emptiesOrigin, e.g.
+   * Destroy) must take exactly what the origin holds, no less (over-removal is rejected
+   * separately). Missing values or incomparable categories never count as emptying. Live-state
+   * check: the controller loads each origin and calls this (DevDocs/adr/0015).
+   */
+  public static boolean amountTakenEmptiesOrigin(
+      ApiQuantityInfo amountTaken, ApiQuantityInfo originQuantity) {
+    if (amountTaken == null
+        || amountTaken.getNumericValue() == null
+        || originQuantity == null
+        || originQuantity.getNumericValue() == null) {
+      return false;
+    }
+    QuantityUtils quantityUtils = new QuantityUtils();
+    if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)) {
+      return false;
+    }
+    return quantityUtils.getComparatorFor(originQuantity).compare(amountTaken, originQuantity) == 0;
   }
 }

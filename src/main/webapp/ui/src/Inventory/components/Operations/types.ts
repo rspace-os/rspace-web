@@ -1,14 +1,14 @@
 /**
  * Types for the Inventory operation wizard request. The wizard collects values per the operation's
  * config, then buildOperationRequest turns them into an OperationRequest which is POSTed to the
- * thin backend endpoint (see adr/0001). Shapes mirror the backend ApiInventoryOperationPost /
+ * thin backend endpoint (see DevDocs/adr/0006). Shapes mirror the backend ApiInventoryOperationPost /
  * ApiSampleWithFullSubSamples so the JSON maps straight through.
  */
 
 export type OperationQuantity = { numericValue: number; unitId: number };
 
 /**
- * How the amount taken is decided across a multi-origin operation's origins (adr/0009). "same" is the
+ * How the amount taken is decided across a multi-origin operation's origins (DevDocs/adr/0014). "same" is the
  * single shared amount (the default, and the only mode single-origin operations use); "all" empties
  * every origin to zero; "perSubsample" takes a separate amount from each origin.
  */
@@ -55,7 +55,7 @@ export type OperationSubSample = {
 
 export type OperationNewSample = {
   name: string;
-  /** null for an ad-hoc sample; a template id when the user chose a template (see adr/0003). */
+  /** null for an ad-hoc sample; a template id when the user chose a template (see DevDocs/adr/0008). */
   templateId: number | null;
   quantity: OperationQuantity;
   storageTempMin?: OperationQuantity;

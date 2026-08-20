@@ -1538,41 +1538,49 @@ paths:
     post:
       summary: Perform a configured Inventory operation
       description: >
-        Runs a single configured Inventory operation as one atomic transaction (see adr/0001).
+        Runs a single configured Inventory operation as one atomic transaction (see DevDocs/adr/0006).
         From one request the endpoint reduces each origin subsample by the amount taken from it
         and, for a producing operation, creates one new Sample with its subsamples, custom
         fields and relation links. Everything succeeds or everything rolls back.
 
 
-        The endpoint is operation-agnostic: operationType is recorded for audit only and is never
-        branched on. The whole payload is client-built - the caller constructs the new sample,
-        chooses each link's relationType, computes any derived field content (e.g. a passage
-        number or an ISO disposal date), and sets each origin's amountTaken. The server validates
-        permissions and invariants but infers nothing from operationType.
+        operationType names one of the configured operation definitions and the server enforces
+        that definition (DevDocs/adr/0015): the number of origins, whether a new sample is
+        created, what each origin's amountTaken must be, any configured storage-temperature
+        bounds, and a provenance link from the new sample back to every origin with the
+        operation's relation type. The payload is still client-built - the caller constructs the
+        new sample, computes any derived field content (e.g. a passage number or an ISO disposal
+        date), and may add extra fields and links beyond the required ones - but a request that
+        does not conform to its named operation is rejected with 400. There is still no
+        per-operation server code; the rules are interpreted generically from the shared
+        operation definitions.
 
 
         ## Origin amount
 
 
-        origins[].amountTaken is a positive-or-zero decrement, not an absolute value: the origin
-        is reduced by it and can never be increased. Zero is a valid no-op (used by Passage,
-        which links without consuming). To empty an origin (Destroy, or Pool's "take all") send
-        the origin's full current quantity. Taking more than an origin holds is rejected with 400
-        and leaves the origin unchanged (adr/0005).
+        origins[].amountTaken is a decrement, not an absolute value: the origin is reduced by it
+        and can never be increased. What it must be follows the operation: a decrementing
+        operation (Aliquot, Pool, Derive, Cryopreserve, Revive) requires a positive amount per
+        origin; Passage links without consuming and requires exactly zero; Destroy must send each
+        origin's full current quantity (it empties the origin). Every origin must currently hold
+        a positive quantity, and taking more than an origin holds is rejected with 400 and leaves
+        the origin unchanged (DevDocs/adr/0010).
 
 
         ## Terminal operations
 
 
-        A terminal operation (e.g. Destroy) creates nothing: omit newSample (or send null). The
-        response is still 201 but with an empty body.
+        A terminal operation (e.g. Destroy) creates nothing: omit newSample (or send null); a
+        terminal request that includes newSample is rejected, as is a producing request without
+        one. The response is still 201 but with an empty body.
 
 
         ## Per-operation shape
 
 
-        These are all client-built; the server does not recognise them as modes. The examples
-        below show a request body for each.
+        The server enforces each row of this table against the request's operationType. The
+        examples below show a conforming request body for each.
 
 
         | Operation | Origins | Link relationType | Origin amount | Notes |
@@ -1794,10 +1802,17 @@ paths:
                 $ref: "#/components/schemas/Sample"
         "400":
           description: >
-            The request failed validation - for example over-removal (taking more than an origin
-            holds), a missing or blank new-sample name, an origin without an id, the same origin
-            listed twice, or an amount with a negative value or a missing/invalid unit. The
-            origins are left unchanged.
+            The request failed validation. Beyond the generic rules (an origin without an id, the
+            same origin listed twice, an amount with a negative value or a missing/invalid unit,
+            invalid new-sample fields), the request must conform to the operation definition its
+            operationType names - an unknown operationType, a wrong origin count (e.g. two origins
+            for Aliquot, one for Pool), a newSample on Destroy or a missing one elsewhere, a zero
+            amount for a decrementing operation or a non-zero amount for Passage, an origin that
+            currently holds nothing, over-removal (taking more than an origin holds), a Destroy
+            amount that does not equal the origin's current quantity, a storage temperature
+            missing or outside the operation's configured bounds (Cryopreserve at most -18°C,
+            Revive 4°C to 120°C, compared unit-aware), or a new sample missing the operation's
+            provenance link back to an origin. The origins are left unchanged.
           content:
             application/json:
               schema:
@@ -4754,19 +4769,21 @@ components:
         $ref: "#/components/schemas/ExtraField"
     InventoryOperationPost:
       description: >
-        A configured Inventory operation to perform. Generic and client-built: operationType is
-        audit-only and never branched on, so the server applies exactly the mutation the request
-        describes (see adr/0001). One request is one atomic transaction.
+        A configured Inventory operation to perform. Client-built, server-enforced: the request
+        must conform to the operation definition its operationType names (origin count, new-sample
+        presence, amount semantics, temperature bounds, provenance links; see DevDocs/adr/0006 and
+        DevDocs/adr/0015). One request is one atomic transaction.
       type: object
       required:
+        - operationType
         - origins
       properties:
         operationType:
           type: string
+          enum: [aliquot, passage, pool, derive, cryopreserve, revive, destroy]
           description: >
-            The kind of operation, recorded for audit/logging only; the endpoint never branches
-            on it. Values used by the RSpace UI are aliquot, passage, pool, derive, cryopreserve,
-            revive and destroy, but any string is accepted.
+            The configured operation to perform. Names the operation definition the request is
+            validated against; an unknown value is rejected with 400.
           example: derive
         origins:
           type: array

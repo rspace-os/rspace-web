@@ -1,5 +1,5 @@
 /**
- * Resolves an operation's `effect.computed` values at submit (adr/0006): for each computed value, it
+ * Resolves an operation's `effect.computed` values at submit (DevDocs/adr/0011): for each computed value, it
  * sources every argument, applies the named Operation function, and writes the single result into the
  * `into` input. Pure and operation-agnostic - the wizard supplies the parent-sample fields and the
  * current values; the computation lives in the operation function registry, not here.

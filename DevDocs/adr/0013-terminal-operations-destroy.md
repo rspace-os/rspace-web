@@ -1,4 +1,4 @@
-# 8. Terminal operations (Destroy): no output, empties the origin, adds a field to it
+# 13. Terminal operations (Destroy): no output, empties the origin, adds a field to it
 
 Date: 2026-07-20
 
@@ -18,7 +18,7 @@ origin, and emptying an origin - plus a way to skip the now-irrelevant template 
 Two constraints shaped the design. First, inventory subsample custom (extra) fields support only
 text, number and link - there is **no native date type** (`ApiExtraField.ExtraFieldTypeEnum`). A real
 date type exists only for sample *template* fields, which do not apply to an ad-hoc field on a
-subsample. Second, adr/0001's thin, operation-agnostic backend: the backend applies what the request
+subsample. Second, DevDocs/adr/0006's thin, operation-agnostic backend: the backend applies what the request
 says and never branches on the operation.
 
 ## Decision
@@ -34,11 +34,11 @@ says and never branches on the operation.
   future operation that annotates its origins reuses it.
 - **`effect.emptiesOrigin: true`** sets the amount taken from each origin to that origin's **own full
   current quantity**, so its volume ends at zero. This reuses the existing decrement path unchanged:
-  the backend clamps at zero, and taking exactly the full quantity is not over-removal (adr/0005), so
+  the backend clamps at zero, and taking exactly the full quantity is not over-removal (DevDocs/adr/0010), so
   no new backend quantity concept is needed.
 - **The "disposed" field is a text field holding an ISO date** (`YYYY-MM-DD`), because a subsample has
   no native date field type. Its value - today - is computed **on the frontend** via a `today`
-  Operation function in the registry (adr/0006), the same mechanism as Passage's number. The backend
+  Operation function in the registry (DevDocs/adr/0011), the same mechanism as Passage's number. The backend
   receives a plain text field and stays generic; the date is the user's local "today".
 - **`steps`** lets an operation declare an explicit wizard-step subset. Destroy uses
   `["confirm"]` (it needs no input, so it goes straight to confirmation, skipping details, template
@@ -53,7 +53,7 @@ says and never branches on the operation.
   annotating operation needs a config entry, not new wizard or backend code.
 - Producing operations are unchanged: they omit `noOutput`/`originFields`/`emptiesOrigin`, send a
   `newSample`, and every existing behaviour holds.
-- The backend stays operation-agnostic (adr/0001): it decrements origins, optionally adds fields to
+- The backend stays operation-agnostic (DevDocs/adr/0006): it decrements origins, optionally adds fields to
   them, and optionally creates a sample - all driven by the request, none by the operation type.
 - Field-name uniqueness is enforced on the origin, so disposing a subsample that already has a
   "disposed" field is rejected with a clear error rather than duplicating the field. Acceptable: a
@@ -64,7 +64,7 @@ says and never branches on the operation.
 ## Alternatives considered
 
 - **Stamp the date server-side.** Rejected: the backend would have to interpret a field as "today",
-  which is operation-specific logic against the thin-backend principle (adr/0001). The registry
+  which is operation-specific logic against the thin-backend principle (DevDocs/adr/0006). The registry
   computes it on the frontend instead, keeping the backend generic.
 - **Skip template/amounts implicitly from `noOutput`.** Rejected in favour of an explicit `steps`
   list: step selection is then independently controllable and reads declaratively, at the cost of one

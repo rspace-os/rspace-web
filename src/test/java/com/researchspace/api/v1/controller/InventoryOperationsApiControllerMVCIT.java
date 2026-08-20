@@ -25,7 +25,7 @@ import org.springframework.test.web.servlet.MvcResult;
  * via a "Derive" request: a single POST must atomically create one new Sample parenting N
  * subsamples, put an IsDerivedFrom link back to the origin on the new Sample AND on every created
  * subsample, and reduce the origin subsample by the amount taken from it (never increasing it). See
- * adr/0001, adr/0002.
+ * DevDocs/adr/0006, DevDocs/adr/0007.
  *
  * <p>Authored with the feature; not run automatically (extends a real-transaction MVC base).
  */
@@ -69,7 +69,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             + linkJson
             + "]}";
     String operationJson =
-        "{\"operationType\":\"DERIVE\","
+        "{\"operationType\":\"derive\","
             + "\"origins\":[{\"id\":"
             + originId
             + ",\"amountTaken\":{\"numericValue\":0.6,\"unitId\":"
@@ -142,7 +142,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             + originGlobalId
             + "\",\"versionPin\":null}}";
     String operationJson =
-        "{\"operationType\":\"DERIVE\","
+        "{\"operationType\":\"derive\","
             + "\"origins\":[{\"id\":"
             + originId
             + ",\"amountTaken\":{\"numericValue\":0.6,\"unitId\":"
@@ -175,7 +175,8 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   @Test
   public void rejectsTakingMoreThanTheOriginHolds() throws Exception {
-    // adr/0005: taking more than the origin currently holds must be rejected (400), not clamped,
+    // DevDocs/adr/0010: taking more than the origin currently holds must be rejected (400), not
+    // clamped,
     // and
     // must leave the origin untouched.
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
@@ -193,7 +194,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             + originGlobalId
             + "\",\"versionPin\":null}}";
     String operationJson =
-        "{\"operationType\":\"DERIVE\","
+        "{\"operationType\":\"derive\","
             + "\"origins\":[{\"id\":"
             + originId
             + ",\"amountTaken\":{\"numericValue\":"

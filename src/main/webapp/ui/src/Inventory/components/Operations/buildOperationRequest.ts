@@ -1,15 +1,15 @@
 /**
  * Turns an operation definition plus the user's collected input values into the concrete
  * OperationRequest POSTed to the backend. Pure and operation-agnostic: it only follows the effect
- * spec, so a new operation needs a new config entry, not new code here (see adr/0001).
+ * spec, so a new operation needs a new config entry, not new code here (see DevDocs/adr/0006).
  *
  * The provenance/documentation link(s) and text fields (e.g. Cryomedium) go on the new sample only,
  * never on the subsamples it creates; custom fields added to an origin itself (Destroy's disposed
  * date) travel on the origin update. Each origin's amount-taken is a positive decrement; the backend
- * rejects taking more than the origin holds (HTTP 400, adr/0005) and clamps at zero only as
- * defence-in-depth (adr/0002). `templateId` is chosen by the user in the wizard's template step
+ * rejects taking more than the origin holds (HTTP 400, DevDocs/adr/0010) and clamps at zero only as
+ * defence-in-depth (DevDocs/adr/0007). `templateId` is chosen by the user in the wizard's template step
  * (none / an existing template / a template created from the origin's sample); null means an ad-hoc
- * sample (adr/0003). A terminal operation (noOutput, e.g. Destroy) creates no sample, so newSample is
+ * sample (DevDocs/adr/0008). A terminal operation (noOutput, e.g. Destroy) creates no sample, so newSample is
  * null and only the origins are affected.
  */
 import type { InventoryOperation } from "./operationsConfig";
@@ -41,7 +41,7 @@ export function buildOperationRequest(params: {
   templateId: number | null;
   /** Optional SOP link chosen in the documentation step; added as an IsDocumentedBy link. */
   documentationLink?: { fieldName: string; targetGlobalId: string };
-  /** How the amount taken is decided across origins (adr/0009). Defaults to "same" (single shared
+  /** How the amount taken is decided across origins (DevDocs/adr/0014). Defaults to "same" (single shared
    *  amount), which is also every single-origin operation's mode. */
   amountMode?: AmountMode;
   /** Per-origin amounts (by origin global id) for "perSubsample" mode; ignored in other modes. */
@@ -68,13 +68,13 @@ export function buildOperationRequest(params: {
   const fullQuantity = (origin: OperationOrigin): OperationQuantity =>
     origin.quantity ? { ...origin.quantity } : { numericValue: 0, unitId: eachAmountUnit ?? UNSET_UNIT };
 
-  // The amount to take from a given origin (adr/0002, adr/0007, adr/0009):
+  // The amount to take from a given origin (DevDocs/adr/0007, DevDocs/adr/0012, DevDocs/adr/0014):
   // - `emptiesOrigin` (Destroy) and the runtime "take all" mode both take the origin's own full
   //   current quantity, so its volume ends at zero.
   // - "perSubsample" mode takes the per-origin amount chosen for this origin (by global id); an origin
   //   with none recorded takes a zero (no-op) decrement.
   // - otherwise ("same" mode, and every single-origin operation) it takes the configured shared amount
-  //   (Pool takes the same amount from every origin; adr/0007). An operation that leaves the origin
+  //   (Pool takes the same amount from every origin; DevDocs/adr/0012). An operation that leaves the origin
   //   untouched (Passage) has no amountTakenFrom and takes zero: the backend treats a 0 decrement as a
   //   no-op (SubSampleApiManagerImpl returns early), so the origin is still linked/permission-checked.
   const amountTakenFor = (origin: OperationOrigin): OperationQuantity => {
@@ -115,7 +115,7 @@ export function buildOperationRequest(params: {
     // Provenance links point back to each origin; the display name may interpolate inputs
     // (e.g. {processName}) and the origin's own name as {originName}. Each link spec fans out to one
     // link per origin, so a single-origin operation yields one link and Pool yields one HasPart link
-    // per pooled subsample (adr/0007). Pool's fieldNameKey includes {originName} so its several links
+    // per pooled subsample (DevDocs/adr/0012). Pool's fieldNameKey includes {originName} so its several links
     // get distinct names - a record cannot hold two fields with the same name. The optional
     // documentation link is one more link; all of them land on the created sample only.
     const links: Array<OperationExtraField> = effect.links.flatMap((spec) =>

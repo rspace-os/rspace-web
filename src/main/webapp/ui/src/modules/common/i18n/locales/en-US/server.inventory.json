@@ -143,10 +143,24 @@
       "operation": {
         "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
         "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
+        "amountTakenPositive": "This operation takes from each origin, so the amount taken must be greater than zero.",
+        "amountTakenZero": "This operation does not take from its origins, so the amount taken must be zero.",
         "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
+        "linkToOriginRequired": "The new sample must include a {0} link back to origin subsample {1}.",
+        "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
+        "newSampleForbidden": "This operation does not create a sample, so newSample must be omitted.",
+        "newSampleRequired": "This operation creates a sample, so newSample is required.",
+        "originCountExact": "This operation requires exactly one origin subsample.",
+        "originCountMinimum": "This operation requires at least two origin subsamples.",
+        "originEmpty": "An origin subsample that currently holds nothing cannot be operated on.",
         "originIdRequired": "Each origin must identify a subsample by id.",
         "originsRequired": "At least one origin subsample must be provided for the operation.",
-        "sampleNameRequired": "The new sample must have a name."
+        "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
+        "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
+        "storageTempRequired": "This operation requires a storage temperature on the new sample.",
+        "subSampleQuantityInvalid": "Each new subsample must hold a quantity greater than zero, with a unit.",
+        "subSamplesRequired": "The new sample must include at least one subsample.",
+        "unknownType": "Unknown operation type [{0}]."
       },
       "publicLink": {
         "unavailable": "The item you try to see is not publicly available right now."
