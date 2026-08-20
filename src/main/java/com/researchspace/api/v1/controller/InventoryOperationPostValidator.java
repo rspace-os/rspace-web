@@ -10,6 +10,7 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Objects;
@@ -35,14 +36,23 @@ import org.springframework.validation.Validator;
 @Component
 public class InventoryOperationPostValidator implements Validator {
 
+  /**
+   * Ceiling on origins per request: each origin costs a read, a lock and an update cycle, so the
+   * batch is capped like the samples endpoint caps newSampleSubSamplesCount (both 100).
+   */
+  static final int MAX_ORIGINS = 100;
+
   private final InventoryOperationConfigRegistry operationConfigs;
   private final SampleApiPostValidator sampleApiPostValidator;
+  private final ApiExtraFieldsHelper extraFieldsHelper;
 
   public InventoryOperationPostValidator(
       InventoryOperationConfigRegistry operationConfigs,
-      SampleApiPostValidator sampleApiPostValidator) {
+      SampleApiPostValidator sampleApiPostValidator,
+      ApiExtraFieldsHelper extraFieldsHelper) {
     this.operationConfigs = operationConfigs;
     this.sampleApiPostValidator = sampleApiPostValidator;
+    this.extraFieldsHelper = extraFieldsHelper;
   }
 
   @Override
@@ -75,18 +85,33 @@ public class InventoryOperationPostValidator implements Validator {
           "At least one origin subsample must be provided for the operation.");
       return;
     }
+    // A null list entry (JSON "[null]") cannot be iterated by the checks below; reject it as a
+    // clean 400 rather than letting it surface as a 500.
+    if (request.getOrigins().stream().anyMatch(Objects::isNull)) {
+      errors.rejectValue(
+          "origins",
+          "errors.inventory.operation.originIdRequired",
+          "Each origin must identify a subsample by id.");
+      return;
+    }
     if (config.requiresMultiple() && request.getOrigins().size() < 2) {
       errors.rejectValue(
           "origins",
           "errors.inventory.operation.originCountMinimum",
-          new Object[] {config.key()},
           "This operation requires at least two origin subsamples.");
     } else if (!config.requiresMultiple() && request.getOrigins().size() != 1) {
       errors.rejectValue(
           "origins",
           "errors.inventory.operation.originCountExact",
-          new Object[] {config.key()},
           "This operation requires exactly one origin subsample.");
+    } else if (request.getOrigins().size() > MAX_ORIGINS) {
+      // Each origin costs a read, a lock and an update cycle; cap the batch like the samples
+      // endpoint caps newSampleSubSamplesCount at 100.
+      errors.rejectValue(
+          "origins",
+          "errors.inventory.operation.originCountMaximum",
+          new Object[] {MAX_ORIGINS},
+          "This operation accepts at most 100 origin subsamples.");
     }
 
     validateOrigins(request, config, errors);
@@ -131,18 +156,49 @@ public class InventoryOperationPostValidator implements Validator {
           errors.rejectValue(
               "amountTaken",
               "errors.inventory.operation.amountTakenPositive",
-              new Object[] {config.key()},
               "This operation takes from each origin, so the amount taken must be greater than"
                   + " zero.");
         } else if (config.effect().amountTakenFrom() == null && amountSignum != 0) {
           errors.rejectValue(
               "amountTaken",
               "errors.inventory.operation.amountTakenZero",
-              new Object[] {config.key()},
               "This operation does not take from its origins, so the amount taken must be zero.");
         }
       }
+      validateOriginExtraFields(origin, errors);
       errors.popNestedPath();
+    }
+  }
+
+  /**
+   * Origin extra fields may only ADD new fields (Destroy's disposed date): a delete request or an
+   * id-bearing edit of an existing field is a mutation no operation definition describes, so it is
+   * rejected even though the caller holds edit permission (DevDocs/adr/0015). Each allowed field's
+   * content is then validated by the same shared field validator the subsample PUT endpoint uses
+   * (name required, per-type content, link payloads).
+   */
+  private void validateOriginExtraFields(ApiInventoryOperationOriginUpdate origin, Errors errors) {
+    if (CollectionUtils.isEmpty(origin.getExtraFields())) {
+      return;
+    }
+    int fieldIndex = 0;
+    for (ApiExtraField field : origin.getExtraFields()) {
+      errors.pushNestedPath(String.format("extraFields[%d]", fieldIndex++));
+      try {
+        if (field == null
+            || !field.isNewFieldRequest()
+            || field.isDeleteFieldRequest()
+            || field.getId() != null) {
+          errors.rejectValue(
+              "newFieldRequest",
+              "errors.inventory.operation.originFieldNewOnly",
+              "Origin extra fields may only add new fields.");
+        } else {
+          ValidationUtils.invokeValidator(extraFieldsHelper, field, errors);
+        }
+      } finally {
+        errors.popNestedPath();
+      }
     }
   }
 
@@ -153,7 +209,6 @@ public class InventoryOperationPostValidator implements Validator {
         errors.rejectValue(
             "newSample",
             "errors.inventory.operation.newSampleForbidden",
-            new Object[] {config.key()},
             "This operation does not create a sample, so newSample must be omitted.");
       }
       return;
@@ -162,11 +217,21 @@ public class InventoryOperationPostValidator implements Validator {
       errors.rejectValue(
           "newSample",
           "errors.inventory.operation.newSampleRequired",
-          new Object[] {config.key()},
           "This operation creates a sample, so newSample is required.");
       return;
     }
     ApiSampleWithFullSubSamples newSample = request.getNewSample();
+
+    // A null subsample entry (JSON "[null]") cannot be iterated by the delegated validator or the
+    // per-subsample checks below; reject it as a clean 400 rather than letting it 500.
+    if (newSample.getSubSamples() != null
+        && newSample.getSubSamples().stream().anyMatch(Objects::isNull)) {
+      errors.rejectValue(
+          "newSample.subSamples",
+          "errors.inventory.operation.subSampleQuantityInvalid",
+          "Each new subsample must hold a quantity greater than zero, with a unit.");
+      return;
+    }
 
     // The operations path bypasses SamplesApiController, so delegate the new sample to the exact
     // validator the public samples endpoint uses (name, tags, storage-temperature sanity, extra
@@ -186,7 +251,6 @@ public class InventoryOperationPostValidator implements Validator {
       errors.rejectValue(
           "newSample.subSamples",
           "errors.inventory.operation.subSamplesRequired",
-          new Object[] {config.key()},
           "The new sample must include at least one subsample.");
       return;
     }
@@ -220,28 +284,32 @@ public class InventoryOperationPostValidator implements Validator {
    */
   private void validateConfiguredTemperatures(
       ApiSampleWithFullSubSamples newSample, InventoryOperationConfig config, Errors errors) {
-    for (InventoryOperationConfig.Input input : config.inputs()) {
-      if (!"temperature".equals(input.type()) || config.effect().storageTempFrom() == null) {
-        continue;
-      }
-      checkConfiguredTemperature(
-          newSample.getStorageTempMin(), "newSample.storageTempMin", input, config, errors);
-      checkConfiguredTemperature(
-          newSample.getStorageTempMax(), "newSample.storageTempMax", input, config, errors);
+    if (config.effect().storageTempFrom() == null) {
+      return;
     }
+    // Exactly one temperature input maps to the two storage-temperature fields; taking the first
+    // also guards against double-rejecting should a config ever declare more than one.
+    config.inputs().stream()
+        .filter(input -> "temperature".equals(input.type()))
+        .findFirst()
+        .ifPresent(
+            input -> {
+              checkConfiguredTemperature(
+                  newSample.getStorageTempMin(), "newSample.storageTempMin", input, errors);
+              checkConfiguredTemperature(
+                  newSample.getStorageTempMax(), "newSample.storageTempMax", input, errors);
+            });
   }
 
   private void checkConfiguredTemperature(
       ApiQuantityInfo temperature,
       String field,
       InventoryOperationConfig.Input input,
-      InventoryOperationConfig config,
       Errors errors) {
     if (temperature == null || temperature.getNumericValue() == null) {
       errors.rejectValue(
           field,
           "errors.inventory.operation.storageTempRequired",
-          new Object[] {config.key()},
           "This operation requires a storage temperature on the new sample.");
       return;
     }
