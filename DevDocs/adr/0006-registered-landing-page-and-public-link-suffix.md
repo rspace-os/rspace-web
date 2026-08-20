@@ -23,9 +23,14 @@ address with the provider.
 
 1. The public link suffix is generated on the `ApiInventoryDOI` DTO when a new
    identifier registration begins (`SecureStringUtils.getURLSafeSecureRandomString(16)`,
-   the same algorithm the entity used), *before* any provider call, and is
-   threaded into `DigitalObjectIdentifier` through a new constructor parameter
-   so the entity's `publicLink` names the same page that was registered.
+   the same algorithm the entity used), and is threaded into
+   `DigitalObjectIdentifier` through a new constructor parameter so the entity's
+   `publicLink` names the same page that was registered. On the B2INST path
+   generation happens *before* the provider call, because that payload carries
+   the address. On the DataCite/IGSN path the DTO is constructed from the
+   provider's response, so generation follows the call; nothing there consumes
+   the address beforehand, so the invariant is unaffected. What matters on every
+   path is that generation precedes entity creation.
    Generation is an explicit call made by the two new-registration flows — not
    the no-args constructor — because that constructor also backs Jackson
    deserialization and the sparse "update" DTOs, where a self-generated value
@@ -44,6 +49,38 @@ address with the provider.
    URL setting — and would then register the login-walled default. With no
    server URL configured the property is omitted, as before: a missing property
    is recoverable, a wrong published URL is not.
+
+   The tail is matched against the address's *normalised* path, not its raw
+   text: query and fragment dropped, dot segments resolved, percent-escapes
+   decoded, trailing slashes stripped, case folded. None of those change which
+   page an address names, so all of them have to compare equal. An exact match let a default a user had
+   since edited to `.../globalId/IN5/` or `.../globalId/IN5?from=email` read as
+   user-typed, and registered the login-walled page after all. Two consequences
+   are accepted, both erring towards omission: a deliberate link to some *other*
+   RSpace's `/globalId/<same id>` is discarded in favour of this identifier's
+   public page, and a differently-cased global id is treated as the default even
+   though it may resolve to nothing — an address that resolves to nothing is no
+   more fit to register.
+
+   A value also has to be an address a resolver can follow: only an absolute
+   `http`/`https` URL is registered. A typed value that is not falls back to the
+   public landing page, and the substitution is logged at WARN, since the field
+   goes on displaying what the user typed and nothing else would tell them. The
+   same rule is applied *again* after the fallback, because the public landing
+   page is built from the deployment's server URL and nothing validates that for
+   a scheme — a deployment configured as `rspace.example.org` would otherwise
+   register exactly the scheme-less form we refuse from users. Failing that
+   second check omits the property rather than falling back further. The field's own validation is just `new URI(...)`
+   parsing, which accepts a bare host (`lab.example.org/aws-42`), a relative
+   path, and non-web schemes such as `javascript:`. RSpace already refuses to
+   emit a site-relative address of its own, so accepting a typed one would be
+   inconsistent, and PIDINST defines LandingPage as the page the identifier
+   resolves to.
+
+   Because LandingPage is *mandatory* in the PIDINST 1.0 schema that this path
+   asserts, omitting it is logged at WARN naming the record, so an operator can
+   see why a mandatory property left RSpace empty instead of hearing it from a
+   curator.
 3. The generated URL is used for the outbound payload only. The identifier's
    `publicUrl` (PUBLIC_URL) keeps its publish-time semantics: the Inventory UI
    links an identifier row to `publicUrl` whenever it is present, and a draft

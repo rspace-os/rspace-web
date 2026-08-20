@@ -35,8 +35,10 @@ public interface RspaceToExternalProviderAdapter {
    * caller with no transaction fails immediately rather than part-way through the mapping.
    *
    * @param publicLandingPageUrl the identifier's public landing page address, registered as
-   *     LandingPage when the instrument's Landing page field holds no user-typed value; null when
-   *     no server URL is configured, in which case the property is omitted rather than sent wrong
+   *     LandingPage when the instrument's Landing page field holds no address a resolver could
+   *     follow; null when no server URL is configured, in which case the property is omitted rather
+   *     than sent wrong — but only when there is no usable field value either, since a user-typed
+   *     address still wins
    */
   B2instDoi buildB2instDoi(InventoryRecord instrument, String publicLandingPageUrl);
 

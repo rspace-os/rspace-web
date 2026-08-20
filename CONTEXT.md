@@ -110,9 +110,10 @@ resolved during design. This file is a glossary only — no implementation detai
   as the identifier's public address.
 - **Public link suffix** — the unguessable random token that names an
   identifier's public landing page. Generated when a new identifier registration
-  begins — before any provider is called, so the page's address can be part of
-  the registered metadata — and immutable for the identifier's lifetime. Every
-  identifier has one, whichever provider registers it.
+  begins — always before the identifier is created, and before the provider call
+  on the path whose payload carries the address — then immutable for the
+  identifier's lifetime. Every identifier has one, whichever provider registers
+  it. (ADR 0006 records the per-provider ordering and why it differs.)
 - **Public landing page** — the page RSpace serves anonymously for a published
   identifier, addressed by the public link suffix
   (`/public/inventory/<suffix>`). Distinct from the instrument's Landing page
@@ -123,12 +124,12 @@ resolved during design. This file is a glossary only — no implementation detai
   published.
 - **Registered landing page** — the LandingPage value RSpace sends to a PID
   provider when registering an instrument identifier: the Landing page field
-  when it holds a value the user typed themselves, otherwise the identifier's
-  public landing page. A materialised default is never registered — it is a
-  login-walled address, and a landing page is baked into a citable PID once a
-  curator accepts — so when there is neither a typed value nor a public address
-  the property is omitted, a missing property being recoverable where a wrong
-  published one is not.
+  when it holds an absolute http(s) address the user typed themselves, otherwise
+  the identifier's public landing page. A materialised default is never
+  registered — it is a login-walled address, and a landing page is baked into a
+  citable PID once a curator accepts — and neither is any value a resolver could
+  not follow. When no registrable address exists the property is omitted, a
+  missing property being recoverable where a wrong published one is not.
 
 ## Record version history
 

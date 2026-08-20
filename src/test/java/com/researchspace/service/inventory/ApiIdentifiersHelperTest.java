@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,12 +14,15 @@ import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.properties.IPropertyHolder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -134,5 +139,33 @@ public class ApiIdentifiersHelperTest {
     assertEquals(
         "https://localhost:8080/public/inventory/" + apiDoi.getPublicLinkSuffix(),
         result.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
+  }
+
+  /**
+   * The same invariant on the path RSDEV-1254 actually exists for. A registration that attaches the
+   * identifier to a record arrives through {@code createDeleteRequestedIdentifiers} with the
+   * register flag set, not through {@code createDoiToSave} (which is the bulk IGSN path), so
+   * without this the entity-adopts-the-DTO-suffix rule was pinned only on the other flow. See ADR
+   * 0006.
+   */
+  @Test
+  public void registerRequestUsesDtoSuffixAsEntityPublicLink() {
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI();
+    apiDoi.generatePublicLinkSuffix();
+    apiDoi.setRegisterIdentifierRequest(true);
+    InventoryRecord parent = mock(InventoryRecord.class);
+    when(parent.getOwner()).thenReturn(user);
+
+    assertTrue(underTest.createDeleteRequestedIdentifiers(List.of(apiDoi), parent, user));
+
+    ArgumentCaptor<DigitalObjectIdentifier> attached =
+        ArgumentCaptor.forClass(DigitalObjectIdentifier.class);
+    verify(parent).addIdentifier(attached.capture());
+    assertEquals(apiDoi.getPublicLinkSuffix(), attached.getValue().getPublicLink());
+    assertEquals(
+        "https://localhost:8080/public/inventory/" + apiDoi.getPublicLinkSuffix(),
+        attached
+            .getValue()
+            .getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
   }
 }

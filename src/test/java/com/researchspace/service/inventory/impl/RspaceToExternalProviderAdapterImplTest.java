@@ -24,7 +24,6 @@ import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryTextField;
 import com.researchspace.model.inventory.field.InventoryUriField;
-import com.researchspace.properties.IPropertyHolder;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,14 +38,11 @@ class RspaceToExternalProviderAdapterImplTest {
   private static final String SERVER = "https://rspace.example.com";
   private static final String PUBLIC_PAGE = SERVER + "/public/inventory/abc123XYZ_-456789";
 
-  private IPropertyHolder properties;
   private RspaceToExternalProviderAdapterImpl adapter;
 
   @BeforeEach
   void setUp() {
-    properties = mock(IPropertyHolder.class);
-    when(properties.getServerUrl()).thenReturn(SERVER);
-    adapter = new RspaceToExternalProviderAdapterImpl(properties);
+    adapter = new RspaceToExternalProviderAdapterImpl();
   }
 
   private Instrument templateShapedInstrument() {
@@ -200,6 +196,57 @@ class RspaceToExternalProviderAdapterImplTest {
   }
 
   /**
+   * A hand-typed address with no scheme is not something a resolver can follow, and the field's own
+   * validation does not catch it: core-model's InventoryUriField only checks that {@code new URI()}
+   * parses, which a bare host or a relative path does. The code refuses to emit a site-relative
+   * address of its own, so accepting a typed one would be inconsistent. Fall back to the
+   * identifier's public page, which does resolve.
+   */
+  @Test
+  void schemeLessUserTypedLandingPageIsNotRegistered() {
+    Instrument instrument = templateShapedInstrument();
+    addField(instrument, uriField("Landing page", "lab.example.org/aws-42"));
+
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
+
+    assertEquals(PUBLIC_PAGE, md.getLandingPage());
+  }
+
+  /**
+   * Regression pin rather than a driving case: the absolute-http(s) rule above already blocks a
+   * non-web scheme. Worth pinning explicitly because {@code new URI("javascript:...")} parses
+   * cleanly, so the field's own validation lets it through, and the value would otherwise be
+   * published in a third party's record.
+   */
+  @Test
+  void nonWebSchemeUserTypedLandingPageIsNotRegistered() {
+    Instrument instrument = templateShapedInstrument();
+    addField(instrument, uriField("Landing page", "javascript:alert(1)"));
+
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
+
+    assertEquals(PUBLIC_PAGE, md.getLandingPage());
+  }
+
+  /**
+   * The resolvable-address rule has to cover the fallback too, not just the field. The public
+   * landing page is built from the deployment's server URL, which is bound by a plain
+   * {@code @Value} with no scheme validation, so a deployment configured as {@code
+   * rspace.example.com} would otherwise register exactly the scheme-less form we refuse from users.
+   */
+  @Test
+  void schemeLessPublicLandingPageIsNotRegisteredEither() {
+    Instrument instrument = templateShapedInstrument();
+
+    B2instInstrumentMetadata md =
+        adapter
+            .buildB2instDoi(instrument, "rspace.example.com/public/inventory/abc123")
+            .getMetadata();
+
+    assertNull(md.getLandingPage());
+  }
+
+  /**
    * A default-valued field with no public URL available: omitted. Registering the login-walled
    * default would bake a wrong URL into a citable PID; a missing property is recoverable.
    */
@@ -216,15 +263,137 @@ class RspaceToExternalProviderAdapterImplTest {
   }
 
   /**
-   * The default is recognised by its {@code /globalId/<globalId>} tail, not only by equality with
-   * the currently configured address. A deployment that has since been renamed, or that has lost
-   * its server URL setting, must not start registering the login-walled default it filled in
-   * earlier: that is the exact outcome ADR 0006 exists to prevent, and it cannot be undone once a
-   * curator accepts the record.
+   * A near miss of the materialised default still names the same login-walled page: a trailing
+   * slash resolves to the record's globalId page just as the bare address does. An exact tail match
+   * lets a hand-edited default through and registers it, which ADR 0006 forbids and which cannot be
+   * undone once a curator accepts.
    */
   @Test
-  void materialisedDefaultIsRecognisedAfterTheServerUrlChanged() {
-    when(properties.getServerUrl()).thenReturn(null);
+  void materialisedDefaultIsRecognisedDespiteATrailingSlash() {
+    Instrument instrument = templateShapedInstrument();
+    addField(
+        instrument,
+        uriField("Landing page", SERVER + "/globalId/" + instrument.getGlobalIdentifier() + "/"));
+
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
+
+    assertEquals(PUBLIC_PAGE, md.getLandingPage());
+  }
+
+  /**
+   * A query string does not change which page an address names, so the default carrying one is
+   * still the login-walled page and must not be registered.
+   */
+  @Test
+  void materialisedDefaultIsRecognisedDespiteAQueryString() {
+    Instrument instrument = templateShapedInstrument();
+    addField(
+        instrument,
+        uriField(
+            "Landing page",
+            SERVER + "/globalId/" + instrument.getGlobalIdentifier() + "?from=email"));
+
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
+
+    assertEquals(PUBLIC_PAGE, md.getLandingPage());
+  }
+
+  /**
+   * Dot segments resolve away, so this is still the login-walled page. The tail is compared against
+   * the normalised path rather than the raw text, or a hand-edited default could hide behind them.
+   */
+  @Test
+  void materialisedDefaultIsRecognisedThroughDotSegments() {
+    Instrument instrument = templateShapedInstrument();
+    String globalId = instrument.getGlobalIdentifier();
+    addField(
+        instrument, uriField("Landing page", SERVER + "/globalId/" + globalId + "/../" + globalId));
+
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
+
+    assertEquals(PUBLIC_PAGE, md.getLandingPage());
+  }
+
+  /**
+   * Regression pins for the other two forms the normalised-path comparison covers: more than one
+   * trailing slash (containers collapse them), and a percent-escape of an unreserved character
+   * ({@code %31} is {@code 1}). Both resolve to the same login-walled page.
+   */
+  @Test
+  void materialisedDefaultIsRecognisedThroughRedundantSlashesAndPercentEscapes() {
+    Instrument doubleSlash = templateShapedInstrument();
+    addField(
+        doubleSlash,
+        uriField("Landing page", SERVER + "/globalId/" + doubleSlash.getGlobalIdentifier() + "//"));
+    assertEquals(
+        PUBLIC_PAGE,
+        adapter.buildB2instDoi(doubleSlash, PUBLIC_PAGE).getMetadata().getLandingPage());
+
+    // IN5 written as IN%35, which decodes back to IN5
+    Instrument escaped = templateShapedInstrument();
+    addField(escaped, uriField("Landing page", SERVER + "/globalId/IN%35"));
+    assertEquals(
+        PUBLIC_PAGE, adapter.buildB2instDoi(escaped, PUBLIC_PAGE).getMetadata().getLandingPage());
+  }
+
+  /** Nor does a fragment: same page, so still never registered. */
+  @Test
+  void materialisedDefaultIsRecognisedDespiteAFragment() {
+    Instrument instrument = templateShapedInstrument();
+    addField(
+        instrument,
+        uriField(
+            "Landing page", SERVER + "/globalId/" + instrument.getGlobalIdentifier() + "#details"));
+
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
+
+    assertEquals(PUBLIC_PAGE, md.getLandingPage());
+  }
+
+  /**
+   * Case in the global id is folded too. Such an address either resolves to the same login-walled
+   * page or to nothing at all, and neither is fit to bake into a citable PID.
+   */
+  @Test
+  void materialisedDefaultIsRecognisedDespiteGlobalIdCase() {
+    Instrument instrument = templateShapedInstrument();
+    addField(
+        instrument,
+        uriField(
+            "Landing page",
+            SERVER + "/globalId/" + instrument.getGlobalIdentifier().toLowerCase()));
+
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
+
+    assertEquals(PUBLIC_PAGE, md.getLandingPage());
+  }
+
+  /**
+   * Recognition is pinned to <em>this</em> record's global id, not to the {@code /globalId/} path
+   * alone. A user who links to a different record's page has typed that deliberately, so it is
+   * registered. Without this case the guard could be weakened to a bare {@code contains} and the
+   * rest of the suite would stay green while silently discarding such links.
+   */
+  @Test
+  void aLinkToAnotherRecordsGlobalIdPageIsTreatedAsUserTyped() {
+    Instrument instrument = templateShapedInstrument();
+    addField(instrument, uriField("Landing page", SERVER + "/globalId/IN999"));
+
+    B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata();
+
+    assertEquals(SERVER + "/globalId/IN999", md.getLandingPage());
+  }
+
+  /**
+   * Recognition is host agnostic: the {@code /globalId/<globalId>} tail is what the default-fill
+   * produces and names this one record, while the host is only whatever the server URL said at fill
+   * time. So a default written under an old deployment name is still recognised. That matters
+   * because the alternative, comparing whole addresses, would start registering the login-walled
+   * default after a rename, which is the exact outcome ADR 0006 exists to prevent and cannot be
+   * undone once a curator accepts the record.
+   */
+  @Test
+  void materialisedDefaultIsRecognisedOnAnyHost() {
     Instrument instrument = templateShapedInstrument();
     addField(
         instrument,
@@ -237,10 +406,9 @@ class RspaceToExternalProviderAdapterImplTest {
     assertEquals(PUBLIC_PAGE, md.getLandingPage());
   }
 
-  /** The same recognition with nothing to fall back to: omitted, never the login-walled default. */
+  /** The same host-agnostic recognition with nothing to fall back to: omitted, never registered. */
   @Test
-  void materialisedDefaultFromAnOldServerUrlIsOmittedWhenNoPublicUrlExists() {
-    when(properties.getServerUrl()).thenReturn("https://new-name.example.com");
+  void materialisedDefaultOnAnotherHostIsOmittedWhenNoPublicUrlExists() {
     Instrument instrument = templateShapedInstrument();
     addField(
         instrument,
@@ -254,14 +422,14 @@ class RspaceToExternalProviderAdapterImplTest {
   }
 
   /**
-   * With no server URL configured there is no correct address to send, and a LandingPage is baked
-   * into a citable PID the moment a curator accepts the record, with no way for RSpace to update a
-   * published B2INST record afterwards. So the property is omitted rather than sent site-relative:
-   * absent is recoverable, wrong-and-published is not.
+   * Neither a field value nor a public landing page: the property is omitted rather than guessed. A
+   * LandingPage is baked into a citable PID the moment a curator accepts the record, with no way
+   * for RSpace to update a published B2INST record afterwards, so absent is recoverable and
+   * wrong-and-published is not. (Whether a missing public URL is caused by an unset server URL is
+   * decided by the caller now, and is covered by ApiInventoryDOITest.)
    */
   @Test
-  void landingPageIsOmittedRatherThanRelativeWhenServerUrlIsUnset() {
-    when(properties.getServerUrl()).thenReturn(null);
+  void landingPageIsOmittedWhenThereIsNeitherAFieldNorAPublicUrl() {
     Instrument instrument = templateShapedInstrument();
 
     B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
@@ -269,10 +437,9 @@ class RspaceToExternalProviderAdapterImplTest {
     assertNull(md.getLandingPage());
   }
 
-  /** A Landing page the user typed is unaffected by an unconfigured server URL. */
+  /** A Landing page the user typed is registered even when no public landing page is available. */
   @Test
-  void landingPageFromTheFieldSurvivesAnUnsetServerUrl() {
-    when(properties.getServerUrl()).thenReturn(null);
+  void userTypedLandingPageIsRegisteredWithoutAPublicUrl() {
     Instrument instrument = templateShapedInstrument();
     addField(instrument, uriField("Landing page", "https://lab.example.org/aws-42"));
 

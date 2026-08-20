@@ -8,6 +8,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.properties.IPropertyHolder;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
  * API client.
  */
 @Component
+@Slf4j
 public class ApiIdentifiersHelper {
 
   private @Autowired IPropertyHolder properties;
@@ -64,24 +66,39 @@ public class ApiIdentifiersHelper {
    * was called, or the entity's own when the caller carried none (RSDEV-1254, ADR 0006).
    *
    * <p>Built through {@link ApiInventoryDOI#publicLandingPageUrl}, the same builder the registered
-   * address goes through, so the stored and the registered address cannot be normalised
-   * differently. With no server URL configured the property is left unset rather than stored as the
-   * literal "null/public/inventory/...", which would then surface as the identifier's {@code url}
-   * over the API; a missing value can still be filled in later.
+   * address goes through, so the two cannot be normalised differently. (The builder settles
+   * normalisation only; {@code applyChangesToDatabaseDOI} runs immediately after these calls and
+   * overwrites LOCAL_URL from the DTO's own url whenever that is non-null, which draft provider
+   * responses are not.)
+   *
+   * <p>With no server URL configured the property is left unset rather than stored as the literal
+   * "null/public/inventory/...", which would surface as the identifier's {@code url} over the API.
+   * Note what absence costs, because nothing fills it in later: LOCAL_URL becomes the DataCite
+   * target url, and DataCite needs a url to make a DOI findable, so an identifier minted while the
+   * server URL was blank cannot be published without a manual repair. Unset is still the better of
+   * the two, since a stored "null/..." is equally unpublishable and harder to spot. Hence the WARN.
    */
-  private void addPublicLandingPageUrl(DigitalObjectIdentifier newDoi) {
-    ApiInventoryDOI.publicLandingPageUrl(properties.getServerUrl(), newDoi.getPublicLink())
-        .ifPresent(
-            url ->
-                newDoi.addOtherData(
-                    DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL, url));
+  private void addPublicLandingPageUrl(DigitalObjectIdentifier newDoi, String forWhat) {
+    Optional<String> url =
+        ApiInventoryDOI.publicLandingPageUrl(properties.getServerUrl(), newDoi.getPublicLink());
+    url.ifPresentOrElse(
+        u -> newDoi.addOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL, u),
+        // Named so the message is actionable: a bulk allocation would otherwise emit the same
+        // undifferentiated line per identifier. The suffix itself is never logged - it is the only
+        // thing guarding the anonymous page. An unset server URL is the sole reachable cause here,
+        // since the entity constructor always yields a non-blank publicLink.
+        () ->
+            log.warn(
+                "No public landing page stored for the new identifier on {}: no server URL is"
+                    + " configured. The identifier cannot be published until its url is set.",
+                forWhat));
   }
 
   private void addRecordIdentifierForRegisteredApiIdentifier(
       ApiInventoryDOI apiIdentifier, InventoryRecord parentInvRec) {
     DigitalObjectIdentifier newDoi =
         new DigitalObjectIdentifier(null, null, apiIdentifier.getPublicLinkSuffix());
-    addPublicLandingPageUrl(newDoi);
+    addPublicLandingPageUrl(newDoi, parentInvRec.getGlobalIdentifier());
     newDoi.setOwner(parentInvRec.getOwner());
     apiIdentifier.applyChangesToDatabaseDOI(newDoi);
     parentInvRec.addIdentifier(newDoi);
@@ -98,7 +115,7 @@ public class ApiIdentifiersHelper {
   public DigitalObjectIdentifier createDoiToSave(ApiInventoryDOI apiIdentifier, User creator) {
     DigitalObjectIdentifier newDoi =
         new DigitalObjectIdentifier(null, null, apiIdentifier.getPublicLinkSuffix());
-    addPublicLandingPageUrl(newDoi);
+    addPublicLandingPageUrl(newDoi, "a bulk allocation for " + creator.getUsername());
     newDoi.setOwner(creator);
     apiIdentifier.applyChangesToDatabaseDOI(newDoi);
     return newDoi;

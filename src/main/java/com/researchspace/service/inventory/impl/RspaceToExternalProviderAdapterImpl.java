@@ -19,16 +19,18 @@ import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /** See {@link RspaceToExternalProviderAdapter}. */
+@Slf4j
 public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProviderAdapter {
 
   private static final String PIDINST_SCHEMA_VERSION = "1.0";
@@ -54,12 +56,6 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
   private static final String DATE_TYPE_COMMISSIONED = "Commissioned";
   private static final String DATE_TYPE_DECOMMISSIONED = "DeCommissioned";
   private static final String ALTERNATE_ID_TYPE_OTHER = "Other";
-
-  private final IPropertyHolder properties;
-
-  public RspaceToExternalProviderAdapterImpl(IPropertyHolder properties) {
-    this.properties = properties;
-  }
 
   /*
    * MANDATORY, not REQUIRED: this walks the instrument's lazy associations (getActiveFields, and the
@@ -109,10 +105,42 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
      * value nor a public URL the property is omitted: a missing property is recoverable, a wrong
      * published URL is not. See ADR 0006 and CONTEXT.md ("Registered landing page").
      */
-    mappedFieldData(source, FIELD_LANDING_PAGE, FieldType.URI)
-        .filter(fieldValue -> !isMaterialisedGlobalIdDefault(fieldValue, source))
-        .or(() -> Optional.ofNullable(publicLandingPageUrl))
-        .ifPresent(metadata::setLandingPage);
+    Optional<String> typed =
+        mappedFieldData(source, FIELD_LANDING_PAGE, FieldType.URI)
+            .filter(fieldValue -> !isMaterialisedGlobalIdDefault(fieldValue, source));
+    if (typed.isPresent() && !isResolvableAddress(typed.get())) {
+      // Substituting our own address for one the user typed is worth saying out loud: the field
+      // goes
+      // on displaying their value, so nothing else tells them it was not the one registered. The
+      // value itself is not logged, only the record it belongs to.
+      log.warn(
+          "Not registering the Landing page of {} as its LandingPage: the value is not an absolute"
+              + " http(s) address. Using the identifier's public landing page instead.",
+          source.getGlobalIdentifier());
+    }
+    Optional<String> landingPage =
+        typed
+            // before the .or so an unusable field value falls back to the public page...
+            .filter(RspaceToExternalProviderAdapterImpl::isResolvableAddress)
+            .or(() -> Optional.ofNullable(publicLandingPageUrl))
+            // ...and again after it, because the fallback needs the same guard: the public landing
+            // page is built from the deployment's server URL, which nothing validates for a scheme,
+            // so a deployment configured without one would register the very form we refuse from
+            // users. Failing this second check omits the property rather than falling back further.
+            .filter(RspaceToExternalProviderAdapterImpl::isResolvableAddress);
+    // LandingPage is mandatory in the PIDINST 1.0 schema asserted above, so omitting it is a
+    // deliberate, visible trade rather than a silent one: an operator who has left the server URL
+    // unconfigured should be able to see why a mandatory property left RSpace empty, instead of
+    // hearing it from a curator. Same reasoning as the WARN in
+    // InstrumentEntityApiManagerImpl.fillBlankLandingPage.
+    landingPage.ifPresentOrElse(
+        metadata::setLandingPage,
+        () ->
+            log.warn(
+                "Registering {} without a LandingPage: no user-typed address and no public landing"
+                    + " page were available. The property is mandatory in PIDINST 1.0, but a wrong"
+                    + " address cannot be corrected once a curator accepts the record.",
+                source.getGlobalIdentifier()));
     mappedFieldData(source, FIELD_ALTERNATE_IDENTIFIER, FieldType.STRING)
         .ifPresent(
             a ->
@@ -131,6 +159,23 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
   }
 
   /**
+   * Whether a typed Landing page is an address a resolver could actually follow. The field's own
+   * validation is only {@code new URI(...)} parsing (core-model's InventoryUriField), which accepts
+   * a bare host, a relative path, and non-web schemes such as {@code javascript:} and {@code
+   * data:}. None of those identify the instrument to someone resolving the PID, and a LandingPage
+   * is baked into a citable PID once a curator accepts, so anything that is not an absolute http(s)
+   * address falls back to the identifier's public page rather than being registered.
+   *
+   * <p>A scheme prefix is deliberately enough: the field's validation does reject a scheme with no
+   * authority ({@code new URI("http://")} throws "Expected authority"), so there is no reachable
+   * input of that shape left to guard against here.
+   */
+  private static boolean isResolvableAddress(String fieldValue) {
+    return StringUtils.startsWithIgnoreCase(fieldValue, "http://")
+        || StringUtils.startsWithIgnoreCase(fieldValue, "https://");
+  }
+
+  /**
    * Whether the Landing page field is holding RSpace's own materialised default rather than a value
    * the user typed. Matched on the {@code /globalId/<globalId>} tail alone, not on equality with
    * the currently configured address: the tail is what the default-fill produces and names this one
@@ -138,15 +183,49 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
    * addresses would stop recognising the fill as soon as the deployment was renamed or lost its
    * server URL setting, and would then register the login-walled default — irreversibly, once a
    * curator accepts. See {@link GlobalIdUrls} and ADR 0006.
+   *
+   * <p>The tail is compared against the address's path with any query and fragment dropped, any
+   * trailing slash removed, and case folded, because none of those change which page the address
+   * names. Without that normalisation a default a user had since edited to carry a trailing slash
+   * or a {@code ?from=...} would read as user-typed and be registered.
+   *
+   * <p>Two accepted consequences, both erring towards omission because a missing property is
+   * recoverable and a wrong published one is not. A user who deliberately types some other RSpace's
+   * {@code /globalId/<same id>} address has it discarded in favour of this identifier's public
+   * page. And a differently-cased global id is treated as the default even though it may resolve to
+   * nothing; an address that resolves to nothing is no more fit to register.
    */
-  private boolean isMaterialisedGlobalIdDefault(String fieldValue, InstrumentEntity source) {
-    return fieldValue.endsWith(GlobalIdUrls.GLOBAL_ID_PATH + source.getGlobalIdentifier());
+  private static boolean isMaterialisedGlobalIdDefault(String fieldValue, InstrumentEntity source) {
+    String globalIdTail = GlobalIdUrls.GLOBAL_ID_PATH + source.getGlobalIdentifier();
+    return StringUtils.endsWithIgnoreCase(
+        StringUtils.stripEnd(comparablePath(fieldValue), "/"), globalIdTail);
+  }
+
+  /**
+   * The address's path, normalised so that forms which name the same page compare equal: query and
+   * fragment gone, dot segments resolved, percent-escapes decoded. {@link URI#getPath()} does the
+   * last two ({@code getPath} decodes, unlike {@code getRawPath}).
+   *
+   * <p>An address the URI parser rejects falls back to the raw text with query and fragment
+   * stripped, so a malformed value is still checked rather than waved through. The field's own
+   * validation makes that rare but not impossible, since it runs at save time and says nothing
+   * about rows written before it existed.
+   */
+  private static String comparablePath(String address) {
+    try {
+      String path = URI.create(address).normalize().getPath();
+      return path == null ? address : path;
+    } catch (IllegalArgumentException unparseable) {
+      return StringUtils.substringBefore(StringUtils.substringBefore(address, "#"), "?");
+    }
   }
 
   /**
    * Exactly one Owner entry: ownerName from the "Owner" field when non-blank, else the record
    * owner's full name; ownerContact is always the record owner's email. Owner is the only
-   * PIDINST-mandatory property built from fields, hence the unconditional fallback.
+   * PIDINST-mandatory property given an unconditional fallback, hence the fallback here.
+   * Manufacturer is mandatory too and is built from a field with no fallback and no warning, so the
+   * three mandatory properties are handled three different ways; worth aligning separately.
    */
   private B2instOwner ownerOf(InstrumentEntity instrument) {
     B2instOwner b2instOwner = new B2instOwner();

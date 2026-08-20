@@ -127,15 +127,22 @@ class ApiInventoryDOITest {
   }
 
   /**
-   * DTO round-trips from the entity keep the invariant suffix == rsPublicId == entity publicLink.
+   * publicLinkSuffix means "the suffix to give a brand-new entity", so a DTO built from an existing
+   * identifier must not carry one. The two readers of the suffix
+   * (ApiIdentifiersHelper.createDoiToSave and addRecordIdentifierForRegisteredApiIdentifier) both
+   * hand it to a new DigitalObjectIdentifier; carrying an already-persisted publicLink here would
+   * let one identifier's public page be assigned to a second row, and publicLink has UNIQUE KEY
+   * isPublicLink, so that surfaces as a constraint violation at flush - after the provider call in
+   * the same transaction has already created a draft. rsPublicId carries the entity value for every
+   * read purpose. See ADR 0006.
    */
   @Test
-  void entityConstructorCopiesPublicLinkAsSuffix() {
+  void entityConstructorDoesNotCopyPublicLinkAsSuffix() {
     DigitalObjectIdentifier entity = new DigitalObjectIdentifier(null, null);
 
     ApiInventoryDOI api = new ApiInventoryDOI(entity);
 
-    assertEquals(entity.getPublicLink(), api.getPublicLinkSuffix());
+    assertNull(api.getPublicLinkSuffix(), "an entity-derived DTO must not carry a suffix");
     assertEquals(entity.getPublicLink(), api.getRsPublicId());
   }
 
