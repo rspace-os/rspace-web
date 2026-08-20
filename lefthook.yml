@@ -5,6 +5,32 @@ colors: false
 pre-commit:
   parallel: true
   commands:
+    # Refuse to commit local secret/config files. `.gitignore` already covers
+    # the known paths, but `git add -f` and new locations slip through, so match
+    # by filename instead: `.env`/`.env.*` and `deployment.properties` exactly.
+    # The name is anchored, so `defaultDeployment.properties` (the checked-in
+    # defaults) and `deployment.properties.example` (the dev template) do not
+    # match; `*.example` is excluded so `.env.example` stays committable.
+    # To add or change a property for everyone, edit the template
+    # `deployments/dev/deployment.properties.example`, and
+    # `deployments/defaultDeployment.properties` when the property has a
+    # sensible production value. Never your own `deployment.properties`: it is
+    # git-ignored, so nobody else would ever see the change.
+    # Escape hatch: `git commit --no-verify`.
+    secret-files:
+      run: |
+        blocked=$(printf '%s\n' {staged_files} \
+          | grep -iE '(^|/)(\.env(\..+)?|deployment\.properties)$' \
+          | grep -viE '\.example$' \
+          | sed 's/^/  /' || true)
+        if [ -n "$blocked" ]; then
+          echo "Refusing to commit local secret/config files:" >&2
+          echo "$blocked" >&2
+          echo "To share a property change, edit deployment.properties.example (and" >&2
+          echo "defaultDeployment.properties if it has a production value) instead." >&2
+          echo "Unstage them (git restore --staged <file>), or use --no-verify if intentional." >&2
+          exit 1
+        fi
     # Fail the commit if any staged Java file is not spotless-formatted.
     # spotlessFiles matches the absolute path via String#matches, so each
     # staged (repo-relative) path is prefixed with `.*` to anchor correctly.

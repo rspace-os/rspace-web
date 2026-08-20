@@ -32,6 +32,11 @@ fully isolated RSpace at the same time:
 Heavy, safe-to-share caches (the Maven `~/.m2` repository and the pnpm store)
 are reused across worktrees so you only download dependencies once.
 
+On first run `rspace-dev` also creates the git-ignored
+`src/main/resources/deployments/dev/deployment.properties` from the checked-in
+`deployment.properties.example`, since Spring will not start without it. Edit the copy to add your
+local credentials.
+
 ## Prerequisites
 
 - Docker Engine + Docker Compose v2 (Docker Desktop on macOS/Windows works).

@@ -727,40 +727,35 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
   }
 
   /*
-   * An instrument shaped by the PIDINST template should always carry a landing page: when the user
-   * leaves the field empty, saving fills it with the instrument's own public RSpace address. This is
-   * independent of PIDINST registration - it happens on save.
+   * RSDEV-1307: a landing page names exactly one physical instrument, so a value typed into a
+   * template must not travel onto instruments created from it — each new instrument gets its own
+   * public RSpace address instead, filled on save and independently of PIDINST registration.
+   * (A landing page supplied in the creation request itself is still kept; that is user input on
+   * the new record, covered by InstrumentEntityApiManagerTest.)
+   *
+   * This subsumes the blank-template case: since the template's value is cleared either way, a
+   * template seeded with a landing page and one seeded blank now exercise the same fill.
    */
   @Test
-  public void blankLandingPageIsFilledWithTheInstrumentsOwnAddressOnCreate() throws Exception {
+  public void aTemplateSuppliedLandingPageIsNotInheritedByANewInstrument() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
-    Long templateId = postPidinstShapedTemplate(anyUser, apiKey, "");
+    Long templateId = postPidinstShapedTemplate(anyUser, apiKey, "https://lab.example.org/mine");
 
     ApiInstrument created = postInstrumentFromTemplate(anyUser, apiKey, templateId);
 
     assertNotNull(created.getGlobalId());
     assertTrue(
         StringUtils.endsWith(landingPageOf(created), "/globalId/" + created.getGlobalId()),
-        "expected the default landing page, got: " + landingPageOf(created));
-  }
-
-  @Test
-  public void aLandingPageTheUserSuppliedIsNeverReplaced() throws Exception {
-    User anyUser = createInitAndLoginAnyUser();
-    String apiKey = createNewApiKeyForUser(anyUser);
-    Long templateId = postPidinstShapedTemplate(anyUser, apiKey, "https://lab.example.org/mine");
-
-    ApiInstrument created = postInstrumentFromTemplate(anyUser, apiKey, templateId);
-
-    assertEquals("https://lab.example.org/mine", landingPageOf(created));
+        "expected the instrument's own landing page, got: " + landingPageOf(created));
   }
 
   @Test
   public void clearingTheLandingPageAndSavingRestoresTheDefault() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
-    Long templateId = postPidinstShapedTemplate(anyUser, apiKey, "https://lab.example.org/mine");
+    // the template's own value never reaches the instrument, so seeding one would be misleading
+    Long templateId = postPidinstShapedTemplate(anyUser, apiKey, "");
     ApiInstrument created = postInstrumentFromTemplate(anyUser, apiKey, templateId);
     Long fieldId =
         created.getFields().stream()

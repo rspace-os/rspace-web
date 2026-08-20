@@ -456,7 +456,7 @@
       "helpLink": "Cloud Storage integrations docs",
       "name": "Google Drive",
       "setup": {
-        "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the Google Drive icon in the text editor toolbar.</li></ol>",
+        "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the Google Drive icon in the text editor toolbar.</li><li>Sign in to Google and approve access. If Google asks for cookie access, select <strong>Allow cookies</strong> to open the file picker.</li></ol>",
         "toolbar": "When editing a document, click on the Google Drive icon in the text editor toolbar."
       },
       "usage": "You can include files from Google Drive in your RSpace documents. Files are embedded as links to the Google Drive location of that file."

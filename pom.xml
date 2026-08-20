@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>researchspace</artifactId>
   <packaging>war</packaging>
-  <version>2.25.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
+  <version>2.26.0-SNAPSHOT-${timestamp}</version><!-- appVersionID don't remove this comment it identifies this version -->
   <name>ResearchSpace</name>
   <url>https://www.researchspace.com</url>
 
@@ -391,6 +391,8 @@
           placeholders resolve from deployment.properties at runtime. -->
         <excludes>
           <exclude>applicationContext-dao.xml</exclude>
+          <!-- seed template for the git-ignored deployment.properties; never packaged -->
+          <exclude>deployments/*/deployment.properties.example</exclude>
         </excludes>
       </resource>
 

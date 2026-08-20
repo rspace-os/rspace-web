@@ -482,7 +482,7 @@ export default interface Resources {
         "helpLink": "Cloud Storage integrations docs",
         "name": "Google Drive",
         "setup": {
-          "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the Google Drive icon in the text editor toolbar.</li></ol>",
+          "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the Google Drive icon in the text editor toolbar.</li><li>Sign in to Google and approve access. If Google asks for cookie access, select <strong>Allow cookies</strong> to open the file picker.</li></ol>",
           "toolbar": "When editing a document, click on the Google Drive icon in the text editor toolbar."
         },
         "usage": "You can include files from Google Drive in your RSpace documents. Files are embedded as links to the Google Drive location of that file."
@@ -6787,6 +6787,7 @@ export default interface Resources {
           "unrecognizedFileType": "Unrecognized fileType: {0}"
         },
         "instrument": {
+          "fieldCountMismatch": "Number of incoming instrument fields [{0}] doesn''t match number of template fields [{1}]",
           "nameExists": "There is already an instrument named [{0}]",
           "notFound": "No instrument with id: {0}",
           "templateNotFound": "No instrument template with id: {0}",
@@ -7489,6 +7490,12 @@ export default interface Resources {
           "authError": "Egnyte authorization could not be verified. Please try connecting to Egnyte again.",
           "configMissing": "Egnyte is not configured properly on this RSpace instance. Please contact your System Admin",
           "domainMissing": "Egnyte Domain URL is not set, please go to Apps page and set it up."
+        },
+        "googleDrive": {
+          "authorizationIncomplete": "Google Drive authorization was not completed. Try again, keep the Google sign-in window open, and approve access when prompted.",
+          "pickerTitle": "Select a file from Google Drive",
+          "popupBlocked": "Google Drive sign-in was blocked. Allow pop-ups for this site, then try again.",
+          "signInFailed": "Google Drive sign-in could not be completed. Allow pop-ups and third-party cookies for this site, sign in to Google when prompted, then try again."
         },
         "handsontable": {
           "insertFailed": "Inserting calculation table failed."
