@@ -23,6 +23,7 @@ import {
 } from "./operationsConfig";
 import type { TemplateSelection } from "./TemplateStep";
 import type { AmountMode, OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./types";
+import { resolveLabelFrom } from "./types";
 
 /**
  * Final step: a preview card of the sample the operation will create, before it is performed. The
@@ -71,7 +72,7 @@ function OperationConfirmation({
   const { t } = useTranslation("inventory");
   const theme = useTheme();
   const { unitStore } = useStores();
-  const resolveLabel = t as unknown as (key: string, params?: Record<string, unknown>) => string;
+  const resolveLabel = resolveLabelFrom(t);
   const { effect } = operation;
   const unitLabel = (unitId: number): string => unitStore.getUnit(unitId)?.label ?? "";
 
@@ -211,9 +212,10 @@ function OperationConfirmation({
     "linkBack",
     "documentation",
   ];
-  const content: Array<Row> = (operation.confirmSummary ?? DEFAULT_SUMMARY)
-    .flatMap((field) => rowBuilders[field]() ?? [])
-    .filter((row): row is Row => row !== null);
+  // flatMap already drops a null builder result via `?? []`, so no further filtering is needed.
+  const content: Array<Row> = (operation.confirmSummary ?? DEFAULT_SUMMARY).flatMap(
+    (field) => rowBuilders[field]() ?? [],
+  );
 
   // A terminal operation (Destroy) skips the details step, so its description is shown here as an info
   // panel, and its "cannot operate on an empty subsample" guard also moves here: when it would empty

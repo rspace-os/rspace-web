@@ -16,6 +16,7 @@ import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -33,10 +34,11 @@ class InventoryOperationPostValidatorTest {
 
   /** Fully-wired validator for unit tests; shared with the controller test in this package. */
   static InventoryOperationPostValidator newValidator() {
+    ApiExtraFieldsHelper extraFieldsHelper = new ApiExtraFieldsHelper(new RecordFactory());
     SampleApiPostValidator sampleApiPostValidator = new SampleApiPostValidator();
-    sampleApiPostValidator.extraFieldHelper = new ApiExtraFieldsHelper(new RecordFactory());
+    sampleApiPostValidator.extraFieldHelper = extraFieldsHelper;
     return new InventoryOperationPostValidator(
-        new InventoryOperationConfigRegistry(), sampleApiPostValidator);
+        new InventoryOperationConfigRegistry(), sampleApiPostValidator, extraFieldsHelper);
   }
 
   private Errors validate(ApiInventoryOperationPost request) {
@@ -441,6 +443,110 @@ class InventoryOperationPostValidatorTest {
     request.getNewSample().getExtraFields().add(cryomedium);
     Errors errors = validate(request);
     assertFalse(errors.hasErrors(), () -> "extras must be allowed: " + errors.getAllErrors());
+  }
+
+  // --- origin extra fields: strictly new-field requests, contents fully validated ---
+
+  private static ApiExtraField disposedField() {
+    ApiExtraField field = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.TEXT);
+    field.setName("Disposed");
+    field.setContent("2026-08-20");
+    field.setNewFieldRequest(true);
+    return field;
+  }
+
+  @Test
+  void allowsNewFieldRequestExtraFieldsOnAnOrigin() {
+    ApiInventoryOperationPost request = destroyRequest();
+    request.getOrigins().get(0).setExtraFields(new ArrayList<>(List.of(disposedField())));
+    Errors errors = validate(request);
+    assertFalse(errors.hasErrors(), () -> "disposed field: " + errors.getAllErrors());
+  }
+
+  @Test
+  void rejectsOriginExtraFieldThatIsNotANewFieldRequest() {
+    ApiInventoryOperationPost request = destroyRequest();
+    ApiExtraField notNew = disposedField();
+    notNew.setNewFieldRequest(false);
+    request.getOrigins().get(0).setExtraFields(new ArrayList<>(List.of(notNew)));
+    assertSingleErrorWithCode(
+        validate(request),
+        "origins[0].extraFields[0].newFieldRequest",
+        "errors.inventory.operation.originFieldNewOnly");
+  }
+
+  @Test
+  void rejectsOriginExtraFieldThatDeletesOrEditsAnExistingField() {
+    // a delete request, or an id-bearing edit of an existing field, is a mutation no operation
+    // definition describes; only adding new fields is allowed (DevDocs/adr/0015)
+    ApiInventoryOperationPost request = destroyRequest();
+    ApiExtraField delete = disposedField();
+    delete.setDeleteFieldRequest(true);
+    request.getOrigins().get(0).setExtraFields(new ArrayList<>(List.of(delete)));
+    assertTrue(
+        validate(request).hasFieldErrors("origins[0].extraFields[0].newFieldRequest"),
+        "delete request must be rejected");
+
+    ApiInventoryOperationPost edit = destroyRequest();
+    ApiExtraField existing = disposedField();
+    existing.setId(42L);
+    edit.getOrigins().get(0).setExtraFields(new ArrayList<>(List.of(existing)));
+    assertTrue(
+        validate(edit).hasFieldErrors("origins[0].extraFields[0].newFieldRequest"),
+        "id-bearing edit must be rejected");
+  }
+
+  @Test
+  void validatesOriginExtraFieldContentsLikeTheSubsampleEndpoint() {
+    // a link-typed origin field without a link payload is rejected by the same shared field
+    // validator the subsample PUT endpoint uses
+    ApiInventoryOperationPost request = destroyRequest();
+    ApiExtraField linkWithoutPayload = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.LINK);
+    linkWithoutPayload.setName("Broken link");
+    linkWithoutPayload.setNewFieldRequest(true);
+    request.getOrigins().get(0).setExtraFields(new ArrayList<>(List.of(linkWithoutPayload)));
+    assertTrue(validate(request).hasFieldErrors("origins[0].extraFields[0].link"));
+  }
+
+  // --- malformed list elements must be clean 400s, not 500s ---
+
+  @Test
+  void rejectsNullOriginListEntry() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.setOrigins(new ArrayList<>(Arrays.asList((ApiInventoryOperationOriginUpdate) null)));
+    assertSingleErrorWithCode(
+        validate(request), "origins", "errors.inventory.operation.originIdRequired");
+  }
+
+  @Test
+  void rejectsNullSubSampleListEntry() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().setSubSamples(new ArrayList<>(Arrays.asList((ApiSubSample) null)));
+    assertTrue(
+        validate(request).getFieldErrors("newSample.subSamples").stream()
+            .anyMatch(
+                error ->
+                    "errors.inventory.operation.subSampleQuantityInvalid".equals(error.getCode())));
+  }
+
+  // --- origin count ceiling (resource-exhaustion guard) ---
+
+  @Test
+  void rejectsMoreOriginsThanTheMaximum() {
+    ApiSampleWithFullSubSamples sample = newSample("Pooled");
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("pool");
+    request.setNewSample(sample);
+    List<ApiInventoryOperationOriginUpdate> origins = new ArrayList<>();
+    for (long id = 1; id <= 101; id++) {
+      origins.add(origin(id, "0.6"));
+      sample.getExtraFields().add(linkTo("HasPart", id));
+    }
+    request.setOrigins(origins);
+    assertTrue(
+        validate(request).getFieldErrors("origins").stream()
+            .anyMatch(
+                error -> "errors.inventory.operation.originCountMaximum".equals(error.getCode())));
   }
 
   // --- origin shape rules (operation-independent) ---

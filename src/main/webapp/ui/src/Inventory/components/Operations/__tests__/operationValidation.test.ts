@@ -82,6 +82,21 @@ describe("detailsValid temperature limit", () => {
   it("does not constrain the temperature when no maximum is configured", () => {
     expect(detailsValid(cryo, { ...validValues, storageTemp: { numericValue: 20, unitId: 8 } })).toBe(true);
   });
+
+  // revive-style floor: minCelsius 4 (as in operations_config.json)
+  const reviveWithMin = {
+    ...cryo,
+    inputs: cryo.inputs.map((i) => (i.key === "storageTemp" ? { ...i, minCelsius: 4 } : i)),
+  } as unknown as InventoryOperation;
+
+  it("rejects a storage temperature below the configured minimum", () => {
+    expect(detailsValid(reviveWithMin, { ...validValues, storageTemp: { numericValue: 2, unitId: 8 } })).toBe(false);
+  });
+
+  it("accepts a storage temperature at or above the configured minimum", () => {
+    expect(detailsValid(reviveWithMin, { ...validValues, storageTemp: { numericValue: 4, unitId: 8 } })).toBe(true);
+    expect(detailsValid(reviveWithMin, { ...validValues, storageTemp: { numericValue: 37, unitId: 8 } })).toBe(true);
+  });
 });
 
 describe("amountTakenExceedsOrigin", () => {
