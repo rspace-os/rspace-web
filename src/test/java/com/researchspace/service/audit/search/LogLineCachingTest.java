@@ -11,10 +11,12 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 @ContextConfiguration(classes = SpringConfig.class)
+@ActiveProfiles("audit-file-cache-test")
 public class LogLineCachingTest extends AbstractJUnit4SpringContextTests {
 
   private @Autowired LogLineContentProvider logLineContentProvider;

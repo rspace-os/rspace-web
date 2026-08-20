@@ -10,9 +10,16 @@ import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
+/**
+ * Guarded by a dedicated profile: this class sits in a package that the application contexts
+ * component-scan, and without the guard its cacheManager bean replaces the application's
+ * JCache-backed one in every Spring test context.
+ */
 @EnableCaching
 @Configuration
+@Profile("audit-file-cache-test")
 public class SpringConfig {
 
   @Bean
