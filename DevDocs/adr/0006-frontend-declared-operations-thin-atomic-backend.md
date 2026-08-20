@@ -1,10 +1,13 @@
-# 1. Frontend-declared operations, executed by a thin generic atomic backend endpoint
+# 6. Frontend-declared operations, executed by a thin generic atomic backend endpoint
 
 Date: 2026-07-10
 
 ## Status
 
-Accepted
+Accepted. Amended by DevDocs/adr/0015: the clause that `operationType` is "never branched on"
+no longer holds. The backend now resolves `operationType` against the operation
+definitions and enforces them server-side, still generically (there is still no
+per-operation Java and no operationType enum). The rest of this ADR stands.
 
 ## Context
 
