@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { derivedSampleName, firstAvailableName } from "../sampleNaming";
 
 describe("derivedSampleName", () => {
@@ -58,5 +58,14 @@ describe("firstAvailableName", () => {
 
   it("fills a gap rather than always taking the highest+1", async () => {
     expect(await firstAvailableName("Blood dna", availabilityOf(["Blood dna", "Blood dna_2"]))).toBe("Blood dna_1");
+  });
+
+  it("gives up after a bounded number of attempts and falls back to the base name", async () => {
+    // The availability endpoint also answers false for an INVALID name (e.g. one over the length
+    // limit), in which case every suffixed candidate is equally unavailable; without a cap the
+    // probe would spin forever, one HTTP request per iteration.
+    const isAvailable = vi.fn((_name: string) => Promise.resolve(false));
+    expect(await firstAvailableName("Very long name", isAvailable)).toBe("Very long name");
+    expect(isAvailable.mock.calls.length).toBeLessThanOrEqual(30);
   });
 });
