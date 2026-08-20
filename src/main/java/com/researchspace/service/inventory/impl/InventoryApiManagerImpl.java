@@ -82,7 +82,7 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   protected @Autowired UserManager userManager;
   protected @Autowired ContainerDao containerDao;
   protected @Autowired InventoryPermissionUtils invPermissions;
-  protected @Autowired InventoryLinkManager inventoryLinkManager;
+  private @Autowired InventoryLinkManager inventoryLinkManager;
   private @Autowired InventoryEditLockTracker tracker;
   private @Autowired GroupDao groupDao;
   private @Autowired InventoryFileApiManager inventoryFileApiManager;
@@ -133,10 +133,9 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   /**
    * Rejects a template edit that narrows a link field's allowed-relation-types whitelist so that
    * the field's own default link (RSDEV-1246) would no longer be permitted. The per-link check in
-   * each manager's {@code assertRelationAllowed} only sees an incoming link, and an unchanged
-   * default is a no-op on that path, so a whitelist-only edit would otherwise leave the template
-   * holding a default its own field forbids. Failing the edit is preferable to silently dropping
-   * the default.
+   * {@code assertRelationAllowed} below only sees an incoming link, and an unchanged default is a
+   * no-op on that path, so a whitelist-only edit would otherwise leave the template holding a
+   * default its own field forbids. Failing the edit is preferable to silently dropping the default.
    */
   static void assertDefaultLinksMatchWhitelists(List<InventoryEntityField> templateFields) {
     for (InventoryEntityField field : templateFields) {
@@ -147,7 +146,7 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
           throw new ApiRuntimeException(
               "errors.inventory.field.link.defaultRelationTypeNotPermitted",
               link.getRelationType(),
-              linkField.getName());
+              linkField.getName() == null ? "" : linkField.getName());
         }
       }
     }
@@ -174,6 +173,15 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   }
 
   /**
+   * Item semantics: an omitted link clears. Equivalent to the four-argument form with {@code
+   * omittedLinkPreservesExisting = false}.
+   */
+  boolean applyLinkFieldValue(
+      InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
+    return applyLinkFieldValue(field, apiField, user, false);
+  }
+
+  /**
    * Applies a record's chosen link value to its structured link field, going through the {@link
    * InventoryLinkManager} so the target is parsed/validated and the Envers revision captured (the
    * same path used by extra-field links). An unchanged payload is a no-op (previously every save
@@ -186,14 +194,6 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
    * alongside it. The chosen relation type must be permitted by the template field's
    * allowed-relation-types whitelist (an empty whitelist permits all).
    *
-   * <p>Item semantics: an omitted link clears. See the four-argument overload.
-   */
-  boolean applyLinkFieldValue(
-      InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
-    return applyLinkFieldValue(field, apiField, user, false);
-  }
-
-  /**
    * @param omittedLinkPreservesExisting how to read a payload that carries no {@code link} key at
    *     all. True for a <b>template</b> field, whose PUT accepts a partial field list: a
    *     whitelist-only edit or a rename must not destroy the default link. False for an <b>item</b>
@@ -243,6 +243,19 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
       field.setLink(inventoryLinkManager.createLink(apiLink, user));
     }
     return true;
+  }
+
+  /**
+   * Applies a link value while creating a record from a template. The template's default link has
+   * already been stamped onto the new field by {@code InventoryLinkField#shallowCopy()}, so a
+   * payload that lists the fields but says nothing about the link must leave that stamp alone
+   * rather than wipe it before it is ever persisted (ADR-0006: bulk, API and UI creation behave
+   * identically, and the UI always sends the link key). An explicit {@code "link": null} still
+   * clears, which is how a caller declines the default.
+   */
+  boolean applyLinkFieldValueOnCreate(
+      InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
+    return applyLinkFieldValue(field, apiField, user, true);
   }
 
   /**
@@ -346,6 +359,9 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     try {
       return new GlobalIdentifier(targetGlobalId);
     } catch (IllegalArgumentException | NullPointerException ex) {
+      // deliberately swallowed: a malformed or blank target is not an error here. The callers
+      // either treat it as "no target" (the clear path) or hand it to InventoryLinkManager, which
+      // rejects it with a resolved 422 rather than this raw parse failure.
       return null;
     }
   }

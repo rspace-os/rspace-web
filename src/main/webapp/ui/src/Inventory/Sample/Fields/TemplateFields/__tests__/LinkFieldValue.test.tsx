@@ -248,6 +248,57 @@ describe("LinkFieldValue", () => {
     expect(setAttributesDirty).not.toHaveBeenCalled();
   });
 
+  it("clears the edit-in-progress flag on unmount, so a deleted field cannot block save", async () => {
+    // The template editor unmounts this component when the field is marked for deletion (CustomField
+    // swaps in the delete notice), while record validation still walks deleted fields. Without the
+    // cleanup, opening the editor and then removing the field left Save blocked by an "Apply or
+    // discard" message with no editor left to act on.
+    const user = userEvent.setup();
+    const setLinkEditInProgress = vi.fn();
+    const field = linkField({
+      link: { relationType: "References", targetGlobalId: "SA20", versionPin: null },
+      setLinkEditInProgress,
+    });
+    const { unmount } = renderField({
+      field,
+      sourceGlobalId: "SA1",
+      disabled: false,
+      onChange: () => {},
+    });
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.linkField.editLink" }));
+    expect(setLinkEditInProgress).toHaveBeenLastCalledWith(true);
+
+    unmount();
+
+    expect(setLinkEditInProgress).toHaveBeenLastCalledWith(false);
+  });
+
+  it("commits an Apply when no onChange listener is supplied", async () => {
+    // DefaultValueField is the only caller that omits onChange. Dropping the optional-call guard
+    // would throw a TypeError on every template default-link Apply, and nothing else catches it.
+    const user = userEvent.setup();
+    const setAttributesDirty = vi.fn();
+    const field = linkField({
+      link: { relationType: "References", targetGlobalId: "SA20", versionPin: null },
+      setAttributesDirty,
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkFieldValue field={field} sourceGlobalId="ST1" disabled={false} />
+      </ThemeProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.linkField.editLink" }));
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    await user.click(screen.getByRole("option", { name: "IsDerivedFrom" }));
+    await user.click(screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" }));
+
+    expect(setAttributesDirty).toHaveBeenCalledWith({
+      link: { relationType: "IsDerivedFrom", targetGlobalId: "SA20", versionPin: null },
+    });
+  });
+
   it("flags the field model while link edits are unapplied so record save is blocked", async () => {
     const user = userEvent.setup();
     const setLinkEditInProgress = vi.fn();

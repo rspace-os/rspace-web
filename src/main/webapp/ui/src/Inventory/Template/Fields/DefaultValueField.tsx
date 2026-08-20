@@ -119,6 +119,9 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
               showFieldName={false}
               // inside this section "Target" alone would be ambiguous against the item's own link
               targetHeading={t("fields.templateFields.defaultValue.defaultLinkTarget")}
+              // InputWrapper renders the "Default Link (optional)" heading above, so these
+              // groups really are one level below it
+              nestHeadings
             />
           </InputWrapper>
         </Box>

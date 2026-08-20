@@ -2,7 +2,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-
+import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import materialTheme from "../../../../../theme";
 import LinkEditor, { type LinkEditorProps } from "../LinkEditor";
 
@@ -148,5 +148,49 @@ describe("LinkEditor target row alignment", () => {
       name: "inventory:fields.link.editor.targetGlobalId",
     });
     expect(input).toHaveAttribute("placeholder", "inventory:fields.link.editor.targetPlaceholder");
+  });
+});
+
+describe("LinkEditor heading level", () => {
+  function renderAtLevel(props: Partial<LinkEditorProps>, level: 1 | 2 | 3 | 4 | 5 | 6) {
+    return render(
+      <ThemeProvider theme={materialTheme}>
+        <HeadingContext level={level}>
+          <LinkEditor
+            relationType=""
+            onRelationTypeChange={vi.fn()}
+            relationOptions={[]}
+            relationFreeSolo={false}
+            relationLabel="Relationship type"
+            targetGlobalId=""
+            onTargetChange={vi.fn()}
+            targetError={false}
+            targetHelperText=""
+            versionPin={null}
+            onVersionPinChange={vi.fn()}
+            canPinVersion={false}
+            {...props}
+          />
+        </HeadingContext>
+      </ThemeProvider>,
+    );
+  }
+
+  it("renders its group headings at the ambient level, not one deeper", () => {
+    // The item and extra-field callers render no heading of their own in edit mode: FieldLabel
+    // only emits a Heading when disabled, so nesting a level here would skip one (h3 panel title
+    // straight to h5) and axe's heading-order rule would flag it.
+    renderAtLevel({}, 4);
+
+    expect(screen.getByRole("heading", { name: "inventory:fields.link.editor.target" }).tagName).toBe("H4");
+    expect(screen.getByRole("heading", { name: "inventory:fields.link.editor.version" }).tagName).toBe("H4");
+  });
+
+  it("descends one level when the caller already renders a heading above", () => {
+    // the template editor wraps this in an InputWrapper whose FormControl does render a Heading
+    // ("Default Link (optional)"), so there the groups genuinely are subheadings of it
+    renderAtLevel({ nestHeadings: true, targetHeading: "Default link target" }, 4);
+
+    expect(screen.getByRole("heading", { name: "Default link target" }).tagName).toBe("H5");
   });
 });

@@ -161,7 +161,10 @@ public class ApiInventoryEntityField extends ApiField {
       InventoryLinkField linkField = (InventoryLinkField) field;
       setAllowedRelationTypes(splitRelationTypes(linkField.getAllowedRelationTypes()));
       if (linkField.getLink() != null) {
-        setLink(new ApiInventoryLink(linkField.getLink()));
+        // assign the field, not the setter: linkProvided means "the client sent a link key", and
+        // this is the outgoing direction. Going through setLink would make it true on every
+        // serialized field and rob the flag of its meaning.
+        this.link = new ApiInventoryLink(linkField.getLink());
       }
     }
 

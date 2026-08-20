@@ -291,7 +291,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       InventoryEntityField inventoryEntityField = inventoryEntityFieldList.get(i);
 
       if (inventoryEntityField instanceof InventoryLinkField) {
-        applyLinkFieldValue((InventoryLinkField) inventoryEntityField, apiField, user);
+        applyLinkFieldValueOnCreate((InventoryLinkField) inventoryEntityField, apiField, user);
       } else if (inventoryEntityField.isOptionsStoringField()) {
         inventoryEntityField.setSelectedOptions(apiField.getSelectedOptions());
       } else if (inventoryEntityField == landingPage
@@ -881,7 +881,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
         // (RSDEV-1200) — mirror the sample path and re-apply them here.
         boolean whitelistsChanged =
             syncLinkFieldWhitelistsFromTemplate(dbInstrument.getActiveFields());
-        clearRetroStampedDefaultLinks(dbInstrument, linkFieldsBeforeUpdate);
+        clearRetroStampedDefaultLinks(dbInstrument);
         linkFieldsBeforeUpdate.forEach(field -> softDeleteLinkOfDeletedLinkField(field, user));
         if (updated || whitelistsChanged) {
           saveDbInstrumentUpdate(dbInstrument, user);
@@ -906,15 +906,14 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
    * Instrument#updateToLatestTemplateVersion} calls {@code setFieldData(null)}, which link fields
    * do not override. Without this an existing instrument would silently acquire a copy of the
    * template's current default.
-   *
-   * @param before the link fields active before the sync ran; anything not in it is newly cloned
    */
-  private void clearRetroStampedDefaultLinks(
-      InstrumentEntity dbInstrument, List<InventoryLinkField> before) {
+  void clearRetroStampedDefaultLinks(InstrumentEntity dbInstrument) {
     dbInstrument.getActiveFields().stream()
         .filter(InventoryLinkField.class::isInstance)
         .map(InventoryLinkField.class::cast)
-        .filter(field -> before.stream().noneMatch(seen -> seen == field))
+        // a field the sync has just cloned is exactly the one with no id yet, which is cheaper and
+        // more robust than comparing instance identity against a pre-sync snapshot
+        .filter(field -> field.getId() == null)
         .forEach(InventoryLinkField::clearValue);
   }
 

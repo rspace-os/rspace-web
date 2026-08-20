@@ -63,9 +63,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 /**
  * Unit tests for the link-field persistence logic in {@link InstrumentEntityApiManagerImpl}.
  *
- * <p>The {@code applyLinkFieldValue} method is the creation/update hot-path for structured
- * link-type template fields on instruments. It mirrors the equivalent in {@link
- * SampleApiManagerImpl}; these tests guard against independent drift or regression.
+ * <p>{@code applyLinkFieldValue} now lives once on {@link InventoryApiManagerImpl}, so these cases
+ * exercise it through the instrument manager: what is instrument-specific is the {@code isTemplate}
+ * wiring of the update wrapper, the template-create path, and {@code
+ * clearRetroStampedDefaultLinks}.
  */
 @ExtendWith(MockitoExtension.class)
 class InstrumentEntityApiManagerImplLinkFieldTest {
@@ -195,6 +196,20 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
     assertTrue(changed);
     assertNull(dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aCreatePayloadThatOmitsTheLinkKeepsTheStampedDefault() {
+    // as the sample counterpart: the template's default is already stamped on the field by
+    // shallowCopy() before the create payload is applied, and an unmentioned link must not wipe it
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+    apiField.setContent("");
+
+    boolean changed = manager.applyLinkFieldValueOnCreate(dbField, apiField, user);
+
+    assertFalse(changed);
+    assertSame(dbLink, dbField.getLink());
     verifyNoInteractions(inventoryLinkManager);
   }
 
@@ -766,14 +781,63 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
                 manager.createDeleteRequestedFieldsInDbInstrumentTemplate(
                     apiTemplate, new InstrumentTemplate(), user));
 
+    assertEquals("errors.inventory.field.deleteRequestIdMissing", missingId.getErrorCode());
+    assertEquals("errors.inventory.field.deleteRequestIdUnknown", unknownId.getErrorCode());
+    assertResolves(missingId.getErrorCode(), unknownId.getErrorCode());
+  }
+
+  @Test
+  void everyErrorCodeTheLinkPathsThrowResolves() {
+    // Same failure mode as above, for the codes reached from the shared link write path. They are
+    // bare string literals, so a renamed catalogue key compiles, lints and passes i18n:lint, and
+    // shows up only as an unresolved message against a live server.
+    assertResolves(
+        "errors.inventory.field.link.defaultRelationTypeNotPermitted",
+        "errors.inventory.field.link.selfLinkForbidden",
+        "errors.inventory.field.linkRelationTypeInvalid",
+        "errors.inventory.field.linkRelationTypeNotPermitted",
+        "errors.inventory.field.linkTargetNotFound",
+        "errors.inventory.field.linkTargetKindUnsupported");
+  }
+
+  private static void assertResolves(String... errorCodes) {
     JsonMessageSource messages = new JsonMessageSource();
     Locale enUs = Locale.forLanguageTag("en-US");
-    assertDoesNotThrow(
-        () -> messages.getMessage(missingId.getErrorCode(), new Object[] {1L}, enUs),
-        () -> missingId.getErrorCode() + " resolves to no message");
-    assertDoesNotThrow(
-        () -> messages.getMessage(unknownId.getErrorCode(), new Object[] {1L}, enUs),
-        () -> unknownId.getErrorCode() + " resolves to no message");
+    for (String code : errorCodes) {
+      assertDoesNotThrow(
+          () -> messages.getMessage(code, new Object[] {"a", "b"}, enUs),
+          () -> code + " is thrown by a link path but resolves to no message");
+    }
+  }
+
+  @Test
+  void aLinkFieldTheTemplateSyncJustClonedHasItsDefaultCleared() {
+    // A template's default is stamped at creation only, never retro-applied (ADR-0006, and the
+    // "Stamped" entry in CONTEXT.md). This is instrument-only compensation: Sample's
+    // updateToLatestTemplateVersion calls clearValue(), which InventoryLinkField overrides to null
+    // its link, while Instrument's calls setFieldData(null), which link fields do not override.
+    Instrument dbInstrument = new Instrument();
+
+    InventoryLinkField existingField = new InventoryLinkField();
+    existingField.setName("already here");
+    existingField.setId(11L);
+    existingField.setColumnIndex(1);
+    InventoryLink keptLink = new InventoryLink();
+    existingField.setLink(keptLink);
+
+    InventoryLinkField clonedField = new InventoryLinkField();
+    clonedField.setName("just arrived from the template");
+    clonedField.setColumnIndex(2);
+    clonedField.setLink(new InventoryLink());
+
+    dbInstrument.getFields().add(existingField);
+    dbInstrument.getFields().add(clonedField);
+    dbInstrument.refreshActiveFieldsAndColumnIndex();
+
+    manager.clearRetroStampedDefaultLinks(dbInstrument);
+
+    assertNull(clonedField.getLink(), "a newly cloned field must not inherit the current default");
+    assertSame(keptLink, existingField.getLink(), "an existing field's own link is untouched");
   }
 
   @Test
