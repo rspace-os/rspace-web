@@ -52,7 +52,13 @@ describe("Gallery create menu (DMP enabled)", () => {
 
     await expect.element(sidebar.dmpDialog).toBeVisible();
     expect(sidebar.modalZIndex(sidebar.dmpDialog)).toBeGreaterThan(menuZIndex);
-    await expect.element(sidebar.menu).toBeVisible();
+    /*
+     * Asserted by class, not by role: the dialog and the menu now share the
+     * boundary supplied by Alerts, so ModalManager correctly marks the menu
+     * behind the modal aria-hidden and no role query can reach it (RSDEV-1317).
+     * What matters here is that the menu is not destroyed underneath.
+     */
+    await expect.poll(() => sidebar.mountedMenuCount()).toBe(1);
   });
 
   test("the Gallery SPA keeps the create menu open until the DMP dialog closes", async () => {
@@ -64,10 +70,15 @@ describe("Gallery create menu (DMP enabled)", () => {
 
     await expect.element(sidebar.dmpDialog).toBeVisible();
     expect(sidebar.modalZIndex(sidebar.dmpDialog)).toBeGreaterThan(menuZIndex);
-    await expect.element(sidebar.menu).toBeVisible();
+    await expect.poll(() => sidebar.mountedMenuCount()).toBe(1);
 
     await sidebar.closeDmpDialog.click();
     await expect.element(sidebar.dmpDialog).not.toBeInTheDocument();
-    await expect.element(sidebar.menu).not.toBeInTheDocument();
+    /*
+     * By class again, and deliberately: the role-based version of this
+     * assertion passed whether the menu had unmounted or was merely left
+     * aria-hidden, which is the exact PRT-1135 failure it is meant to catch.
+     */
+    await expect.poll(() => sidebar.mountedMenuCount()).toBe(0);
   });
 });

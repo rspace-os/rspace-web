@@ -16,7 +16,7 @@ import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRi
 import { ACCENT_COLOR } from "../../assets/branding/dmptool";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import { Dialog } from "../../components/DialogBoundary";
 import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
@@ -333,29 +333,32 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
   const { isViewportSmall } = useViewportDimensions();
 
   /*
-   * We use DialogBoundary to wrap the Dialog so that Alerts can be shown atop
-   * the dialog whilst keeping them accessible to screen readers. We then have
-   * to manually add Portal back (Dialogs normally include a Portal) so that
-   * the Dialog isn't rendered inside the Menu where it will not be seen once
-   * the Menu is closed.
+   * The enclosing <Alerts> supplies the shared DialogBoundary, which keeps
+   * toasts raised from inside this dialog reachable by screen readers. This
+   * component deliberately does NOT nest its own boundary: doing so mounted the
+   * boundary and an open Dialog in the same commit, so the Portal resolved its
+   * container before the boundary div existed and the dialog ended up relocated
+   * into an aria-hidden subtree (RSDEV-1317).
+   *
+   * Portal is still added back manually (Dialogs normally include their own) so
+   * the Dialog is not rendered inside the Menu, where it would disappear as
+   * soon as the Menu closed.
    */
 
   return (
     <DMPDialogThemeProvider accentColor={ACCENT_COLOR}>
       <Portal>
-        <DialogBoundary>
-          <CustomDialog
-            onClose={() => {
-              setOpen(false);
-            }}
-            open={open}
-            maxWidth="lg"
-            fullWidth
-            fullScreen={isViewportSmall}
-          >
-            <DMPDialogContent setOpen={setOpen} />
-          </CustomDialog>
-        </DialogBoundary>
+        <CustomDialog
+          onClose={() => {
+            setOpen(false);
+          }}
+          open={open}
+          maxWidth="lg"
+          fullWidth
+          fullScreen={isViewportSmall}
+        >
+          <DMPDialogContent setOpen={setOpen} />
+        </CustomDialog>
       </Portal>
     </DMPDialogThemeProvider>
   );
