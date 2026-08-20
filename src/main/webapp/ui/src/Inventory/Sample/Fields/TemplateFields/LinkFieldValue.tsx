@@ -37,6 +37,8 @@ type LinkFieldValueArgs = {
    * record. Left unset on an item, where "Target" is right.
    */
   targetHeading?: string;
+  /** Passed through to {@link LinkEditor}; see its docblock. */
+  nestHeadings?: boolean;
 };
 
 /**
@@ -55,6 +57,7 @@ function LinkFieldValue({
   onChange,
   showFieldName = true,
   targetHeading,
+  nestHeadings,
 }: LinkFieldValueArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
   const committedRelationType = field.link?.relationType ?? "";
@@ -117,8 +120,11 @@ function LinkFieldValue({
   // user has no editor left to act on.
   useEffect(() => {
     field.setLinkEditInProgress(!disabled && (changed || (editing && hasLink)));
-    return () => field.setLinkEditInProgress(false);
   }, [changed, editing, hasLink, disabled, field]);
+  // Separate from the effect above on purpose. React runs a cleanup before every re-run, not only
+  // on unmount, so keeping it there wrote false and then the real value on every dependency
+  // change: two MobX actions, and an observable transiently wrong in between.
+  useEffect(() => () => field.setLinkEditInProgress(false), [field]);
 
   const relationOptions =
     field.allowedRelationTypes.length > 0 ? field.allowedRelationTypes : [...DATACITE_RELATION_TYPES];
@@ -221,6 +227,7 @@ function LinkFieldValue({
         relationFreeSolo={false}
         relationLabel={t("fields.extraFields.fields.relationType")}
         targetHeading={targetHeading}
+        nestHeadings={nestHeadings}
         targetGlobalId={stagedTargetGlobalId}
         onTargetChange={(globalId) => setStagedTarget(globalId)}
         targetError={Boolean(targetExistenceError) || !targetValidity.ok}

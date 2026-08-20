@@ -153,7 +153,8 @@ class SampleApiManagerImplLinkFieldTest {
   void clearingTheValueDereferencesTheRowForOrphanRemoval() {
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
     // an explicit null link: the field's value is being cleared. (Absence is a different thing and
-    // now means "no change" - see aPayloadThatNeverMentionsTheLinkLeavesItAlone.) The field's
+    // now means "no change" for a template - see
+    // aTemplatePayloadThatNeverMentionsTheLinkLeavesItAlone.) The field's
     // orphanRemoval mapping hard-deletes the dereferenced row at flush (with a
     // DEL revision in InventoryLink_AUD); an extra soft-delete write would be
     // collapsed away by Envers and is deliberately not attempted.
@@ -219,6 +220,22 @@ class SampleApiManagerImplLinkFieldTest {
   }
 
   @Test
+  void aCreatePayloadThatOmitsTheLinkKeepsTheStampedDefault() {
+    // Creating an item from a template stamps the template's default onto the new field before the
+    // request's own field values are applied. A create payload that lists the fields but says
+    // nothing about the link must not wipe that stamp before it is ever persisted: ADR-0006 says
+    // bulk, API and UI creation behave identically, and the UI always sends the link key.
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+    apiField.setContent("");
+
+    boolean changed = manager.applyLinkFieldValueOnCreate(dbField, apiField, user);
+
+    assertFalse(changed);
+    assertSame(dbLink, dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
   void anItemPayloadThatNeverMentionsTheLinkStillClearsIt() {
     // The item contract is the opposite way round, and predates this work (RSDEV-1131): an item's
     // field list arrives complete, so a link field with no link at all means the user cleared it.
@@ -231,18 +248,6 @@ class SampleApiManagerImplLinkFieldTest {
     assertTrue(changed);
     assertNull(dbField.getLink());
     verifyNoInteractions(inventoryLinkManager);
-  }
-
-  @Test
-  void anExplicitNullLinkStillClearsIt() {
-    // the editor's "remove the link" path sends link: null explicitly, and must keep working
-    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
-    apiField.setLink(null);
-
-    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
-
-    assertTrue(changed);
-    assertNull(dbField.getLink());
   }
 
   @Test

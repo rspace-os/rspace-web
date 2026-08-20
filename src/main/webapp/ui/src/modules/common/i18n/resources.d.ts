@@ -3222,6 +3222,10 @@ export default interface Resources {
           "title": "Browse ELN",
           "workspaceTreeLabel": "Workspace tree"
         },
+        "field": {
+          "label": "Link field",
+          "namedLabel": "Link field {name}"
+        },
         "gallerySections": {
           "labels": {
             "caption": "Caption",
@@ -4143,7 +4147,6 @@ export default interface Resources {
         "linkFieldValue": {
           "apply": "Apply",
           "applyLabel": "Apply link",
-          "bothRequired": "Select both a relationship type and a target before applying.",
           "discard": "Discard",
           "discardLabel": "Discard link changes",
           "none": "None",
@@ -6736,7 +6739,7 @@ export default interface Resources {
           "unexportableUsers": "Cannot export data of users [{0}] - users not found, or no permission"
         },
         "field": {
-          "deleteRequestIdMissing": "''id'' property not provided for a field with ''deleteFieldRequest'' flag.",
+          "deleteRequestIdMissing": "'id' property not provided for a field with 'deleteFieldRequest' flag.",
           "deleteRequestIdUnknown": "Field id {0} doesn''t match the id of any pre-existing field.",
           "duplicateName": "Field name ''{0}'' is duplicated. Field names on a record must be unique.",
           "link": {

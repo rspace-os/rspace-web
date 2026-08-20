@@ -959,6 +959,10 @@
         "title": "Browse ELN",
         "workspaceTreeLabel": "Workspace tree"
       },
+      "field": {
+        "label": "Link field",
+        "namedLabel": "Link field {name}"
+      },
       "gallerySections": {
         "labels": {
           "caption": "Caption",
@@ -1880,7 +1884,6 @@
       "linkFieldValue": {
         "apply": "Apply",
         "applyLabel": "Apply link",
-        "bothRequired": "Select both a relationship type and a target before applying.",
         "discard": "Discard",
         "discardLabel": "Discard link changes",
         "none": "None",

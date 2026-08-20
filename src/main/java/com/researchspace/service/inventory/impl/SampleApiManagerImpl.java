@@ -396,7 +396,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       InventoryEntityField inventoryEntityField = inventoryEntityFieldList.get(i);
 
       if (inventoryEntityField instanceof InventoryLinkField) {
-        applyLinkFieldValue((InventoryLinkField) inventoryEntityField, apiField, user);
+        applyLinkFieldValueOnCreate((InventoryLinkField) inventoryEntityField, apiField, user);
       } else if (inventoryEntityField.isOptionsStoringField()) {
         inventoryEntityField.setSelectedOptions(apiField.getSelectedOptions());
       } else {
