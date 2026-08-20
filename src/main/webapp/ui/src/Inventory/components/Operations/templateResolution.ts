@@ -76,6 +76,21 @@ export function templateSelectionFor(remembered: TemplateDefault | undefined): T
 }
 
 /**
+ * The template-step selection for a first-time run (nothing remembered for this process name): when
+ * the origin's parent sample has its own template, "use the parent's template" is preselected as the
+ * common case, leaving the user free to override it; otherwise "unselected", so the user must make
+ * an explicit choice before Next is enabled (DevDocs/adr/0008). A multi-origin operation (Pool)
+ * passes parentHasTemplate=false, because "the parent" is ambiguous across several origins.
+ */
+export function initialTemplateSelection(parentHasTemplate: boolean): TemplateSelectionLike {
+  return {
+    mode: parentHasTemplate ? "fromSample" : "unselected",
+    templateId: null,
+    remember: false,
+  };
+}
+
+/**
  * Whether the template step is complete enough to advance: the user has made a choice (not the
  * initial "unselected" state), and a picked template has finished validating (its id is set).
  */
