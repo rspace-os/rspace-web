@@ -149,5 +149,14 @@ export function createConfirmationDialog(payload: ConfirmActionPayload) {
 }
 
 window.addEventListener("load", () => {
+  /*
+   * `window.RS` is created by the legacy JSP chrome, so it does not exist on
+   * the standalone full-page entrypoints (Gallery, Inventory, Apps, About,
+   * Identifiers). Assigning into it unconditionally threw "Cannot set
+   * properties of undefined" on every Gallery load. Create the namespace if it
+   * is missing rather than skipping the registration, so a legacy page that
+   * loads this bundle before its own chrome still gets the dialog.
+   */
+  window.RS ??= {};
   window.RS.createConfirmationDialog = createConfirmationDialog;
 });
