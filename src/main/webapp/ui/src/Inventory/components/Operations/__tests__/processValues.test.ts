@@ -28,18 +28,15 @@ describe("normalizeProcessValues", () => {
 });
 
 describe("processValuesAfterPerform", () => {
-  it("stores the bundle under the key when remember is on", () => {
-    expect(processValuesAfterPerform({}, "derive dna", bundle, true)).toEqual({ "derive dna": bundle });
-  });
-
-  it("leaves the store untouched when remember is off (never deletes a prior bundle)", () => {
-    const current = { "derive dna": bundle };
-    expect(processValuesAfterPerform(current, "derive dna", bundle, false)).toBe(current);
+  // The wizard calls this only for a remembered Perform; an unremembered one never reaches it, so
+  // "unticking never deletes" holds by construction (grill Q1).
+  it("stores the bundle under the key", () => {
+    expect(processValuesAfterPerform({}, "derive dna", bundle)).toEqual({ "derive dna": bundle });
   });
 
   it("does not mutate the input map", () => {
     const current = { existing: bundle };
-    processValuesAfterPerform(current, "derive dna", bundle, true);
+    processValuesAfterPerform(current, "derive dna", bundle);
     expect(current).toEqual({ existing: bundle });
   });
 });

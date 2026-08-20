@@ -30,6 +30,7 @@ import {
 } from "./operationValidation";
 import { filterProcessNames } from "./processNames";
 import type { AmountMode, OperationInputs, OperationInputValue, OperationQuantity, PerSubsampleAmounts } from "./types";
+import { resolveLabelFrom } from "./types";
 
 // Practical ceiling for an amount: far beyond any real inventory quantity, yet comfortably inside
 // both the decimal(19,3) DB column and JS's safe-integer range, so entering huge values can neither
@@ -82,7 +83,7 @@ function OperationDetailsStep({
   onPerSubsampleAmountsChange?: (amounts: PerSubsampleAmounts) => void;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const label = t as unknown as (key: string, params?: Record<string, unknown>) => string;
+  const label = resolveLabelFrom(t);
   const originUnitId = getUnitId(origin.quantity);
   const { countFrom, eachAmountFrom, amountTakenFrom } = operation.effect;
   const amountKeys = new Set([countFrom, eachAmountFrom, amountTakenFrom].filter(Boolean));

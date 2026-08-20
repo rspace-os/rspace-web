@@ -48,7 +48,7 @@ import {
   templateStepValid,
 } from "./templateResolution";
 import type { AmountMode, OperationInputs, OperationOrigin, OperationQuantity, PerSubsampleAmounts } from "./types";
-import { UNSET_UNIT } from "./types";
+import { resolveLabelFrom, UNSET_UNIT } from "./types";
 
 // How long to wait after the process name settles before querying existing names to de-duplicate the
 // derived sample name. Keeps typing from firing a search per keystroke.
@@ -94,7 +94,8 @@ function blankAmounts(operation: InventoryOperation, origin: SubSampleModel): Op
 
 /**
  * A fresh set of values for the "defaults" state (nothing remembered, or the user unticked remember):
- * every input at its config default, amounts blank (unset units), keeping only the current names.
+ * every input at its config default, amounts reset to 1 with the origin's own unit prefilled,
+ * keeping only the current names.
  */
 function freshValues(operation: InventoryOperation, origin: SubSampleModel, current: OperationInputs): OperationInputs {
   const values = { ...buildInitialValues(operation, origin), ...blankAmounts(operation, origin) };
@@ -131,9 +132,10 @@ function representativeOrigin(origins: Array<SubSampleModel>): SubSampleModel {
 }
 
 /**
- * The operation wizard: pick operation -> details (process name, derived sample name, remember) ->
- * template -> amounts -> (optional documentation) -> confirm -> perform. The origin subsample is
- * pre-selected (launched from its detail pane). The whole effect is one atomic backend call (DevDocs/adr/0006).
+ * The operation wizard: pick operation -> details (process name, derived sample name) -> template
+ * -> amounts -> (optional documentation) -> confirm (summary + the remember checkbox) -> perform.
+ * The origin subsample is pre-selected (launched from its detail pane). The whole effect is one
+ * atomic backend call (DevDocs/adr/0006).
  *
  * A single "remember" checkbox governs everything kept for a process name: the template, the
  * documentation, and the collected amounts (DevDocs/adr/0009). Ticking it loads the saved bundle; unticking
@@ -150,7 +152,7 @@ function OperationWizard({
   origins: Array<SubSampleModel>;
 }): React.ReactNode {
   const { t } = useTranslation(["inventory", "common"]);
-  const resolveLabel = t as unknown as (key: string, params?: Record<string, unknown>) => string;
+  const resolveLabel = resolveLabelFrom(t);
   // The representative origin (the smallest; see representativeOrigin) drives the single-origin wizard
   // logic - units, the derived name base, over-removal - unchanged. Multi-origin specifics (all the
   // origins, the shared amount, the per-origin links) are threaded in only where they differ.
@@ -322,14 +324,15 @@ function OperationWizard({
         setValues((v) => ({ ...v, ...bundle.values }));
         setTemplateSelection(templateSelectionFor(bundle.template));
         setDocumentation(bundle.documentation);
-        setAmountMode(bundle.amountMode ?? "same");
+        setAmountMode(bundle.amountMode ?? resolveDefaultAmountMode(operation));
         setPerSubsampleAmounts(bundle.perSubsampleAmounts ?? {});
       }
     } else {
       setValues((v) => freshValues(operation, origin, v));
       setTemplateSelection(initialTemplateSelection(parentHasTemplate));
       setDocumentation(null);
-      setAmountMode("same");
+      // Back to the operation's own configured default (Pool: "all"), like every other reset path.
+      setAmountMode(resolveDefaultAmountMode(operation));
       setPerSubsampleAmounts({});
     }
   };
@@ -496,13 +499,13 @@ function OperationWizard({
             ? { amountMode, perSubsampleAmounts: amountMode === "perSubsample" ? perSubsampleAmounts : {} }
             : {}),
         };
-        setProcessValues(processValuesAfterPerform(processValues ?? {}, key, bundle, true));
+        setProcessValues(processValuesAfterPerform(processValues ?? {}, key, bundle));
         if (operation.effect.processNameFrom) {
           const name = String(values[operation.effect.processNameFrom] ?? "");
           const list = processNames?.[operation.key] ?? [];
           const updated = addProcessName(list, name);
           if (updated !== list) setProcessNames({ ...(processNames ?? {}), [operation.key]: updated });
-          setProcessNameDefaults(processNameDefaultAfterPerform(processNameDefaults ?? {}, operation.key, name, true));
+          setProcessNameDefaults(processNameDefaultAfterPerform(processNameDefaults ?? {}, operation.key, name));
         }
       }
       await Promise.all(origins.map((o) => o.fetchAdditionalInfo()));
@@ -674,7 +677,9 @@ function OperationWizard({
               <SubmitSpinnerButton
                 onClick={() => void submit()}
                 loading={submitting}
-                disabled={submitting || !allStepsValid()}
+                // fastPath itself requires allStepsValid() in the same render, so only submitting
+                // can disable Perform here.
+                disabled={submitting}
                 label={t("operations.wizard.perform")}
               />
             </>
