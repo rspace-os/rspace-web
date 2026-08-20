@@ -619,21 +619,33 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
 
   const selectedItems = useMemo(
     () => items.filter((item) => selectedItemIds.includes(`${item.type}_${item.id}`)),
-    [selectedItemIds],
+    [items, selectedItemIds],
   );
 
-  // The dialog runs in an iframe and does not touch the editor itself. It sends
-  // the button state and the table to insert to the plugin, which owns both.
+  // The dialog runs in an iframe and does not touch the editor itself. It tells
+  // the plugin whether the Insert button has anything to insert.
   useEffect(() => {
-    const table =
-      selectedItems.length > 0 ? createTinyMceTable(selectedItems, visibleHeaderCells, order, orderBy, t) : null;
-    window.parent.postMessage(
-      {
-        mceAction: table ? "enable" : "disable",
-        tableHtml: table?.outerHTML ?? null,
-      },
-      window.location.origin,
-    );
+    window.parent.postMessage({ mceAction: selectedItems.length > 0 ? "enable" : "disable" }, window.location.origin);
+  }, [selectedItems]);
+
+  // Building the table scrapes the rendered dialog and strips the controls it
+  // finds, so it can only run once the user is finished with the dialog. The
+  // plugin asks for the table when Insert is clicked and inserts what comes back.
+  useEffect(() => {
+    const respondToInsertRequest = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if ((event.data as { mceAction?: string } | null)?.mceAction !== "omero-insert") return;
+      const table =
+        selectedItems.length > 0 ? createTinyMceTable(selectedItems, visibleHeaderCells, order, orderBy, t) : null;
+      window.parent.postMessage(
+        { mceAction: "omero-table", tableHtml: table?.outerHTML ?? null },
+        window.location.origin,
+      );
+    };
+    window.addEventListener("message", respondToInsertRequest);
+    return () => {
+      window.removeEventListener("message", respondToInsertRequest);
+    };
   }, [selectedItems, visibleHeaderCells, order, orderBy, t]);
 
   if (errorReason !== ErrorReason.None) {

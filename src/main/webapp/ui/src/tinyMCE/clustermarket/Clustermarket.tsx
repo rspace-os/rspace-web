@@ -248,23 +248,37 @@ function Clustermarket({
       bookingType === BookingType.EQUIPMENT
         ? equipment.filter((item) => selectedBookingIds.includes(item.equipmentID))
         : bookings.filter((booking) => selectedBookingIds.includes(booking.bookingID)),
-    [selectedBookingIds],
+    [bookingType, bookings, equipment, selectedBookingIds],
   );
 
-  // The dialog runs in an iframe and does not touch the editor itself. It sends
-  // the button state and the table to insert to the plugin, which owns both.
+  // The dialog runs in an iframe and does not touch the editor itself. It tells
+  // the plugin whether the Insert button has anything to insert.
   useEffect(() => {
-    const table =
-      selectedBookings.length > 0
-        ? createTinyMceTable(selectedBookings, visibleHeaderCells, order, orderBy, clustermarket_web_url, t)
-        : null;
     window.parent.postMessage(
-      {
-        mceAction: table ? "enable" : "disable",
-        tableHtml: table?.outerHTML ?? null,
-      },
+      { mceAction: selectedBookings.length > 0 ? "enable" : "disable" },
       window.location.origin,
     );
+  }, [selectedBookings]);
+
+  // The plugin asks for the table when Insert is clicked and inserts what comes
+  // back, so the dialog builds it only when the user is finished with it.
+  useEffect(() => {
+    const respondToInsertRequest = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if ((event.data as { mceAction?: string } | null)?.mceAction !== "clustermarket-insert") return;
+      const table =
+        selectedBookings.length > 0
+          ? createTinyMceTable(selectedBookings, visibleHeaderCells, order, orderBy, clustermarket_web_url, t)
+          : null;
+      window.parent.postMessage(
+        { mceAction: "clustermarket-table", tableHtml: table?.outerHTML ?? null },
+        window.location.origin,
+      );
+    };
+    window.addEventListener("message", respondToInsertRequest);
+    return () => {
+      window.removeEventListener("message", respondToInsertRequest);
+    };
   }, [selectedBookings, visibleHeaderCells, order, orderBy, clustermarket_web_url, t]);
   if (errorReason !== ErrorReason.None) {
     return <ErrorView errorReason={errorReason} errorMessage={errorMessage} />;
