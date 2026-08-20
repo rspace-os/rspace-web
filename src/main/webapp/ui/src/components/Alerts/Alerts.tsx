@@ -1,8 +1,8 @@
 import Box from "@mui/material/Box";
-import { runInAction } from "mobx";
-import { observer, useLocalObservable } from "mobx-react-lite";
+import { observable, runInAction } from "mobx";
+import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { type Alert } from "../../stores/contexts/Alert";
@@ -18,8 +18,12 @@ function Alerts({ children }: AlertsArgs): React.ReactNode {
   const { t } = useTranslation("common");
   const { isViewportVerySmall } = useViewportDimensions();
 
-  // ordered from the top down
-  const alerts: Array<Alert> = useLocalObservable(() => []);
+  // Ordered from the top down. Shallow (deep: false) so only add/remove are tracked and each alert
+  // object is stored by reference rather than deep-observed. Deep-observing an alert would turn its
+  // React-element `icon` into a MobX proxy, and React 19 dev-mode fiber work then invokes
+  // `element._debugTask.run(...)` on that proxy, throwing "'run' called with illegal receiver".
+  // Alerts are immutable after mkAlert (only add/remove happens), so nothing reactive is lost.
+  const [alerts] = useState(() => observable.array<Alert>([], { deep: false }));
 
   /*
    * The context value that is exposed to all of the components down the tree
