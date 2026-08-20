@@ -1,4 +1,4 @@
-import Alert from "@mui/material/Alert";
+import Alert, { alertClasses } from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CardActions from "@mui/material/CardActions";
@@ -103,7 +103,21 @@ export default function BarcodeScannerSkeleton({
 
   return (
     <Stack
-      sx={submitOnScan ? { p: 1.5, width: 440, maxWidth: "80vw" } : { alignItems: "center" }}
+      sx={
+        submitOnScan
+          ? {
+              p: 1.5,
+              width: 440,
+              maxWidth: "80vw",
+              /*
+               * By default an Alert stretches its icon, message, and action
+               * slots to full height, leaving single-line text and the icon
+               * sitting high; centering the slots keeps them aligned.
+               */
+              [`& .${alertClasses.root}`]: { alignItems: "center" },
+            }
+          : { alignItems: "center" }
+      }
       spacing={submitOnScan ? 1 : 0}
     >
       {submitOnScan ? (
