@@ -1,14 +1,14 @@
-# 5. Amount taken rejects over-removal (revises ADR-0002)
+# 10. Amount taken rejects over-removal (revises ADR-0007)
 
 Date: 2026-07-16
 
 ## Status
 
-Accepted. Revises the over-taking behaviour of ADR-0002.
+Accepted. Revises the over-taking behaviour of ADR-0007.
 
 ## Context
 
-ADR-0002 established the amount taken from the origin as a positive decrement,
+ADR-0007 established the amount taken from the origin as a positive decrement,
 applied by `SubSampleApiManager.registerApiSubSampleUsage`, which is unit-aware and
 **clamps at zero**. Under that decision, asking to remove more than the origin holds
 (e.g. 101 ml from a 100 ml origin) silently clamps the origin to zero.
@@ -26,11 +26,11 @@ user did not intend to consume.
   inline message. This is in addition to the existing "must be > 0" rule.
 - **Backend:** the `/operations` endpoint gains a validator that **rejects** a request
   whose amount taken exceeds the origin's current quantity, returning an error rather
-  than clamping. This protects direct API callers, consistent with ADR-0001's
+  than clamping. This protects direct API callers, consistent with ADR-0006's
   "validate server-side, do not trust the client" stance.
 - The zero-clamp in `registerApiSubSampleUsage` remains as defence-in-depth, but it is
   no longer the primary behaviour for over-removal: over-removal is a rejection.
-- The "an operation can never increase the origin" invariant from ADR-0002 is
+- The "an operation can never increase the origin" invariant from ADR-0007 is
   unchanged; only the handling of over-removal changes from clamp to reject.
 
 ## Consequences
@@ -41,12 +41,12 @@ user did not intend to consume.
   API's behaviour matches the UI's.
 - The backend validator must load each origin's current quantity to compare
   (unit-aware). This is a read the thin coordinator already has the identifiers for.
-- ADR-0002 stays correct except for its final over-taking sentence; that sentence is
+- ADR-0007 stays correct except for its final over-taking sentence; that sentence is
   superseded here.
 
 ## Alternatives considered
 
-- **Keep clamping (ADR-0002 unchanged).** Rejected: silently zeroing an origin is
+- **Keep clamping (ADR-0007 unchanged).** Rejected: silently zeroing an origin is
   surprising and loses state the user did not intend to consume; the ticket explicitly
   wants over-removal prevented.
 - **Frontend-only block.** Rejected: direct API callers would still clamp, so the API

@@ -130,10 +130,10 @@ function representativeOrigin(origins: Array<SubSampleModel>): SubSampleModel {
 /**
  * The operation wizard: pick operation -> details (process name, derived sample name, remember) ->
  * template -> amounts -> (optional documentation) -> confirm -> perform. The origin subsample is
- * pre-selected (launched from its detail pane). The whole effect is one atomic backend call (adr/0001).
+ * pre-selected (launched from its detail pane). The whole effect is one atomic backend call (DevDocs/adr/0006).
  *
  * A single "remember" checkbox governs everything kept for a process name: the template, the
- * documentation, and the collected amounts (adr/0004). Ticking it loads the saved bundle; unticking
+ * documentation, and the collected amounts (DevDocs/adr/0009). Ticking it loads the saved bundle; unticking
  * resets the form to defaults without deleting what was saved.
  */
 function OperationWizard({
@@ -162,12 +162,12 @@ function OperationWizard({
   const [values, setValues] = React.useState<OperationInputs>({});
   const [documentation, setDocumentation] = React.useState<DocumentationSelection>(null);
   const [remember, setRemember] = React.useState(false);
-  // The multi-origin amount mode (adr/0009) and, for "perSubsample", the per-origin amounts by global
+  // The multi-origin amount mode (DevDocs/adr/0014) and, for "perSubsample", the per-origin amounts by global
   // id. Single-origin operations stay on "same".
   const [amountMode, setAmountMode] = React.useState<AmountMode>("same");
   const [perSubsampleAmounts, setPerSubsampleAmounts] = React.useState<PerSubsampleAmounts>({});
   // When a complete remembered bundle loads, step one offers Perform straight away; "reviewing" is set
-  // once the user chooses to step through the wizard instead (adr/0009).
+  // once the user chooses to step through the wizard instead (DevDocs/adr/0014).
   const [reviewing, setReviewing] = React.useState(false);
   // Whether the user has hand-edited the derived sample name; once they have, the wizard stops
   // re-deriving it from the process name.
@@ -362,7 +362,7 @@ function OperationWizard({
     setActiveStep((s) => s - 1);
   };
 
-  // Whether the amounts step is valid, given the amount mode (adr/0009). "same" (and any operation
+  // Whether the amounts step is valid, given the amount mode (DevDocs/adr/0014). "same" (and any operation
   // without amount modes) checks the shared amount against the representative (smallest) origin; "all"
   // is always valid (every origin emptied, never over-removal); "perSubsample" needs a positive,
   // in-range amount for every origin, each checked against its own quantity. The created-sample
@@ -393,17 +393,20 @@ function OperationWizard({
     // An operation that empties its origin (Destroy) cannot run on an empty subsample. It skips the
     // details step (where other operations gate this), so enforce it for every step here, blocking
     // Perform on the confirmation with the reason shown there.
-    if (operation.effect.emptiesOrigin && getValue(origin.quantity) <= 0) return false;
-    // An origin with no amount (0, or a quantity never set) cannot be operated on: block the first
-    // step (OperationDetailsStep shows the matching error).
-    if (key === "details") return detailsValid(operation, values, detailKeys) && getValue(origin.quantity) > 0;
+    if (operation.effect.emptiesOrigin && origins.some((o) => commonQuantity(o) <= 0)) return false;
+    // An origin with no amount (0, or a quantity never set) cannot be operated on - the backend
+    // rejects it (DevDocs/adr/0015) - so block the first step (OperationDetailsStep shows the
+    // matching error). Checked on EVERY origin explicitly: the representative is the smallest, which
+    // makes the two equivalent today, but the backend rule is per-origin so the gate is too.
+    if (key === "details")
+      return detailsValid(operation, values, detailKeys) && origins.every((o) => commonQuantity(o) > 0);
     if (key === "template") return templateStepValid(templateSelection);
     if (key === "amounts") return amountsStepValid();
     return true;
   };
 
   const stepValid = (): boolean => stepValidFor(stepKeys[activeStep]);
-  // Every step complete and valid: the gate for the step-one fast path (adr/0009), only offered when a
+  // Every step complete and valid: the gate for the step-one fast path (DevDocs/adr/0014), only offered when a
   // remembered bundle already makes the whole run performable.
   const allStepsValid = (): boolean => operation !== null && stepKeys.every(stepValidFor);
   // Step one shows the confirmation and Perform (skipping the wizard) when a remembered bundle fully
@@ -429,7 +432,7 @@ function OperationWizard({
             pickedTemplateId: templateSelection.templateId,
             originSampleTemplateId: origin.sample.templateId ?? null,
           });
-      // Apply the operation's computed values (adr/0006), e.g. Passage number = parent's + 1, else 1.
+      // Apply the operation's computed values (DevDocs/adr/0011), e.g. Passage number = parent's + 1, else 1.
       // Computed only for the request, so they never enter the remembered bundle below. Search both the
       // template-defined fields and the sample's ad-hoc extra fields: a "Passage number" the user added
       // as a custom field lives in extraFields, so reading only `fields` would miss it and always fall
@@ -455,7 +458,7 @@ function OperationWizard({
       });
       await showToastWhilstPending(t("operations.wizard.inProgress"), performOperation(request));
       // Persist the "remember" bundle only now that Perform has succeeded, and only when the box is
-      // ticked. Keyed per operation + process name; unticking never deletes a prior bundle (adr/0004).
+      // ticked. Keyed per operation + process name; unticking never deletes a prior bundle (DevDocs/adr/0009).
       if (remember) {
         const key = rememberKey(operation, values);
         const bundle: ProcessValues = {
@@ -466,7 +469,7 @@ function OperationWizard({
           template: templateSelectionToDefault(templateSelection),
           documentation,
           // The amount mode and (for "perSubsample") the per-origin amounts are only meaningful for a
-          // multi-origin run, so store them only for such operations (adr/0009); a single-origin bundle
+          // multi-origin run, so store them only for such operations (DevDocs/adr/0014); a single-origin bundle
           // stays as before, and an older bundle without them keeps normalising to "same".
           ...(usesAmountModes(operation)
             ? { amountMode, perSubsampleAmounts: amountMode === "perSubsample" ? perSubsampleAmounts : {} }
@@ -568,7 +571,7 @@ function OperationWizard({
     return confirmationStep();
   };
 
-  // The confirmation card, shared by the confirm step and the step-one fast path (adr/0009). Origins
+  // The confirmation card, shared by the confirm step and the step-one fast path (DevDocs/adr/0014). Origins
   // are passed as name + global id so a "per subsample" run can break the amounts down per origin.
   const confirmationStep = (): React.ReactNode => {
     if (!operation) return null;
@@ -603,7 +606,7 @@ function OperationWizard({
         {operation ? (
           fastPath ? (
             // A remembered run: show its confirmation on step one so the user can Perform without
-            // stepping through the wizard (adr/0009). "Review / edit" (below) drops into the stepper.
+            // stepping through the wizard (DevDocs/adr/0014). "Review / edit" (below) drops into the stepper.
             confirmationStep()
           ) : (
             <>

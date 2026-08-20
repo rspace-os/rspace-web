@@ -19,7 +19,7 @@ type ProcessActionArgs = {
 /**
  * Launches the operation wizard on the selected subsamples (RSDEV-1231). Shown for one or more
  * subsamples; the wizard's picker then enables single-origin operations for a single selection and
- * Pool for two or more (adr/0007). Disabled when any selected record is not a subsample.
+ * Pool for two or more (DevDocs/adr/0012). Disabled when any selected record is not a subsample.
  */
 const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }, ref) => {

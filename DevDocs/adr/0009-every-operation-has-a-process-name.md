@@ -1,4 +1,4 @@
-# 4. Every operation has a process name (user-entered or fixed)
+# 9. Every operation has a process name (user-entered or fixed)
 
 Date: 2026-07-16
 
@@ -15,7 +15,7 @@ Derive, but per bare operation key for operations without one (Cryopreserve).
 Two new features make a process name load-bearing for *every* operation:
 
 - **Remembered process values** are saved and recalled under a single per-process
-  key (see ADR-0003 and the single "remember" checkbox).
+  key (see ADR-0008 and the single "remember" checkbox).
 - The **Derived Sample name** is auto-derived as `"<origin name> <process name>"`.
 
 Both need a process name to key/seed off, uniformly, for every operation. But
