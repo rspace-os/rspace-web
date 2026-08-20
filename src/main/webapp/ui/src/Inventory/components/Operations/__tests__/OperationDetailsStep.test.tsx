@@ -262,6 +262,34 @@ describe("OperationDetailsStep", () => {
     expect(screen.queryByText(/storageTempMax/)).not.toBeInTheDocument();
   });
 
+  it("shows an error on the temperature field when it is below the configured minimum", () => {
+    const reviveOp = {
+      ...operation,
+      inputs: [{ key: "storageTemp", type: "temperature", labelKey: "operations.fields.storageTemp", minCelsius: 4 }],
+      effect: { ...operation.effect, storageTempFrom: "storageTemp" },
+    } as unknown as InventoryOperation;
+    const { rerender } = render(
+      <OperationDetailsStep
+        operation={reviveOp}
+        origin={origin}
+        values={{ storageTemp: { numericValue: 2, unitId: 8 } }}
+        onChange={() => undefined}
+      />,
+    );
+    expect(screen.getByText(/storageTempMin/)).toBeInTheDocument();
+
+    // at or above the minimum, no error
+    rerender(
+      <OperationDetailsStep
+        operation={reviveOp}
+        origin={origin}
+        values={{ storageTemp: { numericValue: 4, unitId: 8 } }}
+        onChange={() => undefined}
+      />,
+    );
+    expect(screen.queryByText(/storageTempMin/)).not.toBeInTheDocument();
+  });
+
   it("disables the derived sample-name field with a hint until a process name is entered", () => {
     const { rerender } = render(
       <OperationDetailsStep

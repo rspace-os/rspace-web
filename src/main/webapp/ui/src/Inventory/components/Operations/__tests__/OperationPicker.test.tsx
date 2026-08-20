@@ -1,10 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
 import OperationPicker from "../OperationPicker";
 
 // The picker shows every operation; each is enabled or aria-disabled for the current selection.
 describe("OperationPicker", () => {
+  it("is accessible", async () => {
+    const { container } = render(<OperationPicker onSelect={() => undefined} selectionCount={1} allSameCategory />);
+    await expectAccessible(container);
+  });
+
   it("shows every operation, enabling single-origin ones and disabling Pool for one subsample", () => {
     render(<OperationPicker onSelect={() => undefined} selectionCount={1} allSameCategory />);
     // Seven operations ship: derive, cryopreserve, aliquot, revive, passage, pool, destroy.

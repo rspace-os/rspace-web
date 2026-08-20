@@ -29,19 +29,20 @@ export function addProcessName(list: Array<string>, name: string): Array<string>
 }
 
 /**
- * The remembered default process name per operation after Perform. When "remember" is ticked and a
- * non-blank name was entered, store it as this operation's default so future runs pre-fill it;
- * otherwise drop any previous default, so unticking (or clearing the name) is itself remembered.
- * Keyed by operation (Cryopreserve has no process name and contributes nothing).
+ * The remembered default process name per operation after a remembered Perform. The wizard calls
+ * this only when "remember" is ticked (unticking never deletes what was saved; grill Q1): a
+ * non-blank name becomes this operation's default so future runs pre-fill it. A blank name is not
+ * producible through the wizard (the details step requires one), but is defensively dropped rather
+ * than stored as an empty default. Keyed by operation (Cryopreserve has no process name and
+ * contributes nothing).
  */
 export function processNameDefaultAfterPerform(
   current: Record<string, string>,
   operationKey: string,
   name: string,
-  remember: boolean,
 ): Record<string, string> {
   const trimmed = name.trim();
-  if (!remember || trimmed === "") return omit(current, [operationKey]);
+  if (trimmed === "") return omit(current, [operationKey]);
   return { ...current, [operationKey]: trimmed };
 }
 

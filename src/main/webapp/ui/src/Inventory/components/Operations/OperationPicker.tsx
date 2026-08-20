@@ -15,6 +15,7 @@ import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import { type InventoryOperation, operationAvailability, operations } from "./operationsConfig";
+import { resolveLabelFrom } from "./types";
 
 // Resolves an operation's config `iconKey` to a statically-imported FontAwesome icon. Icons cannot
 // live in the JSON (they must be imported by name for tree-shaking), so the config names one and this
@@ -48,7 +49,7 @@ export default function OperationPicker({
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
   // Cast so config-driven (dynamic) keys resolve; the keys are validated to exist in the catalog.
-  const label = t as unknown as (key: string) => string;
+  const label = resolveLabelFrom(t);
   return (
     // 2px between the operation buttons (DevDocs/adr/0014 UI request); a flex column with a small gap keeps
     // the spacing even without per-item margins.

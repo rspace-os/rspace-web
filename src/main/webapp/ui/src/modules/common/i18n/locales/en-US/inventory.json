@@ -1662,8 +1662,7 @@
   },
   "operations": {
     "action": {
-      "process": "Process",
-      "subsampleOnly": "Operations can only be run on a subsample."
+      "process": "Process"
     },
     "aliquot": {
       "description": "Take equal-volume aliquots. Same material; parent volume decremented.",
