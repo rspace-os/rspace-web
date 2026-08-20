@@ -140,6 +140,14 @@
           "requiredForGridOrImageContainer": "When moving to image/grid type container request has to specify target location"
         }
       },
+      "operation": {
+        "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
+        "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
+        "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
+        "originIdRequired": "Each origin must identify a subsample by id.",
+        "originsRequired": "At least one origin subsample must be provided for the operation.",
+        "sampleNameRequired": "The new sample must have a name."
+      },
       "publicLink": {
         "unavailable": "The item you try to see is not publicly available right now."
       },
