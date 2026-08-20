@@ -71,6 +71,17 @@ away.
   deliberate and temporary (DevDocs/adr/0016).
 - The wizard's step gate is fixed to check every origin's quantity rather than only
   the representative one, so the UI never offers a pool run the API rejects.
+- Hardening added by the 2026-08-20 parallel review, same doctrine (generic, no
+  per-operation Java): the origins list is capped at 100 (the samples endpoint's
+  subsample-count precedent); origin extra fields may only ADD new fields
+  (`newFieldRequest` true, no id, no delete request) and their contents run through
+  the same shared field validator as the subsample PUT endpoint; a template-based
+  `newSample` gets the samples endpoint's template-conformance pass (readable
+  template, fields and quantity unit matching it); per-origin edit permission is
+  asserted before the live-state reads so an under-permissioned caller gets an
+  authorization error, not a misleading "origin empty" 400; null list entries are
+  clean 400s; and the manager mutates origins in ascending id order so concurrent
+  overlapping operations cannot deadlock on lock order.
 
 ## Consequences
 

@@ -8,6 +8,8 @@ import com.researchspace.model.User;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import java.util.Comparator;
+import java.util.List;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,13 +41,24 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     // marked newFieldRequest by the frontend. Coordinated inside this manager so it joins the one
     // transaction with the sample creation. See DevDocs/adr/0007, DevDocs/adr/0010,
     // DevDocs/adr/0013.
-    for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
+    // Mutate origins in ascending id order (not request order) so two concurrent multi-origin
+    // operations over overlapping origins acquire their row locks in one consistent order and
+    // cannot deadlock. The validator guarantees unique, non-null ids by this point.
+    List<ApiInventoryOperationOriginUpdate> originsById =
+        request.getOrigins().stream()
+            .sorted(Comparator.comparing(ApiInventoryOperationOriginUpdate::getId))
+            .toList();
+    for (ApiInventoryOperationOriginUpdate origin : originsById) {
       subSampleApiMgr.registerApiSubSampleUsage(
           origin.getId(), origin.getAmountTaken().toQuantityInfo(), user);
       if (CollectionUtils.isNotEmpty(origin.getExtraFields())) {
         ApiSubSample fieldUpdate = new ApiSubSample();
         fieldUpdate.setId(origin.getId());
         fieldUpdate.setExtraFields(origin.getExtraFields());
+        // Sparse update: null tags means "leave tags untouched"; the DTO's default empty list
+        // would be applied as "clear all tags" and silently wipe a tagged origin's tags (same
+        // idiom as InventoryIdentifierApiManagerImpl's sparse updates).
+        fieldUpdate.setTags(null);
         subSampleApiMgr.updateApiSubSample(fieldUpdate, user);
       }
     }

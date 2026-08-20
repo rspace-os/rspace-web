@@ -55,8 +55,9 @@ export function detailsValid(
       if (temperatureExceedsMax(input, q)) return false;
       if (temperatureBelowMin(input, q)) return false;
       if (input.type === "quantity") {
-        // The unit is part of the amount: a cleared/unset unit (e.g. after switching to a new process
-        // name) leaves the amount incomplete, so block the step until the user picks one.
+        // The unit is part of the amount: a cleared/unset unit (produced when a picked template
+        // changes the measurement category) leaves the amount incomplete, so block the step until
+        // the user picks one. Fresh amounts are otherwise prefilled with the origin's own unit.
         if (!Number.isFinite(q.unitId) || q.unitId <= 0) return false;
         if (q.numericValue < 0) return false;
         // The created "each amount" and the amount taken from the origin must both be > 0: an
