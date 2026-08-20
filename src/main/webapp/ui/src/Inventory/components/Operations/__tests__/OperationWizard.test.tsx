@@ -52,21 +52,20 @@ vi.mock("../../ContextMenu/ContextDialog", () => ({
 
 // Stub the step bodies so the flow can be driven deterministically. The details stub renders all its
 // controls regardless of `section` (so a test can fill amounts while still on the details step) and
-// echoes `section`/`unitCategories`/`remember` back via spans.
+// echoes `section`/`unitCategories` back via spans (the remember state is echoed by the
+// confirmation stub, where the checkbox lives).
 vi.mock("../OperationDetailsStep", () => ({
   default: ({
     values,
     onChange,
     section,
     unitCategories,
-    remember,
     onRememberChange,
   }: {
     values: Record<string, unknown>;
     onChange: (v: Record<string, unknown>) => void;
     section?: string;
     unitCategories?: Array<string>;
-    remember?: boolean;
     onRememberChange?: (r: boolean) => void;
   }) => (
     <div>
@@ -77,6 +76,7 @@ vi.mock("../OperationDetailsStep", () => ({
         value={String(values.processName ?? "")}
         onChange={(e) => onChange({ ...values, processName: e.target.value })}
       />
+      <span data-testid="details-has-toggle">{String(Boolean(onRememberChange))}</span>
       <span data-testid="sample-name">{String(values.sampleName ?? "")}</span>
       <button
         type="button"
@@ -107,8 +107,6 @@ vi.mock("../OperationDetailsStep", () => ({
           })
         }
       />
-      <span data-testid="remember">{String(remember)}</span>
-      <button type="button" data-testid="toggle-remember" onClick={() => onRememberChange?.(!remember)} />
       <span data-testid="count">{String(values.count ?? "")}</span>
       <span data-testid="each-amount">{JSON.stringify(values.eachAmount ?? null)}</span>
       <span data-testid="amount-taken">{JSON.stringify(values.amountTaken ?? null)}</span>
@@ -136,6 +134,11 @@ vi.mock("../TemplateStep", () => ({
         data-testid="tmpl-pick-volume"
         onClick={() => onChange({ mode: "pick", templateId: 7, templateName: "T7", quantityCategory: "volume" })}
       />
+      <button
+        type="button"
+        data-testid="tmpl-pick-mass"
+        onClick={() => onChange({ mode: "pick", templateId: 8, templateName: "T8", quantityCategory: "mass" })}
+      />
     </div>
   ),
 }));
@@ -146,7 +149,19 @@ vi.mock("../DocumentationStep", () => ({
     </div>
   ),
 }));
-vi.mock("../OperationConfirmation", () => ({ default: () => <div data-testid="confirm" /> }));
+// The confirmation stub echoes the remember state and offers a toggle: the single "remember"
+// checkbox lives on the summary & confirm step (and the step-one fast path, which renders the same
+// confirmation).
+vi.mock("../OperationConfirmation", () => ({
+  default: ({ remember, onRememberChange }: { remember?: boolean; onRememberChange?: (remember: boolean) => void }) => (
+    <div data-testid="confirm">
+      <span data-testid="remember">{String(remember)}</span>
+      {onRememberChange ? (
+        <button type="button" data-testid="toggle-remember" onClick={() => onRememberChange(!remember)} />
+      ) : null}
+    </div>
+  ),
+}));
 
 const nextButton = () => screen.getByRole("button", { name: /actions\.next/i });
 const backButton = () => screen.getByRole("button", { name: /actions\.back/i });
@@ -228,6 +243,37 @@ describe("OperationWizard step flow", () => {
     await user.click(screen.getByTestId("edit-sample")); // manual override
     await user.type(screen.getByTestId("proc"), "x"); // process name changes again
     expect(screen.getByTestId("sample-name")).toHaveTextContent("Custom name");
+  });
+
+  it("preselects the parent's template for a first-time run when the parent has one", async () => {
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    origin.sample.templateId = 9;
+    render(<OperationWizard open onClose={vi.fn()} origins={[origin]} />);
+    await fillDerive(user, "dna");
+    await user.click(nextButton()); // details -> template
+    expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("fromSample");
+    expect(nextButton()).toBeEnabled();
+  });
+
+  it("prefills the amount units from the origin subsample", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":1,"unitId":3}');
+    expect(screen.getByTestId("amount-taken")).toHaveTextContent('{"numericValue":1,"unitId":3}');
+  });
+
+  it("resets the created amount's unit when a picked template changes the measurement category", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await fillDerive(user, "dna"); // fills both amounts with unit 3
+    await user.click(nextButton()); // -> template
+    await user.click(screen.getByTestId("tmpl-pick-mass")); // a category the origin's unit is not in
+    await user.click(nextButton()); // -> amounts
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":5,"unitId":0}');
+    // the amount taken FROM the origin stays in the origin's own category, so its unit is untouched
+    expect(screen.getByTestId("amount-taken")).toHaveTextContent('{"numericValue":1,"unitId":3}');
   });
 
   it("puts the template on its own step, gated until a choice is made", async () => {
@@ -328,6 +374,21 @@ describe("OperationWizard step flow", () => {
 });
 
 describe("OperationWizard remember bundle", () => {
+  it("offers the remember checkbox on the summary & confirm step, not the details step", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await fillDerive(user, "dna");
+    // details: no remember handler is passed, so the step renders no checkbox
+    expect(screen.getByTestId("details-has-toggle")).toHaveTextContent("false");
+    await user.click(nextButton()); // -> template
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // -> amounts
+    await user.click(nextButton()); // -> documentation
+    await user.click(nextButton()); // -> confirm
+    expect(screen.getByTestId("toggle-remember")).toBeInTheDocument();
+    expect(screen.getByTestId("remember")).toHaveTextContent("false");
+  });
+
   it("persists the whole bundle keyed by process name when remember is ticked", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
@@ -337,7 +398,6 @@ describe("OperationWizard remember bundle", () => {
 
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna extraction");
-    await user.click(screen.getByTestId("toggle-remember")); // tick remember
     await user.click(screen.getByTestId("fill-amounts"));
     await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
@@ -345,6 +405,7 @@ describe("OperationWizard remember bundle", () => {
     await user.click(nextButton()); // -> documentation
     await user.click(screen.getByTestId("doc-choose"));
     await user.click(nextButton()); // -> confirm
+    await user.click(screen.getByTestId("toggle-remember")); // tick remember on the confirm step
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -385,7 +446,7 @@ describe("OperationWizard remember bundle", () => {
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
-    expect(screen.getByTestId("remember")).toHaveTextContent("true");
+    // the loaded remember flag itself is observable on the confirm step / fast path (tested below)
     expect(screen.getByTestId("count")).toHaveTextContent("4");
     expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":7,"unitId":3}');
   });
@@ -404,15 +465,17 @@ describe("OperationWizard remember bundle", () => {
     await user.type(screen.getByTestId("proc"), "dna"); // loads the saved bundle
     expect(screen.getByTestId("count")).toHaveTextContent("4");
     await user.type(screen.getByTestId("proc"), "x"); // "dnax" is unsaved
-    expect(screen.getByTestId("remember")).toHaveTextContent("false");
     expect(screen.getByTestId("count")).toHaveTextContent("1");
-    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":1,"unitId":0}');
+    // fresh amounts are prefilled with the origin subsample's unit
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":1,"unitId":3}');
   });
 
-  it("unticking remember resets the form but never deletes the saved bundle", async () => {
+  it("unticking remember (on the confirmation) resets the form but never deletes the saved bundle", async () => {
+    // amountTaken must not exceed the mock origin's quantity (1), or over-removal blocks the
+    // step-one fast path this test rides to reach the confirmation.
     const saved = {
       "derive dna": {
-        values: { count: 4, eachAmount: { numericValue: 7, unitId: 3 }, amountTaken: { numericValue: 2, unitId: 3 } },
+        values: { count: 4, eachAmount: { numericValue: 7, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
         template: { mode: "pick", templateId: 9, templateName: "T9" },
         documentation: null,
       },
@@ -421,11 +484,14 @@ describe("OperationWizard remember bundle", () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
-    await user.type(screen.getByTestId("proc"), "dna"); // loads + ticks
-    expect(screen.getByTestId("remember")).toHaveTextContent("true");
+    await user.type(screen.getByTestId("proc"), "dna"); // loads + ticks the saved bundle
+    // once the derived sample name settles, the whole run is valid, so the step-one fast path shows
+    // the confirmation, which carries the remember checkbox
+    await waitFor(() => expect(screen.getByTestId("remember")).toHaveTextContent("true"), { timeout: 3000 });
     await user.click(screen.getByTestId("toggle-remember")); // untick
-    expect(screen.getByTestId("remember")).toHaveTextContent("false");
-    expect(screen.getByTestId("count")).toHaveTextContent("1"); // form reset to defaults
+    // unticking drops the fast path (nothing is remembered any more): back to the details step,
+    // with the form reset to defaults
+    expect(screen.getByTestId("count")).toHaveTextContent("1");
     expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES).toEqual(saved); // store untouched
   });
 
@@ -443,14 +509,15 @@ describe("OperationWizard remember bundle", () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
-    // Fast path: the confirmation and an enabled Perform show; the details form is not rendered yet.
+    // Fast path: the confirmation (carrying the ticked remember checkbox) and an enabled Perform
+    // show; the details form is not rendered yet.
     expect(screen.getByTestId("confirm")).toBeInTheDocument();
+    expect(screen.getByTestId("remember")).toHaveTextContent("true");
     expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
     expect(screen.queryByTestId("proc")).not.toBeInTheDocument();
     // Review / edit drops into the normal wizard with the bundle pre-filled.
     await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
     expect(screen.getByTestId("proc")).toHaveValue("boil");
-    expect(screen.getByTestId("remember")).toHaveTextContent("true");
     expect(screen.getByTestId("count")).toHaveTextContent("3");
   });
 
@@ -481,13 +548,13 @@ describe("OperationWizard remember bundle", () => {
     vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
     render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await user.click(screen.getByRole("button", { name: /operations\.cryopreserve\.label/i }));
-    await user.click(screen.getByTestId("toggle-remember")); // tick
     await user.click(screen.getByTestId("fill-amounts"));
     await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
     await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
     await user.click(nextButton()); // -> confirm
+    await user.click(screen.getByTestId("toggle-remember")); // tick on the confirm step
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());

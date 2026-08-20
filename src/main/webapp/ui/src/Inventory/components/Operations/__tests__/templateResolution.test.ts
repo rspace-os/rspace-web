@@ -1,11 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
+  initialTemplateSelection,
   resolveTemplateId,
   templateSelectionBlock,
   templateSelectionFor,
   templateSelectionToDefault,
   templateStepValid,
 } from "../templateResolution";
+
+describe("initialTemplateSelection", () => {
+  it("preselects the parent's own template for a first-time run when the parent has one", () => {
+    expect(initialTemplateSelection(true)).toEqual({ mode: "fromSample", templateId: null, remember: false });
+  });
+
+  it("starts unselected when the parent has no template, keeping the step gated", () => {
+    expect(initialTemplateSelection(false)).toEqual({ mode: "unselected", templateId: null, remember: false });
+  });
+});
 
 describe("resolveTemplateId", () => {
   it("returns null when no template is chosen", () => {
