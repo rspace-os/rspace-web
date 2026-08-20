@@ -6,8 +6,6 @@
              http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
        default-lazy-init="true">
 
-    <bean id="authc" name="authc" class="org.apache.shiro.web.filter.authc.PassThruAuthenticationFilter" />
-
     <!-- The shiroFilter and the AuthorizationAttributeSourceAdvisor below deliberately do
          NOT take a securityManager ref: the advisor is created during early advisor
          retrieval, before context refresh completes (under Shiro 2 the filter was too,
