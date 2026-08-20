@@ -23,7 +23,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       ApiInventoryOperationPost request, User user) {
     // Validate-before-mutate: assert edit permission on every origin first, so a permission
     // failure aborts before anything is written (a throw inside this shared transaction marks it
-    // rollback-only). See adr/0001.
+    // rollback-only). See DevDocs/adr/0006.
     for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
       subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
     }
@@ -37,7 +37,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     // origin
     // itself (Destroy's disposed date) are applied through the ordinary subsample-edit path, each
     // marked newFieldRequest by the frontend. Coordinated inside this manager so it joins the one
-    // transaction with the sample creation. See adr/0002, adr/0005, adr/0008.
+    // transaction with the sample creation. See DevDocs/adr/0007, DevDocs/adr/0010,
+    // DevDocs/adr/0013.
     for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
       subSampleApiMgr.registerApiSubSampleUsage(
           origin.getId(), origin.getAmountTaken().toQuantityInfo(), user);
@@ -51,7 +52,7 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
 
     // A terminal operation (noOutput, e.g. Destroy) sends no new sample: it only acts on its
     // origins,
-    // so there is nothing to create and nothing to return. See adr/0008.
+    // so there is nothing to create and nothing to return. See DevDocs/adr/0013.
     return request.getNewSample() == null
         ? null
         : sampleApiMgr.createNewApiSample(request.getNewSample(), user);
