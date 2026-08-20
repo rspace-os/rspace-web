@@ -50,10 +50,7 @@ describe("Sidebar", () => {
     await expect(container).toBeAccessible();
   });
 
-  /*
-   * The sidebar used to force the right panel visible on every click, which
-   * in single-column layouts hid the new listing behind stale record details.
-   */
+  // Forcing the right panel visible on nav clicks left stale record details on screen in single-column layouts.
   test("Clicking a record type nav item should not change the visible panel.", async () => {
     mockAxios.onGet("livechatProperties").reply(200, {
       livechatEnabled: false,
