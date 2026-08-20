@@ -22,12 +22,10 @@
         <property name="successUrl" value="/workspace" />
         <property name="unauthorizedUrl" value="login?error=true" />
 
-        <!-- Every custom filter used in the chain definitions must be listed here (Shiro's
-             built-in defaults such as anon and noSessionCreation need not be). Shiro 3 moved
-             the automatic discovery of Filter beans into ShiroFilterFactoryBeanPostProcessor,
-             which we deliberately do not register: it would sweep every servlet Filter bean
-             in the context into this map and, as a BeanPostProcessor depending on this
-             factory bean, reintroduce the early-instantiation window described above. -->
+        <!-- Custom filters used in the chain definitions must be listed here; Shiro 3
+             no longer auto-discovers Filter beans (we deliberately do not register its
+             ShiroFilterFactoryBeanPostProcessor). Shiro's built-in defaults such as
+             anon and noSessionCreation need no entry. -->
         <property name="filters">
             <util:map>
                 <!-- Overrides defaul sslFilter to better handle enablement/disablement -->

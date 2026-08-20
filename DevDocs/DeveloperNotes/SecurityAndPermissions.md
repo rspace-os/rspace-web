@@ -15,30 +15,6 @@ Is configured in `WEB-INF/security.xml`, which defines role based access
 to URLs and the various Spring bean integrations. There is some good
 documentation in the Shiro project web docs which describes the basics.
 
-Notes on how the URL filter chains in `security.xml` are resolved,
-including what the Shiro 3 upgrade did and did not change:
-
-- Chain patterns match case-sensitively, so `/SYSTEM/foo` does not hit
-  the `/system/**` chain and instead falls through to the `/**`
-  catch-all (still authenticated). This is configurable via the filter
-  factory's `caseInsensitive` property, which defaults to false.
-- Since Shiro 3, the filter factory guarantees a `/**` chain exists: if
-  none is defined it appends `/** = noAccess`, which redirects unmatched
-  requests to the login page instead of letting them through to the
-  servlet container (or `/** = anon` when `allowAccessByDefault` is
-  set). Our explicit `/** = authc, ssl[8443]` takes precedence, so this
-  default is inert here, but removing our catch-all would engage it
-  rather than opening unmatched paths.
-- Since Shiro 3, CORS preflight `OPTIONS` requests are allowed without
-  credentials through Shiro's Basic and Bearer HTTP authentication
-  filters only. Our chains do not use those filters, so this has no
-  effect here; our form-based `authc` filter still applies to `OPTIONS`
-  requests.
-- Since Shiro 3, custom filters must be listed explicitly in the filter
-  factory's `filters` map. The automatic discovery of `Filter` beans
-  moved to `ShiroFilterFactoryBeanPostProcessor`, which we do not
-  register.
-
 ## Authentication
 
 ### Standalone application
