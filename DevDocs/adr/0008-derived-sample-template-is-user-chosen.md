@@ -1,4 +1,4 @@
-# 3. The derived sample's template is user-chosen (none / any / from the origin's sample)
+# 8. The derived sample's template is user-chosen (none / any / from the origin's sample)
 
 Date: 2026-07-10
 
@@ -44,7 +44,7 @@ client-side by POSTing that sample's fields to `POST /api/inventory/v1/sampleTem
 - **The backend `/operations` endpoint is unchanged.** It already forwards
   `newSample.templateId` to the sample-create manager, so options (a)/(b)/(c) all
   reduce to "send a `templateId` (or null)". No new backend code, consistent with
-  adr/0001.
+  DevDocs/adr/0006.
 - "Remember" is a per-user, per-operation preference stored in `UI_JSON_SETTINGS`
   (via `useUiPreference`, keyed by operation), mirroring the documentation-link
   default. No backend change and no per-operation code.
@@ -55,7 +55,7 @@ client-side by POSTing that sample's fields to `POST /api/inventory/v1/sampleTem
   created in the common case. A new template is created only when the origin sample
   is itself template-less; that creation is a separate call before the atomic
   operation, so a failure after it leaves an unused template (harmless, deletable).
-  The operation itself remains atomic (adr/0001).
+  The operation itself remains atomic (DevDocs/adr/0006).
 - Option (a) cannot silently fail at submit: a template whose mandatory fields lack
   defaults is blocked in the template step with a clear message. Collecting values
   for such template fields in the wizard is deferred; for now the user must pick a

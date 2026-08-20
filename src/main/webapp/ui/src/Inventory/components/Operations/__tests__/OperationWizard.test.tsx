@@ -242,7 +242,7 @@ describe("OperationWizard step flow", () => {
   });
 
   it("blocks Next on the amounts step when the amount taken exceeds the origin (over-removal)", async () => {
-    // origin (makeMockSubSample) holds 1 ml; taking 5 ml must be blocked (adr/0005).
+    // origin (makeMockSubSample) holds 1 ml; taking 5 ml must be blocked (DevDocs/adr/0010).
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
@@ -283,6 +283,29 @@ describe("OperationWizard step flow", () => {
     expect(screen.queryByText(/step\.template/)).not.toBeInTheDocument();
     expect(screen.queryByText(/step\.amounts/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeDisabled();
+  });
+
+  it("blocks the details step for Pool when ANY pooled origin is empty, not just the smallest", async () => {
+    // Pool's default amount mode is "all" (take each origin's full quantity), which would silently
+    // no-op an empty origin; the backend also rejects empty origins outright (DevDocs/adr/0015), so
+    // the wizard must gate on every origin's quantity.
+    const user = userEvent.setup();
+    render(
+      <OperationWizard
+        open
+        onClose={vi.fn()}
+        origins={[makeMockSubSample({}), makeMockSubSample({ quantity: { numericValue: 0, unitId: 3 } })]}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /operations\.pool\.label/i }));
+    expect(nextButton()).toBeDisabled();
+  });
+
+  it("lets Pool proceed past the details step when every pooled origin holds an amount", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({}), makeMockSubSample({})]} />);
+    await user.click(screen.getByRole("button", { name: /operations\.pool\.label/i }));
+    expect(nextButton()).toBeEnabled();
   });
 
   it("enables Perform for a terminal operation (Destroy) on a non-empty origin", async () => {
@@ -407,7 +430,7 @@ describe("OperationWizard remember bundle", () => {
   });
 
   it("pre-fills the last-used process name and, on Review / edit, shows its bundle", async () => {
-    // A complete remembered bundle loads on open, so the wizard offers the step-one fast path (adr/0009):
+    // A complete remembered bundle loads on open, so the wizard offers the step-one fast path (DevDocs/adr/0014):
     // the confirmation and Perform, with the details form only behind "Review / edit".
     prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS = { derive: "boil" };
     prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
