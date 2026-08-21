@@ -1105,8 +1105,8 @@ export default interface Resources {
         "notFound": "Please contact an Admin: Calira returned HTTP status 404. Is Calira endpoint set correctly?"
       },
       "omero": {
-        "notFound": "The requested data was not found on this instance of Omero",
-        "sessionExpired": "Your session with Omero has expired. Please re-connect to Omero on the Apps page."
+        "notConnected": "You are not connected to Omero. Please connect to Omero on the Apps page.",
+        "notFound": "The requested data was not found on this instance of Omero"
       },
       "serverUnavailable": "The {appName} server at <serverLink>{url}</serverLink> is down, or CORS for this server has not been configured properly. If you are responsible for setting up the {appName} integration, open developer tools and have a look at the console and/or the network tab to find out what the issue is.",
       "timeout": "Request timed out.",
@@ -5173,8 +5173,12 @@ export default interface Resources {
       },
       "omero": {
         "errors": {
-          "authenticationExpired": "Omero authentication expired, please connect to Omero on the Apps page",
-          "login": "Could not log in to OMERO: {0}"
+          "blankCredentials": "Both an OMERO username and password are required.",
+          "credentialsDelimiter": "An OMERO username or password may not contain \"{0}\".",
+          "login": "Could not log in to OMERO: {0}",
+          "notConnected": "You are not connected to OMERO. Connect from the Apps page.",
+          "rejectedCredentials": "OMERO rejected these credentials. Check your username and password.",
+          "unknownServer": "RSpace is configured for an OMERO server named \"{0}\", which this OMERO instance does not offer. Please contact an administrator."
         }
       },
       "owncloud": {

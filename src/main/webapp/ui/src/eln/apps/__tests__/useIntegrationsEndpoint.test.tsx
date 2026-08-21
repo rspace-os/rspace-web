@@ -35,6 +35,61 @@ describe("useIntegrationsEndpoint", () => {
     });
   });
 
+  describe("OMERO", () => {
+    /*
+     * This decode is the only thing that surfaces the Disconnect button on the
+     * OMERO card, so if it regresses no user can revoke stored OMERO
+     * credentials from the Apps page.
+     */
+    test("allIntegrations decodes options.ACCESS_TOKEN into credentials.ACCESS_TOKEN", async () => {
+      const mockAxios = new MockAdapter(axios);
+      const data = {
+        ...allIntegrationsAreDisabled.data,
+        OMERO: {
+          ...allIntegrationsAreDisabled.data.OMERO,
+          options: { ACCESS_TOKEN: "XXXXXXXXXXXXXXXXX" },
+        },
+      };
+      mockAxios.onGet("integration/allIntegrations").reply(200, { success: true, data, error: null });
+      const onSuccess = vi.fn<(states: IntegrationStates) => void>();
+
+      function Wrapper() {
+        const { allIntegrations } = useIntegrationsEndpoint();
+        useEffect(() => {
+          void allIntegrations().then(onSuccess);
+        }, []);
+        // biome-ignore lint/complexity/noUselessFragments: initial biome migration
+        return <></>;
+      }
+      render(<Wrapper />);
+
+      await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+      const states = onSuccess.mock.calls[0][0];
+      expect(states.OMERO.credentials.ACCESS_TOKEN.isPresent()).toBe(true);
+    });
+
+    test("allIntegrations reports no credentials when OMERO is not connected", async () => {
+      const mockAxios = new MockAdapter(axios);
+      mockAxios
+        .onGet("integration/allIntegrations")
+        .reply(200, { success: true, data: allIntegrationsAreDisabled.data, error: null });
+      const onSuccess = vi.fn<(states: IntegrationStates) => void>();
+
+      function Wrapper() {
+        const { allIntegrations } = useIntegrationsEndpoint();
+        useEffect(() => {
+          void allIntegrations().then(onSuccess);
+        }, []);
+        // biome-ignore lint/complexity/noUselessFragments: initial biome migration
+        return <></>;
+      }
+      render(<Wrapper />);
+
+      await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+      expect(onSuccess.mock.calls[0][0].OMERO.credentials.ACCESS_TOKEN.isPresent()).toBe(false);
+    });
+  });
+
   describe("DMPASSISTANT", () => {
     test("allIntegrations decodes options.ACCESS_TOKEN into credentials.ACCESS_TOKEN", async () => {
       const mockAxios = new MockAdapter(axios);

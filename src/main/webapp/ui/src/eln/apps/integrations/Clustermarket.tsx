@@ -8,7 +8,7 @@ import { LOGO_COLOR } from "../../../assets/branding/clustermarket";
 import ClustermarketIcon from "../../../assets/branding/clustermarket/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import IntegrationCard from "../IntegrationCard";
-import { useClustermarketEndpoint } from "../useClustermarket";
+import { useDisconnectEndpoint } from "../useDisconnect";
 import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type ClustermarketArgs = {
@@ -44,12 +44,12 @@ export const CLUSTERMARKET_CONNECTION_CHANNEL = "rspace.apps.clustermarket.conne
  * success alerts, etc.).
  *
  * The process of disconnecing is via a standard API call made by
- * ../useClustermarket.
+ * ../useDisconnect.
  */
 function Clustermarket({ integrationState, update }: ClustermarketArgs): React.ReactNode {
   const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
-  const { disconnect } = useClustermarketEndpoint();
+  const { disconnect } = useDisconnectEndpoint("/apps/clustermarket", t("integrations.calira.name"));
   const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
   useBroadcastChannel<ClustermarketConnectedMessage>(
@@ -103,8 +103,8 @@ function Clustermarket({ integrationState, update }: ClustermarketArgs): React.R
                 onSubmit={(e) => {
                   e.preventDefault();
                   void (async () => {
-                    await disconnect();
-                    setConnected(false);
+                    // only report a disconnection that actually happened
+                    if (await disconnect()) setConnected(false);
                   })();
                 }}
               >

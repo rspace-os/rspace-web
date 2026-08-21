@@ -31,9 +31,9 @@ export default function ErrorView({ errorReason, errorMessage }: ErrorViewProps)
         />
       )}
       {errorReason === ErrorReason.NotFound && t("integrationErrors.omero.notFound")}
-      {/* when user credentials expire on user session end, server responds with 401 */}
+      {/* RSpace responds 401 when the user has no stored OMERO connection (RSDEV-779) */}
       {(errorReason === ErrorReason.Unauthorized || errorMessage.includes("invalid_grant")) &&
-        t("integrationErrors.omero.sessionExpired")}
+        t("integrationErrors.omero.notConnected")}
       {errorReason === ErrorReason.Timeout && t("integrationErrors.timeout")}
       {/* when a refresh token expires the omero API responds with 400 response and 'invalid_grant' in the response message */}
       {errorReason === ErrorReason.BadRequest &&
