@@ -1,5 +1,7 @@
 package com.researchspace.webapp.integrations.omero;
 
+import static com.researchspace.service.IntegrationsHandler.OMERO_APP_NAME;
+
 import com.researchspace.integrations.omero.model.DataSetRSpaceView;
 import com.researchspace.integrations.omero.model.ImageRSpaceView;
 import com.researchspace.integrations.omero.model.OmeroRSpaceView;
@@ -10,12 +12,10 @@ import com.researchspace.integrations.omero.service.OmeroService;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
 import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -34,25 +34,41 @@ public class OmeroController {
   private final UserManager userManager;
   private final OmeroService omeroService;
   private final MessageSourceUtils messages;
+  private final UserConnectionManager userConnectionManager;
 
+  /** The user has no stored OMERO connection, either never made or since disconnected. */
   @ResponseStatus(HttpStatus.UNAUTHORIZED)
-  private static class OmeroAuthException extends RuntimeException {
+  private static class OmeroNotConnectedException extends RuntimeException {
 
-    public OmeroAuthException(String message) {
+    public OmeroNotConnectedException(String message) {
       super(message);
     }
   }
 
-  @Autowired
-  @Qualifier("userNameToUserConnection")
-  private Map<String, UserConnection> userUserConnectionMap;
-
   public OmeroController(
-      UserManager userManager, OmeroService omeroService, MessageSourceUtils messages) {
+      UserManager userManager,
+      OmeroService omeroService,
+      MessageSourceUtils messages,
+      UserConnectionManager userConnectionManager) {
     this.userManager = userManager;
     this.messages = messages;
     this.omeroExceptionHandler = new OmeroExceptionHandler(messages);
     this.omeroService = omeroService;
+    this.userConnectionManager = userConnectionManager;
+  }
+
+  /**
+   * The OMERO username and password are stored as a delimited string in the access token field of
+   * the UserConnection table, encrypted at rest by the DAO.
+   */
+  private String omeroCredentials(User user) {
+    return userConnectionManager
+        .findByUserNameProviderName(user.getUsername(), OMERO_APP_NAME)
+        .map(UserConnection::getAccessToken)
+        .orElseThrow(
+            () ->
+                new OmeroNotConnectedException(
+                    messages.getMessage("apps.omero.errors.notConnected")));
   }
 
   @ExceptionHandler()
@@ -64,13 +80,7 @@ public class OmeroController {
   public List<? extends OmeroRSpaceView> getProjects(
       @RequestParam(required = false) String dataType) {
     User user = userManager.getAuthenticatedUserInSession();
-    UserConnection uc = userUserConnectionMap.get("omero_" + user.getUsername());
-    if (uc == null) {
-      throw new OmeroAuthException(messages.getMessage("apps.omero.errors.authenticationExpired"));
-    }
-    String cred =
-        uc.getAccessToken(); // we save omero credentials as a delimited string in the access
-    // token field of UserConnection table
+    String cred = omeroCredentials(user);
     long start = System.currentTimeMillis();
     List<? extends OmeroRSpaceView> projectsAndScreens =
         omeroService.getProjectsAndScreens(cred, dataType);
@@ -86,14 +96,7 @@ public class OmeroController {
   public List<DataSetRSpaceView> getDatasetsForProject(@PathVariable long projectid) {
     long start = System.currentTimeMillis();
     User user = userManager.getAuthenticatedUserInSession();
-    UserConnection uc = userUserConnectionMap.get("omero_" + user.getUsername());
-    if (uc == null) {
-      throw new OmeroAuthException(
-          "Omero authentication expired, please connect to Omero on the Apps page");
-    }
-    String cred =
-        uc.getAccessToken(); // we save omero credentials as a delimited string in the access
-    // token field of UserConnection table
+    String cred = omeroCredentials(user);
     List<DataSetRSpaceView> datasets = omeroService.getDataSets(cred, projectid);
     for (DataSetRSpaceView dataset : datasets) {
       dataset.setOmeroConnectionKey(user.getUsername());
@@ -107,14 +110,7 @@ public class OmeroController {
   public List<PlateRSpaceView> getPlatesForScreen(@PathVariable long screenid) {
     long start = System.currentTimeMillis();
     User user = userManager.getAuthenticatedUserInSession();
-    UserConnection uc = userUserConnectionMap.get("omero_" + user.getUsername());
-    if (uc == null) {
-      throw new OmeroAuthException(
-          "Omero authentication expired, please connect to Omero on the Apps page");
-    }
-    String cred =
-        uc.getAccessToken(); // we save omero credentials as a delimited string in the access
-    // token field of UserConnection table
+    String cred = omeroCredentials(user);
     List<PlateRSpaceView> plates = omeroService.getPlates(cred, screenid);
     for (PlateRSpaceView plate : plates) {
       plate.setOmeroConnectionKey(user.getUsername());
@@ -128,14 +124,7 @@ public class OmeroController {
   public List<ImageRSpaceView> getImages(@PathVariable long id, @RequestParam boolean fetchLarge) {
     User user = userManager.getAuthenticatedUserInSession();
     long start = System.currentTimeMillis();
-    UserConnection uc = userUserConnectionMap.get("omero_" + user.getUsername());
-    if (uc == null) {
-      throw new OmeroAuthException(
-          "Omero authentication expired, please connect to Omero on the Apps page");
-    }
-    String cred =
-        uc.getAccessToken(); // we save omero credentials as a delimited string in the access
-    // token field of UserConnection table
+    String cred = omeroCredentials(user);
     List<ImageRSpaceView> images = omeroService.getImages(cred, id, fetchLarge);
     for (ImageRSpaceView img : images) {
       img.setOmeroConnectionKey(user.getUsername());
@@ -150,14 +139,7 @@ public class OmeroController {
       @PathVariable long datasetid, @PathVariable long imageid, @RequestParam boolean fetchLarge) {
     User user = userManager.getAuthenticatedUserInSession();
     long start = System.currentTimeMillis();
-    UserConnection uc = userUserConnectionMap.get("omero_" + user.getUsername());
-    if (uc == null) {
-      throw new OmeroAuthException(
-          "Omero authentication expired, please connect to Omero on the Apps page");
-    }
-    String cred =
-        uc.getAccessToken(); // we save omero credentials as a delimited string in the access
-    // token field of UserConnection table
+    String cred = omeroCredentials(user);
     ImageRSpaceView image = omeroService.getImage(cred, imageid, datasetid, fetchLarge);
     long end = System.currentTimeMillis();
     log.debug("get full single image took: " + (end - start));
@@ -168,14 +150,7 @@ public class OmeroController {
   public List<String> getAnnotations(@PathVariable long id, @RequestParam String type) {
     User user = userManager.getAuthenticatedUserInSession();
     long start = System.currentTimeMillis();
-    UserConnection uc = userUserConnectionMap.get("omero_" + user.getUsername());
-    if (uc == null) {
-      throw new OmeroAuthException(
-          "Omero authentication expired, please connect to Omero on the Apps page");
-    }
-    String cred =
-        uc.getAccessToken(); // we save omero credentials as a delimited string in the access
-    // token field of UserConnection table
+    String cred = omeroCredentials(user);
     List<String> annotations = omeroService.getAnnotations(cred, id, type);
     long end = System.currentTimeMillis();
     log.debug("get annotations for " + type + " took: " + (end - start));
@@ -190,14 +165,7 @@ public class OmeroController {
       @RequestParam int wellIndex) {
     User user = userManager.getAuthenticatedUserInSession();
     long start = System.currentTimeMillis();
-    UserConnection uc = userUserConnectionMap.get("omero_" + user.getUsername());
-    if (uc == null) {
-      throw new OmeroAuthException(
-          "Omero authentication expired, please connect to Omero on the Apps page");
-    }
-    String cred =
-        uc.getAccessToken(); // we save omero credentials as a delimited string in the access
-    // token field of UserConnection table
+    String cred = omeroCredentials(user);
     List<WellRSpaceView> wells = omeroService.getWells(cred, parentid, id, fetchLarge, wellIndex);
     for (WellRSpaceView well : wells) {
       well.setOmeroConnectionKey(user.getUsername());
@@ -211,14 +179,7 @@ public class OmeroController {
   public List<PlateAcquisitionRSpaceView> getPlateAcquisitions(@PathVariable long plateID) {
     User user = userManager.getAuthenticatedUserInSession();
     long start = System.currentTimeMillis();
-    UserConnection uc = userUserConnectionMap.get("omero_" + user.getUsername());
-    if (uc == null) {
-      throw new OmeroAuthException(
-          "Omero authentication expired, please connect to Omero on the Apps page");
-    }
-    String cred =
-        uc.getAccessToken(); // we save omero credentials as a delimited string in the access
-    // token field of UserConnection table
+    String cred = omeroCredentials(user);
     List<PlateAcquisitionRSpaceView> plateAcquisitions =
         omeroService.getPlateAcquisitions(cred, plateID);
     for (PlateAcquisitionRSpaceView pa : plateAcquisitions) {
