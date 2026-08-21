@@ -22,7 +22,23 @@ type LinkFieldValueArgs = {
   /** The Global ID of the sample owning this field, used to forbid self-links. */
   sourceGlobalId: string;
   disabled: boolean;
-  onChange: () => void;
+  /** Notifies the owning form that the committed link changed. Omit where there is nothing to tell:
+   * the template editor tracks error state on its Name field only. */
+  onChange?: () => void;
+  /**
+   * Whether to surface the field name above the editor and inside the committed card. True on an
+   * item, whose FormField label is hidden. False in the template editor, where the name is already
+   * entered in the Name field just above and repeating it here is noise.
+   */
+  showFieldName?: boolean;
+  /**
+   * Overrides the editor's "Target" group heading. The template editor passes "Default link target",
+   * since inside the Default link section the target being chosen belongs to the default, not to the
+   * record. Left unset on an item, where "Target" is right.
+   */
+  targetHeading?: string;
+  /** Passed through to {@link LinkEditor}; see its docblock. */
+  nestHeadings?: boolean;
 };
 
 /**
@@ -34,7 +50,15 @@ type LinkFieldValueArgs = {
  * committed on Apply, mirroring the extra-field Link editor. The editor body itself is the shared
  * {@link LinkEditor}.
  */
-function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkFieldValueArgs): React.ReactNode {
+function LinkFieldValue({
+  field,
+  sourceGlobalId,
+  disabled,
+  onChange,
+  showFieldName = true,
+  targetHeading,
+  nestHeadings,
+}: LinkFieldValueArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
   const committedRelationType = field.link?.relationType ?? "";
   const committedTargetGlobalId = field.link?.targetGlobalId ?? "";
@@ -89,9 +113,18 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
   // left-open editor must not keep the field flagged: that would block save with an "Apply or
   // discard" message the user has no way to act on. A record Save happens while still editable
   // (`disabled` is false), so gating on `!disabled` does not weaken the guard.
+  // The cleanup matters: the template editor unmounts this component when the field is marked for
+  // deletion (Template/Fields/CustomField swaps in the delete notice), and record validation walks
+  // every field including deleted ones. Without it, opening the editor on a link field and then
+  // removing that field leaves the flag set and blocks Save with an "Apply or discard" message the
+  // user has no editor left to act on.
   useEffect(() => {
     field.setLinkEditInProgress(!disabled && (changed || (editing && hasLink)));
   }, [changed, editing, hasLink, disabled, field]);
+  // Separate from the effect above on purpose. React runs a cleanup before every re-run, not only
+  // on unmount, so keeping it there wrote false and then the real value on every dependency
+  // change: two MobX actions, and an observable transiently wrong in between.
+  useEffect(() => () => field.setLinkEditInProgress(false), [field]);
 
   const relationOptions =
     field.allowedRelationTypes.length > 0 ? field.allowedRelationTypes : [...DATACITE_RELATION_TYPES];
@@ -134,7 +167,7 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
     field.setAttributesDirty({ link: nextLink });
     field.setLinkEditInProgress(false);
     setEditing(false);
-    onChange();
+    onChange?.();
   };
 
   const discard = (): void => {
@@ -164,7 +197,7 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
             />
           </Box>
         )}
-        <LinkField name={field.name} link={committedLink} editable={!disabled} />
+        <LinkField name={showFieldName ? field.name : ""} link={committedLink} editable={!disabled} />
       </Box>
     );
   }
@@ -182,7 +215,7 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
   return (
     <Box>
       {/* The FormField label is hidden, so surface the field name here. */}
-      {field.name && (
+      {showFieldName && field.name && (
         <Typography variant="subtitle1" component="span" sx={{ fontWeight: 700 }}>
           {field.name}
         </Typography>
@@ -193,6 +226,8 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
         relationOptions={relationOptions}
         relationFreeSolo={false}
         relationLabel={t("fields.extraFields.fields.relationType")}
+        targetHeading={targetHeading}
+        nestHeadings={nestHeadings}
         targetGlobalId={stagedTargetGlobalId}
         onTargetChange={(globalId) => setStagedTarget(globalId)}
         targetError={Boolean(targetExistenceError) || !targetValidity.ok}

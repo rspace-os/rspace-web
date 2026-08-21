@@ -10,6 +10,7 @@ import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Heading, HeadingContext } from "../../../../components/DynamicHeadingLevel";
 import RecordTypeIcon from "../../../../components/RecordTypeIcon";
 import ElnRecordPicker from "./ElnRecordPicker";
 import { iconForGlobalId } from "./iconForGlobalId";
@@ -32,6 +33,18 @@ export interface LinkEditorProps {
   relationError?: boolean;
   relationHelperText?: string;
 
+  /**
+   * Heading for the target group. Defaults to "Target"; a template's default-link editor overrides
+   * it, since there the target being chosen is the default's, not the record's own.
+   */
+  targetHeading?: string;
+  /**
+   * Whether the group headings descend one level below the caller's own. True only where the
+   * caller actually renders a heading immediately above (the template editor's InputWrapper, whose
+   * FormControl emits one). The item and extra-field editors render a plain <label> in edit mode,
+   * because FieldLabel only emits a Heading when disabled, so nesting there would skip a level.
+   */
+  nestHeadings?: boolean;
   /** Current target Global ID (controlled). */
   targetGlobalId: string;
   /** Optional display name shown in the target chip ("GID — name"). */
@@ -52,9 +65,13 @@ export interface LinkEditorProps {
 
 /**
  * The shared link-editor UI used by both the extra-field editor (UpdateField)
- * and the template-field editor (LinkFieldValue): the relation-type field, the
- * target chip + Browse Inventory/ELN buttons + Target Global ID field, the
- * version pill and version-pin control, and the three picker/version dialogs.
+ * and the template-field editor (LinkFieldValue), in three labelled groups:
+ * the target group (the Global ID field and the two Browse buttons on one
+ * wrapping row, with the selected target's chip beneath), then the
+ * relation-type field, then "Version" (the version pill and version-pin
+ * control). Plus the three picker/version dialogs. The target group is headed
+ * "Target" unless the caller renames it via `targetHeading`, which the
+ * template's default-link editor does.
  *
  * Controlled and presentational: it owns only the open-state of its three
  * dialogs and a neutral vertical layout. All staged values, validation, the
@@ -70,6 +87,8 @@ export default function LinkEditor({
   relationLabel,
   relationError,
   relationHelperText,
+  targetHeading,
+  nestHeadings = false,
   targetGlobalId,
   targetName,
   onTargetChange,
@@ -84,61 +103,42 @@ export default function LinkEditor({
   const [browserOpen, setBrowserOpen] = useState(false);
   const [elnOpen, setElnOpen] = useState(false);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
+  const targetIcon = targetGlobalId ? iconForGlobalId(targetGlobalId) : null;
+  const groupHeadingSx = { fontWeight: 700, fontSize: "1rem" } as const;
 
-  return (
+  // The group headings take their level from the ambient context rather than being hardcoded: this
+  // component is mounted at two different depths. Only nest where the caller really did render a
+  // heading above (see nestHeadings), or the levels skip.
+  const body = (
     <Box>
-      <Autocomplete
-        freeSolo={relationFreeSolo}
-        options={relationOptions}
-        value={relationFreeSolo ? relationType : relationType === "" ? null : relationType}
-        onChange={relationFreeSolo ? undefined : (_event, value) => onRelationTypeChange(value ?? "")}
-        onInputChange={relationFreeSolo ? (_event, value) => onRelationTypeChange(value) : undefined}
-        renderInput={(params) => {
-          const { slotProps, ...textFieldProps } = params;
-          return (
-            <TextField
-              {...textFieldProps}
-              variant="standard"
-              label={relationLabel}
-              error={relationError}
-              helperText={relationHelperText}
-              slotProps={{
-                ...slotProps,
-                htmlInput: {
-                  ...slotProps.htmlInput,
-                  "aria-label": relationLabel,
-                },
-              }}
-            />
-          );
-        }}
-      />
-      <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", alignItems: "center" }}>
-        {targetGlobalId
-          ? (() => {
-              const iconData = iconForGlobalId(targetGlobalId);
-              return (
-                <Chip
-                  // Match the committed (non-edit) LinkField pill. size="small"
-                  // gives the same geometry; the pl restores the left padding
-                  // the accented theme strips from deletable chips
-                  // (`&.MuiChip-deletable { padding: 0 }`). Without it the type
-                  // icon — which gets no MuiChip-icon margin because
-                  // RecordTypeIcon wraps it in a tooltip — sits flush against
-                  // the left edge instead of the non-edit pill's 4px
-                  // (spacing(0.5)). The selector is repeated to out-specify the
-                  // theme's two-class `.MuiChip-deletable` rule. The cancel
-                  // button just widens the chip.
-                  size="small"
-                  sx={{ "&.MuiChip-deletable": { pl: 0.5 } }}
-                  icon={iconData ? <RecordTypeIcon record={iconData} aria-hidden /> : undefined}
-                  label={targetName ? `${targetGlobalId} — ${targetName}` : targetGlobalId}
-                  onDelete={() => onTargetChange("", "")}
-                  data-test-id="LinkTarget-globalId"
-                />
-              );
-            })()
-          : null}
+      <Heading variant="h6" sx={groupHeadingSx}>
+        {targetHeading ?? t("fields.link.editor.target")}
+      </Heading>
+      <Stack
+        direction="row"
+        spacing={1}
+        // useFlexGap so a wrapped line gets real vertical spacing; Stack's default
+        // sibling-margin implementation of `spacing` leaves wrapped lines touching
+        useFlexGap
+        sx={{ mt: 0.5, flexWrap: "wrap", alignItems: "flex-start" }}
+        data-test-id="LinkEditor-targetRow"
+      >
+        <TextField
+          // no floating label: variant="standard" stacks one above the input, which drops the
+          // input below the neighbouring Browse buttons. The group heading above names this
+          // control, the helper text says what to put in it, and aria-label keeps it announced.
+          placeholder={t("fields.link.editor.targetPlaceholder")}
+          value={targetGlobalId}
+          onChange={(e) => onTargetChange(e.target.value, "")}
+          size="small"
+          variant="standard"
+          // a Global ID is short (about 20 characters at the very most, usually far fewer), so the
+          // field is sized to its content rather than flexing to fill the row
+          sx={{ width: "11em", flexShrink: 0 }}
+          helperText={targetHelperText}
+          error={targetError}
+          slotProps={{ htmlInput: { "aria-label": t("fields.link.editor.targetGlobalId") } }}
+        />
         <Button
           size="small"
           variant="outlined"
@@ -156,20 +156,64 @@ export default function LinkEditor({
           {t("fields.link.editor.browseEln")}
         </Button>
       </Stack>
-      <TextField
-        label={t("fields.link.editor.targetGlobalId")}
-        value={targetGlobalId}
-        onChange={(e) => onTargetChange(e.target.value, "")}
-        fullWidth
-        size="small"
-        variant="standard"
-        sx={{ mt: 1 }}
-        helperText={targetHelperText}
-        error={targetError}
-        slotProps={{ htmlInput: { "aria-label": t("fields.link.editor.targetGlobalId") } }}
-      />
+      {/* The selected target sits below the id field and pickers, not beside them: it is the
+          outcome of using them, and in the row it competed for width and had its delete icon
+          clipped (MuiChip-label is overflow: hidden, so a shrunk chip loses the X). */}
+      {targetGlobalId ? (
+        <Box sx={{ mt: 1 }}>
+          <Chip
+            // Match the committed (non-edit) LinkField pill. size="small"
+            // gives the same geometry; the pl restores the left padding
+            // the accented theme strips from deletable chips
+            // (`&.MuiChip-deletable { padding: 0 }`). Without it the type
+            // icon — which gets no MuiChip-icon margin because
+            // RecordTypeIcon wraps it in a tooltip — sits flush against
+            // the left edge instead of the non-edit pill's 4px
+            // (spacing(0.5)). The selector is repeated to out-specify the
+            // theme's two-class `.MuiChip-deletable` rule. The cancel
+            // button just widens the chip.
+            size="small"
+            sx={{ "&.MuiChip-deletable": { pl: 0.5 } }}
+            icon={targetIcon ? <RecordTypeIcon record={targetIcon} aria-hidden /> : undefined}
+            label={targetName ? `${targetGlobalId} — ${targetName}` : targetGlobalId}
+            onDelete={() => onTargetChange("", "")}
+            data-test-id="LinkTarget-globalId"
+          />
+        </Box>
+      ) : null}
       {validationMessage ? <FormHelperText error>{validationMessage}</FormHelperText> : null}
-      <Stack direction="row" spacing={1} sx={{ mt: 1, alignItems: "center" }}>
+      <Box sx={{ mt: 2 }}>
+        <Autocomplete
+          freeSolo={relationFreeSolo}
+          options={relationOptions}
+          value={relationFreeSolo ? relationType : relationType === "" ? null : relationType}
+          onChange={relationFreeSolo ? undefined : (_event, value) => onRelationTypeChange(value ?? "")}
+          onInputChange={relationFreeSolo ? (_event, value) => onRelationTypeChange(value) : undefined}
+          renderInput={(params) => {
+            const { slotProps, ...textFieldProps } = params;
+            return (
+              <TextField
+                {...textFieldProps}
+                variant="standard"
+                label={relationLabel}
+                error={relationError}
+                helperText={relationHelperText}
+                slotProps={{
+                  ...slotProps,
+                  htmlInput: {
+                    ...slotProps.htmlInput,
+                    "aria-label": relationLabel,
+                  },
+                }}
+              />
+            );
+          }}
+        />
+      </Box>
+      <Heading variant="h6" sx={{ mt: 2, ...groupHeadingSx }}>
+        {t("fields.link.editor.version")}
+      </Heading>
+      <Stack direction="row" spacing={1} sx={{ mt: 0.5, alignItems: "center" }} data-test-id="LinkEditor-versionRow">
         <Chip
           size="small"
           variant="outlined"
@@ -222,4 +266,5 @@ export default function LinkEditor({
       />
     </Box>
   );
+  return nestHeadings ? <HeadingContext>{body}</HeadingContext> : body;
 }
