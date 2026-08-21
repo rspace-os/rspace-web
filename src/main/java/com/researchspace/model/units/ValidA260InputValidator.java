@@ -6,9 +6,7 @@ import jakarta.validation.ConstraintValidatorContext;
 public class ValidA260InputValidator implements ConstraintValidator<ValidA260Input, A260Input> {
 
   @Override
-  public void initialize(ValidA260Input constraintAnnotation) {
-    ;
-  }
+  public void initialize(ValidA260Input constraintAnnotation) {}
 
   @Override
   public boolean isValid(A260Input value, ConstraintValidatorContext context) {
@@ -19,7 +17,7 @@ public class ValidA260InputValidator implements ConstraintValidator<ValidA260Inp
     if (value.getA280() != null && value.getA320() != null && value.getA280() <= value.getA320()) {
       return false;
     }
-    if (value.getA320() != null && value.getA260() <= value.getA320()) {
+    if (value.getA320() != null && value.getA260() != null && value.getA260() <= value.getA320()) {
       return false;
     }
     return true;
