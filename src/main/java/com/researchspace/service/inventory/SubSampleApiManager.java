@@ -78,7 +78,8 @@ public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
    * <p>The version bump happens at most once per subsample per transaction. Envers writes one
    * revision per entity per transaction, so a caller that decrements the same subsample several
    * times in one transaction still sees the version advance by exactly one, keeping every version
-   * resolvable in the revision history (RSDEV-1319). The quantity is reduced by every call.
+   * resolvable in the revision history (RSDEV-1319). Only the version bump is deduplicated: each
+   * call still reduces the stored quantity whenever that quantity actually changes.
    *
    * @return the updated subsample
    */

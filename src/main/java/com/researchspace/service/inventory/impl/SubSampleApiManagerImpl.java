@@ -313,10 +313,10 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
   }
 
   /**
-   * True the first time this subsample's version is bumped in the current transaction. Envers
-   * writes one revision per entity per transaction and stores only the final state, so a second
-   * bump would advance the version past any revision carrying it, leaving that version unresolvable
-   * (RSDEV-1319).
+   * Returns true the first time this subsample's version is bumped in the current transaction.
+   * Envers writes one revision per entity per transaction and stores only the final state, so a
+   * second bump would advance the version past any revision carrying it, leaving that version
+   * unresolvable (RSDEV-1319).
    *
    * <p>Outside a real transaction every save commits on its own and gets its own revision, so there
    * is nothing to deduplicate against and the bump always goes ahead.
