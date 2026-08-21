@@ -33,14 +33,21 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service("subSampleApiManager")
 public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     implements SubSampleApiManager {
+
+  private static final String BUMPED_IN_TX =
+      SubSampleApiManagerImpl.class.getName() + ".versionBumped";
 
   private @Autowired SubSampleDao subSampleDao;
   private @Autowired InventoryMoveHelper moveHelper;
@@ -289,7 +296,9 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
               || !orgQuantity.getUnitId().equals(newQuantity.getUnitId());
       if (quantityChanged) {
         dbSubSample.setQuantity(newQuantity);
-        dbSubSample.increaseVersion();
+        if (firstVersionBumpInTransaction(dbSubSample.getId())) {
+          dbSubSample.increaseVersion();
+        }
         registerSubSampleModification(user, dbSubSample);
         dbSubSample = subSampleDao.save(dbSubSample);
       }
@@ -301,6 +310,44 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     }
 
     return getPopulatedApiSubSampleFull(dbSubSample, user);
+  }
+
+  /**
+   * Returns true the first time this subsample's version is bumped in the current transaction.
+   * Envers writes one revision per entity per transaction and stores only the final state, so a
+   * second bump would advance the version past any revision carrying it, leaving that version
+   * unresolvable (RSDEV-1319).
+   *
+   * <p>Outside a real transaction every save commits on its own and gets its own revision, so there
+   * is nothing to deduplicate against and the bump always goes ahead.
+   *
+   * <p>The set is bound to the thread rather than to the transaction object, and Spring only
+   * suspends synchronizations, not application-bound resources. Nothing on this path currently
+   * opens a nested {@code REQUIRES_NEW} transaction; if one is ever introduced it would inherit
+   * this set and wrongly suppress a bump that belongs to its own revision.
+   */
+  private boolean firstVersionBumpInTransaction(Long subSampleId) {
+    if (!TransactionSynchronizationManager.isActualTransactionActive()
+        || !TransactionSynchronizationManager.isSynchronizationActive()) {
+      return true;
+    }
+    @SuppressWarnings("unchecked")
+    Set<Long> bumped = (Set<Long>) TransactionSynchronizationManager.getResource(BUMPED_IN_TX);
+    if (bumped == null) {
+      // register before binding: if registration fails nothing is left bound. Resources are
+      // thread-bound and Spring's clear() does not remove them, so without this unbind a pooled
+      // thread would keep suppressing bumps for these ids forever
+      TransactionSynchronizationManager.registerSynchronization(
+          new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+              TransactionSynchronizationManager.unbindResourceIfPossible(BUMPED_IN_TX);
+            }
+          });
+      bumped = new HashSet<>();
+      TransactionSynchronizationManager.bindResource(BUMPED_IN_TX, bumped);
+    }
+    return bumped.add(subSampleId);
   }
 
   private void registerSubSampleModification(User user, SubSample dbSubSample) {

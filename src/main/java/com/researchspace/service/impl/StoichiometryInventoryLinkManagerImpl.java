@@ -89,7 +89,10 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   public StockDeductionResult deductStock(long stoichiometryId, List<Long> linkIds, User user) {
     StockDeductionResult result = new StockDeductionResult();
     result.setStoichiometryId(stoichiometryId);
-    for (Long id : linkIds) {
+    // dedupe so a repeated id deducts its amount once instead of draining the stock twice; this is
+    // a quantity fix, separate from the per-transaction version guard also added by RSDEV-1319.
+    // Results are keyed by link id, so a repeated id yields one result row rather than two
+    for (Long id : linkIds.stream().distinct().toList()) {
       try {
         StoichiometryInventoryLink link = getLinkOrThrowNotFound(id);
         StoichiometryMolecule stoichiometryMolecule = link.getStoichiometryMolecule();
@@ -122,7 +125,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
         log.error("Unexpected error deducting stock for link {}", id, e);
         result.addResult(
             new StockDeductionResult.IndividualResult(
-                id, false, "An internal error occurred while deducting stock"));
+                id, false, messages.getMessage("errors.inventory.stoichiometry.deductionFailed")));
       }
     }
     return result;
