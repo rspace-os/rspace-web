@@ -42,6 +42,17 @@ import type { Order } from "../../../util/types";
 import { type GalleryFile, idToString } from "../useGalleryListing";
 import ResetZoomIcon from "./ResetZoomIcon";
 
+const accentedTheme = createAccentedTheme(ACCENT_COLOR);
+const previewTheme = {
+  ...accentedTheme,
+  zIndex: {
+    ...accentedTheme.zIndex,
+    // Keep the dialog above the picker and legacy dialogs, and its portalled
+    // menus above the dialog backdrop.
+    modal: 2000,
+  },
+};
+
 function DnaPreview({
   show,
   file,
@@ -687,7 +698,7 @@ export function CallableSnapGenePreview({ children }: { children: React.ReactNod
     <SnapGenePreviewContext.Provider value={{ setFile: openSnapGenePreview }}>
       {children}
       {file && (
-        <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+        <ThemeProvider theme={previewTheme}>
           <Dialog
             open
             onClose={() => {
