@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -97,6 +98,20 @@ public class ApiIdentifiersHelper {
 
   private void addRecordIdentifierForRegisteredApiIdentifier(
       ApiInventoryDOI apiIdentifier, InventoryRecord parentInvRec) {
+    /*
+     * The entity generates its own publicLink when handed a blank suffix, which is correct for
+     * every path that has no address to preserve. This path is the exception: registration has
+     * already sent an address to the provider, so a freshly generated suffix would publish an
+     * address RSpace never serves - permanently, and irreversibly once a curator accepts. Refuse
+     * rather than lean on that fallback. Unreachable today (both producers generate before setting
+     * the flag), which is the point: reaching it means the suffix was lost in between. Left
+     * unlocalised deliberately, as a programmer-error guard rather than anything a user can act on.
+     */
+    if (StringUtils.isBlank(apiIdentifier.getPublicLinkSuffix())) {
+      throw new IllegalStateException(
+          "A registered identifier reached persistence with no public link suffix; the address"
+              + " already sent to the provider cannot be recovered here.");
+    }
     DigitalObjectIdentifier newDoi =
         new DigitalObjectIdentifier(null, null, apiIdentifier.getPublicLinkSuffix());
     addPublicLandingPageUrl(newDoi, parentInvRec.getGlobalIdentifier());

@@ -3,6 +3,7 @@ package com.researchspace.service.inventory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -145,6 +146,28 @@ public class ApiIdentifiersHelperTest {
     assertEquals(
         "https://localhost:8080/public/inventory/" + apiDoi.getPublicLinkSuffix(),
         result.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
+  }
+
+  /**
+   * The entity generates its own suffix when handed none, which is right for every path with no
+   * address to preserve: bulk IGSN allocation, RecordFactory.createDoiIdentifier, imports. On the
+   * register path it would be exactly wrong. By the time this runs the address has already gone to
+   * the provider, so a freshly generated suffix would publish an address RSpace never serves,
+   * permanently and irreversibly once a curator accepts the record.
+   *
+   * <p>So the register path refuses rather than leaning on the fallback. It cannot happen today
+   * (both producers generate before setting the flag), which is the point: if it ever does, the
+   * suffix was lost in between and silence would be the worst possible response.
+   */
+  @Test
+  public void registerRequestWithoutASuffixFailsRatherThanGeneratingADifferentOne() {
+    ApiInventoryDOI apiDoi = new ApiInventoryDOI(); // deliberately no generatePublicLinkSuffix()
+    apiDoi.setRegisterIdentifierRequest(true);
+    InventoryRecord parent = mock(InventoryRecord.class);
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> underTest.createDeleteRequestedIdentifiers(List.of(apiDoi), parent, user));
   }
 
   /**
