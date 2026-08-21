@@ -683,10 +683,12 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
   }
 
   private String landingPageOf(ApiInstrument instrument) {
+    // findFirst before map: a blank Landing page has null content, and Stream.findFirst rejects a
+    // null element, so mapping first would NPE rather than report the blank
     return instrument.getFields().stream()
         .filter(f -> "Landing page".equals(f.getName()))
-        .map(ApiInventoryEntityField::getContent)
         .findFirst()
+        .map(ApiInventoryEntityField::getContent)
         .orElse(null);
   }
 
@@ -728,13 +730,11 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   /*
    * RSDEV-1307: a landing page names exactly one physical instrument, so a value typed into a
-   * template must not travel onto instruments created from it — each new instrument gets its own
-   * public RSpace address instead, filled on save and independently of PIDINST registration.
+   * template must not travel onto instruments created from it. The new instrument now starts blank
+   * and stays blank: RSpace no longer derives an address of its own, and only registering an
+   * identifier fills the field (ADR 0006 item 3).
    * (A landing page supplied in the creation request itself is still kept; that is user input on
    * the new record, covered by InstrumentEntityApiManagerTest.)
-   *
-   * This subsumes the blank-template case: since the template's value is cleared either way, a
-   * template seeded with a landing page and one seeded blank now exercise the same fill.
    */
   @Test
   public void aTemplateSuppliedLandingPageIsNotInheritedByANewInstrument() throws Exception {
@@ -746,15 +746,18 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
     assertNotNull(created.getGlobalId());
     assertTrue(
-        StringUtils.endsWith(landingPageOf(created), "/globalId/" + created.getGlobalId()),
-        "expected the instrument's own landing page, got: " + landingPageOf(created));
+        StringUtils.isBlank(landingPageOf(created)),
+        "expected a blank landing page, got: " + landingPageOf(created));
   }
 
+  /**
+   * The counterpart of the retired auto-fill: clearing the field used to hand it straight back to
+   * the user on the next save, which made the field impossible to empty on purpose.
+   */
   @Test
-  public void clearingTheLandingPageAndSavingRestoresTheDefault() throws Exception {
+  public void clearingTheLandingPageAndSavingKeepsItBlank() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
-    // the template's own value never reaches the instrument, so seeding one would be misleading
     Long templateId = postPidinstShapedTemplate(anyUser, apiKey, "");
     ApiInstrument created = postInstrumentFromTemplate(anyUser, apiKey, templateId);
     Long fieldId =
@@ -763,6 +766,16 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .map(ApiInventoryEntityField::getId)
             .findFirst()
             .orElseThrow();
+
+    String typedThenCleared =
+        "{ \"fields\": [ { \"id\": "
+            + fieldId
+            + ", \"content\": \"https://lab.example.org/mine\" } ] }";
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey, "/instruments/" + created.getId(), anyUser, typedThenCleared))
+        .andExpect(status().isOk());
 
     String clearJson = "{ \"fields\": [ { \"id\": " + fieldId + ", \"content\": \"\" } ] }";
     MvcResult result =
@@ -775,7 +788,7 @@ public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiInstrument updated = mvcUtils.getFromJsonResponseBody(result, ApiInstrument.class);
 
     assertTrue(
-        StringUtils.endsWith(landingPageOf(updated), "/globalId/" + created.getGlobalId()),
-        "expected the default restored on save, got: " + landingPageOf(updated));
+        StringUtils.isBlank(landingPageOf(updated)),
+        "expected the cleared value to stay cleared, got: " + landingPageOf(updated));
   }
 }
