@@ -559,8 +559,9 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(2, retrievedSubSample.getNotes().size());
     assertEquals("4.999 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(testUser.getFullName(), retrievedSubSample.getModifiedByFullName());
-    // only the content update (rename) bumps the user-facing version; notes and usage don't
-    assertEquals(2L, retrievedSubSample.getVersion());
+    // content edits bump the user-facing version: the rename and the usage decrement
+    // (RSDEV-1318); notes don't
+    assertEquals(3L, retrievedSubSample.getVersion());
     Mockito.verify(mockPublisher, Mockito.times(2))
         .publishEvent(Mockito.any(InventoryAccessEvent.class));
 
@@ -576,6 +577,29 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
     ApiSubSample retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("5 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(1L, retrievedSubSample.getVersion());
+
+    // registering a zero usage is a complete no-op: no quantity change, no version bump
+    subSampleApiMgr.registerApiSubSampleUsage(
+        retrievedSubSample.getId(), QuantityInfo.of(BigDecimal.ZERO, RSUnitDef.GRAM), testUser);
+    retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
+    assertEquals("5 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(1L, retrievedSubSample.getVersion());
+
+    // ... including a zero written with a non-zero scale (BigDecimal "0.00" != ZERO by equals)
+    subSampleApiMgr.registerApiSubSampleUsage(
+        retrievedSubSample.getId(),
+        QuantityInfo.of(new BigDecimal("0.00"), RSUnitDef.GRAM),
+        testUser);
+    retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
+    assertEquals("5 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(1L, retrievedSubSample.getVersion());
+
+    // ... and a null usage (e.g. list-of-materials update sent without usedQuantity)
+    subSampleApiMgr.registerApiSubSampleUsage(subSampleId, null, testUser);
+    retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
+    assertEquals("5 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(1L, retrievedSubSample.getVersion());
 
     // register usage
     QuantityInfo quantity1dot5555mg = QuantityInfo.of(new BigDecimal("1.5555"), RSUnitDef.GRAM);
@@ -584,6 +608,8 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("3.444 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    // each non-zero usage decrement is a content edit and bumps the version (RSDEV-1318)
+    assertEquals(2L, retrievedSubSample.getVersion());
 
     // register another usage
     QuantityInfo quantity45mg = QuantityInfo.of(new BigDecimal("45"), RSUnitDef.MILLI_GRAM);
@@ -591,6 +617,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("3.399 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(3L, retrievedSubSample.getVersion());
 
     // register usage greater than the remaining value - that should zero remaining quantity
     QuantityInfo quantity5g = QuantityInfo.of(new BigDecimal("5"), RSUnitDef.GRAM);
@@ -598,6 +625,49 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("0 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    // the clamp to zero still changed the stored quantity, so it bumps the version
+    assertEquals(4L, retrievedSubSample.getVersion());
+
+    // usage against already-empty stock leaves the quantity at zero and must not bump the version
+    subSampleApiMgr.registerApiSubSampleUsage(retrievedSubSample.getId(), quantity5g, testUser);
+    retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
+    assertEquals("0 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(4L, retrievedSubSample.getVersion());
+
+    // same in a different unit: the stored quantity must keep its unit, not relabel to "0 mg"
+    subSampleApiMgr.registerApiSubSampleUsage(retrievedSubSample.getId(), quantity45mg, testUser);
+    retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
+    assertEquals("0 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(4L, retrievedSubSample.getVersion());
+  }
+
+  @Test
+  public void registerUsageRequiresEditPermission() {
+    // a pi with two groups; testUser in groupA, otherUser in groupB
+    User piUser = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
+    initialiseContentWithEmptyContent(piUser, otherUser);
+    Group groupA = createGroup("groupA", piUser);
+    addUsersToGroup(piUser, groupA, testUser);
+    Group groupB = createGroup("groupB", piUser);
+    addUsersToGroup(piUser, groupB, otherUser);
+
+    // testUser's subsample in a container shared with groupB: otherUser can see it, not edit it
+    ApiContainer apiContainer = createBasicContainerForUser(testUser, "c1", List.of(groupB));
+    ApiSubSample apiSubSample = createComplexSampleForUser(testUser).getSubSamples().get(0);
+    moveSubSampleIntoListContainer(apiSubSample.getId(), apiContainer.getId(), testUser);
+
+    QuantityInfo usage = QuantityInfo.of(BigDecimal.ONE, RSUnitDef.GRAM);
+    assertThrows(
+        RuntimeException.class,
+        () -> subSampleApiMgr.registerApiSubSampleUsage(apiSubSample.getId(), usage, otherUser));
+
+    // the owner's subsample is untouched
+    ApiSubSample retrieved = subSampleApiMgr.getApiSubSampleById(apiSubSample.getId(), testUser);
+    assertEquals(
+        apiSubSample.getQuantity().toQuantityInfo().toPlainString(),
+        retrieved.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(1L, retrieved.getVersion());
   }
 
   @Test
