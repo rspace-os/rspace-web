@@ -1610,9 +1610,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <!-- jitpack commit pin: core-model built with Shiro 3 via parent 3.1.0; move to
-           the next core-model release once its branch is merged -->
-      <version>2af3f34891</version>
+      <version>3.3.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
