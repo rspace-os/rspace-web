@@ -368,6 +368,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSample sampleUpdates = new ApiSample();
     sampleUpdates.setId(retrievedSample.getId());
     ApiInventoryDOI newIdentifier = new ApiInventoryDOI();
+    newIdentifier.generatePublicLinkSuffix();
     newIdentifier.setRegisterIdentifierRequest(true);
     newIdentifier.setTitle("testDOItitle");
     newIdentifier.setPublisher("ResearchSpace");
