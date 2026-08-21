@@ -171,6 +171,7 @@
       "stoichiometry": {
         "actualAmountRequired": "Molecule actual amount must be set for deduction",
         "alreadyLinked": "Stoichiometry molecule already has an inventory link",
+        "deductionFailed": "An internal error occurred while deducting stock",
         "insufficientStock": "Insufficient stock to perform this action. Attempting to use {0} of stock amount {1} for {2}",
         "linkNotFound": "Stoichiometry link not found: id={0}",
         "linkNotInStoichiometry": "Link with id {0} does not belong to stoichiometry with id {1}",

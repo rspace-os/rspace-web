@@ -36,21 +36,14 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
   @Test
   public void createLinkTest() throws Exception {
     User user = createInitAndLoginAnyUser();
-    StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "some text");
-    Field field = doc.getFields().get(0);
-    RSChemElement reaction = addReactionToField(field, user);
-
-    Stoichiometry stoich =
-        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, doc, user);
+    Stoichiometry stoich = createStoichiometry(user, analysisOf(ethanol()));
     StoichiometryMolecule molecule = stoich.getMolecules().get(0);
 
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
 
-    StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setInventoryItemGlobalId(sample.getGlobalId());
+    StoichiometryInventoryLink createdLink =
+        linkManager.createLink(molecule.getId(), linkRequestFor(sample.getGlobalId()), user);
 
-    // Create
-    StoichiometryInventoryLink createdLink = linkManager.createLink(molecule.getId(), req, user);
     assertNotNull(createdLink.getId());
     assertEquals(molecule.getId(), createdLink.getStoichiometryMolecule().getId());
     assertEquals(sample.getGlobalId(), createdLink.getInventoryRecord().getOid().getIdString());
@@ -59,26 +52,22 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
   @Test
   public void createLinkToSubSampleReducesStock() throws Exception {
     User user = createInitAndLoginAnyUser();
-    StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "some text");
-    Field field = doc.getFields().get(0);
-    RSChemElement reaction = addReactionToField(field, user);
-
-    Stoichiometry stoich =
-        stoichiometryManager.createFromAnalysis(createSimpleAnalysis(), reaction, doc, user);
+    Stoichiometry stoich = createStoichiometry(user, analysisOf(ethanol()));
     StoichiometryMolecule molecule = stoich.getMolecules().get(0);
     molecule.setActualAmount(0.01); // 10 mg
     stoichiometryManager.save(stoich);
 
-    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(user);
-    ApiSubSampleInfo subInfo = sample.getSubSamples().get(0);
+    ApiSubSampleInfo subInfo = createBasicSampleForUser(user).getSubSamples().get(0);
+    assertEquals(
+        "5 g",
+        subSampleApiMgr
+            .getApiSubSampleById(subInfo.getId(), user)
+            .getQuantity()
+            .toQuantityInfo()
+            .toPlainString());
 
-    ApiSubSample sub = subSampleApiMgr.getApiSubSampleById(subInfo.getId(), user);
-    assertEquals("5 g", sub.getQuantity().toQuantityInfo().toPlainString());
-
-    StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
-    req.setInventoryItemGlobalId(subInfo.getGlobalId());
-
-    StoichiometryInventoryLink createdLink = linkManager.createLink(molecule.getId(), req, user);
+    StoichiometryInventoryLink createdLink =
+        linkManager.createLink(molecule.getId(), linkRequestFor(subInfo.getGlobalId()), user);
     assertNotNull(createdLink.getId());
 
     linkManager.deductStock(stoich.getId(), List.of(createdLink.getId()), user);
@@ -88,18 +77,70 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
     assertEquals("4.99 g", after.getQuantity().toQuantityInfo().toPlainString());
   }
 
-  private ElementalAnalysisDTO createSimpleAnalysis() {
-    MoleculeInfoDTO molecule =
-        MoleculeInfoDTO.builder()
-            .role(MoleculeRole.REACTANT)
-            .formula("C2H6O")
-            .name("Ethanol")
-            .smiles("CCO")
-            .mass(46.07)
-            .build();
+  @Test
+  public void twoMoleculesLinkedToSameSubSampleBumpVersionOnce() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    Stoichiometry stoich = createStoichiometry(user, analysisOf(ethanol(), methanol()));
+    assertEquals(2, stoich.getMolecules().size());
+    stoich.getMolecules().forEach(m -> m.setActualAmount(0.01)); // 10 mg each
+    stoichiometryManager.save(stoich);
+
+    ApiSubSampleInfo subInfo = createBasicSampleForUser(user).getSubSamples().get(0);
+    assertEquals(
+        1L, subSampleApiMgr.getApiSubSampleById(subInfo.getId(), user).getVersion().longValue());
+
+    List<Long> linkIds =
+        stoich.getMolecules().stream()
+            .map(
+                m -> linkManager.createLink(m.getId(), linkRequestFor(subInfo.getGlobalId()), user))
+            .map(StoichiometryInventoryLink::getId)
+            .toList();
+
+    linkManager.deductStock(stoich.getId(), linkIds, user);
+
+    ApiSubSample after = subSampleApiMgr.getApiSubSampleById(subInfo.getId(), user);
+    // both molecules' amounts are deducted: 5 g - 10 mg - 10 mg
+    assertEquals("4.98 g", after.getQuantity().toQuantityInfo().toPlainString());
+    // Envers writes one revision per entity per transaction, so the version may only advance once,
+    // otherwise the skipped version has no revision to resolve to (RSDEV-1319)
+    assertEquals(2L, after.getVersion().longValue());
+  }
+
+  private Stoichiometry createStoichiometry(User user, ElementalAnalysisDTO analysis)
+      throws Exception {
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "some text");
+    RSChemElement reaction = addReactionToField(doc.getFields().get(0), user);
+    return stoichiometryManager.createFromAnalysis(analysis, reaction, doc, user);
+  }
+
+  private StoichiometryInventoryLinkRequest linkRequestFor(String inventoryGlobalId) {
+    StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
+    req.setInventoryItemGlobalId(inventoryGlobalId);
+    return req;
+  }
+
+  private MoleculeInfoDTO ethanol() {
+    return molecule("Ethanol", "C2H6O", "CCO", 46.07);
+  }
+
+  private MoleculeInfoDTO methanol() {
+    return molecule("Methanol", "CH4O", "CO", 32.04);
+  }
+
+  private MoleculeInfoDTO molecule(String name, String formula, String smiles, double mass) {
+    return MoleculeInfoDTO.builder()
+        .role(MoleculeRole.REACTANT)
+        .formula(formula)
+        .name(name)
+        .smiles(smiles)
+        .mass(mass)
+        .build();
+  }
+
+  private ElementalAnalysisDTO analysisOf(MoleculeInfoDTO... molecules) {
     return ElementalAnalysisDTO.builder()
-        .moleculeInfo(List.of(molecule))
-        .formula("C2H6O")
+        .moleculeInfo(List.of(molecules))
+        .formula(molecules[0].getFormula())
         .isReaction(false)
         .build();
   }

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -189,6 +190,36 @@ public class StoichiometryInventoryLinkManagerImplTest {
     assertEquals(Long.valueOf(stoichiometryId), result.getStoichiometryId());
     assertTrue(original.isStockDeducted());
     verify(linkDao).save(original);
+  }
+
+  @Test
+  public void repeatedLinkIdIsDeductedOnce() {
+    StoichiometryInventoryLink original = new StoichiometryInventoryLink();
+    original.setId(321L);
+    long stoichiometryId = 55L;
+    molecule.getStoichiometry().setId(stoichiometryId);
+    molecule.setActualAmount(10.0);
+    original.setStoichiometryMolecule(molecule);
+    original.setInventoryRecord(invSubSample);
+
+    invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
+
+    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
+    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    doNothing()
+        .when(invPerms)
+        .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
+
+    StockDeductionResult result =
+        manager.deductStock(stoichiometryId, List.of(321L, 321L, 321L), user);
+
+    // the repeat is dropped before any stock is touched, so the amount comes off once (RSDEV-1319)
+    verify(subSampleMgr, times(1))
+        .registerApiSubSampleUsage(eq(invSubSample.getId()), any(QuantityInfo.class), eq(user));
+    // and the response carries one result row per distinct id, not per id sent
+    assertEquals(1, result.getResults().size());
+    assertTrue(result.getResults().get(0).isSuccess());
   }
 
   @Test
