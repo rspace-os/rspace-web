@@ -100,7 +100,7 @@ export function DmpImportMenuSection({
   const dswConnections = showDsw ? ArrayUtils.mapOptional((config) => config, integrationStates.DSW.credentials) : [];
 
   React.useEffect(() => {
-    // @ts-expect-error gallery is a legacy global function
+    // @ts-expect-error window.gallery is a legacy global callback
     window.gallery = showDmpPanel;
   }, [showDmpPanel]);
 
@@ -142,7 +142,7 @@ export function DmpImportMenuSection({
   );
 }
 
-/** Keeps the selected dialog mounted long enough to play its exit transition. */
+/** Retains the selected dialog until its exit transition completes. */
 export default function DmpImportDialogs({
   target,
   onClose,

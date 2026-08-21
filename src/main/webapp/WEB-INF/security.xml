@@ -6,15 +6,13 @@
              http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd"
        default-lazy-init="true">
 
-    <!-- The shiroFilter and the AuthorizationAttributeSourceAdvisor below deliberately do
-         NOT take a securityManager ref: the advisor is created during early advisor
-         retrieval, before context refresh completes (under Shiro 2 the filter was too,
-         as a BeanPostProcessor: SHIRO-829), and a direct ref would drag the realms'
-         entire service-bean dependency graph into that early window, where
-         annotation-driven advice (@Transactional, Shiro's authorization annotations)
-         is silently skipped. The Lazy* subclasses resolve the securityManager bean on
-         first use, safely after refresh; TransactionAdviceStartupCheck initialises it
-         right after refresh. See the AOP notes in applicationContext-service.xml. -->
+    <!-- Do not inject securityManager into shiroFilter or AuthorizationAttributeSourceAdvisor.
+         The advisor initializes before the context refresh completes. Under Shiro 2, the filter
+         also initialized early as a BeanPostProcessor (SHIRO-829). Direct injection would
+         initialize the realm service graph before annotation-driven advice is available. The
+         Lazy* subclasses resolve securityManager on first use after the refresh, and
+         TransactionAdviceStartupCheck initializes it immediately afterward. See the AOP notes in
+         applicationContext-service.xml. -->
     <bean id="shiroFilter" class="com.researchspace.webapp.filter.LazySecurityManagerShiroFilterFactoryBean">
         <!-- override these for application-specific URLs if you like: -->
 
@@ -22,10 +20,9 @@
         <property name="successUrl" value="/workspace" />
         <property name="unauthorizedUrl" value="login?error=true" />
 
-        <!-- Custom filters used in the chain definitions must be listed here; Shiro 3
-             no longer auto-discovers Filter beans (we deliberately do not register its
-             ShiroFilterFactoryBeanPostProcessor). Shiro's built-in defaults such as
-             anon and noSessionCreation need no entry. -->
+        <!-- List custom chain filters here. Shiro 3 does not auto-discover Filter beans because
+             this application does not register ShiroFilterFactoryBeanPostProcessor. Built-in
+             filters such as anon and noSessionCreation need no entry. -->
         <property name="filters">
             <util:map>
                 <!-- Overrides defaul sslFilter to better handle enablement/disablement -->

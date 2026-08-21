@@ -11,15 +11,7 @@ export class SidebarPage {
     return page.getByRole("menu", { name: "Create", exact: true });
   }
 
-  /**
-   * How many menu lists are mounted, found by class rather than by role.
-   *
-   * While a modal Dialog is open above it the menu is legitimately
-   * `aria-hidden`, so `getByRole("menu")` cannot see it -- which makes a role
-   * query useless for asking "is the menu still mounted?", and makes a
-   * role-based `not.toBeInTheDocument()` pass whether the menu was unmounted or
-   * merely left hidden. Counting elements distinguishes the two.
-   */
+  /** Counts MUI menu lists to distinguish an unmounted menu from one hidden by a modal. */
   mountedMenuCount(): number {
     return document.querySelectorAll(`.${menuClasses.list}`).length;
   }

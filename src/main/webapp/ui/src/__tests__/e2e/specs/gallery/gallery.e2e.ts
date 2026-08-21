@@ -45,11 +45,9 @@ test.describe("Gallery", () => {
   });
 
   /*
-   * The Create button opens a menu; it must never navigate. A stray `href`, or
-   * a default `type="submit"` inside one of the surrounding legacy JSP forms,
-   * would submit/reload the page and destroy the menu (and any unsaved state)
-   * instead. `framenavigated` covers both a full document load and a
-   * same-document SPA route change, so this catches either regression.
+   * The Create button must open its menu without navigating. An `href` or implicit
+   * `type="submit"` could reload a surrounding legacy JSP form and discard unsaved state.
+   * `framenavigated` detects full-page loads and SPA route changes.
    */
   test("As a user, clicking Create opens the menu without navigating", async ({ pageGallery, page }) => {
     await pageGallery.open();

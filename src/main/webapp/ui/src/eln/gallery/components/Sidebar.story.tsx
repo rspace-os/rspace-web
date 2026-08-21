@@ -115,7 +115,7 @@ export function DMPToolCreateMenuStory({ isPicker }: { isPicker: boolean }): Rea
                   {t("apps:dmpIntegrations.dmptool")}
                 </MenuItem>
               </SidebarCreateMenu>
-              {/* Rendered outside the menu, mirroring the real Sidebar. */}
+              {/* Match Sidebar by rendering the dialog outside the menu. */}
               <DmpImportDialogs
                 target={dmpTarget}
                 onClose={() => {

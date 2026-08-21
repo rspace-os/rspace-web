@@ -1,42 +1,32 @@
 /*
- * PRT-1118 / PRT-1135. A modal rendered through DialogBoundary could finish its
- * exit transition without ever unmounting: the Modal root stayed in the DOM and
- * ModalManager never restored the `aria-hidden` it had put on the rest of the
- * page. Symptoms were a menu that stayed visually open with the page unreachable
- * by role (PRT-1135) and an invisible backdrop eating every click (PRT-1118).
+ * PRT-1118 and PRT-1135 cover mui/material-ui#32286, fixed in MUI 9.3.1 by PR #48881.
+ * A Modal could remain mounted after its exit transition. This left an invisible backdrop
+ * intercepting clicks (PRT-1118) and leaked `aria-hidden` attributes (PRT-1135).
  *
- * Upstream cause is mui/material-ui#32286, fixed in @mui/material 9.3.1 by
- * PR #48881, which names two triggers:
+ * The upstream issue identifies two triggers:
  *
- *   A. the Modal's portal container changing during an exit, and
- *   B. React reconnecting effects across a Suspense boundary during an exit,
- *      rearming the transition's completion timer for a superseded phase.
+ *   A. The Modal portal container changes during an exit.
+ *   B. React reconnects effects across a Suspense boundary during an exit and rearms an obsolete
+ *      transition timer.
  *
- * B is the one that bites RSpace: i18next runs with `useSuspense: true` and
- * lazily loaded namespaces, so any `useTranslation` for a not-yet-loaded
- * namespace can suspend while a menu is mid-exit. That is why the Gallery create
- * menu got stuck when a DMP import dialog closed.
+ * RSpace encountered the second trigger. With `useSuspense: true`, i18next can suspend while it
+ * loads a namespace during the Gallery Create menu exit.
  *
- * These tests force each trigger rather than waiting for the intermittent race:
- * the exit window is widened to 3s so the perturbation lands inside it. On
- * @mui/material 9.2.0 test B fails deterministically (1 surviving modal root,
- * 2 leaked aria-hidden nodes); on 9.3.1 both pass.
- *
- * Assertions are positive ("the page is reachable", "no modal root survives")
- * rather than "the menu is hidden": an aria-hidden menu root cannot be matched
- * by role at all, so a hidden/absent assertion would pass *because* the bug is
- * present.
+ * The tests extend the exit to 3 seconds to reproduce both triggers. On MUI 9.2.0, test B leaves
+ * one modal root and two `aria-hidden` nodes. Both tests pass on 9.3.1. The assertions count DOM
+ * nodes because role queries cannot match an `aria-hidden` Modal.
  */
 import Button from "@mui/material/Button";
 import DialogContent from "@mui/material/DialogContent";
 import MenuItem from "@mui/material/MenuItem";
+import { Suspense } from "@suspensive/react";
 import { cleanup, render } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { Dialog, DialogBoundary, Menu } from "./DialogBoundary";
 
-/** Wide enough that the perturbation reliably lands inside the exit. */
+/** Allows the perturbation to run before the exit completes. */
 const EXIT_MS = 3000;
 const PERTURB_AT_MS = 150;
 /* Held as constants rather than inline JSX text to satisfy noJsxLiterals. */
@@ -45,28 +35,19 @@ const IMPORT_LABEL = "Import";
 const FALLBACK_LABEL = "loading";
 const OUTER_LABEL = "outer modal";
 const INNER_LABEL = "inner modal";
-/* A distinctive pre-existing value, so "restored" is provably not just "cleared". */
+/* Proves that cleanup restores the prior value instead of clearing it. */
 const SENTINEL_OVERFLOW = "clip";
 
 afterEach(cleanup);
 
-/** Suspends on demand, standing in for a lazily loaded i18n namespace. */
+/** Simulates a lazily loaded i18n namespace. */
 function makeSuspender() {
-  let resolve = (): void => {};
-  let settled = false;
-  let promise: Promise<void> | null = null;
+  const { promise, resolve: release } = Promise.withResolvers<void>();
+
   return {
-    release: () => resolve(),
+    release,
     Suspender: ({ armed }: { armed: boolean }) => {
-      if (armed && !settled) {
-        promise ??= new Promise<void>((r) => {
-          resolve = () => {
-            settled = true;
-            r();
-          };
-        });
-        throw promise;
-      }
+      if (armed) React.use(promise);
       return null;
     },
   };
@@ -80,7 +61,6 @@ function leakedAriaHidden(): number {
   return document.querySelectorAll('[aria-hidden="true"]').length;
 }
 
-/** A parent re-render lands during the menu's exit. */
 function ReRenderHarness(): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [, setTick] = React.useState(0);
@@ -97,9 +77,8 @@ function ReRenderHarness(): React.ReactNode {
           onClick={() => {
             setAnchorEl(null);
             /*
-             * Stands in for the Gallery Sidebar's own state updates
-             * (setNewMenuAnchorEl / setSelectedSection) and the
-             * allIntegrations query settling, on a deterministic timer.
+             * Simulates Gallery state updates and the allIntegrations query settling during
+             * the exit.
              */
             setTimeout(() => setTick((t) => t + 1), PERTURB_AT_MS);
           }}
@@ -111,13 +90,12 @@ function ReRenderHarness(): React.ReactNode {
   );
 }
 
-/** A Suspense boundary above the Menu suspends during the menu's exit. */
 function SuspenseHarness({ suspender }: { suspender: ReturnType<typeof makeSuspender> }): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [armed, setArmed] = React.useState(false);
   const { Suspender } = suspender;
   return (
-    <React.Suspense fallback={<div>{FALLBACK_LABEL}</div>}>
+    <Suspense fallback={<div>{FALLBACK_LABEL}</div>}>
       <Suspender armed={armed} />
       <DialogBoundary>
         <Button onClick={(e) => setAnchorEl(e.currentTarget)}>{CREATE_LABEL}</Button>
@@ -130,10 +108,7 @@ function SuspenseHarness({ suspender }: { suspender: ReturnType<typeof makeSuspe
           <MenuItem
             onClick={() => {
               setAnchorEl(null);
-              /*
-               * Stands in for useTranslation(["apps", "common"]) hitting a
-               * namespace that has not loaded yet while the menu is exiting.
-               */
+              /* Simulates useTranslation suspending for an unloaded namespace during the exit. */
               setTimeout(() => setArmed(true), PERTURB_AT_MS);
             }}
           >
@@ -141,7 +116,7 @@ function SuspenseHarness({ suspender }: { suspender: ReturnType<typeof makeSuspe
           </MenuItem>
         </Menu>
       </DialogBoundary>
-    </React.Suspense>
+    </Suspense>
   );
 }
 
@@ -181,10 +156,8 @@ describe("a modal rendered through DialogBoundary always unmounts after its exit
 });
 
 /*
- * The body scroll lock is reference-counted and restores the value it found.
- * Previously each of Dialog/Menu/Drawer set `overflow` directly with no
- * cleanup, so nested modals fought over it and a modal unmounted while open
- * left the page permanently unscrollable.
+ * Nested overlays share a reference-counted body lock. The final cleanup restores the previous
+ * overflow value, including when an open overlay unmounts.
  */
 describe("the body scroll lock", () => {
   function Nested({ outer, inner }: { outer: boolean; inner: boolean }): React.ReactNode {
@@ -207,7 +180,6 @@ describe("the body scroll lock", () => {
     await expect.element(page.getByText(INNER_LABEL)).toBeVisible();
     expect(document.body.style.overflow).toBe("hidden");
 
-    // closing the inner one must NOT unlock while the outer is open
     screen.rerender(<Nested outer={true} inner={false} />);
     await expect.poll(() => document.body.style.overflow).toBe("hidden");
 

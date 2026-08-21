@@ -9,18 +9,17 @@ import org.springframework.beans.factory.BeanFactoryAware;
  * A {@link ShiroFilterFactoryBean} that resolves the securityManager bean on first use instead of
  * having it injected at construction.
  *
- * <p>Under Shiro 2, ShiroFilterFactoryBean was itself a BeanPostProcessor, so it was created before
- * context refresh completed. A direct securityManager property reference would instantiate the
- * realms' entire service-bean dependency graph inside that early window, where annotation-driven
- * advice (@Transactional, Shiro's authorization annotations) is silently skipped; see the AOP notes
- * in applicationContext-service.xml. Shiro 3 moved the post-processing into a separate
- * ShiroFilterFactoryBeanPostProcessor (not used here), so the filter itself no longer instantiates
- * early. The companion advisor still does (see
- * LazySecurityManagerAuthorizationAttributeSourceAdvisor), and keeping the filter lazy as well is a
- * cheap guard against the early window reappearing. {@link #getSecurityManager()} is first called
- * from {@code createInstance()} when the servlet container initialises the filter, which is safely
- * after refresh, and hands the real securityManager instance to the filter so downstream code (e.g.
- * casts to DefaultSecurityManager) behaves exactly as with direct injection.
+ * <p>Under Shiro 2, ShiroFilterFactoryBean was a BeanPostProcessor and initialized before the
+ * context refresh completed. Direct securityManager injection would then initialize the realm
+ * service graph before annotation-driven advice was available. See the AOP notes in
+ * applicationContext-service.xml. Shiro 3 moved this processing to a separate
+ * ShiroFilterFactoryBeanPostProcessor, which this application does not use. The companion advisor
+ * still initializes early, so the filter remains lazy to prevent the early dependency graph from
+ * returning.
+ *
+ * <p>The servlet container calls {@link #getSecurityManager()} from {@code createInstance()} after
+ * the refresh. The method returns the real securityManager, which preserves behavior such as casts
+ * to DefaultSecurityManager.
  */
 public class LazySecurityManagerShiroFilterFactoryBean extends ShiroFilterFactoryBean
     implements BeanFactoryAware {

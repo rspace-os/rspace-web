@@ -4,11 +4,7 @@ export class DSWImportDialogComponent {
   readonly root: Locator;
   readonly importButton: Locator;
   /**
-   * The dismiss button. Its label depends on state -- "Cancel" while a plan is
-   * selected, "Close" otherwise -- but a successful import calls
-   * setSelectedPlan(null) in the same commit that raises the success toast, so
-   * by the time `dismiss()` is reachable the label is deterministically
-   * "Close".
+   * Matches "Close", which replaces "Cancel" after a successful import clears the selected plan.
    */
   readonly dismissButton: Locator;
 

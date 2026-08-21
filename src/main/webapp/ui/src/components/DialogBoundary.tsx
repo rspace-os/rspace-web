@@ -56,9 +56,8 @@ import React, { createContext, Suspense, useContext, useRef } from "react";
  * exported from this module rather than the one exported by MUI. In all other
  * respects, they behave exactly the same.
  *
- * Local Suspense boundaries keep lazy overlay translations from replacing the
- * entire page and isolate modal transitions from suspended content (PRT-1118,
- * PRT-1135).
+ * Local Suspense boundaries prevent lazy overlay translations from replacing the page or
+ * interrupting modal exit transitions (PRT-1118, PRT-1135).
  *
  * And that it's it. The fact that a context is being used is purely an
  * implementation detail. That's why its declared inside this module and not
@@ -91,7 +90,7 @@ export function DialogBoundary({ children }: { children: React.ReactNode }): Rea
   );
 }
 
-/* MUI locks the boundary div, so nested overlays share a separate body lock. */
+/* MUI locks the boundary element. This counter keeps the body locked until all overlays close. */
 let scrollLockCount = 0;
 let overflowBeforeLock: string | null = null;
 
@@ -113,7 +112,7 @@ function useBodyScrollLock(open: boolean | undefined): void {
   }, [open]);
 }
 
-/* A stable callback prevents MUI's Portal from relocating during a render. */
+/* Keep the Portal container stable across renders so it does not move during a transition. */
 function useStableContainerGetter(): () => HTMLElement | null {
   const { modalContainer } = useContext(DialogBoundaryContext);
   return React.useCallback(() => modalContainer.current, [modalContainer]);

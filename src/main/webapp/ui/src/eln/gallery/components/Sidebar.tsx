@@ -452,7 +452,7 @@ const Sidebar = ({
               if (viewport.isViewportSmall) setDrawerOpen(false);
             }}
           />
-          {/* Keep the rest of the menu visible while DMP translations load. */}
+          {/* Keep other menu items visible while DMP translations load. */}
           <Suspense fallback={null}>
             <DmpImportMenuSection
               onSelect={(target) => {
@@ -468,7 +468,7 @@ const Sidebar = ({
             />
           </Suspense>
         </SidebarCreateMenu>
-        {/* Keep dialogs mounted independently from the menu that opened them. */}
+        {/* Render dialogs outside the menu so closing the menu does not unmount them. */}
         <DmpImportDialogs
           target={dmpImportTarget}
           onClose={() => {

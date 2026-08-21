@@ -18,17 +18,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 /*
- * PRT-1118 / PRT-1135. With a DMP integration enabled, the Gallery create menu
- * could survive its own exit transition: the Modal stayed mounted with an
- * invisible backdrop intercepting every click (PRT-1118), and the aria-hidden
- * it had applied to the rest of the page was never lifted (PRT-1135). Root
- * cause was mui/material-ui#32286, fixed upstream in @mui/material 9.3.1 by
- * PR #48881; see components/DialogBoundary.spec.tsx for the A/B that verifies
- * it. The `pointerEvents: "none"` workaround this file used to guard has been
- * removed now that the exit completes reliably.
+ * PRT-1118 and PRT-1135 cover mui/material-ui#32286. A Gallery Create menu could remain mounted
+ * after its exit, leaving an invisible backdrop and leaked `aria-hidden` attributes. MUI 9.3.1
+ * fixes the issue in PR #48881. DialogBoundary.spec.tsx verifies both upstream triggers.
  *
- * These tests remain the regression gate for that removal: the OPEN menu must
- * stay interactive, and the menu must unmount once the DMP dialog closes.
+ * These tests verify removal of the `pointerEvents: "none"` workaround. The open menu remains
+ * interactive, stays mounted below a DMP dialog, and unmounts after the dialog closes.
  */
 describe("Gallery create menu (DMP enabled)", () => {
   test("the open menu and its DMP option are interactive", async () => {
@@ -52,12 +47,7 @@ describe("Gallery create menu (DMP enabled)", () => {
 
     await expect.element(sidebar.dmpDialog).toBeVisible();
     expect(sidebar.modalZIndex(sidebar.dmpDialog)).toBeGreaterThan(menuZIndex);
-    /*
-     * Asserted by class, not by role: the dialog and the menu now share the
-     * boundary supplied by Alerts, so ModalManager correctly marks the menu
-     * behind the modal aria-hidden and no role query can reach it (RSDEV-1317).
-     * What matters here is that the menu is not destroyed underneath.
-     */
+    /* Count menu lists because ModalManager hides the menu from role queries (RSDEV-1317). */
     await expect.poll(() => sidebar.mountedMenuCount()).toBe(1);
   });
 
@@ -74,11 +64,7 @@ describe("Gallery create menu (DMP enabled)", () => {
 
     await sidebar.closeDmpDialog.click();
     await expect.element(sidebar.dmpDialog).not.toBeInTheDocument();
-    /*
-     * By class again, and deliberately: the role-based version of this
-     * assertion passed whether the menu had unmounted or was merely left
-     * aria-hidden, which is the exact PRT-1135 failure it is meant to catch.
-     */
+    /* Role queries cannot distinguish an unmounted menu from an aria-hidden menu (PRT-1135). */
     await expect.poll(() => sidebar.mountedMenuCount()).toBe(0);
   });
 });

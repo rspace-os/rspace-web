@@ -6,10 +6,8 @@ import { tags } from "@/__tests__/e2e/tags";
 const INTEGRATION_MODE = env.integrationMode;
 const DSW_ALIAS = INTEGRATION_MODE === "real" ? "real" : "mock";
 /*
- * PRT-1135 needs 2+ items under the Gallery create menu's "DMP Import"
- * section. A second connection to the same server is the cheapest way there
- * and matches the ticket's "a single integration like DSW with 2+ configured
- * server connections". Distinct aliases keep the menuitem locator unambiguous.
+ * PRT-1135 requires at least two DMP Import items from one integration. A second DSW connection
+ * provides that state. Distinct aliases keep the menu-item locators unambiguous.
  */
 const DSW_SECOND_ALIAS = `${DSW_ALIAS}-2`;
 const DSW_SERVER_URL = INTEGRATION_MODE === "real" ? env.dswServerUrl : env.mockBackendBaseUrl;
@@ -51,7 +49,7 @@ test.describe(`DSW / FAIR Wizard integration [${INTEGRATION_MODE}]`, { tag: tags
 
     await dialog.dismiss();
 
-    // Include hidden instances so an aria-hidden stranded Create menu still fails.
+    // Include hidden elements to detect a Create menu that failed to unmount.
     await expect(pageGallery.sidebar.createButton).toBeVisible();
     await expect(pageGallery.mountedCreateMenu()).toHaveCount(0);
 

@@ -251,6 +251,9 @@ importers:
       '@sa11y/vitest':
         specifier: 8.0.28
         version: 8.0.28(@opentelemetry/api@1.9.1)(@types/node@24.12.4)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-istanbul@4.1.10)(@vitest/ui@4.1.10)(jsdom@29.1.1(canvas@3.2.3))(msw@2.15.0(@types/node@24.12.4)(typescript@7.0.2))(vite@8.2.0(@types/node@24.12.4)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
+      '@suspensive/react':
+        specifier: 3.21.3
+        version: 3.21.3(react@19.2.8)
       '@testing-library/jest-dom':
         specifier: 7.0.0
         version: 7.0.0(@testing-library/dom@10.4.1)
@@ -2096,6 +2099,11 @@ packages:
 
   '@stomp/stompjs@7.3.0':
     resolution: {integrity: sha512-nKMLoFfJhrQAqkvvKd1vLq/cVBGCMwPRCD0LqW7UT1fecRx9C3GoKEIR2CYwVuErGeZu8w0kFkl2rlhPlqHVgQ==}
+
+  '@suspensive/react@3.21.3':
+    resolution: {integrity: sha512-6nYE0yL3q6XnnWZ6BPBb61mWzXAXp6dvzpKGLopCI6CwzPQFNCPY0wj38dilBaBdpbIShE/uaPOT9WLX3leGig==}
+    peerDependencies:
+      react: ^18 || ^19
 
   '@swc/core-darwin-arm64@1.15.46':
     resolution: {integrity: sha512-IsISIT22EfktVJrlvIpnAxG2u/A9aob9l99HMlx80x72WlFmFPk1V3UhkEzx86eJP8hw049KTFv/RISho2cq2Q==}
@@ -7860,6 +7868,10 @@ snapshots:
 
   '@stomp/stompjs@7.3.0': {}
 
+  '@suspensive/react@3.21.3(react@19.2.8)':
+    dependencies:
+      react: 19.2.8
+
   '@swc/core-darwin-arm64@1.15.46':
     optional: true
 
@@ -10797,7 +10809,7 @@ snapshots:
       '@jest/schemas': 30.4.1
       ansi-styles: 5.2.0
       react-is-18: react-is@18.3.1
-      react-is-19: react-is@19.2.7
+      react-is-19: react-is@19.2.8
 
   pretty-ms@9.3.0:
     dependencies:

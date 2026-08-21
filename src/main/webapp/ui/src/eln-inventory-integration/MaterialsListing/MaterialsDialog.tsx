@@ -399,9 +399,9 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                 paper: {
                   sx: {
                     overflow: "hidden",
-                    // this is to avoid intercom help button
+                    // Prevent the Intercom button from overlapping the dialog.
                     maxHeight: fullScreen ? "unset" : "86vh",
-                    // this is to ensure the picker has enough height even when list is empty
+                    // Keep the picker tall enough to display an empty list.
                     minHeight: "86vh",
                   },
                 },

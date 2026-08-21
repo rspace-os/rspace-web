@@ -85,10 +85,8 @@ export class GalleryPage extends BasePage {
   }
 
   /**
-   * The DSW items rendered under the create menu's "DMP Import" divider.
-   *
-   * Each item's accessible name is "<alias> DSW / FAIR Wizard", so this relies
-   * on Playwright's default substring matching rather than an exact name.
+   * Finds all DSW items by the alias-independent suffix of their accessible name.
+   * Playwright uses substring matching because each name starts with its connection alias.
    */
   dswImportMenuItems(): Locator {
     return this.page.getByRole("menuitem", { name: "DSW / FAIR Wizard" });
@@ -103,7 +101,7 @@ export class GalleryPage extends BasePage {
     await this.page.getByRole("menu", { name: "Create", exact: true }).waitFor({ state: "visible" });
   }
 
-  /** Requires the create menu to already be open. */
+  /** Requires an open Create menu. */
   async clickDSWImport(alias: string): Promise<DSWImportDialogComponent> {
     await this.page.getByRole("menuitem", { name: `${alias} DSW / FAIR Wizard` }).click();
     const dialog = new DSWImportDialogComponent(this.page);
