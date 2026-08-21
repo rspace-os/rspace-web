@@ -8,7 +8,7 @@ export class SidebarPage {
   }
 
   get menu(): Locator {
-    return page.getByRole("menu");
+    return page.getByRole("menu", { name: "Create", exact: true });
   }
 
   /**

@@ -51,9 +51,9 @@ test.describe(`DSW / FAIR Wizard integration [${INTEGRATION_MODE}]`, { tag: tags
 
     await dialog.dismiss();
 
-    // Include hidden menus so an aria-hidden stranded menu still fails.
+    // Include hidden instances so an aria-hidden stranded Create menu still fails.
     await expect(pageGallery.sidebar.createButton).toBeVisible();
-    await expect(pageGallery.mountedMenus()).toHaveCount(0);
+    await expect(pageGallery.mountedCreateMenu()).toHaveCount(0);
 
     await pageGallery.openSection("DMPs");
     await expect(pageGallery.fileCell(planName)).toBeVisible();
