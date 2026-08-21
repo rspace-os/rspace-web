@@ -338,6 +338,9 @@ public class GalleryController extends BaseController {
         rsChemElementManager.generateRsChemElementForNewlyUploadedChemistryFile(
             (EcatChemistryFile) media, subject);
       }
+      if (media instanceof EcatImage ecatImage) {
+        media = mediaManager.getImageWithOriginalImage(ecatImage.getId(), subject);
+      }
       return new AjaxReturnObject<>(media.toRecordInfo(), null);
 
     } catch (IllegalStateException e) {
