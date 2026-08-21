@@ -79,16 +79,22 @@ import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Common class for hibernate-based tests.
  *
- * <p>To run these tests add this line (the tests use same DB credentials as for RSpace) mysql >
- * grant all on hibtest.* to 'rspacedbuser'@'localhost';
+ * <p>To run these tests a MariaDB server must listen on localhost:3306 with this grant (the tests
+ * use same DB credentials as for RSpace) mysql > grant all on hibtest.* to
+ * 'rspacedbuser'@'localhost'; When no server is listening the tests are skipped, so they run on
+ * developer machines and DB-backed CI shards but not on database-less runners.
  */
 public abstract class HibernateTest {
 
@@ -98,13 +104,26 @@ public abstract class HibernateTest {
   // this will be used for all test-cases
   @BeforeAll
   static void beforeAll() {
+    Assumptions.assumeTrue(
+        databaseListening(), "no MariaDB on localhost:3306; skipping hibernate model tests");
     sf = HibernateUtils.getSessionFactory(testDbName, recordClasses());
+  }
+
+  private static boolean databaseListening() {
+    try (Socket socket = new Socket()) {
+      socket.connect(new InetSocketAddress("localhost", 3306), 1000);
+      return true;
+    } catch (IOException e) {
+      return false;
+    }
   }
 
   // enable other tests to use a differently configured session factory
   @AfterAll
   static void afterAll() {
-    sf.close();
+    if (sf != null) {
+      sf.close();
+    }
   }
 
   @BeforeEach
