@@ -118,6 +118,7 @@ export function DMPToolCreateMenuStory({ isPicker }: { isPicker: boolean }): Rea
               {/* Match Sidebar by rendering the dialog outside the menu. */}
               <DmpImportDialogs
                 target={dmpTarget}
+                onImport={() => {}}
                 onClose={() => {
                   setDmpTarget(null);
                   setAnchorEl(null);

@@ -458,13 +458,6 @@ const Sidebar = ({
               onSelect={(target) => {
                 setDmpImportTarget(target);
               }}
-              showDmpPanel={() => {
-                if (selectedSection === "DMPs") {
-                  void refreshListing();
-                } else {
-                  setSelectedSection("DMPs");
-                }
-              }}
             />
           </Suspense>
         </SidebarCreateMenu>
@@ -475,6 +468,13 @@ const Sidebar = ({
             setDmpImportTarget(null);
             setNewMenuAnchorEl(null);
             if (viewport.isViewportSmall) setDrawerOpen(false);
+          }}
+          onImport={() => {
+            if (selectedSection === "DMPs") {
+              void refreshListing();
+            } else {
+              setSelectedSection("DMPs");
+            }
           }}
         />
       </Box>

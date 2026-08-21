@@ -1,20 +1,7 @@
 /*
- * PRT-1118 and PRT-1135 cover mui/material-ui#32286, fixed in MUI 9.3.1 by PR #48881.
- * A Modal could remain mounted after its exit transition. This left an invisible backdrop
- * intercepting clicks (PRT-1118) and leaked `aria-hidden` attributes (PRT-1135).
- *
- * The upstream issue identifies two triggers:
- *
- *   A. The Modal portal container changes during an exit.
- *   B. React reconnects effects across a Suspense boundary during an exit and rearms an obsolete
- *      transition timer.
- *
- * RSpace encountered the second trigger. With `useSuspense: true`, i18next can suspend while it
- * loads a namespace during the Gallery Create menu exit.
- *
- * The tests extend the exit to 3 seconds to reproduce both triggers. On MUI 9.2.0, test B leaves
- * one modal root and two `aria-hidden` nodes. Both tests pass on 9.3.1. The assertions count DOM
- * nodes because role queries cannot match an `aria-hidden` Modal.
+ * Regression tests for mui/material-ui#32286 (PRT-1118, PRT-1135), fixed in MUI 9.3.1 by PR #48881.
+ * RSpace triggered the bug when i18next suspended during the Gallery Create menu exit. The tests
+ * count DOM nodes because role queries ignore `aria-hidden` modals.
  */
 import Button from "@mui/material/Button";
 import DialogContent from "@mui/material/DialogContent";
@@ -26,21 +13,18 @@ import { afterEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { Dialog, DialogBoundary, Menu } from "./DialogBoundary";
 
-/** Allows the perturbation to run before the exit completes. */
+// Widen the exit window so the perturbation reliably lands during it.
 const EXIT_MS = 3000;
 const PERTURB_AT_MS = 150;
-/* Held as constants rather than inline JSX text to satisfy noJsxLiterals. */
 const CREATE_LABEL = "Create";
 const IMPORT_LABEL = "Import";
 const FALLBACK_LABEL = "loading";
 const OUTER_LABEL = "outer modal";
 const INNER_LABEL = "inner modal";
-/* Proves that cleanup restores the prior value instead of clearing it. */
 const SENTINEL_OVERFLOW = "clip";
 
 afterEach(cleanup);
 
-/** Simulates a lazily loaded i18n namespace. */
 function makeSuspender() {
   const { promise, resolve: release } = Promise.withResolvers<void>();
 
@@ -76,10 +60,6 @@ function ReRenderHarness(): React.ReactNode {
         <MenuItem
           onClick={() => {
             setAnchorEl(null);
-            /*
-             * Simulates Gallery state updates and the allIntegrations query settling during
-             * the exit.
-             */
             setTimeout(() => setTick((t) => t + 1), PERTURB_AT_MS);
           }}
         >
@@ -108,7 +88,6 @@ function SuspenseHarness({ suspender }: { suspender: ReturnType<typeof makeSuspe
           <MenuItem
             onClick={() => {
               setAnchorEl(null);
-              /* Simulates useTranslation suspending for an unloaded namespace during the exit. */
               setTimeout(() => setArmed(true), PERTURB_AT_MS);
             }}
           >
@@ -155,10 +134,6 @@ describe("a modal rendered through DialogBoundary always unmounts after its exit
   });
 });
 
-/*
- * Nested overlays share a reference-counted body lock. The final cleanup restores the previous
- * overflow value, including when an open overlay unmounts.
- */
 describe("the body scroll lock", () => {
   function Nested({ outer, inner }: { outer: boolean; inner: boolean }): React.ReactNode {
     return (

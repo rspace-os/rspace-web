@@ -340,7 +340,13 @@ function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dial
     />
   );
 }
-function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): React.ReactNode {
+function DMPDialogContent({
+  setOpen,
+  onImport,
+}: {
+  setOpen: (open: boolean) => void;
+  onImport?: () => void;
+}): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
   const { t } = useTranslation(["apps", "common"]);
@@ -357,6 +363,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
     setImporting(true);
     try {
       await importPlan(selectedPlan);
+      onImport?.();
       addAlert(
         mkAlert({
           title: t("dmpIntegrations.dialog.importSuccess"),
@@ -564,6 +571,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
 type DMPDialogArgs = {
   open: boolean;
   setOpen: (open: boolean) => void;
+  onImport?: () => void;
 };
 
 /*
@@ -574,7 +582,7 @@ type DMPDialogArgs = {
  * custom tabbing behaviour of the Gallery page takes control of the tab key
  * events away from the React+MUI tech stack. See ../../../../scripts/global.js
  */
-function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
+function DMPDialog({ open, setOpen, onImport }: DMPDialogArgs): React.ReactNode {
   const { isViewportSmall } = useViewportDimensions();
 
   return (
@@ -588,7 +596,7 @@ function DMPDialog({ open, setOpen }: DMPDialogArgs): React.ReactNode {
         fullWidth
         fullScreen={isViewportSmall}
       >
-        <DMPDialogContent setOpen={setOpen} />
+        <DMPDialogContent setOpen={setOpen} onImport={onImport} />
       </CustomDialog>
     </DMPDialogThemeProvider>
   );

@@ -80,13 +80,7 @@ type DmpSource = (typeof DMP_SOURCES)[number]["source"];
 
 export type DmpImportTarget = { source: DmpSource } | { source: "dsw"; connection: DswConfig };
 
-export function DmpImportMenuSection({
-  onSelect,
-  showDmpPanel,
-}: {
-  onSelect: (target: DmpImportTarget) => void;
-  showDmpPanel: () => void;
-}): React.ReactNode {
+export function DmpImportMenuSection({ onSelect }: { onSelect: (target: DmpImportTarget) => void }): React.ReactNode {
   const { allIntegrations } = useIntegrationsEndpoint();
   const { data: integrationStates } = useQuery({
     queryKey: ["integration", "allIntegrations"],
@@ -98,11 +92,6 @@ export function DmpImportMenuSection({
   const enabledSources = DMP_SOURCES.filter(({ integration }) => integrationStates?.[integration].mode === "ENABLED");
   const showDsw = integrationStates?.DSW.mode === "ENABLED";
   const dswConnections = showDsw ? ArrayUtils.mapOptional((config) => config, integrationStates.DSW.credentials) : [];
-
-  React.useEffect(() => {
-    // @ts-expect-error window.gallery is a legacy global callback
-    window.gallery = showDmpPanel;
-  }, [showDmpPanel]);
 
   if (enabledSources.length === 0 && !showDsw) return null;
   return (
@@ -146,9 +135,11 @@ export function DmpImportMenuSection({
 export default function DmpImportDialogs({
   target,
   onClose,
+  onImport,
 }: {
   target: DmpImportTarget | null;
   onClose: () => void;
+  onImport: () => void;
 }): React.ReactNode {
   const [lastTarget, setLastTarget] = React.useState<DmpImportTarget | null>(target);
   React.useEffect(() => {
@@ -163,6 +154,9 @@ export default function DmpImportDialogs({
   };
   if (shown.source === "dsw") {
     return <DSWImportDialog open={Boolean(target)} setOpen={setOpen} connection={shown.connection} />;
+  }
+  if (shown.source === "argos") {
+    return <ArgosDMPDialog open={Boolean(target)} setOpen={setOpen} onImport={onImport} />;
   }
 
   const SourceDialog = DMP_SOURCES.find(({ source }) => source === shown.source)?.Dialog;
