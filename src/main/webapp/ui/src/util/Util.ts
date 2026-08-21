@@ -129,10 +129,19 @@ export const isValidDate = (str: string): boolean => new Date(str).toString() !=
 
 /**
  * Checks if a string is a valid Inventory URL to a container, sample,
- * template, or subsample.
+ * template, or subsample. The value can come from an untrusted source such as
+ * a scanned barcode, so it must be a same-origin http(s) URL: matching the
+ * path pattern against the raw string would let `javascript:` URLs or
+ * other-origin links through.
  */
 export const isInventoryPermalink = (str: string): boolean => {
-  return URL.canParse(str) && /\/inventory\/(container|sample|sampletemplate|subsample)\/\d+$/.test(str);
+  if (!URL.canParse(str)) return false;
+  const url = new URL(str);
+  return (
+    (url.protocol === "https:" || url.protocol === "http:") &&
+    url.origin === window.location.origin &&
+    /\/inventory\/(container|sample|sampletemplate|subsample)\/\d+$/.test(url.pathname)
+  );
 };
 
 /**
