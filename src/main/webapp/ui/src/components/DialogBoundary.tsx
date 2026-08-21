@@ -87,6 +87,23 @@ export function DialogBoundary({ children }: { children: React.ReactNode }): Rea
   );
 }
 
+/*
+ * MUI's Portal keys a layout effect on the `container` prop and re-resolves its
+ * mount node whenever that value changes, falling back to `document.body` when
+ * the resolved container is null. Passing a fresh arrow on every render made
+ * that run on every render, and `modalContainer.current` genuinely reads null
+ * during the layout phase, so the portal was periodically re-parented to the
+ * body. A changed mount node makes React tear the entire portal subtree down
+ * and rebuild it, destroying any state held inside it -- which is how an open
+ * Gallery DMP import dialog vanished mid-import while the create menu that
+ * owned it stayed on screen. Memoising keeps the mount node stable. See
+ * PRT-1135.
+ */
+function useModalContainer(): () => HTMLElement | null {
+  const { modalContainer } = useContext(DialogBoundaryContext);
+  return React.useCallback(() => modalContainer.current, [modalContainer]);
+}
+
 /**
  * A Dialog that is rendered within the boundary defined by DialogBoundary.
  *
@@ -97,7 +114,7 @@ export function DialogBoundary({ children }: { children: React.ReactNode }): Rea
  * the logic for wiring up the `aria-labelledby` attribute correctly.
  */
 export function Dialog(props: Omit<React.ComponentProps<typeof MuiDialog>, "container">): React.ReactNode {
-  const { modalContainer } = useContext(DialogBoundaryContext);
+  const getContainer = useModalContainer();
   const { children, open, ...rest } = props;
 
   React.useEffect(() => {
@@ -111,7 +128,7 @@ export function Dialog(props: Omit<React.ComponentProps<typeof MuiDialog>, "cont
   }, [open]);
 
   return (
-    <MuiDialog container={() => modalContainer.current} open={open} {...rest}>
+    <MuiDialog container={getContainer} open={open} {...rest}>
       {children}
     </MuiDialog>
   );
@@ -121,7 +138,7 @@ export function Dialog(props: Omit<React.ComponentProps<typeof MuiDialog>, "cont
  * A Menu that is rendered within the boundary defined by DialogBoundary.
  */
 export function Menu(props: Omit<React.ComponentProps<typeof MuiMenu>, "container">): React.ReactNode {
-  const { modalContainer } = useContext(DialogBoundaryContext);
+  const getContainer = useModalContainer();
   const { children, open, ...rest } = props;
 
   React.useEffect(() => {
@@ -135,7 +152,7 @@ export function Menu(props: Omit<React.ComponentProps<typeof MuiMenu>, "containe
   }, [open]);
 
   return (
-    <MuiMenu container={() => modalContainer.current} open={open} {...rest}>
+    <MuiMenu container={getContainer} open={open} {...rest}>
       {children}
     </MuiMenu>
   );
@@ -145,7 +162,7 @@ export function Menu(props: Omit<React.ComponentProps<typeof MuiMenu>, "containe
  * A Drawer that is rendered within the boundary defined by DialogBoundary.
  */
 export function Drawer(props: Omit<React.ComponentProps<typeof MuiDrawer>, "container">): React.ReactNode {
-  const { modalContainer } = useContext(DialogBoundaryContext);
+  const getContainer = useModalContainer();
   const { children, open, ...rest } = props;
 
   React.useEffect(() => {
@@ -165,7 +182,7 @@ export function Drawer(props: Omit<React.ComponentProps<typeof MuiDrawer>, "cont
        * Including the superfluous prop otherwise results in a console error.
        * See https://mui.com/material-ui/api/drawer/
        */
-      {...(props.variant === "temporary" ? { container: () => modalContainer.current } : {})}
+      {...(props.variant === "temporary" ? { container: getContainer } : {})}
       open={open}
       {...rest}
     >
