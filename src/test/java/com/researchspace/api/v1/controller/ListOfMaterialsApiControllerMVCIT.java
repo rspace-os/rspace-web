@@ -226,6 +226,34 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
         mvcUtils.getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
     assertEquals(
         2, history.getRevisions().size(), "a stock decrement must add a revision-history entry");
+
+    // the two revisions carry distinct versions 1 and 2, so each version resolves to a snapshot
+    ApiSubSample revision1 = getRevisionSnapshot(apiKey, anyUser, subSampleId, history, 0);
+    assertEquals(1L, revision1.getVersion());
+    assertEquals("5 g", revision1.getQuantity().toQuantityInfo().toPlainString());
+    ApiSubSample revision2 = getRevisionSnapshot(apiKey, anyUser, subSampleId, history, 1);
+    assertEquals(2L, revision2.getVersion());
+    assertEquals("4 g", revision2.getQuantity().toQuantityInfo().toPlainString());
+  }
+
+  private ApiSubSample getRevisionSnapshot(
+      String apiKey, User user, Long subSampleId, ApiInventoryRecordRevisionList history, int index)
+      throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/subSamples/"
+                        + subSampleId
+                        + "/revisions/"
+                        + history.getRevisions().get(index).getRevisionId(),
+                    user))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return mvcUtils.getFromJsonResponseBody(result, ApiSubSample.class);
   }
 
   @Test

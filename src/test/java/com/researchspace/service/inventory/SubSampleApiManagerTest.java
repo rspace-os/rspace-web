@@ -595,6 +595,12 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals("5 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(1L, retrievedSubSample.getVersion());
 
+    // ... and a null usage (e.g. list-of-materials update sent without usedQuantity)
+    subSampleApiMgr.registerApiSubSampleUsage(subSampleId, null, testUser);
+    retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
+    assertEquals("5 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(1L, retrievedSubSample.getVersion());
+
     // register usage
     QuantityInfo quantity1dot5555mg = QuantityInfo.of(new BigDecimal("1.5555"), RSUnitDef.GRAM);
     subSampleApiMgr.registerApiSubSampleUsage(
@@ -627,6 +633,41 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("0 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(4L, retrievedSubSample.getVersion());
+
+    // same in a different unit: the stored quantity must keep its unit, not relabel to "0 mg"
+    subSampleApiMgr.registerApiSubSampleUsage(retrievedSubSample.getId(), quantity45mg, testUser);
+    retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
+    assertEquals("0 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(4L, retrievedSubSample.getVersion());
+  }
+
+  @Test
+  public void registerUsageRequiresEditPermission() {
+    // a pi with two groups; testUser in groupA, otherUser in groupB
+    User piUser = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
+    initialiseContentWithEmptyContent(piUser, otherUser);
+    Group groupA = createGroup("groupA", piUser);
+    addUsersToGroup(piUser, groupA, testUser);
+    Group groupB = createGroup("groupB", piUser);
+    addUsersToGroup(piUser, groupB, otherUser);
+
+    // testUser's subsample in a container shared with groupB: otherUser can see it, not edit it
+    ApiContainer apiContainer = createBasicContainerForUser(testUser, "c1", List.of(groupB));
+    ApiSubSample apiSubSample = createComplexSampleForUser(testUser).getSubSamples().get(0);
+    moveSubSampleIntoListContainer(apiSubSample.getId(), apiContainer.getId(), testUser);
+
+    QuantityInfo usage = QuantityInfo.of(BigDecimal.ONE, RSUnitDef.GRAM);
+    assertThrows(
+        RuntimeException.class,
+        () -> subSampleApiMgr.registerApiSubSampleUsage(apiSubSample.getId(), usage, otherUser));
+
+    // the owner's subsample is untouched
+    ApiSubSample retrieved = subSampleApiMgr.getApiSubSampleById(apiSubSample.getId(), testUser);
+    assertEquals(
+        apiSubSample.getQuantity().toQuantityInfo().toPlainString(),
+        retrieved.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(1L, retrieved.getVersion());
   }
 
   @Test

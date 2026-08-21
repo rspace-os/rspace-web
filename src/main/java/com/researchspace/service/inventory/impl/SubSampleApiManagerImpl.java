@@ -264,7 +264,8 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       Long subsampleId, QuantityInfo usedQuantity, User user) {
 
     SubSample dbSubSample = getIfExists(subsampleId);
-    if (usedQuantity.getNumericValue().signum() == 0) {
+    invPermissions.assertUserCanEditInventoryRecord(dbSubSample, user);
+    if (usedQuantity == null || usedQuantity.getNumericValue().signum() == 0) {
       return getPopulatedApiSubSampleFull(dbSubSample, user);
     }
 
@@ -275,9 +276,10 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       QuantityInfo orgQuantity = dbSubSample.getQuantity();
       QuantityInfo newQuantity = qUtils.sum(Arrays.asList(orgQuantity, usedQuantity.negate()));
 
-      // if usage is larger than remaining quantity set remaining to zero
+      // if usage is larger than remaining quantity set remaining to zero, in the stored unit
+      // (qUtils.sum may return a different unit, and "0 g" must not relabel itself to "0 mg")
       if (newQuantity.getNumericValue().compareTo(BigDecimal.ZERO) < 0) {
-        newQuantity.setNumericValue(BigDecimal.ZERO);
+        newQuantity = new QuantityInfo(BigDecimal.ZERO, orgQuantity.getUnitId());
       }
 
       // RSDEV-1318: a stock decrement is a content edit, so it bumps the user-facing version;
