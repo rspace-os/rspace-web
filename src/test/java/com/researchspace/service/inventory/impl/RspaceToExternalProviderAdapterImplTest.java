@@ -172,9 +172,9 @@ class RspaceToExternalProviderAdapterImplTest {
     assertEquals("https://other.example.org/public/inventory/x", md.getLandingPage());
   }
 
-  /** The materialised globalId default is not a user's landing page and never gets registered. */
+  /** The legacy auto-filled landing page is not a user's landing page and never gets registered. */
   @Test
-  void materialisedDefaultLandingPageIsSupersededByThePublicLandingPage() {
+  void legacyAutoFilledLandingPageIsSupersededByThePublicLandingPage() {
     Instrument instrument = templateShapedInstrument();
     addField(
         instrument,
@@ -263,13 +263,13 @@ class RspaceToExternalProviderAdapterImplTest {
   }
 
   /**
-   * A near miss of the materialised default still names the same login-walled page: a trailing
-   * slash resolves to the record's globalId page just as the bare address does. An exact tail match
-   * lets a hand-edited default through and registers it, which ADR 0006 forbids and which cannot be
-   * undone once a curator accepts.
+   * A near miss of a legacy auto-filled landing page still names the same login-walled page: a
+   * trailing slash resolves to the record's globalId page just as the bare address does. An exact
+   * tail match lets a hand-edited default through and registers it, which ADR 0006 forbids and
+   * which cannot be undone once a curator accepts.
    */
   @Test
-  void materialisedDefaultIsRecognisedDespiteATrailingSlash() {
+  void legacyAutoFilledLandingPageIsRecognisedDespiteATrailingSlash() {
     Instrument instrument = templateShapedInstrument();
     addField(
         instrument,
@@ -285,7 +285,7 @@ class RspaceToExternalProviderAdapterImplTest {
    * still the login-walled page and must not be registered.
    */
   @Test
-  void materialisedDefaultIsRecognisedDespiteAQueryString() {
+  void legacyAutoFilledLandingPageIsRecognisedDespiteAQueryString() {
     Instrument instrument = templateShapedInstrument();
     addField(
         instrument,
@@ -303,7 +303,7 @@ class RspaceToExternalProviderAdapterImplTest {
    * the normalised path rather than the raw text, or a hand-edited default could hide behind them.
    */
   @Test
-  void materialisedDefaultIsRecognisedThroughDotSegments() {
+  void legacyAutoFilledLandingPageIsRecognisedThroughDotSegments() {
     Instrument instrument = templateShapedInstrument();
     String globalId = instrument.getGlobalIdentifier();
     addField(
@@ -320,7 +320,7 @@ class RspaceToExternalProviderAdapterImplTest {
    * ({@code %31} is {@code 1}). Both resolve to the same login-walled page.
    */
   @Test
-  void materialisedDefaultIsRecognisedThroughRedundantSlashesAndPercentEscapes() {
+  void legacyAutoFilledLandingPageIsRecognisedThroughRedundantSlashesAndPercentEscapes() {
     Instrument doubleSlash = templateShapedInstrument();
     addField(
         doubleSlash,
@@ -338,7 +338,7 @@ class RspaceToExternalProviderAdapterImplTest {
 
   /** Nor does a fragment: same page, so still never registered. */
   @Test
-  void materialisedDefaultIsRecognisedDespiteAFragment() {
+  void legacyAutoFilledLandingPageIsRecognisedDespiteAFragment() {
     Instrument instrument = templateShapedInstrument();
     addField(
         instrument,
@@ -355,7 +355,7 @@ class RspaceToExternalProviderAdapterImplTest {
    * page or to nothing at all, and neither is fit to bake into a citable PID.
    */
   @Test
-  void materialisedDefaultIsRecognisedDespiteGlobalIdCase() {
+  void legacyAutoFilledLandingPageIsRecognisedDespiteGlobalIdCase() {
     Instrument instrument = templateShapedInstrument();
     addField(
         instrument,
@@ -393,7 +393,7 @@ class RspaceToExternalProviderAdapterImplTest {
    * undone once a curator accepts the record.
    */
   @Test
-  void materialisedDefaultIsRecognisedOnAnyHost() {
+  void legacyAutoFilledLandingPageIsRecognisedOnAnyHost() {
     Instrument instrument = templateShapedInstrument();
     addField(
         instrument,
@@ -408,7 +408,7 @@ class RspaceToExternalProviderAdapterImplTest {
 
   /** The same host-agnostic recognition with nothing to fall back to: omitted, never registered. */
   @Test
-  void materialisedDefaultOnAnotherHostIsOmittedWhenNoPublicUrlExists() {
+  void legacyAutoFilledLandingPageOnAnotherHostIsOmittedWhenNoPublicUrlExists() {
     Instrument instrument = templateShapedInstrument();
     addField(
         instrument,

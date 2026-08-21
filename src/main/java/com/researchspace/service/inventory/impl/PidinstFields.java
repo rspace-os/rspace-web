@@ -3,14 +3,14 @@ package com.researchspace.service.inventory.impl;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import java.net.URI;
+import com.researchspace.service.inventory.InventoryUrls;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 
 /**
  * Resolves the structured fields of an instrument that carry PIDINST meaning.
  *
- * <p>Shared deliberately, in the same spirit as {@link GlobalIdUrls}: an instrument's fields are
+ * <p>Shared deliberately, in the same spirit as {@link InventoryUrls}: an instrument's fields are
  * matched by display name, so any two places that disagree about how a name is matched disagree
  * about which field they are looking at. The service layer's landing-page rules and the PIDINST
  * mapping both depend on picking the same field, so they resolve it here rather than each carrying
@@ -88,46 +88,12 @@ final class PidinstFields {
 
   /**
    * Whether the Landing page field is holding a landing page the retired auto-fill wrote rather
-   * than a value the user typed. Matched on the {@code /globalId/<globalId>} tail alone, not on
-   * equality with the currently configured address: the tail is what the retired auto-fill produced
-   * and names this one record, while the host part is whatever the server URL said at fill time.
-   * Comparing whole addresses would stop recognising the fill as soon as the deployment was renamed
-   * or lost its server URL setting, and would then register the login-walled default —
-   * irreversibly, once a curator accepts. See {@link GlobalIdUrls} and ADR 0006.
-   *
-   * <p>The tail is compared against the address's path with any query and fragment dropped, any
-   * trailing slash removed, and case folded, because none of those change which page the address
-   * names. Without that normalisation a default a user had since edited to carry a trailing slash
-   * or a {@code ?from=...} would read as user-typed and be registered.
-   *
-   * <p>Two accepted consequences, both erring towards omission because a missing property is
-   * recoverable and a wrong published one is not. A user who deliberately types some other RSpace's
-   * {@code /globalId/<same id>} address has it discarded in favour of this identifier's public
-   * page. And a differently-cased global id is treated as the default even though it may resolve to
-   * nothing; an address that resolves to nothing is no more fit to register.
+   * than a value the user typed, recognised by its {@code /globalId/<globalId>} tail through {@link
+   * InventoryUrls#namesGlobalIdPage}. Shared with the public-page recogniser so the two cannot
+   * disagree about which addresses RSpace authored; see that class for the normalisation and for
+   * the consequences deliberately accepted.
    */
   private static boolean isLegacyAutoFilledLandingPage(String fieldValue, InstrumentEntity source) {
-    String globalIdTail = GlobalIdUrls.GLOBAL_ID_PATH + source.getGlobalIdentifier();
-    return StringUtils.endsWithIgnoreCase(
-        StringUtils.stripEnd(comparablePath(fieldValue), "/"), globalIdTail);
-  }
-
-  /**
-   * The address's path, normalised so that forms which name the same page compare equal: query and
-   * fragment gone, dot segments resolved, percent-escapes decoded. {@link URI#getPath()} does the
-   * last two ({@code getPath} decodes, unlike {@code getRawPath}).
-   *
-   * <p>An address the URI parser rejects falls back to the raw text with query and fragment
-   * stripped, so a malformed value is still checked rather than waved through. The field's own
-   * validation makes that rare but not impossible, since it runs at save time and says nothing
-   * about rows written before it existed.
-   */
-  private static String comparablePath(String address) {
-    try {
-      String path = URI.create(address).normalize().getPath();
-      return path == null ? address : path;
-    } catch (IllegalArgumentException unparseable) {
-      return StringUtils.substringBefore(StringUtils.substringBefore(address, "#"), "?");
-    }
+    return InventoryUrls.namesGlobalIdPage(fieldValue, source.getGlobalIdentifier());
   }
 }

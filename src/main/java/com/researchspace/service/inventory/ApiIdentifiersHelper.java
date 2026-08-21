@@ -65,7 +65,7 @@ public class ApiIdentifiersHelper {
    * whichever suffix the entity ended up with: the one pre-generated on the DTO before the provider
    * was called, or the entity's own when the caller carried none (RSDEV-1254, ADR 0006).
    *
-   * <p>Built through {@link ApiInventoryDOI#publicLandingPageUrl}, the same builder the registered
+   * <p>Built through {@link InventoryUrls#publicLandingPageUrl}, the same builder the registered
    * address goes through, so the two cannot be normalised differently. (The builder settles
    * normalisation only; {@code applyChangesToDatabaseDOI} runs immediately after these calls and
    * overwrites LOCAL_URL from the DTO's own url whenever that is non-null, which draft provider
@@ -80,12 +80,13 @@ public class ApiIdentifiersHelper {
    */
   private void addPublicLandingPageUrl(DigitalObjectIdentifier newDoi, String forWhat) {
     Optional<String> url =
-        ApiInventoryDOI.publicLandingPageUrl(properties.getServerUrl(), newDoi.getPublicLink());
+        InventoryUrls.publicLandingPageUrl(properties.getServerUrl(), newDoi.getPublicLink());
     url.ifPresentOrElse(
         u -> newDoi.addOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL, u),
         // Named so the message is actionable: a bulk allocation would otherwise emit the same
-        // undifferentiated line per identifier. The suffix itself is never logged - it is the only
-        // thing guarding the anonymous page. An unset server URL is the sole reachable cause here,
+        // undifferentiated line per identifier. The suffix itself is still kept out of the log: it
+        // is public from registration onward (it is sent to the provider), but a log is a wider
+        // audience than the provider record. An unset server URL is the sole reachable cause here,
         // since the entity constructor always yields a non-blank publicLink.
         () ->
             log.warn(

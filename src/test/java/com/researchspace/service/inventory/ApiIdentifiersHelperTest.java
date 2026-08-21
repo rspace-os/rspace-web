@@ -110,10 +110,16 @@ public class ApiIdentifiersHelperTest {
     DigitalObjectIdentifier result = underTest.createDoiToSave(apiDoi, user);
 
     assertNotNull(result.getPublicLink()); // entity fallback keeps suffix-less callers safe
+    // and LOCAL_URL must be built from *that* value: a regression to the DTO's (absent) suffix
+    // would leave the property off every bulk IGSN allocation, which this test would otherwise
+    // still pass.
+    assertEquals(
+        "https://localhost:8080/public/inventory/" + result.getPublicLink(),
+        result.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
   }
 
   /**
-   * Same rule as {@code GlobalIdUrls} and {@code ApiInventoryDOI.getPublicLandingPageUrl}: with no
+   * Same rule as {@code InventoryUrls.publicLandingPageUrl}, which the registered address also
    * server URL configured the address is omitted rather than persisted as the literal
    * "null/public/inventory/...", which would surface as the identifier's url over the API.
    */

@@ -96,26 +96,28 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
     metadata.setMeasuredVariable(nullIfEmpty(measuredVariables(source)));
     /*
      * The registered landing page: the user's own value when they typed one, otherwise the
-     * identifier's public landing page. The materialised globalId default is recognised and never
+     * identifier's public landing page. A legacy auto-filled landing page is recognised and never
      * registered: it needs an RSpace sign-in, and a LandingPage is baked into a citable PID once a
      * curator accepts, with no way to update the published record afterwards. With neither a typed
      * value nor a public URL the property is omitted: a missing property is recoverable, a wrong
      * published URL is not. See ADR 0006 and CONTEXT.md ("Registered landing page").
      */
     Optional<String> typed = PidinstFields.userTypedLandingPage(source);
-    if (typed.isPresent() && !PidinstFields.isResolvableAddress(typed.get())) {
-      // Substituting our own address for one the user typed is worth saying out loud: the field
-      // goes on displaying their value, so nothing else tells them it was not the one registered.
-      // The value itself is not logged, only the record it belongs to.
+    Optional<String> registrableTyped = typed.filter(PidinstFields::isResolvableAddress);
+    if (typed.isPresent() && registrableTyped.isEmpty()) {
+      // Discarding a value the user typed is worth saying out loud: the field goes on displaying
+      // it,
+      // so nothing else tells them it was not the one registered. The value itself is not logged,
+      // only the record it belongs to. Deliberately silent on what replaced it - that is decided
+      // below and reported there, so the two lines cannot contradict each other.
       log.warn(
           "Not registering the Landing page of {} as its LandingPage: the value is not an absolute"
-              + " http(s) address. Using the identifier's public landing page instead.",
+              + " http(s) address.",
           source.getGlobalIdentifier());
     }
     Optional<String> landingPage =
-        typed
-            // before the .or so an unusable field value falls back to the public page...
-            .filter(PidinstFields::isResolvableAddress)
+        registrableTyped
+            // an unusable field value has already been filtered out, so it falls back here...
             .or(() -> Optional.ofNullable(publicLandingPageUrl))
             // ...and again after it, because the fallback needs the same guard: the public landing
             // page is built from the deployment's server URL, which nothing validates for a scheme,

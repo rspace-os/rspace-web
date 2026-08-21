@@ -331,8 +331,10 @@ export default class InstrumentModel
    * must never start out pointing at its source's page (RSDEV-1307). The backend clears it on
    * creation and leaves it blank; blanking it here keeps the form showing what will actually be
    * saved. Anything the user types into the creation form afterwards is their own input and is left
-   * alone, and registering a PIDINST later fills a still-blank field with the identifier's public
-   * landing page.
+   * alone, and registering a PIDINST later writes the identifier's public landing page into a field
+   * the user has not typed into. (Not simply "a blank field": the backend gate is
+   * PidinstFields.userTypedLandingPage, which also treats a legacy auto-filled /globalId/ address as
+   * nothing the user chose, and overwrites it.)
    *
    * Only the first matching field is blanked, mirroring the backend, which resolves a single
    * Landing page.

@@ -396,7 +396,6 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
   @Test
   void landingPageIsMatchedIgnoringCaseAndSurroundingWhitespace() {
-    String serverUrl = "https://rspace.example.com";
     Instrument source = new Instrument();
     source.setId(1L);
     source.setName("Odd Field Name");

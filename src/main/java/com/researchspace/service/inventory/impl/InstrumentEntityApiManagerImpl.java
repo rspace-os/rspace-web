@@ -46,6 +46,7 @@ import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryLinkValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
+import com.researchspace.service.inventory.InventoryUrls;
 import com.researchspace.service.inventory.SampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
@@ -167,20 +168,12 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   }
 
   /**
-   * Blanks the Landing page field of a record derived from another record — a duplicated
-   * instrument, a duplicated template, or an instrument created from a template. The landing page
-   * names exactly one physical instrument, so a derived record must never start out pointing at its
-   * source's page, whether the source value was written by RSpace or typed by a user (RSDEV-1307).
-   * The blanked field then stays blank on an Instrument as on an InstrumentTemplate, until a user
-   * types a value or an identifier is registered for the record (ADR 0006 item 3).
-   */
-  /**
    * Takes the Landing page away with the identifier that wrote it: when an update deletes an
    * identifier, an address RSpace put there at registration is cleared, so the instrument stops
    * pointing at a public page that no longer exists (ADR 0006).
    *
    * <p>Only an address RSpace wrote is cleared, recognised by {@link
-   * ApiInventoryDOI#namesPublicLandingPage}. That is the same asymmetry registration applies in
+   * InventoryUrls#namesPublicLandingPage}. That is the same asymmetry registration applies in
    * reverse: a value the user chose is theirs, so it survives both the write and this clear. An
    * address belonging to a *different* identifier is left alone too.
    *
@@ -214,7 +207,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
                         .filter(doi -> deletedId.equals(doi.getId())))
             .anyMatch(
                 doi ->
-                    ApiInventoryDOI.namesPublicLandingPage(
+                    InventoryUrls.namesPublicLandingPage(
                         landingPage.getFieldData(), doi.getPublicLink()));
     if (writtenByADeletedIdentifier) {
       landingPage.clearValue();
@@ -223,6 +216,14 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     return false;
   }
 
+  /**
+   * Blanks the Landing page field of a record derived from another record — a duplicated
+   * instrument, a duplicated template, or an instrument created from a template. The landing page
+   * names exactly one physical instrument, so a derived record must never start out pointing at its
+   * source's page, whether the source value was written by RSpace or typed by a user (RSDEV-1307).
+   * The blanked field then stays blank on an Instrument as on an InstrumentTemplate, until a user
+   * types a value or an identifier is registered for the record (ADR 0006 item 3).
+   */
   private static void clearLandingPage(InstrumentEntity derivedRecord) {
     landingPageField(derivedRecord).ifPresent(InventoryEntityField::clearValue);
   }

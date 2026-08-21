@@ -39,7 +39,7 @@ address with the provider.
    when given no suffix, so callers that never carry one stay correct.
 2. The **registered landing page** sent to B2INST is the Landing page field
    when it holds a value the user typed themselves; otherwise it is the public
-   landing page built from the suffix. The materialised globalId default is
+   landing page built from the suffix. A legacy auto-filled landing page is
    never registered. It is recognised by its `/globalId/<globalId>` tail
    (`GlobalIdUrls.GLOBAL_ID_PATH`, shared with the default-fill) rather than by
    equality with the currently configured address: the tail is what the fill

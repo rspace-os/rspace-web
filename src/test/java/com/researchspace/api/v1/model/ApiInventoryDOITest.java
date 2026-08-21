@@ -2,6 +2,7 @@ package com.researchspace.api.v1.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class ApiInventoryDOITest {
@@ -106,9 +106,24 @@ class ApiInventoryDOITest {
 
     doi.generatePublicLinkSuffix();
 
-    assertNotNull(doi.getPublicLinkSuffix());
-    // 16 random bytes, base64url-encoded without padding: pins the entropy, not the char count
-    assertEquals(22, doi.getPublicLinkSuffix().length());
+    String first = doi.getPublicLinkSuffix();
+    assertNotNull(first);
+    // 16 random bytes, base64url-encoded without padding. Length alone is only a proxy, so the two
+    // properties that actually matter are asserted directly.
+    assertEquals(22, first.length());
+    assertTrue(
+        first.matches("[A-Za-z0-9_-]+"),
+        "must be safe as a URL path segment: it becomes /public/inventory/<suffix>, is persisted as"
+            + " publicLink and is registered with a provider; got: "
+            + first);
+
+    ApiInventoryDOI second = new ApiInventoryDOI();
+    second.generatePublicLinkSuffix();
+    assertNotEquals(
+        first,
+        second.getPublicLinkSuffix(),
+        "a constant would collide on publicLink's UNIQUE key, and only after the provider call in"
+            + " the same transaction had already created a draft");
   }
 
   /** Server-internal: rsPublicId is the client-facing copy of the entity value. */
@@ -144,54 +159,5 @@ class ApiInventoryDOITest {
 
     assertNull(api.getPublicLinkSuffix(), "an entity-derived DTO must not carry a suffix");
     assertEquals(entity.getPublicLink(), api.getRsPublicId());
-  }
-
-  @Test
-  void publicLandingPageUrlBuiltFromServerUrlAndSuffix() {
-    ApiInventoryDOI doi = new ApiInventoryDOI();
-    assertTrue(
-        doi.getPublicLandingPageUrl("https://rspace.example.com").isEmpty(), "no suffix -> no URL");
-
-    doi.generatePublicLinkSuffix();
-
-    assertEquals(
-        Optional.of("https://rspace.example.com/public/inventory/" + doi.getPublicLinkSuffix()),
-        doi.getPublicLandingPageUrl("https://rspace.example.com/"),
-        "trailing slash on the server URL must not double up");
-    assertTrue(
-        doi.getPublicLandingPageUrl(" ").isEmpty(),
-        "no server URL -> empty, never site-relative (same rule as GlobalIdUrls)");
-  }
-
-  /**
-   * Recognising RSpace's own public landing page in a field value, so deleting an identifier can
-   * clear the address it wrote without touching one a user chose (ADR 0006 item 5).
-   *
-   * <p>Matched on the tail rather than by equality with the address we would build today: the
-   * deployment's server URL may have changed since the value was written, and the point is to
-   * recognise what RSpace wrote, not what it would write now.
-   */
-  @Test
-  void namesPublicLandingPageRecognisesOnlyRSpacesOwnAddressForThatSuffix() {
-    assertTrue(
-        ApiInventoryDOI.namesPublicLandingPage(
-            "https://rspace.example.com/public/inventory/abc123XYZ", "abc123XYZ"));
-    assertTrue(
-        ApiInventoryDOI.namesPublicLandingPage(
-            "https://renamed.example.org/public/inventory/abc123XYZ/", "abc123XYZ"),
-        "a renamed deployment, and a trailing slash, still name the same page");
-
-    assertFalse(
-        ApiInventoryDOI.namesPublicLandingPage("https://lab.example.org/aws-42", "abc123XYZ"),
-        "a landing page the user typed must never be mistaken for ours");
-    assertFalse(
-        ApiInventoryDOI.namesPublicLandingPage(
-            "https://rspace.example.com/public/inventory/someoneElse", "abc123XYZ"),
-        "another identifier's public page belongs to that identifier, not this one");
-    assertFalse(ApiInventoryDOI.namesPublicLandingPage(null, "abc123XYZ"));
-    assertFalse(
-        ApiInventoryDOI.namesPublicLandingPage(
-            "https://rspace.example.com/public/inventory/abc123XYZ", " "),
-        "no suffix means nothing to recognise, never a blanket match");
   }
 }

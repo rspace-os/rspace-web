@@ -13,7 +13,6 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierOtherProperty;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -21,6 +20,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -58,13 +58,6 @@ import org.apache.commons.lang3.StringUtils;
       "_links"
     })
 public class ApiInventoryDOI extends LinkableApiObject {
-
-  /**
-   * Path of the anonymous public identifier page. Private because what callers share is {@link
-   * #publicLandingPageUrl}, not this segment; going through the builder is what keeps the
-   * registered and the stored address normalised identically.
-   */
-  private static final String PUBLIC_PAGE_PATH = "/public/inventory/";
 
   @Data
   @NoArgsConstructor
@@ -199,56 +192,16 @@ public class ApiInventoryDOI extends LinkableApiObject {
   // No setter: generatePublicLinkSuffix() is the only way to populate this, so a brand-new
   // entity can never be handed an already-persisted publicLink. core-model's counterpart
   // DigitalObjectIdentifier.publicLink is locked down the same way.
+  // ToString.Exclude so the "kept out of logs" rule is enforced by the generated toString
+  // rather than left to every future caller to remember.
   @JsonIgnore
   @Setter(AccessLevel.NONE)
+  @ToString.Exclude
   private String publicLinkSuffix;
 
   /** Generates the public link suffix for a brand-new identifier registration. */
   public void generatePublicLinkSuffix() {
     this.publicLinkSuffix = SecureStringUtils.getURLSafeSecureRandomString(16);
-  }
-
-  /**
-   * The public landing page address for this DTO's suffix, or empty when no server URL is
-   * configured or no suffix has been generated. Empty rather than site-relative for the same reason
-   * as {@code GlobalIdUrls.globalIdUrl}: a wrong absolute URL registered with a provider cannot be
-   * repaired once a curator accepts the record.
-   */
-  public Optional<String> getPublicLandingPageUrl(String serverUrl) {
-    return publicLandingPageUrl(serverUrl, publicLinkSuffix);
-  }
-
-  /**
-   * The public landing page address for any suffix, or empty when either part is missing. Shared
-   * with the persistence side (ApiIdentifiersHelper builds the identifier's LOCAL_URL from the
-   * entity's own publicLink) so the address RSpace registers and the address it stores are built
-   * the same way: same trailing-slash handling, and the same refusal to produce a wrong absolute
-   * URL from a blank server setting rather than emitting "null/public/inventory/...".
-   */
-  public static Optional<String> publicLandingPageUrl(String serverUrl, String suffix) {
-    String trimmed = StringUtils.trimToEmpty(serverUrl);
-    if (trimmed.isEmpty() || StringUtils.isBlank(suffix)) {
-      return Optional.empty();
-    }
-    return Optional.of(StringUtils.removeEnd(trimmed, "/") + PUBLIC_PAGE_PATH + suffix);
-  }
-
-  /**
-   * Whether an address names the public landing page of the identifier with this suffix, i.e.
-   * whether RSpace itself wrote it. Lets a caller undo that write — clearing an instrument's
-   * Landing page when its identifier is deleted — without touching an address a user chose (ADR
-   * 0006).
-   *
-   * <p>Matched on the {@code /public/inventory/<suffix>} tail rather than by equality with the
-   * address {@link #publicLandingPageUrl} would build today, for the same reason the globalId check
-   * matches a tail: the deployment's server URL may have changed since, and the question is what
-   * RSpace wrote, not what it would write now. A blank suffix matches nothing rather than
-   * everything.
-   */
-  public static boolean namesPublicLandingPage(String address, String suffix) {
-    return StringUtils.isNotBlank(suffix)
-        && StringUtils.endsWithIgnoreCase(
-            StringUtils.stripEnd(StringUtils.trimToEmpty(address), "/"), PUBLIC_PAGE_PATH + suffix);
   }
 
   /**

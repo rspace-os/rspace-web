@@ -35,6 +35,7 @@ import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.InventoryRecordRetriever;
+import com.researchspace.service.inventory.InventoryUrls;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -402,8 +403,8 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
      * and the operator gets a reason.
      */
     Optional<String> publicLandingPage =
-        identifier
-            .getPublicLandingPageUrl(properties.getServerUrl())
+        InventoryUrls.publicLandingPageUrl(
+                properties.getServerUrl(), identifier.getPublicLinkSuffix())
             .filter(PidinstFields::isResolvableAddress);
     if (publicLandingPage.isEmpty()) {
       log.warn(
@@ -434,7 +435,8 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
           dcException);
     }
     if (createdDoi == null || !"draft".equals(createdDoi.getAttributes().getState())) {
-      throw new IllegalStateException("DataCite registration failed");
+      throw new IllegalStateException(
+          messages.getMessage("errors.inventory.identifier.dataCiteRegisterNoDraft"));
     }
 
     ApiInventoryDOI newDoi = new ApiInventoryDOI(user, createdDoi);
@@ -492,7 +494,8 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     // registered address and the page RSpace serves can never diverge (RSDEV-1254, ADR 0006)
     newDoi.generatePublicLinkSuffix();
     String publicLandingPageUrl =
-        newDoi.getPublicLandingPageUrl(properties.getServerUrl()).orElse(null);
+        InventoryUrls.publicLandingPageUrl(properties.getServerUrl(), newDoi.getPublicLinkSuffix())
+            .orElse(null);
 
     B2instDoi b2instDoi =
         rspaceToExternalProviderAdapter.buildB2instDoi(invRec, publicLandingPageUrl);
@@ -507,7 +510,8 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
           b2instException);
     }
     if (draft == null || isBlank(draft.getId())) {
-      throw new IllegalStateException("B2INST registration failed");
+      throw new IllegalStateException(
+          messages.getMessage("errors.inventory.identifier.b2instRegisterNoDraft"));
     }
 
     newDoi.setRegisterIdentifierRequest(true);
