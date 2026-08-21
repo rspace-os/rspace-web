@@ -72,7 +72,6 @@ class ImportedCoreDependenciesTest {
           "com.researchspace.model.units",
           "com.researchspace.model.utils",
           "com.researchspace.model.views",
-          "com.researchspace.model.views.search",
           "com.researchspace.session");
 
   /**
