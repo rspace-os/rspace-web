@@ -27,7 +27,7 @@ public class SecurityTestConfig extends SecurityBaseConfig {
   @Bean(name = "securityManagerTest")
   @Override
   public SecurityManager securityManager() {
-    DefaultSecurityManager rc = new DefaultSecurityManager();
+    DefaultSecurityManager rc = new ApiAwareTestSecurityManager();
     Collection<Realm> realms = new ArrayList<>();
     realms.add(standardRealm());
     realms.add(ssoRealm());
