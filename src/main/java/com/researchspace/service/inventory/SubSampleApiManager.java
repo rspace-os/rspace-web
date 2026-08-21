@@ -70,8 +70,9 @@ public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
 
   /**
    * Reduces the subsample's quantity by the given used amount (unit-aware, clamped at zero). A
-   * non-zero usage is a content edit: it bumps the subsample's user-facing version and is recorded
-   * in its revision history (RSDEV-1318). A zero usage is a complete no-op.
+   * usage that changes the stored quantity is a content edit: it bumps the subsample's user-facing
+   * version and is recorded in its revision history (RSDEV-1318). A usage that leaves the quantity
+   * unchanged (zero usage, or usage against already-empty stock) is a complete no-op.
    *
    * @return the updated subsample
    */

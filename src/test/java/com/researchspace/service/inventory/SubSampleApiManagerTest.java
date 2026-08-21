@@ -586,6 +586,15 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals("5 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(1L, retrievedSubSample.getVersion());
 
+    // ... including a zero written with a non-zero scale (BigDecimal "0.00" != ZERO by equals)
+    subSampleApiMgr.registerApiSubSampleUsage(
+        retrievedSubSample.getId(),
+        QuantityInfo.of(new BigDecimal("0.00"), RSUnitDef.GRAM),
+        testUser);
+    retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
+    assertEquals("5 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(1L, retrievedSubSample.getVersion());
+
     // register usage
     QuantityInfo quantity1dot5555mg = QuantityInfo.of(new BigDecimal("1.5555"), RSUnitDef.GRAM);
     subSampleApiMgr.registerApiSubSampleUsage(
@@ -602,6 +611,7 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("3.399 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(3L, retrievedSubSample.getVersion());
 
     // register usage greater than the remaining value - that should zero remaining quantity
     QuantityInfo quantity5g = QuantityInfo.of(new BigDecimal("5"), RSUnitDef.GRAM);
@@ -609,6 +619,14 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("0 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    // the clamp to zero still changed the stored quantity, so it bumps the version
+    assertEquals(4L, retrievedSubSample.getVersion());
+
+    // usage against already-empty stock leaves the quantity at zero and must not bump the version
+    subSampleApiMgr.registerApiSubSampleUsage(retrievedSubSample.getId(), quantity5g, testUser);
+    retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
+    assertEquals("0 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(4L, retrievedSubSample.getVersion());
   }
 
   @Test

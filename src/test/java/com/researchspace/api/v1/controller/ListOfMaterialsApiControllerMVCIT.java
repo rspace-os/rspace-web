@@ -181,6 +181,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
                 createBuilderForPostWithJSONBody(apiKey, "/listOfMaterials", anyUser, newListJson))
             .andExpect(status().isCreated())
             .andReturn();
+    assertNull(result.getResolvedException());
     ApiListOfMaterials createdList =
         mvcUtils.getFromJsonResponseBody(result, ApiListOfMaterials.class);
     String listUpdateJson =
@@ -207,6 +208,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
                 createBuilderForGet(API_VERSION.ONE, apiKey, "/subSamples/" + subSampleId, anyUser))
             .andExpect(status().isOk())
             .andReturn();
+    assertNull(result.getResolvedException());
     ApiSubSample reloaded = mvcUtils.getFromJsonResponseBody(result, ApiSubSample.class);
     assertEquals("4 g", reloaded.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(2L, reloaded.getVersion(), "a stock decrement must bump the subsample version");
@@ -219,6 +221,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
                     API_VERSION.ONE, apiKey, "/subSamples/" + subSampleId + "/revisions", anyUser))
             .andExpect(status().isOk())
             .andReturn();
+    assertNull(result.getResolvedException());
     ApiInventoryRecordRevisionList history =
         mvcUtils.getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
     assertEquals(

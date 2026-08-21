@@ -264,7 +264,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       Long subsampleId, QuantityInfo usedQuantity, User user) {
 
     SubSample dbSubSample = getIfExists(subsampleId);
-    if (usedQuantity.getNumericValue().equals(BigDecimal.ZERO)) {
+    if (usedQuantity.getNumericValue().signum() == 0) {
       return getPopulatedApiSubSampleFull(dbSubSample, user);
     }
 
@@ -280,11 +280,17 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
         newQuantity.setNumericValue(BigDecimal.ZERO);
       }
 
-      dbSubSample.setQuantity(newQuantity);
-      // RSDEV-1318: a stock decrement is a content edit, so it bumps the user-facing version
-      dbSubSample.increaseVersion();
-      registerSubSampleModification(user, dbSubSample);
-      dbSubSample = subSampleDao.save(dbSubSample);
+      // RSDEV-1318: a stock decrement is a content edit, so it bumps the user-facing version;
+      // a usage that leaves the stored quantity unchanged (e.g. against empty stock) is a no-op
+      boolean quantityChanged =
+          orgQuantity.getNumericValue().compareTo(newQuantity.getNumericValue()) != 0
+              || !orgQuantity.getUnitId().equals(newQuantity.getUnitId());
+      if (quantityChanged) {
+        dbSubSample.setQuantity(newQuantity);
+        dbSubSample.increaseVersion();
+        registerSubSampleModification(user, dbSubSample);
+        dbSubSample = subSampleDao.save(dbSubSample);
+      }
 
     } finally {
       if (temporaryLock) {
