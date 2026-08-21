@@ -608,7 +608,9 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("3.444 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
-    // each non-zero usage decrement is a content edit and bumps the version (RSDEV-1318)
+    // a non-zero usage decrement is a content edit and bumps the version (RSDEV-1318). This whole
+    // test runs in one transaction, and Envers writes one revision per entity per transaction, so
+    // every later decrement below leaves the version at 2 (RSDEV-1319)
     assertEquals(2L, retrievedSubSample.getVersion());
 
     // register another usage
@@ -617,28 +619,45 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("3.399 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
-    assertEquals(3L, retrievedSubSample.getVersion());
+    assertEquals(2L, retrievedSubSample.getVersion());
 
     // register usage greater than the remaining value - that should zero remaining quantity
     QuantityInfo quantity5g = QuantityInfo.of(new BigDecimal("5"), RSUnitDef.GRAM);
+    Mockito.clearInvocations(mockPublisher);
     subSampleApiMgr.registerApiSubSampleUsage(retrievedSubSample.getId(), quantity5g, testUser);
 
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("0 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
-    // the clamp to zero still changed the stored quantity, so it bumps the version
-    assertEquals(4L, retrievedSubSample.getVersion());
+    // the clamp to zero still changed the stored quantity, but the version was already bumped in
+    // this transaction
+    assertEquals(2L, retrievedSubSample.getVersion());
+    // the version is pinned for the rest of this transaction, so it can no longer tell a real edit
+    // from a no-op. The edit event can: it is published only when the stored quantity changes
+    Mockito.verify(mockPublisher).publishEvent(Mockito.any(InventoryEditingEvent.class));
 
-    // usage against already-empty stock leaves the quantity at zero and must not bump the version
+    // usage against already-empty stock leaves the quantity at zero, so it is not an edit at all
+    Mockito.clearInvocations(mockPublisher);
     subSampleApiMgr.registerApiSubSampleUsage(retrievedSubSample.getId(), quantity5g, testUser);
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("0 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
-    assertEquals(4L, retrievedSubSample.getVersion());
+    assertEquals(2L, retrievedSubSample.getVersion());
+    Mockito.verify(mockPublisher, Mockito.never())
+        .publishEvent(Mockito.any(InventoryEditingEvent.class));
 
     // same in a different unit: the stored quantity must keep its unit, not relabel to "0 mg"
+    Mockito.clearInvocations(mockPublisher);
     subSampleApiMgr.registerApiSubSampleUsage(retrievedSubSample.getId(), quantity45mg, testUser);
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("0 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
-    assertEquals(4L, retrievedSubSample.getVersion());
+    assertEquals(2L, retrievedSubSample.getVersion());
+    Mockito.verify(mockPublisher, Mockito.never())
+        .publishEvent(Mockito.any(InventoryEditingEvent.class));
+
+    // the guard is per subsample, so a different subsample in the same transaction still bumps
+    ApiSubSampleInfo otherSubSample = createBasicSampleForUser(testUser).getSubSamples().get(0);
+    subSampleApiMgr.registerApiSubSampleUsage(otherSubSample.getId(), quantity45mg, testUser);
+    assertEquals(
+        2L, subSampleApiMgr.getApiSubSampleById(otherSubSample.getId(), testUser).getVersion());
   }
 
   @Test

@@ -75,6 +75,11 @@ public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
    * history (RSDEV-1318). A usage that leaves the quantity unchanged (null or zero usage, or usage
    * against already-empty stock) makes no change to the stored subsample.
    *
+   * <p>The version bump happens at most once per subsample per transaction. Envers writes one
+   * revision per entity per transaction, so a caller that decrements the same subsample several
+   * times in one transaction still sees the version advance by exactly one, keeping every version
+   * resolvable in the revision history (RSDEV-1319). The quantity is reduced by every call.
+   *
    * @return the updated subsample
    */
   ApiSubSample registerApiSubSampleUsage(Long subsampleId, QuantityInfo usedQuantity, User user);
