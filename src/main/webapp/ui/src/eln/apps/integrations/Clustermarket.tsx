@@ -43,7 +43,7 @@ export const CLUSTERMARKET_CONNECTION_CHANNEL = "rspace.apps.clustermarket.conne
  * state (e.g. keeping the user in the dialog they were just in, displaying
  * success alerts, etc.).
  *
- * The process of disconnecing is via a standard API call made by
+ * The process of disconnecting is via a standard API call made by
  * ../useDisconnect.
  */
 function Clustermarket({ integrationState, update }: ClustermarketArgs): React.ReactNode {
