@@ -66,9 +66,7 @@ export class InventorySidebar {
     }
     if (section === "Settings") {
       await button.click();
-      await this.page
-        .getByRole("dialog", { name: "Configure Inventory (for System Administrators)" })
-        .waitFor({ state: "visible" });
+      await this.page.getByRole("dialog", { name: "Configure Identifier Registries" }).waitFor({ state: "visible" });
       return;
     }
     const resultType = RESULT_TYPE_BY_SECTION[section];

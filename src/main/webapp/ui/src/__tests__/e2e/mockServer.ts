@@ -13,6 +13,7 @@ import { omeroHandlers } from "../../modules/omero/__tests__/mock.ts";
 import { pubchemHandlers } from "../../modules/pubchem/__tests__/mock.ts";
 import { pyratHandlers } from "../../modules/pyrat/__tests__/mock.ts";
 import { zenodoHandlers } from "../../modules/zenodo/__tests__/mock.ts";
+import { b2instHandlers } from "./mocks/b2inst.ts";
 import { dataciteHandlers } from "./mocks/datacite.ts";
 
 const PORT = Number(process.argv[2] ?? process.env.E2E_MOCK_PORT ?? "9099");
@@ -34,6 +35,7 @@ const handlers = [
   ...pyratHandlers,
   ...omeroHandlers,
   ...dataciteHandlers,
+  ...b2instHandlers,
 ];
 const mswMiddleware = createMiddleware(...handlers);
 

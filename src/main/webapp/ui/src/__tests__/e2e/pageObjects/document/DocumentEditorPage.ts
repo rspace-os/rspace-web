@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { resolveFieldId } from "@/__tests__/e2e/components/document/DocumentFieldHelpers";
 import { DocumentToolbar } from "@/__tests__/e2e/components/document/DocumentToolbar";
+import { MaterialsDialogComponent } from "@/__tests__/e2e/components/document/MaterialsDialogComponent";
 import { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor";
 import { GalleryPickerComponent } from "@/__tests__/e2e/components/shared/GalleryPickerComponent";
 import { ExternalWorkflowDialogComponent } from "@/modules/galaxy/__tests__/pageObjects/ExternalWorkflowDialogComponent";
@@ -113,5 +114,16 @@ export class DocumentEditorPage extends DocumentPage {
     await this.omeroToolbarButton.click();
     await this.omeroDialog.waitForOpen();
     return this.omeroDialog;
+  }
+
+  newListOfMaterialsButton(fieldIndex = 0): Locator {
+    return this.page.getByRole("button", { name: "New List of Materials" }).nth(fieldIndex);
+  }
+
+  async openNewListOfMaterialsDialog(fieldIndex = 0): Promise<MaterialsDialogComponent> {
+    await this.newListOfMaterialsButton(fieldIndex).click();
+    const dialog = new MaterialsDialogComponent(this.page);
+    await dialog.waitForOpen();
+    return dialog;
   }
 }
