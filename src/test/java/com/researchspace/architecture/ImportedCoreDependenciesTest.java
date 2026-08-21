@@ -43,7 +43,6 @@ class ImportedCoreDependenciesTest {
           "com.researchspace.core.util.imageutils",
           "com.researchspace.core.util.jsonserialisers",
           "com.researchspace.core.util.progress",
-          "com.researchspace.core.util.structs",
           "com.researchspace.core.util.throttling",
           "com.researchspace.core.util.version",
           "com.researchspace.maintenance.model",
