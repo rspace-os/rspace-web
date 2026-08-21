@@ -2,6 +2,7 @@ package com.researchspace.api.v1.auth;
 
 import static com.researchspace.core.util.StringAbbreviationUtils.abbreviate;
 
+import com.researchspace.auth.ApiAwareWebSecurityManager;
 import com.researchspace.auth.ApiKeyAuthenticationToken;
 import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
@@ -81,6 +82,9 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
       // When it does, we know that session  preservation is not possible.
     }
 
+    // this login must not disturb any session that arrived with the request (for example a
+    // browser session cookie sent alongside the API key); see ApiAwareWebSecurityManager
+    request.setAttribute(ApiAwareWebSecurityManager.STATELESS_API_LOGIN, Boolean.TRUE);
     doLogin(accessToken, targetUser);
     return targetUser;
   }
