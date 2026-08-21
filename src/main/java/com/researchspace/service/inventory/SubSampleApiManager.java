@@ -68,6 +68,13 @@ public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
    */
   ApiSubSample addNewApiSubSampleToSample(ApiSubSample incomingSubSample, Long sampleId, User user);
 
+  /**
+   * Reduces the subsample's quantity by the given used amount (unit-aware, clamped at zero). A
+   * non-zero usage is a content edit: it bumps the subsample's user-facing version and is recorded
+   * in its revision history (RSDEV-1318). A zero usage is a complete no-op.
+   *
+   * @return the updated subsample
+   */
   ApiSubSample registerApiSubSampleUsage(Long subsampleId, QuantityInfo usedQuantity, User user);
 
   ApiSubSample addSubSampleNote(Long subSampleId, ApiSubSampleNote subSampleNote, User user);

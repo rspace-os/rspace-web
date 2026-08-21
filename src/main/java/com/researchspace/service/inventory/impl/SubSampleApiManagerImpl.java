@@ -178,7 +178,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
               user);
 
       if (contentChanged) {
-        // only content edits bump the user-facing version; moves, notes and usage don't
+        // only content edits bump the user-facing version; moves and notes don't
         dbSubSample.increaseVersion();
         registerSubSampleModification(user, dbSubSample);
       }
@@ -281,6 +281,8 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       }
 
       dbSubSample.setQuantity(newQuantity);
+      // RSDEV-1318: a stock decrement is a content edit, so it bumps the user-facing version
+      dbSubSample.increaseVersion();
       registerSubSampleModification(user, dbSubSample);
       dbSubSample = subSampleDao.save(dbSubSample);
 

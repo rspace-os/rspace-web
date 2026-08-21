@@ -559,8 +559,9 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(2, retrievedSubSample.getNotes().size());
     assertEquals("4.999 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(testUser.getFullName(), retrievedSubSample.getModifiedByFullName());
-    // only the content update (rename) bumps the user-facing version; notes and usage don't
-    assertEquals(2L, retrievedSubSample.getVersion());
+    // content edits bump the user-facing version: the rename and the usage decrement
+    // (RSDEV-1318); notes don't
+    assertEquals(3L, retrievedSubSample.getVersion());
     Mockito.verify(mockPublisher, Mockito.times(2))
         .publishEvent(Mockito.any(InventoryAccessEvent.class));
 
@@ -576,6 +577,14 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
     ApiSubSample retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("5 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(1L, retrievedSubSample.getVersion());
+
+    // registering a zero usage is a complete no-op: no quantity change, no version bump
+    subSampleApiMgr.registerApiSubSampleUsage(
+        retrievedSubSample.getId(), QuantityInfo.of(BigDecimal.ZERO, RSUnitDef.GRAM), testUser);
+    retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
+    assertEquals("5 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(1L, retrievedSubSample.getVersion());
 
     // register usage
     QuantityInfo quantity1dot5555mg = QuantityInfo.of(new BigDecimal("1.5555"), RSUnitDef.GRAM);
@@ -584,6 +593,8 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
     retrievedSubSample = subSampleApiMgr.getApiSubSampleById(subSampleId, testUser);
     assertEquals("3.444 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
+    // each non-zero usage decrement is a content edit and bumps the version (RSDEV-1318)
+    assertEquals(2L, retrievedSubSample.getVersion());
 
     // register another usage
     QuantityInfo quantity45mg = QuantityInfo.of(new BigDecimal("45"), RSUnitDef.MILLI_GRAM);
