@@ -158,8 +158,12 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
    * Exactly one Owner entry: ownerName from the "Owner" field when non-blank, else the record
    * owner's full name; ownerContact is always the record owner's email. Owner is the only
    * PIDINST-mandatory property given an unconditional fallback, hence the fallback here.
-   * Manufacturer is mandatory too and is built from a field with no fallback and no warning, so the
-   * three mandatory properties are handled three different ways; worth aligning separately.
+   *
+   * <p>PIDINST 1.0 marks six properties mandatory: Identifier, SchemaVersion, LandingPage, Name,
+   * Owner and Manufacturer (see the RDA schema table). RSpace sets the first two itself, and the
+   * remaining four come from fields but are handled three different ways: Owner falls back, Name
+   * and Manufacturer are sent as found with no fallback and no warning, and LandingPage warns when
+   * omitted. Worth aligning deliberately rather than by accident, but that is its own change.
    */
   private B2instOwner ownerOf(InstrumentEntity instrument) {
     B2instOwner b2instOwner = new B2instOwner();
