@@ -1,7 +1,7 @@
 import MuiDialog from "@mui/material/Dialog";
 import MuiDrawer from "@mui/material/Drawer";
 import MuiMenu from "@mui/material/Menu";
-import React, { createContext, useContext, useRef } from "react";
+import React, { createContext, Suspense, useContext, useRef } from "react";
 
 /**
  * This file contains a number of components that collectively provide a
@@ -56,6 +56,9 @@ import React, { createContext, useContext, useRef } from "react";
  * exported from this module rather than the one exported by MUI. In all other
  * respects, they behave exactly the same.
  *
+ * Local Suspense boundaries prevent lazy overlay translations from replacing the page or
+ * interrupting modal exit transitions (PRT-1118, PRT-1135).
+ *
  * And that it's it. The fact that a context is being used is purely an
  * implementation detail. That's why its declared inside this module and not
  * in `../stores/contexts` -- the rest of the codebase does not need to be
@@ -87,6 +90,34 @@ export function DialogBoundary({ children }: { children: React.ReactNode }): Rea
   );
 }
 
+/* MUI locks the boundary element. This counter keeps the body locked until all overlays close. */
+let scrollLockCount = 0;
+let overflowBeforeLock: string | null = null;
+
+function useBodyScrollLock(open: boolean | undefined): void {
+  React.useEffect(() => {
+    if (!open) return;
+    if (scrollLockCount === 0) {
+      overflowBeforeLock = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    }
+    scrollLockCount += 1;
+    return () => {
+      scrollLockCount -= 1;
+      if (scrollLockCount === 0) {
+        document.body.style.overflow = overflowBeforeLock ?? "";
+        overflowBeforeLock = null;
+      }
+    };
+  }, [open]);
+}
+
+/* Keep the Portal container stable across renders so it does not move during a transition. */
+function useStableContainerGetter(): () => HTMLElement | null {
+  const { modalContainer } = useContext(DialogBoundaryContext);
+  return React.useCallback(() => modalContainer.current, [modalContainer]);
+}
+
 /**
  * A Dialog that is rendered within the boundary defined by DialogBoundary.
  *
@@ -97,22 +128,14 @@ export function DialogBoundary({ children }: { children: React.ReactNode }): Rea
  * the logic for wiring up the `aria-labelledby` attribute correctly.
  */
 export function Dialog(props: Omit<React.ComponentProps<typeof MuiDialog>, "container">): React.ReactNode {
-  const { modalContainer } = useContext(DialogBoundaryContext);
+  const getModalContainer = useStableContainerGetter();
   const { children, open, ...rest } = props;
 
-  React.useEffect(() => {
-    if (document.body) {
-      if (open) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "unset";
-      }
-    }
-  }, [open]);
+  useBodyScrollLock(open);
 
   return (
-    <MuiDialog container={() => modalContainer.current} open={open} {...rest}>
-      {children}
+    <MuiDialog container={getModalContainer} open={open} {...rest}>
+      <Suspense fallback={null}>{children}</Suspense>
     </MuiDialog>
   );
 }
@@ -121,22 +144,14 @@ export function Dialog(props: Omit<React.ComponentProps<typeof MuiDialog>, "cont
  * A Menu that is rendered within the boundary defined by DialogBoundary.
  */
 export function Menu(props: Omit<React.ComponentProps<typeof MuiMenu>, "container">): React.ReactNode {
-  const { modalContainer } = useContext(DialogBoundaryContext);
+  const getModalContainer = useStableContainerGetter();
   const { children, open, ...rest } = props;
 
-  React.useEffect(() => {
-    if (document.body) {
-      if (open) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "unset";
-      }
-    }
-  }, [open]);
+  useBodyScrollLock(open);
 
   return (
-    <MuiMenu container={() => modalContainer.current} open={open} {...rest}>
-      {children}
+    <MuiMenu container={getModalContainer} open={open} {...rest}>
+      <Suspense fallback={null}>{children}</Suspense>
     </MuiMenu>
   );
 }
@@ -145,18 +160,10 @@ export function Menu(props: Omit<React.ComponentProps<typeof MuiMenu>, "containe
  * A Drawer that is rendered within the boundary defined by DialogBoundary.
  */
 export function Drawer(props: Omit<React.ComponentProps<typeof MuiDrawer>, "container">): React.ReactNode {
-  const { modalContainer } = useContext(DialogBoundaryContext);
+  const getModalContainer = useStableContainerGetter();
   const { children, open, ...rest } = props;
 
-  React.useEffect(() => {
-    if (document.body) {
-      if (open) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "unset";
-      }
-    }
-  }, [open]);
+  useBodyScrollLock(open);
 
   return (
     <MuiDrawer
@@ -165,11 +172,11 @@ export function Drawer(props: Omit<React.ComponentProps<typeof MuiDrawer>, "cont
        * Including the superfluous prop otherwise results in a console error.
        * See https://mui.com/material-ui/api/drawer/
        */
-      {...(props.variant === "temporary" ? { container: () => modalContainer.current } : {})}
+      {...(props.variant === "temporary" ? { container: getModalContainer } : {})}
       open={open}
       {...rest}
     >
-      {children}
+      <Suspense fallback={null}>{children}</Suspense>
     </MuiDrawer>
   );
 }

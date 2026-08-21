@@ -15,9 +15,6 @@ const mockAxios = new MockAdapter(axios);
 describe("DMPDialog", () => {
   beforeEach(() => {
     mockAxios.resetHistory();
-    // importPlan calls a `gallery()` global defined on the legacy Gallery page;
-    // stub it so the import success path completes cleanly under jsdom.
-    (globalThis as unknown as { gallery: () => void }).gallery = () => {};
     stubAppChrome(mockAxios, {
       visibleTabs: { published: false, system: false },
     });
@@ -106,9 +103,10 @@ describe("DMPDialog", () => {
 
   test("Importing a selected DMP should call the import endpoint.", async () => {
     const user = userEvent.setup();
+    const onImport = vi.fn();
     mockAxios.onGet(/\/apps\/argos\/plans.*/).reply(200, plansResponse);
     mockAxios.onPost("/apps/argos/importPlan/e27789f1-de35-4b4a-9587-a46d131c366e").reply(200);
-    render(<DMPDialog open setOpen={() => {}} />);
+    render(<DMPDialog open setOpen={() => {}} onImport={onImport} />);
     await waitFor(
       () => {
         expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
@@ -125,6 +123,7 @@ describe("DMPDialog", () => {
         ),
       ).toBe(true);
     });
+    expect(onImport).toHaveBeenCalledOnce();
   });
 
   describe("Pagination should work.", () => {
