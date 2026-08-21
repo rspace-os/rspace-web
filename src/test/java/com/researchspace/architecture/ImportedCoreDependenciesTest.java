@@ -73,8 +73,7 @@ class ImportedCoreDependenciesTest {
           "com.researchspace.model.utils",
           "com.researchspace.model.views",
           "com.researchspace.model.views.search",
-          "com.researchspace.session",
-          "com.researchspace.zipprocessing");
+          "com.researchspace.session");
 
   /**
    * Imported classes in the three packages shared with pre-existing rspace-web classes
