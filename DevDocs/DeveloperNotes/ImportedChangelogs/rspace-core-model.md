@@ -2,6 +2,9 @@
 
 Summary of important or breaking changes.
 
+## 3.3.0 2026-08-20
+ - rspace-parent 3.0.0 -> 3.1.0, bringing Shiro 2.1.0 -> 3.0.0
+
 ## 3.2.0 2026-08-07
  - Keep temporary autosave document copies out of the Lucene index
 
