@@ -94,6 +94,10 @@ export class GalleryPage extends BasePage {
     return this.page.getByRole("menuitem", { name: "DSW / FAIR Wizard" });
   }
 
+  mountedMenus(): Locator {
+    return this.page.getByRole("menu", { includeHidden: true });
+  }
+
   async openCreateMenu(): Promise<void> {
     await this.sidebar.createButton.click();
     await this.page.getByRole("menu").waitFor({ state: "visible" });

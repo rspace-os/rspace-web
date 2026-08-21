@@ -56,22 +56,9 @@ import React, { createContext, Suspense, useContext, useRef } from "react";
  * exported from this module rather than the one exported by MUI. In all other
  * respects, they behave exactly the same.
  *
- * Each of these components also wraps its children in a local Suspense
- * boundary. i18next runs with `useSuspense: true` and lazily loaded
- * namespaces, so the first `useTranslation` for a namespace the page did not
- * preload suspends. Without a boundary here that suspension reaches the page's
- * `I18nRoot`, which replaces the *entire page* with its fallback -- clicking
- * the Gallery's Create button blanked the whole Gallery for ~540ms behind a
- * spinner, because the DMP menu items pull the `apps` namespace and the Gallery
- * only preloads `gallery`, `common` and `about`. Overlays are how most
- * interaction-revealed UI appears, so containing the suspension here fixes the
- * class rather than each call site: a briefly empty menu or dialog body is a
- * far better failure mode than a blank page.
- *
- * The boundary also sits below the Modal's own transition, so a suspension in
- * the content cannot disconnect that transition's effects -- the mechanism
- * behind the stranded modals in PRT-1118 and PRT-1135. That is defence in depth
- * behind the @mui/material 9.3.1 fix rather than a substitute for it.
+ * Local Suspense boundaries keep lazy overlay translations from replacing the
+ * entire page and isolate modal transitions from suspended content (PRT-1118,
+ * PRT-1135).
  *
  * And that it's it. The fact that a context is being used is purely an
  * implementation detail. That's why its declared inside this module and not
@@ -104,28 +91,7 @@ export function DialogBoundary({ children }: { children: React.ReactNode }): Rea
   );
 }
 
-/*
- * Nested modals share one body scroll lock.
- *
- * Each of Dialog/Menu/Drawer previously ran its own effect that set
- * `document.body.style.overflow` to "hidden" while open and "unset" while
- * closed, with no cleanup. Consequences, all real: nested modals fought over
- * the value, closing an inner one unlocked the page while an outer one was
- * still open, "unset" clobbered whatever the page had set rather than restoring
- * it, and a modal unmounted while open left the page permanently unscrollable.
- *
- * RSDEV-1317 suggests deleting the effect outright, on the grounds that MUI
- * locks scrolling itself. That does not hold here: MUI locks the scroll
- * container derived from the modal's `container` prop, and these components
- * deliberately re-parent modals into the DialogBoundary div, so MUI locks that
- * div rather than the body. Measured on the Gallery with two modals open,
- * `document.body.style.overflow` was empty while MUI had applied
- * `overflow: hidden` to the boundary div. The Gallery itself is not scrollable
- * so nothing would break there, but the legacy JSP pages hosting ShareDialog,
- * RenameDialog, TagDialog and CompareDialog do scroll. So the lock is kept and
- * made correct instead: reference-counted across nested modals, restoring the
- * original value, and released on unmount.
- */
+/* MUI locks the boundary div, so nested overlays share a separate body lock. */
 let scrollLockCount = 0;
 let overflowBeforeLock: string | null = null;
 
@@ -147,37 +113,7 @@ function useBodyScrollLock(open: boolean | undefined): void {
   }, [open]);
 }
 
-/*
- * Why the container is handed over as a *stable* getter, and why RSDEV-1317
- * phase 5 (state plus a callback ref) is not used.
- *
- * MUI's Portal resolves `container` inside an effect keyed on the prop itself.
- * The three shapes behave very differently here:
- *
- *   1. An inline `() => ref.current` arrow, as this file had. New identity
- *      every render, so the effect re-runs constantly and the mount node can
- *      move out from under an open modal -- the mui/material-ui#32286 territory
- *      behind PRT-1118 and PRT-1135.
- *   2. State plus a callback ref (phase 5). The container goes null -> div
- *      deterministically, so the portal always relocates once. Where a boundary
- *      is already mounted that is harmless, but where a boundary and an ALREADY
- *      OPEN dialog mount in the same commit the dialog portals to
- *      document.body, ModalManager aria-hides the other body children, and the
- *      relocation then moves the dialog inside that hidden subtree. Measured
- *      when trying it: 42 failures across ShareDialog, pubchem/ImportDialog and
- *      FieldmarkImportDialog, all "Unable to find role=dialog".
- *   3. The stable getter below. React attaches the boundary div's ref after its
- *      descendants' layout effects, so a same-commit dialog reads null and
- *      portals to document.body -- and because the prop identity never changes,
- *      the effect does not re-run and it STAYS there: reachable, no relocation.
- *      Where the boundary mounted earlier (the normal case, <Alerts> at app
- *      level) the first read already returns the div, so toasts still render
- *      above dialogs as intended.
- *
- * Note the same-commit shape is not limited to a nested <DialogBoundary>, which
- * is all RSDEV-1317 groups A and B removed: any tree mounting <Alerts> together
- * with an open dialog has it too, because Alerts contains a boundary.
- */
+/* A stable callback prevents MUI's Portal from relocating during a render. */
 function useStableContainerGetter(): () => HTMLElement | null {
   const { modalContainer } = useContext(DialogBoundaryContext);
   return React.useCallback(() => modalContainer.current, [modalContainer]);
