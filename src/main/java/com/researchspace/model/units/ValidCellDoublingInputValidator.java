@@ -11,7 +11,9 @@ public class ValidCellDoublingInputValidator
 
   @Override
   public boolean isValid(CellDoublingTimeInput cellDoubleTime, ConstraintValidatorContext context) {
-    if (cellDoubleTime == null) {
+    if (cellDoubleTime == null
+        || cellDoubleTime.getFinalConc() == null
+        || cellDoubleTime.getInitConc() == null) {
       return true;
     }
     return cellDoubleTime.getFinalConc() > cellDoubleTime.getInitConc();

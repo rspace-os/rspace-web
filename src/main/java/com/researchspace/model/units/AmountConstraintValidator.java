@@ -11,6 +11,9 @@ public class AmountConstraintValidator implements ConstraintValidator<ValidAmoun
 
   @Override
   public boolean isValid(Quantifiable value, ConstraintValidatorContext context) {
+    if (value == null) {
+      return true;
+    }
     return AmountValidator.validate(value);
   }
 }

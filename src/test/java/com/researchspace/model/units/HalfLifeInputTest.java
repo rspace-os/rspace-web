@@ -36,6 +36,20 @@ public class HalfLifeInputTest {
   }
 
   @Test
+  public void emptyOrUnknownTimeUnitIsRejected() {
+    Set<ConstraintViolation<HalfLifeInput>> constraintViolations =
+        validator.validate(new HalfLifeInput(3.1, "", 2.0, "week"));
+    assertEquals(2, constraintViolations.size());
+  }
+
+  @Test
+  public void zeroTimesAreRejected() {
+    Set<ConstraintViolation<HalfLifeInput>> constraintViolations =
+        validator.validate(new HalfLifeInput(0d, "day", 0d, "h"));
+    assertEquals(2, constraintViolations.size());
+  }
+
+  @Test
   public void test2() {
     BaseUnit<Dimensionless> PEOPLE = new BaseUnit<>("people");
     javax.measure.Quantity<Dimensionless> pop = Quantities.getQuantity(100, PEOPLE);
