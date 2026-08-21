@@ -69,8 +69,6 @@ public class RSUnits {
   public static final Unit<Concentration> MILLIGM_PER_ML =
       MILLIGRAM.divide(MILLILITRE).asType(Concentration.class);
   public static final Unit<Concentration> GM_PER_L = GRAM.divide(LITRE).asType(Concentration.class);
-  public static final Unit<Efficiency> TRANSFORMANTS_PER_UG =
-      MICROGRAM.inverse().asType(Efficiency.class);
 
   // derived enzyme units
   public static final Unit<CatalyticActivity> MICROKATAL = MICRO(Units.KATAL);

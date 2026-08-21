@@ -43,7 +43,6 @@ class ImportedCoreDependenciesTest {
           "com.researchspace.core.util.imageutils",
           "com.researchspace.core.util.jsonserialisers",
           "com.researchspace.core.util.progress",
-          "com.researchspace.core.util.structs",
           "com.researchspace.core.util.throttling",
           "com.researchspace.core.util.version",
           "com.researchspace.maintenance.model",
@@ -72,9 +71,7 @@ class ImportedCoreDependenciesTest {
           "com.researchspace.model.units",
           "com.researchspace.model.utils",
           "com.researchspace.model.views",
-          "com.researchspace.model.views.search",
-          "com.researchspace.session",
-          "com.researchspace.zipprocessing");
+          "com.researchspace.session");
 
   /**
    * Imported classes in the three packages shared with pre-existing rspace-web classes
@@ -86,7 +83,6 @@ class ImportedCoreDependenciesTest {
           "com.researchspace.core.util.ASearchResultEntry",
           "com.researchspace.core.util.AbstractURLPaginator",
           "com.researchspace.core.util.BasicPaginationCriteria",
-          "com.researchspace.core.util.BasicSearchResultEntry",
           "com.researchspace.core.util.CollectionFilter",
           "com.researchspace.core.util.CommandLineRunner",
           "com.researchspace.core.util.DateRange",
@@ -105,7 +101,6 @@ class ImportedCoreDependenciesTest {
           "com.researchspace.core.util.ISearchResults",
           "com.researchspace.core.util.JacksonUtil",
           "com.researchspace.core.util.LimitedBytesFromURLRetriever",
-          "com.researchspace.core.util.LinkUtils",
           "com.researchspace.core.util.MediaUtils",
           "com.researchspace.core.util.NullCache",
           "com.researchspace.core.util.NumberUtils",
