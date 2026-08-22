@@ -14,7 +14,7 @@ export type GallerySection =
 
 export class GallerySidebar {
   readonly root: Locator;
-  readonly createButton: Locator;
+  private readonly createButton: Locator;
   private readonly openSidebarButton: Locator;
 
   constructor(page: Page) {
@@ -34,5 +34,14 @@ export class GallerySidebar {
   async openSection(section: GallerySection): Promise<void> {
     await this.ensureOpen();
     await this.root.getByRole("button", { name: section, exact: true }).click();
+  }
+
+  async clickCreate(): Promise<void> {
+    await this.ensureOpen();
+    await this.createButton.click();
+    await this.root
+      .locator(".MuiBackdrop-root")
+      .click({ timeout: 2_000 })
+      .catch(() => {});
   }
 }

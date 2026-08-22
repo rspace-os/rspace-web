@@ -1,8 +1,9 @@
 import type { Locator, Page } from "@playwright/test";
 import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
+import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
 import { CreateFolderDialog } from "@/__tests__/e2e/components/workspace/CreateFolderDialog";
+import { CreateNotebookDialog } from "@/__tests__/e2e/components/workspace/CreateNotebookDialog";
 import { WorkspacePagination } from "@/__tests__/e2e/components/workspace/WorkspacePagination";
-import type { WorkspaceRecordInfoDialog } from "@/__tests__/e2e/components/workspace/WorkspaceRecordInfoDialog";
 import { WorkspaceSearchBar } from "@/__tests__/e2e/components/workspace/WorkspaceSearchBar";
 import { WorkspaceSelectionBar } from "@/__tests__/e2e/components/workspace/WorkspaceSelectionBar";
 import { WorkspaceTable } from "@/__tests__/e2e/components/workspace/WorkspaceTable";
@@ -11,6 +12,7 @@ import { WorkspaceToolbar } from "@/__tests__/e2e/components/workspace/Workspace
 import { WorkspaceTree } from "@/__tests__/e2e/components/workspace/WorkspaceTree";
 import { BasePage } from "../BasePage";
 import { DocumentEditorPage } from "../document/DocumentEditorPage";
+import { NotebookPage } from "../notebook/NotebookPage";
 
 export class WorkspacePage extends BasePage {
   readonly path = "/workspace";
@@ -78,7 +80,7 @@ export class WorkspacePage extends BasePage {
     throw new Error(`findRecord: "${name}" not found within ${maxPages} pages.`);
   }
 
-  async openInfoFor(name: string): Promise<WorkspaceRecordInfoDialog> {
+  async openInfoFor(name: string): Promise<RecordInfoDialog> {
     if (await this.isTreeView()) {
       throw new Error("openInfoFor: no Record Info action in tree view — switch to list view first.");
     }
@@ -91,6 +93,16 @@ export class WorkspacePage extends BasePage {
     const editor = new DocumentEditorPage(this.page);
     await editor.isLoaded();
     return editor;
+  }
+
+  async createNotebook(name: string): Promise<NotebookPage> {
+    await this.toolbar.createMenu.create("Notebook");
+    const dialog = new CreateNotebookDialog(this.page);
+    await dialog.waitUntilVisible();
+    await dialog.create(name);
+    const notebook = new NotebookPage(this.page);
+    await notebook.isLoaded();
+    return notebook;
   }
 
   async createFolder(path: string, { navigate = false }: { navigate?: boolean } = {}): Promise<void> {
