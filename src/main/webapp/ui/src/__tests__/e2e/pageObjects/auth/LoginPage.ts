@@ -1,6 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
 import { PublicNavComponent } from "@/__tests__/e2e/components/navigation/PublicNavComponent";
 import { BasePage } from "../BasePage";
+import { RequestPasswordResetPage } from "./RequestPasswordResetPage";
+import { RequestUsernameReminderPage } from "./RequestUsernameReminderPage";
 
 export class LoginPage extends BasePage {
   readonly path = "/login";
@@ -26,11 +28,13 @@ export class LoginPage extends BasePage {
     await this.submitButton.click();
   }
 
-  async clickForgotUsername(): Promise<void> {
+  async clickForgotUsername(): Promise<RequestUsernameReminderPage> {
     await this.page.getByRole("link", { name: "Forgotten your username?" }).click();
+    return new RequestUsernameReminderPage(this.page);
   }
 
-  async clickForgotPassword(): Promise<void> {
+  async clickForgotPassword(): Promise<RequestPasswordResetPage> {
     await this.page.getByRole("link", { name: "Forgotten your password?" }).click();
+    return new RequestPasswordResetPage(this.page);
   }
 }

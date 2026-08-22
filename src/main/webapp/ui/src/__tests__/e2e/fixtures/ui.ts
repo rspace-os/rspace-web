@@ -7,6 +7,10 @@ import { ToastsComponent } from "../components/shared/ToastsComponent";
 import { env } from "../env";
 import { AppsPage } from "../pageObjects/apps/AppsPage";
 import { LoginPage } from "../pageObjects/auth/LoginPage";
+import { RequestPasswordResetPage } from "../pageObjects/auth/RequestPasswordResetPage";
+import { RequestUsernameReminderPage } from "../pageObjects/auth/RequestUsernameReminderPage";
+import { ResetPasswordPage } from "../pageObjects/auth/ResetPasswordPage";
+import { SignupPage } from "../pageObjects/auth/SignupPage";
 import { DocumentEditorPage } from "../pageObjects/document/DocumentEditorPage";
 import { DocumentPage } from "../pageObjects/document/DocumentPage";
 import { GalleryPage } from "../pageObjects/gallery/GalleryPage";
@@ -25,6 +29,10 @@ export type E2EOptions = { appUser: AppUser };
 type UiFixtures = {
   browserContextOptions: BrowserContextOptions;
   pageLogin: LoginPage;
+  pageRequestPasswordReset: RequestPasswordResetPage;
+  pageResetPassword: ResetPasswordPage;
+  pageRequestUsernameReminder: RequestUsernameReminderPage;
+  pageSignup: SignupPage;
   pageApps: AppsPage;
   pageWorkspace: WorkspacePage;
   pageDocument: DocumentPage;
@@ -56,6 +64,10 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
     await use({ baseURL: env.baseURL, ignoreHTTPSErrors: browserName === "webkit" });
   },
   pageLogin: pageFixture(LoginPage),
+  pageRequestPasswordReset: pageFixture(RequestPasswordResetPage),
+  pageResetPassword: pageFixture(ResetPasswordPage),
+  pageRequestUsernameReminder: pageFixture(RequestUsernameReminderPage),
+  pageSignup: pageFixture(SignupPage),
   pageApps: pageFixture(AppsPage),
   pageWorkspace: pageFixture(WorkspacePage),
   pageDocument: pageFixture(DocumentPage),

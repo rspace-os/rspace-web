@@ -29,6 +29,7 @@ export const env = {
   playwrightLog: optional("PW_LOG", "off") as "trace" | "info" | "off",
 
   mockBaseUrl: `http://localhost:${optional("E2E_MOCK_PORT", "9099")}`,
+  mailpitBaseUrl: optional("MAILPIT_HTTP_URL", "http://localhost:8025"),
 
   get mockBackendBaseUrl(): string {
     return optional("E2E_MOCK_BACKEND_URL", this.mockBaseUrl);
