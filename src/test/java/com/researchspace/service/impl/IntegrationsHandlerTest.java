@@ -7,6 +7,7 @@ import static com.researchspace.service.IntegrationsHandler.DMPASSISTANT_APP_NAM
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTING;
+import static com.researchspace.service.IntegrationsHandler.OMERO_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ONBOARDING_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
@@ -14,6 +15,7 @@ import static com.researchspace.service.SystemPropertyName.BOX_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.DIGITAL_COMMON_DATA_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.DMPASSISTANT_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.DROPBOX_AVAILABLE;
+import static com.researchspace.service.SystemPropertyName.OMERO_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.PYRAT_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.SLACK_AVAILABLE;
 import static com.researchspace.service.impl.IntegrationsHandlerImpl.MASKED_TOKEN;
@@ -385,6 +387,53 @@ public class IntegrationsHandlerTest {
     assertEquals(1, options.size());
     // the real token must never be surfaced to the Apps page; only the masked sentinel
     assertEquals(MASKED_TOKEN, options.get(ACCESS_TOKEN_SETTING));
+  }
+
+  /**
+   * OMERO is a single-option-set appConfig integration, so getIntegration replaces the whole
+   * options map from the app config before postProcessInfo adds the masked token. Stubbing the app
+   * config is what makes this test exercise that real ordering rather than a null-config shortcut.
+   */
+  private void stubOmeroAppConfig() {
+    UserAppConfig omeroConfig =
+        new UserAppConfig(subject, new App(OMERO_APP_NAME, "Omero", true), true);
+    when(appCfgMgr.getByAppName("app.omero", subject)).thenReturn(omeroConfig);
+  }
+
+  @Test
+  public void getOmeroConnectionStatus() {
+    SystemPropertyValue omeroAvailable = getSystemPropertyValueAllowed(OMERO_AVAILABLE);
+
+    UserConnection userConn = new UserConnection();
+    userConn.setAccessToken("omerouser_,_omeropassword");
+
+    when(sysPropMgr.findByName(OMERO_AVAILABLE)).thenReturn(omeroAvailable);
+    stubOmeroAppConfig();
+    when(userConnectionManager.findByUserNameProviderName(anyString(), eq(OMERO_APP_NAME)))
+        .thenReturn(Optional.of(userConn));
+
+    IntegrationInfo info = handler.getIntegration(subject, OMERO_APP_NAME);
+    assertEquals(OMERO_APP_NAME, info.getName());
+    assertTrue(info.isOauthConnected());
+    // the stored OMERO username/password must never reach the Apps page
+    assertEquals(MASKED_TOKEN, info.getOptions().get(ACCESS_TOKEN_SETTING));
+    assertFalse(
+        "the real OMERO credentials must not appear anywhere in the options",
+        info.getOptions().toString().contains("omeropassword"));
+  }
+
+  @Test
+  public void getOmeroConnectionStatusWhenNotConnected() {
+    SystemPropertyValue omeroAvailable = getSystemPropertyValueAllowed(OMERO_AVAILABLE);
+
+    when(sysPropMgr.findByName(OMERO_AVAILABLE)).thenReturn(omeroAvailable);
+    stubOmeroAppConfig();
+    when(userConnectionManager.findByUserNameProviderName(anyString(), eq(OMERO_APP_NAME)))
+        .thenReturn(Optional.empty());
+
+    IntegrationInfo info = handler.getIntegration(subject, OMERO_APP_NAME);
+    assertFalse(info.isOauthConnected());
+    assertNull(info.getOptions().get(ACCESS_TOKEN_SETTING));
   }
 
   @Test

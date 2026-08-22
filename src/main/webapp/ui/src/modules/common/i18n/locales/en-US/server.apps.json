@@ -118,8 +118,12 @@
     },
     "omero": {
       "errors": {
-        "authenticationExpired": "Omero authentication expired, please connect to Omero on the Apps page",
-        "login": "Could not log in to OMERO: {0}"
+        "blankCredentials": "Both an OMERO username and password are required.",
+        "credentialsDelimiter": "An OMERO username or password may not contain \"{0}\".",
+        "login": "Could not log in to OMERO: {0}",
+        "notConnected": "You are not connected to OMERO. Connect from the Apps page.",
+        "rejectedCredentials": "OMERO rejected these credentials. Check your username and password.",
+        "unknownServer": "RSpace is configured for an OMERO server named \"{0}\", which this OMERO instance does not offer. Please contact an administrator."
       }
     },
     "raid": {
