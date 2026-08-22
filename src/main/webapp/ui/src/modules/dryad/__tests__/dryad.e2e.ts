@@ -27,9 +27,13 @@ test.describe(`Dryad integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () 
     componentNotifications,
     componentToasts,
   }) => {
-    await page.route("https://api.crossref.org/funders**", (route) =>
+    await page.route("https://api.crossref.org/funders?query=Mock", (route) =>
       route.fulfill({
-        json: { message: { items: [{ id: MOCK_CROSSREF_FUNDER_ID, name: "Mock Funding Body" }] } },
+        json: {
+          message: {
+            items: [{ id: "100000001", uri: MOCK_CROSSREF_FUNDER_ID, name: "Mock Funding Body" }],
+          },
+        },
       }),
     );
 
@@ -64,9 +68,10 @@ test.describe(`Dryad integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () 
       repositoryConfig?: { meta?: { otherProperties?: { funder?: string } } };
     };
     const submittedFunder = JSON.parse(exportRequestBody.repositoryConfig?.meta?.otherProperties?.funder ?? "{}") as {
-      id?: string;
+      uri?: string;
     };
-    expect(submittedFunder.id).toBe(MOCK_CROSSREF_FUNDER_ID);
+
+    expect(submittedFunder.uri).toBe(MOCK_CROSSREF_FUNDER_ID);
 
     await expect(
       componentToasts.byVariant("success", "Your export generation request has been submitted"),

@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,7 +90,7 @@ public class ArgosDMPProvider {
     log.info("Importing DMP: " + id + ", " + dmpDetails.getLabel());
 
     String json = OBJECT_MAPPER.writeValueAsString(dmpDetails);
-    InputStream is = new ByteArrayInputStream(json.getBytes());
+    InputStream is = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
     EcatDocumentFile file =
         mediaManager.saveNewDMP(dmpDetails.getLabel() + ".json", is, user, null);
 
