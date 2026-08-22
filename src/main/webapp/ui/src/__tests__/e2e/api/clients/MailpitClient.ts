@@ -41,4 +41,10 @@ export class MailpitClient {
     const { document } = new JSDOM(html).window;
     return [...document.querySelectorAll("a[href]")].map((a) => a.getAttribute("href") as string);
   }
+
+  /** Extracts the visible plain text from an HTML email body. */
+  extractText(html: string): string {
+    const { document } = new JSDOM(html).window;
+    return document.body.textContent ?? "";
+  }
 }

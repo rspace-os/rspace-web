@@ -55,6 +55,8 @@ test.describe("Password reset", () => {
       if (!link) {
         throw new Error(`no password-reset link found in email body: ${message.HTML}`);
       }
+      const token = new URL(link).searchParams.get("token");
+      expect(token).toBeTruthy();
       return link;
     });
 

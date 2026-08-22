@@ -49,7 +49,18 @@ test.describe("Username reminder", () => {
         throw new Error(`no "${REMINDER_EMAIL_SUBJECT}" email found for ${email}`);
       }
       const message = await clientMailpit.getMessage(summary.ID);
-      expect(message.HTML).toContain(username);
+      const bodyText = clientMailpit.extractText(message.HTML);
+      const [, afterMarker] = bodyText.split("Your username is ");
+      if (afterMarker === undefined) {
+        throw new Error(`"Your username is " not found in email body: ${message.HTML}`);
+      }
+      expect(afterMarker.startsWith(username)).toBe(true);
+
+      const links = clientMailpit.extractLinks(message.HTML);
+      const loginLink = links.find((href) => href.endsWith("/login"));
+      if (!loginLink) {
+        throw new Error(`no login link found in email body: ${message.HTML}`);
+      }
     });
   });
 });
