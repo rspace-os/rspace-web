@@ -125,7 +125,8 @@ fixture change is always intentional and reviewable in a diff.
 | DSW / FAIR Wizard | none — same per-connection UI field pattern as Dataverse. | `src/modules/dsw/__tests__/mock.ts` |
 | PyRAT | `pyrat.server.config` (JSON **object** keyed by alias — `{"mock":{"url":"http://localhost:9099","token":"..."}}`, NOT an array like Galaxy's) | `src/modules/pyrat/__tests__/mock.ts` |
 | OMERO | `omero.api.url` — unlike Dataverse/DSW's per-connection field, OMERO's base URL is a static JVM property, so the mock server stands in for the *whole* third-party OMERO JSON API (version/urls/servers/token/login/projects/screens), not just one endpoint. | `src/modules/omero/__tests__/mock.ts` |
-| DataCite IGSN | configured on demand by the `flowIgsnConfig` fixture through the sysadmin API | `src/__tests__/e2e/mocks/datacite.ts` |
+| DataCite IGSN/PIDINST | configured on demand by the `flowIgsnConfig` / `flowPidinstDataciteConfig` fixtures through the sysadmin API (separate identifier-type slots, same real sandbox account) | `src/__tests__/e2e/mocks/datacite.ts` |
+| B2INST PIDINST | configured on demand by the `flowPidinstB2instConfig` fixture through the sysadmin API (PIDINST_B2INST provider). Mocks `B2instConnectorImpl`'s outbound calls (`GET /api/communities`, `POST /api/records`, `DELETE /api/records/:rid/draft`, the review/submit sequence) — there's no update-draft-metadata call to mock, since RSpace's B2INST connector doesn't have one. | `src/__tests__/e2e/mocks/b2inst.ts` |
 
 ## CI setup
 

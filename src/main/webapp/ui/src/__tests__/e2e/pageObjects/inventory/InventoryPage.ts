@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { openDialog } from "@/__tests__/e2e/components/inventory/DialogHelpers";
 import { ExportDialogComponent } from "@/__tests__/e2e/components/inventory/ExportDialogComponent";
+import { IdentifierSettingsDialog } from "@/__tests__/e2e/components/inventory/IdentifierSettingsDialog";
 import {
   InventoryCreateMenu,
   type InventoryCsvImportItem,
@@ -80,5 +81,9 @@ export class InventoryPage extends BasePage {
 
   async openExportData(): Promise<ExportDialogComponent> {
     return openDialog(() => this.sidebar.navigateTo("Export Data"), new ExportDialogComponent(this.page));
+  }
+
+  async openIdentifierSettings(): Promise<IdentifierSettingsDialog> {
+    return openDialog(() => this.sidebar.navigateTo("Settings"), new IdentifierSettingsDialog(this.page));
   }
 }
