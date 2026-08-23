@@ -189,6 +189,7 @@ import com.researchspace.service.impl.FieldLinksEntitySyncImpl;
 import com.researchspace.service.impl.FileStoreRootDetector;
 import com.researchspace.service.impl.GroupSharedSnippetsFolderAppInitialiser;
 import com.researchspace.service.impl.ImageProcessorImpl;
+import com.researchspace.service.impl.InstrumentCustomFieldIndexInitialisor;
 import com.researchspace.service.impl.IntegrationsHandlerImpl;
 import com.researchspace.service.impl.IntegrationsHandlerInitialisor;
 import com.researchspace.service.impl.JoinExistingCollGroupRequestUpdateHandler;
@@ -528,6 +529,11 @@ public abstract class BaseConfig {
   @Bean
   public IApplicationInitialisor chemistryIndexer() {
     return new ChemistrySearchIndexInitialisor();
+  }
+
+  @Bean
+  public IApplicationInitialisor customFieldIndexer() {
+    return new InstrumentCustomFieldIndexInitialisor();
   }
 
   @Bean

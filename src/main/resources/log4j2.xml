@@ -125,6 +125,9 @@
     <Logger name="com.researchspace.api.v1.service.impl.ApiRequestLogger" level="INFO">
       <AppenderRef ref="ApiRequestLogAppender"/>
     </Logger>
+    <Logger name="com.researchspace.api.v2.requests" level="INFO">
+      <AppenderRef ref="ApiRequestLogAppender"/>
+    </Logger>
 
     <Logger name="com.researchspace.model.audittrail.AuditTrailService" level="INFO">
       <AppenderRef ref="auditTrailLogger"/>

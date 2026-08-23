@@ -15,44 +15,52 @@ import jakarta.validation.constraints.Size;
 import java.util.Calendar;
 import java.util.Date;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 
-/** Stores information about maintenance periods scheduled by system admin */
+/** Stores information about maintenance periods scheduled by a system administrator. */
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 @EqualsAndHashCode
 @ToString
 public class ScheduledMaintenance {
 
-  /** Number of minutes before scheduled maintenance when we stop letting people log in. */
+  /** Number of minutes before scheduled maintenance when users can no longer log in. */
   private static final int STOP_USER_LOGIN_MINUTES = 10;
 
-  /**
-   * This is a placeholder to populate the cache when there are no scheduled maintenance windows.
-   * <br>
-   * It is transient.
-   */
+  /** Transient placeholder returned when there is no scheduled maintenance window. */
   public static final ScheduledMaintenance NULL =
       new ScheduledMaintenance(new Date(0), new Date(1));
 
+  @Getter(onMethod_ = {@Id, @GeneratedValue(strategy = GenerationType.IDENTITY)})
+  @Setter
   private Long id;
+
   private Long startDate;
   private Long endDate;
   private Long stopUserLoginDate;
+
+  @Getter(
+      onMethod_ =
+          @Size(
+              min = 0,
+              max = User.DEFAULT_MAXFIELD_LEN,
+              message = "{message} {errors.string.max}"))
+  @Setter
   private String message;
 
   protected ScheduledMaintenance() {}
 
   /**
-   * Public constructor. startDate and endDate columns have nullable=false property, so if you don't
-   * set them in constructor, make sure you do it before save.
+   * Creates a scheduled maintenance window.
    *
-   * @param startDate
-   * @param endDate
+   * @param startDate start of the maintenance window
+   * @param endDate end of the maintenance window
    */
   public ScheduledMaintenance(Date startDate, Date endDate) {
     setStartDate(startDate);
@@ -60,25 +68,12 @@ public class ScheduledMaintenance {
     setDefaultStopUserLoginDate();
   }
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  public Long getId() {
-    return id;
-  }
-
-  public void setId(Long id) {
-    this.id = id;
-  }
-
   @Column(nullable = false)
   @Temporal(TemporalType.TIMESTAMP)
   @DateTimeFormat(iso = ISO.DATE_TIME)
-  @NotNull(message = "start date {errors.required.field}")
+  @NotNull(message = "{errors.api.v2.maintenance.startDate.required}")
   public Date getStartDate() {
-    if (startDate == null) {
-      return null;
-    }
-    return new Date(startDate);
+    return startDate == null ? null : new Date(startDate);
   }
 
   @Transient
@@ -87,9 +82,9 @@ public class ScheduledMaintenance {
   }
 
   /**
-   * Sets new maintenance start date, updates stopUserLoginDate.
+   * Sets the maintenance start date and derives the default login cutoff.
    *
-   * @param startDate
+   * @param startDate start of the maintenance window
    */
   public void setStartDate(Date startDate) {
     if (startDate != null) {
@@ -101,12 +96,9 @@ public class ScheduledMaintenance {
   @Column(nullable = false)
   @Temporal(TemporalType.TIMESTAMP)
   @DateTimeFormat(iso = ISO.DATE_TIME)
-  @NotNull(message = "end date {errors.required.field}")
+  @NotNull(message = "{errors.api.v2.maintenance.endDate.required}")
   public Date getEndDate() {
-    if (endDate == null) {
-      return null;
-    }
-    return new Date(endDate);
+    return endDate == null ? null : new Date(endDate);
   }
 
   @Transient
@@ -120,13 +112,10 @@ public class ScheduledMaintenance {
     }
   }
 
-  @Column(nullable = false)
+  @Column(nullable = true)
   @Temporal(TemporalType.TIMESTAMP)
   public Date getStopUserLoginDate() {
-    if (stopUserLoginDate == null) {
-      return null;
-    }
-    return new Date(stopUserLoginDate);
+    return stopUserLoginDate == null ? null : new Date(stopUserLoginDate);
   }
 
   @Transient
@@ -135,38 +124,34 @@ public class ScheduledMaintenance {
   }
 
   public void setStopUserLoginDate(Date stopUserLoginDate) {
-    if (stopUserLoginDate != null) {
-      this.stopUserLoginDate = stopUserLoginDate.getTime();
-    }
-  }
-
-  @Size(min = 0, max = User.DEFAULT_MAXFIELD_LEN, message = "{message} {errors.string.max}")
-  public String getMessage() {
-    return message;
-  }
-
-  public void setMessage(String message) {
-    this.message = message;
+    this.stopUserLoginDate = stopUserLoginDate == null ? null : stopUserLoginDate.getTime();
   }
 
   @Transient
   public boolean getCanUserLoginNow() {
-    long now = (new Date()).getTime();
-    return now < stopUserLoginDate || now > endDate;
+    long now = System.currentTimeMillis();
+    long cutoff = stopUserLoginDate == null ? startDate : stopUserLoginDate;
+    return now < cutoff || now > endDate;
   }
 
   @Transient
   public boolean isActiveNow() {
-    long now = (new Date()).getTime();
-    return (now > startDate) && (now < endDate);
+    long now = System.currentTimeMillis();
+    return now > startDate && now < endDate;
+  }
+
+  /** Whether this maintenance ends strictly after it starts. */
+  @Transient
+  public boolean hasValidWindow() {
+    return startDate != null && endDate != null && endDate > startDate;
   }
 
   private void setDefaultStopUserLoginDate() {
     if (startDate != null) {
-      Calendar cal = Calendar.getInstance();
-      cal.setTimeInMillis(startDate);
-      cal.add(Calendar.MINUTE, -STOP_USER_LOGIN_MINUTES);
-      setStopUserLoginDate(cal.getTime());
+      Calendar calendar = Calendar.getInstance();
+      calendar.setTimeInMillis(startDate);
+      calendar.add(Calendar.MINUTE, -STOP_USER_LOGIN_MINUTES);
+      setStopUserLoginDate(calendar.getTime());
     }
   }
 
