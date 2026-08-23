@@ -137,6 +137,7 @@
 
         <mapping class="com.researchspace.model.inventory.Instrument"/>
         <mapping class="com.researchspace.model.inventory.InstrumentTemplate"/>
+        <mapping class="com.researchspace.model.booking.BookingConfiguration"/>
     
         <mapping class="com.researchspace.model.inventory.Container"/>
         <mapping class="com.researchspace.model.inventory.ContainerLocation"/>
