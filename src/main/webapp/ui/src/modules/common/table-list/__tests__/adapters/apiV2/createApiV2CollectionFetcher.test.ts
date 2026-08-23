@@ -195,4 +195,54 @@ describe("createApiV2CollectionFetcher", () => {
       rowCount: 1,
     });
   });
+
+  it("always ANDs the non-removable base filter with user filters", async () => {
+    const baseFilter = {
+      kind: "comparison",
+      field: "owner",
+      operator: "contains",
+      value: "ada",
+    } as const;
+    const state = {
+      filters: {
+        search: "",
+        expression: { kind: "comparison", field: "title", operator: "contains", value: "scope" } as const,
+      },
+      sorting: [],
+      page: { pageIndex: 0, pageSize: 2 },
+      visibleFields: ["title"],
+    } satisfies Parameters<ReturnType<typeof createApiV2CollectionFetcher<TestRecord>>>[0];
+    server.use(
+      http.get("/api/v2/records", ({ request }) => {
+        expect(new URL(request.url).searchParams.get("where")).toContain("owner=contains=ada");
+        expect(new URL(request.url).searchParams.get("where")).toContain("title=contains=scope");
+        return HttpResponse.json({
+          docs: [],
+          totalDocs: 0,
+          limit: 2,
+          page: 1,
+          pagingCounter: 1,
+          totalPages: 0,
+          hasPrevPage: false,
+          hasNextPage: false,
+          prevPage: null,
+          nextPage: null,
+        });
+      }),
+    );
+
+    await createApiV2CollectionFetcher(adapter, { baseFilter })(state, {
+      signal: new AbortController().signal,
+    });
+
+    expect(
+      apiV2CollectionRequestParams(
+        adapter,
+        { ...state, filters: { search: "", expression: null } },
+        undefined,
+        "visible",
+        baseFilter,
+      ).get("where"),
+    ).toContain("owner=contains=ada");
+  });
 });

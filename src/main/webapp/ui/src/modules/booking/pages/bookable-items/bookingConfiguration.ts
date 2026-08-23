@@ -17,7 +17,8 @@ export const BookingConfigurationSchema = v.object({
   ),
   enabled: v.boolean(),
   timezone: v.string(),
-  updatedAt: v.nullable(v.string()),
+  // Fixed-projection consumers, such as Calendar, deliberately omit this field.
+  updatedAt: v.optional(v.nullable(v.string())),
 });
 
 export type BookingConfiguration = v.InferOutput<typeof BookingConfigurationSchema>;

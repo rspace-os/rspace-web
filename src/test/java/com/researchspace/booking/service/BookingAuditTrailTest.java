@@ -10,6 +10,7 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.TimeSlotBooking;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.event.TransactionPhase;
@@ -34,6 +35,29 @@ class BookingAuditTrailTest {
     Method listener =
         BookingAuditTrail.class.getDeclaredMethod(
             "bookingConfigurationChanged", BookingConfigurationAuditEvent.class);
+
+    assertEquals(
+        TransactionPhase.AFTER_COMMIT,
+        listener.getAnnotation(TransactionalEventListener.class).phase());
+  }
+
+  @Test
+  void writesCommittedTimeSlotBookingEventToAuditTrail() {
+    AuditTrailService auditTrail = mock(AuditTrailService.class);
+    BookingAuditTrail listener = new BookingAuditTrail(auditTrail);
+
+    listener.timeSlotBookingChanged(
+        new TimeSlotBookingAuditEvent(
+            mock(User.class), mock(User.class), new TimeSlotBooking(), AuditAction.WRITE));
+
+    verify(auditTrail).notify(any(GenericEvent.class));
+  }
+
+  @Test
+  void timeSlotBookingListenerRunsOnlyAfterCommit() throws Exception {
+    Method listener =
+        BookingAuditTrail.class.getDeclaredMethod(
+            "timeSlotBookingChanged", TimeSlotBookingAuditEvent.class);
 
     assertEquals(
         TransactionPhase.AFTER_COMMIT,

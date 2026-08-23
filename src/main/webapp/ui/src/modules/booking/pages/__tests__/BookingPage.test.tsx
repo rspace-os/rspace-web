@@ -97,9 +97,19 @@ describe("booking sidebar", () => {
     const { container } = renderAt("/booking");
 
     // i18next runs in cimode under vitest, so t() renders "<namespace>:<key>"
-    for (const key of ["dashboard", "calendar", "myBookings", "administration", "approvalQueue", "settings"]) {
+    for (const key of ["dashboard", "myBookings", "administration", "approvalQueue", "settings"]) {
       expect(await screen.findByRole("button", { name: `booking:sidebar.${key}` })).toBeInTheDocument();
     }
+
+    expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toHaveAttribute(
+      "href",
+      expect.stringMatching(/^\/booking\/calendar\?date=\d{4}-\d{2}-\d{2}$/),
+    );
+
+    expect(await screen.findByRole("link", { name: "booking:sidebar.addBooking" })).toHaveAttribute(
+      "href",
+      expect.stringMatching(/^\/booking\/calendar\/bookings\/add\?date=\d{4}-\d{2}-\d{2}$/),
+    );
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.bookableItems" })).toHaveAttribute(
       "href",

@@ -82,6 +82,20 @@ public final class RsqlCollectionQuery {
     return translate(filter, targets, RuntimeFieldSelection.empty(), false);
   }
 
+  /** Compiles the SQL-level read rule for one described relationship. */
+  public Predicate compileReadableRelationship(
+      String relationshipName, RelationshipReadAccess targets) {
+    State state =
+        new State(
+            parameterPrefix,
+            java.util.Objects.requireNonNull(targets, "Target access"),
+            RuntimeFieldSelection.empty(),
+            false);
+    String expression =
+        compileReadableRelationship(description.requireRelationship(relationshipName), state);
+    return new Predicate(expression, state.parameters, state.subqueries);
+  }
+
   private Predicate translate(
       FilterExpression filter,
       RelationshipReadAccess targets,

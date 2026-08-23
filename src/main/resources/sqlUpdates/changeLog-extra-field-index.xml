@@ -14,28 +14,28 @@
   </changeSet>
 
   <changeSet id="extra-field-name-index" author="rspace" context="run">
-    <comment>
-      Index the published name prefix, deletion flag, and subtype used by runtime-field discovery.
-    </comment>
     <preConditions onFail="MARK_RAN">
       <not>
         <indexExists tableName="ExtraField" indexName="ix_extrafield_name_deleted"/>
       </not>
     </preConditions>
+    <comment>
+      Index the published name prefix, deletion flag, and subtype used by runtime-field discovery.
+    </comment>
     <sql>
       CREATE INDEX ix_extrafield_name_deleted ON ExtraField (name(128), deleted, DTYPE)
     </sql>
   </changeSet>
 
   <changeSet id="extra-field-parent-name-index" author="rspace" context="run">
-    <comment>
-      Index the owning instrument followed by the published name prefix and deletion flag.
-    </comment>
     <preConditions onFail="MARK_RAN">
       <not>
         <indexExists tableName="ExtraField" indexName="ix_extrafield_instr_name"/>
       </not>
     </preConditions>
+    <comment>
+      Index the owning instrument followed by the published name prefix and deletion flag.
+    </comment>
     <sql>
       CREATE INDEX ix_extrafield_instr_name
       ON ExtraField (instrumentEntity_id, name(128), deleted)

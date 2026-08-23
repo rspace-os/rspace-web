@@ -1,6 +1,7 @@
 import { type AnyRoute, createRoute, Link, Outlet } from "@tanstack/react-router";
 import {
   CalendarIcon,
+  CalendarPlusIcon,
   CheckSquareIcon,
   ChevronRightIcon,
   LayoutDashboardIcon,
@@ -23,10 +24,12 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/modules/common/ui/sidebar";
+import { localToday } from "./all-bookable-items/calendarDate";
 
 const items = [
   { key: "dashboard", icon: LayoutDashboardIcon },
-  { key: "calendar", icon: CalendarIcon },
+  { key: "calendar", icon: CalendarIcon, to: "/booking/calendar" },
+  { key: "addBooking", icon: CalendarPlusIcon, to: "/booking/calendar/bookings/add" },
   { key: "myBookings", icon: ListIcon },
   {
     key: "administration",
@@ -37,6 +40,7 @@ const items = [
 ] as const satisfies ReadonlyArray<{
   key: string;
   icon: LucideIcon;
+  to?: string;
   children?: ReadonlyArray<{ key: string; to?: string }>;
 }>;
 
@@ -47,6 +51,7 @@ export function BookingSidebar() {
   const labels = {
     dashboard: t("sidebar.dashboard"),
     calendar: t("sidebar.calendar"),
+    addBooking: t("sidebar.addBooking"),
     myBookings: t("sidebar.myBookings"),
     administration: t("sidebar.administration"),
     settings: t("sidebar.settings"),
@@ -87,8 +92,12 @@ export function BookingSidebar() {
               </Collapsible>
             ) : (
               <SidebarMenuItem key={item.key}>
-                {/* ponytail: no sub-routes exist yet; wire `render={<Link .../>}` when they do */}
-                <SidebarMenuButton tooltip={labels[item.key]}>
+                <SidebarMenuButton
+                  tooltip={labels[item.key]}
+                  render={
+                    "to" in item ? <Link to={item.to} search={{ date: localToday() }} /> : <button type="button" />
+                  }
+                >
                   <item.icon />
                   <span>{labels[item.key]}</span>
                 </SidebarMenuButton>

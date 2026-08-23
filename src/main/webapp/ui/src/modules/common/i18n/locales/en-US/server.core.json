@@ -61,6 +61,21 @@
             "tooWide": "The audit search range must not exceed {0} days."
           }
         },
+        "booking": {
+          "create": "The booking is invalid.",
+          "overlap": "The selected time overlaps another booking.",
+          "patch": "The booking patch is invalid.",
+          "purpose": {
+            "length": "Purpose must not exceed 1,000 characters."
+          },
+          "state": {
+            "transition": "The requested booking state transition is not permitted."
+          },
+          "target": {
+            "unavailable": "The selected target is not available for booking."
+          },
+          "window": "End time must be after start time."
+        },
         "bulk": {
           "filter": {
             "required": "A where filter is required for bulk operations."
