@@ -11,6 +11,9 @@ import type { TableListProps } from "./tableListState";
 import { useTableListQueryString } from "./useTableListQueryString";
 
 export type {
+  TableListFilterButtons,
+  TableListPresentations,
+  TableListPresentationVisibility,
   TableListProps,
   TableListRowActions,
   TableListSelection,
@@ -32,6 +35,9 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   uiColumns,
   rowActions,
   selection,
+  filterButtons,
+  presentations,
+  renderRows,
   variant = "card",
   reserveEmptyRows,
   onSelectRuntimeField,
@@ -48,6 +54,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
       ...(uiColumns ?? []),
       {
         ...rowActions,
+        card: { ...rowActions.card, placement: "footer" as const },
         renderCell: (row: TDocument) =>
           rowActions.renderCell({
             row,
@@ -59,7 +66,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   const activeRow = activeRowAction ? rows.find((row) => getRowId(row) === activeRowAction.rowId) : undefined;
   return (
     <TooltipProvider delay={250}>
-      <section className="text-foreground [&_[data-slot=badge]]:rounded-sm [&_[data-slot=button]]:rounded-sm [&_[data-slot=input]]:rounded-sm [&_svg]:size-3.5!">
+      <section className="text-foreground [&_[data-inventory-item]]:p-0 [&_[data-slot=badge]]:rounded-sm [&_[data-slot=button]]:rounded-sm [&_[data-slot=input]]:rounded-sm [&_svg]:size-3.5!">
         <div className={cn(variant === "card" && "mb-5")}>
           <TableListHeader
             config={config}
@@ -78,6 +85,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
             clientSide={clientSide}
             activePanel={activePanel}
             filterCount={filterCount}
+            filterButtons={filterButtons}
             onPanelChange={setActivePanel}
             onReset={() => setActivePanel(null)}
           />
@@ -102,6 +110,8 @@ function TableListContent<TDocument extends Record<string, unknown>>({
             reserveEmptyRows={reserveEmptyRows}
             uiColumns={tableUiColumns}
             selection={selection}
+            presentations={presentations}
+            renderRows={renderRows}
           />
         </div>
       </section>

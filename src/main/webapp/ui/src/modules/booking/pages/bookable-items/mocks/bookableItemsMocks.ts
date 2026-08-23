@@ -1,6 +1,6 @@
 import { HttpResponse, http, type RequestHandler } from "msw";
 
-const openApi = {
+export const bookableItemsOpenApi = {
   paths: {
     "/api/v2/booking-configurations": {
       get: {
@@ -22,6 +22,16 @@ const openApi = {
               maximumNesting: 10,
               maximumArguments: 1000,
               selectors: {
+                id: {
+                  schema: { type: "integer", format: "int64" },
+                  operators: ["=="],
+                  wildcards: false,
+                },
+                target: {
+                  schema: { type: "string" },
+                  operators: ["=in="],
+                  wildcards: false,
+                },
                 enabled: { schema: { type: "boolean" }, operators: ["==", "!=", "=out="], wildcards: false },
                 timezone: {
                   schema: { type: "string" },
@@ -108,18 +118,122 @@ const openApi = {
   },
 };
 
-const bookingConfiguration = {
-  id: 7,
-  target: {
-    relationTo: "instruments",
-    value: { id: 123, name: "Confocal microscope", deleted: false },
-    globalId: "IN123",
+export const bookableItemFixtures = [
+  {
+    id: 7,
+    target: {
+      relationTo: "instruments",
+      value: { id: 123, name: "Confocal microscope", deleted: false },
+      globalId: "IN123",
+    },
+    enabled: true,
+    timezone: "Europe/Berlin",
+    updatedAt: "2026-08-10T10:00:00Z",
+    "target.customFields": { SF152: "BSL-2", SF160: "yes" },
   },
-  enabled: true,
-  timezone: "Europe/Berlin",
-  updatedAt: "2026-08-10T10:00:00Z",
-  "target.customFields": { SF152: "BSL-2", SF160: "yes" },
-};
+  {
+    id: 8,
+    target: {
+      relationTo: "instruments",
+      value: { id: 124, name: "Electron microscope", deleted: false },
+      globalId: "IN124",
+    },
+    enabled: true,
+    timezone: "America/New_York",
+    updatedAt: "2026-08-11T11:00:00Z",
+  },
+  {
+    id: 9,
+    target: {
+      relationTo: "instruments",
+      value: { id: 125, name: "Mass spectrometer", deleted: false },
+      globalId: "IN125",
+    },
+    enabled: true,
+    timezone: "UTC",
+    updatedAt: "2026-08-12T12:00:00Z",
+  },
+  {
+    id: 10,
+    target: {
+      relationTo: "instruments",
+      value: { id: 126, name: "Flow cytometer", deleted: false },
+      globalId: "IN126",
+    },
+    enabled: true,
+    timezone: "Asia/Singapore",
+    updatedAt: "2026-08-13T13:00:00Z",
+  },
+] as const;
+
+export const sampleBookingEvents = [
+  {
+    id: 41,
+    target: bookableItemFixtures[0].target,
+    timezone: bookableItemFixtures[0].timezone,
+    start: "2026-08-17T06:00:00Z",
+    end: "2026-08-17T07:30:00Z",
+    state: "CONFIRMED",
+    privacy: "full",
+    purpose: "Calibrate the objective",
+    bookedBy: "Ada Lovelace (ada)",
+  },
+  {
+    id: 42,
+    target: bookableItemFixtures[0].target,
+    timezone: bookableItemFixtures[0].timezone,
+    start: "2026-08-17T12:00:00Z",
+    end: "2026-08-17T13:00:00Z",
+    state: "CONFIRMED",
+    privacy: "busy",
+    purpose: null,
+    bookedBy: null,
+  },
+  {
+    id: 43,
+    target: bookableItemFixtures[1].target,
+    timezone: bookableItemFixtures[1].timezone,
+    start: "2026-08-17T00:00:00Z",
+    end: "2026-08-17T01:00:00Z",
+    state: "CONFIRMED",
+    privacy: "full",
+    purpose: "Cryo-grid screening",
+    bookedBy: "Grace Hopper (grace)",
+  },
+  {
+    id: 44,
+    target: bookableItemFixtures[2].target,
+    timezone: bookableItemFixtures[2].timezone,
+    start: "2026-08-17T00:00:00Z",
+    end: "2026-08-18T00:00:00Z",
+    state: "CONFIRMED",
+    privacy: "busy",
+    purpose: null,
+    bookedBy: null,
+  },
+  {
+    id: 45,
+    target: bookableItemFixtures[3].target,
+    timezone: bookableItemFixtures[3].timezone,
+    start: "2026-08-17T02:00:00Z",
+    end: "2026-08-17T03:30:00Z",
+    state: "CONFIRMED",
+    privacy: "full",
+    purpose: "Cell-cycle panel",
+    bookedBy: "Katherine Johnson (katherine)",
+  },
+  {
+    id: 46,
+    target: bookableItemFixtures[0].target,
+    timezone: bookableItemFixtures[0].timezone,
+    start: "2026-08-16T21:30:00Z",
+    end: "2026-08-17T00:30:00Z",
+    state: "CONFIRMED",
+    privacy: "full",
+    purpose: "Overnight acquisition",
+    bookedBy: "Marie Curie (marie)",
+  },
+] as const;
 
 function collectionPage(docs: readonly unknown[]) {
   return {
@@ -172,10 +286,17 @@ const definitions = [...hazardClass, ...requiresTraining];
 
 export function bookableItemsHandlers(onCollectionRequest: (request: Request) => void): RequestHandler[] {
   return [
-    http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
+    http.get("/api/v2/openapi.json", () => HttpResponse.json(bookableItemsOpenApi)),
     http.get("/api/v2/booking-configurations", ({ request }) => {
       onCollectionRequest(request);
-      return HttpResponse.json(collectionPage([bookingConfiguration]));
+      const where = decodeURIComponent(new URL(request.url).searchParams.get("where") ?? "");
+      const targetIds = where.match(/target=in=\(([^)]*)\)/)?.[1].split(",");
+      const docs = where.includes("id==-1")
+        ? []
+        : targetIds
+          ? bookableItemFixtures.filter((fixture) => targetIds.includes(fixture.target.globalId))
+          : bookableItemFixtures;
+      return HttpResponse.json(collectionPage(docs));
     }),
     http.get("/api/v2/instruments", () => HttpResponse.json(collectionPage([]))),
     http.get("/api/v2/instruments/fields/customFields", ({ request }) => {

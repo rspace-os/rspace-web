@@ -761,6 +761,176 @@ export default interface Resources {
     }
   },
   "booking": {
+    "allBookableItems": {
+      "actions": {
+        "book": "Book",
+        "nextDay": "Next day",
+        "previousDay": "Previous day",
+        "today": "Today"
+      },
+      "date": "Date",
+      "fields": {
+        "actions": "Actions"
+      },
+      "plural": "All Bookable Items",
+      "quickFilters": {
+        "availableNow": "Available now",
+        "error": "Could not find available items.",
+        "freeLaterToday": "Free later today",
+        "legend": "Quick filters",
+        "loading": "Finding bookable items…",
+        "retry": "Retry",
+        "scope": "Today in each bookable item's time zone."
+      },
+      "singular": "Bookable item",
+      "title": "All Bookable Items"
+    },
+    "availabilityBar": {
+      "current": {
+        "available": "Available",
+        "availableUntil": "Available until {time}",
+        "notAvailable": "Not available",
+        "notAvailableFrom": "Not available · Available from {time}"
+      },
+      "fullAvailable": "Available for the full period.",
+      "label": "{itemName} availability",
+      "now": "Current time: {time}.",
+      "ranges": {
+        "available": "Available: {ranges}.",
+        "blockout": "Blocked out: {ranges}.",
+        "booking": "Booked: {ranges}.",
+        "overlap": "Booked and blocked out: {ranges}."
+      },
+      "summary": "Availability period: {period}. {states}"
+    },
+    "bookableItems": {
+      "actions": {
+        "add": "Add",
+        "delete": "Delete {item}",
+        "edit": "Edit {item}",
+        "save": "Save changes",
+        "submit": "Submit"
+      },
+      "addError": "Could not add the bookable item. Try again.",
+      "addTitle": "Add Bookable Item",
+      "availability": {
+        "alreadyConfigured": "This inventory item already has a bookable item configuration.",
+        "checkFailed": "RSpace could not check whether this instrument can be added. Select it again or try another instrument.",
+        "checking": "Checking whether this instrument can be added.",
+        "editExisting": "Edit the existing configuration",
+        "instrumentRequired": "The selected inventory item is not an instrument and cannot be added as a bookable item."
+      },
+      "bulk": {
+        "actions": {
+          "delete": "Delete selected",
+          "disable": "Disable",
+          "enable": "Enable"
+        },
+        "deleteDialog": {
+          "description": "This action cannot be undone.",
+          "title": "Delete {count, plural, one {# bookable item} other {# bookable items}}?"
+        },
+        "errors": {
+          "delete": "Could not delete the selected rows. No rows changed. Try again.",
+          "disable": "Could not disable the selected rows. No rows changed. Try again.",
+          "enable": "Could not enable the selected rows. No rows changed. Try again."
+        }
+      },
+      "deleteDialog": {
+        "description": "Delete {item}? This action cannot be undone.",
+        "error": "Could not delete {item}. Try again.",
+        "title": "Delete bookable item?"
+      },
+      "editError": "Could not update the bookable item. Try again.",
+      "editTitle": "Edit Bookable Item",
+      "fields": {
+        "actions": "Actions",
+        "enabled": "Enabled",
+        "id": "ID",
+        "target": "Bookable item",
+        "targetName": "Bookable item name",
+        "timezone": "Time zone",
+        "updatedAt": "Last updated"
+      },
+      "plural": "Bookable Items",
+      "singular": "Bookable item"
+    },
+    "bookings": {
+      "actions": {
+        "delete": "Delete booking",
+        "edit": "Edit"
+      },
+      "addTitle": "Add Booking",
+      "deleteDialog": {
+        "description": "Delete Booking removes the {itemName} event for {period} from the Calendar. This release cannot restore the event.",
+        "title": "Delete booking?"
+      },
+      "editTitle": "Edit Booking",
+      "errors": {
+        "deleteForbidden": "You no longer have permission to delete this booking.",
+        "deleteGeneric": "RSpace could not delete the booking. Try again.",
+        "deleteStale": "This booking is no longer editable.",
+        "endAfterStart": "The end must be after the start.",
+        "forbidden": "You cannot edit this booking.",
+        "generic": "RSpace could not save the booking. Try again.",
+        "itemLoad": "RSpace could not load bookable items.",
+        "itemRequired": "Select a bookable item.",
+        "noLongerEditable": "This booking is no longer editable.",
+        "nonexistentTime": "This local time does not occur in the selected time zone.",
+        "notFound": "This booking was not found or is not visible.",
+        "occurrenceRequired": "Select which occurrence of this local time to use.",
+        "overlap": "This period overlaps another booking.",
+        "targetUnavailable": "This bookable item is unavailable.",
+        "windowRequired": "Enter a valid start and end."
+      },
+      "form": {
+        "cancel": "Cancel",
+        "date": "Date",
+        "earlierOccurrence": "Earlier occurrence ({offset})",
+        "end": "End",
+        "item": "Bookable item",
+        "itemChoose": "Choose a bookable item",
+        "itemNone": "No bookable items found",
+        "itemOption": "{name} ({globalId}) — {timezone}",
+        "itemResults": "Bookable item results",
+        "itemSearch": "Search bookable items",
+        "laterOccurrence": "Later occurrence ({offset})",
+        "occurrence": "Repeated local time",
+        "openItem": "Open {globalId}",
+        "purpose": "Purpose",
+        "purposeCount": "{count, number}/1,000 characters",
+        "returnToCalendar": "Return to Calendar",
+        "save": "Save changes",
+        "start": "Start",
+        "submit": "Book",
+        "time": "Time",
+        "timezone": "Time zone: {timezone}"
+      },
+      "loading": "Loading booking."
+    },
+    "calendar": {
+      "actions": {
+        "book": "Book",
+        "edit": "Edit",
+        "label": "Booking actions"
+      },
+      "agenda": "Booking agenda",
+      "availability": "Availability",
+      "availabilityLoading": "Loading availability",
+      "availabilityUnavailable": "Availability unavailable",
+      "busy": "Busy",
+      "date": "Date",
+      "description": "Browse bookable items and their bookings for one day.",
+      "detail": "Bookings for {itemName}",
+      "detailLoading": "Loading bookings.",
+      "detailUnavailable": "Bookings are unavailable.",
+      "item": "Bookable item",
+      "items": "Bookable items",
+      "nextDay": "Next day",
+      "previousDay": "Previous day",
+      "title": "Calendar",
+      "today": "Today"
+    },
     "dayTimeline": {
       "event": {
         "busy": "Busy",
@@ -769,6 +939,7 @@ export default interface Resources {
         "labelWithNotes": "{title}, {period}. {notes}",
         "showDetails": "Show details for {title}, {period}"
       },
+      "itemScrollLabel": "24-hour calendar for {itemName} on {date} in {timezone}",
       "now": {
         "afterWindow": "Now {time}, after visible window",
         "current": "Now {time}"
@@ -788,6 +959,7 @@ export default interface Resources {
       }
     },
     "sidebar": {
+      "addBooking": "Add Booking",
       "administration": "Administration",
       "approvalQueue": "Approval Queue",
       "bookableItems": "Bookable Items",
@@ -1760,6 +1932,7 @@ export default interface Resources {
         "resizeColumn": "Resize column",
         "sortBy": "Sort by {column}"
       },
+      "cardView": "{collection} cards",
       "columns": {
         "customised": "Columns, {count} of {total} shown",
         "hidden": "Hidden",
@@ -5726,6 +5899,21 @@ export default interface Resources {
             }
           },
           "authenticationRequired": "Authentication is required.",
+          "booking": {
+            "create": "The booking is invalid.",
+            "overlap": "The selected time overlaps another booking.",
+            "patch": "The booking patch is invalid.",
+            "purpose": {
+              "length": "Purpose must not exceed 1,000 characters."
+            },
+            "state": {
+              "transition": "The requested booking state transition is not permitted."
+            },
+            "target": {
+              "unavailable": "The selected target is not available for booking."
+            },
+            "window": "End time must be after start time."
+          },
           "bookingConfiguration": {
             "create": "The booking configuration is invalid.",
             "patch": "The booking configuration patch is invalid.",

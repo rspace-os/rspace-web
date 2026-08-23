@@ -184,7 +184,13 @@ export function useApiV2TableList<
       queryKey: (state) => [
         "api-v2",
         resourceName,
-        apiV2CollectionRequestParams(adapter, state, request?.depth, request?.projection).toString(),
+        apiV2CollectionRequestParams(
+          adapter,
+          state,
+          request?.depth,
+          request?.projection,
+          request?.baseFilter,
+        ).toString(),
       ],
       fetch: fetchCollection as unknown as CollectionFetcher<Row>,
       ...query,

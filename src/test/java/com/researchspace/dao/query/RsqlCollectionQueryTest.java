@@ -8,7 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
+import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
+import com.researchspace.model.collection.AccessFunction;
+import com.researchspace.model.collection.AccessPolicy;
+import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Field;
@@ -28,6 +32,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
@@ -230,6 +235,68 @@ class RsqlCollectionQueryTest {
   }
 
   @Test
+  void compilesReadableRelationshipWithoutRequiringACallerFilter() {
+    CollectionDescription<Related> description = relationshipDescription();
+    RsqlCollectionQuery relationshipTranslator = new RsqlCollectionQuery(description, "item");
+    RelationshipReadAccess targets =
+        RelationshipReadAccess.unrestricted(
+            new ResourceRegistry(
+                List.of(
+                    description,
+                    relationshipTargetDescription(
+                        "instruments", RelatedTarget.class, RelatedTarget::id),
+                    relationshipTargetDescription(
+                        "samples", RelatedSample.class, RelatedSample::id))));
+
+    Predicate allowed = relationshipTranslator.compileReadableRelationship("target", targets);
+    Predicate denied =
+        relationshipTranslator.compileReadableRelationship("target", RelationshipReadAccess.none());
+
+    assertEquals(2, allowed.subqueries().size());
+    assertTrue(allowed.expression().contains(" OR "));
+    assertTrue(allowed.parameters().containsValue(TargetKind.INSTRUMENT));
+    assertTrue(allowed.parameters().containsValue(TargetKind.SAMPLE));
+    assertEquals("(1 = 0)", denied.expression());
+    assertThrows(
+        CollectionQueryException.class,
+        () -> relationshipTranslator.compileReadableRelationship("unknown", targets));
+  }
+
+  @Test
+  void compilesTargetAccessConstraintsInsideEachRelationshipSubquery() {
+    CollectionDescription<Related> description = relationshipDescription();
+    AccessFunction excludesNine =
+        AccessFunction.documented(
+            "Test target access.",
+            Set.of(),
+            ignored ->
+                AccessResult.allowedWhere(
+                    new FilterExpression.Comparison("id", Operator.NOT_EQUAL, List.of(9L), false)));
+    ResourceRegistry registry =
+        new ResourceRegistry(
+            List.of(
+                description,
+                relationshipTargetDescription(
+                    "instruments", RelatedTarget.class, RelatedTarget::id, excludesNine),
+                relationshipTargetDescription(
+                    "samples", RelatedSample.class, RelatedSample::id, excludesNine)));
+    RelationshipReadAccess targets = RelationshipReadAccess.forActor(registry, new User("reader"));
+
+    Predicate result =
+        new RsqlCollectionQuery(description, "item").compileReadableRelationship("target", targets);
+
+    assertEquals(2, result.subqueries().size());
+    assertEquals(
+        2,
+        result.parameters().values().stream()
+            .filter(value -> Long.valueOf(9L).equals(value))
+            .count());
+    assertTrue(
+        result.subqueries().values().stream()
+            .allMatch(subquery -> subquery.whereExpression().contains(" <> ")));
+  }
+
+  @Test
   void translatesAutomaticAuditFieldAndUserRelationshipFilters() {
     CollectionDescription<?> description = ApiV2BookingConfigurationResource.DESCRIPTION;
     RsqlFilterParser auditParser = new RsqlFilterParser(description);
@@ -286,6 +353,21 @@ class RsqlCollectionQueryTest {
         List.of(),
         "id",
         List.of(new Sort("id", true)));
+  }
+
+  private static <T> CollectionDescription<T> relationshipTargetDescription(
+      String name,
+      Class<T> entityType,
+      java.util.function.Function<T, Long> idAccessor,
+      AccessFunction readAccess) {
+    return new CollectionDescription<>(
+        name,
+        entityType,
+        List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), idAccessor)),
+        List.of(),
+        "id",
+        List.of(new Sort("id", true)),
+        AccessPolicy.readOnly(readAccess));
   }
 
   private Predicate translate(String rsql) {

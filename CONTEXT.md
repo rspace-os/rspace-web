@@ -276,3 +276,63 @@ _Avoid_: deprecated flag, disabled forever, archived flag
 **Expired Feature Flag**:
 A flag whose `expires` date has passed. It fails CI validation but not startup.
 _Avoid_: runtime-failing flag, startup blocker
+
+## Booking
+
+- **Available now** — the current instant falls in an available segment of the
+  bookable item's current local day. Booking and blockout intervals are
+  half-open, so the item becomes available exactly when an occupied interval
+  ends.
+- **Free later today** — the bookable item is not available now, but has a
+  positive-duration available segment later in its current local day. An item
+  that is already available now or remains occupied through local midnight is
+  excluded.
+
+- **Day timeline** — a read-only, horizontal representation of one calendar day,
+  divided into 24 equal hour intervals and populated by events positioned by
+  their exact start and end times. Its day boundaries and wall-clock labels are
+  interpreted in an explicit IANA timezone rather than the viewer's implicit
+  browser timezone.
+- **Wall-clock day** — the stable 00:00–24:00 grid represented by a day timeline.
+  It always has 24 hour intervals, including daylight-saving transition dates
+  where elapsed time contains 23 or 25 hours; the timeline communicates skipped
+  or repeated hours without changing the grid's shape.
+- **Event** — a time-bounded item displayed on a resource's calendar. Events may
+  overlap; overlap is not, by itself, evidence of a booking conflict.
+- **Event kind** — the reason an event affects a resource's availability: either
+  a booking or a blockout.
+- **Booking event** — an event that reserves a resource for a user. Its full
+  calendar card identifies who booked it, its exact period, and any notes the
+  viewer is permitted to see.
+- **Blockout event** — a non-booking event that marks a resource as unavailable,
+  such as maintenance or downtime. It has kind-appropriate card content and no
+  booker.
+- **Event lane** — one horizontal visual track within a day timeline. Overlapping
+  events occupy separate lanes so that each remains visible.
+- **Calendar card** — the reusable visual representation of an event. Its compact
+  state fits the geometry imposed by a calendar view; its expanded state exposes
+  the event's complete display details without changing the event's time range.
+- **Expanded calendar card** — a calendar card state that exposes the full booked-by
+  heading, exact period, and notes when compact timeline geometry cannot show them.
+  Expansion is distinct from creating or editing an event.
+- **Availability window** — the explicit time interval over which a resource's
+  availability is summarized. It can span part of a day, one day, or several days.
+- **Availability bar** — a thin summary of one resource's availability within an
+  availability window. Touching or overlapping events of the same kind form one
+  continuous section, so individual event identity is deliberately absent.
+- **Availability state** — the condition of a resource during one section of an
+  availability window: available, booked, blocked out, or simultaneously booked
+  and blocked out.
+- **Booking configuration** — the settings that make one inventory instrument
+  bookable. It supplies the booking timezone and the lock used to serialize
+  overlap checks for that instrument.
+- **Time-slot booking** — one persisted reservation for one booking configuration.
+  It stores a half-open UTC interval, its requester, optional purpose, state, and
+  audit data.
+- **Booking privacy** — the response detail prepared for one caller. `full` shows
+  the purpose and requester label. `busy` shows only the target and occupied time.
+- **Half-open booking interval** — a booking window that includes its start and
+  excludes its end. Two bookings that only touch at one boundary do not overlap.
+- **Booking cancellation** — the one-way change from `CONFIRMED` to `CANCELLED`.
+  Cancellation also soft-deletes the booking from normal Calendar reads; it does
+  not physically delete the audit history.

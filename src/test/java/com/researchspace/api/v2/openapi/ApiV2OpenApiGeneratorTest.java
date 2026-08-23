@@ -65,7 +65,12 @@ class ApiV2OpenApiGeneratorTest {
                         ExampleConflictException.class,
                         HttpStatus.CONFLICT,
                         "errors.example.conflict",
-                        "The resource conflicts."))));
+                        "The resource conflicts."),
+                    ApiV2ErrorMapping.of(
+                        SecondConflictException.class,
+                        HttpStatus.CONFLICT,
+                        "errors.example.second-conflict",
+                        "The resource has another conflict."))));
     ApiV2ResourceSpec<User, Long> users =
         new ApiV2ResourceSpec<>(
             ApiV2UserResource.DESCRIPTION,
@@ -91,6 +96,8 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   private static final class ExampleConflictException extends RuntimeException {}
+
+  private static final class SecondConflictException extends RuntimeException {}
 
   @Test
   void generatesConcretePathsAndKeepsTargetOnlyResourcesSchemaOnly() {
@@ -153,10 +160,18 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals("createManyMaintenances", bulkCreate.get("operationId"));
     assertTrue(objectMap(bulkCreate.get("responses")).containsKey("201"));
     Map<String, Object> conflict = objectMap(objectMap(create.get("responses")).get("409"));
-    assertEquals("The resource conflicts.", conflict.get("description"));
+    assertEquals(
+        "The resource conflicts. The resource has another conflict.", conflict.get("description"));
     Map<String, Object> conflictMedia =
         objectMap(objectMap(conflict.get("content")).get("application/problem+json"));
-    assertEquals("errors.example.conflict", objectMap(conflictMedia.get("example")).get("code"));
+    Map<String, Object> conflictExamples = objectMap(conflictMedia.get("examples"));
+    assertEquals(
+        Set.of("errors.example.conflict", "errors.example.second-conflict"),
+        conflictExamples.keySet());
+    assertEquals(
+        "errors.example.conflict",
+        objectMap(objectMap(conflictExamples.get("errors.example.conflict")).get("value"))
+            .get("code"));
     Map<String, Object> bulkRequestSchema =
         objectMap(
             objectMap(

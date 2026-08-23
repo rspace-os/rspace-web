@@ -106,6 +106,37 @@ export type TableListStatus = "idle" | "loading" | "refreshing" | "error";
 
 export type TableListVariant = "card" | "transparent";
 
+/** Where a presentation is available relative to the TableList container's 48rem breakpoint. */
+export type TableListPresentationVisibility = false | "all" | "narrow" | "wide";
+
+export type TableListPresentations = {
+  /** Defaults to `"all"`. */
+  table?: TableListPresentationVisibility;
+  /** Defaults to `false`, keeping cards explicitly opt-in. */
+  cards?: TableListPresentationVisibility;
+};
+
+export type TableListCardFieldLayout = {
+  /** Stack the label above the value and span the complete card body. */
+  fullWidth?: boolean;
+  /** Card footer is intended for compact row controls such as actions. */
+  placement?: "field" | "footer";
+};
+
+export type TableListFilterButtons = {
+  legend: string;
+  buttons: readonly {
+    id: string;
+    label: ReactNode;
+    icon?: ReactNode;
+    pressed: boolean;
+    disabled?: boolean;
+    count?: number;
+    onClick: () => void;
+  }[];
+  onReset: () => void;
+};
+
 export type TableListQueryStringOptions = {
   /** Prefix for the table's owned query parameters. Defaults to the collection slug; use a distinct prefix for tables on the same page. */
   parameterPrefix?: string;
@@ -120,6 +151,7 @@ export type TableListUiColumn<TDocument> = {
   width?: number;
   /** Smallest user-selected column width in CSS pixels. */
   minWidth?: number;
+  card?: TableListCardFieldLayout;
   renderCell: (row: TDocument) => ReactNode;
 };
 
@@ -166,6 +198,12 @@ export type TableListProps<TDocument extends Record<string, unknown>> = {
   uiColumns?: readonly TableListUiColumn<TDocument>[];
   rowActions?: TableListRowActions<TDocument>;
   selection?: TableListSelection<TDocument>;
+  /** Page-owned filters rendered beside the built-in toolbar controls. */
+  filterButtons?: TableListFilterButtons;
+  /** Enable table and card presentations everywhere or on either side of the standard 48rem container breakpoint. */
+  presentations?: TableListPresentations;
+  /** Replace the built-in table/card result area with rows from the same filtered, sorted, and paginated row model. */
+  renderRows?: (rows: readonly TDocument[]) => ReactNode;
   variant?: TableListVariant;
   /** Reserve the height of ten data rows for the empty state. Set this to `false` for a compact display. */
   reserveEmptyRows?: boolean;

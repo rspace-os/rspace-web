@@ -8,6 +8,26 @@ import { config, emptyFilters, records } from "../fixtures/tableListFixtures";
 const disabledFeatures = { filtering: false, sorting: false, pagination: false, columns: false } as const;
 
 describe("TableList states", () => {
+  it("renders loading, empty, and error states in card-only lists", () => {
+    const commonProps = {
+      queryString: false as const,
+      config,
+      rows: [],
+      getRowId: (row: (typeof records)[number]) => row.id,
+      presentations: { table: false as const, cards: "all" as const },
+      features: disabledFeatures,
+    };
+    const { rerender } = render(<TableList {...commonProps} status="loading" />);
+    expect(screen.getByRole("region", { name: "common:tableList.cardView" })).toHaveAttribute("aria-busy", "true");
+
+    rerender(<TableList {...commonProps} />);
+    expect(screen.getByText("common:tableList.empty.title")).toBeVisible();
+
+    rerender(<TableList {...commonProps} status="error" error={new Error("Expected card failure")} />);
+    expect(screen.getByText("common:tableList.error.title")).toBeVisible();
+    expect(screen.getByText("Expected card failure")).toBeVisible();
+  });
+
   it("renders loading, empty, and error states", () => {
     const { rerender } = render(
       <TableList

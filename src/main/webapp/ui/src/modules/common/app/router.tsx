@@ -1,11 +1,13 @@
 import { createRootRoute, createRoute, createRouter, lazyRouteComponent } from "@tanstack/react-router";
 import { createAboutRoute } from "@/modules/about/pages/AboutPage";
+import { createAllBookableItemsRoute } from "@/modules/booking/pages/all-bookable-items/routes";
 import { createBookingRoute } from "@/modules/booking/pages/BookingPage";
 import {
   createAddBookableItemRoute,
   createBookableItemRoute,
   createBookableItemsRoute,
 } from "@/modules/booking/pages/bookable-items/routes";
+import { createAddBookingRoute, createEditBookingRoute } from "@/modules/booking/pages/bookings/routes";
 import i18n from "@/modules/common/i18n";
 import NotFoundPage from "@/modules/common/pages/notFound/NotFoundPage";
 import { createMaintenanceInProgressRoute } from "@/modules/maintenance/pages/MaintenanceInProgressPage";
@@ -31,6 +33,9 @@ const rootRoute = createRootRoute({
 
 const bookingRouteBase = createBookingRoute(rootRoute);
 const bookingRoute = bookingRouteBase.addChildren([
+  createAllBookableItemsRoute(bookingRouteBase),
+  createAddBookingRoute(bookingRouteBase),
+  createEditBookingRoute(bookingRouteBase),
   createBookableItemsRoute(bookingRouteBase),
   createAddBookableItemRoute(bookingRouteBase),
   createBookableItemRoute(bookingRouteBase),

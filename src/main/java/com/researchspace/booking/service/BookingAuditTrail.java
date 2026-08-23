@@ -29,4 +29,18 @@ public final class BookingAuditTrail {
             event.action(),
             "subject=" + event.subject().getUsername()));
   }
+
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  public void timeSlotBookingChanged(TimeSlotBookingAuditEvent event) {
+    if (event.actor().equals(event.subject())) {
+      auditTrail.notify(new GenericEvent(event.actor(), event.booking(), event.action()));
+      return;
+    }
+    auditTrail.notify(
+        new GenericEvent(
+            event.actor(),
+            event.booking(),
+            event.action(),
+            "subject=" + event.subject().getUsername()));
+  }
 }

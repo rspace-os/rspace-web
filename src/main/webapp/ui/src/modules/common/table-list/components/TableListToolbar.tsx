@@ -5,7 +5,7 @@ import type { ResolvedCollectionConfig } from "@/modules/common/collection/colle
 import { Button } from "@/modules/common/ui/button";
 import { Input } from "@/modules/common/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
-import type { TableListFeatures } from "../tableListState";
+import type { TableListFeatures, TableListFilterButtons } from "../tableListState";
 
 export type TableListControlPanel = "filters" | "sorting" | "columns";
 
@@ -103,6 +103,7 @@ export function TableListToolbar<TDocument>({
   clientSide,
   activePanel,
   filterCount,
+  filterButtons,
   onPanelChange,
   onReset,
 }: {
@@ -112,6 +113,7 @@ export function TableListToolbar<TDocument>({
   clientSide?: boolean;
   activePanel: TableListControlPanel | null;
   filterCount: number;
+  filterButtons?: TableListFilterButtons;
   onPanelChange: (panel: TableListControlPanel) => void;
   onReset: () => void;
 }) {
@@ -134,14 +136,17 @@ export function TableListToolbar<TDocument>({
   const filtersChanged =
     features.filtering !== false &&
     (features.filtering.value.search !== "" || features.filtering.value.expression !== null);
-  const viewChanged = filtersChanged || sortingChanged || columnsChanged;
+  const viewChanged =
+    filtersChanged || sortingChanged || columnsChanged || filterButtons?.buttons.some(({ pressed }) => pressed);
   const visibleColumnCount = visibleColumns.length;
   const listableColumnCount = config.fields.filter((field) => field.list !== false).length;
 
-  if (features.filtering === false && features.sorting === false && features.columns === false) return null;
+  if (features.filtering === false && features.sorting === false && features.columns === false && !filterButtons) {
+    return null;
+  }
 
   return (
-    <div className="flex flex-col gap-2 border-b py-2 lg:flex-row lg:items-center">
+    <div className="flex flex-col flex-wrap gap-2 border-b py-2 lg:flex-row lg:items-center">
       {features.filtering !== false && (config.listSearchableFields?.length ?? 0) > 0 ? (
         <SearchRecordsInput
           value={features.filtering.value.search}
@@ -160,7 +165,30 @@ export function TableListToolbar<TDocument>({
       ) : (
         <div className="flex-1" />
       )}
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {filterButtons ? (
+          <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
+            <legend className="sr-only">{filterButtons.legend}</legend>
+            {filterButtons.buttons.map((button) => (
+              <Button
+                key={button.id}
+                type="button"
+                aria-pressed={button.pressed}
+                disabled={button.disabled}
+                variant={button.pressed ? "secondary" : "outline"}
+                onClick={button.onClick}
+              >
+                {button.icon}
+                {button.label}
+                {button.count === undefined ? null : (
+                  <span aria-hidden="true" className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">
+                    {button.count}
+                  </span>
+                )}
+              </Button>
+            ))}
+          </fieldset>
+        ) : null}
         {features.filtering !== false ? (
           <Button
             aria-label={
@@ -237,6 +265,7 @@ export function TableListToolbar<TDocument>({
                     if (features.columns !== false) features.columns.onChange(config.defaultColumns);
                     if (features.pagination !== false)
                       features.pagination.onChange({ ...features.pagination.value, pageIndex: 0 });
+                    filterButtons?.onReset();
                     setSearchResetSignal((current) => current + 1);
                     onReset();
                   }}
