@@ -4,23 +4,38 @@ import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.dao.query.IndexedTextNarrowing;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.search.customfield.RuntimeFieldTextSearch;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository(value = "instrumentDao")
 public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument, Long>
     implements InstrumentDao {
 
+  private static final CollectionQueryExecutor<Instrument> COLLECTION_QUERY =
+      new CollectionQueryExecutor<>(
+          Instrument.class, ApiV2InstrumentResource.DESCRIPTION, "collectionInstrument");
+
   private String defaultTemplateOwner;
+
+  @Autowired(required = false)
+  private RuntimeFieldTextSearch textSearch;
 
   public InstrumentDaoHibernateImpl(Class<Instrument> persistentClass) {
     super(persistentClass);
@@ -28,6 +43,29 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   public InstrumentDaoHibernateImpl() {
     super(Instrument.class);
+  }
+
+  @Override
+  public ResourcePage<Instrument> getReadableResources(
+      ResourceRequest request, AccessResult access) {
+    try {
+      return readableResourcePage(COLLECTION_QUERY, narrowed(request), access);
+    } catch (IndexedTextNarrowing.NoMatch noMatch) {
+      return new ResourcePage<>(List.of(), 0);
+    }
+  }
+
+  @Override
+  public long countReadableResources(ResourceRequest request, AccessResult access) {
+    try {
+      return countReadableResources(COLLECTION_QUERY, narrowed(request), access);
+    } catch (IndexedTextNarrowing.NoMatch noMatch) {
+      return 0;
+    }
+  }
+
+  private ResourceRequest narrowed(ResourceRequest request) {
+    return IndexedTextNarrowing.apply(request, ApiV2InstrumentResource.DESCRIPTION, textSearch);
   }
 
   @Override

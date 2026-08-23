@@ -20,6 +20,11 @@ import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.InventoryEntityFieldDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessContext;
+import com.researchspace.model.collection.AccessContext.Operation;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
@@ -42,6 +47,7 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
+import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryLinkManager;
@@ -79,6 +85,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   private @Autowired IPropertyHolder properties;
   private @Autowired InstrumentDao instrumentDao;
+  private @Autowired InstrumentReadAccess instrumentReadAccess;
   private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   private @Autowired InventoryEntityFieldDao inventoryEntityFieldDao;
   private @Autowired SampleApiManager sampleApiManager;
@@ -1003,6 +1010,31 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     Instrument instrument = getInstrumentOrThrowNotFound(dbId);
     invPermissions.assertUserCanReadOrLimitedReadInventoryRecord(instrument, user);
     return instrument;
+  }
+
+  @Override
+  public ResourcePage<Instrument> getReadableInstruments(ResourceRequest request, User user) {
+    return instrumentDao.getReadableResources(request, readAccess(user));
+  }
+
+  @Override
+  public long countReadableInstruments(ResourceRequest request, User user) {
+    return instrumentDao.countReadableResources(request, readAccess(user));
+  }
+
+  private AccessResult readAccess(User user) {
+    return instrumentReadAccess.check(new AccessContext(user, Operation.READ, "instruments"));
+  }
+
+  @Override
+  public Optional<Instrument> findReadableInstrument(Long dbId, User user) {
+    if (!instrumentExists(dbId)) {
+      return Optional.empty();
+    }
+    Instrument instrument = instrumentDao.get(dbId);
+    return invPermissions.canUserReadOrLimitedReadInventoryRecord(instrument, user)
+        ? Optional.of(instrument)
+        : Optional.empty();
   }
 
   @Override

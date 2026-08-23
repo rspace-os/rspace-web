@@ -27,6 +27,8 @@
     			hibernate.cache.use_second_level_cache=false
     			hibernate.cache.region.factory_class=org.hibernate.cache.internal.NoCachingRegionFactory
 			hibernate.search.indexing.plan.synchronization.strategy=sync
+			     Hibernate Search 5, whose annotations Search 7 ignores, so anything this
+			     deployment actually indexes is declared programmatically here. -->
     		</value>
     		<!-- Turn batching off for better error messages under PostgreSQL -->
     		<!-- hibernate.jdbc.batch_size=0 -->
@@ -49,6 +51,22 @@
     		     this cross-context contamination entirely.
     		-->
     	</property>
+    </bean>
+
+    <!--
+      This file shadows src/main/resources/applicationContext-dao.xml on the test classpath, so any
+      bean the main file adds must be mirrored here or every Spring test context that needs it fails
+      to load. MaintenanceDaoHibernate autowires CriteriaBuilderFactory (Blaze-Persistence) for the
+      REST API v2 collection queries; without these two beans, every integration test whose context
+      reaches maintenanceDao dies with NoSuchBeanDefinitionException, database or not.
+    -->
+    <bean id="blazeCriteriaConfiguration"
+          class="com.researchspace.dao.query.BlazeCriteriaConfiguration"
+          factory-method="create" />
+    <bean id="criteriaBuilderFactory"
+          factory-bean="blazeCriteriaConfiguration"
+          factory-method="createCriteriaBuilderFactory">
+        <constructor-arg ref="sessionFactory" />
     </bean>
 
 </beans>

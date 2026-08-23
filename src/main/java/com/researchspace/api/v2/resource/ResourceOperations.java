@@ -1,0 +1,64 @@
+package com.researchspace.api.v2.resource;
+
+import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessPolicy;
+import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Collection-specific domain adapter used by the generic REST v2 CRUD dispatcher.
+ *
+ * <p>A read-only collection pairs the three read methods with {@link AccessPolicy#readOnly}, which
+ * refuses every mutation before dispatch reaches the adapter, so the throws below are unreachable
+ * defense rather than the mechanism that makes a collection read-only.
+ */
+public interface ResourceOperations<T, ID> {
+
+  /** Finds one page, resolving any caller-specific values for the effective {@code subject}. */
+  ResourcePage<T> find(ResourceRequest request, User subject);
+
+  /** Counts matching resources after caller-specific values are resolved. */
+  long count(ResourceRequest request, User subject);
+
+  /**
+   * Finds one resource with caller-specific values and collection-specific read authorization.
+   *
+   * <p>The collection access policy remains the normal authorization mechanism. Collections whose
+   * existing permission model cannot be represented as a query constraint can implement that check
+   * here. Relationship resolution uses this method, so it cannot bypass those permissions.
+   */
+  Optional<T> findById(ID id, User subject);
+
+  default T create(ParsedDocument document, ApiV2Caller caller) {
+    throw readOnly("create");
+  }
+
+  default List<T> createMany(List<ParsedDocument> documents, ApiV2Caller caller) {
+    throw readOnly("create");
+  }
+
+  default Optional<T> update(ID id, ParsedDocument document, ApiV2Caller caller) {
+    throw readOnly("update");
+  }
+
+  default List<T> updateMany(ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
+    throw readOnly("update");
+  }
+
+  default Optional<T> delete(ID id, ApiV2Caller caller) {
+    throw readOnly("delete");
+  }
+
+  default List<T> deleteMany(ResourceRequest request, ApiV2Caller caller) {
+    throw readOnly("delete");
+  }
+
+  private UnsupportedOperationException readOnly(String operation) {
+    return new UnsupportedOperationException(
+        getClass().getName() + " is read-only; it cannot " + operation);
+  }
+}
