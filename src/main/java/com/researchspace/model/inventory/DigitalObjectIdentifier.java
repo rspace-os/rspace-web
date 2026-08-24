@@ -101,9 +101,21 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity
   private boolean deleted;
 
   public DigitalObjectIdentifier(String identifier, String title) {
+    this(identifier, title, null);
+  }
+
+  /**
+   * @param publicLinkSuffix pre-generated suffix for this identifier's public landing page, created
+   *     before registering with an external provider so the page's address can be part of the
+   *     registration payload. Surrounding whitespace is trimmed, since the suffix becomes a path
+   *     segment of that address; when blank, a fresh secure random suffix is generated
+   */
+  public DigitalObjectIdentifier(String identifier, String title, String publicLinkSuffix) {
     setIdentifier(identifier);
     setTitle(title);
-    setPublicLink(SecureStringUtils.getURLSafeSecureRandomString(16));
+    String trimmedSuffix = StringUtils.trimToNull(publicLinkSuffix);
+    setPublicLink(
+        trimmedSuffix != null ? trimmedSuffix : SecureStringUtils.getURLSafeSecureRandomString(16));
   }
 
   @Id
