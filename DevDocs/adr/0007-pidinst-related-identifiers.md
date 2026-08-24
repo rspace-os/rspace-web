@@ -39,6 +39,17 @@ B2INST draft metadata (`RelatedIdentifier`) and the DataCite attributes
 - Guard rails mirror the landing page: an address that would not be absolute http(s) is
   omitted with a WARN; an absent field, empty, deleted or target-less link is omitted
   silently.
+- **No read-permission re-check on the link target** at registration, publish or retract,
+  deliberately. READ is asserted where the link is written (`InventoryLinkManagerImpl`, on
+  create and update); from then on the target's globalId is part of the instrument's own
+  data, and RSpace already shows that id to every instrument viewer even when the target
+  itself is unreadable — the link summary redacts name and type, never the id
+  (`LinkTargetSnapshotResolverImpl`). The registered entry discloses exactly that id plus a
+  fixed label, never the target's name or content, and the address resolves only for
+  signed-in users who pass the target's own checks. Re-checking at publish time would also
+  key the permanent payload to whichever editor happens to click publish on a shared
+  instrument, so the same instrument could register different metadata depending on the
+  actor — a worse property than the disclosure it would prevent.
 - B2INST receives the entries at draft-register time (its only metadata write). DataCite
   receives them on publish and again on retract, because both resend full metadata and
   the entries are computed from the instrument, not persisted on the DOI.
