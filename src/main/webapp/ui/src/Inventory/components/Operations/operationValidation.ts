@@ -72,7 +72,7 @@ export function detailsValid(
 }
 
 /**
- * Whether the amount taken from the origin exceeds the origin's current quantity (DevDocs/adr/0010). The
+ * Whether the amount taken from the origin exceeds the origin's current quantity (DevDocs/adr/0007). The
  * comparison is unit-aware: both are converted to the atomic unit of their (shared) category, so an
  * entry in a different unit within the same category (e.g. 0.5 L against a 400 ml origin) is compared
  * correctly. The amount-taken field is constrained to the origin's category, so a cross-category
@@ -91,9 +91,9 @@ export function amountTakenExceedsOrigin(
 }
 
 /**
- * The lower-level, operation-agnostic over-removal check (DevDocs/adr/0010): whether a single amount exceeds
+ * The lower-level, operation-agnostic over-removal check (DevDocs/adr/0007): whether a single amount exceeds
  * an origin's current quantity, unit-aware within the shared category. Used directly for a per-origin
- * amount ("perSubsample" mode, DevDocs/adr/0014), where each origin is checked against its own quantity rather
+ * amount ("perSubsample" mode, DevDocs/adr/0007), where each origin is checked against its own quantity rather
  * than against the representative origin. An incomplete (unit-unset) amount is not flagged; a missing
  * origin quantity means the origin holds nothing, so any positive amount is over-removal.
  */

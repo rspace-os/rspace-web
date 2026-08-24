@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
  * amount-taken (never increasing it). {@code operationType} names the operation definition the
  * request must conform to: the endpoint's validator (InventoryOperationPostValidator, in the
  * controller layer) resolves it against the backend's copy of the config and enforces the
- * definition, still generically. See DevDocs/adr/0006, DevDocs/adr/0007, DevDocs/adr/0015.
+ * definition, still generically. See DevDocs/adr/0007.
  */
 @Data
 @NoArgsConstructor
