@@ -11,7 +11,7 @@ import { omit } from "es-toolkit";
 import { type InventoryOperation, resolveProcessName } from "./operationsConfig";
 
 /**
- * The per-user "remember" scope key: the operation combined with its resolved process name (DevDocs/adr/0009).
+ * The per-user "remember" scope key: the operation combined with its resolved process name (DevDocs/adr/0007).
  * A fixed-process operation (Cryopreserve) and a Derive run with no process name typed both key by the
  * operation alone, so the key stays clean ("cryopreserve", "derive") rather than repeating the name.
  */

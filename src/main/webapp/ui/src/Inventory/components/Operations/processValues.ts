@@ -1,5 +1,5 @@
 /**
- * Pure helpers for the single per-process "remember" bundle (DevDocs/adr/0008, DevDocs/adr/0009). One checkbox on
+ * Pure helpers for the single per-process "remember" bundle (DevDocs/adr/0007). One checkbox on
  * step 1 governs everything the user entered for a process name: the collected input values (amounts
  * and any operation-specific fields), the template choice, and the documentation link. The bundle is
  * saved under the process's rememberKey and re-applied when that process name is used again.
@@ -17,7 +17,7 @@ export type ProcessValues = {
   values: OperationInputs;
   template: TemplateDefault;
   documentation: DocumentationSelection;
-  /** The amount mode chosen for a multi-origin run (DevDocs/adr/0014); absent in older bundles = "same". */
+  /** The amount mode chosen for a multi-origin run (DevDocs/adr/0007); absent in older bundles = "same". */
   amountMode?: AmountMode;
   /** Per-origin amounts by origin global id, for "perSubsample" mode; absent otherwise. */
   perSubsampleAmounts?: PerSubsampleAmounts;
@@ -64,7 +64,7 @@ export function normalizeProcessValues(stored: unknown): ProcessValues | null {
     documentation: normalizeDocumentation(s.documentation),
   };
   // Only carried for multi-origin runs; an older bundle without them normalises to no field, and
-  // consumers default the mode to "same" (DevDocs/adr/0014).
+  // consumers default the mode to "same" (DevDocs/adr/0007).
   if (s.amountMode !== undefined) result.amountMode = normalizeAmountMode(s.amountMode);
   if (s.perSubsampleAmounts !== undefined)
     result.perSubsampleAmounts = normalizePerSubsampleAmounts(s.perSubsampleAmounts);

@@ -1,5 +1,5 @@
 /**
- * Pure helpers for the wizard's template step (DevDocs/adr/0008).
+ * Pure helpers for the wizard's template step (DevDocs/adr/0007).
  *
  * - resolveTemplateId turns the user's choice into a single templateId. Option "fromSample" reuses
  *   the origin sample's existing template; the wizard never creates a template (a template-less
@@ -17,7 +17,7 @@ import type { UnitCategory } from "@/stores/stores/UnitStore";
 // "remembered" is a specific template restored from the user's saved default: it resolves to a
 // concrete templateId like "pick", but is presented as a banner with no radio selected so the user
 // can override it. "unselected" is the initial state when nothing is remembered: no radio is selected
-// and the user must make an explicit choice before Next is enabled (DevDocs/adr/0008).
+// and the user must make an explicit choice before Next is enabled (DevDocs/adr/0007).
 export type TemplateMode = "none" | "pick" | "fromSample" | "remembered" | "unselected";
 
 export type TemplateSelectionLike = {
@@ -61,7 +61,7 @@ export function templateSelectionToDefault(selection: {
  * (first run, or the previous run was not remembered) yields "unselected": no radio selected, so the
  * user must make an explicit choice before Next is enabled. A remembered specific template is shown
  * as a banner ("remembered", no radio); a remembered "none"/"fromSample" is applied as that radio
- * directly (DevDocs/adr/0008).
+ * directly (DevDocs/adr/0007).
  */
 export function templateSelectionFor(remembered: TemplateDefault | undefined): TemplateSelectionLike {
   if (!remembered) return { mode: "unselected", templateId: null, remember: false };
@@ -79,7 +79,7 @@ export function templateSelectionFor(remembered: TemplateDefault | undefined): T
  * The template-step selection for a first-time run (nothing remembered for this process name): when
  * the origin's parent sample has its own template, "use the parent's template" is preselected as the
  * common case, leaving the user free to override it; otherwise "unselected", so the user must make
- * an explicit choice before Next is enabled (DevDocs/adr/0008). A multi-origin operation (Pool)
+ * an explicit choice before Next is enabled (DevDocs/adr/0007). A multi-origin operation (Pool)
  * passes parentHasTemplate=false, because "the parent" is ambiguous across several origins.
  */
 export function initialTemplateSelection(parentHasTemplate: boolean): TemplateSelectionLike {
@@ -111,7 +111,7 @@ export function resolveTemplateId(params: {
   if (mode === "none" || mode === "unselected") return null;
   // "remembered" is a concrete template restored from the saved default, so it resolves like "pick".
   if (mode === "pick" || mode === "remembered") return pickedTemplateId;
-  // fromSample: reuse the origin sample's own template. The wizard never creates one (DevDocs/adr/0008), so a
+  // fromSample: reuse the origin sample's own template. The wizard never creates one (DevDocs/adr/0007), so a
   // template-less parent (null) resolves to no template - the UI blocks this choice up front.
   return originSampleTemplateId;
 }
