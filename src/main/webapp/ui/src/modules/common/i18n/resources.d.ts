@@ -786,6 +786,16 @@ export default interface Resources {
         "notes": "Laser alignment and safety inspection.",
         "title": "Scheduled maintenance"
       }
+    },
+    "sidebar": {
+      "administration": "Administration",
+      "approvalQueue": "Approval Queue",
+      "bookableItems": "Bookable Items",
+      "calendar": "Calendar",
+      "dashboard": "Dashboard",
+      "label": "Booking",
+      "myBookings": "My Bookings",
+      "settings": "Settings"
     }
   },
   "common": {

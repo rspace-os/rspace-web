@@ -120,6 +120,57 @@ export const Compact: Story = {
   },
 };
 
+export const WithBackground: Story = {
+  args: {
+    ...confocal,
+    variant: "filled",
+    children: (
+      <>
+        <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
+        Lab 2.14
+      </>
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Uses the semantic secondary background and foreground tokens, which provide separate light and dark mode colors.",
+      },
+    },
+  },
+  render: (args) => (
+    <ItemGroup style={{ width: "420px" }}>
+      <InventoryItem {...args} />
+    </ItemGroup>
+  ),
+};
+
+export const IconAndBadgeBackground: Story = {
+  args: {
+    ...confocal,
+    variant: "accented",
+    children: (
+      <>
+        <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
+        Lab 2.14
+      </>
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Applies the semantic secondary background and foreground tokens only to the icon and global-ID badge.",
+      },
+    },
+  },
+  render: (args) => (
+    <ItemGroup style={{ width: "420px" }}>
+      <InventoryItem {...args} />
+    </ItemGroup>
+  ),
+};
+
 export const VariantComparison: Story = {
   args: confocal,
   render: () => (
