@@ -56,9 +56,13 @@ public interface RspaceToExternalProviderAdapter {
    * method, not {@code convertToDataCiteDoi()} directly, or the registered related identifiers
    * silently regress.
    *
-   * <p>Must be called inside an existing transaction when the record is an Instrument: the mapping
-   * reads the instrument's lazy fields. The implementation declares
-   * {@code @Transactional(propagation = MANDATORY)}, matching {@link #buildB2instDoi}.
+   * <p>Must be called inside an existing transaction, whatever the record: the implementation
+   * declares {@code @Transactional(propagation = MANDATORY)}, matching {@link #buildB2instDoi}, so
+   * a caller without one fails immediately rather than part-way through the mapping. Only the
+   * Instrument path actually needs the session, to read the instrument's lazy fields, but the
+   * requirement is deliberately uniform: both production callers (publish and retract) are already
+   * transactional, and a transaction requirement that changed with the argument's runtime type
+   * would be the harder contract to honour.
    *
    * @param associatedRecord the inventory record the DOI belongs to; null or a non-Instrument
    *     yields the plain conversion
