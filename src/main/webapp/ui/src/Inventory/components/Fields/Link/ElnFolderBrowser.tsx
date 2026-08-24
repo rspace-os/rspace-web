@@ -133,29 +133,44 @@ function CollapseArrow(): React.ReactElement {
 }
 
 /**
- * A single tree node. Folders and notebooks are expandable and lazily load their
- * own contents (mirroring FolderTree's load strategy); documents render as leaves.
+ * A paged listing of one tree level: the workspace root when {@code id} is
+ * undefined, otherwise the contents of the folder or notebook with that id.
+ * Loads the first page on mount; loadNextPage appends further pages until
+ * every record the endpoint reports has been fetched.
  */
-function TreeNodeContent({ node }: { node: FolderTreeNode }): React.ReactNode {
-  const { t } = useTranslation(["inventory", "common"]);
+function usePagedFolderListing(id?: number): {
+  records: ReadonlyArray<FolderTreeNode>;
+  loading: boolean;
+  error: boolean;
+  hasMorePages: boolean;
+  loadNextPage: () => void;
+  reload: () => void;
+} {
   const { getFolderTree } = useFolders();
-  const [children, setChildren] = React.useState<ReadonlyArray<FolderTreeNode>>([]);
+  const [records, setRecords] = React.useState<ReadonlyArray<FolderTreeNode>>([]);
   const [totalHits, setTotalHits] = React.useState(0);
   const [currentPage, setCurrentPage] = React.useState(0);
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
 
-  const loadChildren = React.useCallback(
+  const loadPage = React.useCallback(
     async (pageNumber: number, append: boolean) => {
       setLoading(true);
       setError(false);
       try {
         const response = await getFolderTree({
-          id: node.id,
+          id,
           typesToInclude: TYPES_TO_INCLUDE,
           pageNumber,
         });
-        setChildren((prev) => (append ? [...prev, ...response.records] : response.records));
+        setRecords((prev) => {
+          if (!append) return response.records;
+          // Offset pagination can re-serve a record already shown when the
+          // listing shifts between page fetches (e.g. something was created or
+          // renamed meanwhile). The tree requires unique item ids, so drop them.
+          const seen = new Set(prev.map((r) => r.id));
+          return [...prev, ...response.records.filter((r) => !seen.has(r.id))];
+        });
         setTotalHits(response.totalHits);
         setCurrentPage(pageNumber);
       } catch {
@@ -164,22 +179,52 @@ function TreeNodeContent({ node }: { node: FolderTreeNode }): React.ReactNode {
         setLoading(false);
       }
     },
-    [node.id, getFolderTree],
+    [id, getFolderTree],
   );
 
   React.useEffect(() => {
-    if (isExpandable(node)) void loadChildren(0, false);
-  }, [loadChildren, node]);
+    void loadPage(0, false);
+  }, [loadPage]);
 
+  return {
+    records,
+    loading,
+    error,
+    hasMorePages: records.length < totalHits,
+    loadNextPage: () => void loadPage(currentPage + 1, true),
+    reload: () => void loadPage(0, false),
+  };
+}
+
+function LoadMoreRow({ onClick }: { onClick: () => void }): React.ReactElement {
+  const { t } = useTranslation(["inventory", "common"]);
+  return (
+    <Box sx={{ p: 1 }}>
+      <Button size="small" onClick={onClick}>
+        {t("fields.link.elnFolderBrowser.loadMore")}
+      </Button>
+    </Box>
+  );
+}
+
+/**
+ * A single tree node. Folders and notebooks are expandable and lazily load their
+ * own contents (mirroring FolderTree's load strategy); documents render as leaves.
+ */
+function TreeNodeContent({ node }: { node: FolderTreeNode }): React.ReactNode {
   if (!isExpandable(node)) {
     return <TreeItem item={node} label={<NodeLabel node={node} />} role="treeitem" />;
   }
+  return <ExpandableTreeNode node={node} />;
+}
 
-  const hasMorePages = children.length < totalHits;
+function ExpandableTreeNode({ node }: { node: FolderTreeNode }): React.ReactElement {
+  const { t } = useTranslation(["inventory", "common"]);
+  const { records, loading, error, hasMorePages, loadNextPage } = usePagedFolderListing(node.id);
 
   return (
     <TreeItem item={node} label={<NodeLabel node={node} />} role="treeitem">
-      {children.map((child) => (
+      {records.map((child) => (
         <TreeNodeContent key={child.id} node={child} />
       ))}
       {loading && (
@@ -192,13 +237,7 @@ function TreeNodeContent({ node }: { node: FolderTreeNode }): React.ReactNode {
           <Alert severity="error">{t("fields.link.elnFolderBrowser.failedToLoadContents")}</Alert>
         </Box>
       )}
-      {hasMorePages && !loading && (
-        <Box sx={{ p: 1 }}>
-          <Button size="small" onClick={() => void loadChildren(currentPage + 1, true)}>
-            {t("fields.link.elnFolderBrowser.loadMore")}
-          </Button>
-        </Box>
-      )}
+      {hasMorePages && !loading && <LoadMoreRow onClick={loadNextPage} />}
     </TreeItem>
   );
 }
@@ -220,29 +259,9 @@ export default function ElnFolderBrowser({
   onSelectionChange: (selection: ElnTreeSelection | null) => void;
 }): React.ReactElement {
   const { t } = useTranslation(["inventory", "common"]);
-  const { getFolderTree } = useFolders();
-  const [roots, setRoots] = React.useState<ReadonlyArray<FolderTreeNode>>([]);
+  const { records: roots, loading, error, hasMorePages, loadNextPage, reload } = usePagedFolderListing();
   const [expanded, setExpanded] = React.useState<Array<FolderTreeNode>>([]);
   const [selected, setSelected] = React.useState<FolderTreeNode | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(false);
-
-  const loadRoots = React.useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      const response = await getFolderTree({ typesToInclude: TYPES_TO_INCLUDE });
-      setRoots(response.records);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [getFolderTree]);
-
-  React.useEffect(() => {
-    void loadRoots();
-  }, [loadRoots]);
 
   return (
     <Box>
@@ -251,7 +270,7 @@ export default function ElnFolderBrowser({
           severity="error"
           sx={{ mb: 1 }}
           action={
-            <Button size="small" onClick={() => void loadRoots()}>
+            <Button size="small" onClick={reload}>
               {t("common:actions.retry")}
             </Button>
           }
@@ -300,6 +319,7 @@ export default function ElnFolderBrowser({
           <TreeNodeContent key={node.id} node={node} />
         ))}
       </Tree>
+      {hasMorePages && !loading && <LoadMoreRow onClick={loadNextPage} />}
       {!loading && !error && roots.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           {t("fields.link.elnFolderBrowser.nothingToBrowse")}
