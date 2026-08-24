@@ -81,6 +81,7 @@ public class RSDevConfig extends BaseConfig {
   public GlobalInitManager globalInitManager() {
     GlobalInitManagerImpl mgr = new GlobalInitManagerImpl();
     List<IApplicationInitialisor> inits = new ArrayList<IApplicationInitialisor>();
+    inits.add(featureFlagInitialisor());
     inits.add(fileStoreRootDetector());
     inits.add(integrationsHandlerInitialisor());
     mgr.setApplicationInitialisors(inits);

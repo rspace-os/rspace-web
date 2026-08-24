@@ -185,6 +185,7 @@ import com.researchspace.service.impl.ExportImportImpl;
 import com.researchspace.service.impl.ExportUtils;
 import com.researchspace.service.impl.ExternalMessageHandlerImpl;
 import com.researchspace.service.impl.ExternalOauthUserSignupPolicy;
+import com.researchspace.service.impl.FeatureFlagInitialisor;
 import com.researchspace.service.impl.FieldLinksEntitySyncImpl;
 import com.researchspace.service.impl.FileStoreRootDetector;
 import com.researchspace.service.impl.GroupSharedSnippetsFolderAppInitialiser;
@@ -549,6 +550,11 @@ public abstract class BaseConfig {
   @Bean
   public IApplicationInitialisor integrationsHandlerInitialisor() {
     return new IntegrationsHandlerInitialisor();
+  }
+
+  @Bean
+  public IApplicationInitialisor featureFlagInitialisor() {
+    return new FeatureFlagInitialisor();
   }
 
   @Bean
