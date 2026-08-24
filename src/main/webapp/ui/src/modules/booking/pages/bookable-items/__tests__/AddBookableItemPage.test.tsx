@@ -19,6 +19,16 @@ import { server } from "@/__tests__/mswServer";
 import { createAddBookableItemRoute } from "../routes";
 
 const confocal = { id: 123, name: "Confocal microscope", globalId: "IN123" };
+const settings = {
+  slotGranularityMinutes: 5,
+  openingStart: "00:00",
+  openingEnd: "24:00",
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+  maxBookingDurationMinutes: 0,
+  allowDoubleBooking: false,
+  configurationVersion: 0,
+};
 
 function collectionPage(docs: readonly unknown[]) {
   return {
@@ -66,6 +76,7 @@ function ExistingConfigurationPage() {
 }
 
 function renderPage() {
+  server.use(http.get("/api/v2/booking-settings", () => HttpResponse.json(settings)));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rootRoute = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({
@@ -116,6 +127,22 @@ async function completeForm(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("AddBookableItemPage", () => {
+  it("treats a blank relationship control as an empty selection", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+      instrumentsHandler(),
+      availabilityHandler(),
+    );
+    renderPage();
+
+    const bookableItem = await screen.findByRole("combobox", { name: "booking:bookableItems.fields.target" });
+    await user.type(bookableItem, "Conf");
+    await user.clear(bookableItem);
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("submits the selected booking configuration and returns to the list", async () => {
     const user = userEvent.setup();
     let requestBody: unknown;
@@ -147,6 +174,13 @@ describe("AddBookableItemPage", () => {
       target: { relationTo: "instruments", value: 123 },
       enabled: true,
       timezone: "Europe/Berlin",
+      slotGranularityMinutes: 5,
+      openingStart: "00:00",
+      openingEnd: "24:00",
+      bufferBeforeMinutes: 0,
+      bufferAfterMinutes: 0,
+      maxBookingDurationMinutes: 0,
+      allowDoubleBooking: false,
     });
   });
 

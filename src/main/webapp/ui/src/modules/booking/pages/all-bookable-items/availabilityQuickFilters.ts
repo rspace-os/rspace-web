@@ -40,7 +40,8 @@ async function fetchCandidatePage(page: number, token: string, signal: AbortSign
     page: String(page),
     limit: "100",
     depth: "1",
-    "fields[booking-configurations]": "id,target,enabled,timezone",
+    "fields[booking-configurations]":
+      "id,target,enabled,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",
   });
   const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
     headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
@@ -76,6 +77,12 @@ export async function loadAvailabilityQuickIndex(
             globalId: candidate.target.globalId,
             timezone: candidate.timezone,
             date: currentWallClock(current.toISOString(), candidate.timezone).date,
+            openingStart: candidate.openingStart,
+            openingEnd: candidate.openingEnd,
+            bufferBeforeMinutes: candidate.bufferBeforeMinutes,
+            bufferAfterMinutes: candidate.bufferAfterMinutes,
+            maxBookingDurationMinutes: candidate.maxBookingDurationMinutes,
+            allowDoubleBooking: candidate.allowDoubleBooking,
           },
         ]
       : [],
@@ -109,7 +116,22 @@ export function useAvailabilityQuickFilterIndex(
     staleTime: 60_000,
   });
   const signature = candidates.data
-    ?.flatMap((candidate) => (candidate.target ? [[candidate.target.globalId, candidate.timezone] as const] : []))
+    ?.flatMap((candidate) =>
+      candidate.target
+        ? [
+            [
+              candidate.target.globalId,
+              candidate.timezone,
+              candidate.openingStart,
+              candidate.openingEnd,
+              candidate.bufferBeforeMinutes,
+              candidate.bufferAfterMinutes,
+              candidate.maxBookingDurationMinutes,
+              candidate.allowDoubleBooking,
+            ] as const,
+          ]
+        : [],
+    )
     .toSorted(([left], [right]) => left.localeCompare(right));
   const index = useQuery({
     queryKey: ["api-v2", "bookings", "availability-quick-index", signature, minute],

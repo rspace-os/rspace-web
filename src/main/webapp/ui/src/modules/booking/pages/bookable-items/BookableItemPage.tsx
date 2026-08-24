@@ -16,8 +16,10 @@ import {
   BookingConfigurationUpdateInputSchema,
   bookingConfigurationFields,
 } from "./bookingConfiguration";
+import { SchedulingSettingsFields } from "./schedulingSettings";
 
-const selectedFields = "id,target,enabled,timezone,updatedAt";
+const selectedFields =
+  "id,target,enabled,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,updatedAt";
 
 function requestUrl(id: string): string {
   const search = new URLSearchParams({
@@ -73,6 +75,13 @@ export default function BookableItemPage() {
         : { target: { relationTo: "instruments" as const, value: configuration.target.value.id } }),
       enabled: configuration.enabled,
       timezone: configuration.timezone,
+      slotGranularityMinutes: configuration.slotGranularityMinutes,
+      openingStart: configuration.openingStart,
+      openingEnd: configuration.openingEnd,
+      bufferBeforeMinutes: configuration.bufferBeforeMinutes,
+      bufferAfterMinutes: configuration.bufferAfterMinutes,
+      maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
+      allowDoubleBooking: configuration.allowDoubleBooking,
     },
   });
   const updateMutation = useMutation({
@@ -98,6 +107,7 @@ export default function BookableItemPage() {
           form={form}
           disabled={updateMutation.isPending}
         />
+        <SchedulingSettingsFields form={form} disabled={updateMutation.isPending} />
         {updateMutation.isError ? (
           <p role="alert" className="text-sm text-destructive">
             {t("bookableItems.editError")}

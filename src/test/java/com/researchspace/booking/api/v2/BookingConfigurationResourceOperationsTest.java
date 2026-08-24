@@ -16,6 +16,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.ParsedDocument;
@@ -135,6 +136,28 @@ class BookingConfigurationResourceOperationsTest {
             .orElseThrow());
 
     verify(manager).updateConfiguration(42L, new Patch(null, null, target), actor, actor);
+  }
+
+  @Test
+  void translatesMaximumBookingDurationPatchesToSchedulingSettings() {
+    BookingConfiguration configuration = new BookingConfiguration();
+    BookingSchedulingSettings.Patch schedulingPatch =
+        new BookingSchedulingSettings.Patch(null, null, null, null, null, 60L, null);
+    when(manager.updateConfiguration(
+            42L, new Patch(null, null, null, schedulingPatch), actor, actor))
+        .thenReturn(Optional.of(configuration));
+
+    assertEquals(
+        configuration,
+        operations
+            .update(
+                42L,
+                ParsedDocument.update(Map.of("maxBookingDurationMinutes", 60L)),
+                ApiV2Caller.direct(actor))
+            .orElseThrow());
+
+    verify(manager)
+        .updateConfiguration(42L, new Patch(null, null, null, schedulingPatch), actor, actor);
   }
 
   @Test

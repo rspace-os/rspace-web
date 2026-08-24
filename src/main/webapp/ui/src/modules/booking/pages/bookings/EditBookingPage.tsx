@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { useBookableItemConfiguration } from "@/modules/booking/components/BookableItemPicker";
 import {
   ApiV2ProblemError,
   type Booking,
@@ -25,13 +26,21 @@ function errorKey(
 ):
   | "bookings.errors.generic"
   | "bookings.errors.endAfterStart"
+  | "bookings.errors.duration"
+  | "bookings.errors.maximumDuration"
   | "bookings.errors.overlap"
+  | "bookings.errors.granularity"
+  | "bookings.errors.openingHours"
   | "bookings.errors.targetUnavailable"
   | "bookings.errors.forbidden"
   | "bookings.errors.noLongerEditable" {
   if (!(error instanceof ApiV2ProblemError)) return "bookings.errors.generic";
   if (error.code === "errors.api.v2.booking.window") return "bookings.errors.endAfterStart";
+  if (error.code === "errors.api.v2.booking.duration") return "bookings.errors.duration";
+  if (error.code === "errors.api.v2.booking.maximumDuration") return "bookings.errors.maximumDuration";
   if (error.code === "errors.api.v2.booking.overlap") return "bookings.errors.overlap";
+  if (error.code === "errors.api.v2.booking.granularity") return "bookings.errors.granularity";
+  if (error.code === "errors.api.v2.booking.openingHours") return "bookings.errors.openingHours";
   if (error.code === "errors.api.v2.booking.target.unavailable") return "bookings.errors.targetUnavailable";
   if (error.code === "errors.api.v2.forbidden") return "bookings.errors.forbidden";
   if (error.code === "errors.api.v2.booking.state.transition") return "bookings.errors.noLongerEditable";
@@ -51,6 +60,7 @@ export default function EditBookingPage() {
     enabled: Number.isSafeInteger(bookingId) && bookingId > 0 && Boolean(token),
     queryFn: ({ signal }) => fetchBooking(bookingId, token, signal),
   });
+  const configuration = useBookableItemConfiguration(booking.data?.target.globalId, token);
   const mutation = useMutation({
     mutationFn: (submission: BookingFormSubmission) => {
       if (!booking.data) throw new Error("Booking is not loaded");
@@ -129,6 +139,22 @@ export default function EditBookingPage() {
     );
   }
   if (!isEditableBooking(booking.data)) return null;
+  if (configuration.isPending)
+    return (
+      <main className="p-8">
+        <p>{t("bookings.loadingConfiguration")}</p>
+      </main>
+    );
+  if (configuration.isError || !configuration.data)
+    return (
+      <main className="space-y-4 p-8">
+        <p role="alert">{t("bookings.errors.targetUnavailable")}</p>
+        {returnLink(
+          search.date ?? currentWallClock(booking.data.start, booking.data.timezone).date,
+          booking.data.target.globalId,
+        )}
+      </main>
+    );
   const returnDate = search.date ?? currentWallClock(booking.data.start, booking.data.timezone).date;
   return (
     <main className="space-y-6 p-4 sm:p-8">
@@ -153,6 +179,7 @@ export default function EditBookingPage() {
       <BookingForm
         mode="edit"
         booking={booking.data}
+        configuration={configuration.data}
         token={token}
         pending={mutation.isPending}
         error={mutation.error ? t(errorKey(mutation.error)) : undefined}

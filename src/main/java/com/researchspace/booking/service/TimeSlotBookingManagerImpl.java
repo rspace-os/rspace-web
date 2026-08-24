@@ -1,5 +1,7 @@
 package com.researchspace.booking.service;
 
+import static com.researchspace.model.booking.BookingSchedulingSettings.MAX_BOOKING_DURATION_MINUTES;
+
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.model.User;
@@ -17,6 +19,7 @@ import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
+import java.time.Duration;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +39,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   private final TimeSlotBookingDao bookingDao;
   private final BookingConfigurationDao configurationDao;
   private final InventoryPermissionUtils inventoryPermissions;
+  private final BookingSchedulingPolicy schedulingPolicy;
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
   private final ApplicationEventPublisher events;
 
@@ -43,11 +47,13 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       @Qualifier("timeSlotBookingDao") TimeSlotBookingDao bookingDao,
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
       InventoryPermissionUtils inventoryPermissions,
+      BookingSchedulingPolicy schedulingPolicy,
       ObjectProvider<ResourceRegistry> resourceRegistry,
       ApplicationEventPublisher events) {
     this.bookingDao = bookingDao;
     this.configurationDao = configurationDao;
     this.inventoryPermissions = inventoryPermissions;
+    this.schedulingPolicy = schedulingPolicy;
     this.resourceRegistry = resourceRegistry;
     this.events = events;
   }
@@ -90,7 +96,11 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
             .lockByTarget(create.target().reference())
             .filter(BookingConfiguration::isEnabled)
             .orElseThrow(BookingTargetUnavailableException::new);
-    requireNoOverlap(configuration.getId(), create.start(), create.end(), null);
+    BookingSchedulingPolicy.ConflictInterval conflict =
+        schedulingPolicy.validate(configuration, create.start(), create.end());
+    if (!configuration.isAllowDoubleBooking()) {
+      requireNoOverlap(configuration.getId(), conflict.start(), conflict.end(), null);
+    }
 
     Date now = new Date();
     TimeSlotBooking booking = new TimeSlotBooking();
@@ -123,20 +133,27 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               if (booking.getState() != BookingState.CONFIRMED) {
                 throw new BookingStateTransitionException();
               }
-              BookingConfiguration configuration =
-                  configurationDao
-                      .lockById(booking.getBookingConfiguration().getId())
-                      .orElseThrow(BookingTargetUnavailableException::new);
               Date start = patch.start() == null ? booking.getStartTime() : patch.start();
               Date end = patch.end() == null ? booking.getEndTime() : patch.end();
               boolean intervalChanged =
                   !start.equals(booking.getStartTime()) || !end.equals(booking.getEndTime());
               if (intervalChanged) {
+                validateWindow(start, end);
+              }
+              BookingConfiguration configuration =
+                  configurationDao
+                      .lockById(booking.getBookingConfiguration().getId())
+                      .orElseThrow(BookingTargetUnavailableException::new);
+              if (intervalChanged) {
                 if (!configuration.isEnabled()) {
                   throw new BookingTargetUnavailableException();
                 }
-                validateWindow(start, end);
-                requireNoOverlap(configuration.getId(), start, end, booking.getId());
+                BookingSchedulingPolicy.ConflictInterval conflict =
+                    schedulingPolicy.validate(configuration, start, end);
+                if (!configuration.isAllowDoubleBooking()) {
+                  requireNoOverlap(
+                      configuration.getId(), conflict.start(), conflict.end(), booking.getId());
+                }
               }
               if (patch.purposeSupplied()) {
                 validatePurpose(patch.purpose());
@@ -214,6 +231,11 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   private static void validateWindow(Date start, Date end) {
     if (start == null || end == null || !end.after(start)) {
       throw new BookingWindowException();
+    }
+    if (Duration.between(start.toInstant(), end.toInstant())
+            .compareTo(Duration.ofMinutes(MAX_BOOKING_DURATION_MINUTES))
+        > 0) {
+      throw new BookingDurationException();
     }
   }
 

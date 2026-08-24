@@ -7,37 +7,56 @@ const BookingTargetSchema = v.object({
   globalId: v.string(),
 });
 
-const BookingIdentitySchema = {
-  id: v.number(),
-  target: BookingTargetSchema,
-  timezone: v.string(),
-  start: v.string(),
-  end: v.string(),
-  state: v.picklist(["CONFIRMED", "CANCELLED"]),
-};
+// Mutation responses are serialized directly from the saved entity. Unlike reads, they do not
+// expand relationships, even when the request includes depth=1.
+const MutationTargetSchema = v.object({
+  relationTo: v.literal("instruments"),
+  value: v.union([v.number(), BookingTargetSchema.entries.value]),
+  globalId: v.string(),
+});
+
+function bookingIdentity<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(target: TTarget) {
+  return {
+    id: v.number(),
+    target,
+    timezone: v.string(),
+    start: v.string(),
+    end: v.string(),
+    state: v.picklist(["CONFIRMED", "CANCELLED"]),
+  };
+}
+
+function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(target: TTarget) {
+  const identity = bookingIdentity(target);
+  return v.variant("privacy", [
+    v.object({
+      ...identity,
+      privacy: v.literal("full"),
+      purpose: v.nullable(v.string()),
+      bookedBy: v.string(),
+      canEdit: v.boolean(),
+      createdAt: v.string(),
+      updatedAt: v.string(),
+    }),
+    v.object({
+      ...identity,
+      privacy: v.literal("busy"),
+      purpose: v.null(),
+      bookedBy: v.null(),
+      canEdit: v.literal(false),
+      createdAt: v.string(),
+      updatedAt: v.string(),
+    }),
+  ]);
+}
+
+const BookingIdentitySchema = bookingIdentity(BookingTargetSchema);
 
 export const BookingSummarySchema = v.object(BookingIdentitySchema);
 
-export const BookingSchema = v.variant("privacy", [
-  v.object({
-    ...BookingIdentitySchema,
-    privacy: v.literal("full"),
-    purpose: v.nullable(v.string()),
-    bookedBy: v.string(),
-    canEdit: v.boolean(),
-    createdAt: v.string(),
-    updatedAt: v.string(),
-  }),
-  v.object({
-    ...BookingIdentitySchema,
-    privacy: v.literal("busy"),
-    purpose: v.null(),
-    bookedBy: v.null(),
-    canEdit: v.literal(false),
-    createdAt: v.string(),
-    updatedAt: v.string(),
-  }),
-]);
+export const BookingSchema = bookingSchema(BookingTargetSchema);
+
+const BookingMutationSchema = bookingSchema(MutationTargetSchema);
 
 export const BookingListDocumentSchema = v.object({
   ...BookingIdentitySchema,
@@ -53,6 +72,7 @@ export const BookingListDocumentSchema = v.object({
 export type BookingSummary = v.InferOutput<typeof BookingSummarySchema>;
 export type Booking = v.InferOutput<typeof BookingSchema>;
 export type BookingListDocument = v.InferOutput<typeof BookingListDocumentSchema>;
+type BookingMutation = v.InferOutput<typeof BookingMutationSchema>;
 
 export const BookingCreateSchema = v.object({
   target: v.object({ relationTo: v.literal("instruments"), value: v.number() }),
@@ -127,20 +147,20 @@ export function fetchBooking(id: number, token: string, signal?: AbortSignal): P
   return requestBooking(`/api/v2/bookings/${id}?${parameters}`, token, BookingSchema, { signal });
 }
 
-export function createBooking(input: BookingCreate, token: string): Promise<Booking> {
-  return requestBooking("/api/v2/bookings?depth=1", token, BookingSchema, {
+export function createBooking(input: BookingCreate, token: string): Promise<BookingMutation> {
+  return requestBooking("/api/v2/bookings?depth=1", token, BookingMutationSchema, {
     method: "POST",
     body: JSON.stringify(parseOrThrow(BookingCreateSchema, input)),
   });
 }
 
-export function updateBooking(id: number, input: BookingUpdate, token: string): Promise<Booking> {
-  return requestBooking(`/api/v2/bookings/${id}?depth=1`, token, BookingSchema, {
+export function updateBooking(id: number, input: BookingUpdate, token: string): Promise<BookingMutation> {
+  return requestBooking(`/api/v2/bookings/${id}?depth=1`, token, BookingMutationSchema, {
     method: "PATCH",
     body: JSON.stringify(parseOrThrow(BookingUpdateSchema, input)),
   });
 }
 
-export function cancelBooking(id: number, token: string): Promise<Booking> {
+export function cancelBooking(id: number, token: string): Promise<BookingMutation> {
   return updateBooking(id, { state: "CANCELLED" }, token);
 }

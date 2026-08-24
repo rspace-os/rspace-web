@@ -25,11 +25,12 @@ import {
   BookingConfigurationSchema,
   bookingConfigurationConfig,
 } from "../bookable-items/bookingConfiguration";
-import { useCalendarAvailability } from "../calendar/calendarAvailability";
+import { schedulingSettingsFieldNames } from "../bookable-items/schedulingSettings";
+import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
 import { type AvailabilityQuickFilter, useAvailabilityQuickFilterIndex } from "./availabilityQuickFilters";
 import { addCalendarDays, localToday } from "./calendarDate";
 
-const requestProjection = { fixed: ["id", "target", "enabled", "timezone"] } as const;
+const requestProjection = { fixed: ["id", "target", "enabled", "timezone", ...schedulingSettingsFieldNames] } as const;
 const baseFilter = {
   kind: "and",
   children: [
@@ -118,9 +119,11 @@ export default function AllBookableItemsPage({ clock = currentDate }: { clock?: 
     },
   });
   const rows = table.tableProps.rows as readonly BookingConfigurationRow[];
-  const availabilityRows = rows.flatMap((row) =>
-    row.target && row.timezone ? [{ globalId: row.target.globalId, timezone: row.timezone }] : [],
-  );
+  const availabilityRows = rows.flatMap((row) => {
+    if (!row.target) return [];
+    const availabilityRow = calendarAvailabilityRow({ globalId: row.target.globalId, ...row });
+    return availabilityRow ? [availabilityRow] : [];
+  });
   const availability = useCalendarAvailability(quickMode ? [] : availabilityRows, date, token);
 
   const setDate = (nextDate: string) =>

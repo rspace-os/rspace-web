@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -48,9 +49,11 @@ class TimeSlotBookingManagerTest {
   private final InventoryPermissionUtils permissions = mock(InventoryPermissionUtils.class);
   private final ObjectProvider<ResourceRegistry> registry = mock(ObjectProvider.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+  private final BookingSchedulingPolicy schedulingPolicy = new BookingSchedulingPolicyImpl();
   private final User actor = mock(User.class);
   private final TimeSlotBookingManager manager =
-      new TimeSlotBookingManagerImpl(bookingDao, configurationDao, permissions, registry, events);
+      new TimeSlotBookingManagerImpl(
+          bookingDao, configurationDao, permissions, schedulingPolicy, registry, events);
 
   @BeforeEach
   void setUp() {
@@ -122,6 +125,221 @@ class TimeSlotBookingManagerTest {
                 new TimeSlotBookingManager.Create(target, start(), end(), null), actor, actor));
 
     verify(bookingDao, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void fullDayOpeningCoversOvernightMultiDayAndDstTransitions() {
+    BookingConfiguration utc = configuration(4L, 12L, true);
+    utc.setTimeZone("UTC");
+    assertDoesNotThrow(
+        () ->
+            schedulingPolicy.validate(
+                utc, instant("2026-08-17T23:00:00Z"), instant("2026-08-18T01:00:00Z")));
+    assertDoesNotThrow(
+        () ->
+            schedulingPolicy.validate(
+                utc, instant("2026-08-17T00:00:00Z"), instant("2026-08-20T00:00:00Z")));
+
+    BookingConfiguration berlin = configuration(4L, 12L, true);
+    assertDoesNotThrow(
+        () ->
+            schedulingPolicy.validate(
+                berlin, instant("2026-03-28T23:00:00Z"), instant("2026-03-29T22:00:00Z")));
+    assertDoesNotThrow(
+        () ->
+            schedulingPolicy.validate(
+                berlin, instant("2026-10-24T22:00:00Z"), instant("2026-10-25T23:00:00Z")));
+  }
+
+  @Test
+  void openingCoverageAcceptsExactBoundariesAndRejectsClosedOvernightGaps() {
+    BookingConfiguration configuration = configuration(4L, 12L, true);
+    configuration.setTimeZone("UTC");
+    configuration.setOpeningStart("08:00");
+    configuration.setOpeningEnd("18:00");
+
+    assertDoesNotThrow(
+        () ->
+            schedulingPolicy.validate(
+                configuration, instant("2026-08-17T08:00:00Z"), instant("2026-08-17T18:00:00Z")));
+    BookingPolicyException failure =
+        assertThrows(
+            BookingPolicyException.class,
+            () ->
+                schedulingPolicy.validate(
+                    configuration,
+                    instant("2026-08-17T17:00:00Z"),
+                    instant("2026-08-18T09:00:00Z")));
+    assertEquals(BookingPolicyException.Reason.OPENING_HOURS, failure.reason());
+  }
+
+  @Test
+  void requiresBothEndpointsToAlignToConfiguredGranularity() {
+    BookingConfiguration configuration = configuration(4L, 12L, true);
+    configuration.setTimeZone("UTC");
+    configuration.setSlotGranularityMinutes(15);
+
+    for (String instant : List.of("2026-08-17T10:01:00Z", "2026-08-17T10:00:01Z")) {
+      BookingPolicyException failure =
+          assertThrows(
+              BookingPolicyException.class,
+              () ->
+                  schedulingPolicy.validate(
+                      configuration,
+                      Date.from(Instant.parse(instant)),
+                      instant("2026-08-17T11:00:00Z")));
+      assertEquals(BookingPolicyException.Reason.GRANULARITY, failure.reason());
+    }
+  }
+
+  @Test
+  void maximumDurationUsesElapsedInstantsAndAcceptsTheExactBoundary() {
+    BookingConfiguration configuration = configuration(4L, 12L, true);
+    configuration.setSlotGranularityMinutes(1);
+    configuration.setMaxBookingDurationMinutes(60);
+
+    assertDoesNotThrow(
+        () ->
+            schedulingPolicy.validate(
+                configuration, instant("2026-10-25T00:30:00Z"), instant("2026-10-25T01:30:00Z")));
+
+    BookingPolicyException failure =
+        assertThrows(
+            BookingPolicyException.class,
+            () ->
+                schedulingPolicy.validate(
+                    configuration,
+                    instant("2026-10-25T00:30:00Z"),
+                    instant("2026-10-25T01:31:00Z")));
+    assertEquals(BookingPolicyException.Reason.MAXIMUM_DURATION, failure.reason());
+  }
+
+  @Test
+  void maximumDurationAppliesToCreateAndTimeChangingUpdatesEvenWithDoubleBooking() {
+    ResolvedBookableTarget target = target(12L);
+    when(permissions.canUserReadInventoryRecord((Instrument) target.entity(), actor))
+        .thenReturn(true);
+    BookingConfiguration configuration = configuration(4L, 12L, true);
+    configuration.setMaxBookingDurationMinutes(60);
+    configuration.setAllowDoubleBooking(true);
+    when(configurationDao.lockByTarget(target.reference())).thenReturn(Optional.of(configuration));
+
+    assertThrows(
+        BookingPolicyException.class,
+        () ->
+            manager.createBooking(
+                new TimeSlotBookingManager.Create(target, start(), end(), null), actor, actor));
+    verify(bookingDao, never()).overlaps(any(), any(), any(), any());
+    verify(bookingDao, never()).saveAndFlush(any());
+
+    TimeSlotBooking existing = booking(41L, 12L, actor);
+    existing.getBookingConfiguration().setMaxBookingDurationMinutes(60);
+    when(bookingDao.getSafeNull(41L)).thenReturn(Optional.of(existing));
+    when(configurationDao.lockById(4L)).thenReturn(Optional.of(existing.getBookingConfiguration()));
+
+    BookingPolicyException failure =
+        assertThrows(
+            BookingPolicyException.class,
+            () ->
+                manager.updateBooking(
+                    41L,
+                    new TimeSlotBookingManager.Patch(
+                        null, instant("2026-10-25T09:05:00Z"), false, null, null),
+                    actor,
+                    actor));
+    assertEquals(BookingPolicyException.Reason.MAXIMUM_DURATION, failure.reason());
+  }
+
+  @Test
+  void expandsConflictQueriesAsymmetricallyAndSkipsThemForDoubleBooking() {
+    ResolvedBookableTarget target = target(12L);
+    when(permissions.canUserReadInventoryRecord((Instrument) target.entity(), actor))
+        .thenReturn(true);
+    BookingConfiguration buffered = configuration(4L, 12L, true);
+    buffered.setTimeZone("UTC");
+    buffered.setBufferBeforeMinutes(10);
+    buffered.setBufferAfterMinutes(20);
+    when(configurationDao.lockByTarget(target.reference())).thenReturn(Optional.of(buffered));
+
+    manager.createBooking(
+        new TimeSlotBookingManager.Create(
+            target, instant("2026-08-17T10:00:00Z"), instant("2026-08-17T11:00:00Z"), null),
+        actor,
+        actor);
+
+    verify(bookingDao)
+        .overlaps(4L, instant("2026-08-17T09:40:00Z"), instant("2026-08-17T11:10:00Z"), null);
+
+    BookingConfiguration doubleBookable = configuration(5L, 12L, true);
+    doubleBookable.setTimeZone("UTC");
+    doubleBookable.setAllowDoubleBooking(true);
+    when(configurationDao.lockByTarget(target.reference())).thenReturn(Optional.of(doubleBookable));
+    manager.createBooking(
+        new TimeSlotBookingManager.Create(
+            target, instant("2026-08-17T12:00:00Z"), instant("2026-08-17T13:00:00Z"), null),
+        actor,
+        actor);
+    verify(bookingDao, never()).overlaps(eq(5L), any(), any(), any());
+  }
+
+  @Test
+  void rejectsExcessiveDurationsBeforeTakingTheConfigurationLock() {
+    ResolvedBookableTarget target = target(12L);
+    when(permissions.canUserReadInventoryRecord((Instrument) target.entity(), actor))
+        .thenReturn(true);
+
+    assertThrows(
+        BookingDurationException.class,
+        () ->
+            manager.createBooking(
+                new TimeSlotBookingManager.Create(
+                    target, instant("2026-01-01T00:00:00Z"), instant("2027-01-03T00:00:00Z"), null),
+                actor,
+                actor));
+
+    verify(configurationDao, never()).lockByTarget(any());
+  }
+
+  @Test
+  void purposeOnlyEditsRemainAllowedWhenTheConfigurationIsDisabled() {
+    TimeSlotBooking existing = booking(41L, 12L, actor);
+    BookingConfiguration disabled = existing.getBookingConfiguration();
+    disabled.setEnabled(false);
+    when(bookingDao.getSafeNull(41L)).thenReturn(Optional.of(existing));
+    when(configurationDao.lockById(4L)).thenReturn(Optional.of(disabled));
+
+    TimeSlotBooking updated =
+        manager
+            .updateBooking(
+                41L,
+                new TimeSlotBookingManager.Patch(null, null, true, "Changed", null),
+                actor,
+                actor)
+            .orElseThrow();
+
+    assertEquals("Changed", updated.getPurpose());
+    verify(bookingDao, never()).overlaps(any(), any(), any(), any());
+  }
+
+  @Test
+  void purposeOnlyEditsRemainAllowedAfterTheMaximumIsLowered() {
+    TimeSlotBooking existing = booking(41L, 12L, actor);
+    BookingConfiguration configuration = existing.getBookingConfiguration();
+    configuration.setMaxBookingDurationMinutes(60);
+    when(bookingDao.getSafeNull(41L)).thenReturn(Optional.of(existing));
+    when(configurationDao.lockById(4L)).thenReturn(Optional.of(configuration));
+
+    TimeSlotBooking updated =
+        manager
+            .updateBooking(
+                41L,
+                new TimeSlotBookingManager.Patch(null, null, true, "Changed", null),
+                actor,
+                actor)
+            .orElseThrow();
+
+    assertEquals("Changed", updated.getPurpose());
+    verify(bookingDao, never()).overlaps(any(), any(), any(), any());
   }
 
   @Test
@@ -231,5 +449,9 @@ class TimeSlotBookingManagerTest {
 
   private static Date end() {
     return Date.from(Instant.parse("2026-10-25T09:00:00Z"));
+  }
+
+  private static Date instant(String value) {
+    return Date.from(Instant.parse(value));
   }
 }

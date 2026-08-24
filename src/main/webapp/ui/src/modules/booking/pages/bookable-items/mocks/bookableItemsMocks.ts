@@ -1,4 +1,5 @@
 import { HttpResponse, http, type RequestHandler } from "msw";
+import { DEFAULT_SCHEDULING_SETTINGS, schedulingSettingsFieldNames } from "../schedulingSettings";
 
 export const bookableItemsOpenApi = {
   paths: {
@@ -109,7 +110,14 @@ export const bookableItemsOpenApi = {
           {
             name: "fields",
             "x-rspace-allowed-fields": {
-              "booking-configurations": ["id", "target", "enabled", "timezone", "updatedAt"],
+              "booking-configurations": [
+                "id",
+                "target",
+                "enabled",
+                "timezone",
+                ...schedulingSettingsFieldNames,
+                "updatedAt",
+              ],
             },
           },
         ],
@@ -128,6 +136,7 @@ export const bookableItemFixtures = [
     },
     enabled: true,
     timezone: "Europe/Berlin",
+    ...DEFAULT_SCHEDULING_SETTINGS,
     updatedAt: "2026-08-10T10:00:00Z",
     "target.customFields": { SF152: "BSL-2", SF160: "yes" },
   },
@@ -140,6 +149,7 @@ export const bookableItemFixtures = [
     },
     enabled: true,
     timezone: "America/New_York",
+    ...DEFAULT_SCHEDULING_SETTINGS,
     updatedAt: "2026-08-11T11:00:00Z",
   },
   {
@@ -151,6 +161,7 @@ export const bookableItemFixtures = [
     },
     enabled: true,
     timezone: "UTC",
+    ...DEFAULT_SCHEDULING_SETTINGS,
     updatedAt: "2026-08-12T12:00:00Z",
   },
   {
@@ -162,6 +173,7 @@ export const bookableItemFixtures = [
     },
     enabled: true,
     timezone: "Asia/Singapore",
+    ...DEFAULT_SCHEDULING_SETTINGS,
     updatedAt: "2026-08-13T13:00:00Z",
   },
 ] as const;

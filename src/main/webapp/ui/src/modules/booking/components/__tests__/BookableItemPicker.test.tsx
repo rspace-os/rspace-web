@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { DEFAULT_SCHEDULING_SETTINGS } from "../../pages/bookable-items/schedulingSettings";
 import { BookableItemPicker, loadBookableItems } from "../BookableItemPicker";
 
 function envelope(docs: unknown[], page = 1, totalPages = 1) {
@@ -30,6 +31,7 @@ function configuration(id: number, name: string) {
       value: { id, name, deleted: false },
     },
     timezone: "Europe/Berlin",
+    ...DEFAULT_SCHEDULING_SETTINGS,
   };
 }
 
@@ -55,13 +57,16 @@ describe("BookableItemPicker", () => {
     const page = await loadBookableItems({ target: "IN12" }, "token", new AbortController().signal);
 
     expect(requestUrl?.searchParams.get("where")).toBe("enabled==true;target==IN12");
-    expect(requestUrl?.searchParams.get("fields[booking-configurations]")).toBe("id,target,timezone");
+    expect(requestUrl?.searchParams.get("fields[booking-configurations]")).toBe(
+      "id,target,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",
+    );
     expect(page.options[0]).toEqual({
       configurationId: 12,
       targetId: 12,
       globalId: "IN12",
       name: "Scope",
       timezone: "Europe/Berlin",
+      ...DEFAULT_SCHEDULING_SETTINGS,
     });
   });
 

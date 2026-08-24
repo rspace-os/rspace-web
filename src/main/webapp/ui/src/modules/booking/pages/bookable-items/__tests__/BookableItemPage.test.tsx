@@ -27,6 +27,13 @@ const configuration = {
   },
   enabled: true,
   timezone: "Europe/Berlin",
+  slotGranularityMinutes: 5,
+  openingStart: "00:00",
+  openingEnd: "24:00",
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+  maxBookingDurationMinutes: 0,
+  allowDoubleBooking: false,
   updatedAt: "2026-08-10T12:00:00Z",
 };
 
@@ -97,7 +104,9 @@ describe("BookableItemPage", () => {
       "Europe/Berlin",
     );
     expect(requestUrl?.searchParams.get("depth")).toBe("1");
-    expect(requestUrl?.searchParams.get("fields[booking-configurations]")).toBe("id,target,enabled,timezone,updatedAt");
+    expect(requestUrl?.searchParams.get("fields[booking-configurations]")).toBe(
+      "id,target,enabled,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,updatedAt",
+    );
     await expectAccessible(container);
 
     await user.click(screen.getByRole("checkbox", { name: "booking:bookableItems.fields.enabled" }));
@@ -109,6 +118,13 @@ describe("BookableItemPage", () => {
       target: { relationTo: "instruments", value: 123 },
       enabled: false,
       timezone: "Europe/Berlin",
+      slotGranularityMinutes: 5,
+      openingStart: "00:00",
+      openingEnd: "24:00",
+      bufferBeforeMinutes: 0,
+      bufferAfterMinutes: 0,
+      maxBookingDurationMinutes: 0,
+      allowDoubleBooking: false,
     });
   });
 
@@ -150,6 +166,16 @@ describe("BookableItemPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
 
     expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
-    expect(requestBody).toEqual({ enabled: false, timezone: "Europe/Berlin" });
+    expect(requestBody).toEqual({
+      enabled: false,
+      timezone: "Europe/Berlin",
+      slotGranularityMinutes: 5,
+      openingStart: "00:00",
+      openingEnd: "24:00",
+      bufferBeforeMinutes: 0,
+      bufferAfterMinutes: 0,
+      maxBookingDurationMinutes: 0,
+      allowDoubleBooking: false,
+    });
   });
 });

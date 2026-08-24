@@ -21,6 +21,13 @@ const target = {
   globalId: "IN123",
   name: "Confocal microscope",
   timezone: "Europe/Berlin",
+  slotGranularityMinutes: 5,
+  openingStart: "00:00",
+  openingEnd: "24:00",
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+  maxBookingDurationMinutes: 0,
+  allowDoubleBooking: false,
 };
 
 const editableBooking = {
@@ -84,7 +91,16 @@ describe("BookingForm", () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
 
-    renderForm(<BookingForm mode="edit" booking={editableBooking} token="token" pending={false} onSubmit={submit} />);
+    renderForm(
+      <BookingForm
+        mode="edit"
+        booking={editableBooking}
+        configuration={target}
+        token="token"
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
 
     expect(await screen.findByText("Confocal microscope")).toBeVisible();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
@@ -122,7 +138,9 @@ describe("BookingForm", () => {
     const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
     expect(within(start).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-08-17");
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("");
+    expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", "300");
     expect(within(end).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-08-17");
+    expect(screen.getByText("booking:bookings.form.openingHours")).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
 
@@ -156,6 +174,13 @@ describe("BookingForm", () => {
                 value: { id: target.targetId, name: target.name, deleted: false },
               },
               timezone: target.timezone,
+              slotGranularityMinutes: target.slotGranularityMinutes,
+              openingStart: target.openingStart,
+              openingEnd: target.openingEnd,
+              bufferBeforeMinutes: target.bufferBeforeMinutes,
+              bufferAfterMinutes: target.bufferAfterMinutes,
+              maxBookingDurationMinutes: target.maxBookingDurationMinutes,
+              allowDoubleBooking: target.allowDoubleBooking,
             },
             {
               id: paris.configurationId,
@@ -165,6 +190,13 @@ describe("BookingForm", () => {
                 value: { id: paris.targetId, name: paris.name, deleted: false },
               },
               timezone: paris.timezone,
+              slotGranularityMinutes: paris.slotGranularityMinutes,
+              openingStart: paris.openingStart,
+              openingEnd: paris.openingEnd,
+              bufferBeforeMinutes: paris.bufferBeforeMinutes,
+              bufferAfterMinutes: paris.bufferAfterMinutes,
+              maxBookingDurationMinutes: paris.maxBookingDurationMinutes,
+              allowDoubleBooking: paris.allowDoubleBooking,
             },
           ]),
         ),
@@ -227,5 +259,49 @@ describe("BookingForm", () => {
     expect(submit).toHaveBeenCalledWith(expect.objectContaining({ purpose: null }));
     expect(button).toBeDisabled();
     await act(async () => release?.());
+  });
+
+  it("shows the maximum and blocks an over-limit booking", async () => {
+    const user = userEvent.setup();
+    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+    renderForm(
+      <BookingForm
+        mode="add"
+        initialTarget={{ ...target, maxBookingDurationMinutes: 60 }}
+        initialDate="2026-08-17"
+        token="token"
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
+    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+    expect(screen.getByText("booking:bookings.form.maximumDuration")).toBeVisible();
+    await user.type(within(start).getByLabelText("booking:bookings.form.time"), "09:00");
+    await user.type(within(end).getByLabelText("booking:bookings.form.time"), "10:05");
+
+    expect(screen.getByText("booking:bookings.errors.maximumDuration")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("allows an unchanged over-limit interval on a purpose-only edit", async () => {
+    const user = userEvent.setup();
+    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+    renderForm(
+      <BookingForm
+        mode="edit"
+        booking={editableBooking}
+        configuration={{ ...target, maxBookingDurationMinutes: 30 }}
+        token="token"
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
+
+    expect(screen.queryByText("booking:bookings.errors.maximumDuration")).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "booking:bookings.form.save" }));
+    expect(submit).toHaveBeenCalledOnce();
   });
 });

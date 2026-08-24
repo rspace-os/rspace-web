@@ -52,12 +52,35 @@ class ApiV2BookingConfigurationResourceTest {
   @Test
   void definesScalarFieldsAndTheWritableTargetRelationship() {
     assertEquals(
-        List.of("id", "enabled", "timezone", "configurationVersion", "createdAt", "updatedAt"),
+        List.of(
+            "id",
+            "enabled",
+            "timezone",
+            "slotGranularityMinutes",
+            "openingStart",
+            "openingEnd",
+            "bufferBeforeMinutes",
+            "bufferAfterMinutes",
+            "maxBookingDurationMinutes",
+            "allowDoubleBooking",
+            "configurationVersion",
+            "createdAt",
+            "updatedAt"),
         ApiV2BookingConfigurationResource.DESCRIPTION.fields().stream()
             .map(field -> field.name())
             .toList());
     assertEquals(
-        List.of("enabled", "timezone", "target"),
+        List.of(
+            "enabled",
+            "timezone",
+            "slotGranularityMinutes",
+            "openingStart",
+            "openingEnd",
+            "bufferBeforeMinutes",
+            "bufferAfterMinutes",
+            "maxBookingDurationMinutes",
+            "allowDoubleBooking",
+            "target"),
         List.copyOf(
             ApiV2BookingConfigurationResource.DESCRIPTION.writableFields(WriteOperation.UPDATE)));
     assertEquals(
@@ -133,6 +156,13 @@ class ApiV2BookingConfigurationResourceTest {
                 {
                   "enabled": true,
                   "timezone": "Europe/Berlin",
+                  "slotGranularityMinutes": 15,
+                  "openingStart": "08:00",
+                  "openingEnd": "18:00",
+                  "bufferBeforeMinutes": 10,
+                  "bufferAfterMinutes": 20,
+                  "maxBookingDurationMinutes": 120,
+                  "allowDoubleBooking": true,
                   "target": {"relationTo": "instruments", "value": 12}
                 }
                 """),
@@ -143,7 +173,27 @@ class ApiV2BookingConfigurationResourceTest {
     BookingConfiguration configuration = new BookingConfiguration();
 
     ApiV2BookingConfigurationResource.DESCRIPTION.apply(
-        configuration, Map.of("enabled", true, "timezone", "Europe/Berlin"), WriteOperation.CREATE);
+        configuration,
+        Map.of(
+            "enabled",
+            true,
+            "timezone",
+            "Europe/Berlin",
+            "slotGranularityMinutes",
+            15L,
+            "openingStart",
+            "08:00",
+            "openingEnd",
+            "18:00",
+            "bufferBeforeMinutes",
+            10L,
+            "bufferAfterMinutes",
+            20L,
+            "maxBookingDurationMinutes",
+            120L,
+            "allowDoubleBooking",
+            true),
+        WriteOperation.CREATE);
 
     assertTrue(configuration.isEnabled());
     assertEquals("Europe/Berlin", configuration.getTimeZone());
@@ -151,17 +201,39 @@ class ApiV2BookingConfigurationResourceTest {
     Map<String, Object> rendered =
         ApiV2BookingConfigurationResource.DESCRIPTION.toDocument(configuration);
     assertEquals(
-        List.of("id", "enabled", "timezone", "configurationVersion", "createdAt", "updatedAt"),
+        List.of(
+            "id",
+            "enabled",
+            "timezone",
+            "slotGranularityMinutes",
+            "openingStart",
+            "openingEnd",
+            "bufferBeforeMinutes",
+            "bufferAfterMinutes",
+            "maxBookingDurationMinutes",
+            "allowDoubleBooking",
+            "configurationVersion",
+            "createdAt",
+            "updatedAt"),
         List.copyOf(rendered.keySet()));
     assertNull(rendered.get("id"));
     assertEquals(true, rendered.get("enabled"));
     assertEquals("Europe/Berlin", rendered.get("timezone"));
+    assertEquals(15L, rendered.get("slotGranularityMinutes"));
+    assertEquals("08:00", rendered.get("openingStart"));
+    assertEquals("18:00", rendered.get("openingEnd"));
+    assertEquals(10L, rendered.get("bufferBeforeMinutes"));
+    assertEquals(20L, rendered.get("bufferAfterMinutes"));
+    assertEquals(120L, rendered.get("maxBookingDurationMinutes"));
+    assertEquals(true, rendered.get("allowDoubleBooking"));
     assertEquals(0L, rendered.get("configurationVersion"));
     assertNull(rendered.get("createdAt"));
     assertNull(rendered.get("updatedAt"));
     assertEquals(
         new ResourceReference<>(BookableTargetType.INSTRUMENT, 12L),
         document.values().get("target"));
+    assertEquals(15L, document.values().get("slotGranularityMinutes"));
+    assertEquals(120L, document.values().get("maxBookingDurationMinutes"));
   }
 
   @Test

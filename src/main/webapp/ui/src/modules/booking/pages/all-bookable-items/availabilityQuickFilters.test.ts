@@ -21,6 +21,13 @@ const candidate = (id: number, globalId: string, timezone: string): BookingConfi
   },
   enabled: true,
   timezone,
+  slotGranularityMinutes: 5,
+  openingStart: "00:00",
+  openingEnd: "24:00",
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+  maxBookingDurationMinutes: 0,
+  allowDoubleBooking: false,
 });
 
 const page = (docs: readonly BookingConfiguration[], pageNumber = 1, totalPages = 1, totalDocs = docs.length) => ({
@@ -51,7 +58,9 @@ describe("availability quick filters", () => {
     expect(requests[0].searchParams.get("where")).toBe("enabled==true;target.deleted==false");
     expect(requests[0].searchParams.get("limit")).toBe("100");
     expect(requests[0].searchParams.get("depth")).toBe("1");
-    expect(requests[0].searchParams.get("fields[booking-configurations]")).toBe("id,target,enabled,timezone");
+    expect(requests[0].searchParams.get("fields[booking-configurations]")).toBe(
+      "id,target,enabled,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",
+    );
   });
 
   it("rejects candidate collections above the relationship-filter ceiling", async () => {
@@ -92,6 +101,33 @@ describe("availability quick filters", () => {
     expect(result.get("IN1")?.date).toBe("2026-08-17");
     expect(result.get("IN2")?.category).toBe("available-now");
     expect(result.get("IN2")?.date).toBe("2026-08-17");
+  });
+
+  it("distinguishes before opening, open now, and after closing", async () => {
+    server.use(
+      http.get("/api/v2/bookings", () =>
+        HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false }),
+      ),
+    );
+    const restricted = {
+      ...candidate(1, "IN1", "UTC"),
+      openingStart: "08:00",
+      openingEnd: "18:00",
+    };
+
+    for (const [time, expected] of [
+      ["2026-08-17T07:00:00Z", "free-later-today"],
+      ["2026-08-17T09:00:00Z", "available-now"],
+      ["2026-08-17T19:00:00Z", "unavailable-today"],
+    ] as const) {
+      const result = await loadAvailabilityQuickIndex(
+        [restricted],
+        new Date(time),
+        "token",
+        new AbortController().signal,
+      );
+      expect(result.get("IN1")?.category).toBe(expected);
+    }
   });
 
   it("does not request data while disabled and reuses the index when modes switch", async () => {

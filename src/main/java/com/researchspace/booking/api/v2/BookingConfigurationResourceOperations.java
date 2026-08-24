@@ -18,6 +18,7 @@ import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.RelationshipTarget;
@@ -83,6 +84,20 @@ public final class BookingConfigurationResourceOperations
                         true,
                         "timezone",
                         "Europe/Berlin",
+                        "slotGranularityMinutes",
+                        5,
+                        "openingStart",
+                        "08:00",
+                        "openingEnd",
+                        "18:00",
+                        "bufferBeforeMinutes",
+                        15,
+                        "bufferAfterMinutes",
+                        15,
+                        "maxBookingDurationMinutes",
+                        120,
+                        "allowDoubleBooking",
+                        false,
                         "target",
                         Map.of("relationTo", "instruments", "value", 123)))
                 .build()),
@@ -181,14 +196,27 @@ public final class BookingConfigurationResourceOperations
     return new Patch(
         value(document, "enabled", Boolean.class),
         value(document, "timezone", String.class),
-        target(document));
+        target(document),
+        schedulingPatch(document));
   }
 
   private Create create(ParsedDocument document) {
     return new Create(
         (boolean) document.values().getOrDefault("enabled", false),
         value(document, "timezone", String.class),
-        target(document));
+        target(document),
+        schedulingPatch(document));
+  }
+
+  private static BookingSchedulingSettings.Patch schedulingPatch(ParsedDocument document) {
+    return new BookingSchedulingSettings.Patch(
+        value(document, "slotGranularityMinutes", Long.class),
+        value(document, "openingStart", String.class),
+        value(document, "openingEnd", String.class),
+        value(document, "bufferBeforeMinutes", Long.class),
+        value(document, "bufferAfterMinutes", Long.class),
+        value(document, "maxBookingDurationMinutes", Long.class),
+        value(document, "allowDoubleBooking", Boolean.class));
   }
 
   private static ResolvedBookableTarget target(ParsedDocument document) {

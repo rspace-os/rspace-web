@@ -52,7 +52,7 @@ const items = [
     key: "administration",
     icon: SettingsIcon,
     children: [
-      { key: "settings" },
+      { key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> },
       { key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> },
     ],
   },

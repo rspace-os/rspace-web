@@ -35,6 +35,13 @@ const bookingConfiguration = {
   },
   enabled: true,
   timezone: "Europe/Berlin",
+  slotGranularityMinutes: 5,
+  openingStart: "00:00",
+  openingEnd: "24:00",
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+  maxBookingDurationMinutes: 0,
+  allowDoubleBooking: false,
   updatedAt: "2026-08-10T10:00:00Z",
 };
 
@@ -153,7 +160,20 @@ const openApi = {
           {
             name: "fields",
             "x-rspace-allowed-fields": {
-              "booking-configurations": ["id", "target", "enabled", "timezone", "updatedAt"],
+              "booking-configurations": [
+                "id",
+                "target",
+                "enabled",
+                "timezone",
+                "slotGranularityMinutes",
+                "openingStart",
+                "openingEnd",
+                "bufferBeforeMinutes",
+                "bufferAfterMinutes",
+                "maxBookingDurationMinutes",
+                "allowDoubleBooking",
+                "updatedAt",
+              ],
             },
           },
         ],
@@ -361,7 +381,9 @@ describe("BookableItemsPage", () => {
     expect(screen.queryByRole("columnheader", { name: "booking:bookableItems.fields.target" })).not.toBeInTheDocument();
     await waitFor(() => {
       const params = new URL(collectionRequest?.url ?? "http://localhost").searchParams;
-      expect(params.get("fields[booking-configurations]")).toBe("id,target,enabled,timezone,updatedAt");
+      expect(params.get("fields[booking-configurations]")).toBe(
+        "id,target,enabled,timezone,updatedAt,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes",
+      );
       expect(params.get("depth")).toBe("1");
     });
   });
