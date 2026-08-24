@@ -25,7 +25,7 @@ import org.springframework.validation.FieldError;
 
 /**
  * The operations endpoint is public API, so every rule the wizard enforces client-side must be
- * enforced here too (DevDocs/adr/0015). One fixture per configured operation, each the exact shape
+ * enforced here too (DevDocs/adr/0007). One fixture per configured operation, each the exact shape
  * the wizard's request builder produces; the tests then break them one rule at a time.
  */
 class InventoryOperationPostValidatorTest {
@@ -430,7 +430,7 @@ class InventoryOperationPostValidatorTest {
   @Test
   void allowsExtraFieldsBeyondTheRequiredLinks() {
     // The wizard adds an optional IsDocumentedBy link and text fields (e.g. Cryomedium); the
-    // backend must accept fields it does not require (DevDocs/adr/0015).
+    // backend must accept fields it does not require (DevDocs/adr/0007).
     ApiInventoryOperationPost request = aliquotRequest();
     ApiExtraField documentation = linkTo("IsDocumentedBy", 0);
     documentation.getLink().setTargetGlobalId("SD1");
@@ -478,7 +478,7 @@ class InventoryOperationPostValidatorTest {
   @Test
   void rejectsOriginExtraFieldThatDeletesOrEditsAnExistingField() {
     // a delete request, or an id-bearing edit of an existing field, is a mutation no operation
-    // definition describes; only adding new fields is allowed (DevDocs/adr/0015)
+    // definition describes; only adding new fields is allowed (DevDocs/adr/0007)
     ApiInventoryOperationPost request = destroyRequest();
     ApiExtraField delete = disposedField();
     delete.setDeleteFieldRequest(true);
@@ -610,7 +610,7 @@ class InventoryOperationPostValidatorTest {
     assertTrue(validate(request).hasFieldErrors("origins[1].id"));
   }
 
-  // --- static live-state helpers (used by the controller, DevDocs/adr/0010 + 0015) ---
+  // --- static live-state helpers (used by the controller, DevDocs/adr/0007 + 0015) ---
 
   private static ApiQuantityInfo grams(String value) {
     return new ApiQuantityInfo(new BigDecimal(value), RSUnitDef.GRAM.getId());
@@ -653,7 +653,7 @@ class InventoryOperationPostValidatorTest {
   @Test
   void flagsPositiveAmountTakenFromOriginWithNoQuantity() {
     // A subsample whose quantity was never set holds nothing, so taking any positive amount from it
-    // is over-removal (DevDocs/adr/0010). A null origin quantity, or one with a null numeric value,
+    // is over-removal (DevDocs/adr/0007). A null origin quantity, or one with a null numeric value,
     // is treated as zero available rather than as "no limit".
     assertTrue(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("6"), null));
     assertTrue(
