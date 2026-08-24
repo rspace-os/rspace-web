@@ -4,10 +4,6 @@ package com.researchspace.model.inventory;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.model.User;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -19,6 +15,10 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.TableGenerator;
 import jakarta.persistence.Transient;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -88,9 +88,22 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity impl
 	private boolean deleted;
 
 	public DigitalObjectIdentifier(String identifier, String title) {
+		this(identifier, title, null);
+	}
+
+	/**
+	 * @param publicLinkSuffix pre-generated suffix for this identifier's public landing page,
+	 *   created before registering with an external provider so the page's address can be part
+	 *   of the registration payload. Surrounding whitespace is trimmed, since the suffix becomes
+	 *   a path segment of that address; when blank, a fresh secure random suffix is generated
+	 */
+	public DigitalObjectIdentifier(String identifier, String title, String publicLinkSuffix) {
 		setIdentifier(identifier);
 		setTitle(title);
-		setPublicLink(SecureStringUtils.getURLSafeSecureRandomString(16));
+		String trimmedSuffix = StringUtils.trimToNull(publicLinkSuffix);
+		setPublicLink(trimmedSuffix != null
+				? trimmedSuffix
+				: SecureStringUtils.getURLSafeSecureRandomString(16));
 	}
 
 	@Id

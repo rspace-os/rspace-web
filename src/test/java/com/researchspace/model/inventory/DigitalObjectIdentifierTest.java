@@ -40,4 +40,41 @@ public class DigitalObjectIdentifierTest {
 		assertNotNull(enumerated, "getType() must carry an explicit @Enumerated annotation");
 		assertEquals(EnumType.ORDINAL, enumerated.value());
 	}
+
+	/*
+	 * The suffix must exist before an external provider is called, so the public landing
+	 * page's address can be part of the registration payload (RSDEV-1254). The entity
+	 * therefore adopts a caller-supplied suffix rather than always minting its own.
+	 */
+	@Test
+	public void constructorAdoptsPreGeneratedPublicLinkSuffix() {
+		DigitalObjectIdentifier doi =
+				new DigitalObjectIdentifier("10.12345/test", "test title", "abc123XYZ_-456789");
+		assertEquals("abc123XYZ_-456789", doi.getPublicLink());
+	}
+
+	/*
+	 * The suffix becomes a path segment of the public landing page's URL, so surrounding
+	 * whitespace from a caller must not survive into the persisted value: it would yield an
+	 * address that only resolves once percent-encoded, and differs from the one registered
+	 * with the external provider.
+	 */
+	@Test
+	public void constructorTrimsSurroundingWhitespaceFromSuppliedSuffix() {
+		DigitalObjectIdentifier doi =
+				new DigitalObjectIdentifier("10.12345/test", "test title", "  abc123XYZ_-456789\t\n");
+		assertEquals("abc123XYZ_-456789", doi.getPublicLink());
+	}
+
+	@Test
+	public void constructorGeneratesPublicLinkWhenGivenNoSuffix() {
+		DigitalObjectIdentifier withNull = new DigitalObjectIdentifier("10.12345/test", "t", null);
+		DigitalObjectIdentifier withBlank = new DigitalObjectIdentifier("10.12345/test", "t", " ");
+		DigitalObjectIdentifier twoArg = new DigitalObjectIdentifier("10.12345/test", "t");
+		assertNotNull(withNull.getPublicLink());
+		assertNotNull(withBlank.getPublicLink());
+		assertNotNull(twoArg.getPublicLink());
+		// 16 random bytes, base64url-encoded without padding: pins the entropy, not the char count
+		assertEquals(22, twoArg.getPublicLink().length());
+	}
 }
