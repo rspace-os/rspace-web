@@ -151,7 +151,7 @@ export function Menu(props: Omit<React.ComponentProps<typeof MuiMenu>, "containe
 
   return (
     <MuiMenu container={getModalContainer} open={open} {...rest}>
-      <Suspense fallback={null}>{children}</Suspense>
+      {children}
     </MuiMenu>
   );
 }
@@ -163,7 +163,7 @@ export function Drawer(props: Omit<React.ComponentProps<typeof MuiDrawer>, "cont
   const getModalContainer = useStableContainerGetter();
   const { children, open, ...rest } = props;
 
-  useBodyScrollLock(open);
+  useBodyScrollLock(props.variant === "temporary" && open);
 
   return (
     <MuiDrawer

@@ -73,7 +73,7 @@ const DMP_SOURCES = [
   icon: string;
   logoColor: { hue: number; saturation: number; lightness: number };
   foregroundLightness: number;
-  Dialog: React.ComponentType<{ open: boolean; setOpen: (open: boolean) => void }>;
+  Dialog: React.ComponentType<{ open: boolean; setOpen: (open: boolean) => void; onImport?: () => void }>;
 }>;
 
 type DmpSource = (typeof DMP_SOURCES)[number]["source"];
@@ -155,10 +155,6 @@ export default function DmpImportDialogs({
   if (shown.source === "dsw") {
     return <DSWImportDialog open={Boolean(target)} setOpen={setOpen} connection={shown.connection} />;
   }
-  if (shown.source === "argos") {
-    return <ArgosDMPDialog open={Boolean(target)} setOpen={setOpen} onImport={onImport} />;
-  }
-
   const SourceDialog = DMP_SOURCES.find(({ source }) => source === shown.source)?.Dialog;
-  return SourceDialog ? <SourceDialog open={Boolean(target)} setOpen={setOpen} /> : null;
+  return SourceDialog ? <SourceDialog open={Boolean(target)} setOpen={setOpen} onImport={onImport} /> : null;
 }

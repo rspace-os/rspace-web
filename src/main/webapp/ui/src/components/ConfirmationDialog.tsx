@@ -21,7 +21,7 @@ declare global {
   }
 
   interface Window {
-    RS: RSGlobal;
+    RS?: RSGlobal;
   }
 }
 
@@ -149,12 +149,6 @@ export function createConfirmationDialog(payload: ConfirmActionPayload) {
 }
 
 window.addEventListener("load", () => {
-  /*
-   * The legacy JSP chrome creates `window.RS`, so standalone entry points do not define it.
-   * These entry points include Gallery, Inventory, Apps, About, and Identifiers. Unconditional
-   * registration caused "Cannot set properties of undefined" on each Gallery load. Initialize
-   * the namespace before registration to also support legacy pages that load this bundle first.
-   */
   window.RS ??= {};
   window.RS.createConfirmationDialog = createConfirmationDialog;
 });

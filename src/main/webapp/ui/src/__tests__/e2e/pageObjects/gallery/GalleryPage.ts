@@ -108,9 +108,4 @@ export class GalleryPage extends BasePage {
     await dialog.waitForOpen();
     return dialog;
   }
-
-  async openDSWImport(alias: string): Promise<DSWImportDialogComponent> {
-    await this.openCreateMenu();
-    return this.clickDSWImport(alias);
-  }
 }

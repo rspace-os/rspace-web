@@ -11,16 +11,16 @@ import { cleanup, render } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
-import { Dialog, DialogBoundary, Menu } from "./DialogBoundary";
+import { Dialog, DialogBoundary, Drawer, Menu } from "./DialogBoundary";
 
 // Widen the exit window so the perturbation reliably lands during it.
 const EXIT_MS = 3000;
 const PERTURB_AT_MS = 150;
 const CREATE_LABEL = "Create";
 const IMPORT_LABEL = "Import";
-const FALLBACK_LABEL = "loading";
 const OUTER_LABEL = "outer modal";
 const INNER_LABEL = "inner modal";
+const PERMANENT_DRAWER_LABEL = "permanent drawer";
 const SENTINEL_OVERFLOW = "clip";
 
 afterEach(cleanup);
@@ -75,7 +75,7 @@ function SuspenseHarness({ suspender }: { suspender: ReturnType<typeof makeSuspe
   const [armed, setArmed] = React.useState(false);
   const { Suspender } = suspender;
   return (
-    <Suspense fallback={<div>{FALLBACK_LABEL}</div>}>
+    <Suspense>
       <Suspender armed={armed} />
       <DialogBoundary>
         <Button onClick={(e) => setAnchorEl(e.currentTarget)}>{CREATE_LABEL}</Button>
@@ -173,6 +173,22 @@ describe("the body scroll lock", () => {
 
     screen.unmount();
     await expect.poll(() => document.body.style.overflow).toBe(SENTINEL_OVERFLOW);
+
+    document.body.style.overflow = "";
+  });
+
+  test("does not lock the body for a permanent drawer", async () => {
+    document.body.style.overflow = SENTINEL_OVERFLOW;
+
+    render(
+      <DialogBoundary>
+        <Drawer variant="permanent" open>
+          <div>{PERMANENT_DRAWER_LABEL}</div>
+        </Drawer>
+      </DialogBoundary>,
+    );
+    await expect.element(page.getByText(PERMANENT_DRAWER_LABEL)).toBeVisible();
+    expect(document.body.style.overflow).toBe(SENTINEL_OVERFLOW);
 
     document.body.style.overflow = "";
   });
