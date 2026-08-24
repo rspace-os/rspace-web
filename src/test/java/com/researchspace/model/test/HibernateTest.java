@@ -91,10 +91,12 @@ import org.junit.jupiter.api.BeforeEach;
 /**
  * Common class for hibernate-based tests.
  *
- * <p>To run these tests a MariaDB server must listen on localhost:3306 with a hibtest database and
- * this grant (the tests use same DB credentials as for RSpace) mysql > grant all on hibtest.* to
- * 'rspacedbuser'@'localhost'; When that database cannot be opened the tests are skipped, so they
- * run on developer machines and provisioned CI shards but not elsewhere.
+ * <p>These tests need a scratch hibtest database on the same MariaDB server the main test suite
+ * uses (localhost:3306, RSpace credentials); Hibernate creates and drops its schema on each run. If
+ * the database is missing the test tries to create it, which succeeds with the standard test-DB
+ * setup where rspacedbuser can create databases (as drop-recreate-db already relies on). Only when
+ * the database can neither be opened nor created are the tests skipped, so they still run on
+ * developer machines and provisioned CI shards but not elsewhere.
  */
 public abstract class HibernateTest {
 
@@ -106,20 +108,37 @@ public abstract class HibernateTest {
   static void beforeAll() {
     Assumptions.assumeTrue(
         hibtestDatabaseUsable(),
-        "no usable hibtest database on localhost:3306; skipping hibernate model tests");
+        "no usable hibtest database on localhost:3306 and cannot create one;"
+            + " skipping hibernate model tests");
     sf = HibernateUtils.getSessionFactory(testDbName, recordClasses());
   }
 
   private static boolean hibtestDatabaseUsable() {
-    try (Connection ignored =
-        DriverManager.getConnection(
-            "jdbc:mysql://localhost:3306/" + testDbName + "?useSSL=false&connectTimeout=2000",
-            "rspacedbuser",
-            "rspacedbpwd")) {
+    if (canConnectTo(testDbName)) {
+      return true;
+    }
+    try (Connection serverConnection = openConnection("");
+        var statement = serverConnection.createStatement()) {
+      statement.execute("create database if not exists " + testDbName);
+    } catch (SQLException e) {
+      return false;
+    }
+    return canConnectTo(testDbName);
+  }
+
+  private static boolean canConnectTo(String dbName) {
+    try (Connection ignored = openConnection(dbName)) {
       return true;
     } catch (SQLException e) {
       return false;
     }
+  }
+
+  private static Connection openConnection(String dbName) throws SQLException {
+    return DriverManager.getConnection(
+        "jdbc:mysql://localhost:3306/" + dbName + "?useSSL=false&connectTimeout=2000",
+        "rspacedbuser",
+        "rspacedbpwd");
   }
 
   // enable other tests to use a differently configured session factory
