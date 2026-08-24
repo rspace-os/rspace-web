@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { EyeIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -96,8 +96,19 @@ function BookableItemActionTriggers({
 
   return (
     <div className="flex justify-start gap-1">
+      {configuration.target === null ? null : (
+        <Link
+          to="/booking/bookable-items/$globalId"
+          params={{ globalId: configuration.target.globalId }}
+          aria-label={t("bookableItems.actions.viewDetails", { item: itemName })}
+          className={cn(buttonVariants({ variant: "ghost", size: "icon-xs" }), "rounded-sm")}
+          data-slot="button"
+        >
+          <EyeIcon aria-hidden="true" />
+        </Link>
+      )}
       <Link
-        to="/booking/config/bookable-items/$id"
+        to="/booking/config/bookable-items/$id/edit"
         params={{ id: String(configuration.id) }}
         aria-label={t("bookableItems.actions.edit", { item: itemName })}
         className={cn(buttonVariants({ variant: "ghost", size: "icon-xs" }), "rounded-sm")}

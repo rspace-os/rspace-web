@@ -334,10 +334,12 @@ class BookingConfigurationManagerTest {
     when(dao.saveAndFlush(configuration)).thenReturn(configuration);
 
     BookingConfiguration updated =
-        manager.updateConfiguration(42L, new Patch(true, null, null), actor, actor).orElseThrow();
+        manager.updateConfiguration(42L, new Patch(true, null), actor, actor).orElseThrow();
 
     assertTrue(updated.isEnabled());
     assertEquals("UTC", updated.getTimeZone());
+    assertEquals(
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L), updated.getTarget());
     assertSame(actor, updated.getUpdatedBy());
     assertTrue(updated.getUpdatedAt() != null);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
@@ -363,8 +365,7 @@ class BookingConfigurationManagerTest {
   void reportsAnAbsentConfigurationWithoutWriting() {
     when(dao.getSafeNull(42L)).thenReturn(Optional.empty());
 
-    assertFalse(
-        manager.updateConfiguration(42L, new Patch(true, null, null), actor, actor).isPresent());
+    assertFalse(manager.updateConfiguration(42L, new Patch(true, null), actor, actor).isPresent());
     assertFalse(manager.removeConfiguration(42L, actor, actor).isPresent());
 
     verify(dao, never()).save(any());
@@ -380,7 +381,7 @@ class BookingConfigurationManagerTest {
 
     assertThrows(
         AuthorizationException.class,
-        () -> manager.updateConfigurations(request, new Patch(true, null, null), actor, actor));
+        () -> manager.updateConfigurations(request, new Patch(true, null), actor, actor));
     verify(dao, never()).getResources(any(ResourceRequest.class), anyInt(), any());
 
     when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
@@ -392,7 +393,7 @@ class BookingConfigurationManagerTest {
 
     assertThrows(
         CollectionMutationException.class,
-        () -> manager.updateConfigurations(request, new Patch(true, null, null), actor, actor));
+        () -> manager.updateConfigurations(request, new Patch(true, null), actor, actor));
     verify(dao, never()).saveAndFlush(any());
   }
 
@@ -415,33 +416,6 @@ class BookingConfigurationManagerTest {
   }
 
   @Test
-  void replacesTheTargetAtomicallyAndRejectsTargetsUsedByAnotherConfiguration() {
-    BookingConfiguration configuration = new BookingConfiguration();
-    configuration.setId(42L);
-    configuration.setTimeZone("UTC");
-    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L));
-    when(dao.getSafeNull(42L)).thenReturn(Optional.of(configuration));
-    when(dao.saveAndFlush(configuration)).thenReturn(configuration);
-
-    BookingConfiguration updated =
-        manager
-            .updateConfiguration(42L, new Patch(null, null, target(13L)), actor, actor)
-            .orElseThrow();
-
-    assertEquals(
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, 13L), updated.getTarget());
-
-    BookingConfiguration other = new BookingConfiguration();
-    other.setId(99L);
-    when(dao.findByTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 14L)))
-        .thenReturn(Optional.of(other));
-
-    assertThrows(
-        BookingConfigurationTargetConflictException.class,
-        () -> manager.updateConfiguration(42L, new Patch(null, null, target(14L)), actor, actor));
-  }
-
-  @Test
   void rejectsDeletedTargetsBeforeSaving() {
     Instrument deleted = new Instrument();
     deleted.setId(12L);
@@ -453,49 +427,6 @@ class BookingConfigurationManagerTest {
     assertThrows(
         InvalidBookableTargetException.class,
         () -> manager.createConfiguration(new Create(true, "UTC", target), actor, actor));
-    verify(dao, never()).saveAndFlush(any());
-  }
-
-  @Test
-  void doesNotSaveWhenTheOnlyPatchValueIsTheCurrentTarget() {
-    BookingConfiguration configuration = new BookingConfiguration();
-    configuration.setId(42L);
-    configuration.setTimeZone("UTC");
-    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L));
-    when(dao.getSafeNull(42L)).thenReturn(Optional.of(configuration));
-
-    BookingConfiguration result =
-        manager
-            .updateConfiguration(42L, new Patch(null, null, target(12L)), actor, actor)
-            .orElseThrow();
-
-    assertEquals(configuration, result);
-    verify(dao, never()).saveAndFlush(any());
-  }
-
-  @Test
-  void bulkTargetPatchRequiresAtMostOneMatchingConfiguration() {
-    ResourceRequest request =
-        ResourceRequest.unpaged(
-            new FilterExpression.Comparison("id", Operator.IN, List.of(1L, 2L), false));
-    BookingConfiguration first = configuration(1L, 11L);
-    BookingConfiguration second = configuration(2L, 12L);
-    when(dao.getResources(
-            eq(request),
-            eq(ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1),
-            any()))
-        .thenReturn(List.of(first, second));
-
-    assertThrows(
-        BookingConfigurationTargetConflictException.class,
-        () ->
-            manager.updateConfigurations(
-                request, new Patch(null, null, target(13L)), actor, actor));
-
-    assertEquals(
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, 11L), first.getTarget());
-    assertEquals(
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L), second.getTarget());
     verify(dao, never()).saveAndFlush(any());
   }
 

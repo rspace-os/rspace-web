@@ -12,6 +12,7 @@ export type ApiV2CollectionFetchOptions<TDocument> = {
   fetch?: typeof globalThis.fetch;
   projection?: ApiV2CollectionProjection<TDocument>;
   baseFilter?: FilterExpression<TDocument>;
+  validateRows?: (rows: readonly TDocument[]) => void;
 };
 
 async function resolveValue<T>(value: T | (() => T | Promise<T>) | undefined): Promise<T | undefined> {
@@ -74,6 +75,8 @@ export function createApiV2CollectionFetcher<TDocument>(
     });
     if (!response.ok) throw new Error(`API V2 collection request failed with status ${response.status}`);
     const body: unknown = await response.json();
-    return adapter.parseResponse(body, selected);
+    const page = adapter.parseResponse(body, selected);
+    options.validateRows?.(page.rows);
+    return page;
   };
 }

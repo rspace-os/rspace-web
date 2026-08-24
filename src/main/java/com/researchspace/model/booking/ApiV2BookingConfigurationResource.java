@@ -84,7 +84,7 @@ public record ApiV2BookingConfigurationResource(
                   "target.type",
                   "target.id"))
           .required()
-          .acceptGlobalIdOn(WriteOperation.UPDATE)
+          .writeOnlyOn(WriteOperation.CREATE)
           .documented(
               new OpenApiSchemaDocumentation(
                   "Booking target",

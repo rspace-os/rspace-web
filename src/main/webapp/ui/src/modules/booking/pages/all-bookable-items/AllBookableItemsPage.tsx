@@ -146,13 +146,22 @@ export default function AllBookableItemsPage({ clock = currentDate }: { clock?: 
         if (!row.target) return null;
         const rowDate = quickIndex.data?.get(row.target.globalId)?.date ?? date;
         return (
-          <Link
-            className={buttonVariants({ size: "sm" })}
-            to="/booking/calendar/bookings/add"
-            search={{ date: rowDate, target: row.target.globalId }}
-          >
-            {t("allBookableItems.actions.book")}
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              className={buttonVariants({ size: "sm", variant: "outline" })}
+              to="/booking/bookable-items/$globalId"
+              params={{ globalId: row.target.globalId }}
+            >
+              {t("allBookableItems.actions.viewDetails")}
+            </Link>
+            <Link
+              className={buttonVariants({ size: "sm" })}
+              to="/booking/calendar/bookings/add"
+              search={{ date: rowDate, target: row.target.globalId }}
+            >
+              {t("allBookableItems.actions.book")}
+            </Link>
+          </div>
         );
       },
       renderInteraction: () => null,

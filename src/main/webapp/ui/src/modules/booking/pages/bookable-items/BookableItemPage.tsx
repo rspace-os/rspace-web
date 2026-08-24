@@ -1,127 +1,157 @@
-import { Form, useForm } from "@formisch/react";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useParams } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import { Button } from "@/modules/common/ui/button";
-import { Separator } from "@/modules/common/ui/separator";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { Badge } from "@/modules/common/ui/badge";
+import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
+import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Heading } from "@/modules/common/ui/typography";
-import { UnknownItem } from "@/modules/common/ui/unknown-item";
-import {
-  type BookingConfiguration,
-  BookingConfigurationSchema,
-  type BookingConfigurationUpdateInput,
-  BookingConfigurationUpdateInputSchema,
-  bookingConfigurationFields,
-} from "./bookingConfiguration";
-import { SchedulingSettingsFields } from "./schedulingSettings";
+import { BookingEventList } from "./BookingEventList";
+import { fetchBookingConfigurationByTarget } from "./bookingConfiguration";
 
-const selectedFields =
-  "id,target,enabled,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,updatedAt";
-
-function requestUrl(id: string): string {
-  const search = new URLSearchParams({
-    depth: "1",
-    "fields[booking-configurations]": selectedFields,
+function Details({ globalId }: { globalId: string }) {
+  const { t, i18n } = useTranslation("booking");
+  const { t: commonT } = useTranslation("common");
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const { data: currentUser } = useCurrentUserQuery();
+  const [cutoff] = useState(() => new Date().toISOString());
+  const configuration = useQuery({
+    queryKey: ["api-v2", "booking-configurations", "target", globalId],
+    queryFn: ({ signal }) => fetchBookingConfigurationByTarget(globalId, token, signal),
   });
-  return `/api/v2/booking-configurations/${id}?${search}`;
-}
 
-async function getBookingConfiguration(id: string, token: string): Promise<BookingConfiguration> {
-  const response = await fetch(requestUrl(id), {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  });
-  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
-  return parseOrThrow(BookingConfigurationSchema, (await response.json()) as unknown);
-}
+  if (configuration.isPending) {
+    return (
+      <main className="p-4 sm:p-8">
+        <p role="status">{t("bookableItemDetails.loading")}</p>
+      </main>
+    );
+  }
 
-async function updateBookingConfiguration(
-  id: string,
-  input: BookingConfigurationUpdateInput,
-  token: string,
-): Promise<void> {
-  const response = await fetch(requestUrl(id), {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-    body: JSON.stringify(input),
-  });
-  if (!response.ok) throw new Error(`Booking configuration update failed with status ${response.status}`);
+  const target = configuration.data?.target;
+  if (configuration.isError || target === null || target === undefined || target.globalId !== globalId) {
+    return (
+      <main className="p-4 sm:p-8">
+        <Empty className="border">
+          <EmptyHeader>
+            <EmptyTitle>{t("bookableItemDetails.error.title")}</EmptyTitle>
+            <EmptyDescription>{t("bookableItemDetails.error.description")}</EmptyDescription>
+          </EmptyHeader>
+          <Button type="button" variant="outline" onClick={() => void configuration.refetch()}>
+            {commonT("actions.retry")}
+          </Button>
+        </Empty>
+      </main>
+    );
+  }
+
+  const { data } = configuration;
+  const updatedAt =
+    data.updatedAt === null || data.updatedAt === undefined ? (
+      t("bookableItemDetails.notAvailable")
+    ) : (
+      <time dateTime={data.updatedAt}>
+        {new Intl.DateTimeFormat(i18n.language, {
+          dateStyle: "medium",
+          timeStyle: "short",
+          timeZone: data.timezone,
+        }).format(new Date(data.updatedAt))}
+      </time>
+    );
+  const facts: Array<[string, ReactNode]> = [
+    [t("bookableItemDetails.fields.timezone"), data.timezone],
+    [t("bookableItemDetails.fields.updatedAt"), updatedAt],
+    [t("bookableItemDetails.fields.openingHours"), `${data.openingStart}–${data.openingEnd}`],
+    [
+      t("bookableItemDetails.fields.granularity"),
+      t("bookableItemDetails.minutes", { count: data.slotGranularityMinutes }),
+    ],
+    [
+      t("bookableItemDetails.fields.maximumDuration"),
+      data.maxBookingDurationMinutes === 0
+        ? t("bookableItemDetails.unlimited")
+        : t("bookableItemDetails.minutes", { count: data.maxBookingDurationMinutes }),
+    ],
+    [
+      t("bookableItemDetails.fields.bufferBefore"),
+      t("bookableItemDetails.minutes", { count: data.bufferBeforeMinutes }),
+    ],
+    [t("bookableItemDetails.fields.bufferAfter"), t("bookableItemDetails.minutes", { count: data.bufferAfterMinutes })],
+    [
+      t("bookableItemDetails.fields.doubleBooking"),
+      data.allowDoubleBooking ? t("bookableItemDetails.yes") : t("bookableItemDetails.no"),
+    ],
+  ];
+
+  return (
+    <main className="space-y-8 p-4 sm:p-8">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-3">
+          <Heading level={2} as="h1">
+            {t("bookableItemDetails.title")}
+          </Heading>
+          <InventoryItem
+            name={target.value.name}
+            globalId={target.globalId}
+            href={`/globalId/${target.globalId}`}
+            idLinkLabel={t("bookableItemDetails.viewInventory", { name: target.value.name })}
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge variant={data.enabled ? "default" : "secondary"}>
+            {data.enabled ? t("bookableItemDetails.enabled") : t("bookableItemDetails.disabled")}
+          </Badge>
+          {currentUser.hasSysAdminRole ? (
+            <Link
+              className={buttonVariants({ variant: "outline" })}
+              to="/booking/config/bookable-items/$id/edit"
+              params={{ id: String(data.id) }}
+            >
+              {t("bookableItemDetails.edit")}
+            </Link>
+          ) : null}
+        </div>
+      </header>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("bookableItemDetails.rules")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-[max-content_1fr]">
+            {facts.map(([label, value]) => (
+              <div className="grid gap-1 sm:contents" key={label}>
+                <dt className="font-medium">{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </CardContent>
+      </Card>
+
+      <section className="space-y-4" aria-labelledby="upcoming-events-heading">
+        <Heading level={3} as="h2" id="upcoming-events-heading">
+          {t("bookableItemDetails.upcoming")}
+        </Heading>
+        <BookingEventList globalId={globalId} timezone={data.timezone} period="upcoming" cutoff={cutoff} />
+      </section>
+
+      <section className="space-y-4" aria-labelledby="past-events-heading">
+        <Heading level={3} as="h2" id="past-events-heading">
+          {t("bookableItemDetails.past")}
+        </Heading>
+        <BookingEventList globalId={globalId} timezone={data.timezone} period="past" cutoff={cutoff} />
+      </section>
+    </main>
+  );
 }
 
 export default function BookableItemPage() {
-  const { t } = useTranslation("booking");
-  const { id } = useParams({ from: "/booking/config/bookable-items/$id" });
-  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const queryClient = useQueryClient();
-  const navigate = useNavigate({ from: "/booking/config/bookable-items/$id" });
-  const configuration = useSuspenseQuery({
-    queryKey: ["api-v2", "booking-configurations", id],
-    queryFn: () => getBookingConfiguration(id, token),
-  }).data;
-  const form = useForm({
-    schema: BookingConfigurationUpdateInputSchema,
-    initialInput: {
-      ...(configuration.target === null
-        ? {}
-        : { target: { relationTo: "instruments" as const, value: configuration.target.value.id } }),
-      enabled: configuration.enabled,
-      timezone: configuration.timezone,
-      slotGranularityMinutes: configuration.slotGranularityMinutes,
-      openingStart: configuration.openingStart,
-      openingEnd: configuration.openingEnd,
-      bufferBeforeMinutes: configuration.bufferBeforeMinutes,
-      bufferAfterMinutes: configuration.bufferAfterMinutes,
-      maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
-      allowDoubleBooking: configuration.allowDoubleBooking,
-    },
-  });
-  const updateMutation = useMutation({
-    mutationFn: (input: BookingConfigurationUpdateInput) => updateBookingConfiguration(id, input, token),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
-      await navigate({ to: "/booking/config/bookable-items" });
-    },
-  });
-
-  return (
-    <main className="p-4 sm:p-8">
-      <Heading level={2} as="h1" className="mb-5">
-        {t("bookableItems.editTitle")}
-      </Heading>
-      <Separator className="mb-8 h-px bg-gray-300" />
-      <Form of={form} className="max-w-2xl space-y-8" onSubmit={(input) => updateMutation.mutateAsync(input)}>
-        {configuration.target === null ? <UnknownItem /> : null}
-        <RenderFields
-          fields={bookingConfigurationFields.filter(
-            (field) => configuration.target !== null || field.name !== "target",
-          )}
-          form={form}
-          disabled={updateMutation.isPending}
-        />
-        <SchedulingSettingsFields form={form} disabled={updateMutation.isPending} />
-        {updateMutation.isError ? (
-          <p role="alert" className="text-sm text-destructive">
-            {t("bookableItems.editError")}
-          </p>
-        ) : null}
-        <Button
-          type="submit"
-          className="rounded-sm"
-          disabled={updateMutation.isPending}
-          aria-busy={updateMutation.isPending}
-        >
-          {t("bookableItems.actions.save")}
-        </Button>
-      </Form>
-    </main>
-  );
+  const { globalId } = useParams({ from: "/booking/bookable-items/$globalId" });
+  return <Details globalId={globalId} key={globalId} />;
 }

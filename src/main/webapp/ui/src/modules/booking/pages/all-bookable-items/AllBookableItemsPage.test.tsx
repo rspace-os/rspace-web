@@ -126,7 +126,8 @@ describe("AllBookableItemsPage", () => {
       const row = within(screen.getByRole("table", { name: "All Bookable Items table" })).getByRole("row", {
         name: new RegExp(itemName),
       });
-      expect(within(row).getAllByRole("link")).toHaveLength(2);
+      // The item link, plus the "View details" and "Book" actions; no location link.
+      expect(within(row).getAllByRole("link")).toHaveLength(3);
     }
     await waitFor(() =>
       expect(
@@ -146,6 +147,11 @@ describe("AllBookableItemsPage", () => {
       name: "Book",
     });
     expect(bookLink).toHaveAttribute("href", "/booking/calendar/bookings/add?date=2026-08-17&target=IN123");
+    expect(
+      within(within(table).getByRole("row", { name: /Confocal microscope/ })).getByRole("link", {
+        name: "View details",
+      }),
+    ).toHaveAttribute("href", "/booking/bookable-items/IN123");
 
     expect(bookingRequests).toBe(1);
     await expectAccessible(container);

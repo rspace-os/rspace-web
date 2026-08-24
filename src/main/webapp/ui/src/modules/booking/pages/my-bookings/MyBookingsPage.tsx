@@ -1,18 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useQueryState } from "nuqs";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
-import { type BookingListDocument, BookingListDocumentSchema } from "@/modules/booking/domain/booking";
+import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
+import { type BookingListDocument, BookingListDocumentTableValidation } from "@/modules/booking/domain/booking";
 import { useAlignedMinute } from "@/modules/booking/hooks/useAlignedMinute";
+import type { CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { useApiV2TableList } from "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
-import { TableList } from "@/modules/common/table-list/TableList";
+import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
 import { Badge } from "@/modules/common/ui/badge";
-import { Button } from "@/modules/common/ui/button";
+import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./routes";
 
@@ -38,7 +41,7 @@ export async function fetchUpcomingBookingCount(
 ): Promise<number> {
   const parameters = new URLSearchParams({ where: `requesterId==${requesterId};end=gt=${asOf.toISOString()}` });
   const response = await fetch(`/api/v2/bookings/count?${parameters}`, {
-    headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
+    headers: bookingApiV2Headers(token),
     signal,
   });
   if (!response.ok) throw new Error(`Booking count request failed (${response.status})`);
@@ -66,11 +69,20 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
     }),
     [asOfDate, period, requesterId],
   );
-  const request = useMemo(() => ({ token, depth: 1, projection, baseFilter }), [baseFilter, token]);
+  const request = useMemo(
+    () => ({
+      token,
+      depth: 1,
+      projection,
+      baseFilter,
+      validateRows: BookingListDocumentTableValidation.validateRows,
+    }),
+    [baseFilter, token],
+  );
   const table = useApiV2TableList({
     resourceName: "bookings",
     config: bookingListConfig,
-    documentSchema: BookingListDocumentSchema,
+    documentSchema: BookingListDocumentTableValidation.documentSchema,
     request,
     query: { keepPreviousData: true },
     table: {
@@ -81,6 +93,24 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
     queryKey: ["api-v2", "bookings", "count", "upcoming", requesterId, asOfDate.toISOString()],
     queryFn: ({ signal }) => fetchUpcomingBookingCount(requesterId, asOfDate, token, signal),
   });
+  const rowActions = useMemo<TableListRowActions<CollectionRow<BookingListDocument, "id" | "target">>>(
+    () => ({
+      id: "actions",
+      label: t("myBookings.actions.label"),
+      width: 120,
+      renderCell: ({ row }) => (
+        <Link
+          className={buttonVariants({ size: "sm", variant: "outline" })}
+          to="/booking/bookable-items/$globalId"
+          params={{ globalId: row.target.globalId }}
+        >
+          {t("myBookings.actions.viewDetails")}
+        </Link>
+      ),
+      renderInteraction: () => null,
+    }),
+    [t],
+  );
 
   const selectPeriod = (nextPeriod: "upcoming" | "past") => {
     if (nextPeriod === period) return;
@@ -136,7 +166,12 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
           </p>
         )}
       </div>
-      <TableList {...table.tableProps} variant="transparent" emptyDescription={t(emptyDescriptionKeys[period])} />
+      <TableList
+        {...table.tableProps}
+        variant="transparent"
+        emptyDescription={t(emptyDescriptionKeys[period])}
+        rowActions={rowActions}
+      />
     </main>
   );
 }

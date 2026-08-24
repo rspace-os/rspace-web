@@ -766,7 +766,8 @@ export default interface Resources {
         "book": "Book",
         "nextDay": "Next day",
         "previousDay": "Previous day",
-        "today": "Today"
+        "today": "Today",
+        "viewDetails": "View details"
       },
       "date": "Date",
       "fields": {
@@ -803,13 +804,60 @@ export default interface Resources {
       },
       "summary": "Availability period: {period}. {states}"
     },
+    "bookableItemDetails": {
+      "disabled": "Disabled",
+      "edit": "Edit configuration",
+      "enabled": "Enabled",
+      "error": {
+        "description": "RSpace could not load this bookable item's configuration.",
+        "title": "Bookable item unavailable"
+      },
+      "events": {
+        "busy": "Busy",
+        "count": "{count, plural, one {# event} other {# events}}",
+        "edit": "Edit booking",
+        "empty": "No events",
+        "error": {
+          "description": "RSpace could not load these events.",
+          "title": "Events unavailable"
+        },
+        "loading": "Loading events.",
+        "page": "Page {page, number} of {totalPages, number}",
+        "pagination": "Event pages",
+        "purpose": "Purpose",
+        "requester": "Requester"
+      },
+      "fields": {
+        "bufferAfter": "Buffer after",
+        "bufferBefore": "Buffer before",
+        "doubleBooking": "Allow double booking",
+        "granularity": "Slot granularity",
+        "maximumDuration": "Maximum duration",
+        "openingHours": "Opening hours",
+        "timezone": "Timezone",
+        "updatedAt": "Last updated"
+      },
+      "loading": "Loading bookable item.",
+      "minutes": "{count, plural, one {# minute} other {# minutes}}",
+      "no": "No",
+      "notAvailable": "Not available",
+      "past": "Past events",
+      "rules": "Booking rules",
+      "title": "Bookable item details",
+      "unlimited": "Unlimited",
+      "upcoming": "Upcoming events",
+      "viewInventory": "View {name} in Inventory",
+      "yes": "Yes"
+    },
     "bookableItems": {
       "actions": {
         "add": "Add",
         "delete": "Delete {item}",
         "edit": "Edit {item}",
         "save": "Save changes",
-        "submit": "Submit"
+        "submit": "Submit",
+        "viewDetails": "View details for {item}",
+        "viewInventory": "View {globalId} in Inventory"
       },
       "addError": "Could not add the bookable item. Try again.",
       "addTitle": "Add Bookable Item",
@@ -818,7 +866,8 @@ export default interface Resources {
         "checkFailed": "RSpace could not check whether this instrument can be added. Select it again or try another instrument.",
         "checking": "Checking whether this instrument can be added.",
         "editExisting": "Edit the existing configuration",
-        "instrumentRequired": "The selected inventory item is not an instrument and cannot be added as a bookable item."
+        "instrumentRequired": "The selected inventory item is not an instrument and cannot be added as a bookable item.",
+        "viewExisting": "View existing"
       },
       "bulk": {
         "actions": {
@@ -919,7 +968,8 @@ export default interface Resources {
       "actions": {
         "book": "Book",
         "edit": "Edit",
-        "label": "Booking actions"
+        "label": "Booking actions",
+        "viewDetails": "View details"
       },
       "agenda": "Booking agenda",
       "availability": "Availability",
@@ -999,6 +1049,10 @@ export default interface Resources {
       }
     },
     "myBookings": {
+      "actions": {
+        "label": "Actions",
+        "viewDetails": "View details"
+      },
       "count": {
         "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",
         "error": "The upcoming booking count could not be loaded.",

@@ -1,8 +1,17 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createBrowserHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
+import { createBookableItemRoute } from "../bookable-items/routes";
 import { MyBookingsRoutePage } from "./MyBookingsPage";
 import { bookingsOpenApi } from "./mocks/bookingMocks";
 
@@ -24,11 +33,22 @@ export function MyBookingsPageStory() {
     ["api-v2", "openapi", "bookings"],
     apiV2CollectionMetadataFromOpenApi(bookingsOpenApi, "bookings"),
   );
+  const root = createRootRoute({ component: Outlet });
+  const bookingRoute = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
+  const pageRoute = createRoute({
+    getParentRoute: () => bookingRoute,
+    path: "/my-bookings",
+    component: () => <MyBookingsRoutePage requesterId={84} title="My Bookings" />,
+  });
+  const router = createRouter({
+    routeTree: root.addChildren([bookingRoute.addChildren([pageRoute, createBookableItemRoute(bookingRoute)])]),
+    history: createBrowserHistory(),
+  });
   return (
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={null}>
         <NuqsAdapter>
-          <MyBookingsRoutePage requesterId={84} title="My Bookings" />
+          <RouterProvider router={router as never} />
         </NuqsAdapter>
       </Suspense>
     </QueryClientProvider>

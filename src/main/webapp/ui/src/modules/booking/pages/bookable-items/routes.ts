@@ -3,6 +3,7 @@ import AddBookableItemPage from "./AddBookableItemPage";
 import BookableItemPage from "./BookableItemPage";
 import BookableItemsPage from "./BookableItemsPage";
 import BookingSettingsPage from "./BookingSettingsPage";
+import EditBookableItemPage from "./EditBookableItemPage";
 
 export function createBookableItemsRoute<TParentRoute extends AnyRoute>(bookingRoute: TParentRoute) {
   return createRoute({
@@ -31,7 +32,15 @@ export function createAddBookableItemRoute<TParentRoute extends AnyRoute>(bookin
 export function createBookableItemRoute<TParentRoute extends AnyRoute>(bookingRoute: TParentRoute) {
   return createRoute({
     getParentRoute: () => bookingRoute,
-    path: "/config/bookable-items/$id",
+    path: "/bookable-items/$globalId",
     component: BookableItemPage,
+  });
+}
+
+export function createEditBookableItemRoute<TParentRoute extends AnyRoute>(bookingRoute: TParentRoute) {
+  return createRoute({
+    getParentRoute: () => bookingRoute,
+    path: "/config/bookable-items/$id/edit",
+    component: EditBookableItemPage,
   });
 }

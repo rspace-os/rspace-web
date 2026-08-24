@@ -1,6 +1,9 @@
 import { type Locator, page } from "vitest/browser";
 
 export class MyBookingsPageObject {
+  readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Bookable item details" });
+  readonly bookableItemDetailsTarget: Locator = page.getByText("Confocal microscope", { exact: true });
+
   get heading(): Locator {
     return page.getByRole("heading", { name: "My Bookings" });
   }
@@ -23,6 +26,10 @@ export class MyBookingsPageObject {
 
   get electron(): Locator {
     return page.getByText("Electron microscope", { exact: true });
+  }
+
+  get confocalDetails(): Locator {
+    return page.getByRole("link", { name: "View details", exact: true }).first();
   }
 
   get reset(): Locator {

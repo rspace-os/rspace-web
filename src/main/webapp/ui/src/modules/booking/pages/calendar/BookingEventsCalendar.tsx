@@ -174,14 +174,30 @@ function EventCard({
   overlay?: boolean;
   alignExpandedEnd?: boolean;
 }) {
-  const { t } = useTranslation("booking");
   const card = (
     <DayTimelineEventCard
       event={toTimelineEvent(event, date, timezone)}
       compactCards={compact}
       variant={overlay ? "timeline" : "flow"}
       alignExpandedEnd={alignExpandedEnd}
-      renderEventActions={() => (
+      renderEventActions={() => <BookingActions event={event} date={date} />}
+    />
+  );
+  return overlay ? <div className="relative min-h-12">{card}</div> : card;
+}
+
+function BookingActions({ event, date }: { event: BookingListDocument; date: string }) {
+  const { t } = useTranslation("booking");
+  return (
+    <div className="flex flex-wrap gap-1">
+      <Link
+        className={buttonVariants({ variant: "link", size: "xs" })}
+        to="/booking/bookable-items/$globalId"
+        params={{ globalId: event.target.globalId }}
+      >
+        {t("calendar.actions.viewDetails")}
+      </Link>
+      {event.canEdit ? (
         <Link
           className={buttonVariants({ variant: "link", size: "xs" })}
           to="/booking/calendar/bookings/$id"
@@ -190,10 +206,16 @@ function EventCard({
         >
           {t("calendar.actions.edit")}
         </Link>
-      )}
-    />
+      ) : null}
+    </div>
   );
-  return overlay ? <div className="relative min-h-12">{card}</div> : card;
+}
+
+function actionsFor(events: readonly BookingListDocument[], date: string) {
+  return (timelineEvent: Extract<DayTimelineEvent, { kind: "booking" }>) => {
+    const event = events.find(({ id }) => String(id) === timelineEvent.id);
+    return event ? <BookingActions event={event} date={date} /> : null;
+  };
 }
 
 function CalendarControls({
@@ -318,6 +340,7 @@ function TimeGrid({
           startWindow={7 * 60}
           endWindow={19 * 60}
           showZoomControls={false}
+          renderEventActions={actionsFor(events, date)}
         />
       ) : (
         <section
@@ -422,6 +445,7 @@ function ResourceSchedule({
                     viewState={timelineViewState}
                     onViewStateChange={setTimelineViewState}
                     showScrollbar={index === resources.length - 1}
+                    renderEventActions={actionsFor(resourceEvents, date)}
                   />
                 </section>
               );

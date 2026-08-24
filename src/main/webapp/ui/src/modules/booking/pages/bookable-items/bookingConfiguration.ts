@@ -1,8 +1,12 @@
 import { createElement } from "react";
 import * as v from "valibot";
+import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import i18n from "@/modules/common/i18n";
+import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { schedulingSettingsEntries, validMaximumBookingDuration, validOpeningHours } from "./schedulingSettings";
@@ -27,7 +31,7 @@ export const BookingConfigurationSchema = v.pipe(
     timezone: v.string(),
     ...schedulingSettingsEntries,
     // Fixed-projection consumers, such as Calendar, deliberately omit this field.
-    updatedAt: v.optional(v.nullable(v.string())),
+    updatedAt: v.optional(v.nullable(v.pipe(v.string(), v.isoTimestamp()))),
   }),
   v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
   v.check((configuration) =>
@@ -57,12 +61,6 @@ export type BookingConfigurationInput = v.InferOutput<typeof BookingConfiguratio
 
 export const BookingConfigurationUpdateInputSchema = v.pipe(
   v.object({
-    target: v.optional(
-      v.object({
-        relationTo: v.literal("instruments"),
-        value: v.number(),
-      }),
-    ),
     enabled: v.boolean(),
     timezone: v.string(),
     ...schedulingSettingsEntries,
@@ -74,6 +72,58 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
 );
 
 export type BookingConfigurationUpdateInput = v.InferOutput<typeof BookingConfigurationUpdateInputSchema>;
+
+export const BOOKING_CONFIGURATION_READ_FIELDS =
+  "id,target,enabled,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,updatedAt";
+
+export async function fetchBookingConfiguration(
+  id: number,
+  token: string,
+  signal?: AbortSignal,
+): Promise<BookingConfiguration> {
+  const parameters = new URLSearchParams({
+    depth: "1",
+    "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
+  });
+  const response = await fetch(`/api/v2/booking-configurations/${id}?${parameters}`, {
+    headers: bookingApiV2Headers(token),
+    signal,
+  });
+  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
+  return parseOrThrow(BookingConfigurationSchema, (await response.json()) as unknown);
+}
+
+export async function fetchBookingConfigurationByTarget(
+  globalId: string,
+  token: string,
+  signal?: AbortSignal,
+): Promise<BookingConfiguration> {
+  const where = serializeRsqlExpression<BookingConfiguration>({
+    kind: "comparison",
+    field: "target",
+    operator: "equals",
+    value: globalId,
+  });
+  const parameters = new URLSearchParams({
+    depth: "1",
+    limit: "2",
+    where,
+    "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
+  });
+  const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
+    headers: bookingApiV2Headers(token),
+    signal,
+  });
+  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
+  const configurations = parseOrThrow(
+    v2ListEnvelope(BookingConfigurationSchema),
+    (await response.json()) as unknown,
+  ).docs;
+  if (configurations.length !== 1 || configurations[0].target?.globalId !== globalId) {
+    throw new Error(`Expected exactly one booking configuration for ${globalId}`);
+  }
+  return configurations[0];
+}
 
 export const bookingConfigurationConfig = {
   slug: "bookable-items",

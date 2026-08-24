@@ -1,5 +1,13 @@
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing";
@@ -36,11 +44,26 @@ function renderPage(
   const syncWindowUrl = ({ queryString }: UrlUpdateEvent) => {
     window.history.replaceState({}, "", `${location.pathname}${queryString}`);
   };
+  const root = createRootRoute({ component: Outlet });
+  const pageRoute = createRoute({
+    getParentRoute: () => root,
+    path: "/booking/my-bookings",
+    component: () => <MyBookingsRoutePage requesterId={requesterId} title="Test user bookings" />,
+  });
+  const detailsRoute = createRoute({
+    getParentRoute: () => root,
+    path: "/booking/bookable-items/$globalId",
+    component: Outlet,
+  });
+  const router = createRouter({
+    routeTree: root.addChildren([pageRoute, detailsRoute]),
+    history: createMemoryHistory({ initialEntries: [`${location.pathname}${location.search}`] }),
+  });
   render(
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={null}>
         <NuqsTestingAdapter searchParams={location.search} hasMemory onUrlUpdate={syncWindowUrl}>
-          <MyBookingsRoutePage requesterId={requesterId} title="Test user bookings" />
+          <RouterProvider router={router as never} />
         </NuqsTestingAdapter>
       </Suspense>
     </QueryClientProvider>,
@@ -108,7 +131,12 @@ describe("My Bookings page", () => {
     );
 
     expect(await screen.findByLabelText("booking:myBookings.count.accessible")).toHaveTextContent("2");
-    expect(await screen.findByText("Confocal microscope")).toBeVisible();
+    expect(await screen.findAllByText("Confocal microscope")).not.toHaveLength(0);
+    expect(
+      screen
+        .getAllByRole("link", { name: "booking:myBookings.actions.viewDetails" })
+        .some((link) => link.getAttribute("href") === "/booking/bookable-items/IN123"),
+    ).toBe(true);
     await waitFor(() => expect(counts).toHaveLength(1));
     const countWhere = counts[0].searchParams.get("where");
     expect(countWhere).toMatch(/^requesterId==84;end=gt=.+Z$/);

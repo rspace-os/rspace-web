@@ -1,7 +1,15 @@
 import { HttpResponse, http } from "msw";
+import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { cancelBooking, createBooking, fetchBooking, updateBooking } from "@/modules/booking/domain/booking";
+import {
+  BookingListDocumentSchema,
+  BookingSummarySchema,
+  cancelBooking,
+  createBooking,
+  fetchBooking,
+  updateBooking,
+} from "@/modules/booking/domain/booking";
 
 const document = {
   id: 41,
@@ -88,6 +96,20 @@ describe("booking API", () => {
     await expect(fetchBooking(41, "token")).rejects.toEqual(
       expect.objectContaining({ status: 409, code: "errors.api.v2.booking.overlap" }),
     );
+  });
+
+  it.each([
+    ["an invalid start timestamp", { start: "tomorrow" }],
+    ["an invalid end timestamp", { end: "later" }],
+    ["an empty interval", { end: document.start }],
+    ["a reversed interval", { end: "2026-10-24T23:30:00Z" }],
+  ])("rejects %s in all read schemas", async (_label, change) => {
+    const invalid = { ...document, requesterId: 5, ...change };
+    server.use(http.get("/api/v2/bookings/41", () => HttpResponse.json(invalid)));
+
+    await expect(fetchBooking(41, "token")).rejects.toThrow();
+    expect(v.safeParse(BookingSummarySchema, invalid).success).toBe(false);
+    expect(v.safeParse(BookingListDocumentSchema, invalid).success).toBe(false);
   });
 
   it("honors an aborted read", async () => {

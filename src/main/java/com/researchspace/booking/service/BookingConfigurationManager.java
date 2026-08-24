@@ -32,13 +32,10 @@ public interface BookingConfigurationManager {
 
   /** Values accepted when changing a booking configuration; {@code null} means unchanged. */
   record Patch(
-      Boolean enabled,
-      String timeZone,
-      ResolvedBookableTarget target,
-      BookingSchedulingSettings.Patch schedulingSettings) {
+      Boolean enabled, String timeZone, BookingSchedulingSettings.Patch schedulingSettings) {
 
-    public Patch(Boolean enabled, String timeZone, ResolvedBookableTarget target) {
-      this(enabled, timeZone, target, BookingSchedulingSettings.Patch.empty());
+    public Patch(Boolean enabled, String timeZone) {
+      this(enabled, timeZone, BookingSchedulingSettings.Patch.empty());
     }
 
     public Patch {

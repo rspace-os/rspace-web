@@ -248,7 +248,11 @@ describe("BookableItemsPage", () => {
     expect(screen.getByRole("columnheader", { name: "booking:bookableItems.fields.actions" })).toBeVisible();
     expect(screen.getByRole("link", { name: "booking:bookableItems.actions.edit" })).toHaveAttribute(
       "href",
-      "/booking/config/bookable-items/7",
+      "/booking/config/bookable-items/7/edit",
+    );
+    expect(screen.getByRole("link", { name: "booking:bookableItems.actions.viewDetails" })).toHaveAttribute(
+      "href",
+      "/booking/bookable-items/IN123",
     );
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.delete" })).toBeVisible();
     await expectAccessible(container);
@@ -266,6 +270,7 @@ describe("BookableItemsPage", () => {
     renderBookableItemsPage();
 
     expect(await screen.findByText("common:values.unknownItem")).toBeVisible();
+    expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.viewDetails" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "booking:bookableItems.actions.edit" })).toBeVisible();
   });
 

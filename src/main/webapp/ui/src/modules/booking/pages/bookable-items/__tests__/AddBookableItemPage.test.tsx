@@ -72,7 +72,7 @@ function DestinationPage() {
 
 function ExistingConfigurationPage() {
   const { t } = useTranslation("booking");
-  return <h1>{t("bookableItems.editTitle")}</h1>;
+  return <h1>{t("bookableItemDetails.title")}</h1>;
 }
 
 function renderPage() {
@@ -91,7 +91,7 @@ function renderPage() {
   });
   const existingConfigurationRoute = createRoute({
     getParentRoute: () => bookingRoute,
-    path: "/config/bookable-items/$id",
+    path: "/bookable-items/$globalId",
     component: ExistingConfigurationPage,
   });
   const router = createRouter({
@@ -232,8 +232,10 @@ describe("AddBookableItemPage", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("booking:bookableItems.availability.alreadyConfigured");
-    const editLink = within(alert).getByRole("link", { name: "booking:bookableItems.availability.editExisting" });
-    expect(editLink).toHaveAttribute("href", "/booking/config/bookable-items/7");
+    const detailsLink = within(alert).getByRole("link", {
+      name: "booking:bookableItems.availability.viewExisting",
+    });
+    expect(detailsLink).toHaveAttribute("href", "/booking/bookable-items/IN123");
     expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
     expect(availabilityRequests[0]?.searchParams.get("where")).toBe("target=in=(IN123)");
@@ -266,8 +268,8 @@ describe("AddBookableItemPage", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("booking:bookableItems.availability.alreadyConfigured");
     expect(
-      within(alert).getByRole("link", { name: "booking:bookableItems.availability.editExisting" }),
-    ).toHaveAttribute("href", "/booking/config/bookable-items/9");
+      within(alert).getByRole("link", { name: "booking:bookableItems.availability.viewExisting" }),
+    ).toHaveAttribute("href", "/booking/bookable-items/IN123");
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
   });
 

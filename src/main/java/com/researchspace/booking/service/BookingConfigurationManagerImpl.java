@@ -144,16 +144,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
         .getSafeNull(id)
         .map(
             configuration -> {
-              boolean targetChanged = false;
-              if (patch.target() != null) {
-                BookableTargetReference target = validateTarget(patch.target());
-                if (!target.equals(configuration.getTarget())) {
-                  requireTargetAvailable(target, configuration.getId());
-                  configuration.replaceTarget(target);
-                  targetChanged = true;
-                }
-              }
-              if (!targetChanged && unchanged(patch)) {
+              if (unchanged(patch)) {
                 return configuration;
               }
               apply(patch, configuration);
@@ -170,16 +161,6 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   public List<BookingConfiguration> updateConfigurations(
       ResourceRequest request, Patch patch, User subject, User actor) {
     List<BookingConfiguration> matches = bulkMatches(request, subject);
-    if (patch.target() != null) {
-      BookableTargetReference target = validateTarget(patch.target());
-      if (matches.size() > 1) {
-        throw new BookingConfigurationTargetConflictException();
-      }
-      if (!matches.isEmpty() && !target.equals(matches.get(0).getTarget())) {
-        requireTargetAvailable(target, matches.get(0).getId());
-        matches.get(0).replaceTarget(target);
-      }
-    }
     Date now = new Date();
     matches.forEach(
         configuration -> {
