@@ -41,7 +41,7 @@ describe("processValuesAfterPerform", () => {
   });
 });
 
-describe("normalizeProcessValues (amount modes, DevDocs/adr/0014)", () => {
+describe("normalizeProcessValues (amount modes, DevDocs/adr/0007)", () => {
   it("carries a valid amount mode and per-origin amounts unchanged", () => {
     const withMode: ProcessValues = {
       ...bundle,

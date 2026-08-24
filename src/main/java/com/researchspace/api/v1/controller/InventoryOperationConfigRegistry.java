@@ -16,10 +16,10 @@ import org.springframework.stereotype.Component;
 
 /**
  * The backend's registry of Inventory operation definitions, parsed once at startup from the
- * verbatim classpath copy of the frontend's {@code operations_config.json} (DevDocs/adr/0015; a
+ * verbatim classpath copy of the frontend's {@code operations_config.json} (DevDocs/adr/0007; a
  * drift test keeps the two copies byte-identical). Construction fails fast on a missing or
  * unparseable file so a bad build cannot boot with an unvalidated public endpoint. Stage 2
- * (DevDocs/adr/0016) replaces this source with user-editable definitions without changing
+ * (DevDocs/adr/0007) replaces this source with user-editable definitions without changing
  * consumers.
  */
 @Component

@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
  * amount, clamped at zero, so an operation can never increase the origin's volume. {@code
  * extraFields} are custom fields to add to the origin itself (each with {@code newFieldRequest}
  * true), e.g. Destroy's "disposed" date; empty for an ordinary decrement-only origin. See
- * DevDocs/adr/0007, DevDocs/adr/0013.
+ * DevDocs/adr/0007.
  */
 @Data
 @NoArgsConstructor

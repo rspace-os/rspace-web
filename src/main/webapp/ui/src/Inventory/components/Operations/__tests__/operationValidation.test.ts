@@ -139,7 +139,7 @@ describe("amountTakenExceedsOrigin", () => {
   });
 });
 
-// The per-origin over-removal check used for "per subsample" amounts (DevDocs/adr/0014): each origin's chosen
+// The per-origin over-removal check used for "per subsample" amounts (DevDocs/adr/0007): each origin's chosen
 // amount is checked against its own quantity, unit-aware within a category.
 describe("quantityExceedsOrigin", () => {
   it("is false at or within the origin's quantity, true above it (same unit)", () => {

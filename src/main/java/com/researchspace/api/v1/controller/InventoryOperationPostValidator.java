@@ -24,14 +24,14 @@ import org.springframework.validation.Validator;
 
 /**
  * Validates an {@link ApiInventoryOperationPost} against the operation definition its {@code
- * operationType} names (DevDocs/adr/0015). The rules are interpreted generically from the shared
+ * operationType} names (DevDocs/adr/0007). The rules are interpreted generically from the shared
  * {@code operations_config.json} (no per-operation Java): origin cardinality, new-sample presence
  * (a noOutput operation like Destroy creates nothing), per-origin amount semantics (positive for a
  * decrementing operation, exactly zero for one that only links, e.g. Passage), configured
  * storage-temperature bounds (unit-aware), and a provenance link from the new sample back to every
  * origin. The new sample is also run through the same {@link SampleApiPostValidator} the public
  * samples endpoint uses. Checks needing an origin's live quantity are static helpers here, called
- * by the controller (DevDocs/adr/0007, DevDocs/adr/0010, DevDocs/adr/0013).
+ * by the controller (DevDocs/adr/0007).
  */
 @Component
 public class InventoryOperationPostValidator implements Validator {
@@ -146,7 +146,7 @@ public class InventoryOperationPostValidator implements Validator {
             "errors.inventory.operation.amountTakenInvalid",
             "Each origin must specify a non-negative amount, with a unit, to take from it.");
       } else if (!config.effect().emptiesOrigin()) {
-        // What the amount taken must be follows the operation's effect (DevDocs/adr/0015): an
+        // What the amount taken must be follows the operation's effect (DevDocs/adr/0007): an
         // operation that decrements its origins (amountTakenFrom configured) must take a positive
         // amount from each; one that only links to them (e.g. Passage) must take exactly zero. An
         // origin-emptying operation (Destroy) is checked live in the controller instead, where the
@@ -173,7 +173,7 @@ public class InventoryOperationPostValidator implements Validator {
   /**
    * Origin extra fields may only ADD new fields (Destroy's disposed date): a delete request or an
    * id-bearing edit of an existing field is a mutation no operation definition describes, so it is
-   * rejected even though the caller holds edit permission (DevDocs/adr/0015). Each allowed field's
+   * rejected even though the caller holds edit permission (DevDocs/adr/0007). Each allowed field's
    * content is then validated by the same shared field validator the subsample PUT endpoint uses
    * (name required, per-type content, link payloads).
    */
@@ -236,7 +236,7 @@ public class InventoryOperationPostValidator implements Validator {
     // The operations path bypasses SamplesApiController, so delegate the new sample to the exact
     // validator the public samples endpoint uses (name, tags, storage-temperature sanity, extra
     // fields including link payloads, subsample quantity units); its errors surface under
-    // newSample.* (gap closed by DevDocs/adr/0015).
+    // newSample.* (gap closed by DevDocs/adr/0007).
     errors.pushNestedPath("newSample");
     try {
       ValidationUtils.invokeValidator(sampleApiPostValidator, newSample, errors);
@@ -278,7 +278,7 @@ public class InventoryOperationPostValidator implements Validator {
 
   /**
    * An operation with a temperature input (e.g. Cryopreserve, Revive) stores it as the new sample's
-   * storage temperature, and the config bounds it in Celsius (DevDocs/adr/0015). Both storage
+   * storage temperature, and the config bounds it in Celsius (DevDocs/adr/0007). Both storage
    * temperatures are required and each is compared unit-aware against the configured bounds, so a
    * value sent in Kelvin or Fahrenheit is judged on the temperature it denotes, not its number.
    */
@@ -347,10 +347,10 @@ public class InventoryOperationPostValidator implements Validator {
   /**
    * The new sample must link back to every origin with the operation's configured relation type
    * (e.g. Aliquot's IsPartOf, Pool's one HasPart per pooled subsample): the links are the
-   * provenance record the operation exists to create (DevDocs/adr/0012, DevDocs/adr/0015). Extra
-   * fields beyond the required links (the optional IsDocumentedBy link, text fields) are the
-   * wizard's own output and are allowed; the link payloads themselves are validated by the
-   * delegated samples-endpoint rules.
+   * provenance record the operation exists to create (DevDocs/adr/0007). Extra fields beyond the
+   * required links (the optional IsDocumentedBy link, text fields) are the wizard's own output and
+   * are allowed; the link payloads themselves are validated by the delegated samples-endpoint
+   * rules.
    */
   private void validateProvenanceLinks(
       ApiInventoryOperationPost request,
@@ -401,7 +401,7 @@ public class InventoryOperationPostValidator implements Validator {
 
   /**
    * Whether the amount taken from an origin exceeds that origin's current quantity
-   * (DevDocs/adr/0010). The comparison is unit-aware within a measurement category (e.g. 0.006 kg
+   * (DevDocs/adr/0007). The comparison is unit-aware within a measurement category (e.g. 0.006 kg
    * against a 5 g origin), so a cross-unit entry in the same category is compared correctly. This
    * needs the origin's live quantity, which the stateless {@link Validator} contract cannot load,
    * so the controller loads each origin and calls this. A null amount, or a pair in different
@@ -428,7 +428,7 @@ public class InventoryOperationPostValidator implements Validator {
   /**
    * Whether an origin currently holds nothing: a null quantity (never set), a quantity without a
    * numeric value, or a non-positive amount. No operation may act on such an origin
-   * (DevDocs/adr/0015): there is nothing to take, pool, preserve or destroy. Like {@link
+   * (DevDocs/adr/0007): there is nothing to take, pool, preserve or destroy. Like {@link
    * #amountTakenExceedsOrigin} this needs the origin's live quantity, so the controller loads each
    * origin and calls this.
    */
@@ -443,7 +443,7 @@ public class InventoryOperationPostValidator implements Validator {
    * category (0.005 kg empties a 5 g origin). An origin-emptying operation (emptiesOrigin, e.g.
    * Destroy) must take exactly what the origin holds, no less (over-removal is rejected
    * separately). Missing values or incomparable categories never count as emptying. Live-state
-   * check: the controller loads each origin and calls this (DevDocs/adr/0015).
+   * check: the controller loads each origin and calls this (DevDocs/adr/0007).
    */
   public static boolean amountTakenEmptiesOrigin(
       ApiQuantityInfo amountTaken, ApiQuantityInfo originQuantity) {
