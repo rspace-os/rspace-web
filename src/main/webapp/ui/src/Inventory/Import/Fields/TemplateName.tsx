@@ -1,17 +1,16 @@
 import TextField from "@mui/material/TextField";
-import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import useStores from "../../../stores/use-stores";
 
 type TemplateNameArgs = {
   disabled?: boolean;
+  value: string;
+  onChange: (value: string) => void;
+  error: boolean;
 };
 
-function TemplateName({ disabled }: TemplateNameArgs): ReactNode {
+function TemplateName({ disabled, value, onChange, error }: TemplateNameArgs): ReactNode {
   const { t } = useTranslation("inventory");
-  const { importStore } = useStores();
-  const error = importStore.importData?.createNewTemplate && !importStore.importData.validTemplateName;
 
   return (
     <TextField
@@ -20,15 +19,14 @@ function TemplateName({ disabled }: TemplateNameArgs): ReactNode {
       fullWidth
       disabled={disabled}
       error={error}
-      id="templateNameField" // for a11y
-      value={importStore.importData?.templateName ?? ""}
+      id="templateNameField"
+      value={value}
       helperText={error ? t("import.fields.templateNameValidation") : ""}
       onChange={({ target }) => {
-        if (target instanceof HTMLInputElement && importStore.importData)
-          importStore.importData?.setTemplateName(target.value);
+        if (target instanceof HTMLInputElement) onChange(target.value);
       }}
     />
   );
 }
 
-export default observer(TemplateName);
+export default TemplateName;

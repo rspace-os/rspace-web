@@ -6,12 +6,12 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
-import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import useStores from "../../../stores/use-stores";
 import InstrumentTemplatePicker from "../../components/Picker/InstrumentTemplatePicker";
+import TemplateName from "./TemplateName";
 
 function InstrumentTemplateDetails(): ReactNode {
   const { t } = useTranslation("inventory");
@@ -42,13 +42,11 @@ function InstrumentTemplateDetails(): ReactNode {
       <Box sx={{ ml: 4, mb: 4, mt: 1 }}>
         <FormControl component="fieldset" fullWidth>
           <FormGroup sx={{ maxWidth: 660 }}>
-            <TextField
-              variant="standard"
-              label={t("import.fields.templateName")}
-              fullWidth
+            <TemplateName
               disabled={!createNewTemplate}
               value={templateName}
-              onChange={({ target }) => importData?.setInstrumentTemplateName(target.value)}
+              onChange={(v) => importData?.setInstrumentTemplateName(v)}
+              error={createNewTemplate && !(importData?.validInstrumentTemplateName ?? true)}
             />
           </FormGroup>
         </FormControl>

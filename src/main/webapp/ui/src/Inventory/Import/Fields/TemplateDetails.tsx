@@ -41,7 +41,15 @@ function TemplateDetails(): ReactNode {
       <Box sx={{ ml: 4, mb: 4, mt: 1 }}>
         <FormControl component="fieldset" fullWidth>
           <FormGroup sx={{ maxWidth: 660 }}>
-            <TemplateName disabled={importStore.importData?.createNewTemplate === false} />
+            <TemplateName
+              disabled={importStore.importData?.createNewTemplate === false}
+              value={importStore.importData?.templateName ?? ""}
+              onChange={(v) => importStore.importData?.setTemplateName(v)}
+              error={
+                (importStore.importData?.createNewTemplate ?? false) &&
+                !(importStore.importData?.validTemplateName ?? true)
+              }
+            />
           </FormGroup>
         </FormControl>
       </Box>
