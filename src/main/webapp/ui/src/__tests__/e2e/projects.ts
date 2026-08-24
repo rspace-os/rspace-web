@@ -13,15 +13,19 @@ const browserProjects: BrowserProject[] = [
   { name: "mobile", browserName: "chromium", appUser: USERS.user7g },
 ];
 
+// Opt-in only: its specs need the Docker conversion stack.
+const conversionProject: BrowserProject = { name: "conversion", browserName: "chromium", appUser: USERS.user6f };
+
 /** Shared by the runner and authentication setup so each selected user has login state. */
 export function selectBrowserProjects(selection: string, { cloud }: { cloud: boolean }): BrowserProject[] {
   if (selection === "api" || selection === "setup") return [];
+  if (selection === "conversion" && !cloud) return [conversionProject];
   const available = cloud ? browserProjects.filter(({ name }) => name !== "mobile") : browserProjects;
   if (!selection) return available;
   const project = available.find(({ name }) => name === selection);
   if (!project) {
     throw new Error(
-      `Unknown E2E_BROWSER "${selection}"${cloud ? " with E2E_CLOUD=true" : ""}. Choose ${available.map(({ name }) => name).join(", ")}, api, or setup.`,
+      `Unknown E2E_BROWSER "${selection}"${cloud ? " with E2E_CLOUD=true" : ""}. Choose ${available.map(({ name }) => name).join(", ")}${cloud ? "" : ", conversion"}, api, or setup.`,
     );
   }
   return [project];

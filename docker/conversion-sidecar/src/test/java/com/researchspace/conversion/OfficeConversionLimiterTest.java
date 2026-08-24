@@ -17,10 +17,10 @@ class OfficeConversionLimiterTest {
 
   @Test
   void rejectsImmediatelyWhenAllSlotsAreBusyAndReleasesTheSlot() {
-    limiter.run(
+    limiter.runWord(
         () -> {
           ConversionException error =
-              assertThrows(ConversionException.class, () -> limiter.run(() -> null));
+              assertThrows(ConversionException.class, () -> limiter.runWord(() -> null));
           assertEquals(HttpStatus.TOO_MANY_REQUESTS, error.status());
           assertEquals(ConversionError.SERVICE_BUSY, error.error());
           assertEquals(1, metrics.counter("rspace.conversion.office.rejected").count());
@@ -28,7 +28,7 @@ class OfficeConversionLimiterTest {
           return null;
         });
 
-    assertEquals("available", limiter.run(() -> "available"));
+    assertEquals("available", limiter.runWord(() -> "available"));
     assertEquals(0, metrics.get("rspace.conversion.office.active").gauge().value());
   }
 
@@ -42,12 +42,22 @@ class OfficeConversionLimiterTest {
     assertThrows(
         IllegalStateException.class,
         () ->
-            limiter.run(
+            limiter.runWord(
                 () -> {
                   throw new IllegalStateException("failed");
                 }));
 
-    assertEquals("available", limiter.run(() -> "available"));
+    assertEquals("available", limiter.runWord(() -> "available"));
+  }
+
+  @Test
+  void pdfAndWordUseIndependentSlots() {
+    limiter.runPdf(
+        () -> {
+          assertEquals("word", limiter.runWord(() -> "word"));
+          assertThrows(ConversionException.class, () -> limiter.runPdf(() -> null));
+          return null;
+        });
   }
 
   private static ConverterProperties properties(int capacity) {
@@ -57,7 +67,6 @@ class OfficeConversionLimiterTest {
         Duration.ofSeconds(1),
         capacity,
         1024,
-        Path.of("/bin/true"),
-        Path.of("/tmp/ipc"));
+        Path.of("/bin/true"));
   }
 }

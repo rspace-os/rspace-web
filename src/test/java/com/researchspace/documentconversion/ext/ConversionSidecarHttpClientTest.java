@@ -8,7 +8,9 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import com.sun.net.httpserver.HttpServer;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -141,5 +143,22 @@ class ConversionSidecarHttpClientTest {
 
     assertEquals(DocumentConversionError.SERVICE_UNAVAILABLE.code(), result.getErrorMsg());
     server.verify();
+  }
+
+  @Test
+  void classifiesTimeoutsByCause() {
+    var exception = new IllegalStateException("request failed", new SocketTimeoutException());
+
+    assertEquals(
+        DocumentConversionError.TIMEOUT, ConversionSidecarHttpClient.errorForException(exception));
+  }
+
+  @Test
+  void classifiesUnavailableServiceByCause() {
+    var exception = new IllegalStateException("request failed", new ConnectException());
+
+    assertEquals(
+        DocumentConversionError.SERVICE_UNAVAILABLE,
+        ConversionSidecarHttpClient.errorForException(exception));
   }
 }

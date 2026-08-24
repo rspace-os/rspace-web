@@ -10,7 +10,7 @@ const DOCX = readFileSync(
 );
 
 test.describe("Gotenberg and JODConverter", { tag: tags.GALLERY }, () => {
-  test("previews a DOCX as a generated PDF", async ({ clientFiles, pageGallery, page }) => {
+  test("As a user, I can preview a DOCX as a generated PDF", async ({ clientFiles, pageGallery, page }) => {
     const name = `${uniqueName("e2e-gotenberg-preview")}.docx`;
     const uploaded = await clientFiles.uploadFile({
       name,
@@ -33,7 +33,7 @@ test.describe("Gotenberg and JODConverter", { tag: tags.GALLERY }, () => {
     await expect(page.getByRole("dialog", { name: "PDF Preview" }).locator("canvas").first()).toBeVisible();
   });
 
-  test("imports DOCX content and exports a valid DOCX", async ({
+  test("As a user, I can import DOCX content and export a valid DOCX", async ({
     clientDocuments,
     pageDocument,
     componentExportWizard,

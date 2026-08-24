@@ -11,7 +11,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=C.UTF-8 \
     TZ=UTC \
     SAL_USE_VCLPLUGIN=svp \
-    HOME=/tmp/rspace-conversion
+    HOME=/work/rspace-conversion \
+    LD_LIBRARY_PATH=/usr/lib/libreoffice/program
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
       openjdk-25-jre-headless \
@@ -34,8 +35,7 @@ RUN apt-get update \
       fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --create-home --uid 10001 converter \
-    && install -d -o converter -g converter -m 0700 /tmp/rspace-conversion \
-    && install -d -o converter -g converter -m 0700 /run/rspace-conversion-ipc
+    && install -d -o converter -g converter -m 0700 /work /work/rspace-conversion
 COPY --from=build /build/target/conversion-sidecar-1.0.0-SNAPSHOT.jar /opt/conversion-sidecar.jar
 USER 10001:10001
 EXPOSE 8080
