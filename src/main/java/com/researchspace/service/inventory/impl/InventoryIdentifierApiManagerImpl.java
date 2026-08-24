@@ -602,7 +602,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     ApiInventoryDOI actualdoi = new ApiInventoryDOI(doi);
     actualdoi.setCreatorAffiliation(rorAffiliationName);
     actualdoi.setCreatorAffiliationIdentifier(rorAffiliationID);
-    DataCiteDoi doiToPublish = actualdoi.convertToDataCiteDoi();
+    DataCiteDoi doiToPublish = rspaceToExternalProviderAdapter.buildDataCiteDoi(actualdoi, invRec);
     DataCiteDoi publishResult;
     try {
       publishResult = dataCiteConnector.publishDoi(doiToPublish, settingTypeFor(doi.getType()));
@@ -637,7 +637,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     ApiInventoryDOI actualdoi = new ApiInventoryDOI(doi);
     actualdoi.setCreatorAffiliation(rorAffiliationName);
     actualdoi.setCreatorAffiliationIdentifier(rorAffiliationID);
-    DataCiteDoi doiToRetract = actualdoi.convertToDataCiteDoi();
+    DataCiteDoi doiToRetract = rspaceToExternalProviderAdapter.buildDataCiteDoi(actualdoi, invRec);
 
     DataCiteDoi retractResult;
     try {

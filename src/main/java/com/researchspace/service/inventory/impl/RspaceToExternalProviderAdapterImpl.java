@@ -12,13 +12,18 @@ import com.researchspace.b2inst.model.metadata.B2instInstrumentType;
 import com.researchspace.b2inst.model.metadata.B2instManufacturer;
 import com.researchspace.b2inst.model.metadata.B2instModel;
 import com.researchspace.b2inst.model.metadata.B2instOwner;
+import com.researchspace.b2inst.model.metadata.B2instRelatedIdentifier;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.datacite.model.DataCiteDoi;
+import com.researchspace.datacite.model.DataCiteDoiAttributes;
 import com.researchspace.model.User;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.inventory.InventoryUrls;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,11 +53,28 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
   private static final String FIELD_DECOMMISSIONED = "Decommissioned";
   private static final String FIELD_MEASURED_QUANTITY = "Measured quantity";
   private static final String FIELD_ALTERNATE_IDENTIFIER = "Alternate Identifier";
+  private static final String FIELD_MEASUREMENT_TECHNIQUE = "Measurement technique";
+  private static final String FIELD_CALIBRATION = "Calibration";
 
   // PIDINST controlled values ("DeCommissioned" deliberately differs from the field name).
   private static final String DATE_TYPE_COMMISSIONED = "Commissioned";
   private static final String DATE_TYPE_DECOMMISSIONED = "DeCommissioned";
   private static final String ALTERNATE_ID_TYPE_OTHER = "Other";
+
+  // Wire values fixed by RSDEV-1253 (see ADR 0007). The labels are the ticket's spelling, capital
+  // T, not the template field name's. IsDescribedBy is sent whatever relation the link stores,
+  // because PIDINST's RelatedIdentifier vocabulary has no IsDocumentedBy/IsCalibratedBy.
+  private static final String RELATED_ID_NAME_MEASUREMENT_TECHNIQUE = "Measurement Technique";
+  private static final String RELATED_ID_NAME_CALIBRATION = "Calibration";
+  private static final String RELATION_TYPE_IS_DESCRIBED_BY = "IsDescribedBy";
+  private static final String RELATED_ID_TYPE_URL = "URL";
+
+  /** Deployment configuration; the server URL feeds the related-identifier addresses. */
+  private final IPropertyHolder properties;
+
+  public RspaceToExternalProviderAdapterImpl(IPropertyHolder properties) {
+    this.properties = properties;
+  }
 
   /*
    * MANDATORY, not REQUIRED: this walks the instrument's lazy associations (getActiveFields, and the
@@ -142,6 +164,7 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
             a ->
                 metadata.setAlternateIdentifier(
                     List.of(new B2instAlternateIdentifier(ALTERNATE_ID_TYPE_OTHER, a))));
+    metadata.setRelatedIdentifier(nullIfEmpty(relatedIdentifiers(source)));
 
     B2instAccess access = new B2instAccess();
     access.setRecord(PUBLIC_ACCESS);
@@ -187,15 +210,70 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
 
   /**
    * The measured quantity is the one instrument fact PIDINST's {@code MeasuredVariable} was meant
-   * to carry, so it is sent as-is. "Measurement technique", "Calibration" and "Last calibrated" are
-   * deliberately not mapped: they have no PIDINST home and are kept on the template purely as
-   * instrument documentation (see DevDocs/adr/0005-measured-variable-narratives.md, superseded).
+   * to carry, so it is sent as-is. Nothing else reaches MeasuredVariable: the narrative mapping of
+   * the other fields was rejected (see DevDocs/adr/0005-measured-variable-narratives.md).
+   * "Measurement technique" and "Calibration" instead become RelatedIdentifier entries (ADR 0007);
+   * only "Last calibrated" is still unmapped, having no PIDINST home at all.
    */
   private List<String> measuredVariables(InstrumentEntity instrument) {
     List<String> measuredVariables = new ArrayList<>();
     mappedFieldData(instrument, FIELD_MEASURED_QUANTITY, FieldType.STRING)
         .ifPresent(measuredVariables::add);
     return measuredVariables;
+  }
+
+  /**
+   * RelatedIdentifier entries for the Measurement technique and Calibration link fields
+   * (RSDEV-1253, ADR 0007): the link target's globalId page as a URL, always related as
+   * IsDescribedBy. Measurement Technique first, Calibration second, matching the ticket's example
+   * payloads.
+   */
+  private List<B2instRelatedIdentifier> relatedIdentifiers(InstrumentEntity instrument) {
+    List<B2instRelatedIdentifier> related = new ArrayList<>();
+    pidinstLinkUrl(instrument, FIELD_MEASUREMENT_TECHNIQUE)
+        .ifPresent(
+            url ->
+                related.add(
+                    new B2instRelatedIdentifier(
+                        RELATED_ID_TYPE_URL,
+                        url,
+                        RELATION_TYPE_IS_DESCRIBED_BY,
+                        RELATED_ID_NAME_MEASUREMENT_TECHNIQUE)));
+    pidinstLinkUrl(instrument, FIELD_CALIBRATION)
+        .ifPresent(
+            url ->
+                related.add(
+                    new B2instRelatedIdentifier(
+                        RELATED_ID_TYPE_URL,
+                        url,
+                        RELATION_TYPE_IS_DESCRIBED_BY,
+                        RELATED_ID_NAME_CALIBRATION)));
+    return related;
+  }
+
+  /**
+   * The registrable address of the record this link field points at, or empty when the field holds
+   * no live link. Guarded like the LandingPage: an address without an http(s) scheme (server URL
+   * unset or scheme-less) is omitted with a WARN rather than registered, because a wrong published
+   * value cannot be corrected and a missing one can.
+   */
+  private Optional<String> pidinstLinkUrl(InstrumentEntity instrument, String canonicalName) {
+    Optional<InventoryLink> link = PidinstFields.mappedLink(instrument, canonicalName);
+    if (link.isEmpty()) {
+      return Optional.empty();
+    }
+    Optional<String> url =
+        InventoryUrls.globalIdPageUrl(properties.getServerUrl(), link.get().getTargetGlobalId())
+            .filter(PidinstFields::isResolvableAddress);
+    if (url.isEmpty()) {
+      log.warn(
+          "Not registering the {} link of {} as a RelatedIdentifier: no usable http(s) address"
+              + " could be built, which means no server URL is configured or it carries no http(s)"
+              + " scheme.",
+          canonicalName,
+          instrument.getGlobalIdentifier());
+    }
+    return url;
   }
 
   private Optional<String> mappedFieldData(
@@ -211,7 +289,35 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
   }
 
   @Override
-  public DataCiteDoi buildDataCiteDoi(ApiInventoryDOI doi) {
-    return doi.convertToDataCiteDoi();
+  @Transactional(propagation = Propagation.MANDATORY)
+  public DataCiteDoi buildDataCiteDoi(ApiInventoryDOI doi, InventoryRecord associatedRecord) {
+    DataCiteDoi dataCiteDoi = doi.convertToDataCiteDoi();
+    if (associatedRecord == null || !associatedRecord.isInstrument()) {
+      return dataCiteDoi;
+    }
+    InstrumentEntity instrument = (InstrumentEntity) associatedRecord;
+    List<DataCiteDoiAttributes.RelatedIdentifier> related = new ArrayList<>();
+    pidinstLinkUrl(instrument, FIELD_MEASUREMENT_TECHNIQUE)
+        .ifPresent(
+            url ->
+                related.add(
+                    new DataCiteDoiAttributes.RelatedIdentifier(
+                        RELATION_TYPE_IS_DESCRIBED_BY,
+                        url,
+                        RELATED_ID_TYPE_URL,
+                        RELATED_ID_NAME_MEASUREMENT_TECHNIQUE)));
+    pidinstLinkUrl(instrument, FIELD_CALIBRATION)
+        .ifPresent(
+            url ->
+                related.add(
+                    new DataCiteDoiAttributes.RelatedIdentifier(
+                        RELATION_TYPE_IS_DESCRIBED_BY,
+                        url,
+                        RELATED_ID_TYPE_URL,
+                        RELATED_ID_NAME_CALIBRATION)));
+    if (!related.isEmpty()) {
+      dataCiteDoi.getAttributes().setRelatedIdentifiers(related);
+    }
+    return dataCiteDoi;
   }
 }

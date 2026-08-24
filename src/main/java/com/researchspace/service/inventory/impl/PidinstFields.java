@@ -3,7 +3,10 @@ package com.researchspace.service.inventory.impl;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.service.inventory.InventoryUrls;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 
@@ -42,6 +45,20 @@ final class PidinstFields {
         .filter(f -> f.getType() == expectedType)
         .filter(f -> f.getName() != null && canonicalName.equalsIgnoreCase(f.getName().trim()))
         .findFirst();
+  }
+
+  /**
+   * The live link held by the record's link field with this canonical name: present only when the
+   * field exists (name matched as in {@link #mappedField}, type LINK), holds a link that is not
+   * soft-deleted, and that link names a target. Anything else reads as an empty field.
+   */
+  static Optional<InventoryLink> mappedLink(InstrumentEntity record, String canonicalName) {
+    return mappedField(record, canonicalName, FieldType.LINK)
+        .filter(InventoryLinkField.class::isInstance)
+        .map(field -> ((InventoryLinkField) field).getLink())
+        .filter(Objects::nonNull)
+        .filter(link -> !link.isDeleted())
+        .filter(link -> StringUtils.isNotBlank(link.getTargetGlobalId()));
   }
 
   /**

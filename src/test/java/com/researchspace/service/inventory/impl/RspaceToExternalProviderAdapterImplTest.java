@@ -12,11 +12,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
+import com.researchspace.b2inst.model.metadata.B2instRelatedIdentifier;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.datacite.model.DataCiteDoi;
+import com.researchspace.datacite.model.DataCiteDoiAttributes;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.field.InventoryDateField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLink;
@@ -24,6 +27,7 @@ import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryTextField;
 import com.researchspace.model.inventory.field.InventoryUriField;
+import com.researchspace.properties.IPropertyHolder;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,10 +43,13 @@ class RspaceToExternalProviderAdapterImplTest {
   private static final String PUBLIC_PAGE = SERVER + "/public/inventory/abc123XYZ_-456789";
 
   private RspaceToExternalProviderAdapterImpl adapter;
+  private IPropertyHolder properties;
 
   @BeforeEach
   void setUp() {
-    adapter = new RspaceToExternalProviderAdapterImpl();
+    properties = mock(IPropertyHolder.class);
+    when(properties.getServerUrl()).thenReturn(SERVER);
+    adapter = new RspaceToExternalProviderAdapterImpl(properties);
   }
 
   private Instrument templateShapedInstrument() {
@@ -475,7 +482,7 @@ class RspaceToExternalProviderAdapterImplTest {
   }
 
   @Test
-  void doesNotMapMeasurementTechniqueCalibrationOrLastCalibrated() {
+  void doesNotMapLastCalibratedAndKeepsTheTwoLinksOutOfMeasuredVariable() {
     Instrument instrument = templateShapedInstrument();
     addField(instrument, linkField("Measurement technique", "IsDocumentedBy", "SD101"));
     addField(instrument, linkField("Calibration", "IsCalibratedBy", "SD202"));
@@ -483,8 +490,11 @@ class RspaceToExternalProviderAdapterImplTest {
 
     B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
 
-    // fully populated, and still nothing: these three fields feed no PIDINST property
+    // The two links reach RelatedIdentifier (ADR 0007), never MeasuredVariable: the narrative
+    // mapping ADR 0005 rejected. "Last calibrated" still feeds no PIDINST property at all.
     assertNull(md.getMeasuredVariable());
+    assertNull(md.getDate());
+    assertEquals(2, md.getRelatedIdentifier().size());
   }
 
   @Test
@@ -563,6 +573,7 @@ class RspaceToExternalProviderAdapterImplTest {
     addField(instrument, stringField("Instrument type", "Weather station"));
     addField(instrument, stringField("Measured quantity", "Air temperature"));
     addField(instrument, uriField("Landing page", "https://lab.example.org/aws-42"));
+    addField(instrument, linkField("Measurement technique", "IsDocumentedBy", "IN114"));
 
     JsonNode md =
         new ObjectMapper().valueToTree(adapter.buildB2instDoi(instrument, null)).at("/metadata");
@@ -575,6 +586,12 @@ class RspaceToExternalProviderAdapterImplTest {
     assertEquals("Weather station", md.at("/InstrumentType/0/instrumentTypeName").asText());
     assertEquals("Air temperature", md.at("/MeasuredVariable/0").asText());
     assertEquals("https://lab.example.org/aws-42", md.at("/LandingPage").asText());
+    assertEquals("URL", md.at("/RelatedIdentifier/0/relatedIdentifierType").asText());
+    assertEquals(
+        SERVER + "/globalId/IN114", md.at("/RelatedIdentifier/0/relatedIdentifierValue").asText());
+    assertEquals("IsDescribedBy", md.at("/RelatedIdentifier/0/relationType").asText());
+    assertEquals(
+        "Measurement Technique", md.at("/RelatedIdentifier/0/relatedIdentifierName").asText());
   }
 
   /**
@@ -596,6 +613,7 @@ class RspaceToExternalProviderAdapterImplTest {
     assertTrue(md.at("/Date").isMissingNode());
     assertTrue(md.at("/MeasuredVariable").isMissingNode());
     assertTrue(md.at("/AlternateIdentifier").isMissingNode());
+    assertTrue(md.at("/RelatedIdentifier").isMissingNode());
     // Name, SchemaVersion and Owner always resolve, and LandingPage does here because a public
     // landing page was supplied, so all four must still be present
     assertFalse(md.at("/Name").isMissingNode());
@@ -618,8 +636,131 @@ class RspaceToExternalProviderAdapterImplTest {
     ApiInventoryDOI doi = new ApiInventoryDOI();
     doi.setTitle("My DOI");
 
-    DataCiteDoi result = adapter.buildDataCiteDoi(doi);
+    DataCiteDoi result = adapter.buildDataCiteDoi(doi, null);
 
     assertEquals("My DOI", result.getAttributes().getTitles().get(0).getTitle());
+  }
+
+  @Test
+  void mapsMeasurementTechniqueAndCalibrationLinksIntoRelatedIdentifier() {
+    Instrument instrument = templateShapedInstrument();
+    addField(instrument, linkField("Measurement technique", "IsDocumentedBy", "IN114"));
+    addField(instrument, linkField("Calibration", "IsCalibratedBy", "IN115"));
+
+    B2instDoi doi = adapter.buildB2instDoi(instrument, PUBLIC_PAGE);
+
+    List<B2instRelatedIdentifier> related = doi.getMetadata().getRelatedIdentifier();
+    assertEquals(2, related.size());
+    // Measurement Technique first, Calibration second, as in the ticket's example payloads.
+    // relationType is always IsDescribedBy, whatever the link stores: PIDINST's vocabulary has
+    // no IsDocumentedBy/IsCalibratedBy (ADR 0007).
+    assertEquals("Measurement Technique", related.get(0).getRelatedIdentifierName());
+    assertEquals("IsDescribedBy", related.get(0).getRelationType());
+    assertEquals("URL", related.get(0).getRelatedIdentifierType());
+    assertEquals(SERVER + "/globalId/IN114", related.get(0).getRelatedIdentifierValue());
+    assertEquals("Calibration", related.get(1).getRelatedIdentifierName());
+    assertEquals("IsDescribedBy", related.get(1).getRelationType());
+    assertEquals("URL", related.get(1).getRelatedIdentifierType());
+    assertEquals(SERVER + "/globalId/IN115", related.get(1).getRelatedIdentifierValue());
+  }
+
+  @Test
+  void relatedIdentifierIsOmittedWhenLinkFieldsAreAbsentOrEmpty() {
+    // no link fields at all
+    assertNull(
+        adapter
+            .buildB2instDoi(templateShapedInstrument(), PUBLIC_PAGE)
+            .getMetadata()
+            .getRelatedIdentifier());
+
+    // fields present but holding no link
+    Instrument instrument = templateShapedInstrument();
+    InventoryLinkField empty = new InventoryLinkField();
+    empty.setName("Measurement technique");
+    addField(instrument, empty);
+    assertNull(
+        adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata().getRelatedIdentifier());
+  }
+
+  /**
+   * The blank target is a reachable state; the soft-deleted link is a defensive guard. A link is
+   * only ever soft-deleted along with its field ({@code
+   * SampleApiManagerImpl.softDeleteLinkOfDeletedLinkField}), and a deleted field is already
+   * excluded by {@code getActiveFields}, so no current flow presents a live field holding a deleted
+   * link. The guard stays because the entry it would produce is registered permanently, and this
+   * pins it against a future change to that lifecycle.
+   */
+  @Test
+  void relatedIdentifierSkipsDeletedLinksAndBlankTargets() {
+    Instrument instrument = templateShapedInstrument();
+    InventoryLinkField deleted = linkField("Measurement technique", "IsDocumentedBy", "IN114");
+    deleted.getLink().setDeleted(true);
+    addField(instrument, deleted);
+    addField(instrument, linkField("Calibration", "IsCalibratedBy", "  "));
+
+    assertNull(
+        adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata().getRelatedIdentifier());
+  }
+
+  @Test
+  void relatedIdentifierIsOmittedWhenNoUsableServerUrlExists() {
+    when(properties.getServerUrl()).thenReturn("rspace.example.com"); // no scheme
+    Instrument instrument = templateShapedInstrument();
+    addField(instrument, linkField("Calibration", "IsCalibratedBy", "IN115"));
+
+    assertNull(
+        adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata().getRelatedIdentifier());
+  }
+
+  @Test
+  void relatedIdentifierFieldNamesMatchCaseInsensitively() {
+    Instrument instrument = templateShapedInstrument();
+    addField(instrument, linkField("  MEASUREMENT TECHNIQUE ", "IsDocumentedBy", "IN114"));
+
+    List<B2instRelatedIdentifier> related =
+        adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata().getRelatedIdentifier();
+    assertEquals(1, related.size());
+    assertEquals("Measurement Technique", related.get(0).getRelatedIdentifierName());
+  }
+
+  @Test
+  void dataCiteDoiCarriesRelatedIdentifiersFromInstrumentLinks() {
+    Instrument instrument = templateShapedInstrument();
+    addField(instrument, linkField("Measurement technique", "IsDocumentedBy", "IN114"));
+    addField(instrument, linkField("Calibration", "IsCalibratedBy", "IN115"));
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.setDoi("10.82316/r6m6-v851");
+    doi.setTitle("Nico-PIDINST");
+
+    DataCiteDoi result = adapter.buildDataCiteDoi(doi, instrument);
+
+    List<DataCiteDoiAttributes.RelatedIdentifier> related =
+        result.getAttributes().getRelatedIdentifiers();
+    assertEquals(2, related.size());
+    assertEquals("IsDescribedBy", related.get(0).getRelationType());
+    assertEquals(SERVER + "/globalId/IN114", related.get(0).getRelatedIdentifier());
+    assertEquals("URL", related.get(0).getRelatedIdentifierType());
+    assertEquals("Measurement Technique", related.get(0).getRelationTypeInformation());
+    assertEquals("IsDescribedBy", related.get(1).getRelationType());
+    assertEquals(SERVER + "/globalId/IN115", related.get(1).getRelatedIdentifier());
+    assertEquals("URL", related.get(1).getRelatedIdentifierType());
+    assertEquals("Calibration", related.get(1).getRelationTypeInformation());
+    // the base conversion still happened
+    assertEquals("Nico-PIDINST", result.getAttributes().getTitles().get(0).getTitle());
+  }
+
+  @Test
+  void dataCiteDoiLeavesRelatedIdentifiersNullForNonInstrumentsAndLinklessInstruments() {
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.setDoi("10.82316/abc");
+    doi.setTitle("a sample");
+
+    assertNull(adapter.buildDataCiteDoi(doi, new Sample()).getAttributes().getRelatedIdentifiers());
+    assertNull(adapter.buildDataCiteDoi(doi, null).getAttributes().getRelatedIdentifiers());
+    assertNull(
+        adapter
+            .buildDataCiteDoi(doi, templateShapedInstrument())
+            .getAttributes()
+            .getRelatedIdentifiers());
   }
 }

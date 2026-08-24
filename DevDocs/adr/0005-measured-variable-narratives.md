@@ -12,6 +12,10 @@ status: superseded
 > `CONTEXT.md`). The reasoning below is kept because the underlying problem is
 > unchanged — PIDINST still has no home for those three facts — so anyone
 > proposing to map them again should start here and read the Considered options.
+>
+> RSDEV-1253 later did map the two link fields, resolving the vocabulary clash by
+> fixing the sent relation to `IsDescribedBy`; see ADR 0007. *Last calibrated* alone
+> remains unmapped.
 
 ## Context
 

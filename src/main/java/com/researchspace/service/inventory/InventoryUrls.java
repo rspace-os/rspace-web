@@ -15,7 +15,8 @@ import org.apache.commons.lang3.StringUtils;
  * this one, and the two halves of that invariant would silently stop matching.
  *
  * <p>Replaces {@code GlobalIdUrls}, whose builder went with the retired auto-fill (ADR 0006 item
- * 3), leaving only a path segment RSpace still has to recognise.
+ * 3), leaving only a path segment RSpace had to recognise. RSDEV-1253 gave that segment a composer
+ * again, for a different purpose: PIDINST related identifiers (ADR 0007).
  */
 public final class InventoryUrls {
 
@@ -23,9 +24,10 @@ public final class InventoryUrls {
   private static final String PUBLIC_PAGE_PATH = "/public/inventory/";
 
   /**
-   * Path segment marking an address as a record's globalId page. RSpace no longer composes these,
-   * since the auto-fill that did is retired, but it must still recognise the ones already written
-   * so they read as an empty field rather than as something a user chose.
+   * Path segment marking an address as a record's globalId page. Composed by {@link
+   * #globalIdPageUrl} for PIDINST related identifiers, and recognised by {@link
+   * #namesGlobalIdPage}, which must still spot the ones the retired auto-fill wrote so they read as
+   * an empty Landing page field rather than as something a user chose.
    */
   private static final String GLOBAL_ID_PATH = "/globalId/";
 
@@ -47,6 +49,25 @@ public final class InventoryUrls {
     // stripEnd, not removeEnd: repeated trailing slashes have to go too, because the recogniser
     // normalises them away and a builder that kept them would stop recognising its own output.
     return Optional.of(StringUtils.stripEnd(trimmed, "/") + PUBLIC_PAGE_PATH + suffix);
+  }
+
+  /**
+   * The globalId page address for a record, used as the RelatedIdentifier value when PIDINST
+   * registration maps the instrument's link fields (RSDEV-1253, ADR 0007). Empty when either part
+   * is blank, for the same reason as {@link #publicLandingPageUrl}: a missing related identifier is
+   * recoverable, a wrong registered one is not.
+   *
+   * <p>Reuses the same path segment {@link #namesGlobalIdPage} recognises, so builder and
+   * recogniser cannot drift apart. This deliberately revives a globalId-page builder after the
+   * auto-fill's one was retired: unlike a LandingPage, a RelatedIdentifier is not required to be
+   * anonymously resolvable, and the linked record generally has no public page to point at.
+   */
+  public static Optional<String> globalIdPageUrl(String serverUrl, String globalId) {
+    String trimmed = StringUtils.trimToEmpty(serverUrl);
+    if (trimmed.isEmpty() || StringUtils.isBlank(globalId)) {
+      return Optional.empty();
+    }
+    return Optional.of(StringUtils.stripEnd(trimmed, "/") + GLOBAL_ID_PATH + globalId.trim());
   }
 
   /**
