@@ -38,6 +38,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   filterButtons,
   presentations,
   renderRows,
+  emptyDescription,
   variant = "card",
   reserveEmptyRows,
   onSelectRuntimeField,
@@ -112,6 +113,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
             selection={selection}
             presentations={presentations}
             renderRows={renderRows}
+            emptyDescription={emptyDescription}
           />
         </div>
       </section>

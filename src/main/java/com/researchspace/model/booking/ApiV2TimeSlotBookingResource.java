@@ -43,6 +43,12 @@ public final class ApiV2TimeSlotBookingResource {
                       CollectionFieldTypes.text(255),
                       TimeSlotBooking::getTimeZone)
                   .withQueryCapabilities(false, false),
+              Field.<TimeSlotBooking, Long>readOnly(
+                      "requesterId",
+                      "requester.id",
+                      CollectionFieldTypes.longNumber(),
+                      booking -> booking.getRequester().getId())
+                  .withQueryCapabilities(true, false),
               Field.writable(
                       "start",
                       "startTime",

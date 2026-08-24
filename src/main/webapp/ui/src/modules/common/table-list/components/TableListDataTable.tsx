@@ -204,6 +204,7 @@ type TableListDataTableProps<TDocument extends Record<string, unknown>> = Pick<
   | "uiColumns"
   | "presentations"
   | "renderRows"
+  | "emptyDescription"
 > & {
   collectionLabel: string;
 };
@@ -223,6 +224,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   uiColumns = noUiColumns,
   presentations,
   renderRows,
+  emptyDescription,
 }: TableListDataTableProps<TDocument>) {
   if (selection && (!Number.isFinite(selection.maximumCount) || selection.maximumCount < 1)) {
     throw new Error("Table-list selection maximumCount must be positive");
@@ -571,7 +573,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
             <Empty className="rounded-sm border-0 p-6">
               <EmptyHeader>
                 <EmptyTitle>{t("tableList.empty.title")}</EmptyTitle>
-                <EmptyDescription>{t("tableList.empty.description")}</EmptyDescription>
+                <EmptyDescription>{emptyDescription ?? t("tableList.empty.description")}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           ) : (
@@ -734,7 +736,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
                     <Empty className="rounded-sm border-0 p-6">
                       <EmptyHeader>
                         <EmptyTitle>{t("tableList.empty.title")}</EmptyTitle>
-                        <EmptyDescription>{t("tableList.empty.description")}</EmptyDescription>
+                        <EmptyDescription>{emptyDescription ?? t("tableList.empty.description")}</EmptyDescription>
                       </EmptyHeader>
                     </Empty>
                   </TableCell>
@@ -764,7 +766,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
               <Empty className="rounded-sm border-0 p-6">
                 <EmptyHeader>
                   <EmptyTitle>{t("tableList.empty.title")}</EmptyTitle>
-                  <EmptyDescription>{t("tableList.empty.description")}</EmptyDescription>
+                  <EmptyDescription>{emptyDescription ?? t("tableList.empty.description")}</EmptyDescription>
                 </EmptyHeader>
               </Empty>
             </section>

@@ -1,12 +1,12 @@
-import { type AnyRoute, createRoute, Link, Outlet } from "@tanstack/react-router";
+import { type AnyRoute, createRoute, Link, linkOptions, Outlet } from "@tanstack/react-router";
 import {
   CalendarIcon,
   CalendarPlusIcon,
   CheckSquareIcon,
   ChevronRightIcon,
   LayoutDashboardIcon,
+  LibraryBigIcon,
   ListIcon,
-  type LucideIcon,
   SettingsIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -28,21 +28,36 @@ import { localToday } from "./all-bookable-items/calendarDate";
 
 const items = [
   { key: "dashboard", icon: LayoutDashboardIcon },
-  { key: "calendar", icon: CalendarIcon, to: "/booking/calendar" },
-  { key: "addBooking", icon: CalendarPlusIcon, to: "/booking/calendar/bookings/add" },
-  { key: "myBookings", icon: ListIcon },
+  {
+    key: "calendar",
+    icon: CalendarIcon,
+    link: <Link {...linkOptions({ to: "/booking/calendar", search: () => ({ date: localToday() }) })} />,
+  },
+  {
+    key: "allItems",
+    icon: LibraryBigIcon,
+    link: <Link {...linkOptions({ to: "/booking/all-items", search: () => ({ date: localToday() }) })} />,
+  },
+  {
+    key: "addBooking",
+    icon: CalendarPlusIcon,
+    link: <Link {...linkOptions({ to: "/booking/calendar/bookings/add", search: () => ({ date: localToday() }) })} />,
+  },
+  {
+    key: "myBookings",
+    icon: ListIcon,
+    link: <Link {...linkOptions({ to: "/booking/my-bookings", search: { period: "upcoming" } })} />,
+  },
   {
     key: "administration",
     icon: SettingsIcon,
-    children: [{ key: "settings" }, { key: "bookableItems", to: "/booking/config/bookable-items" }],
+    children: [
+      { key: "settings" },
+      { key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> },
+    ],
   },
   { key: "approvalQueue", icon: CheckSquareIcon },
-] as const satisfies ReadonlyArray<{
-  key: string;
-  icon: LucideIcon;
-  to?: string;
-  children?: ReadonlyArray<{ key: string; to?: string }>;
-}>;
+] as const;
 
 /** Content for the shared AppShell sidebar. The shell owns the surrounding layout. */
 export function BookingSidebar() {
@@ -51,6 +66,7 @@ export function BookingSidebar() {
   const labels = {
     dashboard: t("sidebar.dashboard"),
     calendar: t("sidebar.calendar"),
+    allItems: t("sidebar.allItems"),
     addBooking: t("sidebar.addBooking"),
     myBookings: t("sidebar.myBookings"),
     administration: t("sidebar.administration"),
@@ -80,9 +96,7 @@ export function BookingSidebar() {
                     {item.children.map((child) => (
                       <SidebarMenuSubItem key={child.key}>
                         {/* an <a> without href has no role, so unrouted sub-items render as buttons */}
-                        <SidebarMenuSubButton
-                          render={"to" in child ? <Link to={child.to} /> : <button type="button" />}
-                        >
+                        <SidebarMenuSubButton render={"link" in child ? child.link : <button type="button" />}>
                           <span>{labels[child.key]}</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
@@ -94,9 +108,7 @@ export function BookingSidebar() {
               <SidebarMenuItem key={item.key}>
                 <SidebarMenuButton
                   tooltip={labels[item.key]}
-                  render={
-                    "to" in item ? <Link to={item.to} search={{ date: localToday() }} /> : <button type="button" />
-                  }
+                  render={"link" in item ? item.link : <button type="button" />}
                 >
                   <item.icon />
                   <span>{labels[item.key]}</span>

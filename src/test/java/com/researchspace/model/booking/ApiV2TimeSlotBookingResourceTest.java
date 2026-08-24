@@ -11,6 +11,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
+import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.RsqlFilterParser;
@@ -48,6 +49,11 @@ class ApiV2TimeSlotBookingResourceTest {
         () ->
             new RsqlFilterParser(ApiV2TimeSlotBookingResource.DESCRIPTION)
                 .parse("purpose==secret"));
+
+    var requesterId = ApiV2TimeSlotBookingResource.DESCRIPTION.requireField("requesterId");
+    assertFalse(requesterId.sortable());
+    assertEquals(CollectionFieldTypes.longNumber().operators(), requesterId.operators());
+    new RsqlFilterParser(ApiV2TimeSlotBookingResource.DESCRIPTION).parse("requesterId==42");
   }
 
   @Test

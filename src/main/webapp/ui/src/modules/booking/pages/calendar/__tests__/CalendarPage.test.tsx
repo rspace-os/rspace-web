@@ -1,131 +1,149 @@
 import "@/__tests__/__mocks__/matchMedia";
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import {
-  bookingConfigurationOpenApi,
-  bookingSummary,
+  busyBooking,
   collectionResponse,
-  configuration,
+  currentUser,
+  otherBooking,
+  ownBooking,
   renderCalendar,
-  secondConfiguration,
 } from "./calendarTestHarness";
 
-const fullDetail = {
-  ...bookingSummary,
-  start: "2026-08-16T21:30:00Z",
-  end: "2026-08-17T00:30:00Z",
-  privacy: "full",
-  purpose: "Image plate 4",
-  bookedBy: "Ada Lovelace (ada)",
-  canEdit: true,
-};
-
-const busyDetail = {
-  ...bookingSummary,
-  id: 42,
-  start: "2026-08-17T10:00:00Z",
-  end: "2026-08-17T11:00:00Z",
-  privacy: "busy",
-  purpose: null,
-  bookedBy: null,
-  canEdit: false,
-};
+const bookingFields =
+  "id,target,requesterId,timezone,start,end,state,purpose,bookedBy,privacy,canEdit,createdAt,updatedAt";
 
 describe("CalendarPage", () => {
-  it("keeps the list when a row opens and renders private-safe detail, agenda, and edit actions", async () => {
-    const detailRequests: URL[] = [];
+  it("renders the prototype calendar with search, privacy, editing, and personal filtering", async () => {
+    const requests: URL[] = [];
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/openapi.json", () => HttpResponse.json(bookingConfigurationOpenApi)),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionResponse([configuration]))),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/bookings", ({ request }) => {
-        const url = new URL(request.url);
-        if (url.searchParams.get("fields[bookings]")?.includes("privacy")) {
-          detailRequests.push(url);
-          return HttpResponse.json(collectionResponse([fullDetail, busyDetail]));
-        }
-        return HttpResponse.json(collectionResponse([bookingSummary]));
+        requests.push(new URL(request.url));
+        return HttpResponse.json(collectionResponse([ownBooking, otherBooking, busyBooking]));
       }),
     );
-    const { router } = await renderCalendar();
-    const row = await screen.findByRole("row", { name: /Confocal microscope/ });
+    const user = userEvent.setup();
+    await renderCalendar();
 
-    fireEvent.click(within(row).getByRole("button", { name: /Confocal microscope/ }));
-
-    await waitFor(() => expect(router.state.location.search).toMatchObject({ target: "IN123" }));
-    expect(await screen.findByRole("region", { name: "Bookings for Confocal microscope" })).toBeVisible();
-    expect(screen.getByRole("table", { name: /Bookable items/ })).toBeVisible();
-    expect(screen.getAllByText("Ada Lovelace (ada)")).not.toHaveLength(0);
-    expect(screen.getAllByText("Image plate 4")).not.toHaveLength(0);
-    expect(screen.getAllByText("Busy")).not.toHaveLength(0);
+    expect(await screen.findByRole("heading", { name: "Calendar" })).toBeVisible();
+    expect(await screen.findByRole("region", { name: "Time grid" })).toBeVisible();
+    expect(screen.getByRole("article", { name: /Confocal microscope · Ada Lovelace/ })).toBeVisible();
+    expect(screen.getByRole("article", { name: /^Busy,/ })).toBeVisible();
     expect(screen.queryByText("private server detail")).not.toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: "Edit" })).toHaveLength(1);
+    expect(requests[0].searchParams.get("fields[bookings]")).toBe(bookingFields);
+    expect(requests[0].searchParams.get("where")).toContain("state==CONFIRMED");
+
+    const search = screen.getByRole("textbox", { name: "Search Calendar" });
+    await user.type(search, "Grace");
+    expect(screen.queryByRole("article", { name: /Confocal microscope/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("article", { name: /Electron microscope · Grace Hopper/ })).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Clear search" }));
+    await user.click(screen.getByRole("button", { name: /My calendar/ }));
+    expect(screen.getByRole("article", { name: /Confocal microscope · Ada Lovelace/ })).toBeVisible();
+    expect(screen.queryByRole("article", { name: /Electron microscope · Grace Hopper/ })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Show details for Confocal microscope/ }));
     expect(screen.getByRole("link", { name: "Edit" })).toHaveAttribute(
       "href",
       "/booking/calendar/bookings/41?date=2026-08-17&target=IN123",
     );
-    expect(detailRequests).toHaveLength(1);
-    expect(detailRequests[0].searchParams.get("fields[bookings]")).toBe(
-      "id,target,timezone,start,end,state,privacy,purpose,bookedBy,canEdit",
-    );
-    expect(router.state.location.search).toMatchObject({ date: "2026-08-17", target: "IN123" });
   });
 
-  it("uses typed date controls and updates query bounds", async () => {
-    const user = userEvent.setup();
-    const availabilityWhere: string[] = [];
+  it("switches layouts and periods while keeping the date in route state", async () => {
+    const requests: URL[] = [];
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/openapi.json", () => HttpResponse.json(bookingConfigurationOpenApi)),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionResponse([configuration]))),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/bookings", ({ request }) => {
-        const url = new URL(request.url);
-        if (!url.searchParams.get("fields[bookings]")?.includes("privacy")) {
-          availabilityWhere.push(url.searchParams.get("where") ?? "");
-        }
-        return HttpResponse.json(collectionResponse([]));
+        requests.push(new URL(request.url));
+        return HttpResponse.json(collectionResponse([ownBooking, otherBooking]));
       }),
     );
+    const user = userEvent.setup();
     const { router } = await renderCalendar();
-    await screen.findByText("Confocal microscope");
+    await screen.findByRole("heading", { name: "Calendar" });
+    await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ });
+
+    await user.click(screen.getByRole("button", { name: "Resources" }));
+    expect(screen.getByRole("region", { name: "Resources" })).toBeVisible();
+    expect(screen.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Day" }));
+    await waitFor(() => expect(requests.length).toBeGreaterThan(1));
+    expect(screen.getAllByTestId("day-timeline-scroller")).toHaveLength(2);
+
+    await user.click(screen.getByRole("button", { name: "Agenda" }));
+    expect(screen.getByRole("region", { name: "Booking agenda" })).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "Next day" }));
-
     await waitFor(() => expect(router.state.location.search).toMatchObject({ date: "2026-08-18" }));
-    await waitFor(() => expect(availabilityWhere).toHaveLength(2));
-    expect(availabilityWhere[1]).toContain("start<2026-08-18T22:00:00Z");
-    expect(availabilityWhere[1]).toContain("end>2026-08-17T22:00:00Z");
-
-    await user.click(screen.getByRole("button", { name: "Previous day" }));
-    await waitFor(() => expect(router.state.location.search).toMatchObject({ date: "2026-08-17" }));
+    await waitFor(() => expect(requests.length).toBeGreaterThan(2));
   });
 
-  it("resolves selected detail outside the visible table page without changing the page", async () => {
-    const configurationWhere: string[] = [];
+  it("offers a retry when booking events cannot be loaded", async () => {
+    let requests = 0;
     server.use(
       oauthTokenHandler(),
-      http.get("/api/v2/openapi.json", () => HttpResponse.json(bookingConfigurationOpenApi)),
-      http.get("/api/v2/booking-configurations", ({ request }) => {
-        const where = new URL(request.url).searchParams.get("where") ?? "";
-        configurationWhere.push(where);
-        return HttpResponse.json(
-          collectionResponse(where.includes("target==IN123") ? [configuration] : [secondConfiguration]),
-        );
-      }),
-      http.get("/api/v2/bookings", ({ request }) => {
-        const fields = new URL(request.url).searchParams.get("fields[bookings]") ?? "";
-        return HttpResponse.json(collectionResponse(fields.includes("privacy") ? [fullDetail] : []));
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/bookings", () => {
+        requests += 1;
+        return requests === 1
+          ? new HttpResponse(null, { status: 503 })
+          : HttpResponse.json(collectionResponse([ownBooking]));
       }),
     );
-    await renderCalendar("/booking/calendar?date=2026-08-17&target=IN123");
+    const user = userEvent.setup();
+    await renderCalendar();
 
-    expect(await screen.findByText("Electron microscope")).toBeVisible();
-    expect(await screen.findByRole("region", { name: "Bookings for Confocal microscope" })).toBeVisible();
-    expect(screen.getByText("Electron microscope")).toBeVisible();
-    expect(configurationWhere).toEqual(expect.arrayContaining([expect.stringContaining("target==IN123")]));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Booking events are unavailable.");
+    expect(screen.queryByText("No records found")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ })).toBeVisible();
+    expect(requests).toBe(2);
+  });
+
+  it("keeps calendar controls when search has no matches", async () => {
+    server.use(
+      oauthTokenHandler(),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([ownBooking]))),
+    );
+    const user = userEvent.setup();
+    await renderCalendar();
+    await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ });
+
+    await user.type(screen.getByRole("textbox", { name: "Search Calendar" }), "no matching booking");
+
+    expect(screen.getByLabelText("Date")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Time grid" })).toBeVisible();
+    expect(screen.getByText("No records found")).toBeVisible();
+  });
+
+  it("does not offer the unsupported bookable-item relationship filter", async () => {
+    server.use(
+      oauthTokenHandler(),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([ownBooking]))),
+    );
+    const user = userEvent.setup();
+    await renderCalendar();
+    await screen.findByRole("article", { name: /Confocal microscope · Ada Lovelace/ });
+
+    await user.click(screen.getByRole("button", { name: "Filters, none applied" }));
+    await user.click(screen.getByRole("button", { name: "Add filter" }));
+    const field = screen.getByRole("combobox", { name: "Field for filter 1" });
+    expect(field).toHaveValue("Purpose");
+    await user.clear(field);
+    await user.type(field, "Bookable");
+
+    expect(await screen.findByText("No matching field.")).toBeVisible();
+    expect(screen.queryByRole("option", { name: "Bookable item" })).not.toBeInTheDocument();
   });
 });

@@ -19,7 +19,9 @@ import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
+import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.inventory.Instrument;
 import io.swagger.v3.core.util.Json31;
@@ -41,6 +43,7 @@ class ApiV2OpenApiGeneratorTest {
     ResourceOperations<ScheduledMaintenance, Long> maintenanceOperations = operationsMock();
     ResourceOperations<User, Long> userOperations = operationsMock();
     ResourceOperations<BookingConfiguration, Long> bookingOperations = operationsMock();
+    ResourceOperations<TimeSlotBooking, Long> timeSlotBookingOperations = operationsMock();
     ApiV2ResourceSpec<ScheduledMaintenance, Long> maintenance =
         new ApiV2ResourceSpec<>(
             ApiV2MaintenanceResource.DESCRIPTION,
@@ -78,10 +81,17 @@ class ApiV2OpenApiGeneratorTest {
             Long::valueOf,
             "create-error",
             "update-error");
-    ApiV2ResourceSpec<BookingConfiguration, Long> bookings =
+    ApiV2ResourceSpec<BookingConfiguration, Long> bookingConfigurations =
         new ApiV2ResourceSpec<>(
             ApiV2BookingConfigurationResource.DESCRIPTION,
             bookingOperations,
+            Long::valueOf,
+            "create-error",
+            "update-error");
+    ApiV2ResourceSpec<TimeSlotBooking, Long> timeSlotBookings =
+        new ApiV2ResourceSpec<>(
+            ApiV2TimeSlotBookingResource.DESCRIPTION,
+            timeSlotBookingOperations,
             Long::valueOf,
             "create-error",
             "update-error");
@@ -90,7 +100,9 @@ class ApiV2OpenApiGeneratorTest {
             ApiV2InstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
     generator =
         new ApiV2OpenApiGenerator(
-            new ApiV2ResourceCatalog(List.of(maintenance, users, bookings), List.of(instruments)),
+            new ApiV2ResourceCatalog(
+                List.of(maintenance, users, bookingConfigurations, timeSlotBookings),
+                List.of(instruments)),
             "Test API",
             "2.0.0");
   }
@@ -250,6 +262,29 @@ class ApiV2OpenApiGeneratorTest {
     assertFalse(bookingRelationshipFields.containsKey("target.value"));
     assertFalse(bookingRelationshipFields.containsKey("target.relationTo"));
 
+    Map<String, Object> timeSlotBookingList =
+        objectMap(objectMap(paths.get("/api/v2/bookings")).get("get"));
+    List<Map<String, Object>> timeSlotBookingParameters =
+        objectMapList(timeSlotBookingList.get("parameters"));
+    Map<String, Object> timeSlotBookingWhere =
+        timeSlotBookingParameters.stream()
+            .filter(parameter -> parameter.get("name").equals("where"))
+            .findFirst()
+            .orElseThrow();
+    Map<String, Object> timeSlotBookingSelectors =
+        objectMap(objectMap(timeSlotBookingWhere.get("x-rspace-filter")).get("selectors"));
+    Map<String, Object> requesterId = objectMap(timeSlotBookingSelectors.get("requesterId"));
+    assertEquals("integer", objectMap(requesterId.get("schema")).get("type"));
+    assertTrue(((List<?>) requesterId.get("operators")).contains("=="));
+    Map<String, Object> timeSlotBookingSort =
+        timeSlotBookingParameters.stream()
+            .filter(parameter -> parameter.get("name").equals("sort"))
+            .findFirst()
+            .orElseThrow();
+    assertFalse(
+        ((List<?>) objectMap(timeSlotBookingSort.get("x-rspace-sort")).get("fields"))
+            .contains("requesterId"));
+
     Map<String, Object> schemas = schemas(document);
     Map<String, Object> readProperties =
         objectMap(objectMap(schemas.get("MaintenancesRead")).get("properties"));
@@ -315,6 +350,10 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> instrumentReferenceProperties =
         objectMap(objectMap(schemas.get("InstrumentsReference")).get("properties"));
     assertEquals("integer", objectMap(instrumentReferenceProperties.get("value")).get("type"));
+
+    Map<String, Object> timeSlotBookingReadProperties =
+        objectMap(objectMap(schemas.get("BookingsRead")).get("properties"));
+    assertTrue(timeSlotBookingReadProperties.containsKey("requesterId"));
 
     Map<String, Object> bookingUpdateProperties =
         objectMap(objectMap(schemas.get("BookingConfigurationsUpdate")).get("properties"));

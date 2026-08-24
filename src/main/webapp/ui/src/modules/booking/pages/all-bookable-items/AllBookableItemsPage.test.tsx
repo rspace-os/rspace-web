@@ -33,7 +33,7 @@ function collectionPage(docs: readonly unknown[]) {
   return { docs, totalDocs: docs.length, totalPages: docs.length === 0 ? 0 : 1, page: 1 };
 }
 
-async function renderPage(initialEntry = "/booking/calendar?date=2026-08-17") {
+async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rootRoute = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
@@ -140,7 +140,7 @@ describe("AllBookableItemsPage", () => {
         }),
       ),
     );
-    await renderPage("/booking/calendar?date=2026-08-17&availability=available-now");
+    await renderPage("/booking/all-items?date=2026-08-17&availability=available-now");
 
     const table = await screen.findByRole("table", { name: "All Bookable Items table" });
     const confocal = await within(table).findByRole("img", { name: "Confocal microscope availability" });
@@ -166,7 +166,7 @@ describe("AllBookableItemsPage", () => {
       ...bookableItemsHandlers(() => undefined),
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
     );
-    const { container, unmount } = await renderPage("/booking/calendar?date=2026-08-17&availability=available-now");
+    const { container, unmount } = await renderPage("/booking/all-items?date=2026-08-17&availability=available-now");
 
     expect(await screen.findByRole("status")).toHaveTextContent("Finding bookable items…");
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
@@ -194,7 +194,7 @@ describe("AllBookableItemsPage", () => {
       ...bookableItemsHandlers(() => undefined),
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
     );
-    const { router } = await renderPage("/booking/calendar?date=2026-08-17&availability=free-later-today");
+    const { router } = await renderPage("/booking/all-items?date=2026-08-17&availability=free-later-today");
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not find available items.");
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));

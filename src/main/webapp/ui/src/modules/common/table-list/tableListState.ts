@@ -204,6 +204,8 @@ export type TableListProps<TDocument extends Record<string, unknown>> = {
   presentations?: TableListPresentations;
   /** Replace the built-in table/card result area with rows from the same filtered, sorted, and paginated row model. */
   renderRows?: (rows: readonly TDocument[]) => ReactNode;
+  /** Replace the default empty-state guidance while preserving TableList controls. */
+  emptyDescription?: ReactNode;
   variant?: TableListVariant;
   /** Reserve the height of ten data rows for the empty state. Set this to `false` for a compact display. */
   reserveEmptyRows?: boolean;

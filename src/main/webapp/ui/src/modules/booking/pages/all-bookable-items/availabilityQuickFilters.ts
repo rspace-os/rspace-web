@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 import * as v from "valibot";
 import {
   type AvailabilityInterval,
@@ -7,6 +6,7 @@ import {
   classifyCurrentDayAvailability,
 } from "@/modules/booking/domain/availability";
 import { currentWallClock, type ZonedDayBounds, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { useAlignedMinute } from "@/modules/booking/hooks/useAlignedMinute";
 import { viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
 import { type BookingConfiguration, BookingConfigurationSchema } from "../bookable-items/bookingConfiguration";
 import { loadDatedCalendarAvailability } from "../calendar/calendarAvailability";
@@ -34,28 +34,6 @@ export class AvailabilityCandidateLimitError extends Error {
 }
 
 const now = () => new Date();
-const alignedMinute = (date: Date) => Math.floor(date.getTime() / 60_000) * 60_000;
-
-export function useAlignedMinute(clock: () => Date = now): number {
-  const [minute, setMinute] = useState(() => alignedMinute(clock()));
-  useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-    const schedule = () => {
-      const current = clock();
-      timeout = setTimeout(
-        () => {
-          setMinute(alignedMinute(clock()));
-          schedule();
-        },
-        60_000 - (current.getTime() % 60_000),
-      );
-    };
-    schedule();
-    return () => clearTimeout(timeout);
-  }, [clock]);
-  return minute;
-}
-
 async function fetchCandidatePage(page: number, token: string, signal: AbortSignal) {
   const parameters = new URLSearchParams({
     where: "enabled==true;target.deleted==false",

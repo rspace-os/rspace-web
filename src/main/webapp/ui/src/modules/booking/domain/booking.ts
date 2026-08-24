@@ -1,7 +1,7 @@
 import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 
-const TargetSchema = v.object({
+const BookingTargetSchema = v.object({
   relationTo: v.literal("instruments"),
   value: v.object({ id: v.number(), name: v.string(), deleted: v.boolean() }),
   globalId: v.string(),
@@ -9,7 +9,7 @@ const TargetSchema = v.object({
 
 const BookingIdentitySchema = {
   id: v.number(),
-  target: TargetSchema,
+  target: BookingTargetSchema,
   timezone: v.string(),
   start: v.string(),
   end: v.string(),
@@ -39,8 +39,20 @@ export const BookingSchema = v.variant("privacy", [
   }),
 ]);
 
+export const BookingListDocumentSchema = v.object({
+  ...BookingIdentitySchema,
+  requesterId: v.number(),
+  purpose: v.nullable(v.string()),
+  bookedBy: v.nullable(v.string()),
+  privacy: v.picklist(["full", "busy"]),
+  canEdit: v.boolean(),
+  createdAt: v.string(),
+  updatedAt: v.string(),
+});
+
 export type BookingSummary = v.InferOutput<typeof BookingSummarySchema>;
 export type Booking = v.InferOutput<typeof BookingSchema>;
+export type BookingListDocument = v.InferOutput<typeof BookingListDocumentSchema>;
 
 export const BookingCreateSchema = v.object({
   target: v.object({ relationTo: v.literal("instruments"), value: v.number() }),

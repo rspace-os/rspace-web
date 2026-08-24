@@ -15,7 +15,7 @@ async function matchedSearch(path: string) {
 
 describe("All Bookable Items route", () => {
   it.each(["available-now", "free-later-today"])('keeps the valid availability mode "%s"', async (availability) => {
-    await expect(matchedSearch(`/booking/calendar?date=2026-08-17&availability=${availability}`)).resolves.toEqual({
+    await expect(matchedSearch(`/booking/all-items?date=2026-08-17&availability=${availability}`)).resolves.toEqual({
       date: "2026-08-17",
       availability,
     });
