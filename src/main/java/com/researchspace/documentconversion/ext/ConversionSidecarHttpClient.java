@@ -4,7 +4,12 @@ import com.researchspace.documentconversion.spi.ConversionResult;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
+import java.net.NoRouteToHostException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.net.UnknownHostException;
+import java.net.http.HttpTimeoutException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -17,7 +22,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ConnectionRequestTimeoutException;
 import org.apache.hc.core5.util.Timeout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -29,6 +37,7 @@ import org.springframework.web.client.RestClient;
 public final class ConversionSidecarHttpClient {
 
   private static final String ERROR_HEADER = "X-RSpace-Conversion-Error";
+  private static final Logger LOG = LoggerFactory.getLogger(ConversionSidecarHttpClient.class);
 
   @FunctionalInterface
   interface OutputValidator {
@@ -155,7 +164,9 @@ public final class ConversionSidecarHttpClient {
       return result;
     } catch (Exception e) {
       deleteEmptyOutput(output);
-      return new ConversionResult(errorForException(e).code());
+      DocumentConversionError error = errorForException(e);
+      LOG.warn("Conversion sidecar request to {} failed with {}", route, error.code(), e);
+      return new ConversionResult(error.code());
     } finally {
       FileUtils.deleteQuietly(partial.toFile());
     }
@@ -198,11 +209,21 @@ public final class ConversionSidecarHttpClient {
     };
   }
 
-  private static DocumentConversionError errorForException(Exception exception) {
+  static DocumentConversionError errorForException(Exception exception) {
     for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
       var logicalError = DocumentConversionError.fromCode(cause.getMessage());
       if (logicalError.isPresent()) {
         return logicalError.get();
+      }
+      if (cause instanceof SocketTimeoutException
+          || cause instanceof HttpTimeoutException
+          || cause instanceof ConnectionRequestTimeoutException) {
+        return DocumentConversionError.TIMEOUT;
+      }
+      if (cause instanceof ConnectException
+          || cause instanceof NoRouteToHostException
+          || cause instanceof UnknownHostException) {
+        return DocumentConversionError.SERVICE_UNAVAILABLE;
       }
     }
     return DocumentConversionError.FAILED;
