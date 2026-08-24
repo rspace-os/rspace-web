@@ -29,7 +29,7 @@ import useDebounce from "../../../hooks/ui/useDebounce";
 import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFromGlobalId";
 import RsSet from "../../../util/set";
 import { DataGridColumn } from "../../../util/table";
-import BarcodeScanner from "../../components/BarcodeScanner/AllBarcodeScanner";
+import BarcodeScanner from "../../components/BarcodeScanner/BarcodeScanner";
 import { type Identifier, useIdentifiersListing, useIdentifiersRefresh } from "../../useIdentifiers";
 
 declare module "@mui/x-data-grid" {
@@ -182,7 +182,7 @@ function Toolbar({
             setSearchTerm(result.rawValue);
           }}
           onClose={() => setScannerAnchorEl(null)}
-          buttonPrefix={t("igsnTable.searchButtonPrefix")}
+          submitOnScan
         />
       </Panel>
       <MenuWithSelectedState

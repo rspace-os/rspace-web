@@ -400,7 +400,7 @@ function FieldCard<
                       ],
                     });
                   }}
-                  buttonPrefix={t("common:actions.save")}
+                  submitOnScan
                 />
               </Popover>
               <CustomTooltip
