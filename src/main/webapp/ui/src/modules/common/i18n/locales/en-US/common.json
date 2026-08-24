@@ -66,6 +66,7 @@
     "none": "None",
     "ok": "OK",
     "open": "Open",
+    "previous": "Previous",
     "publish": "Publish",
     "remove": "Remove",
     "republish": "Republish",
@@ -99,9 +100,11 @@
     "warningTitle": "Could not authenticate via API"
   },
   "apiDocs": {
+    "pageTitle": "RSpace API Documentation | ResearchSpace",
     "sources": {
       "eln": "RSpace ELN",
-      "inventory": "RSpace Inventory"
+      "inventory": "RSpace Inventory",
+      "v2": "RSpace v2 (beta)"
     }
   },
   "apiErrors": {
@@ -143,6 +146,7 @@
     "dialogHeader": "dialog header",
     "errorLoadingDetails": "Error loading your details",
     "goTo": "Go to...",
+    "logIn": "Log In",
     "logOut": "Log Out",
     "mainLinks": "main links",
     "mainNavigation": "Main Navigation",
@@ -157,6 +161,10 @@
     "published": "Published",
     "release": "Release",
     "sections": {
+      "booking": {
+        "subheader": "Reserve instruments and equipment",
+        "title": "Booking"
+      },
       "gallery": {
         "subheader": "Your files in RSpace and connected filestores",
         "title": "Gallery"
@@ -177,6 +185,38 @@
         "subheader": "Notebooks and documents",
         "title": "Workspace"
       }
+    },
+    "switchSection": "Switch section",
+    "userIdentity": "{fullName} ({username})"
+  },
+  "collectionForm": {
+    "actions": {
+      "clear": "Clear {field}",
+      "openOptions": "Show options for {field}"
+    },
+    "examples": {
+      "fields": {
+        "collaborators": "Collaborators",
+        "enabled": "Enabled",
+        "id": "ID",
+        "modified": "Modified",
+        "notes": "Notes",
+        "owner": "Owner",
+        "score": "Score",
+        "status": "Status",
+        "title": "Title",
+        "titleDescription": "The human-readable name of the record."
+      },
+      "inventoryItem": "Inventory item",
+      "record": "Research record",
+      "recordDetails": "Record details",
+      "records": "Research records",
+      "relationships": "Relationships"
+    },
+    "relationship": {
+      "empty": "No options found",
+      "remove": "Remove {item} from {field}",
+      "search": "Search {field}"
     }
   },
   "confirmationDialog": {
@@ -296,6 +336,7 @@
     "zenodo": "8i37k8kjqz-zenodo-integration"
   },
   "helpDocs": {
+    "brand": "Support",
     "chatWithUs": "Chat with us",
     "documentation": "RSpace Documentation",
     "openHelp": "Open Help",
@@ -371,6 +412,23 @@
     "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
   },
   "loading": "Loading",
+  "maintenanceMode": {
+    "description": "Scheduled maintenance is in progress now. Please try again later.",
+    "heading": "Maintenance mode",
+    "recheckNotice": "This page rechecks automatically every 30 seconds, or you can <internalLink to=\"/login\">check the status now</internalLink>."
+  },
+  "notFound": {
+    "message": "Page not found"
+  },
+  "pageTitles": {
+    "withProduct": "{pageTitle} | RSpace"
+  },
+  "pagination": {
+    "label": "Pagination",
+    "morePages": "More pages",
+    "nextPage": "Go to next page",
+    "previousPage": "Go to previous page"
+  },
   "profile": {
     "accountActivity": {
       "action": "Action",
@@ -619,6 +677,18 @@
       "singular": "Record"
     }
   },
+  "relationshipPicker": {
+    "availabilityChecking": "Checking whether this item can be added.",
+    "availabilityFailed": "RSpace could not check this item. Search again.",
+    "clear": "Clear the selection",
+    "empty": "No matching records found",
+    "enterSearchTerm": "Enter a search term",
+    "failed": "Search is unavailable. Try again.",
+    "openOptions": "Show matching records",
+    "openRecord": "Open record {globalId}",
+    "remove": "Remove {item}",
+    "search": "Search by name or global ID"
+  },
   "search": {
     "clearTooltip": "Clear search",
     "placeholder": "Search..."
@@ -691,6 +761,11 @@
     "titleSingle": "Share <strong>{name}</strong>",
     "unknownFolder": "Unknown folder",
     "updatedSuccessfully": "Shares updated successfully."
+  },
+  "sidebar": {
+    "description": "Displays the mobile sidebar.",
+    "title": "Sidebar",
+    "toggle": "Toggle sidebar"
   },
   "stoichiometry": {
     "addReagent": {
@@ -934,7 +1009,8 @@
   "values": {
     "none": "None",
     "noValue": "No Value",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "unknownItem": "Unknown item"
   },
   "versionLockPicker": {
     "columns": {
