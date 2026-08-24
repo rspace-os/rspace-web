@@ -78,6 +78,8 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from DMPUser");
     jdbcTemplate.update("delete from ClustermarketBookings");
     jdbcTemplate.update("delete from ClustermarketEquipment");
+    jdbcTemplate.update("delete from FeatureFlagUserOverride");
+    jdbcTemplate.update("delete from FeatureFlagBaseline");
 
     jdbcTemplate.update("delete from OAuthApp where id > 0");
 
