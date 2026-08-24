@@ -89,9 +89,8 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   public StockDeductionResult deductStock(long stoichiometryId, List<Long> linkIds, User user) {
     StockDeductionResult result = new StockDeductionResult();
     result.setStoichiometryId(stoichiometryId);
-    // dedupe so a repeated id deducts its amount once instead of draining the stock twice; this is
-    // a quantity fix, separate from the per-transaction version guard also added by RSDEV-1319.
-    // Results are keyed by link id, so a repeated id yields one result row rather than two
+    // dedupe: a repeated link id deducts once and yields one result row; safe because consumers
+    // match rows by linkId, not by position (RSDEV-1319)
     for (Long id : linkIds.stream().distinct().toList()) {
       try {
         StoichiometryInventoryLink link = getLinkOrThrowNotFound(id);

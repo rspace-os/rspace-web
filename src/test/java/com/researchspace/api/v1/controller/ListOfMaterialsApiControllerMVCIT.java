@@ -203,28 +203,12 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertNull(result.getResolvedException());
 
     // the subsample's stock is reduced AND its user-facing version is bumped
-    result =
-        this.mockMvc
-            .perform(
-                createBuilderForGet(API_VERSION.ONE, apiKey, "/subSamples/" + subSampleId, anyUser))
-            .andExpect(status().isOk())
-            .andReturn();
-    assertNull(result.getResolvedException());
-    ApiSubSample reloaded = mvcUtils.getFromJsonResponseBody(result, ApiSubSample.class);
+    ApiSubSample reloaded = getSubSample(apiKey, anyUser, subSampleId);
     assertEquals("4 g", reloaded.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(2L, reloaded.getVersion(), "a stock decrement must bump the subsample version");
 
     // ... and the decrement is a new entry in the revision history (creation + decrement)
-    result =
-        this.mockMvc
-            .perform(
-                createBuilderForGet(
-                    API_VERSION.ONE, apiKey, "/subSamples/" + subSampleId + "/revisions", anyUser))
-            .andExpect(status().isOk())
-            .andReturn();
-    assertNull(result.getResolvedException());
-    ApiInventoryRecordRevisionList history =
-        mvcUtils.getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
+    ApiInventoryRecordRevisionList history = getRevisions(apiKey, anyUser, subSampleId);
     assertEquals(
         2, history.getRevisions().size(), "a stock decrement must add a revision-history entry");
 
@@ -308,8 +292,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
   private ApiSubSample getSubSample(String apiKey, User user, Long subSampleId) throws Exception {
     MvcResult result =
         this.mockMvc
-            .perform(
-                createBuilderForGet(API_VERSION.ONE, apiKey, "/subSamples/" + subSampleId, user))
+            .perform(getSubSampleById(user, apiKey, subSampleId))
             .andExpect(status().isOk())
             .andReturn();
     assertNull(result.getResolvedException());

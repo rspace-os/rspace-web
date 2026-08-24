@@ -413,13 +413,14 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
    * do not collide, and the guard is shared by every manager: a transaction that edits the same
    * record through two different code paths still bumps it once.
    *
-   * <p>Outside a real transaction every save commits on its own and gets its own revision, so there
-   * is nothing to deduplicate against and the bump always goes ahead.
+   * <p>Outside a real transaction every save commits on its own and gets its own revision, and an
+   * unsaved record (null id) has no revision yet, so in both cases there is nothing to deduplicate
+   * against and the bump always goes ahead.
    *
-   * <p>The set is bound to the thread rather than to the transaction object, and Spring only
-   * suspends synchronizations, not application-bound resources. Nothing on this path currently
-   * opens a nested {@code REQUIRES_NEW} transaction; if one is ever introduced it would inherit
-   * this set and wrongly suppress a bump that belongs to its own revision.
+   * <p>The set is bound to the thread, unbound in {@code afterCompletion} (commit and rollback
+   * alike, or a pooled thread would keep suppressing bumps forever), and unbound/rebound around
+   * transaction suspension so a nested {@code REQUIRES_NEW} transaction gets its own set and its
+   * own bump.
    */
   protected void increaseVersionOncePerTransaction(InventoryRecord dbRecord) {
     if (firstVersionBumpInTransaction(dbRecord)) {
@@ -429,23 +430,33 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
 
   private boolean firstVersionBumpInTransaction(InventoryRecord dbRecord) {
     if (!TransactionSynchronizationManager.isActualTransactionActive()
-        || !TransactionSynchronizationManager.isSynchronizationActive()) {
+        || !TransactionSynchronizationManager.isSynchronizationActive()
+        || dbRecord.getId() == null) {
       return true;
     }
     @SuppressWarnings("unchecked")
     Set<String> bumped = (Set<String>) TransactionSynchronizationManager.getResource(BUMPED_IN_TX);
     if (bumped == null) {
-      // register before binding: if registration fails nothing is left bound. Resources are
-      // thread-bound and Spring's clear() does not remove them, so without this unbind a pooled
-      // thread would keep suppressing bumps for these records forever
+      Set<String> newSet = new HashSet<>();
+      // register before binding: if registration fails nothing is left bound
       TransactionSynchronizationManager.registerSynchronization(
           new TransactionSynchronization() {
+            @Override
+            public void suspend() {
+              TransactionSynchronizationManager.unbindResourceIfPossible(BUMPED_IN_TX);
+            }
+
+            @Override
+            public void resume() {
+              TransactionSynchronizationManager.bindResource(BUMPED_IN_TX, newSet);
+            }
+
             @Override
             public void afterCompletion(int status) {
               TransactionSynchronizationManager.unbindResourceIfPossible(BUMPED_IN_TX);
             }
           });
-      bumped = new HashSet<>();
+      bumped = newSet;
       TransactionSynchronizationManager.bindResource(BUMPED_IN_TX, bumped);
     }
     return bumped.add(dbRecord.getGlobalIdentifier());

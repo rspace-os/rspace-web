@@ -10,7 +10,6 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -215,7 +214,7 @@ public class StoichiometryInventoryLinkManagerImplTest {
         manager.deductStock(stoichiometryId, List.of(321L, 321L, 321L), user);
 
     // the repeat is dropped before any stock is touched, so the amount comes off once (RSDEV-1319)
-    verify(subSampleMgr, times(1))
+    verify(subSampleMgr)
         .registerApiSubSampleUsage(eq(invSubSample.getId()), any(QuantityInfo.class), eq(user));
     // and the response carries one result row per distinct id, not per id sent
     assertEquals(1, result.getResults().size());

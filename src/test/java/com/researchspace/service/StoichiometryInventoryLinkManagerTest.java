@@ -80,7 +80,8 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
   @Test
   public void twoMoleculesLinkedToSameSubSampleBumpVersionOnce() throws Exception {
     User user = createInitAndLoginAnyUser();
-    Stoichiometry stoich = createStoichiometry(user, analysisOf(ethanol(), methanol()));
+    Stoichiometry stoich =
+        createStoichiometry(user, analysisOf(ethanol(), molecule("Methanol", "CH4O", "CO", 32.04)));
     assertEquals(2, stoich.getMolecules().size());
     stoich.getMolecules().forEach(m -> m.setActualAmount(0.01)); // 10 mg each
     stoichiometryManager.save(stoich);
@@ -121,10 +122,6 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
 
   private MoleculeInfoDTO ethanol() {
     return molecule("Ethanol", "C2H6O", "CCO", 46.07);
-  }
-
-  private MoleculeInfoDTO methanol() {
-    return molecule("Methanol", "CH4O", "CO", 32.04);
   }
 
   private MoleculeInfoDTO molecule(String name, String formula, String smiles, double mass) {

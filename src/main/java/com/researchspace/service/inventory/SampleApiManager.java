@@ -187,12 +187,10 @@ public interface SampleApiManager extends InventoryApiManager<SampleEntity> {
   ApiSample changeApiSampleOwner(ApiSampleInfo apiSample, User user);
 
   /**
-   * Stamps modification details on the sample, saves it and publishes an editing event.
-   *
-   * <p>The user-facing version bump happens at most once per sample per transaction: Envers writes
-   * one revision per entity per transaction, so a caller that saves the same sample several times
-   * in one transaction (e.g. adding several subsamples) still sees the version advance by exactly
-   * one, keeping every version resolvable in the revision history (RSDEV-1319).
+   * Stamps modification details on the sample, saves it and publishes an editing event. The
+   * user-facing version bumps at most once per sample per transaction, so repeated saves in one
+   * transaction (e.g. adding several subsamples) advance it by exactly one (RSDEV-1319, see
+   * InventoryApiManagerImpl#increaseVersionOncePerTransaction).
    */
   void saveDbSampleUpdate(SampleEntity dbSample, User user);
 
