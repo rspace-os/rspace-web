@@ -232,6 +232,7 @@ public class DeploymentPropertiesController extends BaseController {
     properties.put("pyrat.server.config", withoutSecrets(pyratServerConfig, PYRAT_CONFIG));
     properties.put("raid.server.config", withoutSecrets(raidServerConfig, RAID_CONFIG));
     properties.put("aspose.enabled", String.valueOf(isAsposeEnabled()));
+    properties.put("conversion.enabled", String.valueOf(isConversionEnabled()));
     return properties;
   }
 

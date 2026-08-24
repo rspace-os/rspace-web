@@ -173,35 +173,26 @@ By default, the `deployment.properties` file can be found in the `/etc/rspace` d
  
 ### Document previews
 
-A separate application is used to generate  document previews of Office/OpenOffice documents. If the application is not installed, then these previews will not be available to users.
+RSpace uses a separate container pair for document preview, Word import, and Word export. The
+RSpace conversion sidecar validates requests and runs JODConverter. It forwards PDF work to a
+private Gotenberg container.
 
-This application can either be installed as a standalone Java application, or as a Docker service (recommended)
+Set these deployment properties to enable conversion:
 
-#### As a standalone application
+- **conversion.url** HTTP origin of the RSpace conversion sidecar.
+- **conversion.cacheConverted** Set to `true` to cache generated previews.
 
-To install, download the application from the RSpace download site:
+Connection, conversion, response, and size limits use the remaining `conversion.*` properties in
+`defaultDeployment.properties`. The URL accepts any HTTP origin because network policy is the
+deployment security boundary. The sidecar does not authenticate callers. Keep it and Gotenberg
+firewalled: RSpace must reach only the sidecar, and Gotenberg must accept traffic only from the
+sidecar.
 
-    wget --user=<username> --password=<password> https://operations.researchspace.com/software/rspace/aspose-app-VERSION.zip
+Aspose properties remain available for older deployments. They are deprecated. When
+`conversion.url` is set, the Gotenberg/JODConverter path takes precedence over Aspose.
 
-replacing VERSION with the current release version and using your download credentials in place of <username> and <password>
-
-Unzip and follow the installation instructions in the file `Usage.md`.
-
-There are several deployment properties relating to document preview generation. These three are **mandatory** if you want document previewing enabled:
-
-* **aspose.enabled**  Needs to be set to 'true'
-* **aspose.license**  Absolute file path to Aspose license E.g. aspose.license=/etc/rspace/aspose/Aspose-Total-Java.lic
-* **aspose.app**      Absolute file path to Aspose standalone document converter E.g. aspose.app=/etc/rspace/aspose/aspose-app.jar
-* **aspose.logfile**  Absolute path to Aspose document converter's log file. E.g. aspose.logfile=/etc/rspace/aspose/logs.txt
-
-##### Optional Aspose logging
-
-* **aspose.logLevel** The log level (default is INFO) e.g. aspose.logLevel=WARN
-* **aspose.jvmArgs**  Optional jvm args to pass to application. E.g. aspose.jvmArgs=-Xmx1024m
-
-#### As a Docker service
-
-Please see https://researchspace.helpdocs.io/article/5k7qib0n3t-installation-of-rspace-add-on-services for details
+See [Document conversion](../DeveloperNotes/DocumentConversion.md) for supported formats,
+security boundaries, and parity evidence.
 
 ### Snapgene service
 

@@ -51,7 +51,7 @@ class WorkspaceToolbar extends React.Component {
       viewableItemsFilter: workspaceSettings.viewableItemsFilter,
       pioEnabled: props.domContainer.getAttribute("data-pio-enabled") === "true",
       ontologiesFilter: workspaceSettings.ontologiesFilter,
-      asposeEnabled: props.domContainer.getAttribute("data-aspose-enabled") === "true",
+      conversionEnabled: props.domContainer.getAttribute("data-conversion-enabled") === "true",
       labgroupsFolderId: props.domContainer.getAttribute("data-labgroups-folder-id"),
     };
 
@@ -287,7 +287,10 @@ class WorkspaceToolbar extends React.Component {
           containerType: "inline-size",
         }}
       >
-        <CreateMenu pioEnabled={this.state.pioEnabled} asposeEnabled={this.state.asposeEnabled} />
+        <CreateMenu
+          pioEnabled={this.state.pioEnabled}
+          conversionEnabled={this.state.conversionEnabled}
+        />
         {!this.state.hideIcons && (
           <Box component="span" sx={{ display: "flex" }}>
             <SocialActions onCreateRequest={this.props.eventHandlers.onCreateRequest} />

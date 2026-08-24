@@ -209,6 +209,8 @@ public interface IPropertyHolder extends Versionable {
 
   boolean isAsposeCachingEnabled();
 
+  boolean isConversionCachingEnabled();
+
   boolean isMsOfficeEnabled();
 
   boolean isCollaboraEnabled();
@@ -299,6 +301,8 @@ public interface IPropertyHolder extends Versionable {
   String getNextCloudSecret();
 
   boolean isAsposeEnabled();
+
+  boolean isConversionEnabled();
 
   String getChemistryProvider();
 

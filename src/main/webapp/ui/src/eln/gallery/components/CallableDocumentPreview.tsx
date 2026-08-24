@@ -11,57 +11,55 @@ const firstResult = <T,>(items: ReadonlyArray<T>): Result<T> =>
   Result.fromNullable(items.at(0), new Error("Array is empty"));
 
 /*
- * If aspose is configured, then users can preview the contents of various
- * common document file types by running them through the PDF generator and
- * viewing that PDF via CallablePdfPreview.
+ * When document conversion is configured, users can preview common document
+ * formats as PDFs through CallablePdfPreview.
  *
  * Much like how `window.open` allows any JS code on the page to trigger the
  * opening of in a new window/tab with a specified URL, this module provides a
  * mechanism to allow any JS code to trigger the opening of a dialog by
- * providing a GalleryFile that can be converted to a PDF by Aspose.
+ * providing a GalleryFile that can be converted to a PDF.
  *
  * If the conversion fails or there is an error for any other reason with the
  * network call then an error toast is shown.
  */
 
-export type AsposePreviewDetails = {
+export type DocumentPreviewDetails = {
   documentId: number;
   fileExtension: string;
   revisionId?: number | null;
   publicView?: boolean;
 };
 
-const AsposePreviewContext = React.createContext({
+const DocumentPreviewContext = React.createContext({
   setFile: (_file: GalleryFile) => Promise.resolve(),
-  setDetails: (_details: AsposePreviewDetails) => Promise.resolve(),
+  setDetails: (_details: DocumentPreviewDetails) => Promise.resolve(),
   loading: false,
 });
 
 /**
- * Use the callable aspose preview component to display a document in a dialog
- * as a PDF.
+ * Display a converted document in the PDF preview dialog.
  */
-export function useAsposePreview(): {
+export function useDocumentPreview(): {
   /**
    * Preview the document at this GalleryFile.
    */
-  openAsposePreview: (file: GalleryFile) => Promise<void>;
+  openDocumentPreview: (file: GalleryFile) => Promise<void>;
 
   /**
    * Preview a document by using its ids/extension rather than a GalleryFile.
    */
-  openAsposePreviewFromDetails: (details: AsposePreviewDetails) => Promise<void>;
+  openDocumentPreviewFromDetails: (details: DocumentPreviewDetails) => Promise<void>;
 
   loading: boolean;
 } {
   const {
-    setFile: openAsposePreview,
-    setDetails: openAsposePreviewFromDetails,
+    setFile: openDocumentPreview,
+    setDetails: openDocumentPreviewFromDetails,
     loading,
-  } = React.useContext(AsposePreviewContext);
+  } = React.useContext(DocumentPreviewContext);
   return {
-    openAsposePreview,
-    openAsposePreviewFromDetails,
+    openDocumentPreview,
+    openDocumentPreviewFromDetails,
     loading,
   };
 }
@@ -69,21 +67,19 @@ export function useAsposePreview(): {
 /**
  * This component provides a mechanism for any other component that is its
  * descendent to trigger the previewing of a document by passing the GalleryFile
- * to a call to `useAsposePreview`'s `openAsposePreview`. Just do something like
- *    const { openAsposePreview } = useImagePreview();
- *    openAsposePreview("http://example.com/document.doc");
+ * to `useDocumentPreview`'s `openDocumentPreview` function.
  *
  * Relies on being inside of an AlertContext and the context created by
  * CallablePdfPreview
  */
-export function CallableAsposePreview({ children }: { children: React.ReactNode }): React.ReactNode {
+export function CallableDocumentPreview({ children }: { children: React.ReactNode }): React.ReactNode {
   const [loading, setLoading] = React.useState(false);
   const { openPdfPreview } = usePdfPreview();
   const { addAlert } = React.useContext(AlertContext);
   const { t } = useTranslation("gallery");
 
   const openConvertedFile = React.useCallback(
-    async ({ documentId, fileExtension, revisionId = null, publicView = false }: AsposePreviewDetails) => {
+    async ({ documentId, fileExtension, revisionId = null, publicView = false }: DocumentPreviewDetails) => {
       const revisionUrlSuffix = revisionId != null ? `&revision=${revisionId}` : "";
       const { data } = await axios.get<unknown>(
         `/Streamfile/ajax/convert/${documentId}?outputFormat=pdf${revisionUrlSuffix}`,
@@ -113,12 +109,12 @@ export function CallableAsposePreview({ children }: { children: React.ReactNode 
         .do((msg) => {
           throw new Error(msg);
         });
-      throw new Error(t("callableAsposePreview.generatePdfError", { fileExtension }));
+      throw new Error(t("callableDocumentPreview.generatePdfError", { fileExtension }));
     },
     [openPdfPreview, t],
   );
 
-  const setDetails = async (details: AsposePreviewDetails) => {
+  const setDetails = async (details: DocumentPreviewDetails) => {
     setLoading(true);
     try {
       await openConvertedFile(details);
@@ -127,7 +123,7 @@ export function CallableAsposePreview({ children }: { children: React.ReactNode 
       addAlert(
         mkAlert({
           variant: "error",
-          title: t("callableAsposePreview.previewError"),
+          title: t("callableDocumentPreview.previewError"),
           message: e.message ?? t("errors.unknownReason"),
         }),
       );
@@ -144,15 +140,18 @@ export function CallableAsposePreview({ children }: { children: React.ReactNode 
   };
 
   return (
-    <AsposePreviewContext.Provider value={{ setFile, setDetails, loading }}>{children}</AsposePreviewContext.Provider>
+    <DocumentPreviewContext.Provider value={{ setFile, setDetails, loading }}>
+      {children}
+    </DocumentPreviewContext.Provider>
   );
 }
 
 /**
- * Check if the file is supported by Aspose based on its extension.
+ * Check whether the configured preview converter supports the file extension.
  */
-export function supportedAsposeFile(file: GalleryFile): Result<null> {
-  const ASPOSE_EXTENSIONS = [
+export function supportedPreviewFile(file: GalleryFile): Result<null> {
+  const PREVIEW_EXTENSIONS = [
+    "csv",
     "doc",
     "docx",
     "md",
@@ -161,7 +160,6 @@ export function supportedAsposeFile(file: GalleryFile): Result<null> {
     "txt",
     "xls",
     "xlsx",
-    "csv",
     "ods",
     "pdf",
     "ppt",
@@ -169,9 +167,9 @@ export function supportedAsposeFile(file: GalleryFile): Result<null> {
     "odp",
   ];
 
-  if (!file.id) return Result.Error([new Error("Aspose requires a file ID")]);
-  if (!file.extension) return Result.Error([new Error("Aspose requires a file extension")]);
-  if (!ASPOSE_EXTENSIONS.includes(file.extension))
-    return Result.Error([new Error("Aspose does not support the extension of the file")]);
+  if (!file.id) return Result.Error([new Error("Document preview requires a file ID")]);
+  if (!file.extension) return Result.Error([new Error("Document preview requires a file extension")]);
+  if (!PREVIEW_EXTENSIONS.includes(file.extension))
+    return Result.Error([new Error("Document preview does not support this file extension")]);
   return Result.Ok(null);
 }
