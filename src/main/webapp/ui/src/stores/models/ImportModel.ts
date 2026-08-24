@@ -1400,7 +1400,7 @@ export default class Import {
       parseString("SUBSAMPLES", recordTypeParam),
       parseString("INSTRUMENTS", recordTypeParam),
     ).orElseGet(() => {
-      throw new Error(`Could not parse URL arg, invaid value: "${recordTypeParam}".`);
+      throw new Error(`Could not parse URL arg, invalid value: "${recordTypeParam}".`);
     });
 
     this.setCurrentRecordType(recordType);

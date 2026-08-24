@@ -201,8 +201,6 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
                 width: "28px",
                 height: "28px",
                 padding: "2px",
-                paddingTop: "5px",
-                paddingLeft: "5px",
               }}
             />
           }
@@ -224,8 +222,6 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
                 width: "28px",
                 height: "28px",
                 padding: "2px",
-                paddingTop: "5px",
-                paddingLeft: "5px",
               }}
             />
           }
@@ -241,7 +237,6 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
           title={t("createNew.fromCsv")}
           subheader={t("createNew.fromCsvDescription")}
           avatarBackgroundColor="white"
-          avatarBorderColor="rgb(168, 194, 168)"
           avatar={<CardMedia image="/images/icons/csv.svg" />}
           onClick={() => {
             void handleImport("SAMPLES");
