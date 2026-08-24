@@ -25,7 +25,7 @@ import org.springframework.test.web.servlet.MvcResult;
  * via a "Derive" request: a single POST must atomically create one new Sample parenting N
  * subsamples, put an IsDerivedFrom link back to the origin on the new Sample AND on every created
  * subsample, and reduce the origin subsample by the amount taken from it (never increasing it). See
- * DevDocs/adr/0006, DevDocs/adr/0007.
+ * DevDocs/adr/0007.
  *
  * <p>Authored with the feature; not run automatically (extends a real-transaction MVC base).
  */
@@ -175,7 +175,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
   @Test
   public void rejectsTakingMoreThanTheOriginHolds() throws Exception {
-    // DevDocs/adr/0010: taking more than the origin currently holds must be rejected (400), not
+    // DevDocs/adr/0007: taking more than the origin currently holds must be rejected (400), not
     // clamped,
     // and
     // must leave the origin untouched.
@@ -224,7 +224,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   @Test
   public void rollsBackOriginDecrementWhenSampleCreationFailsInsideTheTransaction()
       throws Exception {
-    // The atomicity claim (DevDocs/adr/0006) rests on InventoryOperationManager matching the
+    // The atomicity claim (DevDocs/adr/0007) rests on InventoryOperationManager matching the
     // service.inventory.*Manager AOP pointcut; only a real transaction can prove it. Trigger an
     // in-transaction failure AFTER the origin decrement: the documentation link targets a document
     // that does not exist, so link creation (assertTargetExistsAndReadable) throws while the new
