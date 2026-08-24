@@ -1,47 +1,23 @@
 import { type Locator, page } from "vitest/browser";
 
 export class CalendarPage {
-  get heading(): Locator {
-    return page.getByRole("heading", { name: "Calendar" });
+  readonly heading: Locator = page.getByRole("heading", { name: "Calendar" });
+  readonly search: Locator = page.getByRole("textbox", { name: "Search Calendar" });
+  readonly timeGrid: Locator = page.getByRole("region", { name: "Time grid" });
+  readonly resources: Locator = page.getByRole("button", { name: "Resources" });
+  readonly resourceSchedule: Locator = page.getByRole("region", { name: "Resource booking schedule" });
+  readonly agenda: Locator = page.getByRole("button", { name: "Agenda" });
+  readonly bookingAgenda: Locator = page.getByRole("region", { name: "Booking agenda" });
+  readonly day: Locator = page.getByRole("button", { name: "Day", exact: true });
+  readonly month: Locator = page.getByRole("button", { name: "Month", exact: true });
+  readonly mine: Locator = page.getByRole("button", { name: "My calendar" });
+  readonly next: Locator = page.getByRole("button", { name: /^Next / });
+
+  event(itemName: string): Locator {
+    return page.getByRole("article", { name: new RegExp(itemName) });
   }
 
-  get table(): Locator {
-    return page.getByRole("table", { name: /Bookable items/ });
-  }
-
-  availability(itemName: string): Locator {
-    return page.getByRole("img", { name: `${itemName} availability` });
-  }
-
-  item(itemName: string): Locator {
-    return page.getByRole("button", { name: new RegExp(itemName) });
-  }
-
-  detail(itemName: string): Locator {
-    return page.getByRole("region", { name: `Bookings for ${itemName}` });
-  }
-
-  get busy(): Locator {
-    return page.getByRole("article", { name: /^Busy,/ });
-  }
-
-  get nextDay(): Locator {
-    return page.getByRole("button", { name: "Next day" });
-  }
-
-  get previousDay(): Locator {
-    return page.getByRole("button", { name: "Previous day" });
-  }
-
-  get today(): Locator {
-    return page.getByRole("button", { name: "Today" });
-  }
-
-  get nextPage(): Locator {
-    return page.getByRole("button", { name: "Next page" });
-  }
-
-  async openItem(itemName: string): Promise<void> {
-    await this.item(itemName).click();
+  async searchFor(value: string): Promise<void> {
+    await this.search.fill(value);
   }
 }

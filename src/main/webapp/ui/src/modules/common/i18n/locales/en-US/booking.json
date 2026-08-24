@@ -158,16 +158,56 @@
     "availabilityUnavailable": "Availability unavailable",
     "busy": "Busy",
     "date": "Date",
-    "description": "Browse bookable items and their bookings for one day.",
+    "datesInRange": "Dates in range",
+    "description": "Browse booking events by day, week, or month.",
     "detail": "Bookings for {itemName}",
     "detailLoading": "Loading bookings.",
     "detailUnavailable": "Bookings are unavailable.",
+    "event": "Booking event",
+    "fields": {
+      "bookedBy": "Booked by",
+      "createdAt": "Created",
+      "editable": "Editable",
+      "end": "Ends",
+      "id": "ID",
+      "privacy": "Privacy",
+      "purpose": "Purpose",
+      "requester": "Requester",
+      "start": "Starts",
+      "state": "State",
+      "target": "Bookable item",
+      "timezone": "Time zone",
+      "updatedAt": "Updated"
+    },
+    "grid": "Calendar grid",
     "item": "Bookable item",
     "items": "Bookable items",
+    "layout": {
+      "agenda": "Agenda",
+      "legend": "Layout",
+      "resources": "Resources",
+      "time-grid": "Time grid"
+    },
+    "loading": "Loading booking events.",
     "nextDay": "Next day",
+    "nextPeriod": "Next {period}",
+    "period": {
+      "day": "Day",
+      "legend": "Period",
+      "month": "Month",
+      "week": "Week"
+    },
     "previousDay": "Previous day",
+    "previousPeriod": "Previous {period}",
+    "quickFilters": {
+      "legend": "Booking event quick filters",
+      "mine": "My calendar"
+    },
+    "resourceSchedule": "Resource booking schedule",
+    "retry": "Retry",
     "title": "Calendar",
-    "today": "Today"
+    "today": "Today",
+    "unavailable": "Booking events are unavailable."
   },
   "dayTimeline": {
     "event": {
@@ -189,6 +229,34 @@
       "out": "Zoom out"
     }
   },
+  "myBookings": {
+    "count": {
+      "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",
+      "error": "The upcoming booking count could not be loaded.",
+      "loading": "Loading upcoming count"
+    },
+    "description": "View and manage bookings requested by this user.",
+    "empty": {
+      "past": "No past bookings found.",
+      "upcoming": "No upcoming bookings found."
+    },
+    "fields": {
+      "end": "End",
+      "id": "ID",
+      "purpose": "Purpose",
+      "start": "Start",
+      "target": "Bookable item",
+      "timezone": "Time zone"
+    },
+    "period": {
+      "legend": "Booking period",
+      "past": "Past",
+      "upcoming": "Upcoming"
+    },
+    "plural": "Bookings",
+    "singular": "Booking",
+    "title": "My Bookings"
+  },
   "sample": {
     "check": "Sample check {number}.",
     "maintenance": {
@@ -199,6 +267,7 @@
   "sidebar": {
     "addBooking": "Add Booking",
     "administration": "Administration",
+    "allItems": "All items",
     "approvalQueue": "Approval Queue",
     "bookableItems": "Bookable Items",
     "calendar": "Calendar",

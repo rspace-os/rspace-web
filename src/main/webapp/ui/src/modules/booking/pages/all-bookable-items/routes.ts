@@ -19,7 +19,7 @@ export function createAllBookableItemsRoute<TParentRoute extends AnyRoute>(
 ) {
   return createRoute({
     getParentRoute: () => bookingRoute,
-    path: "/calendar",
+    path: "/all-items",
     validateSearch: allBookableItemsSearch,
     component,
   });

@@ -3,31 +3,57 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { worker } from "@/__tests__/browserSetup";
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { bookableItemsHandlers, sampleBookingEvents } from "../bookable-items/mocks/bookableItemsMocks";
+import {
+  busyBooking,
+  collectionResponse,
+  currentUser,
+  otherBooking,
+  ownBooking,
+} from "../calendar/__tests__/calendarTestHarness";
+import { CalendarPageStory } from "../calendar/CalendarPage.story";
+import { CalendarPage as CalendarPageObject } from "../calendar/pageObjects/CalendarPage";
 import { AllBookableItemsStory } from "./AllBookableItemsPage.story";
 import { AllBookableItemsPage } from "./pageObjects/AllBookableItemsPage";
 
 const pageObj = new AllBookableItemsPage();
+const calendar = new CalendarPageObject();
+const availabilityBookingFields = "id,target,timezone,start,end,state";
+const calendarBookingFields =
+  "id,target,requesterId,timezone,start,end,state,purpose,bookedBy,privacy,canEdit,createdAt,updatedAt";
 let collectionQueries: string[] = [];
 let bookingRequests = 0;
 let bookingQuery: URL | undefined;
+let calendarBookingRequests: URL[] = [];
 
 function registerHandlers() {
   worker.use(
+    oauthTokenHandler(),
+    http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
     ...bookableItemsHandlers((request) => {
       collectionQueries.push(decodeURIComponent(new URL(request.url).search));
     }),
     http.get("/api/v2/bookings", ({ request }) => {
-      bookingRequests += 1;
-      bookingQuery = new URL(request.url);
-      return HttpResponse.json({
-        docs: sampleBookingEvents,
-        totalDocs: sampleBookingEvents.length,
-        totalPages: 1,
-        page: 1,
-        hasNextPage: false,
-      });
+      const url = new URL(request.url);
+      const fields = url.searchParams.get("fields[bookings]");
+      if (fields === calendarBookingFields) {
+        calendarBookingRequests.push(url);
+        return HttpResponse.json(collectionResponse([ownBooking, otherBooking, busyBooking]));
+      }
+      if (fields === availabilityBookingFields) {
+        bookingRequests += 1;
+        bookingQuery = url;
+        return HttpResponse.json({
+          docs: sampleBookingEvents,
+          totalDocs: sampleBookingEvents.length,
+          totalPages: 1,
+          page: 1,
+          hasNextPage: false,
+        });
+      }
+      return undefined;
     }),
   );
 }
@@ -40,8 +66,45 @@ beforeEach(() => {
   collectionQueries = [];
   bookingRequests = 0;
   bookingQuery = undefined;
+  calendarBookingRequests = [];
   window.history.replaceState({}, "", "/");
   registerHandlers();
+});
+
+describe("Calendar page", () => {
+  test("uses live booking events across every prototype layout and period", async () => {
+    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory />);
+
+    await expect.element(calendar.heading).toBeVisible();
+    await expect.element(calendar.timeGrid).toBeVisible();
+    await expect.element(calendar.event("Confocal microscope")).toBeVisible();
+    await expect.element(calendar.event("Busy")).toBeVisible();
+    await expect.poll(() => calendarBookingRequests.length).toBe(1);
+    expect(calendarBookingRequests[0].searchParams.get("fields[bookings]")).toBe(calendarBookingFields);
+    expect(calendarBookingRequests[0].searchParams.get("where")).toContain("state==CONFIRMED");
+
+    await calendar.searchFor("Grace");
+    await expect.element(calendar.event("Confocal microscope")).not.toBeInTheDocument();
+    await expect.element(calendar.event("Electron microscope")).toBeVisible();
+    await page.getByRole("button", { name: "Clear search" }).click();
+
+    await calendar.resources.click();
+    await expect.element(calendar.resourceSchedule).toBeVisible();
+    await calendar.day.click();
+    await expect.poll(() => calendarBookingRequests.length).toBe(2);
+    await expect.poll(() => page.getByTestId("day-timeline-scroller").all().length).toBe(2);
+
+    await calendar.mine.click();
+    await expect.element(calendar.event("Confocal microscope")).toBeVisible();
+    await expect.element(calendar.event("Electron microscope")).not.toBeInTheDocument();
+
+    await calendar.agenda.click();
+    await expect.element(calendar.bookingAgenda).toBeVisible();
+    await calendar.month.click();
+    await expect.poll(() => calendarBookingRequests.length).toBe(3);
+    await expectNoAxeViolations();
+  });
 });
 
 afterEach(() => {

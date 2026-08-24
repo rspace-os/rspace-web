@@ -9,7 +9,10 @@ import {
 } from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
+import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
+import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { createAddBookingRoute, createEditBookingRoute } from "../bookings/routes";
+import { currentUser } from "./__tests__/calendarTestHarness";
 import { createCalendarRoute } from "./routes";
 
 export function CalendarPageStory() {
@@ -17,6 +20,8 @@ export function CalendarPageStory() {
     window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
   }
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
+  queryClient.setQueryData(currentUserQueryKeys.me(), currentUser);
   const root = createRootRoute({ component: Outlet });
   const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
   const router = createRouter({

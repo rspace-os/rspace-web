@@ -18,8 +18,8 @@ import { createAllBookableItemsRoute } from "./routes";
 const storyClock = () => new Date("2026-08-17T00:30:00Z");
 
 export function AllBookableItemsStory({ containerWidth = 1500 }: { containerWidth?: number } = {}) {
-  if (window.location.pathname !== "/booking/calendar") {
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
+  if (window.location.pathname !== "/booking/all-items") {
+    window.history.replaceState({}, "", "/booking/all-items?date=2026-08-17");
   }
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);

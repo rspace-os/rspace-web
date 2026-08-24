@@ -76,8 +76,8 @@ const currentDate = () => new Date();
 
 export default function AllBookableItemsPage({ clock = currentDate }: { clock?: () => Date } = {}) {
   const { t } = useTranslation("booking");
-  const { date, availability: quickMode } = useSearch({ from: "/booking/calendar" });
-  const navigate = useNavigate({ from: "/booking/calendar" });
+  const { date, availability: quickMode } = useSearch({ from: "/booking/all-items" });
+  const navigate = useNavigate({ from: "/booking/all-items" });
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const quickIndex = useAvailabilityQuickFilterIndex(quickMode, token, clock);
   const synchronizedNowPosition = (quickIndex.now.getHours() * 60 + quickIndex.now.getMinutes()) / (24 * 60);
