@@ -12,7 +12,7 @@ import type { UnitCategory } from "@/stores/stores/UnitStore";
 import { templateSelectionBlock } from "./templateResolution";
 import WizardTemplatePicker from "./WizardTemplatePicker";
 
-/** The user's template choice for the new sample (DevDocs/adr/0008). */
+/** The user's template choice for the new sample (DevDocs/adr/0007). */
 export type TemplateSelection = {
   // "remembered" = a specific template restored from the saved default: shown as a banner with no
   // radio selected until the user picks a radio to override it. "unselected" = the initial state
@@ -32,7 +32,7 @@ export type TemplateSelection = {
  * (ad-hoc), an existing template, or a template created from the origin's parent sample. When the
  * user picks an existing template, it is validated up front: a template with mandatory fields that
  * have no default value is blocked here with a clear message, rather than failing at submit
- * (DevDocs/adr/0008). The "remember" checkbox is persisted per user, per operation by the wizard.
+ * (DevDocs/adr/0007). The "remember" checkbox is persisted per user, per operation by the wizard.
  */
 function TemplateStep({
   value,
@@ -44,7 +44,7 @@ function TemplateStep({
   onChange: (value: TemplateSelection) => void;
   originSampleName: string;
   /** Whether the origin's parent sample has its own template. When it does not, the "use parent
-   *  template" option is disabled with a hint: the wizard never creates a template (DevDocs/adr/0008). */
+   *  template" option is disabled with a hint: the wizard never creates a template (DevDocs/adr/0007). */
   parentHasTemplate?: boolean;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");

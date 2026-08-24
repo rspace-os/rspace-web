@@ -29,7 +29,7 @@ type ProcessActionArgs = {
  * Launches the operation wizard on the selected subsamples (RSDEV-1231). ContextActions only shows
  * this entry for a processable selection (isProcessableSelection), so no per-action gating remains
  * here; the wizard's picker then enables single-origin operations for a single selection and Pool
- * for two or more (DevDocs/adr/0012).
+ * for two or more (DevDocs/adr/0007).
  */
 const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }, ref) => {
