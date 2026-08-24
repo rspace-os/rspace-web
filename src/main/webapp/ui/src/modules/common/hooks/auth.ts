@@ -9,7 +9,7 @@ import {
   TOKEN_EXPIRY_BUFFER_SECONDS,
 } from "@/modules/common/utils/auth";
 
-const queryKeys = {
+export const queryKeys = {
   all: ["rspace.common.auth"] as const,
   oauthToken: (useRestApiV2: boolean) => [...queryKeys.all, "oauthToken", useRestApiV2 ? "v2" : "legacy"] as const,
 };

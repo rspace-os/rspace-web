@@ -1738,6 +1738,179 @@ export default interface Resources {
         "exportToCsv": "Export to CSV"
       }
     },
+    "tableList": {
+      "actions": {
+        "addFilter": "Add filter",
+        "applyFilters": "Apply filters",
+        "clearAll": "Clear all",
+        "closeColumns": "Close columns",
+        "closeFilters": "Close filters",
+        "closeSorting": "Close sorting",
+        "createNew": "Create new",
+        "hideColumn": "Hide {column} column",
+        "moveColumn": "Drag {column} column",
+        "moveFilter": "Drag filter {number}",
+        "moveSort": "Drag sort rule {number}",
+        "nextPage": "Next page",
+        "previousPage": "Previous page",
+        "removeFilter": "Remove filter {number}",
+        "removeSort": "Remove {column} from sorting",
+        "resetColumns": "Reset columns",
+        "resetToDefaults": "Reset filters, sorting, and columns to defaults",
+        "resizeColumn": "Resize column",
+        "sortBy": "Sort by {column}"
+      },
+      "columns": {
+        "customised": "Columns, {count} of {total} shown",
+        "hidden": "Hidden",
+        "hiddenEmpty": "Drag a shown column here to hide it",
+        "shown": "Shown",
+        "shownEmpty": "Drop a hidden column here",
+        "title": "Arrange columns"
+      },
+      "empty": {
+        "description": "Try changing the search or filter criteria.",
+        "title": "No records found"
+      },
+      "error": {
+        "customFieldColumnLimit": "A table can show at most {{limit}} custom field columns.",
+        "description": "The records could not be loaded.",
+        "title": "Something went wrong"
+      },
+      "examples": {
+        "description": "Find notebooks, protocols, and datasets across your workspace.",
+        "fields": {
+          "collaborators": "Collaborators",
+          "draft": "Draft",
+          "enabled": "Enabled",
+          "id": "ID",
+          "modified": "Modified",
+          "notes": "Notes",
+          "owner": "Owner",
+          "published": "Published",
+          "score": "Score",
+          "status": "Status",
+          "targetName": "Bookable item name",
+          "title": "Title",
+          "titleDescription": "The human-readable name of the record."
+        },
+        "record": "Research record",
+        "records": "Research records"
+      },
+      "fieldGroups": {
+        "customFields": "Custom fields",
+        "extraFields": "Extra fields",
+        "relationshipFields": "Related record fields"
+      },
+      "filters": {
+        "alsoShowAsColumn": "Show as column",
+        "and": "And",
+        "applied": "Filters, {count} applied",
+        "customField": {
+          "attached": "This rule filters on the target's field, through the relationship.",
+          "noMatch": "No matching custom field.",
+          "onlySelectionAttaches": "Searching loads definitions. Only choosing one attaches it to this rule.",
+          "option": "Custom field…",
+          "optionVia": "Custom field on {via}…",
+          "prompt": "Choose a custom field below.",
+          "searchFailed": "Custom fields could not be searched.",
+          "searchLabel": "Search custom fields for filter {number}",
+          "searchLabelVia": "Search {via} custom fields for filter {number}",
+          "searchPlaceholder": "Search custom fields by name or ID"
+        },
+        "field": "Field for filter {number}",
+        "fieldSearch": {
+          "clear": "Clear the field search",
+          "noMatch": "No matching field.",
+          "placeholder": "Search fields",
+          "trigger": "Show fields"
+        },
+        "missing": "is missing",
+        "multiSelect": {
+          "customPlaceholder": "Type a value and press Enter",
+          "empty": "No matching values found",
+          "enterValue": "Enter a value",
+          "remove": "Remove {value}",
+          "selectPlaceholder": "Select values"
+        },
+        "noneApplied": "Filters, none applied",
+        "openRecord": "Open {globalId}",
+        "operator": "Operator for filter {number}",
+        "operatorSearch": {
+          "clear": "Clear the operator search",
+          "noMatch": "No matching operator.",
+          "placeholder": "Search operators",
+          "trigger": "Show operators"
+        },
+        "operators": {
+          "contains": "contains",
+          "equals": "equals",
+          "exists": "exists",
+          "greaterThan": "is greater than",
+          "greaterThanOrEqual": "is at least",
+          "in": "is one of",
+          "lessThan": "is less than",
+          "lessThanOrEqual": "is at most",
+          "matches": "matches pattern",
+          "notEquals": "does not equal",
+          "notIn": "is not one of"
+        },
+        "placeholders": {
+          "pattern": "Use * as a wildcard",
+          "value": "Enter a value"
+        },
+        "present": "is present",
+        "suggestions": {
+          "loading": "Searching…",
+          "minimumLength": "Type {count} characters to search",
+          "noMatch": "No matching value. Your text still filters.",
+          "truncated": "More values match than are shown. Keep typing to narrow.",
+          "unavailable": "Suggestions are unavailable. You can still type a value."
+        },
+        "title": "Filter records",
+        "value": "Value for filter {number}",
+        "valueSearch": {
+          "clear": "Clear the value",
+          "noMatch": "No matching value.",
+          "trigger": "Show values"
+        },
+        "where": "Where"
+      },
+      "loading": "Loading records",
+      "page": "Page {page} of {pages}",
+      "refreshing": "Refreshing records",
+      "results": "{first}–{last} of {total} records",
+      "rows": "Rows",
+      "rowsPerPage": "Rows per page",
+      "search": {
+        "clear": "Clear search",
+        "label": "Search {collection}",
+        "placeholder": "Search records"
+      },
+      "selection": {
+        "clear": "Clear selection",
+        "count": "{count, plural, one {# row selected} other {# rows selected}}",
+        "limit": "You can select up to {count, number} rows.",
+        "regionLabel": "Selected rows actions",
+        "selectAllPage": "Select all rows on this page",
+        "selectRow": "Select {row}"
+      },
+      "sorting": {
+        "applied": "Sort, {count} rules active",
+        "ascending": "Ascending",
+        "descending": "Descending",
+        "direction": "Direction for {column}",
+        "empty": "Select a column header to add a sort rule.",
+        "title": "Sort priority"
+      },
+      "toolbar": {
+        "columns": "Columns",
+        "filters": "Filters",
+        "sorting": "Sort"
+      },
+      "tooltip": "About {column}",
+      "view": "{collection} table"
+    },
     "tags": {
       "addTag": "Add Tag",
       "checkOntologyFiles": "Please check that the ontology files are correctly configured.",
