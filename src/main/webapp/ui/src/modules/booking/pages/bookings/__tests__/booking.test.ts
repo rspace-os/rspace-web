@@ -22,6 +22,11 @@ const document = {
   updatedAt: "2026-08-17T00:00:00Z",
 };
 
+const mutationDocument = {
+  ...document,
+  target: { relationTo: "instruments", value: 12, globalId: "IN12" },
+};
+
 describe("booking API", () => {
   it("uses strict read, POST, and PATCH contracts", async () => {
     const requests: Array<{ method: string; url: URL; body?: unknown }> = [];
@@ -32,11 +37,11 @@ describe("booking API", () => {
       }),
       http.post("/api/v2/bookings", async ({ request }) => {
         requests.push({ method: request.method, url: new URL(request.url), body: await request.json() });
-        return HttpResponse.json(document);
+        return HttpResponse.json(mutationDocument);
       }),
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         requests.push({ method: request.method, url: new URL(request.url), body: await request.json() });
-        return HttpResponse.json(document);
+        return HttpResponse.json(mutationDocument);
       }),
     );
 

@@ -326,9 +326,34 @@ _Avoid_: runtime-failing flag, startup blocker
 - **Booking configuration** — the settings that make one inventory instrument
   bookable. It supplies the booking timezone and the lock used to serialize
   overlap checks for that instrument.
+- **Booking defaults** — the instance-wide scheduling values copied into a new
+  booking configuration at creation time. Changing them does not alter an
+  existing booking configuration.
+  _Avoid_: inherited settings, live defaults
+- **Scheduling policy** — the rules stored on one booking configuration that
+  determine its valid time increments, opening hours, booking buffers, maximum
+  booking duration, and whether concurrent bookings are permitted.
+  _Avoid_: global booking rules
+- **Opening interval** — the daily wall-clock period in a booking
+  configuration's timezone during which a booking may occur. `00:00–24:00`
+  denotes the complete local day; an interval never crosses a closed overnight
+  gap.
+  _Avoid_: business hours, availability event
+- **Booking buffer** — unavailable time immediately before or after a confirmed
+  booking. The two persisted directions may differ even though the settings UI
+  normally edits them as one value.
+- **Maximum booking duration** — the maximum elapsed time permitted for one
+  booking by one booking configuration. `0` disables this item-specific limit;
+  the 366-day system safety limit still applies.
+  _Avoid_: maximum occupancy, booking buffer
+- **Double-booking** — permission for confirmed booking intervals on one
+  bookable item to overlap. Opening intervals and time increments still apply.
+  _Avoid_: unlimited availability, capacity
 - **Time-slot booking** — one persisted reservation for one booking configuration.
   It stores a half-open UTC interval, its requester, optional purpose, state, and
-  audit data.
+  audit data. The system rejects durations over 366 days before acquiring the
+  configuration lock, and the locked scheduling policy may impose a smaller
+  maximum booking duration.
 - **Booking privacy** — the response detail prepared for one caller. `full` shows
   the purpose and requester label. `busy` shows only the target and occupied time.
 - **Half-open booking interval** — a booking window that includes its start and

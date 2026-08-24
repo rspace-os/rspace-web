@@ -17,6 +17,7 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { createBookingRoute } from "@/modules/booking/pages/BookingPage";
 import { createBookableItemRoute } from "@/modules/booking/pages/bookable-items/routes";
+import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/pages/bookable-items/schedulingSettings";
 import { getSidebarRenderer } from "@/modules/common/app/AppShell";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
@@ -97,13 +98,18 @@ describe("booking sidebar", () => {
     const { container } = renderAt("/booking");
 
     // i18next runs in cimode under vitest, so t() renders "<namespace>:<key>"
-    for (const key of ["dashboard", "administration", "approvalQueue", "settings"]) {
+    for (const key of ["dashboard", "administration", "approvalQueue"]) {
       expect(await screen.findByRole("button", { name: `booking:sidebar.${key}` })).toBeInTheDocument();
     }
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.myBookings" })).toHaveAttribute(
       "href",
       "/booking/my-bookings?period=upcoming",
+    );
+
+    expect(await screen.findByRole("link", { name: "booking:sidebar.settings" })).toHaveAttribute(
+      "href",
+      "/booking/config/settings",
     );
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toHaveAttribute(
@@ -139,7 +145,7 @@ describe("booking sidebar", () => {
     await user.click(administration);
 
     expect(administration).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByRole("button", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
   });
 
   it("hides Administration from users who are not sysadmins", async () => {
@@ -162,6 +168,7 @@ describe("booking sidebar", () => {
           },
           enabled: true,
           timezone: "Europe/Berlin",
+          ...DEFAULT_SCHEDULING_SETTINGS,
           updatedAt: null,
         }),
       ),

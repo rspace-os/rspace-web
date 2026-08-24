@@ -28,9 +28,10 @@ import {
   BookingConfigurationSchema,
   bookingConfigurationConfig,
 } from "./bookingConfiguration";
+import { schedulingSettingsFieldNames } from "./schedulingSettings";
 
 const bookableItemsProjection = {
-  fixed: ["id", "target", "enabled", "timezone", "updatedAt"],
+  fixed: ["id", "target", "enabled", "timezone", ...schedulingSettingsFieldNames, "updatedAt"],
 } as const;
 
 const maximumBookableItemsSelection = 1000;

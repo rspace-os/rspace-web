@@ -870,15 +870,19 @@ export default interface Resources {
         "deleteForbidden": "You no longer have permission to delete this booking.",
         "deleteGeneric": "RSpace could not delete the booking. Try again.",
         "deleteStale": "This booking is no longer editable.",
+        "duration": "Bookings may not exceed 366 days.",
         "endAfterStart": "The end must be after the start.",
         "forbidden": "You cannot edit this booking.",
         "generic": "RSpace could not save the booking. Try again.",
+        "granularity": "Start and end times must use this bookable item's time increment.",
         "itemLoad": "RSpace could not load bookable items.",
         "itemRequired": "Select a bookable item.",
+        "maximumDuration": "This booking exceeds the bookable item's maximum duration.",
         "noLongerEditable": "This booking is no longer editable.",
         "nonexistentTime": "This local time does not occur in the selected time zone.",
         "notFound": "This booking was not found or is not visible.",
         "occurrenceRequired": "Select which occurrence of this local time to use.",
+        "openingHours": "This booking must be within the bookable item's opening hours.",
         "overlap": "This period overlaps another booking.",
         "targetUnavailable": "This bookable item is unavailable.",
         "windowRequired": "Enter a valid start and end."
@@ -895,8 +899,10 @@ export default interface Resources {
         "itemResults": "Bookable item results",
         "itemSearch": "Search bookable items",
         "laterOccurrence": "Later occurrence ({offset})",
+        "maximumDuration": "Maximum booking duration: {count, number} minutes",
         "occurrence": "Repeated local time",
         "openItem": "Open {globalId}",
+        "openingHours": "Opening hours: {start}–{end}",
         "purpose": "Purpose",
         "purposeCount": "{count, number}/1,000 characters",
         "returnToCalendar": "Return to Calendar",
@@ -906,7 +912,8 @@ export default interface Resources {
         "time": "Time",
         "timezone": "Time zone: {timezone}"
       },
-      "loading": "Loading booking."
+      "loading": "Loading booking.",
+      "loadingConfiguration": "Loading bookable item settings."
     },
     "calendar": {
       "actions": {
@@ -1025,6 +1032,33 @@ export default interface Resources {
         "notes": "Laser alignment and safety inspection.",
         "title": "Scheduled maintenance"
       }
+    },
+    "settings": {
+      "actions": {
+        "save": "Save settings"
+      },
+      "description": "These defaults are copied to new bookable items. Existing bookable items keep their own settings.",
+      "errors": {
+        "maximumDuration": "Use 0 or a duration divisible by the selected time increment.",
+        "openingHours": "Use an opening start before the end, or select Open all day.",
+        "save": "RSpace could not save the booking settings. Try again.",
+        "stale": "These settings changed after you opened this page. Reload the page and try again."
+      },
+      "fields": {
+        "allowDoubleBooking": "Allow concurrent bookings",
+        "buffer": "Buffer before and after bookings (minutes)",
+        "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
+        "fullDay": "Open all day",
+        "granularity": "Time increment",
+        "granularityOption": "{count, plural, one {# minute} other {# minutes}}",
+        "legend": "Scheduling rules",
+        "maximumDuration": "Maximum booking duration (minutes)",
+        "maximumDurationDescription": "Use 0 to allow bookings up to the 366-day system limit.",
+        "openingEnd": "Opening end",
+        "openingStart": "Opening start"
+      },
+      "saved": "Booking settings saved.",
+      "title": "Booking Settings"
     },
     "sidebar": {
       "addBooking": "Add Booking",
@@ -5970,6 +6004,10 @@ export default interface Resources {
           "authenticationRequired": "Authentication is required.",
           "booking": {
             "create": "The booking is invalid.",
+            "duration": "Bookings may not exceed 366 days.",
+            "granularity": "Start and end must align with this bookable item's slot granularity.",
+            "maximumDuration": "The booking exceeds this bookable item's maximum duration.",
+            "openingHours": "The booking must remain within this bookable item's opening hours.",
             "overlap": "The selected time overlaps another booking.",
             "patch": "The booking patch is invalid.",
             "purpose": {
@@ -5984,8 +6022,21 @@ export default interface Resources {
             "window": "End time must be after start time."
           },
           "bookingConfiguration": {
+            "buffer": {
+              "invalid": "Booking buffers must be between 0 and 10,080 minutes."
+            },
             "create": "The booking configuration is invalid.",
+            "granularity": {
+              "invalid": "Slot granularity must be 1, 5, or 15 minutes."
+            },
+            "maximumDuration": {
+              "invalid": "Maximum booking duration must be 0 or a multiple of the slot granularity, up to 527,040 minutes."
+            },
+            "openingHours": {
+              "invalid": "Opening hours must use HH:mm with start before end, or 00:00–24:00 for full-day availability."
+            },
             "patch": "The booking configuration patch is invalid.",
+            "stale": "The booking settings changed after this page was loaded. Reload and try again.",
             "target": {
               "conflict": "The selected target already has a booking configuration.",
               "invalid": "The selected target is not available for booking."

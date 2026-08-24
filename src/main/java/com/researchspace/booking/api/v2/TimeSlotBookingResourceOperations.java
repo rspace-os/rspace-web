@@ -8,6 +8,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
+import com.researchspace.booking.service.BookingDurationException;
 import com.researchspace.booking.service.BookingOverlapException;
 import com.researchspace.booking.service.BookingStateTransitionException;
 import com.researchspace.booking.service.BookingTargetUnavailableException;
@@ -72,6 +73,11 @@ public final class TimeSlotBookingResourceOperations
                 "errors.api.v2.booking.window",
                 "The booking interval is invalid."),
             mapping(
+                BookingDurationException.class,
+                HttpStatus.BAD_REQUEST,
+                "errors.api.v2.booking.duration",
+                "The booking interval exceeds 366 days."),
+            mapping(
                 BookingTargetUnavailableException.class,
                 HttpStatus.CONFLICT,
                 "errors.api.v2.booking.target.unavailable",
@@ -101,7 +107,9 @@ public final class TimeSlotBookingResourceOperations
         Map.of(
             ResourceOperation.CREATE,
             OpenApiOperationDocumentation.builder()
-                .description("Creates one confirmed booking for an instrument.")
+                .description(
+                    "Creates one confirmed booking for an instrument. Intervals may not exceed "
+                        + "the instrument's configured maximum or the 366-day system maximum.")
                 .requestExample(
                     Map.of(
                         "target",

@@ -16,6 +16,7 @@ import {
   ComboboxList,
 } from "@/modules/common/ui/combobox";
 import { Label } from "@/modules/common/ui/label";
+import { schedulingSettingsEntries } from "../pages/bookable-items/schedulingSettings";
 
 export type BookableItemOption = {
   configurationId: number;
@@ -23,6 +24,13 @@ export type BookableItemOption = {
   globalId: string;
   name: string;
   timezone: string;
+  slotGranularityMinutes: number;
+  openingStart: string;
+  openingEnd: string;
+  bufferBeforeMinutes: number;
+  bufferAfterMinutes: number;
+  maxBookingDurationMinutes: number;
+  allowDoubleBooking: boolean;
 };
 
 const DocumentSchema = v.object({
@@ -33,6 +41,7 @@ const DocumentSchema = v.object({
     value: v.object({ id: v.number(), name: v.string(), deleted: v.boolean() }),
   }),
   timezone: v.string(),
+  ...schedulingSettingsEntries,
 });
 const ListSchema = v2ListEnvelope(DocumentSchema);
 const limits = {
@@ -56,6 +65,13 @@ function toOption(document: v.InferOutput<typeof DocumentSchema>): BookableItemO
     globalId: document.target.globalId,
     name: document.target.value.name,
     timezone: document.timezone,
+    slotGranularityMinutes: document.slotGranularityMinutes,
+    openingStart: document.openingStart,
+    openingEnd: document.openingEnd,
+    bufferBeforeMinutes: document.bufferBeforeMinutes,
+    bufferAfterMinutes: document.bufferAfterMinutes,
+    maxBookingDurationMinutes: document.maxBookingDurationMinutes,
+    allowDoubleBooking: document.allowDoubleBooking,
   };
 }
 
@@ -63,6 +79,7 @@ export async function loadBookableItems(
   search: { term?: string; target?: string; page?: number },
   token: string,
   signal: AbortSignal,
+  includeDisabled = false,
 ): Promise<{ options: readonly BookableItemOption[]; totalPages: number }> {
   const userFilter: FilterExpression<PickerFilterDocument> | undefined = search.target
     ? { kind: "comparison" as const, field: "target", operator: "equals" as const, value: search.target }
@@ -74,21 +91,25 @@ export async function loadBookableItems(
           value: search.term.trim(),
         }
       : undefined;
-  const expression: FilterExpression<PickerFilterDocument> = userFilter
-    ? {
-        kind: "and" as const,
-        children: [
-          { kind: "comparison" as const, field: "enabled", operator: "equals" as const, value: true },
-          userFilter,
-        ],
-      }
-    : { kind: "comparison" as const, field: "enabled", operator: "equals" as const, value: true };
+  const expression: FilterExpression<PickerFilterDocument> =
+    includeDisabled && userFilter
+      ? userFilter
+      : userFilter
+        ? {
+            kind: "and" as const,
+            children: [
+              { kind: "comparison" as const, field: "enabled", operator: "equals" as const, value: true },
+              userFilter,
+            ],
+          }
+        : { kind: "comparison" as const, field: "enabled", operator: "equals" as const, value: true };
   const params = new URLSearchParams({
     where: serializeRsql<PickerFilterDocument>(expression, selectors, limits),
     page: String(search.page ?? 1),
     limit: "20",
     depth: "1",
-    "fields[booking-configurations]": "id,target,timezone",
+    "fields[booking-configurations]":
+      "id,target,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",
   });
   const response = await fetch(`/api/v2/booking-configurations?${params}`, {
     headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
@@ -104,6 +125,15 @@ export function useBookableItem(target: string | undefined, token: string) {
     queryKey: ["api-v2", "booking-configurations", "enabled-picker", "target", target],
     enabled: Boolean(target && token),
     queryFn: ({ signal }) => loadBookableItems({ target }, token, signal),
+    select: (page) => page.options.find((option) => option.globalId === target),
+  });
+}
+
+export function useBookableItemConfiguration(target: string | undefined, token: string) {
+  return useQuery({
+    queryKey: ["api-v2", "booking-configurations", "picker", "target", target],
+    enabled: Boolean(target && token),
+    queryFn: ({ signal }) => loadBookableItems({ target }, token, signal, true),
     select: (page) => page.options.find((option) => option.globalId === target),
   });
 }

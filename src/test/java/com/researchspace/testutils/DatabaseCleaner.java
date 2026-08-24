@@ -80,6 +80,11 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from ClustermarketEquipment");
     jdbcTemplate.update("delete from FeatureFlagUserOverride");
     jdbcTemplate.update("delete from FeatureFlagBaseline");
+    jdbcTemplate.update("delete from BookingConfigurationDefaults_AUD");
+    jdbcTemplate.update(
+        "update BookingConfigurationDefaults set slotGranularityMinutes = 5, openingStart ="
+            + " '00:00', openingEnd = '24:00', bufferBeforeMinutes = 0, bufferAfterMinutes = 0,"
+            + " maxBookingDurationMinutes = 0, allowDoubleBooking = 0, configurationVersion = 0");
 
     jdbcTemplate.update("delete from OAuthApp where id > 0");
 

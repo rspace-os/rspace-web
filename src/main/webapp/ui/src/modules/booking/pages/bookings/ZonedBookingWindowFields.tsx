@@ -45,20 +45,51 @@ export function resolveBookingWindow(
 
 export function ZonedBookingWindowFields({
   timezone,
+  slotGranularityMinutes,
+  maxBookingDurationMinutes,
+  openingStart,
+  openingEnd,
   value,
   onChange,
   onResolved,
+  allowPolicyMismatch = false,
   disabled = false,
 }: {
   timezone: string;
+  slotGranularityMinutes: number;
+  maxBookingDurationMinutes: number;
+  openingStart: string;
+  openingEnd: string;
   value: BookingWindowDraft;
   onChange: (value: BookingWindowDraft) => void;
   onResolved: (value: ResolvedBookingWindow | undefined) => void;
+  allowPolicyMismatch?: boolean;
   disabled?: boolean;
 }) {
   const { t } = useTranslation("booking");
   const result = useMemo(() => resolveBookingWindow(value, timezone), [value, timezone]);
-  useEffect(() => onResolved(result.window), [onResolved, result.window]);
+  const minute = (time: string) => {
+    const match = /^(\d{2}):(\d{2})$/.exec(time);
+    return match ? Number(match[1]) * 60 + Number(match[2]) : undefined;
+  };
+  const startMinute = minute(value.startTime);
+  const endMinute = minute(value.endTime);
+  const granularityInvalid =
+    (startMinute !== undefined && startMinute % slotGranularityMinutes !== 0) ||
+    (endMinute !== undefined && endMinute % slotGranularityMinutes !== 0);
+  const openingInvalid =
+    Boolean(result.window) &&
+    openingEnd !== "24:00" &&
+    (value.startDate !== value.endDate || value.startTime < openingStart || value.endTime > openingEnd);
+  const maximumDurationInvalid =
+    Boolean(result.window) &&
+    maxBookingDurationMinutes > 0 &&
+    Temporal.Instant.from(result.window?.end ?? "").epochMilliseconds -
+      Temporal.Instant.from(result.window?.start ?? "").epochMilliseconds >
+      maxBookingDurationMinutes * 60_000;
+  const policyInvalid = granularityInvalid || openingInvalid || maximumDurationInvalid;
+  const resolvedWindow = policyInvalid && !allowPolicyMismatch ? undefined : result.window;
+  useEffect(() => onResolved(resolvedWindow), [onResolved, resolvedWindow]);
   const change = (patch: Partial<BookingWindowDraft>) => onChange({ ...value, ...patch });
 
   const endpoint = (
@@ -89,6 +120,7 @@ export function ZonedBookingWindowFields({
             <Input
               id={`booking-${name}-time`}
               type="time"
+              step={slotGranularityMinutes * 60}
               required
               disabled={disabled}
               value={value[timeKey]}
@@ -125,6 +157,11 @@ export function ZonedBookingWindowFields({
       {endpoint("start", result.start, value.startOccurrence)}
       {endpoint("end", result.end, value.endOccurrence)}
       {result.orderInvalid && <FieldError>{t("bookings.errors.endAfterStart")}</FieldError>}
+      {granularityInvalid && !allowPolicyMismatch && <FieldError>{t("bookings.errors.granularity")}</FieldError>}
+      {openingInvalid && !allowPolicyMismatch && <FieldError>{t("bookings.errors.openingHours")}</FieldError>}
+      {maximumDurationInvalid && !allowPolicyMismatch && (
+        <FieldError>{t("bookings.errors.maximumDuration")}</FieldError>
+      )}
     </div>
   );
 }

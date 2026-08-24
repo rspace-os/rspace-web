@@ -45,7 +45,20 @@
         "authenticationRequired": "Authentication is required.",
         "bookingConfiguration": {
           "create": "The booking configuration is invalid.",
+          "buffer": {
+            "invalid": "Booking buffers must be between 0 and 10,080 minutes."
+          },
+          "granularity": {
+            "invalid": "Slot granularity must be 1, 5, or 15 minutes."
+          },
+          "maximumDuration": {
+            "invalid": "Maximum booking duration must be 0 or a multiple of the slot granularity, up to 527,040 minutes."
+          },
+          "openingHours": {
+            "invalid": "Opening hours must use HH:mm with start before end, or 00:00–24:00 for full-day availability."
+          },
           "patch": "The booking configuration patch is invalid.",
+          "stale": "The booking settings changed after this page was loaded. Reload and try again.",
           "target": {
             "conflict": "The selected target already has a booking configuration.",
             "invalid": "The selected target is not available for booking."
@@ -63,6 +76,10 @@
         },
         "booking": {
           "create": "The booking is invalid.",
+          "duration": "Bookings may not exceed 366 days.",
+          "granularity": "Start and end must align with this bookable item's slot granularity.",
+          "maximumDuration": "The booking exceeds this bookable item's maximum duration.",
+          "openingHours": "The booking must remain within this bookable item's opening hours.",
           "overlap": "The selected time overlaps another booking.",
           "patch": "The booking patch is invalid.",
           "purpose": {

@@ -93,6 +93,46 @@ public class BookingConfiguration implements Serializable {
   @Setter
   private long configurationVersion;
 
+  @Getter(
+      onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "slotGranularityMinutes")})
+  @Setter
+  private long slotGranularityMinutes = BookingSchedulingSettings.DEFAULT_SLOT_GRANULARITY_MINUTES;
+
+  @Getter(
+      onMethod_ = {
+        @Column(nullable = false, length = 5),
+        @AuditTrailProperty(name = "openingStart")
+      })
+  @Setter
+  private String openingStart = BookingSchedulingSettings.DEFAULT_OPENING_START;
+
+  @Getter(
+      onMethod_ = {@Column(nullable = false, length = 5), @AuditTrailProperty(name = "openingEnd")})
+  @Setter
+  private String openingEnd = BookingSchedulingSettings.DEFAULT_OPENING_END;
+
+  @Getter(
+      onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "bufferBeforeMinutes")})
+  @Setter
+  private long bufferBeforeMinutes = BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES;
+
+  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "bufferAfterMinutes")})
+  @Setter
+  private long bufferAfterMinutes = BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES;
+
+  @Getter(
+      onMethod_ = {
+        @Column(nullable = false),
+        @AuditTrailProperty(name = "maxBookingDurationMinutes")
+      })
+  @Setter
+  private long maxBookingDurationMinutes =
+      BookingSchedulingSettings.DEFAULT_MAX_BOOKING_DURATION_MINUTES;
+
+  @Getter(onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "allowDoubleBooking")})
+  @Setter
+  private boolean allowDoubleBooking = BookingSchedulingSettings.DEFAULT_ALLOW_DOUBLE_BOOKING;
+
   public BookingConfiguration() {}
 
   /** Returns the resource-specific identifier stored in the searchable audit log. */
@@ -143,5 +183,31 @@ public class BookingConfiguration implements Serializable {
     } catch (DateTimeException ex) {
       return false;
     }
+  }
+
+  @Transient
+  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
+  public boolean isGranularityValid() {
+    return BookingSchedulingSettings.isGranularityValid(slotGranularityMinutes);
+  }
+
+  @Transient
+  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.openingHours.invalid}")
+  public boolean isOpeningHoursValid() {
+    return BookingSchedulingSettings.areOpeningHoursValid(openingStart, openingEnd);
+  }
+
+  @Transient
+  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
+  public boolean areBuffersValid() {
+    return BookingSchedulingSettings.isBufferValid(bufferBeforeMinutes)
+        && BookingSchedulingSettings.isBufferValid(bufferAfterMinutes);
+  }
+
+  @Transient
+  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.maximumDuration.invalid}")
+  public boolean isMaximumDurationValid() {
+    return BookingSchedulingSettings.isMaximumDurationValid(
+        maxBookingDurationMinutes, slotGranularityMinutes);
   }
 }

@@ -1,5 +1,5 @@
 import { Form, useField, useForm } from "@formisch/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
@@ -14,6 +14,7 @@ import {
   BookingConfigurationInputSchema,
   bookingConfigurationFields,
 } from "./bookingConfiguration";
+import { loadBookingSettings, SchedulingSettingsFields } from "./schedulingSettings";
 
 const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
 const targetFields = bookingConfigurationFields.filter((field) => field.name === "target");
@@ -71,7 +72,21 @@ async function createBookingConfiguration(input: BookingConfigurationInput, toke
 type TargetSelection = { type: "empty" } | { type: "instrument"; id: number } | { type: "unsupported" };
 
 function targetSelection(input: unknown): TargetSelection {
-  if (input === undefined || input === null) return { type: "empty" };
+  if (
+    input === undefined ||
+    input === null ||
+    input === "" ||
+    (typeof input === "object" && Object.keys(input).length === 0)
+  ) {
+    return { type: "empty" };
+  }
+  if (
+    typeof input === "object" &&
+    "value" in input &&
+    (input.value === undefined || input.value === null || input.value === "")
+  ) {
+    return { type: "empty" };
+  }
   if (typeof input !== "object" || !("relationTo" in input) || !("value" in input)) return { type: "unsupported" };
   return input.relationTo === "instruments" && typeof input.value === "number"
     ? { type: "instrument", id: input.value }
@@ -81,11 +96,24 @@ function targetSelection(input: unknown): TargetSelection {
 export default function AddBookableItemPage() {
   const { t } = useTranslation("booking");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const defaults = useSuspenseQuery({
+    queryKey: ["api-v2", "booking-settings"],
+    queryFn: ({ signal }) => loadBookingSettings(token, signal),
+  }).data;
   const queryClient = useQueryClient();
   const navigate = useNavigate({ from: "/booking/config/bookable-items/add" });
   const form = useForm({
     schema: BookingConfigurationInputSchema,
-    initialInput: { enabled: true },
+    initialInput: {
+      enabled: true,
+      slotGranularityMinutes: defaults.slotGranularityMinutes,
+      openingStart: defaults.openingStart,
+      openingEnd: defaults.openingEnd,
+      bufferBeforeMinutes: defaults.bufferBeforeMinutes,
+      bufferAfterMinutes: defaults.bufferAfterMinutes,
+      maxBookingDurationMinutes: defaults.maxBookingDurationMinutes,
+      allowDoubleBooking: defaults.allowDoubleBooking,
+    },
   });
   const target = targetSelection(useField(form, { path: ["target"] }).input);
   const selectedTargetId = target.type === "instrument" ? target.id : undefined;
@@ -156,6 +184,7 @@ export default function AddBookableItemPage() {
         {canComplete ? (
           <>
             <RenderFields fields={detailFields} form={form} disabled={createMutation.isPending} />
+            <SchedulingSettingsFields form={form} disabled={createMutation.isPending} />
             {createFailed ? (
               <p role="alert" className="text-sm text-destructive">
                 {t("bookableItems.addError")}

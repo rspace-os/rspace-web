@@ -31,6 +31,14 @@ const booking = (id: number, target: string, start: string, end: string) => ({
   state: "CONFIRMED",
 });
 
+const schedule = {
+  openingStart: "00:00",
+  openingEnd: "24:00",
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+  allowDoubleBooking: false,
+};
+
 describe("calendar availability", () => {
   it("uses one minimal batched query and clips results to each row's zoned day", async () => {
     const requests: URL[] = [];
@@ -48,8 +56,8 @@ describe("calendar availability", () => {
 
     const result = await loadCalendarAvailability(
       [
-        { globalId: "IN1", timezone: "Europe/Berlin" },
-        { globalId: "IN2", timezone: "America/New_York" },
+        { globalId: "IN1", timezone: "Europe/Berlin", ...schedule },
+        { globalId: "IN2", timezone: "America/New_York", ...schedule },
       ],
       "2026-03-29",
       "token",
@@ -84,7 +92,7 @@ describe("calendar availability", () => {
         );
       }),
     );
-    const rows = [{ globalId: "IN1", timezone: "UTC" }];
+    const rows = [{ globalId: "IN1", timezone: "UTC", ...schedule }];
     const result = await loadCalendarAvailability(rows, "2026-08-17", "token", new AbortController().signal);
     expect(pages).toEqual(["1", "2"]);
     expect(result.get("IN1")).toHaveLength(2);
@@ -111,8 +119,8 @@ describe("calendar availability", () => {
 
     const result = await loadDatedCalendarAvailability(
       [
-        { globalId: "IN1", timezone: "Asia/Tokyo", date: "2026-08-18" },
-        { globalId: "IN2", timezone: "America/Los_Angeles", date: "2026-08-17" },
+        { globalId: "IN1", timezone: "Asia/Tokyo", date: "2026-08-18", ...schedule },
+        { globalId: "IN2", timezone: "America/Los_Angeles", date: "2026-08-17", ...schedule },
       ],
       "token",
       new AbortController().signal,
@@ -129,12 +137,66 @@ describe("calendar availability", () => {
     ]);
   });
 
+  it("marks closed and buffered periods unavailable while double-bookable events stay available", async () => {
+    server.use(
+      http.get("/api/v2/bookings", () =>
+        HttpResponse.json(envelope([booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z")])),
+      ),
+    );
+    const restricted = {
+      globalId: "IN1",
+      timezone: "UTC",
+      openingStart: "08:00",
+      openingEnd: "18:00",
+      bufferBeforeMinutes: 10,
+      bufferAfterMinutes: 20,
+      allowDoubleBooking: false,
+    };
+
+    const unavailable = await loadCalendarAvailability(
+      [restricted],
+      "2026-08-17",
+      "token",
+      new AbortController().signal,
+    );
+    expect(unavailable.get("IN1")).toEqual([
+      {
+        kind: "blockout",
+        startsAt: new Date("2026-08-17T00:00:00Z"),
+        endsAt: new Date("2026-08-17T08:00:00Z"),
+      },
+      {
+        kind: "blockout",
+        startsAt: new Date("2026-08-17T18:00:00Z"),
+        endsAt: new Date("2026-08-18T00:00:00Z"),
+      },
+      {
+        kind: "booking",
+        startsAt: new Date("2026-08-17T09:50:00Z"),
+        endsAt: new Date("2026-08-17T11:20:00Z"),
+      },
+    ]);
+
+    const available = await loadCalendarAvailability(
+      [{ ...restricted, allowDoubleBooking: true }],
+      "2026-08-17",
+      "token",
+      new AbortController().signal,
+    );
+    expect(available.get("IN1")?.filter(({ kind }) => kind === "booking")).toEqual([]);
+  });
+
   it("honors cancellation before starting a batch", async () => {
     const controller = new AbortController();
     controller.abort();
 
     await expect(
-      loadCalendarAvailability([{ globalId: "IN1", timezone: "UTC" }], "2026-08-17", "token", controller.signal),
+      loadCalendarAvailability(
+        [{ globalId: "IN1", timezone: "UTC", ...schedule }],
+        "2026-08-17",
+        "token",
+        controller.signal,
+      ),
     ).rejects.toThrow();
   });
 });

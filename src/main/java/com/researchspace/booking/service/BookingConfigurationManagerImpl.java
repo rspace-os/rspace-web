@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
@@ -8,6 +9,8 @@ import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationDefaults;
+import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
@@ -36,16 +39,19 @@ import org.springframework.stereotype.Service;
 public class BookingConfigurationManagerImpl implements BookingConfigurationManager {
 
   private final BookingConfigurationDao bookingConfigurationDao;
+  private final BookingConfigurationDefaultsDao defaultsDao;
   private final Validator validator;
   private final ApplicationEventPublisher events;
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
 
   public BookingConfigurationManagerImpl(
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao bookingConfigurationDao,
+      @Qualifier("bookingConfigurationDefaultsDao") BookingConfigurationDefaultsDao defaultsDao,
       Validator validator,
       ApplicationEventPublisher events,
       ObjectProvider<ResourceRegistry> resourceRegistry) {
     this.bookingConfigurationDao = bookingConfigurationDao;
+    this.defaultsDao = defaultsDao;
     this.validator = validator;
     this.events = events;
     this.resourceRegistry = resourceRegistry;
@@ -94,7 +100,13 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     if (creates.size() > ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkCreateRows()) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }
-    List<BookingConfiguration> configurations = creates.stream().map(this::configuration).toList();
+    BookingConfigurationDefaults defaults =
+        defaultsDao
+            .getSafeNull(BookingConfigurationDefaults.SINGLETON_ID)
+            .orElseThrow(
+                () -> new IllegalStateException("Booking configuration defaults row is missing"));
+    List<BookingConfiguration> configurations =
+        creates.stream().map(create -> configuration(create, defaults)).toList();
     Date now = new Date();
     configurations.forEach(configuration -> initializeAudit(configuration, actor, now));
     Set<BookableTargetReference> targets = new HashSet<>();
@@ -109,12 +121,17 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     return saved;
   }
 
-  private BookingConfiguration configuration(Create create) {
+  private BookingConfiguration configuration(Create create, BookingConfigurationDefaults defaults) {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setEnabled(create.enabled());
     configuration.setTimeZone(create.timeZone());
+    create
+        .schedulingSettings()
+        .merge(BookingSchedulingSettings.from(defaults))
+        .applyTo(configuration);
     BookableTargetReference target = validateTarget(create.target());
     configuration.replaceTarget(target);
+    validateSettings(configuration);
     validate(configuration);
     return configuration;
   }
@@ -136,11 +153,12 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
                   targetChanged = true;
                 }
               }
-              if (!targetChanged && patch.enabled() == null && patch.timeZone() == null) {
+              if (!targetChanged && unchanged(patch)) {
                 return configuration;
               }
               apply(patch, configuration);
               touchAudit(configuration, actor, new Date());
+              validateSettings(configuration);
               validate(configuration);
               BookingConfiguration saved = save(configuration);
               notifyAudit(actor, subject, saved, AuditAction.WRITE);
@@ -167,6 +185,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
         configuration -> {
           apply(patch, configuration);
           touchAudit(configuration, actor, now);
+          validateSettings(configuration);
           validate(configuration);
         });
     matches.forEach(this::save);
@@ -230,6 +249,20 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     if (patch.timeZone() != null) {
       configuration.setTimeZone(patch.timeZone());
     }
+    patch
+        .schedulingSettings()
+        .merge(BookingSchedulingSettings.from(configuration))
+        .applyTo(configuration);
+  }
+
+  private static boolean unchanged(Patch patch) {
+    return patch.enabled() == null
+        && patch.timeZone() == null
+        && patch.schedulingSettings().isEmpty();
+  }
+
+  private static void validateSettings(BookingConfiguration configuration) {
+    BookingSettingsValidation.requireValid(BookingSchedulingSettings.from(configuration));
   }
 
   private static void initializeAudit(

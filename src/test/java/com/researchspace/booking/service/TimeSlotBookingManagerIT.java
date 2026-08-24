@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInstrument;
@@ -37,9 +38,39 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
 
   @Test
   public void configurationLockSerializesTwoOverlappingCreates() throws Exception {
+    assertConcurrentOverlappingCreates(false, 1, 1);
+  }
+
+  @Test
+  public void configurationLockPermitsBothOverlappingCreatesWhenDoubleBookingIsEnabled()
+      throws Exception {
+    assertConcurrentOverlappingCreates(true, 2, 0);
+  }
+
+  @Test
+  public void asymmetricBuffersRejectCandidatesOnTheCorrectSidesAndKeepExactBoundariesOpen() {
+    User owner = createInitAndLoginAnyUser();
+    ApiInstrument created = createBasicInstrumentForUser(owner, "Buffer boundary scope");
+    Setup setup = persistConfiguration(owner, created.getId(), false, 10, 20);
+    ResolvedBookableTarget target = new ResolvedBookableTarget(setup.target(), setup.instrument());
+
+    create(target, owner, "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z");
+
+    assertThrows(
+        BookingOverlapException.class,
+        () -> create(target, owner, "2026-08-17T11:15:00Z", "2026-08-17T12:00:00Z"));
+    assertThrows(
+        BookingOverlapException.class,
+        () -> create(target, owner, "2026-08-17T09:00:00Z", "2026-08-17T09:55:00Z"));
+    create(target, owner, "2026-08-17T11:20:00Z", "2026-08-17T12:00:00Z");
+    create(target, owner, "2026-08-17T09:00:00Z", "2026-08-17T09:50:00Z");
+  }
+
+  private void assertConcurrentOverlappingCreates(
+      boolean allowDoubleBooking, long expectedSaved, long expectedOverlaps) throws Exception {
     User owner = createInitAndLoginAnyUser();
     ApiInstrument created = createBasicInstrumentForUser(owner, "Concurrency scope");
-    Setup setup = persistConfiguration(owner, created.getId());
+    Setup setup = persistConfiguration(owner, created.getId(), allowDoubleBooking, 0, 0);
     CountDownLatch holderLocked = new CountDownLatch(1);
     CountDownLatch releaseHolder = new CountDownLatch(1);
     CountDownLatch contendersStarted = new CountDownLatch(2);
@@ -77,10 +108,12 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
           Arrays.asList(first.get(20, TimeUnit.SECONDS), second.get(20, TimeUnit.SECONDS));
       holder.get(20, TimeUnit.SECONDS);
 
-      assertEquals(1, results.stream().filter(result -> result == null).count());
-      assertEquals(1, results.stream().filter(BookingOverlapException.class::isInstance).count());
+      assertEquals(expectedSaved, results.stream().filter(result -> result == null).count());
       assertEquals(
-          Integer.valueOf(1),
+          expectedOverlaps,
+          results.stream().filter(BookingOverlapException.class::isInstance).count());
+      assertEquals(
+          Integer.valueOf((int) expectedSaved),
           jdbcTemplate.queryForObject(
               "SELECT COUNT(*) FROM TimeSlotBooking WHERE bookingConfiguration_id = ? AND deleted ="
                   + " 0",
@@ -94,7 +127,20 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     }
   }
 
-  private Setup persistConfiguration(User owner, Long instrumentId) {
+  private void create(ResolvedBookableTarget target, User owner, String start, String end) {
+    bookingManager.createBooking(
+        new TimeSlotBookingManager.Create(
+            target, Date.from(Instant.parse(start)), Date.from(Instant.parse(end)), null),
+        owner,
+        owner);
+  }
+
+  private Setup persistConfiguration(
+      User owner,
+      Long instrumentId,
+      boolean allowDoubleBooking,
+      long bufferBeforeMinutes,
+      long bufferAfterMinutes) {
     openTransaction();
     Instrument instrument = instrumentDao.get(instrumentId);
     Hibernate.initialize(instrument.getOwner());
@@ -103,6 +149,9 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setEnabled(true);
     configuration.setTimeZone("UTC");
+    configuration.setAllowDoubleBooking(allowDoubleBooking);
+    configuration.setBufferBeforeMinutes(bufferBeforeMinutes);
+    configuration.setBufferAfterMinutes(bufferAfterMinutes);
     configuration.replaceTarget(target);
     sessionFactory.getCurrentSession().persist(configuration);
     sessionFactory.getCurrentSession().flush();

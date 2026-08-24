@@ -35,7 +35,36 @@ const booking = {
   updatedAt: "2026-08-17T06:00:00Z",
 } as const;
 
+const configuration = {
+  id: 7,
+  target: booking.target,
+  timezone: booking.timezone,
+  slotGranularityMinutes: 5,
+  openingStart: "08:00",
+  openingEnd: "18:00",
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+  maxBookingDurationMinutes: 0,
+  allowDoubleBooking: false,
+};
+
 function renderPage(initialEntry = "/booking/calendar/bookings/41?target=IN123&date=2026-10-25") {
+  server.use(
+    http.get("/api/v2/booking-configurations", () =>
+      HttpResponse.json({
+        docs: [configuration],
+        totalDocs: 1,
+        limit: 20,
+        page: 1,
+        pagingCounter: 1,
+        totalPages: 1,
+        hasPrevPage: false,
+        hasNextPage: false,
+        prevPage: null,
+        nextPage: null,
+      }),
+    ),
+  );
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const root = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
@@ -59,7 +88,7 @@ function renderPage(initialEntry = "/booking/calendar/bookings/41?target=IN123&d
 }
 
 describe("EditBookingPage", () => {
-  it("loads an exact zoned form, patches documented fields, invalidates, and returns", async () => {
+  it("allows a purpose-only edit when current opening hours reject the unchanged interval", async () => {
     const user = userEvent.setup();
     let body: unknown;
     let selectedFields: string | null = null;
@@ -80,6 +109,7 @@ describe("EditBookingPage", () => {
     expect(await screen.findByText("Confocal microscope")).toBeVisible();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "booking:bookings.form.laterOccurrence" })).toBeChecked();
+    expect(screen.queryByText("booking:bookings.errors.openingHours")).not.toBeInTheDocument();
     const purpose = screen.getByLabelText("booking:bookings.form.purpose");
     await user.clear(purpose);
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
@@ -159,5 +189,26 @@ describe("EditBookingPage", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookings.errors.noLongerEditable");
     expect(reads).toBeGreaterThan(1);
+  });
+
+  it("maps a server-side maximum-duration rejection to localized text", async () => {
+    const user = userEvent.setup();
+    server.use(
+      oauthTokenHandler(),
+      http.get("/api/v2/bookings/41", () => HttpResponse.json(booking)),
+      http.patch("/api/v2/bookings/41", () =>
+        HttpResponse.json(
+          { status: 400, code: "errors.api.v2.booking.maximumDuration", detail: "private server detail" },
+          { status: 400 },
+        ),
+      ),
+    );
+    renderPage();
+    await user.type(await screen.findByLabelText("booking:bookings.form.purpose"), " changed");
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+
+    expect(await screen.findByText("booking:bookings.errors.maximumDuration")).toBeVisible();
+    expect(screen.queryByText("private server detail")).not.toBeInTheDocument();
   });
 });

@@ -24,6 +24,13 @@ const optionDocument = {
     value: { id: 123, name: "Confocal microscope", deleted: false },
   },
   timezone: "Europe/Berlin",
+  slotGranularityMinutes: 5,
+  openingStart: "00:00",
+  openingEnd: "24:00",
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+  maxBookingDurationMinutes: 0,
+  allowDoubleBooking: false,
 };
 
 const createdBooking = {
@@ -153,5 +160,26 @@ describe("AddBookingPage", () => {
     expect(screen.queryByText("private server detail")).not.toBeInTheDocument();
     const start = screen.getByRole("group", { name: "booking:bookings.form.start" });
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("09:00");
+  });
+
+  it("maps a server-side maximum-duration rejection to localized text", async () => {
+    const user = userEvent.setup();
+    server.use(
+      oauthTokenHandler(),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(page([optionDocument]))),
+      http.post("/api/v2/bookings", () =>
+        HttpResponse.json(
+          { status: 400, code: "errors.api.v2.booking.maximumDuration", detail: "private server detail" },
+          { status: 400 },
+        ),
+      ),
+    );
+    renderPage();
+    await fillWindow(user);
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+
+    expect(await screen.findByText("booking:bookings.errors.maximumDuration")).toBeVisible();
+    expect(screen.queryByText("private server detail")).not.toBeInTheDocument();
   });
 });

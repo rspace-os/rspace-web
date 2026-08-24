@@ -61,6 +61,7 @@ type BookingFormProps =
   | {
       mode: "edit";
       booking: EditableBooking;
+      configuration: BookableItemOption;
       token: string;
       pending: boolean;
       error?: string;
@@ -71,26 +72,31 @@ function emptyDraft(date = ""): BookingWindowDraft {
   return { startDate: date, startTime: "", endDate: date, endTime: "" };
 }
 
-function optionFromBooking(booking: EditableBooking): BookableItemOption {
-  return {
-    configurationId: 0,
-    targetId: booking.target.value.id,
-    globalId: booking.target.globalId,
-    name: booking.target.value.name,
-    timezone: booking.timezone,
-  };
+function sameWindowDraft(left: BookingWindowDraft, right: BookingWindowDraft): boolean {
+  return (
+    left.startDate === right.startDate &&
+    left.startTime === right.startTime &&
+    left.startOccurrence === right.startOccurrence &&
+    left.endDate === right.endDate &&
+    left.endTime === right.endTime &&
+    left.endOccurrence === right.endOccurrence
+  );
 }
 
 export function BookingForm(props: BookingFormProps) {
   const { t } = useTranslation("booking");
   const editing = props.mode === "edit";
-  const fixedTarget = editing ? optionFromBooking(props.booking) : undefined;
+  const fixedTarget = props.mode === "edit" ? props.configuration : undefined;
   const initialTarget = props.mode === "add" ? props.initialTarget : undefined;
   const initialDate = props.mode === "add" ? props.initialDate : undefined;
+  const originalDraft =
+    props.mode === "edit"
+      ? wallClockDraftFromInstants(props.booking.start, props.booking.end, props.booking.timezone)
+      : undefined;
   const [target, setTarget] = useState<BookableItemOption | undefined>(editing ? fixedTarget : initialTarget);
   const [draft, setDraft] = useState<BookingWindowDraft>(() =>
-    editing
-      ? wallClockDraftFromInstants(props.booking.start, props.booking.end, props.booking.timezone)
+    originalDraft
+      ? originalDraft
       : emptyDraft(
           initialDate ??
             (initialTarget ? currentWallClock(new Date().toISOString(), initialTarget.timezone).date : undefined),
@@ -167,13 +173,30 @@ export function BookingForm(props: BookingFormProps) {
       )}
       {attempted && !target && <FieldError>{t("bookings.errors.itemRequired")}</FieldError>}
       {target && (
-        <ZonedBookingWindowFields
-          timezone={target.timezone}
-          value={draft}
-          onChange={setDraft}
-          onResolved={resolved}
-          disabled={busy}
-        />
+        <>
+          <p className="text-sm text-muted-foreground">
+            {t("bookings.form.openingHours", { start: target.openingStart, end: target.openingEnd })}
+          </p>
+          {target.maxBookingDurationMinutes > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("bookings.form.maximumDuration", {
+                count: target.maxBookingDurationMinutes,
+              })}
+            </p>
+          ) : null}
+          <ZonedBookingWindowFields
+            timezone={target.timezone}
+            slotGranularityMinutes={target.slotGranularityMinutes}
+            maxBookingDurationMinutes={target.maxBookingDurationMinutes}
+            openingStart={target.openingStart}
+            openingEnd={target.openingEnd}
+            value={draft}
+            onChange={setDraft}
+            onResolved={resolved}
+            allowPolicyMismatch={Boolean(originalDraft && sameWindowDraft(draft, originalDraft))}
+            disabled={busy}
+          />
+        </>
       )}
       {attempted && target && !window && <FieldError>{t("bookings.errors.windowRequired")}</FieldError>}
       {props.error && <FieldError>{props.error}</FieldError>}
