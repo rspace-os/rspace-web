@@ -57,7 +57,7 @@ function OperationConfirmation({
    * (`emptiesOrigin`) cannot run on an empty subsample, so the confirmation shows why and the wizard
    * disables Perform. Defaults to true (producing operations gate emptiness on their amounts step). */
   originHasAmount?: boolean;
-  /** The amount mode for a multi-origin operation (DevDocs/adr/0014); drives how the amount-taken row reads. */
+  /** The amount mode for a multi-origin operation (DevDocs/adr/0007); drives how the amount-taken row reads. */
   amountMode?: AmountMode;
   /** Per-origin amounts (by origin global id) for "perSubsample" mode. */
   perSubsampleAmounts?: PerSubsampleAmounts;
@@ -89,7 +89,7 @@ function OperationConfirmation({
   // raw template string is shown). A multi-origin operation lists every origin in the linkBack row
   // below instead, so this single value is only its single-origin fallback.
   const linkName = effect.links.length ? resolveLabel(effect.links[0].fieldNameKey, { ...values, originName }) : "";
-  // Preview the values the operation will compute (DevDocs/adr/0011) so the origin-field rows show real
+  // Preview the values the operation will compute (DevDocs/adr/0007) so the origin-field rows show real
   // content. Computed here with no parent fields, which is exact for everything this card actually
   // renders: the only computed value it surfaces is an origin field, and the sole operation with
   // those (Destroy) computes `today`, which needs no parent fields. A parent-dependent computed value
@@ -131,7 +131,7 @@ function OperationConfirmation({
       const amountTakenLabel = usesAmountModes(operation)
         ? t("operations.confirm.labels.amountTakenEach")
         : t("operations.confirm.labels.amountTaken");
-      // Multi-origin amount modes (DevDocs/adr/0014): "take all" reads as emptied; "per subsample" lists each
+      // Multi-origin amount modes (DevDocs/adr/0007): "take all" reads as emptied; "per subsample" lists each
       // origin's chosen amount; "same" (and single-origin) shows the one shared amount as before.
       if (usesAmountModes(operation) && amountMode === "all") {
         return { label: amountTakenLabel, value: t("operations.confirm.values.takeAll") };
@@ -172,7 +172,7 @@ function OperationConfirmation({
     linkBack: () => {
       // Pool (multi-origin) links back to every pooled subsample; its link field name interpolates each
       // origin's own name ("Pooled from: {originName}"), so list one line per origin to match the links
-      // buildOperationRequest creates, rather than only the representative origin (DevDocs/adr/0012). A
+      // buildOperationRequest creates, rather than only the representative origin (DevDocs/adr/0007). A
       // single-origin operation shows its one link name.
       if (operation.requiresMultiple && origins.length && effect.links.length) {
         const fieldNameKey = effect.links[0].fieldNameKey;

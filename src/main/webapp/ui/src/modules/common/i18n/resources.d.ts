@@ -3985,7 +3985,7 @@ export default interface Resources {
         "linkFieldName": "Is Derived From using process: {processName}"
       },
       "destroy": {
-        "description": "Dispose of the subsample: set its volume to zero and record today's disposal date. Creates nothing.",
+        "description": "Dispose of the subsample: set its volume to zero and record today's disposal date.",
         "disposedField": "Disposed",
         "label": "Destroy"
       },

@@ -32,7 +32,7 @@ const operationIcons: Record<string, IconDefinition> = {
 
 /**
  * Step 1: choose an operation. Every operation from operations_config.json is shown; each is enabled
- * or greyed-out for the current selection (DevDocs/adr/0012): single-origin operations need exactly one
+ * or greyed-out for the current selection (DevDocs/adr/0007): single-origin operations need exactly one
  * subsample, Pool needs two or more of the same measurement category. A disabled operation shows the
  * reason as its secondary line instead of its description.
  */
@@ -51,7 +51,7 @@ export default function OperationPicker({
   // Cast so config-driven (dynamic) keys resolve; the keys are validated to exist in the catalog.
   const label = resolveLabelFrom(t);
   return (
-    // 2px between the operation buttons (DevDocs/adr/0014 UI request); a flex column with a small gap keeps
+    // 2px between the operation buttons (DevDocs/adr/0007 UI request); a flex column with a small gap keeps
     // the spacing even without per-item margins.
     <List sx={{ display: "flex", flexDirection: "column", gap: "2px" }}>
       {operations.map((operation) => {

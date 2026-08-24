@@ -31,10 +31,10 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 
 /**
- * Unit coverage for the controller's live-state pass (DevDocs/adr/0010, DevDocs/adr/0015): the
- * checks that need each origin's current quantity, which the stateless structural validator cannot
- * load. Uses the real validators over mocked managers, so every request shape runs the exact
- * production validation chain without a Spring context.
+ * Unit coverage for the controller's live-state pass (DevDocs/adr/0007): the checks that need each
+ * origin's current quantity, which the stateless structural validator cannot load. Uses the real
+ * validators over mocked managers, so every request shape runs the exact production validation
+ * chain without a Spring context.
  */
 class InventoryOperationsApiControllerTest {
 

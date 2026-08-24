@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 /**
  * Thin coordinator endpoint for configured Inventory operations. Validates the request, then
  * delegates to the transactional {@link InventoryOperationManager}, which performs the whole effect
- * atomically. No per-operation logic lives here (see DevDocs/adr/0006).
+ * atomically. No per-operation logic lives here (see DevDocs/adr/0007).
  */
 @ApiController
 public class InventoryOperationsApiController extends BaseApiInventoryController
@@ -64,7 +64,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
             new ApiSampleFullPost(newSample, user, template), sampleApiPostFullValidator, errors);
       }
     }
-    // Live-state checks (DevDocs/adr/0010, DevDocs/adr/0015): every origin must currently hold
+    // Live-state checks (DevDocs/adr/0007): every origin must currently hold
     // something, the amount taken may not exceed what an origin holds, and an origin-emptying
     // operation (e.g. Destroy) must take exactly what the origin holds. These need each origin's
     // live quantity, which the stateless structural validator cannot load, so they run here where
