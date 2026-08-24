@@ -205,6 +205,36 @@ describe("ElnFolderBrowser pagination", () => {
 
     expect(await screen.findByRole("treeitem", { name: "Doc three" })).toBeInTheDocument();
     expect(screen.getAllByRole("treeitem", { name: "Doc two" })).toHaveLength(1);
+    // termination is judged on rows fetched (4), not rows retained (3), so a
+    // dropped duplicate must not leave the button behind
+    expect(screen.queryByRole("button", { name: LOAD_MORE })).not.toBeInTheDocument();
+  });
+
+  it("stops offering Load more when an appended page comes back empty", async () => {
+    // simulates deletions during pagination: unseen records shifted up into the
+    // already-fetched page, so the tail page is empty while totalHits still
+    // reports more rows than were fetched
+    mockGetFolderTree.mockImplementation(({ id, pageNumber = 0 }: { id?: number; pageNumber?: number }) => {
+      if (id !== undefined) return Promise.resolve({ totalHits: 0, pageNumber: 0, records: [] });
+      return Promise.resolve({
+        totalHits: 4,
+        pageNumber,
+        records:
+          pageNumber === 0
+            ? [
+                { id: 1, globalId: "SD1", name: "Doc one", type: "DOCUMENT" },
+                { id: 2, globalId: "SD2", name: "Doc two", type: "DOCUMENT" },
+              ]
+            : [],
+      });
+    });
+    renderBrowser(vi.fn());
+    const user = userEvent.setup();
+
+    await screen.findByRole("treeitem", { name: "Doc two" });
+    await user.click(screen.getByRole("button", { name: LOAD_MORE }));
+
+    await waitFor(() => expect(screen.queryByRole("button", { name: LOAD_MORE })).not.toBeInTheDocument());
   });
 
   it("offers Load more inside an expanded folder and appends the next page", async () => {

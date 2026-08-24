@@ -149,6 +149,14 @@ function usePagedFolderListing(id?: number): {
   const { getFolderTree } = useFolders();
   const [records, setRecords] = React.useState<ReadonlyArray<FolderTreeNode>>([]);
   const [totalHits, setTotalHits] = React.useState(0);
+  // Raw rows fetched, including any dropped as duplicates below. Termination is
+  // judged against this rather than records.length so that a dropped duplicate
+  // cannot leave "Load more" visible forever after the last page.
+  const [fetchedCount, setFetchedCount] = React.useState(0);
+  // Set when an appended page comes back empty: deletions during pagination can
+  // shift unseen records up into pages already fetched, so the tail stays empty
+  // while fetchedCount never reaches totalHits.
+  const [exhausted, setExhausted] = React.useState(false);
   const [currentPage, setCurrentPage] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
@@ -171,6 +179,8 @@ function usePagedFolderListing(id?: number): {
           const seen = new Set(prev.map((r) => r.id));
           return [...prev, ...response.records.filter((r) => !seen.has(r.id))];
         });
+        setFetchedCount((prev) => (append ? prev + response.records.length : response.records.length));
+        setExhausted(append && response.records.length === 0);
         setTotalHits(response.totalHits);
         setCurrentPage(pageNumber);
       } catch {
@@ -190,7 +200,7 @@ function usePagedFolderListing(id?: number): {
     records,
     loading,
     error,
-    hasMorePages: records.length < totalHits,
+    hasMorePages: !exhausted && fetchedCount < totalHits,
     loadNextPage: () => void loadPage(currentPage + 1, true),
     reload: () => void loadPage(0, false),
   };
