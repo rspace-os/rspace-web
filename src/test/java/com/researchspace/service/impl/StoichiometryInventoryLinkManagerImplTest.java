@@ -216,9 +216,16 @@ public class StoichiometryInventoryLinkManagerImplTest {
     // the repeat is dropped before any stock is touched, so the amount comes off once (RSDEV-1319)
     verify(subSampleMgr)
         .registerApiSubSampleUsage(eq(invSubSample.getId()), any(QuantityInfo.class), eq(user));
-    // and the response carries one result row per distinct id, not per id sent
-    assertEquals(1, result.getResults().size());
-    assertTrue(result.getResults().get(0).isSuccess());
+    // but the public API contract is one result row per submitted entry, so the response
+    // cardinality is unchanged: three rows, all reporting the single deduction's outcome
+    assertEquals(3, result.getResults().size());
+    result
+        .getResults()
+        .forEach(
+            row -> {
+              assertEquals(321L, row.getLinkId().longValue());
+              assertTrue(row.isSuccess());
+            });
   }
 
   @Test
