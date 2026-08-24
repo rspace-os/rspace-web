@@ -1,6 +1,8 @@
 # Getting started with RSpace source code
 
-These instructions are for anyone wanting to run RSpace from source code, on their local machine. **Do NOT use these instructions if you want to run RSpace on a production server or even a pilot / trial server, use rspace-docker for this.**
+These instructions are for anyone wanting to run RSpace from source code, on their local machine. 
+
+**Do NOT use these instructions if you want to run RSpace on a production server or even a pilot / trial server, use rspace-docker for this.**
 
 ## Initial Setup
 
@@ -82,6 +84,27 @@ Current location of the codebase is https://github.com/rspace-os/rspace-web
 (if you are a member of ResearchSpace Dev Team, please clone our fork of the codebase located at https://github.com/ResearchSpace-ELN/rspace-web)
 
 We recommend using a Git client to download and update the source code.
+
+#### Create your local deployment.properties
+
+`src/main/resources/deployments/dev/deployment.properties` holds your local settings and
+credentials, so it is gitignored. Spring will not start without it, so copy the checked-in
+template once after cloning:
+
+```bash
+cp src/main/resources/deployments/dev/deployment.properties.example \
+   src/main/resources/deployments/dev/deployment.properties
+```
+
+The Docker dev stack (`./docker/dev/rspace-dev up`) and CI do this for you. Defaults for every
+property that has a sensible production value live in
+`src/main/resources/deployments/defaultDeployment.properties`; only put dev-specific overrides and
+your own credentials in the copy.
+
+To add or change a property for the whole team, edit `deployment.properties.example` (and
+`defaultDeployment.properties` if it has a production value) and copy it down again. Your own
+`deployment.properties` is git-ignored and the pre-commit hook refuses to stage it, so a change
+made only there never reaches anyone else or CI.
 
 #### Sanity check
 

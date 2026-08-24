@@ -62,6 +62,7 @@ pipeline {
                 sh "rm -rf $RS_FILE_BASE"
                 sh "mkdir -p $RS_FILE_BASE"
                 echo "Workspace jenkins var is $WORKSPACE"
+                sh 'cp -f src/main/resources/deployments/dev/deployment.properties.example src/main/resources/deployments/dev/deployment.properties'
             }
         }
 

@@ -1,10 +1,11 @@
-import Alert from "@mui/material/Alert";
+import Alert, { alertClasses } from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CardActions from "@mui/material/CardActions";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import type React from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
@@ -19,7 +20,7 @@ export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
 type BarcodeScannerSkeletonArgs = {
   onClose: () => void;
   onScan: (scannedBarcodeInput: BarcodeInput) => void;
-  buttonPrefix: string;
+  buttonPrefix?: string;
   beforeScanHelpText: string;
   barcode: BarcodeInput | null;
   setBarcode: (value: BarcodeInput | null) => void;
@@ -27,6 +28,7 @@ type BarcodeScannerSkeletonArgs = {
   warning?: React.ReactNode;
   videoElem: React.RefObject<HTMLVideoElement | null>;
   error: boolean;
+  submitOnScan?: boolean;
 };
 
 export default function BarcodeScannerSkeleton({
@@ -40,11 +42,12 @@ export default function BarcodeScannerSkeleton({
   warning,
   videoElem,
   error,
+  submitOnScan = false,
 }: BarcodeScannerSkeletonArgs): React.ReactNode {
   const { uiStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
 
-  function handleOnSubmit() {
+  const handleOnSubmit = useCallback(() => {
     try {
       if (!barcode || typeof barcode.rawValue !== "string") {
         uiStore.addAlert(
@@ -71,78 +74,131 @@ export default function BarcodeScannerSkeleton({
     } finally {
       onClose();
     }
-  }
+  }, [barcode, onScan, onClose, uiStore, t]);
+
+  /*
+   * The ref guards against the camera re-detecting the same code on a later
+   * interval tick before the popover has finished closing.
+   */
+  const submitted = useRef(false);
+  useEffect(() => {
+    if (submitOnScan && barcode?.rawValue && !submitted.current) {
+      submitted.current = true;
+      handleOnSubmit();
+    }
+  }, [submitOnScan, barcode, handleOnSubmit]);
+
+  const alertContent = loading ? (
+    t("barcodeScanner.loading")
+  ) : barcode?.rawValue ? (
+    <>
+      {t("barcodeScanner.barcodeDetected", { format: barcodeFormatAsString(barcode.format) })}
+      <br />
+      {`${barcode.rawValue}`}
+    </>
+  ) : (
+    t("barcodeScanner.prompt", { helpText: beforeScanHelpText })
+  );
+  const helpIcon = <HelpLinkIcon link={helpDocsArticleUrl("barcodes")} title={t("barcodeScanner.helpTitle")} />;
 
   return (
-    <Stack sx={{ alignItems: "center" }}>
-      <Stack
-        direction="row"
-        sx={{
-          justifyContent: "space-around",
-          width: "100%",
-          marginBottom: "8px",
-        }}
-      >
-        <Alert severity="info">
-          {loading ? (
-            t("barcodeScanner.loading")
-          ) : barcode?.rawValue ? (
-            <>
-              {t("barcodeScanner.barcodeDetected", { format: barcodeFormatAsString(barcode.format) })}
-              <br />
-              {`${barcode.rawValue}`}
-            </>
-          ) : (
-            t("barcodeScanner.prompt", { helpText: beforeScanHelpText })
-          )}
+    <Stack
+      sx={
+        submitOnScan
+          ? {
+              p: 1.5,
+              width: 440,
+              maxWidth: "80vw",
+              /*
+               * By default an Alert stretches its icon, message, and action
+               * slots to full height, leaving single-line text and the icon
+               * sitting high; centering the slots keeps them aligned.
+               */
+              [`& .${alertClasses.root}`]: { alignItems: "center" },
+            }
+          : { alignItems: "center" }
+      }
+      spacing={submitOnScan ? 1 : 0}
+    >
+      {submitOnScan ? (
+        <Alert severity="info" action={helpIcon}>
+          {alertContent}
         </Alert>
-        <HelpLinkIcon link={helpDocsArticleUrl("barcodes")} title={t("barcodeScanner.helpTitle")} />
-      </Stack>
-      <CardActions>
-        <Button
-          onClick={() => {
-            onClose();
+      ) : (
+        <Stack
+          direction="row"
+          sx={{
+            justifyContent: "space-around",
+            width: "100%",
+            marginBottom: "8px",
           }}
         >
-          {t("common:actions.cancel")}
-        </Button>
-        <Button
-          disabled={!barcode?.rawValue}
-          color="callToAction"
-          variant="contained"
-          disableElevation
-          onClick={handleOnSubmit}
-        >
-          {buttonPrefix}
-        </Button>
-        {barcode && (
+          <Alert severity="info">{alertContent}</Alert>
+          {helpIcon}
+        </Stack>
+      )}
+      {!submitOnScan && (
+        <CardActions>
           <Button
             onClick={() => {
-              setBarcode(null);
+              onClose();
             }}
           >
-            {t("common:actions.clear")}
+            {t("common:actions.cancel")}
           </Button>
-        )}
-      </CardActions>
+          <Button
+            disabled={!barcode?.rawValue}
+            color="callToAction"
+            variant="contained"
+            disableElevation
+            onClick={handleOnSubmit}
+          >
+            {buttonPrefix}
+          </Button>
+          {barcode && (
+            <Button
+              onClick={() => {
+                setBarcode(null);
+              }}
+            >
+              {t("common:actions.clear")}
+            </Button>
+          )}
+        </CardActions>
+      )}
       {/* hide via CSS on detection (not on loading or scanner won't start in Safari)  */}
       <Box
         component="video"
         ref={videoElem}
         sx={(theme) => ({
           display: barcode?.rawValue || error ? "none" : "block",
-          height: "37vh",
-          width: "37vw",
-          [theme.breakpoints.down("sm")]: {
-            width: "100%",
-            height: "100%",
-            maxHeight: "50vh",
-            maxWidth: "80vw",
-          },
+          ...(submitOnScan
+            ? { width: "100%", maxHeight: "45vh" }
+            : {
+                height: "37vh",
+                width: "37vw",
+                [theme.breakpoints.down("sm")]: {
+                  width: "100%",
+                  height: "100%",
+                  maxHeight: "50vh",
+                  maxWidth: "80vw",
+                },
+              }),
         })}
       />
-      {warning !== null && <Box>{warning}</Box>}
-      {(!barcode || barcode.format === "Unknown") && (
+      {warning !== null && <Box sx={submitOnScan ? { width: "100%" } : {}}>{warning}</Box>}
+      {submitOnScan && (
+        <Stack direction="row" sx={{ justifyContent: "flex-end", width: "100%" }}>
+          <Button
+            onClick={() => {
+              onClose();
+            }}
+          >
+            {t("common:actions.cancel")}
+          </Button>
+        </Stack>
+      )}
+      {!submitOnScan && (!barcode || barcode.format === "Unknown") && (
         <>
           <Box sx={{ width: "100%" }}>
             <Box sx={{ m: 1 }}>

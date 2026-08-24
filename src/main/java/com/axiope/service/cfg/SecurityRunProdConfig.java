@@ -2,6 +2,7 @@ package com.axiope.service.cfg;
 
 import static org.apache.commons.lang3.ArrayUtils.contains;
 
+import com.researchspace.auth.ApiAwareWebSecurityManager;
 import com.researchspace.auth.FirstSuccessOrExceptionAuthStrategy;
 import com.researchspace.auth.JCacheShiroCacheManager;
 import java.time.Duration;
@@ -26,7 +27,7 @@ public class SecurityRunProdConfig extends SecurityBaseConfig {
 
   @Bean
   public SecurityManager securityManager() {
-    DefaultWebSecurityManager rc = new DefaultWebSecurityManager();
+    DefaultWebSecurityManager rc = new ApiAwareWebSecurityManager();
     Collection<Realm> realms = new ArrayList<>();
 
     if (deploymentPropertyConfig.isStandalone()

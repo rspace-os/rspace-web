@@ -2,17 +2,23 @@ package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
@@ -22,7 +28,9 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -32,7 +40,9 @@ import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class InventoryIdentifierApiManagerImplUnitTest {
@@ -82,7 +92,8 @@ class InventoryIdentifierApiManagerImplUnitTest {
     User user = mock(User.class);
     when(user.getFullName()).thenReturn("Jane Doe");
     when(properties.getCustomerName()).thenReturn("Acme");
-    when(adapter.buildB2instDoi(instrument)).thenReturn(new B2instDoi());
+    when(adapter.buildB2instDoi(eq(instrument), nullable(String.class)))
+        .thenReturn(new B2instDoi());
     B2instDraftRecord draft = new B2instDraftRecord();
     draft.setId("k2j9p-7yh21");
     when(b2instConnector.registerDoi(any(B2instDoi.class))).thenReturn(draft);
@@ -97,6 +108,48 @@ class InventoryIdentifierApiManagerImplUnitTest {
     assertEquals("draft", result.getState());
     assertEquals(IdentifierType.PIDINST_B2INST.name(), result.getDoiType());
     assertEquals("Instrument", result.getResourceType());
+  }
+
+  /**
+   * The point of RSDEV-1254: the landing page address exists BEFORE the provider call, is built
+   * from the DTO's own suffix, and the same suffix stays on the DTO so the entity later adopts it.
+   * The URL is payload-only: publicUrl keeps its publish-time semantics (ADR 0006).
+   */
+  @Test
+  void createNewB2instDoiBuildsLandingPageFromGeneratedSuffixBeforeRegistering() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    RspaceToExternalProviderAdapter adapter = mock(RspaceToExternalProviderAdapter.class);
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    ReflectionTestUtils.setField(mgr, "rspaceToExternalProviderAdapter", adapter);
+    ReflectionTestUtils.setField(mgr, "properties", properties);
+
+    InventoryRecord instrument = mock(InventoryRecord.class);
+    User user = mock(User.class);
+    when(user.getFullName()).thenReturn("Jane Doe");
+    when(properties.getCustomerName()).thenReturn("Acme");
+    when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
+    when(adapter.buildB2instDoi(eq(instrument), nullable(String.class)))
+        .thenReturn(new B2instDoi());
+    B2instDraftRecord draft = new B2instDraftRecord();
+    draft.setId("k2j9p-7yh21");
+    when(b2instConnector.registerDoi(any(B2instDoi.class))).thenReturn(draft);
+
+    Method createNewB2instDoi =
+        InventoryIdentifierApiManagerImpl.class.getDeclaredMethod(
+            "createNewB2instDoi", InventoryRecord.class, User.class);
+    createNewB2instDoi.setAccessible(true);
+    ApiInventoryDOI result = (ApiInventoryDOI) createNewB2instDoi.invoke(mgr, instrument, user);
+
+    assertNotNull(result.getPublicLinkSuffix());
+    ArgumentCaptor<String> landingPage = ArgumentCaptor.forClass(String.class);
+    verify(adapter).buildB2instDoi(eq(instrument), landingPage.capture());
+    assertEquals(
+        "https://rspace.example.com/public/inventory/" + result.getPublicLinkSuffix(),
+        landingPage.getValue());
+    assertNull(
+        result.getPublicUrl(), "payload-only: the landing page URL is not persisted as publicUrl");
   }
 
   /**
@@ -213,7 +266,8 @@ class InventoryIdentifierApiManagerImplUnitTest {
     User user = mock(User.class);
     when(user.getFullName()).thenReturn("Jane Doe");
     when(properties.getCustomerName()).thenReturn("Acme");
-    when(adapter.buildB2instDoi(instrument)).thenReturn(new B2instDoi());
+    when(adapter.buildB2instDoi(eq(instrument), nullable(String.class)))
+        .thenReturn(new B2instDoi());
     B2instDraftRecord draft = new B2instDraftRecord();
     draft.setId("k2j9p-7yh21");
     when(b2instConnector.registerDoi(any(B2instDoi.class))).thenReturn(draft);
@@ -260,5 +314,123 @@ class InventoryIdentifierApiManagerImplUnitTest {
     assertEquals("You can only delete an identifier that you own.", exception.getMessage());
     verify(doiDao, never()).save(any());
     verify(doi, never()).setDeleted(true);
+  }
+
+  /**
+   * A real Instrument carrying one "Landing page" URI field with the given content, since the
+   * landing-page rules read getActiveFields(), which a mock cannot exercise.
+   */
+  private static Instrument instrumentWithLandingPage(String content) {
+    Instrument instrument = new Instrument();
+    instrument.setId(5L);
+    instrument.setName("Microscope X");
+    InventoryUriField field = new InventoryUriField("Landing page");
+    field.setId(77L);
+    field.setFieldData(content);
+    field.setInventoryRecord(instrument);
+    field.setColumnIndex(1);
+    instrument.getFields().add(field);
+    instrument.refreshActiveFieldsAndColumnIndex();
+    return instrument;
+  }
+
+  private static ApiInventoryDOI newPidinstRegistration() {
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.generatePublicLinkSuffix();
+    doi.setRegisterIdentifierRequest(true);
+    doi.setDoiType(IdentifierType.PIDINST_B2INST.name());
+    return doi;
+  }
+
+  private static ApiInstrument instrumentUpdateFor(
+      InventoryIdentifierApiManagerImpl mgr, InventoryRecord invRec, ApiInventoryDOI doi)
+      throws Exception {
+    Method m =
+        InventoryIdentifierApiManagerImpl.class.getDeclaredMethod(
+            "getApiInstrumentUpdateWithIdentifier", InventoryRecord.class, ApiInventoryDOI.class);
+    m.setAccessible(true);
+    return (ApiInstrument) m.invoke(mgr, invRec, doi);
+  }
+
+  private static InventoryIdentifierApiManagerImpl mgrWithServerUrl(String serverUrl) {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    when(properties.getServerUrl()).thenReturn(serverUrl);
+    ReflectionTestUtils.setField(mgr, "properties", properties);
+    return mgr;
+  }
+
+  private static Optional<ApiInventoryEntityField> landingPageUpdate(ApiInstrument update) {
+    return update.getFields().stream().filter(f -> Long.valueOf(77L).equals(f.getId())).findFirst();
+  }
+
+  /**
+   * The behaviour RSDEV-1254 was reopened for: registering a PIDINST writes the address that was
+   * registered into the instrument's own Landing page field, so the field and the registered value
+   * cannot drift apart (ADR 0006 item 4).
+   */
+  @Test
+  void newPidinstRegistrationWritesThePublicLandingPageIntoABlankField() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = mgrWithServerUrl("https://rspace.example.com");
+    Instrument instrument = instrumentWithLandingPage(null);
+    ApiInventoryDOI doi = newPidinstRegistration();
+
+    ApiInstrument update = instrumentUpdateFor(mgr, instrument, doi);
+
+    assertEquals(
+        "https://rspace.example.com/public/inventory/" + doi.getPublicLinkSuffix(),
+        landingPageUpdate(update).orElseThrow().getContent());
+  }
+
+  /** ADR 0006 item 4: a value the user typed is theirs and survives registration untouched. */
+  @Test
+  void newPidinstRegistrationLeavesAUserTypedLandingPageAlone() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = mgrWithServerUrl("https://rspace.example.com");
+    Instrument instrument = instrumentWithLandingPage("https://lab.example.org/aws-42");
+
+    ApiInstrument update = instrumentUpdateFor(mgr, instrument, newPidinstRegistration());
+
+    assertTrue(landingPageUpdate(update).isEmpty(), "a typed landing page must not be overwritten");
+  }
+
+  /**
+   * A value the retired auto-fill wrote reads as an empty field, so registration replaces it: it is
+   * login-walled, and leaving it would put a different address in the field than was registered.
+   */
+  @Test
+  void newPidinstRegistrationOverwritesALegacyAutoFilledLandingPage() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = mgrWithServerUrl("https://rspace.example.com");
+    Instrument instrument =
+        instrumentWithLandingPage("https://old-name.example.com/globalId/IN5?from=email");
+    ApiInventoryDOI doi = newPidinstRegistration();
+
+    ApiInstrument update = instrumentUpdateFor(mgr, instrument, doi);
+
+    assertEquals(
+        "https://rspace.example.com/public/inventory/" + doi.getPublicLinkSuffix(),
+        landingPageUpdate(update).orElseThrow().getContent());
+  }
+
+  /** Only a brand-new registration seeds the field; publish, assign and delete updates must not. */
+  @Test
+  void anIdentifierUpdateThatIsNotANewRegistrationLeavesTheFieldAlone() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = mgrWithServerUrl("https://rspace.example.com");
+    ApiInventoryDOI publishUpdate = new ApiInventoryDOI();
+    publishUpdate.setDoiType(IdentifierType.PIDINST_B2INST.name());
+
+    ApiInstrument update = instrumentUpdateFor(mgr, instrumentWithLandingPage(null), publishUpdate);
+
+    assertTrue(landingPageUpdate(update).isEmpty());
+  }
+
+  /** No server URL means no public address to write; the field is left blank rather than junk. */
+  @Test
+  void newPidinstRegistrationLeavesTheFieldBlankWhenNoServerUrlIsConfigured() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = mgrWithServerUrl(null);
+
+    ApiInstrument update =
+        instrumentUpdateFor(mgr, instrumentWithLandingPage(null), newPidinstRegistration());
+
+    assertTrue(landingPageUpdate(update).isEmpty());
   }
 }
