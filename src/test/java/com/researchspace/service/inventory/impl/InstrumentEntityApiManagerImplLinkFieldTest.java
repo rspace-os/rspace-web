@@ -42,7 +42,6 @@ import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.model.record.RecordFactory;
-import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
