@@ -82,6 +82,7 @@ export default defineConfig<E2EOptions>({
     {
       name: "chromium",
       testMatch: "**/*.e2e.ts",
+      testIgnore: "**/*.conversion.e2e.ts",
       dependencies: ["setup"],
       use: {
         ...devices["Desktop Chrome"],
@@ -93,6 +94,7 @@ export default defineConfig<E2EOptions>({
     {
       name: "firefox",
       testMatch: "**/*.e2e.ts",
+      testIgnore: "**/*.conversion.e2e.ts",
       dependencies: ["setup"],
       use: {
         ...devices["Desktop Firefox"],
@@ -104,6 +106,7 @@ export default defineConfig<E2EOptions>({
     {
       name: "webkit",
       testMatch: "**/*.e2e.ts",
+      testIgnore: "**/*.conversion.e2e.ts",
       dependencies: ["setup"],
 
       use: {
@@ -118,6 +121,7 @@ export default defineConfig<E2EOptions>({
     {
       name: "mobile",
       testMatch: "**/*.e2e.ts",
+      testIgnore: "**/*.conversion.e2e.ts",
       dependencies: ["setup"],
       grep: new RegExp(tags.MOBILE),
       use: {
@@ -126,6 +130,17 @@ export default defineConfig<E2EOptions>({
         appUser: USERS.user7g,
         storageState: storageStatePath(USERS.user7g.username),
         ignoreHTTPSErrors: true,
+      },
+    },
+    {
+      name: "conversion",
+      testMatch: "**/*.conversion.e2e.ts",
+      dependencies: ["setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        headless: HEADLESS,
+        appUser: USERS.user6f,
+        storageState: storageStatePath(USERS.user6f.username),
       },
     },
     // Browser projects require setup; API-only runs do not.

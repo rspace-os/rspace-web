@@ -2,6 +2,8 @@ package com.researchspace.conversion;
 
 import java.net.URI;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -17,6 +19,8 @@ import org.springframework.web.multipart.MultipartException;
 
 @RestControllerAdvice
 final class ConversionExceptionHandler {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ConversionExceptionHandler.class);
 
   @ExceptionHandler(ConversionException.class)
   ResponseEntity<ProblemDetail> handle(ConversionException exception) {
@@ -50,16 +54,23 @@ final class ConversionExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   ResponseEntity<ProblemDetail> handleUnexpected(Exception exception) {
-    return response(HttpStatus.INTERNAL_SERVER_ERROR, ConversionError.FAILED);
+    String requestId = UUID.randomUUID().toString();
+    LOG.error("Unexpected conversion failure [{}]", requestId, exception);
+    return response(HttpStatus.INTERNAL_SERVER_ERROR, ConversionError.FAILED, requestId);
   }
 
   private ResponseEntity<ProblemDetail> response(HttpStatus status, ConversionError error) {
+    return response(status, error, UUID.randomUUID().toString());
+  }
+
+  private ResponseEntity<ProblemDetail> response(
+      HttpStatus status, ConversionError error, String requestId) {
     String code = error.code();
     ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, code);
     problem.setType(URI.create("urn:rspace:conversion:error:" + code));
     problem.setTitle(code);
     problem.setProperty("code", code);
-    problem.setProperty("requestId", UUID.randomUUID().toString());
+    problem.setProperty("requestId", requestId);
     ResponseEntity.BodyBuilder response =
         ResponseEntity.status(status).header(ConversionError.HEADER, code);
     if (status.value() == 429) {

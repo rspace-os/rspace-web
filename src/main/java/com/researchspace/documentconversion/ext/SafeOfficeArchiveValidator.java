@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,6 +31,10 @@ final class SafeOfficeArchiveValidator {
   private static final long MAX_COMPRESSION_RATIO = 100;
   private static final Set<String> NESTED_ARCHIVES =
       Set.of(".7z", ".bz2", ".gz", ".jar", ".rar", ".tar", ".tgz", ".xz", ".zip");
+  private static final Set<String> ALLOWED_EXTERNAL_RELATIONSHIP_TYPES =
+      Set.of(
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+          "http://purl.oclc.org/ooxml/officeDocument/relationships/hyperlink");
 
   private SafeOfficeArchiveValidator() {}
 
@@ -126,8 +131,9 @@ final class SafeOfficeArchiveValidator {
       }
       var relationships = readXml(zip, entry).getElementsByTagNameNS("*", "Relationship");
       for (int i = 0; i < relationships.getLength(); i++) {
-        if ("external"
-            .equalsIgnoreCase(((Element) relationships.item(i)).getAttribute("TargetMode"))) {
+        Element relationship = (Element) relationships.item(i);
+        if ("external".equalsIgnoreCase(relationship.getAttribute("TargetMode"))
+            && !ALLOWED_EXTERNAL_RELATIONSHIP_TYPES.contains(relationship.getAttribute("Type"))) {
           throw invalid();
         }
       }
@@ -154,10 +160,70 @@ final class SafeOfficeArchiveValidator {
       Element entry = (Element) fileEntries.item(i);
       if ("/".equals(attribute(entry, "full-path"))
           && expected.equals(attribute(entry, "media-type"))) {
+        validateOpenDocumentReferences(zip);
         return;
       }
     }
     throw invalid();
+  }
+
+  private static void validateOpenDocumentReferences(ZipFile zip) throws Exception {
+    for (String name : List.of("content.xml", "styles.xml")) {
+      ZipArchiveEntry entry = zip.getEntry(name);
+      if (entry != null && !entry.isDirectory()) {
+        validateNoExternalReferences(readXml(zip, entry));
+      }
+    }
+  }
+
+  private static void validateNoExternalReferences(Element root) throws IOException {
+    for (Node node = root; node != null; node = nextNode(root, node)) {
+      if (node.getNodeType() != Node.ELEMENT_NODE) {
+        continue;
+      }
+      var attributes = node.getAttributes();
+      for (int i = 0; i < attributes.getLength(); i++) {
+        Node attribute = attributes.item(i);
+        if (("href".equals(attribute.getLocalName()) || "href".equals(attribute.getNodeName()))
+            && isExternalReference(attribute.getNodeValue())) {
+          throw invalid();
+        }
+      }
+    }
+  }
+
+  private static Node nextNode(Node root, Node current) {
+    if (current.getFirstChild() != null) {
+      return current.getFirstChild();
+    }
+    while (current != root && current.getNextSibling() == null) {
+      current = current.getParentNode();
+    }
+    return current == root ? null : current.getNextSibling();
+  }
+
+  private static boolean isExternalReference(String value) {
+    if (value == null || value.isBlank() || value.startsWith("#")) {
+      return false;
+    }
+    try {
+      URI uri = URI.create(value);
+      String path = uri.getPath();
+      if (uri.isAbsolute()
+          || uri.getAuthority() != null
+          || value.startsWith("/")
+          || path == null
+          || path.indexOf('\\') >= 0) {
+        return true;
+      }
+      Path normalized = Path.of(path).normalize();
+      String normalizedPath = normalized.toString();
+      return normalized.isAbsolute()
+          || normalizedPath.equals("..")
+          || normalizedPath.startsWith("../");
+    } catch (IllegalArgumentException e) {
+      return true;
+    }
   }
 
   private static Element readXml(ZipFile zip, ZipArchiveEntry entry) throws Exception {

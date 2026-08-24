@@ -38,14 +38,17 @@ final class ConversionController {
   private final ArchiveValidator archiveValidator;
   private final OfficeConversionRunner officeRunner;
   private final GotenbergProxy gotenbergProxy;
+  private final OfficeConversionLimiter limiter;
 
   ConversionController(
       ArchiveValidator archiveValidator,
       OfficeConversionRunner officeRunner,
-      GotenbergProxy gotenbergProxy) {
+      GotenbergProxy gotenbergProxy,
+      OfficeConversionLimiter limiter) {
     this.archiveValidator = archiveValidator;
     this.officeRunner = officeRunner;
     this.gotenbergProxy = gotenbergProxy;
+    this.limiter = limiter;
   }
 
   @GetMapping("/v1/capabilities")
@@ -95,7 +98,9 @@ final class ConversionController {
     return stream(
         withUpload(
             file,
-            upload -> gotenbergProxy.convert(upload, extension, UUID.randomUUID().toString())),
+            upload ->
+                limiter.runPdf(
+                    () -> gotenbergProxy.convert(upload, extension, UUID.randomUUID().toString()))),
         "output.pdf");
   }
 

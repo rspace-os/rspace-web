@@ -8,6 +8,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.nio.file.Path;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
@@ -21,8 +24,13 @@ class ConversionControllerTest {
   private final ArchiveValidator archiveValidator = mock(ArchiveValidator.class);
   private final OfficeConversionRunner officeRunner = mock(OfficeConversionRunner.class);
   private final GotenbergProxy gotenbergProxy = mock(GotenbergProxy.class);
+  private final OfficeConversionLimiter limiter =
+      new OfficeConversionLimiter(
+          new ConverterProperties(
+              Path.of("/office"), directory, Duration.ofSeconds(1), 1, 1024, Path.of("/bin/true")),
+          new SimpleMeterRegistry());
   private final ConversionController controller =
-      new ConversionController(archiveValidator, officeRunner, gotenbergProxy);
+      new ConversionController(archiveValidator, officeRunner, gotenbergProxy, limiter);
 
   @Test
   void capabilitiesDeclareBothRequiredRoles() {

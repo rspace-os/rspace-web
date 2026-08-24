@@ -23,7 +23,7 @@ cp src/main/webapp/ui/.env.example src/main/webapp/ui/.env
 |---|---|---|
 | `RSPACE_BASE_URL` | `http://localhost:8080` | Target instance URL |
 | `HEADLESS` | `true` | Set `false` to watch browsers |
-| `E2E_BROWSER` | _(all)_ | Limit to one project: `chromium`, `firefox`, `webkit`, or `api` |
+| `E2E_BROWSER` | _(all)_ | Limit to one project: `chromium`, `firefox`, `webkit`, `conversion`, or `api` |
 | `RSPACE_SYSADMIN_USERNAME` | `sysadmin1` | Sysadmin username |
 | `RSPACE_SYSADMIN_PASSWORD` | `sysWisc23!` | Sysadmin password |
 | `RSPACE_SYSADMIN_API_KEY` | `abcdefghijklmnop12` | Sysadmin API key |
@@ -43,6 +43,9 @@ pnpm run test-e2e
 
 # Single browser (use E2E_BROWSER — --project flag does not work through pnpm)
 E2E_BROWSER=chromium pnpm run test-e2e
+
+# Conversion parity tests against the Docker dev stack
+E2E_BROWSER=conversion pnpm run test-e2e
 
 # API tests only
 pnpm run test-e2e:api
@@ -81,6 +84,7 @@ extra config needed — the Docker stack listens on 8080 by default.
 | Suffix | Project | Description |
 |---|---|---|
 | `*.e2e.ts` | chromium, firefox, webkit | UI browser spec |
+| `*.conversion.e2e.ts` | conversion | Docker conversion-stack browser spec |
 | `*.api.spec.ts` | api | Node HTTP spec (no browser) |
 
 ## Directory layout
@@ -136,6 +140,7 @@ Each project uses a distinct seed user so parallel shards do not collide:
 | firefox | user3c | PI + USER |
 | webkit | user4d | PI + USER |
 | mobile | user7g | PI + USER |
+| conversion | user6f | USER |
 | api | user2b | USER |
 
 All browser projects use PI+USER accounts. See `users.ts` for the full seed
