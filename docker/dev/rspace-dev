@@ -148,8 +148,12 @@ EOF
   echo "rspace-dev: wrote ${ENV_FILE} (app=${app_port}, vite=${vite_port}, db=${db_port}, debug=${debug_port})" >&2
 }
 
-# Read a value out of .env.
-env_get() { grep -E "^$1=" "${ENV_FILE}" 2>/dev/null | head -n1 | cut -d= -f2-; }
+# Read a value from .env. Missing optional keys return an empty string.
+env_get() {
+  local line
+  line="$(grep -m1 -E "^$1=" "${ENV_FILE}" 2>/dev/null || true)"
+  printf '%s' "${line#*=}"
+}
 
 compose() {
   ensure_env
