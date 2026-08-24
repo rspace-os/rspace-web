@@ -12,6 +12,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.core.util.progress.ProgressMonitorImpl;
 import com.researchspace.document.importer.ExternalFileImporter;
+import com.researchspace.documentconversion.ext.DocumentConversionError;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
@@ -230,10 +231,11 @@ public class StructuredDocumentController extends BaseController {
           log.error(error);
         }
       } catch (Exception e) {
+        String reason = getText(DocumentConversionError.messageKeyForCode(e.getMessage()));
         String error =
             getText(
                 "workspace.word.import.createFailedWithReason",
-                new Object[] {mf.getOriginalFilename(), e.getMessage()});
+                new Object[] {mf.getOriginalFilename(), reason});
         el.addErrorMsg(error);
         log.error(error);
       }
@@ -261,7 +263,8 @@ public class StructuredDocumentController extends BaseController {
         || "rtf".equalsIgnoreCase(extension)
         || "txt".equalsIgnoreCase(extension)
         || "docx".equalsIgnoreCase(extension)
-        || "odt".equalsIgnoreCase(extension);
+        || "odt".equalsIgnoreCase(extension)
+        || "ott".equalsIgnoreCase(extension);
   }
 
   /**

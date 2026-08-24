@@ -437,6 +437,10 @@ public abstract class BaseController implements ServletContextAware {
     return properties.isAsposeEnabled();
   }
 
+  protected Boolean isConversionEnabled() {
+    return properties.isConversionEnabled();
+  }
+
   /*
    * Compares provided resultsPerPage setting with user's preference,
    * and either applies or updates the preference

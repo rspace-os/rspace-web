@@ -172,8 +172,30 @@ zenodo.url=https://sandbox.zenodo.org/api
 
 #dataverse.metadataLanguages=[{"title": "English", "locale": "en"}, {"title": "Hungarian", "locale": "hu"}]
 
-# only enable if you have access to aspose converter/service
+# The Docker dev stack overrides these values when it starts its conversion services.
+conversion.url=
+conversion.cacheConverted=true
+conversion.connectionRequestTimeoutMs=2000
+conversion.connectTimeoutMs=5000
+conversion.responseTimeoutMs=185000
+conversion.maxInputBytes=209715200
+conversion.maxOutputBytes=314572800
+conversion.maxHtmlBytes=52428800
+conversion.use.dummy.converter=false
+
+## Deprecated Aspose compatibility settings.
 aspose.enabled=false
+aspose.license=
+## Must be set if running Aspose in separate application
+aspose.app=
+aspose.logfile=
+## optional configuration
+aspose.loglevel=INFO
+aspose.jvmArgs=
+## whether converted docs are cached. This should always be true in production.
+aspose.cacheConverted=true
+## if aspose microservice is used instead of local jar
+aspose.web.url=
 
 # below are credentials used by junit tests that try real connection to external APIs
 datacite.realConnectionTest.username=

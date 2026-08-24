@@ -6,11 +6,13 @@ import com.researchspace.api.v1.ImportApi;
 import com.researchspace.api.v1.model.ApiDocumentInfo;
 import com.researchspace.api.v1.model.ApiFolder;
 import com.researchspace.document.importer.ExternalFileImporter;
+import com.researchspace.documentconversion.ext.DocumentConversionError;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FolderManager;
 import java.io.IOException;
 import java.util.Optional;
@@ -33,6 +35,7 @@ public class ImportsApiController extends BaseApiController implements ImportApi
 
   private @Autowired FolderManager folderMgr;
   private @Autowired IPermissionUtils permissionUtils;
+  private @Autowired IPropertyHolder properties;
 
   @Override
   public ApiDocumentInfo importWord(
@@ -41,6 +44,11 @@ public class ImportsApiController extends BaseApiController implements ImportApi
       @RequestParam("file") MultipartFile file,
       @RequestAttribute(name = "user") User user)
       throws IOException {
+
+    if (!properties.isConversionEnabled()) {
+      throw new IllegalArgumentException(
+          getMessage(DocumentConversionError.SERVICE_UNAVAILABLE.messageKey()));
+    }
 
     Folder targetFolder = getTargetFolder(folderId, user);
     Optional<Folder> imageFolder = getImageFolder(imageFolderId, user);
@@ -51,7 +59,8 @@ public class ImportsApiController extends BaseApiController implements ImportApi
       return docInfo;
     } catch (IllegalStateException e) { // if conversion failed.
       // will cause 422 code
-      throw new IllegalArgumentException(e.getMessage(), e);
+      throw new IllegalArgumentException(
+          getMessage(DocumentConversionError.messageKeyForCode(e.getMessage())), e);
     }
   }
 

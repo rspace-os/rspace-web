@@ -30,7 +30,7 @@ type DynamicMenuItem = {
 };
 
 type CreateMenuProps = {
-  asposeEnabled?: boolean;
+  conversionEnabled?: boolean;
   evernoteEnabled?: boolean;
   pioEnabled?: boolean;
 };
@@ -153,7 +153,7 @@ export default function CreateMenu(props: CreateMenuProps) {
           </Box>
           {t("toolbar.fromTemplate")}
         </MenuItem>
-        {props.asposeEnabled && (
+        {props.conversionEnabled && (
           <MenuItem id="createFromWord" data-test-id="create-btn-word">
             <FontAwesomeIcon icon={faFileWord} style={{ paddingRight: "10px" }} aria-hidden="true" />
             {t("toolbar.fromWord")}

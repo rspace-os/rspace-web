@@ -1,6 +1,7 @@
 package com.researchspace.export.pdf;
 
 import static com.researchspace.testutils.RSpaceTestUtils.setupVelocityWithTextFieldTemplates;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,6 +12,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.documentconversion.ext.DocumentConversionError;
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
@@ -99,7 +101,7 @@ public class MSWordProcessorTest {
         () -> mswordExporter.makeExport(outfile, input, rspaceDoc, cfg));
     verify(imageRetriever, Mockito.never())
         .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
-    verify(converter, never()).convert(any(Convertible.class), eq("doc"), eq(outfile));
+    verify(converter, never()).convert(any(Convertible.class), eq("docx"), eq(outfile));
   }
 
   @NotNull
@@ -113,7 +115,19 @@ public class MSWordProcessorTest {
     mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
     Mockito.verify(imageRetriever, never())
         .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
-    verify(converter, atMost(1)).convert(any(Convertible.class), eq("doc"), eq(outfile));
+    verify(converter, atMost(1)).convert(any(Convertible.class), eq("docx"), eq(outfile));
+  }
+
+  @Test
+  public void testMakeExportPropagatesLogicalConversionError() {
+    when(converter.convert(any(Convertible.class), eq("docx"), eq(outfile)))
+        .thenReturn(new ConversionResult(DocumentConversionError.OUTPUT_INVALID.code()));
+
+    IOException error =
+        assertThrows(
+            IOException.class, () -> mswordExporter.makeExport(outfile, input, rspaceDoc, cfg));
+
+    assertEquals(DocumentConversionError.OUTPUT_INVALID.code(), error.getMessage());
   }
 
   @Test
@@ -126,7 +140,7 @@ public class MSWordProcessorTest {
   }
 
   private void returnSuccesfullExport(File outfile, ConversionResult success) {
-    Mockito.when(converter.convert(any(Convertible.class), eq("doc"), eq(outfile)))
+    Mockito.when(converter.convert(any(Convertible.class), eq("docx"), eq(outfile)))
         .thenReturn(success);
   }
 
@@ -164,13 +178,16 @@ public class MSWordProcessorTest {
   @Test
   public void testMakeExportWithImages() throws IOException {
     input = createAnyHTMLWithImage();
-    when(converter.convert(any(Convertible.class), eq("doc"), eq(outfile))).thenReturn(success);
+    when(converter.convert(any(Convertible.class), eq("docx"), eq(outfile))).thenReturn(success);
     when(imageRetriever.getImageBytesFromImgSrc(Mockito.anyString(), eq(cfg)))
         .thenReturn(new byte[] {1, 2, 3, 4});
     mswordExporter.makeExport(outfile, input, rspaceDoc, cfg);
     verify(imageRetriever, atMost(1))
         .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
-    verify(converter, atMost(1)).convert(any(Convertible.class), eq("doc"), eq(outfile));
+    verify(converter, atMost(1)).convert(any(Convertible.class), eq("docx"), eq(outfile));
+    File htmlInput = new File(outfile.getParentFile(), outfile.getName().replace(".doc", ".html"));
+    assertTrue(
+        FileUtils.readFileToString(htmlInput, "UTF-8").contains("data:image/png;base64,AQIDBA=="));
   }
 
   private ExportProcessorInput createAnyHTMLWithImage() {

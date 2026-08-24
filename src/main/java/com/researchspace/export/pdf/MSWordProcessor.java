@@ -12,15 +12,12 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.service.UserLocaleService;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.spring.VelocityEngineUtils;
 import org.jsoup.Jsoup;
@@ -101,26 +98,25 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
               "This method supports %s export, not %s export",
               ExportFormat.WORD, exportConfig.getExportFormat()));
     }
-    // this puts html and images in the same folder.
-    File htmlInput =
-        extractImagesAndReplaceSrcLinks(tempExportFile, exportInput, exportConfig, strucDoc);
+    File htmlInput = inlineImages(tempExportFile, exportInput, exportConfig, strucDoc);
     Convertible toconvert = new ConvertibleFile(htmlInput);
-    ConversionResult result = docConverter.convert(toconvert, "doc", tempExportFile);
+    ConversionResult result = docConverter.convert(toconvert, "docx", tempExportFile);
     if (!result.isSuccessful()) {
-      log.error("Couldn't convert {} to doc format", toconvert);
+      log.error("Couldn't convert {} to DOCX format", toconvert);
+      throw new IOException(result.getErrorMsg());
     }
   }
 
-  private File extractImagesAndReplaceSrcLinks(
+  private File inlineImages(
       File tempExportFile,
       ExportProcessorInput exportInput,
       ExportToFileConfig exportConfig,
       IRSpaceDoc strucDoc)
-      throws IOException, FileNotFoundException {
+      throws IOException {
     String html = exportInput.getDocumentAsHtml();
     Document jsoup = Jsoup.parse(html);
     Elements images = jsoup.getElementsByTag("img");
-    extractImageFileAndUpdateLinkFromImages(tempExportFile, exportConfig, images);
+    inlineImageSources(exportConfig, images);
 
     html = jsoup.html();
     if (html.contains("data-stoichiometry-table")) {
@@ -178,18 +174,12 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
     return doc;
   }
 
-  private void extractImageFileAndUpdateLinkFromImages(
-      File tempExportFile, ExportToFileConfig exportConfig, Elements images)
-      throws IOException, FileNotFoundException {
+  private void inlineImageSources(ExportToFileConfig exportConfig, Elements images)
+      throws IOException {
     for (int i = 0; i < images.size(); i++) {
       Element img = images.get(i);
       byte[] imgData = imageHelper.getImageBytesFromImgSrc(img.attr("src"), exportConfig);
-      String imageName = RandomStringUtils.randomAlphabetic(10) + ".png";
-      File outfile = new File(tempExportFile.getParentFile(), imageName);
-      img.attr("src", imageName); // replace image name
-      try (FileOutputStream fos = new FileOutputStream(outfile)) {
-        IOUtils.write(imgData, fos);
-      }
+      img.attr("src", "data:image/png;base64," + Base64.getEncoder().encodeToString(imgData));
     }
   }
 }

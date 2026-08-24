@@ -1527,12 +1527,12 @@ RS.isPdfPreviewSupported = function (fileExtension) {
     return true;
   }
 
-  if(!RS.asposeEnabled){
-    // not a pdf file so requires conversion, but aspose conversion is disabled
+  if(!RS.conversionEnabled){
+    // Non-PDF files require the document conversion service.
     return false;
   }
 
-  return ['doc', 'docx','md', 'odt', 'rtf', 'txt', 'xls', 'xlsx', 'csv', 'ods', 'pdf', 'ppt', 'pptx', 'odp'].includes(ext)
+  return ['doc', 'docx', 'md', 'odt', 'rtf', 'txt', 'xls', 'xlsx', 'csv', 'ods', 'pdf', 'ppt', 'pptx', 'odp'].includes(ext)
 };
 
 RS.isSnapGeneFormat = function (fileExtension) {

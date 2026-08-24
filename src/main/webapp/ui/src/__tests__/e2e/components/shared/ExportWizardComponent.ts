@@ -4,7 +4,7 @@ export type ExportFormat = "pdf" | "doc" | "xml" | "html" | "eln";
 
 const FORMAT_ACCESSIBLE_NAME: Record<ExportFormat, string> = {
   pdf: "PDF file",
-  doc: ".DOC file",
+  doc: ".DOCX file",
   xml: ".ZIP bundle containing .XML files",
   html: ".ZIP bundle containing .HTML files",
   eln: "RO-Crate",

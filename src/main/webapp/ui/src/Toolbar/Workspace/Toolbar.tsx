@@ -52,7 +52,7 @@ class WorkspaceToolbar extends React.Component {
       pioEnabled: props.domContainer.getAttribute("data-pio-enabled") === "true",
       ontologiesFilter: workspaceSettings.ontologiesFilter,
       evernoteEnabled: props.domContainer.getAttribute("data-evernote-enabled") === "true",
-      asposeEnabled: props.domContainer.getAttribute("data-aspose-enabled") === "true",
+      conversionEnabled: props.domContainer.getAttribute("data-conversion-enabled") === "true",
       labgroupsFolderId: props.domContainer.getAttribute("data-labgroups-folder-id"),
     };
 
@@ -291,7 +291,7 @@ class WorkspaceToolbar extends React.Component {
         <CreateMenu
           pioEnabled={this.state.pioEnabled}
           evernoteEnabled={this.state.evernoteEnabled}
-          asposeEnabled={this.state.asposeEnabled}
+          conversionEnabled={this.state.conversionEnabled}
         />
         {!this.state.hideIcons && (
           <Box component="span" sx={{ display: "flex" }}>

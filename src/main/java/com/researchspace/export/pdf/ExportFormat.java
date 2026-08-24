@@ -3,7 +3,7 @@ package com.researchspace.export.pdf;
 /** Supported export format */
 public enum ExportFormat {
   PDF("pdf"),
-  WORD("doc");
+  WORD("docx");
 
   private String suffix;
 
