@@ -315,9 +315,13 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
                         url,
                         RELATED_ID_TYPE_URL,
                         RELATED_ID_NAME_CALIBRATION)));
-    if (!related.isEmpty()) {
-      dataCiteDoi.getAttributes().setRelatedIdentifiers(related);
-    }
+    // Set unconditionally, the empty list included. DataCite replaces the whole property with
+    // whatever the payload carries and clears it only when sent an explicit empty array; a property
+    // that is absent or null leaves the registered value alone. An instrument whose link fields
+    // have
+    // all been cleared therefore has to send [], or the entries registered before the user cleared
+    // them stay attached to a findable DOI with no way to withdraw them.
+    dataCiteDoi.getAttributes().setRelatedIdentifiers(related);
     return dataCiteDoi;
   }
 }

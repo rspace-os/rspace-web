@@ -750,17 +750,34 @@ class RspaceToExternalProviderAdapterImplTest {
   }
 
   @Test
-  void dataCiteDoiLeavesRelatedIdentifiersNullForNonInstrumentsAndLinklessInstruments() {
+  void dataCiteDoiLeavesRelatedIdentifiersNullForNonInstruments() {
     ApiInventoryDOI doi = new ApiInventoryDOI();
     doi.setDoi("10.82316/abc");
     doi.setTitle("a sample");
 
+    // never registered any for these, so there is nothing to clear and the property stays absent
     assertNull(adapter.buildDataCiteDoi(doi, new Sample()).getAttributes().getRelatedIdentifiers());
     assertNull(adapter.buildDataCiteDoi(doi, null).getAttributes().getRelatedIdentifiers());
-    assertNull(
+  }
+
+  /**
+   * An instrument with no live links must send an explicit empty list, not null. DataCite replaces
+   * the whole property with what the payload carries and clears it only on an empty array, so an
+   * instrument whose link fields were cleared after registration would otherwise keep the entries
+   * registered before the user cleared them, permanently, on a findable DOI.
+   */
+  @Test
+  void dataCiteDoiSendsAnEmptyRelatedIdentifierListForAnInstrumentWithNoLiveLinks() {
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.setDoi("10.82316/abc");
+    doi.setTitle("an instrument with nothing linked");
+
+    assertEquals(
+        List.of(),
         adapter
             .buildDataCiteDoi(doi, templateShapedInstrument())
             .getAttributes()
-            .getRelatedIdentifiers());
+            .getRelatedIdentifiers(),
+        "an instrument with no links must clear the property, not leave it untouched");
   }
 }
