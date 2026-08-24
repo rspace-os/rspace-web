@@ -3,6 +3,7 @@ import Dialog, { dialogClasses } from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import { paperClasses } from "@mui/material/Paper";
+import { encode as encodeBmp } from "fast-bmp";
 import { applyPalette, GIFEncoder, quantize } from "gifenc";
 import { observer } from "mobx-react-lite";
 import React from "react";
@@ -40,45 +41,9 @@ const encodeAsGif = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement): 
 };
 const encodeAsBmp = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement): Blob => {
   const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  // BMP rows are bottom-up and pixels are BGR; each row is padded to 4 bytes.
-  const stride = Math.ceil((width * 3) / 4) * 4;
-  const pixelDataSize = stride * height;
-  const fileSize = 54 + pixelDataSize;
-  const buffer = new ArrayBuffer(fileSize);
-  const view = new DataView(buffer);
-  const bytes = new Uint8Array(buffer);
-  // File header (14 bytes)
-  view.setUint8(0, 0x42); // 'B'
-  view.setUint8(1, 0x4d); // 'M'
-  view.setUint32(2, fileSize, true);
-  view.setUint32(6, 0, true); // reserved
-  view.setUint32(10, 54, true); // pixel data offset
-  // BITMAPINFOHEADER (40 bytes)
-  view.setUint32(14, 40, true); // header size
-  view.setInt32(18, width, true);
-  view.setInt32(22, height, true); // positive = bottom-up storage
-  view.setUint16(26, 1, true); // colour planes
-  view.setUint16(28, 24, true); // bits per pixel (24-bit BGR)
-  view.setUint32(30, 0, true); // BI_RGB (no compression)
-  view.setUint32(34, pixelDataSize, true);
-  view.setUint32(38, 0, true); // pixels per metre, horizontal
-  view.setUint32(42, 0, true); // pixels per metre, vertical
-  view.setUint32(46, 0, true); // colours in table
-  view.setUint32(50, 0, true); // important colours
-  // Pixel data: rows written bottom-up, each pixel as BGR
-  for (let row = 0; row < height; row++) {
-    const srcRow = height - 1 - row;
-    const dstRowOffset = 54 + row * stride;
-    for (let col = 0; col < width; col++) {
-      const src = (srcRow * width + col) * 4;
-      const dst = dstRowOffset + col * 3;
-      bytes[dst] = data[src + 2]; // B
-      bytes[dst + 1] = data[src + 1]; // G
-      bytes[dst + 2] = data[src]; // R
-    }
-    // padding bytes remain 0 from ArrayBuffer initialisation
-  }
-  return new Blob([buffer], { type: "image/bmp" });
+  return new Blob([encodeBmp({ data, width, height, channels: 4, bitsPerPixel: 32 }) as Uint8Array<ArrayBuffer>], {
+    type: "image/bmp",
+  });
 };
 type ImageEditingDialogArgs = {
   imageFile: Blob | null;
@@ -119,7 +84,7 @@ function ImageEditingDialog({
     if (imageFile) {
       setImageType(imageTypeFromFile(imageFile));
       void readAsBinaryString(imageFile).then((binaryString: string) => {
-        if (settable) setEditorData(`data:${imageType};base64,${btoa(binaryString)}`);
+        if (settable) setEditorData(`data:image/${imageType};base64,${btoa(binaryString)}`);
       });
     }
     return () => {
