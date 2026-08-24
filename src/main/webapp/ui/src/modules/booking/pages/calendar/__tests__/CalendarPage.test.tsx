@@ -39,6 +39,10 @@ describe("CalendarPage", () => {
     expect(requests[0].searchParams.get("fields[bookings]")).toBe(bookingFields);
     expect(requests[0].searchParams.get("where")).toContain("state==CONFIRMED");
 
+    await user.click(screen.getByRole("button", { name: /Show details for Busy/ }));
+    expect(screen.getByRole("link", { name: "View details" })).toHaveAttribute("href", "/booking/bookable-items/IN124");
+    expect(screen.queryByRole("link", { name: "Edit" })).not.toBeInTheDocument();
+
     const search = screen.getByRole("textbox", { name: "Search Calendar" });
     await user.type(search, "Grace");
     expect(screen.queryByRole("article", { name: /Confocal microscope/ })).not.toBeInTheDocument();
@@ -50,6 +54,7 @@ describe("CalendarPage", () => {
     expect(screen.queryByRole("article", { name: /Electron microscope · Grace Hopper/ })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Show details for Confocal microscope/ }));
+    expect(screen.getByRole("link", { name: "View details" })).toHaveAttribute("href", "/booking/bookable-items/IN123");
     expect(screen.getByRole("link", { name: "Edit" })).toHaveAttribute(
       "href",
       "/booking/calendar/bookings/41?date=2026-08-17&target=IN123",

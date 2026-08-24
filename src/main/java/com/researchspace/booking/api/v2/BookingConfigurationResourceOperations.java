@@ -196,7 +196,6 @@ public final class BookingConfigurationResourceOperations
     return new Patch(
         value(document, "enabled", Boolean.class),
         value(document, "timezone", String.class),
-        target(document),
         schedulingPatch(document));
   }
 

@@ -8,174 +8,196 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
-import { useTranslation } from "react-i18next";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { createBookableItemRoute } from "../routes";
+
+vi.mock("@/modules/common/hooks/auth", () => ({ useOauthTokenQuery: vi.fn() }));
+vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
 
 const configuration = {
   id: 7,
   target: {
     relationTo: "instruments",
-    value: { id: 123, name: "Confocal microscope", globalId: "IN123", deleted: false },
+    value: { id: 123, name: "Confocal microscope", deleted: false },
     globalId: "IN123",
   },
   enabled: true,
-  timezone: "Europe/Berlin",
+  timezone: "UTC",
   slotGranularityMinutes: 5,
-  openingStart: "00:00",
-  openingEnd: "24:00",
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
+  openingStart: "08:00",
+  openingEnd: "17:30",
+  bufferBeforeMinutes: 5,
+  bufferAfterMinutes: 15,
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
-  updatedAt: "2026-08-10T12:00:00Z",
+  updatedAt: null,
+};
+const booking = {
+  id: 41,
+  target: configuration.target,
+  timezone: "UTC",
+  start: "2026-08-25T09:00:00Z",
+  end: "2026-08-25T10:00:00Z",
+  state: "CONFIRMED",
+  privacy: "full",
+  purpose: null,
+  bookedBy: "Ada Lovelace (ada)",
+  canEdit: false,
+  createdAt: "2026-08-17T00:00:00Z",
+  updatedAt: "2026-08-17T00:00:00Z",
 };
 
-function DestinationPage() {
-  const { t } = useTranslation("booking");
-  return <h1>{t("bookableItems.plural")}</h1>;
+function envelope(docs: unknown[], limit: number) {
+  return {
+    docs,
+    totalDocs: docs.length,
+    limit,
+    page: 1,
+    pagingCounter: 1,
+    totalPages: docs.length === 0 ? 0 : 1,
+    hasPrevPage: false,
+    hasNextPage: false,
+    prevPage: null,
+    nextPage: null,
+  };
 }
+
+const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
+const mockedUseCurrentUserQuery = vi.mocked(useCurrentUserQuery);
+
+beforeEach(() => {
+  mockedUseOauthTokenQuery.mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);
+  mockedUseCurrentUserQuery.mockReturnValue({ data: { hasSysAdminRole: true } } as ReturnType<
+    typeof useCurrentUserQuery
+  >);
+});
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const rootRoute = createRootRoute({ component: Outlet });
-  const bookingRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/booking",
+  const root = createRootRoute({ component: Outlet });
+  const bookingRoute = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
+  const editRoute = createRoute({
+    getParentRoute: () => bookingRoute,
+    path: "/config/bookable-items/$id/edit",
     component: Outlet,
   });
-  const destinationRoute = createRoute({
-    getParentRoute: () => bookingRoute,
-    path: "/config/bookable-items",
-    component: DestinationPage,
-  });
   const router = createRouter({
-    routeTree: rootRoute.addChildren([
-      bookingRoute.addChildren([destinationRoute, createBookableItemRoute(bookingRoute)]),
-    ]),
-    history: createMemoryHistory({ initialEntries: ["/booking/config/bookable-items/7"] }),
+    routeTree: root.addChildren([bookingRoute.addChildren([createBookableItemRoute(bookingRoute), editRoute])]),
+    history: createMemoryHistory({ initialEntries: ["/booking/bookable-items/IN123"] }),
   });
-
-  return render(
+  const result = render(
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={null}>
         <RouterProvider router={router as never} />
       </Suspense>
     </QueryClientProvider>,
   );
+  return { ...result, queryClient };
 }
 
 describe("BookableItemPage", () => {
-  it("loads and updates the selected booking configuration", async () => {
-    const user = userEvent.setup();
-    let requestUrl: URL | undefined;
-    let requestBody: unknown;
-    let authorization: string | null = null;
+  it("renders identity, rules, role-sensitive actions, and event requests with one cutoff", async () => {
+    const eventFilters: string[] = [];
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      http.get("/api/v2/booking-configurations/7", ({ request }) => {
-        requestUrl = new URL(request.url);
-        return HttpResponse.json(configuration);
-      }),
-      http.get("/api/v2/instruments/123", () =>
-        HttpResponse.json({ id: 123, name: "Confocal microscope", globalId: "IN123" }),
-      ),
-      http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
-        requestBody = await request.json();
-        authorization = request.headers.get("Authorization");
-        return HttpResponse.json({ ...configuration, enabled: false });
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/bookings", ({ request }) => {
+        eventFilters.push(new URL(request.url).searchParams.get("where") ?? "");
+        return HttpResponse.json(envelope([], 10));
       }),
     );
     const { container } = renderPage();
 
-    expect(await screen.findByRole("heading", { name: "booking:bookableItems.editTitle" })).toBeVisible();
-    await screen.findByDisplayValue("Confocal microscope");
-    expect(screen.getByRole("combobox", { name: "booking:bookableItems.fields.target" })).toHaveValue(
-      "Confocal microscope",
+    expect(await screen.findByRole("heading", { name: "booking:bookableItemDetails.title" })).toBeVisible();
+    expect(screen.getByText("Confocal microscope")).toBeVisible();
+    expect(screen.getByText("IN123")).toBeVisible();
+    expect(screen.getByText("UTC")).toBeVisible();
+    expect(screen.getByText("08:00–17:30")).toBeVisible();
+    expect(screen.getByText("booking:bookableItemDetails.unlimited")).toBeVisible();
+    expect(screen.getByText("booking:bookableItemDetails.notAvailable")).toBeVisible();
+    expect(screen.getByRole("link", { name: "booking:bookableItemDetails.edit" })).toHaveAttribute(
+      "href",
+      "/booking/config/bookable-items/7/edit",
     );
-    expect(screen.getByRole("checkbox", { name: "booking:bookableItems.fields.enabled" })).toBeChecked();
-    expect(screen.getByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).toHaveValue(
-      "Europe/Berlin",
-    );
-    expect(requestUrl?.searchParams.get("depth")).toBe("1");
-    expect(requestUrl?.searchParams.get("fields[booking-configurations]")).toBe(
-      "id,target,enabled,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,updatedAt",
-    );
+    await waitFor(() => expect(eventFilters).toHaveLength(2));
+    const boundaries = eventFilters.map((where) => where.match(/end=(?:gt|le)=([^;]+)/)?.[1]);
+    expect(boundaries[0]).toBeTruthy();
+    expect(boundaries[0]).toBe(boundaries[1]);
     await expectAccessible(container);
-
-    await user.click(screen.getByRole("checkbox", { name: "booking:bookableItems.fields.enabled" }));
-    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
-
-    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
-    expect(authorization).toBe("Bearer test-token");
-    expect(requestBody).toEqual({
-      target: { relationTo: "instruments", value: 123 },
-      enabled: false,
-      timezone: "Europe/Berlin",
-      slotGranularityMinutes: 5,
-      openingStart: "00:00",
-      openingEnd: "24:00",
-      bufferBeforeMinutes: 0,
-      bufferAfterMinutes: 0,
-      maxBookingDurationMinutes: 0,
-      allowDoubleBooking: false,
-    });
   });
 
-  it("keeps the form available when updating fails", async () => {
+  it("does not request events for an invalid lookup and offers a working retry", async () => {
     const user = userEvent.setup();
+    let lookupFails = true;
+    let eventRequests = 0;
+    mockedUseCurrentUserQuery.mockReturnValue({ data: { hasSysAdminRole: false } } as ReturnType<
+      typeof useCurrentUserQuery
+    >);
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      http.get("/api/v2/booking-configurations/7", () => HttpResponse.json(configuration)),
-      http.get("/api/v2/instruments/123", () =>
-        HttpResponse.json({ id: 123, name: "Confocal microscope", globalId: "IN123" }),
+      http.get("/api/v2/booking-configurations", () =>
+        lookupFails ? HttpResponse.json(envelope([], 2)) : HttpResponse.json(envelope([configuration], 2)),
       ),
-      http.patch("/api/v2/booking-configurations/7", () => new HttpResponse(null, { status: 500 })),
-    );
-    renderPage();
-
-    await user.click(await screen.findByRole("button", { name: "booking:bookableItems.actions.save" }));
-
-    expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.editError");
-    expect(screen.getByRole("button", { name: "booking:bookableItems.actions.save" })).toBeEnabled();
-    expect(screen.getByRole("heading", { name: "booking:bookableItems.editTitle" })).toBeVisible();
-  });
-
-  it("updates visible fields without resubmitting an unreadable target", async () => {
-    const user = userEvent.setup();
-    let requestBody: unknown;
-    server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      http.get("/api/v2/booking-configurations/7", () => HttpResponse.json({ ...configuration, target: null })),
-      http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
-        requestBody = await request.json();
-        return HttpResponse.json({ ...configuration, target: null, enabled: false });
+      http.get("/api/v2/bookings", () => {
+        eventRequests += 1;
+        return HttpResponse.json(envelope([], 10));
       }),
     );
     renderPage();
 
-    expect(await screen.findByText("common:values.unknownItem")).toBeVisible();
-    expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.target" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("checkbox", { name: "booking:bookableItems.fields.enabled" }));
-    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
+    expect(await screen.findByText("booking:bookableItemDetails.error.title")).toBeVisible();
+    expect(eventRequests).toBe(0);
+    lookupFails = false;
+    await user.click(screen.getByRole("button", { name: "common:actions.retry" }));
 
-    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
-    expect(requestBody).toEqual({
-      enabled: false,
-      timezone: "Europe/Berlin",
-      slotGranularityMinutes: 5,
-      openingStart: "00:00",
-      openingEnd: "24:00",
-      bufferBeforeMinutes: 0,
-      bufferAfterMinutes: 0,
-      maxBookingDurationMinutes: 0,
-      allowDoubleBooking: false,
-    });
+    expect(await screen.findByText("Confocal microscope")).toBeVisible();
+    expect(screen.queryByRole("link", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
+    await waitFor(() => expect(eventRequests).toBe(2));
+  });
+
+  it("marks the configuration update timestamp as machine-readable time", async () => {
+    const updatedAt = "2026-08-10T12:00:00Z";
+    server.use(
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(envelope([{ ...configuration, updatedAt }], 2)),
+      ),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+    );
+    renderPage();
+
+    const updatedTime = (await screen.findAllByRole("time")).find(
+      (element) => element.getAttribute("datetime") === updatedAt,
+    );
+    expect(updatedTime).toBeVisible();
+  });
+
+  it("reformats existing events after a configuration timezone refresh without refetching events", async () => {
+    let timezone = "UTC";
+    let eventRequests = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(envelope([{ ...configuration, timezone }], 2)),
+      ),
+      http.get("/api/v2/bookings", () => {
+        eventRequests += 1;
+        return HttpResponse.json(envelope([booking], 10));
+      }),
+    );
+    const { queryClient } = renderPage();
+
+    const times = await screen.findAllByRole("time");
+    const utcText = times[0].textContent;
+    expect(eventRequests).toBe(2);
+    timezone = "Europe/Berlin";
+    await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations", "target", "IN123"] });
+
+    await waitFor(() => expect(screen.getAllByRole("time")[0]).not.toHaveTextContent(utcText ?? ""));
+    expect(eventRequests).toBe(2);
   });
 });

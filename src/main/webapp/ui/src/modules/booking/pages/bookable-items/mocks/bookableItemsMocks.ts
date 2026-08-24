@@ -1,4 +1,5 @@
 import { HttpResponse, http, type RequestHandler } from "msw";
+import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { DEFAULT_SCHEDULING_SETTINGS, schedulingSettingsFieldNames } from "../schedulingSettings";
 
 export const bookableItemsOpenApi = {
@@ -247,6 +248,13 @@ export const sampleBookingEvents = [
   },
 ] as const;
 
+const detailBookingEvents = sampleBookingEvents.map((booking) => ({
+  ...booking,
+  canEdit: booking.privacy === "full",
+  createdAt: "2026-08-01T09:00:00Z",
+  updatedAt: "2026-08-01T09:00:00Z",
+}));
+
 function collectionPage(docs: readonly unknown[]) {
   return {
     docs,
@@ -303,11 +311,14 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
       onCollectionRequest(request);
       const where = decodeURIComponent(new URL(request.url).searchParams.get("where") ?? "");
       const targetIds = where.match(/target=in=\(([^)]*)\)/)?.[1].split(",");
+      const targetId = where.match(/^target==([^;]+)$/)?.[1].replaceAll('"', "");
       const docs = where.includes("id==-1")
         ? []
-        : targetIds
-          ? bookableItemFixtures.filter((fixture) => targetIds.includes(fixture.target.globalId))
-          : bookableItemFixtures;
+        : targetId
+          ? bookableItemFixtures.filter((fixture) => fixture.target.globalId === targetId)
+          : targetIds
+            ? bookableItemFixtures.filter((fixture) => targetIds.includes(fixture.target.globalId))
+            : bookableItemFixtures;
       return HttpResponse.json(collectionPage(docs));
     }),
     http.get("/api/v2/instruments", () => HttpResponse.json(collectionPage([]))),
@@ -320,6 +331,28 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
           ? definitions.filter((f) => ids.split(",").includes(f.id))
           : definitions.filter((f) => f.label.toLowerCase().includes(search));
       return HttpResponse.json({ fields: matching, totalFields: matching.length, hasMore: false, page: 1, limit: 20 });
+    }),
+  ];
+}
+
+export function bookableItemDetailsHandlers(): RequestHandler[] {
+  return [
+    http.get("/api/v2/booking-configurations", ({ request }) => {
+      const where = new URL(request.url).searchParams.get("where") ?? "";
+      const targetId = where.match(/^target==([^;]+)$/)?.[1].replaceAll('"', "");
+      if (!targetId) return undefined;
+      return HttpResponse.json(
+        collectionPage(bookableItemFixtures.filter((fixture) => fixture.target.globalId === targetId)),
+      );
+    }),
+    http.get("/api/v2/bookings", ({ request }) => {
+      const url = new URL(request.url);
+      if (url.searchParams.get("fields[bookings]") !== BOOKING_READ_FIELDS) return undefined;
+      const where = url.searchParams.get("where") ?? "";
+      const targetId = where.match(/target==([^;]+)/)?.[1].replaceAll('"', "");
+      if (!targetId) return undefined;
+      const docs = detailBookingEvents.filter((booking) => booking.target.globalId === targetId);
+      return HttpResponse.json(collectionPage(docs));
     }),
   ];
 }

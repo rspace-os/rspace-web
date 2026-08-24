@@ -6,6 +6,9 @@ function css(selector: string): Locator {
 }
 
 export class AllBookableItemsPage {
+  readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Bookable item details" });
+  readonly bookableItemDetailsTarget: Locator = page.getByText("Confocal microscope", { exact: true });
+
   get table(): Locator {
     return page.getByRole("table");
   }
@@ -85,6 +88,13 @@ export class AllBookableItemsPage {
       .getByRole("link", { name: "Book", exact: true });
   }
 
+  get detailsButton(): Locator {
+    return this.table
+      .getByRole("row")
+      .filter({ hasText: "Confocal microscope" })
+      .getByRole("link", { name: "View details", exact: true });
+  }
+
   get electronBookButton(): Locator {
     return this.table
       .getByRole("row")
@@ -98,6 +108,10 @@ export class AllBookableItemsPage {
 
   cardBookButton(itemName: string): Locator {
     return this.card(itemName).getByRole("link", { name: "Book", exact: true });
+  }
+
+  cardDetailsButton(itemName: string): Locator {
+    return this.card(itemName).getByRole("link", { name: "View details", exact: true });
   }
 
   cardWidth(itemName: string): number {

@@ -5,7 +5,11 @@ import { page } from "vitest/browser";
 import { worker } from "@/__tests__/browserSetup";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
-import { bookableItemsHandlers, sampleBookingEvents } from "../bookable-items/mocks/bookableItemsMocks";
+import {
+  bookableItemDetailsHandlers,
+  bookableItemsHandlers,
+  sampleBookingEvents,
+} from "../bookable-items/mocks/bookableItemsMocks";
 import {
   busyBooking,
   collectionResponse,
@@ -32,6 +36,7 @@ function registerHandlers() {
   worker.use(
     oauthTokenHandler(),
     http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+    ...bookableItemDetailsHandlers(),
     ...bookableItemsHandlers((request) => {
       collectionQueries.push(decodeURIComponent(new URL(request.url).search));
     }),
@@ -72,6 +77,18 @@ beforeEach(() => {
 });
 
 describe("Calendar page", () => {
+  test("navigates from a busy event to the bookable item details page", async () => {
+    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory />);
+
+    await calendar.showEventDetails("Busy").click();
+    await calendar.viewItemDetails.click();
+
+    await expect.element(calendar.bookableItemDetailsHeading).toBeVisible();
+    await expect.element(calendar.bookableItemDetailsTarget).toBeVisible();
+    await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN124");
+  });
+
   test("uses live booking events across every prototype layout and period", async () => {
     window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
     render(<CalendarPageStory />);
@@ -83,6 +100,10 @@ describe("Calendar page", () => {
     await expect.poll(() => calendarBookingRequests.length).toBe(1);
     expect(calendarBookingRequests[0].searchParams.get("fields[bookings]")).toBe(calendarBookingFields);
     expect(calendarBookingRequests[0].searchParams.get("where")).toContain("state==CONFIRMED");
+
+    await calendar.showEventDetails("Busy").click();
+    await expect.element(calendar.viewItemDetails).toHaveAttribute("href", "/booking/bookable-items/IN124");
+    await expect.element(calendar.editBooking).not.toBeInTheDocument();
 
     await calendar.searchFor("Grace");
     await expect.element(calendar.event("Confocal microscope")).not.toBeInTheDocument();
@@ -113,6 +134,16 @@ afterEach(() => {
 });
 
 describe("the All Bookable Items page", () => {
+  test("navigates to the bookable item details page", async () => {
+    render(<AllBookableItemsStory />);
+
+    await pageObj.detailsButton.click();
+
+    await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
+    await expect.element(pageObj.bookableItemDetailsTarget).toBeVisible();
+    await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123");
+  });
+
   test("uses standardized cards in a narrow container with full-width availability and all controls", async () => {
     const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     await page.viewport(1200, 900);
@@ -139,6 +170,9 @@ describe("the All Bookable Items page", () => {
       );
       expect(bookUrl.pathname).toBe("/booking/calendar/bookings/add");
       expect(bookUrl.searchParams.get("target")).toBe("IN123");
+      await expect
+        .element(pageObj.cardDetailsButton("Confocal microscope"))
+        .toHaveAttribute("href", "/booking/bookable-items/IN123");
       await expectNoAxeViolations();
     } finally {
       await page.viewport(originalViewport.width, originalViewport.height);
@@ -187,6 +221,7 @@ describe("the All Bookable Items page", () => {
     expect(bookUrl.pathname).toBe("/booking/calendar/bookings/add");
     expect(bookUrl.searchParams.get("date")).toBe("2026-08-17");
     expect(bookUrl.searchParams.get("target")).toBe("IN123");
+    await expect.element(pageObj.detailsButton).toHaveAttribute("href", "/booking/bookable-items/IN123");
   });
 
   test("does not render an unnecessary horizontal scrollbar", async () => {

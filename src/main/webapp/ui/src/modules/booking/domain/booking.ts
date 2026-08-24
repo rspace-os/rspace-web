@@ -1,5 +1,15 @@
 import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { bookingApiV2Headers, bookingApiV2JsonHeaders } from "./apiV2";
+
+const BookingTimestampEntries = {
+  start: v.pipe(v.string(), v.isoTimestamp()),
+  end: v.pipe(v.string(), v.isoTimestamp()),
+};
+
+function endsAfterStart(booking: { start: string; end: string }): boolean {
+  return Date.parse(booking.end) > Date.parse(booking.start);
+}
 
 const BookingTargetSchema = v.object({
   relationTo: v.literal("instruments"),
@@ -20,8 +30,7 @@ function bookingIdentity<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIs
     id: v.number(),
     target,
     timezone: v.string(),
-    start: v.string(),
-    end: v.string(),
+    ...BookingTimestampEntries,
     state: v.picklist(["CONFIRMED", "CANCELLED"]),
   };
 }
@@ -52,13 +61,31 @@ function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssu
 
 const BookingIdentitySchema = bookingIdentity(BookingTargetSchema);
 
-export const BookingSummarySchema = v.object(BookingIdentitySchema);
+export const BookingSummarySchema = v.pipe(
+  v.object(BookingIdentitySchema),
+  v.forward(
+    v.check((booking) => endsAfterStart(booking)),
+    ["end"],
+  ),
+);
 
-export const BookingSchema = bookingSchema(BookingTargetSchema);
+export const BookingSchema = v.pipe(
+  bookingSchema(BookingTargetSchema),
+  v.forward(
+    v.check((booking) => endsAfterStart(booking)),
+    ["end"],
+  ),
+);
 
-const BookingMutationSchema = bookingSchema(MutationTargetSchema);
+const BookingMutationSchema = v.pipe(
+  bookingSchema(MutationTargetSchema),
+  v.forward(
+    v.check((booking) => endsAfterStart(booking)),
+    ["end"],
+  ),
+);
 
-export const BookingListDocumentSchema = v.object({
+const BookingListDocumentObjectSchema = v.object({
   ...BookingIdentitySchema,
   requesterId: v.number(),
   purpose: v.nullable(v.string()),
@@ -68,6 +95,31 @@ export const BookingListDocumentSchema = v.object({
   createdAt: v.string(),
   updatedAt: v.string(),
 });
+
+export const BookingListDocumentSchema = v.pipe(
+  BookingListDocumentObjectSchema,
+  v.forward(
+    v.check((booking) => endsAfterStart(booking)),
+    ["end"],
+  ),
+);
+
+const BookingIntervalSchema = v.pipe(
+  v.object(BookingTimestampEntries),
+  v.forward(
+    v.check((booking) => endsAfterStart(booking)),
+    ["end"],
+  ),
+);
+
+function validateBookingIntervals(rows: readonly unknown[]): void {
+  parseOrThrow(v.array(BookingIntervalSchema), rows);
+}
+
+export const BookingListDocumentTableValidation = {
+  documentSchema: BookingListDocumentObjectSchema,
+  validateRows: validateBookingIntervals,
+};
 
 export type BookingSummary = v.InferOutput<typeof BookingSummarySchema>;
 export type Booking = v.InferOutput<typeof BookingSchema>;
@@ -103,6 +155,9 @@ export class ApiV2ProblemError extends Error {
   }
 }
 
+export const BOOKING_READ_FIELDS =
+  "id,target,timezone,start,end,state,purpose,bookedBy,privacy,canEdit,createdAt,updatedAt";
+
 export async function parseApiV2Problem(response: Response): Promise<ApiV2ProblemError> {
   const body: unknown = await response.json().catch(() => null);
   if (body && typeof body === "object") {
@@ -128,12 +183,7 @@ async function requestBooking<TSchema extends v.BaseSchema<unknown, unknown, v.B
 ): Promise<v.InferOutput<TSchema>> {
   const response = await fetch(url, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-      Authorization: `Bearer ${token}`,
-      ...init?.headers,
-    },
+    headers: init?.body ? bookingApiV2JsonHeaders(token, init.headers) : bookingApiV2Headers(token, init?.headers),
   });
   if (!response.ok) throw await parseApiV2Problem(response);
   return parseOrThrow(schema, await response.json());
@@ -142,7 +192,7 @@ async function requestBooking<TSchema extends v.BaseSchema<unknown, unknown, v.B
 export function fetchBooking(id: number, token: string, signal?: AbortSignal): Promise<Booking> {
   const parameters = new URLSearchParams({
     depth: "1",
-    "fields[bookings]": "id,target,timezone,start,end,state,purpose,bookedBy,privacy,canEdit,createdAt,updatedAt",
+    "fields[bookings]": BOOKING_READ_FIELDS,
   });
   return requestBooking(`/api/v2/bookings/${id}?${parameters}`, token, BookingSchema, { signal });
 }

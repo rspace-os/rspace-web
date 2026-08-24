@@ -41,6 +41,42 @@ const adapter = createApiV2CollectionAdapter({
 });
 
 describe("createApiV2CollectionFetcher", () => {
+  it("rejects a parsed page when row validation fails", async () => {
+    server.use(
+      http.get("/api/v2/records", () =>
+        HttpResponse.json({
+          docs: [{ id: "1", title: "Invalid" }],
+          totalDocs: 1,
+          limit: 2,
+          page: 1,
+          pagingCounter: 1,
+          totalPages: 1,
+          hasPrevPage: false,
+          hasNextPage: false,
+          prevPage: null,
+          nextPage: null,
+        }),
+      ),
+    );
+    const fetchCollection = createApiV2CollectionFetcher<TestRecord>(adapter, {
+      validateRows: () => {
+        throw new Error("Invalid row interval");
+      },
+    });
+
+    await expect(
+      fetchCollection(
+        {
+          filters: { search: "", expression: null },
+          sorting: [],
+          page: { pageIndex: 0, pageSize: 2 },
+          visibleFields: ["title"],
+        },
+        { signal: new AbortController().signal },
+      ),
+    ).rejects.toThrow("Invalid row interval");
+  });
+
   it("sends the standard request and parses the response", async () => {
     server.use(
       http.get("/api/v2/records", ({ request }) => {

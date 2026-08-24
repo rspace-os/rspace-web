@@ -12,6 +12,7 @@ import { Suspense } from "react";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
 import { bookableItemsOpenApi } from "../bookable-items/mocks/bookableItemsMocks";
+import { createBookableItemRoute } from "../bookable-items/routes";
 import AllBookableItemsPage from "./AllBookableItemsPage";
 import { createAllBookableItemsRoute } from "./routes";
 
@@ -33,6 +34,7 @@ export function AllBookableItemsStory({ containerWidth = 1500 }: { containerWidt
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([
         createAllBookableItemsRoute(bookingRoute, () => <AllBookableItemsPage clock={storyClock} />),
+        createBookableItemRoute(bookingRoute),
       ]),
     ]),
     history: createBrowserHistory(),

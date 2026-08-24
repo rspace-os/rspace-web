@@ -95,20 +95,20 @@ describe("DayTimeline table row", () => {
         ]}
         startWindow={0}
         endWindow={24 * 60}
-        renderEventActions={(event) => <button type="button">{`Manage ${event.bookedBy}`}</button>}
+        renderEventActions={(event) => <button type="button">{`Manage ${event.id}`}</button>}
       />,
       { wrapper },
     );
 
-    expect(screen.queryByRole("button", { name: "Manage Ada" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Manage editable" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Show details for Ada/ }));
-    expect(screen.getByRole("button", { name: "Manage Ada" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Manage editable" })).toBeVisible();
 
-    for (const name of [/Show details for Grace/, /Show details for Busy/, /Show details for Maintenance/]) {
-      await user.click(screen.getByRole("button", { name }));
-    }
-    expect(screen.queryByRole("button", { name: "Manage Grace" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Manage Busy" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Manage Maintenance" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Show details for Grace/ }));
+    expect(screen.getByRole("button", { name: "Manage readonly" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /Show details for Busy/ }));
+    expect(screen.getByRole("button", { name: "Manage busy" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /Show details for Maintenance/ }));
+    expect(screen.queryByRole("button", { name: "Manage blockout" })).not.toBeInTheDocument();
   });
 });

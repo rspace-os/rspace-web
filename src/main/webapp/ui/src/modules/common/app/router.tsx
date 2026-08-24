@@ -7,6 +7,7 @@ import {
   createBookableItemRoute,
   createBookableItemsRoute,
   createBookingSettingsRoute,
+  createEditBookableItemRoute,
 } from "@/modules/booking/pages/bookable-items/routes";
 import { createAddBookingRoute, createEditBookingRoute } from "@/modules/booking/pages/bookings/routes";
 import { createCalendarRoute } from "@/modules/booking/pages/calendar/routes";
@@ -45,6 +46,7 @@ const bookingRoute = bookingRouteBase.addChildren([
   createBookingSettingsRoute(bookingRouteBase),
   createAddBookableItemRoute(bookingRouteBase),
   createBookableItemRoute(bookingRouteBase),
+  createEditBookableItemRoute(bookingRouteBase),
 ]);
 const aboutRoute = createAboutRoute(rootRoute);
 const maintenanceInProgressRoute = createMaintenanceInProgressRoute(rootRoute);

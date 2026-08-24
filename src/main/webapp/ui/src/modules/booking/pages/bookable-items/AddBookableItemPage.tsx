@@ -3,12 +3,13 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { Button } from "@/modules/common/ui/button";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
-import { loadUnavailableBookableItems, useSelectedBookableItemAvailability } from "./bookableItemAvailability";
+import { useSelectedBookableItemAvailability } from "./bookableItemAvailability";
 import {
   type BookingConfigurationInput,
   BookingConfigurationInputSchema,
@@ -31,30 +32,15 @@ class BookingConfigurationCreateError extends Error {
     readonly code: string | undefined,
     readonly detail: string | undefined,
     readonly targetId: number,
-    readonly existingConfigurationId: string | number | undefined,
   ) {
     super(`Booking configuration create failed with status ${status}`);
-  }
-}
-
-async function existingConfigurationId(targetId: number, token: string): Promise<string | number | undefined> {
-  const globalId = `IN${targetId}`;
-  try {
-    const unavailable = await loadUnavailableBookableItems([globalId], token, new AbortController().signal);
-    return unavailable[globalId]?.relatedRecordId;
-  } catch {
-    return undefined;
   }
 }
 
 async function createBookingConfiguration(input: BookingConfigurationInput, token: string): Promise<void> {
   const response = await fetch("/api/v2/booking-configurations", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
+    headers: bookingApiV2JsonHeaders(token),
     body: JSON.stringify(input),
   });
   if (response.ok) return;
@@ -62,11 +48,7 @@ async function createBookingConfiguration(input: BookingConfigurationInput, toke
   const problem = v.safeParse(ApiV2ProblemSchema, body);
   const code = problem.success ? problem.output.code : undefined;
   const detail = problem.success ? (problem.output.detail ?? undefined) : undefined;
-  const configurationId =
-    response.status === 409 && code === TARGET_CONFLICT
-      ? await existingConfigurationId(input.target.value, token)
-      : undefined;
-  throw new BookingConfigurationCreateError(response.status, code, detail, input.target.value, configurationId);
+  throw new BookingConfigurationCreateError(response.status, code, detail, input.target.value);
 }
 
 type TargetSelection = { type: "empty" } | { type: "instrument"; id: number } | { type: "unsupported" };
@@ -139,7 +121,6 @@ export default function AddBookableItemPage() {
     createMutation.error.targetId === selectedTargetId
       ? createMutation.error
       : null;
-  const existingConfigurationId = selectedTargetAvailability.data?.relatedRecordId ?? conflict?.existingConfigurationId;
   const alreadyConfigured = selectedTargetAvailability.data != null || conflict !== null;
   const canComplete = target.type === "instrument" && selectedTargetAvailability.isSuccess && !alreadyConfigured;
   const createFailed =
@@ -162,15 +143,9 @@ export default function AddBookableItemPage() {
         ) : target.type === "instrument" && alreadyConfigured ? (
           <p role="alert" className="text-sm text-destructive">
             {t("bookableItems.availability.alreadyConfigured")}{" "}
-            {existingConfigurationId === undefined ? null : (
-              <Link
-                to="/booking/config/bookable-items/$id"
-                params={{ id: String(existingConfigurationId) }}
-                className="underline"
-              >
-                {t("bookableItems.availability.editExisting")}
-              </Link>
-            )}
+            <Link to="/booking/bookable-items/$globalId" params={{ globalId: `IN${target.id}` }} className="underline">
+              {t("bookableItems.availability.viewExisting")}
+            </Link>
           </p>
         ) : target.type === "instrument" && selectedTargetAvailability.isError ? (
           <p role="alert" className="text-sm text-destructive">

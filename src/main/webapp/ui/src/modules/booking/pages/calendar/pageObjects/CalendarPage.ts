@@ -1,6 +1,8 @@
 import { type Locator, page } from "vitest/browser";
 
 export class CalendarPage {
+  readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Bookable item details" });
+  readonly bookableItemDetailsTarget: Locator = page.getByText("Electron microscope", { exact: true });
   readonly heading: Locator = page.getByRole("heading", { name: "Calendar" });
   readonly search: Locator = page.getByRole("textbox", { name: "Search Calendar" });
   readonly timeGrid: Locator = page.getByRole("region", { name: "Time grid" });
@@ -15,6 +17,18 @@ export class CalendarPage {
 
   event(itemName: string): Locator {
     return page.getByRole("article", { name: new RegExp(itemName) });
+  }
+
+  showEventDetails(itemName: string): Locator {
+    return page.getByRole("button", { name: new RegExp(`Show details for ${itemName}`) });
+  }
+
+  get viewItemDetails(): Locator {
+    return page.getByRole("link", { name: "View details", exact: true });
+  }
+
+  get editBooking(): Locator {
+    return page.getByRole("link", { name: "Edit", exact: true });
   }
 
   async searchFor(value: string): Promise<void> {

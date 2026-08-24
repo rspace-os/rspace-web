@@ -107,10 +107,7 @@ export function DayTimelineEventCard({
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   alignExpandedEnd?: boolean;
-  renderEventActions?: (
-    event: Extract<DayTimelineEvent, { kind: "booking"; privacy: "full" }>,
-    period: string,
-  ) => React.ReactNode;
+  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
 }) {
   const { t } = useTranslation("booking");
   const detailsId = `${React.useId()}-details`;
@@ -175,11 +172,7 @@ export function DayTimelineEventCard({
       <div id={detailsId} hidden={!isExpanded} className="space-y-1 pt-1">
         <time className="block font-medium">{exactPeriod}</time>
         {notes && <p className="text-[11px] opacity-90">{notes}</p>}
-        {isExpanded &&
-          event.kind === "booking" &&
-          event.privacy === "full" &&
-          event.canEdit &&
-          renderEventActions?.(event, exactPeriod)}
+        {isExpanded && event.kind === "booking" && renderEventActions?.(event, exactPeriod)}
       </div>
       {event.startMinute < 0 && <span className="absolute inset-y-0 left-0 w-1 bg-current" aria-hidden="true" />}
       {event.endMinute > DAY_MINUTES && (
@@ -248,10 +241,7 @@ export function DayTimeline({
   compactCards?: boolean;
   variant?: "detail" | "table-row";
   itemName?: string;
-  renderEventActions?: (
-    event: Extract<DayTimelineEvent, { kind: "booking"; privacy: "full" }>,
-    period: string,
-  ) => React.ReactNode;
+  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
 }) {
   const { t, i18n } = useTranslation("booking");
   const scrollerRef = React.useRef<HTMLElement>(null);

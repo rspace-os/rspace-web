@@ -123,6 +123,11 @@ describe("AllBookableItemsPage", () => {
       name: "Book",
     });
     expect(bookLink).toHaveAttribute("href", "/booking/calendar/bookings/add?date=2026-08-17&target=IN123");
+    expect(
+      within(within(table).getByRole("row", { name: /Confocal microscope/ })).getByRole("link", {
+        name: "View details",
+      }),
+    ).toHaveAttribute("href", "/booking/bookable-items/IN123");
 
     expect(bookingRequests).toBe(1);
     await expectAccessible(container);

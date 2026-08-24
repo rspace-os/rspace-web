@@ -50,7 +50,7 @@ class ApiV2BookingConfigurationResourceTest {
   }
 
   @Test
-  void definesScalarFieldsAndTheWritableTargetRelationship() {
+  void definesScalarFieldsAndTheCreateOnlyTargetRelationship() {
     assertEquals(
         List.of(
             "id",
@@ -79,8 +79,7 @@ class ApiV2BookingConfigurationResourceTest {
             "bufferBeforeMinutes",
             "bufferAfterMinutes",
             "maxBookingDurationMinutes",
-            "allowDoubleBooking",
-            "target"),
+            "allowDoubleBooking"),
         List.copyOf(
             ApiV2BookingConfigurationResource.DESCRIPTION.writableFields(WriteOperation.UPDATE)));
     assertEquals(
@@ -105,10 +104,18 @@ class ApiV2BookingConfigurationResourceTest {
     assertInstanceOf(
         FilterSelector.RelationshipPart.class,
         ApiV2BookingConfigurationResource.DESCRIPTION.requireFilterSelector("updatedBy.value"));
-    assertTrue(
+    assertFalse(
         ApiV2BookingConfigurationResource.DESCRIPTION
             .requireRelationship("target")
             .acceptsInput(WriteOperation.UPDATE, RelationshipInputForm.GLOBAL_ID));
+    assertTrue(
+        ApiV2BookingConfigurationResource.DESCRIPTION
+            .requireRelationship("target")
+            .writableOn(WriteOperation.CREATE));
+    assertFalse(
+        ApiV2BookingConfigurationResource.DESCRIPTION
+            .requireRelationship("target")
+            .writableOn(WriteOperation.UPDATE));
     assertTrue(
         ApiV2BookingConfigurationResource.DESCRIPTION.requireRelationship("createdBy").nullable());
     assertTrue(
@@ -314,23 +321,12 @@ class ApiV2BookingConfigurationResourceTest {
   }
 
   @Test
-  void acceptsOnlyInstrumentGlobalIdsForTargetPatches() throws Exception {
-    ParsedDocument document =
-        ApiV2DocumentParser.parse(
-            mapper.readTree("{\"target\":\"IN12\"}"),
-            ApiV2BookingConfigurationResource.DESCRIPTION,
-            WriteOperation.UPDATE,
-            "errors.api.v2.bookingConfiguration.patch",
-            new AccessContext(null, Operation.UPDATE, "booking-configurations", 42L));
-
-    assertEquals(
-        new ResourceReference<>(BookableTargetType.INSTRUMENT, 12L),
-        document.values().get("target"));
+  void rejectsTargetPatches() {
     assertThrows(
         DocumentValidationException.class,
         () ->
             ApiV2DocumentParser.parse(
-                mapper.readTree("{\"target\":\"SA12\"}"),
+                mapper.readTree("{\"target\":\"IN12\"}"),
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 WriteOperation.UPDATE,
                 "errors.api.v2.bookingConfiguration.patch",
