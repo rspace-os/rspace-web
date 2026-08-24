@@ -84,6 +84,7 @@ E2E_MOCK_BACKEND_URL=http://<host-lan-ip>:9099 pnpm run test-e2e
 File suffix drives `testMatch` in the config — wrong suffix = silently never run.
 
 - UI browser spec: `*.e2e.ts`
+- Docker conversion-stack spec: `*.conversion.e2e.ts` (run with `E2E_BROWSER=conversion`)
 - API (Node HTTP) spec: `*.api.spec.ts`
 
 ## Must: fixture naming

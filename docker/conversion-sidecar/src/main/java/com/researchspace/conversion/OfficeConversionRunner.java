@@ -1,5 +1,7 @@
 package com.researchspace.conversion;
 
+import com.sun.star.document.MacroExecMode;
+import com.sun.star.document.UpdateDocMode;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,11 +14,15 @@ import org.jodconverter.core.office.OfficeException;
 import org.jodconverter.core.office.OfficeUtils;
 import org.jodconverter.local.LocalConverter;
 import org.jodconverter.local.office.LocalOfficeManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 @Component
 class OfficeConversionRunner {
+
+  private static final Logger LOG = LoggerFactory.getLogger(OfficeConversionRunner.class);
 
   private final ConverterProperties properties;
   private final LibreOfficeSandbox sandbox;
@@ -30,7 +36,7 @@ class OfficeConversionRunner {
   }
 
   ConvertedFile convert(Path uploadedFile, String inputExtension, String outputExtension) {
-    return limiter.run(() -> convertWithinLimit(uploadedFile, inputExtension, outputExtension));
+    return limiter.runWord(() -> convertWithinLimit(uploadedFile, inputExtension, outputExtension));
   }
 
   private ConvertedFile convertWithinLimit(
@@ -39,20 +45,28 @@ class OfficeConversionRunner {
     Path input = requestDirectory.resolve("input." + inputExtension);
     Path output = requestDirectory.resolve("output." + outputExtension);
     LocalOfficeManager manager = null;
+    Path pipeAlias = null;
     try {
       Files.move(uploadedFile, input);
       Files.createDirectories(requestDirectory.resolve("home"));
+      Files.createDirectories(requestDirectory.resolve("tmp"));
+      String pipeName = "rspace-" + UUID.randomUUID();
+      pipeAlias = createPipeAlias(pipeName);
       manager =
           LocalOfficeManager.builder()
               .officeHome(properties.officeHome().toFile())
               .workingDir(requestDirectory.toFile())
-              .pipeNames("rspace-" + UUID.randomUUID())
+              .pipeNames(pipeName)
               .runAsArgs(sandbox.commandPrefix(requestDirectory).toArray(String[]::new))
               .taskQueueTimeout(properties.conversionTimeout().toMillis())
               .taskExecutionTimeout(properties.conversionTimeout().toMillis())
               .build();
       manager.start();
-      var builder = LocalConverter.builder().officeManager(manager);
+      var builder =
+          LocalConverter.builder()
+              .officeManager(manager)
+              .loadProperty("MacroExecutionMode", MacroExecMode.NEVER_EXECUTE)
+              .loadProperty("UpdateDocMode", UpdateDocMode.NO_UPDATE);
       if ("html".equals(outputExtension)) {
         builder.storeProperty("FilterName", "HTML (StarWriter)").storeProperty("EmbedImages", true);
       }
@@ -116,6 +130,34 @@ class OfficeConversionRunner {
           e);
     } finally {
       OfficeUtils.stopQuietly(manager);
+      deletePipeAlias(pipeAlias);
+    }
+  }
+
+  private Path createPipeAlias(String pipeName) {
+    try {
+      String uid = Files.getAttribute(Path.of("/proc/self"), "unix:uid").toString();
+      Path socketDirectory = Path.of("/tmp");
+      Path alias = socketDirectory.resolve("OSL_PIPE_" + uid + "_" + pipeName);
+      Files.createSymbolicLink(alias, Path.of("OSL_PIPE_" + pipeName));
+      return alias;
+    } catch (IOException | UnsupportedOperationException e) {
+      throw new ConversionException(
+          HttpStatus.SERVICE_UNAVAILABLE,
+          ConversionError.SERVICE_UNAVAILABLE,
+          "LibreOffice IPC is unavailable",
+          e);
+    }
+  }
+
+  private void deletePipeAlias(Path alias) {
+    if (alias == null) {
+      return;
+    }
+    try {
+      Files.deleteIfExists(alias);
+    } catch (IOException e) {
+      LOG.warn("Could not remove LibreOffice pipe alias {}", alias, e);
     }
   }
 

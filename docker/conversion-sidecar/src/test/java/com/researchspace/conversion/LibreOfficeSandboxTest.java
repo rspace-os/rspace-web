@@ -15,23 +15,26 @@ class LibreOfficeSandboxTest {
   @TempDir Path directory;
 
   @Test
-  void isolatesNetworkAndBindsOnlyRequestAndIpcState() throws Exception {
+  void isolatesNetworkAndBindsOnlyRequestState() throws Exception {
     Path executable = directory.resolve("bwrap");
     Files.createFile(executable).toFile().setExecutable(true);
-    Path ipc = directory.resolve("ipc");
     Path request = directory.resolve("request");
     Files.createDirectories(request);
     var properties =
         new ConverterProperties(
-            Path.of("/office"), directory, Duration.ofSeconds(1), 2, 1024, executable, ipc);
+            Path.of("/office"), directory, Duration.ofSeconds(1), 2, 1024, executable);
 
     List<String> command = new LibreOfficeSandbox(properties).commandPrefix(request);
 
     assertTrue(command.contains("--unshare-all"));
     assertTrue(command.contains("--clearenv"));
     assertEquals(2, command.stream().filter("--bind"::equals).count());
-    assertTrue(command.indexOf("--tmpfs") < command.indexOf("--bind"));
+    assertTrue(command.contains("/tmp"));
+    assertTrue(command.contains("/proc"));
+    assertTrue(command.indexOf("/tmp") < command.indexOf(request.toAbsolutePath().toString()));
     assertTrue(command.contains(request.toAbsolutePath().toString()));
-    assertTrue(command.contains(ipc.toAbsolutePath().toString()));
+    assertTrue(command.contains(request.resolve("tmp").toAbsolutePath().toString()));
+    assertTrue(command.contains("/lib64"));
+    assertTrue(command.contains("/usr/lib/libreoffice/program"));
   }
 }

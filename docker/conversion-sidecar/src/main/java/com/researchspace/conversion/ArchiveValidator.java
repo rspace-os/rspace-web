@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -31,6 +32,10 @@ class ArchiveValidator {
   private static final long MAX_COMPRESSION_RATIO = 100;
   private static final Set<String> NESTED_ARCHIVE_SUFFIXES =
       Set.of(".7z", ".bz2", ".gz", ".jar", ".rar", ".tar", ".tgz", ".xz", ".zip");
+  private static final Set<String> ALLOWED_EXTERNAL_RELATIONSHIP_TYPES =
+      Set.of(
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+          "http://purl.oclc.org/ooxml/officeDocument/relationships/hyperlink");
 
   void validate(Path archive, String extension) {
     try (ZipFile zip = ZipFile.builder().setPath(archive).get()) {
@@ -131,7 +136,8 @@ class ArchiveValidator {
         var relationships = root.getElementsByTagNameNS("*", "Relationship");
         for (int i = 0; i < relationships.getLength(); i++) {
           Element relationship = (Element) relationships.item(i);
-          if ("external".equalsIgnoreCase(relationship.getAttribute("TargetMode"))) {
+          if ("external".equalsIgnoreCase(relationship.getAttribute("TargetMode"))
+              && !ALLOWED_EXTERNAL_RELATIONSHIP_TYPES.contains(relationship.getAttribute("Type"))) {
             invalid("The uploaded archive contains an external relationship");
           }
         }
@@ -165,6 +171,62 @@ class ArchiveValidator {
     }
     if (!foundRoot) {
       invalid("The uploaded OpenDocument manifest is invalid");
+    }
+    for (String name : List.of("content.xml", "styles.xml")) {
+      ZipArchiveEntry entry = zip.getEntry(name);
+      if (entry != null && !entry.isDirectory()) {
+        validateNoExternalReferences(readXml(zip, entry).getDocumentElement());
+      }
+    }
+  }
+
+  private void validateNoExternalReferences(Element root) {
+    for (Node node = root; node != null; node = nextNode(root, node)) {
+      if (node.getNodeType() != Node.ELEMENT_NODE) {
+        continue;
+      }
+      var attributes = node.getAttributes();
+      for (int i = 0; i < attributes.getLength(); i++) {
+        Node attribute = attributes.item(i);
+        if (("href".equals(attribute.getLocalName()) || "href".equals(attribute.getNodeName()))
+            && isExternalReference(attribute.getNodeValue())) {
+          invalid("The uploaded archive contains an external reference");
+        }
+      }
+    }
+  }
+
+  private Node nextNode(Node root, Node current) {
+    if (current.getFirstChild() != null) {
+      return current.getFirstChild();
+    }
+    while (current != root && current.getNextSibling() == null) {
+      current = current.getParentNode();
+    }
+    return current == root ? null : current.getNextSibling();
+  }
+
+  private boolean isExternalReference(String value) {
+    if (value == null || value.isBlank() || value.startsWith("#")) {
+      return false;
+    }
+    try {
+      URI uri = URI.create(value);
+      String path = uri.getPath();
+      if (uri.isAbsolute()
+          || uri.getAuthority() != null
+          || value.startsWith("/")
+          || path == null
+          || path.indexOf('\\') >= 0) {
+        return true;
+      }
+      Path normalized = Path.of(path).normalize();
+      String normalizedPath = normalized.toString();
+      return normalized.isAbsolute()
+          || normalizedPath.equals("..")
+          || normalizedPath.startsWith("../");
+    } catch (IllegalArgumentException e) {
+      return true;
     }
   }
 

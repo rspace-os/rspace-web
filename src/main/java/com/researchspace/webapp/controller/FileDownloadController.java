@@ -277,6 +277,7 @@ public class FileDownloadController extends BaseController {
             saveConvertedInFileStore(outputformat, input, result, subject);
         return new AjaxReturnObject<>(convertedFileProp.getFileName(), null);
       } catch (Exception e) {
+        log.error("Could not persist converted preview for file {}", input.getId(), e);
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         return new AjaxReturnObject<>(
             null,

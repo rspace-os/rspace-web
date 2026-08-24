@@ -238,6 +238,7 @@ services:
       - conversion
     tmpfs:
       - /tmp:size=768m,mode=1777
+      - /work:size=768m,mode=0700,uid=10001,gid=10001
     read_only: true
     cap_drop: ["ALL"]
     security_opt:

@@ -22,8 +22,9 @@ parts used by RSpace:
 
 Every Word conversion starts LibreOffice through a rootless bubblewrap sandbox. The process gets a
 private network namespace, a read-only view of the LibreOffice runtime, and access only to its own
-request directory plus the local UNO pipe directory. Sandbox startup failure rejects the request;
-there is no unsandboxed fallback.
+request directory. Its home and temporary files are request-private. JODConverter and LibreOffice
+share `/tmp` only for randomly named UNO sockets; uploads and conversion files stay on the separate
+`/work` tmpfs. Sandbox startup failure rejects the request. There is no unsandboxed fallback.
 
 ## Supported RSpace workflows
 
@@ -64,11 +65,12 @@ environment variable, for example `converter.max-output-bytes` becomes
 `CONVERTER_MAX_OUTPUT_BYTES`. Docker deployments can use environment variables for every sidecar
 setting and keep the properties file as the defaults.
 
-The sidecar property `converter.max-concurrent-office-conversions` defaults to `2`. It is a hard
-per-process limit with no waiting queue. When every LibreOffice slot is occupied, the sidecar
+The sidecar property `converter.max-concurrent-office-conversions` defaults to `2`. The sidecar
+applies that capacity independently to its PDF and Word roles, with no waiting queue. When every
+slot for a role is occupied, the sidecar
 returns HTTP 429 with `Retry-After: 1`, and RSpace displays its localized service-busy error.
-Actuator records active and rejected work as `rspace.conversion.office.active` and
-`rspace.conversion.office.rejected`.
+Actuator records active and rejected work under `rspace.conversion.office.*` and
+`rspace.conversion.pdf.*`.
 
 ## Error contract
 
@@ -121,13 +123,13 @@ creates Gallery records.
   tests.
 - `PdfConversionClientTest`, `JodConverterClientTest`, and `DataUriExtractorTest`: RSpace response
   validation and import sanitation tests.
-- `documentConversion.e2e.ts`: Docker-backed PDF preview, DOCX import with three images, and DOCX
-  export.
+- `documentConversion.conversion.e2e.ts`: Docker-backed PDF preview, DOCX import with three images,
+  and DOCX export. The dedicated `conversion` Playwright project keeps these tests out of mocked CI
+  jobs that do not start the sidecar.
 
 Run the browser test from the repository root after `./docker/dev/rspace-dev up --e2e`:
 
 ```bash
-RSPACE_BASE_URL=http://localhost:<app-port> pnpm run test-e2e \
-  src/__tests__/e2e/specs/gallery/documentConversion.e2e.ts \
-  --project=chromium --reporter=list
+RSPACE_BASE_URL=http://localhost:<app-port> E2E_BROWSER=conversion pnpm run test-e2e \
+  src/eln/gallery/__tests__/documentConversion.conversion.e2e.ts --reporter=list
 ```

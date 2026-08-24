@@ -17,17 +17,18 @@ Gotenberg and the conversion sidecar are stateless containers deployed only as a
 on the same machine. Docker Compose or an equivalent container tool connects them through a
 private container network. The sidecar has no supported non-container mode, and Gotenberg is never
 a remote or independently scaled service. One pair provides both roles and may serve multiple
-RSpace deployments. RSpace reaches the sidecar's HTTP interface only through a secure tunnel and
-uses a distinct bearer credential for each deployment. The sidecar applies separate PDF and Word
-quotas per deployment. Gotenberg is private to its paired sidecar and is never an RSpace
-configuration target. An empty `conversion.url`
-turns all conversion features off: the UI hides them and the API returns 422.
+RSpace deployments. RSpace reaches the sidecar's HTTP interface only through a private container
+network or secure tunnel. The sidecar accepts valid requests without an Authorization header and
+applies separate service-wide PDF and Word capacity limits. Deployments must not publish the
+sidecar to an untrusted network. Gotenberg is private to its paired sidecar and is never an RSpace
+configuration target. An empty `conversion.url` selects the legacy Aspose fallback when Aspose is
+enabled. Conversion is unavailable only when `conversion.url` is empty and Aspose is disabled.
 
 The sidecar is a small, owned HTTP wrapper around `jodconverter-local-lo`, not the upstream
 sample REST application. It also exposes Gotenberg's fixed LibreOffice route and
 proxies it to the Gotenberg container on its private same-host network. Owning this seam is
 necessary to enforce
-fixed routes, archive validation, one-shot profiles, authentication, per-role quotas, safe
+fixed routes, archive validation, one-shot profiles, per-role capacity limits, safe
 errors, and request isolation for untrusted documents without creating a general-purpose proxy.
 
 All uploaded and generated documents are untrusted. Gotenberg and each LibreOffice worker have
@@ -55,8 +56,8 @@ allowlist-sanitized and extracted images are content-checked before they become 
 ## Consequences
 
 - Word Export now produces `.docx` (was `.doc`).
-- CSV and Markdown files lost their previews. This is deliberate: LibreOffice cannot read Markdown, and a Markdown preview that only works on some deployments would be a support burden.
-- Plain-text previews are shown directly by the browser instead of being converted.
+- CSV, Markdown, and plain-text files are converted to PDF for preview. Markdown is submitted to
+  LibreOffice with a `.txt` extension so that its text filter handles the content consistently.
 - Word conversion quality is lower than Aspose (LibreOffice engine everywhere). Accepted.
 - Properties are named for the capability (`conversion.*`), not the product. This breaks with the existing `aspose.*` convention on purpose: the vendor name had leaked into about 30 files across every layer.
 - Images cross the Word backend as base64 data URIs (+37% transfer, on import/export only).

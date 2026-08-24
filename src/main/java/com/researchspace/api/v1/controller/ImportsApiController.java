@@ -12,7 +12,6 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
-import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FolderManager;
 import java.io.IOException;
 import java.util.Optional;
@@ -35,7 +34,6 @@ public class ImportsApiController extends BaseApiController implements ImportApi
 
   private @Autowired FolderManager folderMgr;
   private @Autowired IPermissionUtils permissionUtils;
-  private @Autowired IPropertyHolder properties;
 
   @Override
   public ApiDocumentInfo importWord(
@@ -44,11 +42,6 @@ public class ImportsApiController extends BaseApiController implements ImportApi
       @RequestParam("file") MultipartFile file,
       @RequestAttribute(name = "user") User user)
       throws IOException {
-
-    if (!properties.isConversionEnabled()) {
-      throw new IllegalArgumentException(
-          getMessage(DocumentConversionError.SERVICE_UNAVAILABLE.messageKey()));
-    }
 
     Folder targetFolder = getTargetFolder(folderId, user);
     Optional<Folder> imageFolder = getImageFolder(imageFolderId, user);
