@@ -71,7 +71,7 @@ describe("pdf preview dialog island", () => {
     expect(screen.getByTestId("mock-pdf-page-1")).toBeVisible();
   });
 
-  test("opens the callable Aspose preview for convertible files", async () => {
+  test("opens the converted document preview for supported files", async () => {
     axiosGetMock.mockResolvedValue({
       data: {
         data: "converted-preview.pdf",

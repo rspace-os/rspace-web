@@ -1,0 +1,30 @@
+# Maven
+/target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+dependency-reduced-pom.xml
+
+# Local configuration and runtime output
+/.env
+/.env.*
+!/.env.example
+/application-local.properties
+*.log
+hs_err_pid*
+replay_pid*
+
+# IDEs and editors
+/.idea/
+/.vscode/
+/.settings/
+/.classpath
+/.project
+*.iml
+*.swp
+*~
+
+# Operating systems
+.DS_Store
+Thumbs.db

@@ -66,7 +66,7 @@ function FormatChoice({
   const [pdfAvailable, setPdfAvailable] = useState(false);
   const [wordAvailable, setWordAvailable] = useState(false);
   const [wordAvailabilityMessage, setWordAvailabilityMessage] = useState("");
-  const asposeEnabled = useDeploymentProperty("aspose.enabled");
+  const conversionEnabled = useDeploymentProperty("conversion.enabled");
 
   const repoCheck = () => {
     const url = "/repository/ajax/repo/uiConfig";
@@ -258,7 +258,7 @@ function FormatChoice({
               </>
             }
           />
-          {FetchingData.getSuccessValue(asposeEnabled).flatMap(Parsers.isBoolean).orElse(false) && (
+          {FetchingData.getSuccessValue(conversionEnabled).flatMap(Parsers.isBoolean).orElse(false) && (
             <FormControlLabel
               value="doc"
               disabled={!wordAvailable}

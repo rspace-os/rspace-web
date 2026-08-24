@@ -89,7 +89,7 @@
         "filestoresSection": "Filestores",
         "formats": {
           "docAvailable": "MS Word version of your RSpace documents will be placed in the 'Exports' area of the Gallery.",
-          "docHeading": ".DOC file",
+          "docHeading": ".DOCX file",
           "elnExplanation": "An XML bundle with an RO-Crate metadata file, zipped into a .eln archive.",
           "elnHeading": "RO-Crate",
           "htmlExplanation": "Exported data, notebooks and attached files can be accessed offline with a browser.",

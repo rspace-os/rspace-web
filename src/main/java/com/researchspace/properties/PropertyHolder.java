@@ -179,6 +179,12 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${aspose.cacheConverted}")
   private String asposeCacheConverted;
 
+  @Value("${conversion.url:}")
+  private String conversionUrl;
+
+  @Value("${conversion.cacheConverted:true}")
+  private String conversionCacheConverted;
+
   @Value("${msoffice.wopi.enabled}")
   private boolean msOfficeEnabled;
 
@@ -560,6 +566,11 @@ public class PropertyHolder implements IMutablePropertyHolder {
     return Boolean.parseBoolean(asposeEnabled);
   }
 
+  @Override
+  public boolean isConversionEnabled() {
+    return StringUtils.isNotBlank(conversionUrl) || isAsposeEnabled();
+  }
+
   public String getChemistryProvider() {
     return chemistryProvider;
   }
@@ -766,6 +777,13 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public boolean isAsposeCachingEnabled() {
     return Boolean.parseBoolean(asposeCacheConverted);
+  }
+
+  @Override
+  public boolean isConversionCachingEnabled() {
+    return StringUtils.isNotBlank(conversionUrl)
+        ? Boolean.parseBoolean(conversionCacheConverted)
+        : isAsposeCachingEnabled();
   }
 
   @Override

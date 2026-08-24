@@ -1,6 +1,8 @@
 package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.properties.PropertyHolder;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +13,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class PropertyHolderTest {
@@ -51,5 +54,19 @@ public class PropertyHolderTest {
     holder.setFieldmarkBaseUrl("https://base.fieldmark.com");
 
     assertEquals("https://base.fieldmark.com", holder.getFieldmarkBaseUrl());
+  }
+
+  @Test
+  public void conversionUrlEnablesPreviewWordAndNewCacheSetting() {
+    ReflectionTestUtils.setField(holder, "asposeEnabled", "false");
+    ReflectionTestUtils.setField(holder, "asposeCacheConverted", "false");
+    ReflectionTestUtils.setField(holder, "conversionUrl", "");
+    ReflectionTestUtils.setField(holder, "conversionCacheConverted", "true");
+    assertFalse(holder.isConversionEnabled());
+    assertFalse(holder.isConversionCachingEnabled());
+
+    ReflectionTestUtils.setField(holder, "conversionUrl", "http://conversion-sidecar:8080");
+    assertTrue(holder.isConversionEnabled());
+    assertTrue(holder.isConversionCachingEnabled());
   }
 }

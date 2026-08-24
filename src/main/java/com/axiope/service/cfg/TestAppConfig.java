@@ -10,6 +10,8 @@ import com.researchspace.core.util.cache.DefaultTimeLimitedMemoryCache;
 import com.researchspace.core.util.cache.TimeLimitedMemoryCache;
 import com.researchspace.document.importer.ExternalFileImporter;
 import com.researchspace.document.importer.MSWordImporter;
+import com.researchspace.documentconversion.ext.ConversionSidecarClientFactory;
+import com.researchspace.documentconversion.ext.PdfConversionClient;
 import com.researchspace.documentconversion.spi.CompositeDocumentConvertor;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
 import com.researchspace.dryad.rspaceadapter.DryadRSpaceRepository;
@@ -29,6 +31,7 @@ import com.researchspace.service.impl.DummyConversionService;
 import com.researchspace.service.impl.EcatMediaFactory;
 import com.researchspace.service.impl.GlobalInitManagerImpl;
 import com.researchspace.service.impl.LicenseServerChecker;
+import com.researchspace.service.impl.PdfThenPngConverter;
 import com.researchspace.service.impl.license.NoCheckLicenseService;
 import com.researchspace.snapgene.wclient.SnapgeneWSClient;
 import com.researchspace.snapgene.wclient.SnapgeneWSClientImpl;
@@ -39,12 +42,15 @@ import io.vavr.control.Option;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
+import org.springframework.core.env.Environment;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -60,6 +66,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableAsync
 @EnableScheduling
 public class TestAppConfig extends BaseConfig {
+
+  @Value("${conversion.url:}")
+  private String conversionUrl;
+
+  @Autowired private Environment environment;
 
   @Bean(name = "postUserCreate")
   public IPostUserCreationSetUp postUserCreationSetup() {
@@ -203,9 +214,20 @@ public class TestAppConfig extends BaseConfig {
   @Bean
   DocumentConversionService compositeDocumentConverter() {
     CompositeDocumentConvertor composite = new CompositeDocumentConvertor();
-    List<DocumentConversionService> delegates = new ArrayList<DocumentConversionService>();
+    List<DocumentConversionService> delegates = new ArrayList<>();
     delegates.add(baseDocConverterConfig.pdfToImageConverter());
-    delegates.add(dummyDocumentConversionService());
+    if (conversionUrl.isBlank()) {
+      delegates.add(dummyDocumentConversionService());
+    } else {
+      ConversionSidecarClientFactory.Clients clients =
+          ConversionSidecarClientFactory.create(environment);
+      PdfConversionClient pdfClient = clients.pdf();
+      delegates.add(
+          new PdfThenPngConverter(pdfClient, baseDocConverterConfig.pdfToImageConverter()));
+      delegates.add(pdfClient);
+      delegates.add(clients.word());
+      log.info("Using the configured Gotenberg and JODConverter sidecar.");
+    }
     composite.setDelegates(delegates);
     return composite;
   }

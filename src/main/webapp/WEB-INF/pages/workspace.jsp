@@ -65,7 +65,7 @@
 <div
   id="toolbar2"
   data-pio-enabled="${pioEnabled}"
-  data-aspose-enabled="${asposeEnabled}"
+  data-conversion-enabled="${conversionEnabled}"
   data-labgroups-folder-id="${labgroupsFolderId}">
 </div>
 
