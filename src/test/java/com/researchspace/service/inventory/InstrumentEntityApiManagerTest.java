@@ -282,9 +282,9 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
 
-    // RSDEV-1307: the template's landing page names no instrument, so it must not travel; the
-    // blank self-fills with the instrument's own address instead
-    assertTrue(landingPageContentOf(created).endsWith("/globalId/" + created.getGlobalId()));
+    // RSDEV-1307: the template's landing page names no instrument, so it must not travel. It now
+    // stays blank rather than self-filling: RSpace no longer invents an address (ADR 0006 item 3)
+    assertTrue(StringUtils.isBlank(landingPageContentOf(created)));
     // and the source template is untouched by the derivation
     assertEquals(
         "https://lab.example.org/original",
@@ -314,8 +314,8 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
   @Test
   public void createInstrumentFromTemplate_mandatoryLandingPageStillCreatesSuccessfully() {
     // a hand-authored template may mark Landing page mandatory; clearing the inherited value
-    // leaves it blank until the post-save fill supplies the instrument's own address, so the
-    // pre-save mandatory validation must not reject it (RSDEV-1307)
+    // leaves it blank and nothing fills it any more, so the pre-save mandatory validation must
+    // still not reject it (RSDEV-1307, ADR 0006 item 3)
     ApiInstrumentTemplate template =
         templateWithLandingPage("https://lab.example.org/original", true);
 
@@ -326,13 +326,13 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
 
     assertNotNull(created.getId());
-    assertTrue(landingPageContentOf(created).endsWith("/globalId/" + created.getGlobalId()));
+    assertTrue(StringUtils.isBlank(landingPageContentOf(created)));
   }
 
   @Test
-  public void createInstrumentFromTemplate_blankLandingPageInRequestIsFilledNotRejected() {
+  public void createInstrumentFromTemplate_blankLandingPageInRequestIsAcceptedNotRejected() {
     // the UI posts the whole field list with the Landing page deliberately blanked, so a blank
-    // incoming value must be treated as "fill this for me", not as a missing mandatory value
+    // incoming value must be treated as "leave this empty", not as a missing mandatory value
     ApiInstrumentTemplate template =
         templateWithLandingPage("https://lab.example.org/original", true);
 
@@ -346,13 +346,13 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
 
     assertNotNull(created.getId());
-    assertTrue(landingPageContentOf(created).endsWith("/globalId/" + created.getGlobalId()));
+    assertTrue(StringUtils.isBlank(landingPageContentOf(created)));
   }
 
   @Test
-  public void createInstrumentFromTemplate_blankLandingPageInRequestIsFilledForOptionalField() {
-    // same request shape against a template that does not mark the field mandatory: the fill must
-    // happen in the ordinary case too, not only where the mandatory check would have fired
+  public void createInstrumentFromTemplate_blankLandingPageInRequestIsAcceptedForOptionalField() {
+    // same request shape against a template that does not mark the field mandatory: a blank must
+    // be accepted in the ordinary case too, not only where the mandatory check would have fired
     ApiInstrumentTemplate template =
         templateWithLandingPage("https://lab.example.org/original", false);
 
@@ -366,7 +366,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
 
     assertNotNull(created.getId());
-    assertTrue(landingPageContentOf(created).endsWith("/globalId/" + created.getGlobalId()));
+    assertTrue(StringUtils.isBlank(landingPageContentOf(created)));
   }
 
   @Test

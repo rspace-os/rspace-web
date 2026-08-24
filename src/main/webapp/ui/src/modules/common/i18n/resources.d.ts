@@ -2270,9 +2270,10 @@ export default interface Resources {
       "altEntry": "Alternatively, enter the data encoded in the barcode",
       "barcodeDetected": "Barcode detected: {format} format.",
       "cameraError": "Could not access camera, please enter code below.",
+      "cameraErrorSearchBox": "Could not access camera. Alternatively, enter the encoded data directly into the search box.",
       "helpTitle": "Info on using barcodes.",
       "loading": "Loading Barcode Scanner...",
-      "otherFormats": "To scan other formats, please try an Android device, or Chrome on a Mac (with a webcam).",
+      "otherFormats": "To scan other formats, please use Chrome or a Chromium-based browser.",
       "prompt": "Barcode Scanner: {helpText}.",
       "scanError": {
         "message": "Unable to search. Scan has not completed.",
@@ -4279,6 +4280,8 @@ export default interface Resources {
         },
         "searchbar": {
           "clearSearch": "Clear search",
+          "scanBarcode": "Scan barcode",
+          "scanPlaceholder": "Search or scan a barcode",
           "search": "Search"
         },
         "sort": {

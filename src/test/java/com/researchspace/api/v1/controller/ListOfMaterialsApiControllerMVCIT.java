@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiListOfMaterials;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -157,6 +158,102 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     foundLists = mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
     assertNotNull(foundLists);
     assertEquals(0, foundLists.size());
+  }
+
+  @Test
+  public void stockDecrementViaLomBumpsSubSampleVersionAndAddsRevision() throws Exception {
+    // RSDEV-1318: an ELN-driven stock decrement bumps the version and adds a revision entry
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    ApiSampleWithFullSubSamples mySample = createBasicSampleForUser(anyUser);
+    ApiSubSample mySubSample = mySample.getSubSamples().get(0);
+    Long subSampleId = mySubSample.getId();
+    assertEquals(1L, mySubSample.getVersion());
+    StructuredDocument myDoc = createBasicDocumentInRootFolderWithText(anyUser, "text");
+    Field myField = myDoc.getFields().get(0);
+
+    // create a list of materials, then register a 1 g usage that reduces the inventory stock
+    String newListJson = "{ \"name\": \"my list\", \"elnFieldId\": " + myField.getId() + " } ";
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/listOfMaterials", anyUser, newListJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiListOfMaterials createdList =
+        mvcUtils.getFromJsonResponseBody(result, ApiListOfMaterials.class);
+    String listUpdateJson =
+        "{ \"materials\": [ "
+            + " { \"invRec\": { \"id\": "
+            + subSampleId
+            + ", \"type\":\"SUBSAMPLE\" }, "
+            + "   \"usedQuantity\": { \"numericValue\": \"1\", \"unitId\": 7},"
+            + "   \"updateInventoryQuantity\": true } "
+            + "] } ";
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/listOfMaterials/" + createdList.getId(), anyUser, listUpdateJson))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(result.getResolvedException());
+
+    // the subsample's stock is reduced AND its user-facing version is bumped
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/subSamples/" + subSampleId, anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiSubSample reloaded = mvcUtils.getFromJsonResponseBody(result, ApiSubSample.class);
+    assertEquals("4 g", reloaded.getQuantity().toQuantityInfo().toPlainString());
+    assertEquals(2L, reloaded.getVersion(), "a stock decrement must bump the subsample version");
+
+    // ... and the decrement is a new entry in the revision history (creation + decrement)
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apiKey, "/subSamples/" + subSampleId + "/revisions", anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiInventoryRecordRevisionList history =
+        mvcUtils.getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
+    assertEquals(
+        2, history.getRevisions().size(), "a stock decrement must add a revision-history entry");
+
+    // the two revisions carry distinct versions 1 and 2, so each version resolves to a snapshot
+    ApiSubSample revision1 = getRevisionSnapshot(apiKey, anyUser, subSampleId, history, 0);
+    assertEquals(1L, revision1.getVersion());
+    assertEquals("5 g", revision1.getQuantity().toQuantityInfo().toPlainString());
+    ApiSubSample revision2 = getRevisionSnapshot(apiKey, anyUser, subSampleId, history, 1);
+    assertEquals(2L, revision2.getVersion());
+    assertEquals("4 g", revision2.getQuantity().toQuantityInfo().toPlainString());
+  }
+
+  private ApiSubSample getRevisionSnapshot(
+      String apiKey, User user, Long subSampleId, ApiInventoryRecordRevisionList history, int index)
+      throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/subSamples/"
+                        + subSampleId
+                        + "/revisions/"
+                        + history.getRevisions().get(index).getRevisionId(),
+                    user))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return mvcUtils.getFromJsonResponseBody(result, ApiSubSample.class);
   }
 
   @Test
