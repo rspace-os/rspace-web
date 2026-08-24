@@ -467,6 +467,13 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertEquals("renamed template", updated.getName());
     assertEquals(initialVersion + 1, (long) updated.getVersion());
     verify(mockPublisher).publishEvent(Mockito.any(InventoryEditingEvent.class));
+
+    // RSDEV-1319: a second update in the same transaction must not bump the version again
+    updated.setName("renamed template twice");
+    ApiInstrumentTemplate updatedTwice =
+        instrumentApiMgr.updateApiInstrumentTemplate(updated, testUser);
+    assertEquals("renamed template twice", updatedTwice.getName());
+    assertEquals(initialVersion + 1, (long) updatedTwice.getVersion());
   }
 
   @Test
@@ -723,6 +730,21 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertEquals("renamed instrument", updated.getName());
     assertEquals("updated description", updated.getDescription());
     verify(mockPublisher).publishEvent(Mockito.any(InventoryEditingEvent.class));
+  }
+
+  @Test
+  public void twoInstrumentUpdatesInOneTransactionBumpVersionOnce() {
+    // RSDEV-1319: Envers writes one revision per entity per transaction, so a second update in
+    // the same transaction must not advance the version past the single revision carrying it
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "bump-once-test");
+
+    created.setName("first rename");
+    instrumentApiMgr.updateApiInstrument(created, testUser);
+    created.setName("second rename");
+    ApiInstrument updated = instrumentApiMgr.updateApiInstrument(created, testUser);
+
+    assertEquals("second rename", updated.getName());
+    assertEquals(2L, (long) updated.getVersion());
   }
 
   @Test

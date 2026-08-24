@@ -559,9 +559,9 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(2, retrievedSubSample.getNotes().size());
     assertEquals("4.999 g", retrievedSubSample.getQuantity().toQuantityInfo().toPlainString());
     assertEquals(testUser.getFullName(), retrievedSubSample.getModifiedByFullName());
-    // content edits bump the user-facing version: the rename and the usage decrement
-    // (RSDEV-1318); notes don't
-    assertEquals(3L, retrievedSubSample.getVersion());
+    // content edits bump the user-facing version, but at most once per transaction: the rename
+    // and the usage decrement (RSDEV-1318) are one bump here (RSDEV-1319); notes never bump
+    assertEquals(2L, retrievedSubSample.getVersion());
     Mockito.verify(mockPublisher, Mockito.times(2))
         .publishEvent(Mockito.any(InventoryAccessEvent.class));
 

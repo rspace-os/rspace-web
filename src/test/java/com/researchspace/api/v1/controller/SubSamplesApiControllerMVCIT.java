@@ -88,6 +88,98 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
+  public void createMultipleSubSamplesInOneRequestBumpSampleVersionOnce() throws Exception {
+    // RSDEV-1319: creating N subsamples in one request updates the parent sample N times inside
+    // one transaction. Envers writes one revision per entity per transaction, so the sample's
+    // version must advance exactly once, otherwise the skipped versions have no revision and
+    // GET /samples/{id}/revisions can never resolve them
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(anyUser);
+    assertEquals(1L, basicSample.getVersion().longValue());
+
+    String threeNewSubSamplesConfigJson =
+        "{ \"sampleId\" : " + basicSample.getId() + ", \"numSubSamples\": 3 }";
+    mockMvc
+        .perform(
+            createBuilderForPostWithJSONBody(
+                apiKey, "/subSamples", anyUser, threeNewSubSamplesConfigJson))
+        .andExpect(status().is2xxSuccessful());
+
+    ApiSample reloadedSample = getSampleThroughApi(anyUser, apiKey, basicSample.getId());
+    assertEquals(4, reloadedSample.getSubSamplesCount());
+    assertEquals(
+        2L,
+        reloadedSample.getVersion().longValue(),
+        "three sample updates in one transaction are one version");
+
+    ApiInventoryRecordRevisionList history =
+        getSampleRevisions(anyUser, apiKey, basicSample.getId());
+    assertEquals(2, history.getRevisions().size(), "one transaction writes one revision");
+    ApiSample revision2 =
+        getSampleRevisionSnapshot(
+            anyUser, apiKey, basicSample.getId(), history.getRevisions().get(1).getRevisionId());
+    assertEquals(
+        2L, revision2.getVersion().longValue(), "the live version must resolve to a revision");
+
+    // a second request is a second transaction on the same thread: the guard must not leak
+    // across it, or the version would silently stop advancing for this sample
+    String oneNewSubSampleConfigJson =
+        "{ \"sampleId\" : " + basicSample.getId() + ", \"numSubSamples\": 1 }";
+    mockMvc
+        .perform(
+            createBuilderForPostWithJSONBody(
+                apiKey, "/subSamples", anyUser, oneNewSubSampleConfigJson))
+        .andExpect(status().is2xxSuccessful());
+
+    reloadedSample = getSampleThroughApi(anyUser, apiKey, basicSample.getId());
+    assertEquals(
+        3L, reloadedSample.getVersion().longValue(), "a new transaction bumps the version again");
+    history = getSampleRevisions(anyUser, apiKey, basicSample.getId());
+    assertEquals(3, history.getRevisions().size());
+  }
+
+  private ApiSample getSampleThroughApi(User user, String apiKey, Long sampleId) throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(getSampleById(user, apiKey, sampleId))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return getFromJsonResponseBody(result, ApiSample.class);
+  }
+
+  private ApiInventoryRecordRevisionList getSampleRevisions(User user, String apiKey, Long sampleId)
+      throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apiKey, "/samples/" + sampleId + "/revisions", user))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
+  }
+
+  private ApiSample getSampleRevisionSnapshot(
+      User user, String apiKey, Long sampleId, Long revisionId) throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/samples/" + sampleId + "/revisions/" + revisionId,
+                    user))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return getFromJsonResponseBody(result, ApiSample.class);
+  }
+
+  @Test
   public void createMoreSubSamplesValidation() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);

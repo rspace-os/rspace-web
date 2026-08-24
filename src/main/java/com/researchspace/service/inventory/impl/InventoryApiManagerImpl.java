@@ -50,22 +50,29 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Slf4j
 public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     implements InventoryApiManager<T> {
 
   static final int THUMBNAIL_MAX_SIZE_IN_PX = 150;
+
+  private static final String BUMPED_IN_TX =
+      InventoryApiManagerImpl.class.getName() + ".versionBumped";
   final Long DEFAULT_ICON_ID = -1L;
   protected @Autowired IRecordFactory recordFactory;
   protected @Autowired ApiExtraFieldsHelper extraFieldHelper;
@@ -394,6 +401,54 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   protected void setNewCreatorForCopiedInventoryRecord(InventoryRecord copy, User user) {
     copy.setCreatedBy(user.getUsername());
     copy.setModifiedBy(user.getUsername());
+  }
+
+  /**
+   * Bumps the record's user-facing version, at most once per record per transaction. Envers writes
+   * one revision per entity per transaction and stores only the final state, so a second bump would
+   * advance the version past any revision carrying it, leaving that version unresolvable
+   * (RSDEV-1319).
+   *
+   * <p>Records are tracked by global identifier, so records of different types sharing a numeric id
+   * do not collide, and the guard is shared by every manager: a transaction that edits the same
+   * record through two different code paths still bumps it once.
+   *
+   * <p>Outside a real transaction every save commits on its own and gets its own revision, so there
+   * is nothing to deduplicate against and the bump always goes ahead.
+   *
+   * <p>The set is bound to the thread rather than to the transaction object, and Spring only
+   * suspends synchronizations, not application-bound resources. Nothing on this path currently
+   * opens a nested {@code REQUIRES_NEW} transaction; if one is ever introduced it would inherit
+   * this set and wrongly suppress a bump that belongs to its own revision.
+   */
+  protected void increaseVersionOncePerTransaction(InventoryRecord dbRecord) {
+    if (firstVersionBumpInTransaction(dbRecord)) {
+      dbRecord.increaseVersion();
+    }
+  }
+
+  private boolean firstVersionBumpInTransaction(InventoryRecord dbRecord) {
+    if (!TransactionSynchronizationManager.isActualTransactionActive()
+        || !TransactionSynchronizationManager.isSynchronizationActive()) {
+      return true;
+    }
+    @SuppressWarnings("unchecked")
+    Set<String> bumped = (Set<String>) TransactionSynchronizationManager.getResource(BUMPED_IN_TX);
+    if (bumped == null) {
+      // register before binding: if registration fails nothing is left bound. Resources are
+      // thread-bound and Spring's clear() does not remove them, so without this unbind a pooled
+      // thread would keep suppressing bumps for these records forever
+      TransactionSynchronizationManager.registerSynchronization(
+          new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+              TransactionSynchronizationManager.unbindResourceIfPossible(BUMPED_IN_TX);
+            }
+          });
+      bumped = new HashSet<>();
+      TransactionSynchronizationManager.bindResource(BUMPED_IN_TX, bumped);
+    }
+    return bumped.add(dbRecord.getGlobalIdentifier());
   }
 
   /**
