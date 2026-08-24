@@ -1,8 +1,9 @@
 package com.researchspace.service.inventory;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +25,8 @@ import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -64,11 +67,21 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
     realB2instConnector =
         ReflectionTestUtils.getField(inventoryIdentifierApiMgr, "b2instConnector");
     ReflectionTestUtils.setField(inventoryIdentifierApiMgr, "b2instConnector", b2instOff);
+    /*
+     * The expected addresses below are derived from the live server URL. Without an http(s) scheme
+     * the mapping omits every entry by design, and the failures would then read as "the caller
+     * bypassed the adapter", pointing at the wrong cause. Fail with the real reason instead.
+     */
+    String serverUrl = propertyHolder.getServerUrl();
+    assertTrue(
+        "this test needs rs.serverurl to carry an http(s) scheme, but it is: " + serverUrl,
+        StringUtils.startsWithIgnoreCase(serverUrl, "http://")
+            || StringUtils.startsWithIgnoreCase(serverUrl, "https://"));
     user = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(user);
   }
 
-  @org.junit.After
+  @After
   public void tearDown() {
     // the manager is a singleton in a Spring context cached across test classes, so the real
     // connector has to go back or later tests silently run against the mock
@@ -137,11 +150,11 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
       String stage) {
     List<DataCiteDoiAttributes.RelatedIdentifier> sent = lastSentRelatedIdentifiers();
     assertNotNull(
-        sent,
         "no related identifiers reached DataCite on "
             + stage
             + "; the caller most likely converted the DOI directly instead of routing through"
-            + " RspaceToExternalProviderAdapter.buildDataCiteDoi");
+            + " RspaceToExternalProviderAdapter.buildDataCiteDoi",
+        sent);
     return sent;
   }
 
@@ -218,7 +231,7 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
     inventoryIdentifierApiMgr.publishIdentifier(instrumentOid, user);
 
     List<DataCiteDoiAttributes.RelatedIdentifier> sent = requireSentRelatedIdentifiers("publish");
-    assertEquals(1, sent.size(), "the cleared Measurement technique field must not be registered");
+    assertEquals("the cleared Measurement technique field must not be registered", 1, sent.size());
     assertNamesTheLinkedRecord(sent.get(0), "Calibration", calibrationId);
   }
 
@@ -241,7 +254,7 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
 
     List<B2instRelatedIdentifier> sent =
         b2instDummy.getDoiSentToB2inst().getMetadata().getRelatedIdentifier();
-    assertNotNull(sent, "no RelatedIdentifier reached B2INST at draft-register time");
+    assertNotNull("no RelatedIdentifier reached B2INST at draft-register time", sent);
     assertEquals(2, sent.size());
     assertEquals("Measurement Technique", sent.get(0).getRelatedIdentifierName());
     assertEquals("IsDescribedBy", sent.get(0).getRelationType());

@@ -712,6 +712,38 @@ class RspaceToExternalProviderAdapterImplTest {
         adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata().getRelatedIdentifier());
   }
 
+  /**
+   * A pinned link names one version deliberately, and the registered address is permanent, so it
+   * has to carry the pin rather than follow the record's latest state.
+   */
+  @Test
+  void relatedIdentifierCarriesTheLinksVersionPinForATargetTypeThatResolvesOne() {
+    Instrument instrument = templateShapedInstrument();
+    InventoryLinkField pinned = linkField("Calibration", "IsCalibratedBy", "SA42");
+    pinned.getLink().setVersionPin(4L);
+    addField(instrument, pinned);
+
+    List<B2instRelatedIdentifier> related =
+        adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata().getRelatedIdentifier();
+    assertEquals(SERVER + "/globalId/SA42v4", related.get(0).getRelatedIdentifierValue());
+  }
+
+  /**
+   * NB has no version-suffixed route at all (see GlobalLookupController), so registering the pin
+   * would make a permanent address that resolves to nothing. The unpinned one is kept instead.
+   */
+  @Test
+  void relatedIdentifierDropsAVersionPinTheTargetTypeCannotResolve() {
+    Instrument instrument = templateShapedInstrument();
+    InventoryLinkField pinned = linkField("Calibration", "IsCalibratedBy", "NB7");
+    pinned.getLink().setVersionPin(2L);
+    addField(instrument, pinned);
+
+    List<B2instRelatedIdentifier> related =
+        adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata().getRelatedIdentifier();
+    assertEquals(SERVER + "/globalId/NB7", related.get(0).getRelatedIdentifierValue());
+  }
+
   @Test
   void relatedIdentifierFieldNamesMatchCaseInsensitively() {
     Instrument instrument = templateShapedInstrument();

@@ -27,10 +27,10 @@ public interface RspaceToExternalProviderAdapter {
    * record owner).
    *
    * <p>The "Measurement technique" and "Calibration" link fields are mapped to RelatedIdentifier
-   * entries (fixed IsDescribedBy relation, the target's globalId page as a URL; RSDEV-1253, ADR
-   * 0007). "Last calibrated" remains documentation-only, because PIDINST has no property that fits
-   * it; see CONTEXT.md ("Documentation-only field") and
-   * DevDocs/adr/0005-measured-variable-narratives.md.
+   * entries (fixed IsDescribedBy relation, the target's globalId page as a URL, carrying the link's
+   * version pin when the target type resolves a version-suffixed id; RSDEV-1253, ADR 0007). "Last
+   * calibrated" remains documentation-only, because PIDINST has no property that fits it; see
+   * CONTEXT.md ("Documentation-only field") and DevDocs/adr/0005-measured-variable-narratives.md.
    *
    * <p>Must be called inside an existing transaction: the mapping reads the instrument's lazy
    * associations. The implementation declares {@code @Transactional(propagation = MANDATORY)}, so a
@@ -48,9 +48,11 @@ public interface RspaceToExternalProviderAdapter {
    * Build the DataCite DOI wrapper: the RSpace DOI representation converted by {@link
    * ApiInventoryDOI#convertToDataCiteDoi()}, then, when the associated record is an Instrument, the
    * PIDINST related identifiers appended from the Measurement technique and Calibration link fields
-   * (RSDEV-1253, ADR 0007): the link target's globalId page as a URL, always related as
-   * IsDescribedBy, labelled through relationTypeInformation. Entries whose address would not be an
-   * absolute http(s) URL are omitted with a WARN rather than sent wrong.
+   * (RSDEV-1253, ADR 0007): the link target's globalId page as a URL, carrying the link's version
+   * pin when the target type resolves one, always related as IsDescribedBy, labelled through
+   * relationTypeInformation. An instrument with no live links sends an explicit empty list, which
+   * is how DataCite is told to clear the property. Entries whose address would not be an absolute
+   * http(s) URL are omitted with a WARN rather than sent wrong.
    *
    * <p>Callers resending full metadata (publish and retract both do) must route through this
    * method, not {@code convertToDataCiteDoi()} directly, or the registered related identifiers

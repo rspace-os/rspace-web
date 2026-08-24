@@ -25,6 +25,14 @@ B2INST draft metadata (`RelatedIdentifier`) and the DataCite attributes
   built by `InventoryUrls.globalIdPageUrl`. The target generally has no public page, so
   the sign-in-walled address is accepted (unlike a LandingPage, ADR 0006, a
   RelatedIdentifier makes no promise of anonymous resolvability).
+- The link's **version pin is carried** into that address (`<id>v<pin>`) when the target
+  type resolves a version-suffixed globalId, i.e. the inventory prefixes
+  `GlobalLookupController` routes to the versioned viewer (SA, SS, IC, IT, IN, NT). A pin
+  on any other allowed target is dropped: NB has no versioned route at all, and SD's and
+  GL's lead to an audit view and a file stream rather than the record's page, so there the
+  unpinned address is the safer thing to make permanent. Rationale: a pinned link names one
+  version deliberately, and a registered address cannot be corrected, so it must not
+  silently follow the record's latest state.
 - The human label ("Measurement Technique", "Calibration", the ticket's capitalisation)
   goes to B2INST's `relatedIdentifierName` and DataCite's `relationTypeInformation`.
 - `relatedIdentifierType` is `URL`.
@@ -34,6 +42,13 @@ B2INST draft metadata (`RelatedIdentifier`) and the DataCite attributes
 - B2INST receives the entries at draft-register time (its only metadata write). DataCite
   receives them on publish and again on retract, because both resend full metadata and
   the entries are computed from the instrument, not persisted on the DOI.
+- For DataCite the list is sent **unconditionally, the empty list included**. DataCite
+  replaces the whole property with what the payload carries and clears it only on an
+  explicit empty array; an absent or null property leaves the registered value alone. An
+  instrument whose link fields were all cleared after registration therefore has to send
+  `[]`, or the entries registered beforehand stay attached to a findable DOI with no way to
+  withdraw them. B2INST keeps sending null for empty, having no metadata-update call and so
+  nothing to clear.
 
 *Last calibrated* stays documentation-only; PIDINST's `Date.dateType` vocabulary is
 still strictly Commissioned/DeCommissioned.

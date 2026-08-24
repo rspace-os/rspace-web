@@ -17,6 +17,8 @@ import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.datacite.model.DataCiteDoiAttributes;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryRecord;
@@ -26,8 +28,11 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.inventory.InventoryUrls;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Propagation;
@@ -68,6 +73,22 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
   private static final String RELATED_ID_NAME_CALIBRATION = "Calibration";
   private static final String RELATION_TYPE_IS_DESCRIBED_BY = "IsDescribedBy";
   private static final String RELATED_ID_TYPE_URL = "URL";
+
+  /**
+   * Link target types whose version-suffixed globalId resolves to that version, mirroring {@code
+   * GlobalLookupController.VERSIONED_INVENTORY_PREFIXES}, which is the authority. A pin on any
+   * other allowed target is deliberately not registered: NB has no versioned route at all, and SD's
+   * and GL's lead to an audit view and a file stream rather than the record's page, so for those
+   * the unpinned address stays the safer thing to make permanent.
+   */
+  private static final Set<GlobalIdPrefix> VERSION_PINNABLE_TARGETS =
+      EnumSet.of(
+          GlobalIdPrefix.SA,
+          GlobalIdPrefix.SS,
+          GlobalIdPrefix.IC,
+          GlobalIdPrefix.IT,
+          GlobalIdPrefix.IN,
+          GlobalIdPrefix.NT);
 
   /** Deployment configuration; the server URL feeds the related-identifier addresses. */
   private final IPropertyHolder properties;
@@ -164,7 +185,13 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
             a ->
                 metadata.setAlternateIdentifier(
                     List.of(new B2instAlternateIdentifier(ALTERNATE_ID_TYPE_OTHER, a))));
-    metadata.setRelatedIdentifier(nullIfEmpty(relatedIdentifiers(source)));
+    metadata.setRelatedIdentifier(
+        nullIfEmpty(
+            relatedIdentifiers(
+                source,
+                (url, label) ->
+                    new B2instRelatedIdentifier(
+                        RELATED_ID_TYPE_URL, url, RELATION_TYPE_IS_DESCRIBED_BY, label))));
 
     B2instAccess access = new B2instAccess();
     access.setRecord(PUBLIC_ACCESS);
@@ -227,27 +254,19 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
    * (RSDEV-1253, ADR 0007): the link target's globalId page as a URL, always related as
    * IsDescribedBy. Measurement Technique first, Calibration second, matching the ticket's example
    * payloads.
+   *
+   * <p>Which fields are sent, and in what order, is decided here alone so the two providers cannot
+   * drift apart: each passes a builder taking the address and the label, and a third link field is
+   * added in one place. The two provider types take the same four values in different positional
+   * orders, so keeping one constructor call per provider also keeps that easy mistake to one site.
    */
-  private List<B2instRelatedIdentifier> relatedIdentifiers(InstrumentEntity instrument) {
-    List<B2instRelatedIdentifier> related = new ArrayList<>();
+  private <T> List<T> relatedIdentifiers(
+      InstrumentEntity instrument, BiFunction<String, String, T> entry) {
+    List<T> related = new ArrayList<>();
     pidinstLinkUrl(instrument, FIELD_MEASUREMENT_TECHNIQUE)
-        .ifPresent(
-            url ->
-                related.add(
-                    new B2instRelatedIdentifier(
-                        RELATED_ID_TYPE_URL,
-                        url,
-                        RELATION_TYPE_IS_DESCRIBED_BY,
-                        RELATED_ID_NAME_MEASUREMENT_TECHNIQUE)));
+        .ifPresent(url -> related.add(entry.apply(url, RELATED_ID_NAME_MEASUREMENT_TECHNIQUE)));
     pidinstLinkUrl(instrument, FIELD_CALIBRATION)
-        .ifPresent(
-            url ->
-                related.add(
-                    new B2instRelatedIdentifier(
-                        RELATED_ID_TYPE_URL,
-                        url,
-                        RELATION_TYPE_IS_DESCRIBED_BY,
-                        RELATED_ID_NAME_CALIBRATION)));
+        .ifPresent(url -> related.add(entry.apply(url, RELATED_ID_NAME_CALIBRATION)));
     return related;
   }
 
@@ -263,7 +282,8 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
       return Optional.empty();
     }
     Optional<String> url =
-        InventoryUrls.globalIdPageUrl(properties.getServerUrl(), link.get().getTargetGlobalId())
+        InventoryUrls.globalIdPageUrl(
+                properties.getServerUrl(), registrableTargetGlobalId(link.get()))
             .filter(PidinstFields::isResolvableAddress);
     if (url.isEmpty()) {
       log.warn(
@@ -274,6 +294,26 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
           instrument.getGlobalIdentifier());
     }
     return url;
+  }
+
+  /**
+   * The target globalId to register, carrying the link's version pin when the target type resolves
+   * a version-suffixed id. A pinned link names one version deliberately, and a registered address
+   * is permanent, so it must not quietly follow the record's latest state instead. The stored id is
+   * unsuffixed by contract ({@code InventoryLinkManagerImpl.applyApiToEntity} keeps the version in
+   * versionPin), and one already carrying a suffix is left alone rather than doubled.
+   */
+  private String registrableTargetGlobalId(InventoryLink link) {
+    String target = StringUtils.trimToEmpty(link.getTargetGlobalId());
+    Long versionPin = link.getVersionPin();
+    if (versionPin == null) {
+      return target;
+    }
+    GlobalIdentifier oid = new GlobalIdentifier(target);
+    if (oid.hasVersionId() || !VERSION_PINNABLE_TARGETS.contains(oid.getPrefix())) {
+      return target;
+    }
+    return target + "v" + versionPin;
   }
 
   private Optional<String> mappedFieldData(
@@ -296,25 +336,12 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
       return dataCiteDoi;
     }
     InstrumentEntity instrument = (InstrumentEntity) associatedRecord;
-    List<DataCiteDoiAttributes.RelatedIdentifier> related = new ArrayList<>();
-    pidinstLinkUrl(instrument, FIELD_MEASUREMENT_TECHNIQUE)
-        .ifPresent(
-            url ->
-                related.add(
-                    new DataCiteDoiAttributes.RelatedIdentifier(
-                        RELATION_TYPE_IS_DESCRIBED_BY,
-                        url,
-                        RELATED_ID_TYPE_URL,
-                        RELATED_ID_NAME_MEASUREMENT_TECHNIQUE)));
-    pidinstLinkUrl(instrument, FIELD_CALIBRATION)
-        .ifPresent(
-            url ->
-                related.add(
-                    new DataCiteDoiAttributes.RelatedIdentifier(
-                        RELATION_TYPE_IS_DESCRIBED_BY,
-                        url,
-                        RELATED_ID_TYPE_URL,
-                        RELATED_ID_NAME_CALIBRATION)));
+    List<DataCiteDoiAttributes.RelatedIdentifier> related =
+        relatedIdentifiers(
+            instrument,
+            (url, label) ->
+                new DataCiteDoiAttributes.RelatedIdentifier(
+                    RELATION_TYPE_IS_DESCRIBED_BY, url, RELATED_ID_TYPE_URL, label));
     // Set unconditionally, the empty list included. DataCite replaces the whole property with
     // whatever the payload carries and clears it only when sent an explicit empty array; a property
     // that is absent or null leaves the registered value alone. An instrument whose link fields
