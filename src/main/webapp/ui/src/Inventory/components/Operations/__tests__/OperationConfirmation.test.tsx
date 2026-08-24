@@ -239,7 +239,7 @@ describe("OperationConfirmation", () => {
     expect(screen.queryByText(/confirm\.labels\.amountTaken$/)).not.toBeInTheDocument();
   });
 
-  // Destroy-shaped op (DevDocs/adr/0013): noOutput, so the card names the origin subsample, and the summary is
+  // Destroy-shaped op (DevDocs/adr/0007): noOutput, so the card names the origin subsample, and the summary is
   // the origin being emptied plus the disposed field it adds to the origin.
   const destroyOp = {
     key: "destroy",

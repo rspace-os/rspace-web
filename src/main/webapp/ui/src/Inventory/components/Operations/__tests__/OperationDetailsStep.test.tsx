@@ -313,7 +313,7 @@ describe("OperationDetailsStep", () => {
   });
 });
 
-// The "amount to take" modes for a multi-origin operation (DevDocs/adr/0014).
+// The "amount to take" modes for a multi-origin operation (DevDocs/adr/0007).
 describe("OperationDetailsStep (amount modes)", () => {
   const poolOp = {
     ...operation,
