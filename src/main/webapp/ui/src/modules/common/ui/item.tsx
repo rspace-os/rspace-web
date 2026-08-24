@@ -56,6 +56,10 @@ const itemVariants = cva(
         default: "border-transparent",
         outline: "border-border",
         muted: "border-transparent bg-muted/50",
+        filled:
+          "border-transparent bg-secondary text-secondary-foreground [&_[data-slot=item-description]]:text-secondary-foreground",
+        accented:
+          "border-transparent [&_[data-slot=badge]]:border-transparent [&_[data-slot=badge]]:bg-secondary [&_[data-slot=badge]]:text-secondary-foreground [&_[data-slot=badge]:hover]:bg-secondary/80 [&_[data-slot=badge]:hover]:text-secondary-foreground [&_[data-slot=item-media]]:size-8 [&_[data-slot=item-media]]:rounded-lg [&_[data-slot=item-media]]:bg-secondary [&_[data-slot=item-media]]:text-secondary-foreground",
       },
       size: {
         default: "gap-3.5 px-4 py-3.5",

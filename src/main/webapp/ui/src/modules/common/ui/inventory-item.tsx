@@ -6,9 +6,16 @@ import { Item, ItemContent, ItemMedia, ItemTitle } from "@/modules/common/ui/ite
 
 type GlobalIdPlacement = "description" | "title";
 
-function GlobalIdBadge({ globalId, href, label }: { globalId: string; href: string; label: string }) {
+function GlobalIdBadge({ globalId, href, label }: { globalId: string; href?: string; label?: string }) {
+  if (!href) {
+    return (
+      <Badge variant="outline" className="font-mono">
+        {globalId}
+      </Badge>
+    );
+  }
   return (
-    <Badge variant="outline" className="font-mono" render={<a href={href} aria-label={label} />}>
+    <Badge variant="outline" className="font-mono" render={<a href={href} aria-label={label ?? globalId} />}>
       <ExternalLinkIcon aria-hidden="true" />
       {globalId}
     </Badge>
@@ -28,13 +35,12 @@ function InventoryItem({
 }: Omit<React.ComponentProps<typeof Item>, "children"> & {
   name: React.ReactNode;
   globalId: string;
-  href: string;
+  href?: string;
   /**
-   * Accessible name for the global-ID link. Required: the badge text alone is
-   * an opaque identifier, and this layer has no i18n of its own, so the caller
-   * owns the wording.
+   * Accessible name for the global-ID link. Supply it with `href`. When `href`
+   * is absent, the global ID is a non-interactive badge.
    */
-  idLinkLabel: string;
+  idLinkLabel?: string;
   idPlacement?: GlobalIdPlacement;
   /**
    * Single-line layout: the name and the global ID share the title row and the
@@ -47,7 +53,7 @@ function InventoryItem({
   const idInTitle = compact || idPlacement === "title";
 
   return (
-    <Item className={className} {...props}>
+    <Item data-inventory-item className={className} {...props}>
       {/* ponytail: one icon for every record type. Key it off the item type
           (container / sample / subsample / template) when those land. */}
       <ItemMedia variant="icon">
