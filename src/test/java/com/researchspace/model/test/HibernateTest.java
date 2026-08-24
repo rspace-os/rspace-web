@@ -79,9 +79,9 @@ import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
@@ -91,10 +91,10 @@ import org.junit.jupiter.api.BeforeEach;
 /**
  * Common class for hibernate-based tests.
  *
- * <p>To run these tests a MariaDB server must listen on localhost:3306 with this grant (the tests
- * use same DB credentials as for RSpace) mysql > grant all on hibtest.* to
- * 'rspacedbuser'@'localhost'; When no server is listening the tests are skipped, so they run on
- * developer machines and DB-backed CI shards but not on database-less runners.
+ * <p>To run these tests a MariaDB server must listen on localhost:3306 with a hibtest database and
+ * this grant (the tests use same DB credentials as for RSpace) mysql > grant all on hibtest.* to
+ * 'rspacedbuser'@'localhost'; When that database cannot be opened the tests are skipped, so they
+ * run on developer machines and provisioned CI shards but not elsewhere.
  */
 public abstract class HibernateTest {
 
@@ -105,15 +105,19 @@ public abstract class HibernateTest {
   @BeforeAll
   static void beforeAll() {
     Assumptions.assumeTrue(
-        databaseListening(), "no MariaDB on localhost:3306; skipping hibernate model tests");
+        hibtestDatabaseUsable(),
+        "no usable hibtest database on localhost:3306; skipping hibernate model tests");
     sf = HibernateUtils.getSessionFactory(testDbName, recordClasses());
   }
 
-  private static boolean databaseListening() {
-    try (Socket socket = new Socket()) {
-      socket.connect(new InetSocketAddress("localhost", 3306), 1000);
+  private static boolean hibtestDatabaseUsable() {
+    try (Connection ignored =
+        DriverManager.getConnection(
+            "jdbc:mysql://localhost:3306/" + testDbName + "?useSSL=false&connectTimeout=2000",
+            "rspacedbuser",
+            "rspacedbpwd")) {
       return true;
-    } catch (IOException e) {
+    } catch (SQLException e) {
       return false;
     }
   }
