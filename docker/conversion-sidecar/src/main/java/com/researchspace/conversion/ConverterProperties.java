@@ -11,8 +11,7 @@ public record ConverterProperties(
     Duration conversionTimeout,
     int maxConcurrentOfficeConversions,
     long maxOutputBytes,
-    Path sandboxExecutable,
-    Path ipcDirectory) {
+    Path sandboxExecutable) {
 
   public ConverterProperties {
     if (maxConcurrentOfficeConversions < 1) {

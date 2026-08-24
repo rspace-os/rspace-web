@@ -34,11 +34,6 @@ public class ImportsApiController extends BaseApiController implements ImportApi
       @RequestAttribute(name = "user") User user)
       throws IOException {
 
-    if (!properties.isConversionEnabled()) {
-      throw new IllegalArgumentException(
-          getMessage(DocumentConversionError.SERVICE_UNAVAILABLE.messageKey()));
-    }
-
     Folder targetFolder = getTargetFolder(folderId, user);
     Optional<Folder> imageFolder = getImageFolder(imageFolderId, user);
     try {

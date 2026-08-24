@@ -13,35 +13,58 @@ import org.springframework.stereotype.Component;
 @Component
 final class OfficeConversionLimiter {
 
-  private final Semaphore slots;
-  private final AtomicInteger active = new AtomicInteger();
-  private final Counter rejected;
+  private final RoleLimiter word;
+  private final RoleLimiter pdf;
 
   OfficeConversionLimiter(ConverterProperties properties, MeterRegistry meterRegistry) {
-    slots = new Semaphore(properties.maxConcurrentOfficeConversions());
-    rejected =
-        Counter.builder("rspace.conversion.office.rejected")
-            .description("LibreOffice conversions rejected because all process slots were busy")
-            .register(meterRegistry);
-    Gauge.builder("rspace.conversion.office.active", active, AtomicInteger::get)
-        .description("LibreOffice conversions currently holding a process slot")
-        .register(meterRegistry);
+    int capacity = properties.maxConcurrentOfficeConversions();
+    word = new RoleLimiter(capacity, "office", "LibreOffice", meterRegistry);
+    pdf = new RoleLimiter(capacity, "pdf", "PDF", meterRegistry);
   }
 
-  <T> T run(Supplier<T> conversion) {
-    if (!slots.tryAcquire()) {
-      rejected.increment();
-      throw new ConversionException(
-          HttpStatus.TOO_MANY_REQUESTS,
-          ConversionError.SERVICE_BUSY,
-          "All LibreOffice conversion slots are busy");
+  <T> T runWord(Supplier<T> conversion) {
+    return word.run(conversion);
+  }
+
+  <T> T runPdf(Supplier<T> conversion) {
+    return pdf.run(conversion);
+  }
+
+  private static final class RoleLimiter {
+
+    private final Semaphore slots;
+    private final AtomicInteger active = new AtomicInteger();
+    private final Counter rejected;
+    private final String displayName;
+
+    private RoleLimiter(
+        int capacity, String metricRole, String displayName, MeterRegistry meterRegistry) {
+      this.slots = new Semaphore(capacity);
+      this.displayName = displayName;
+      rejected =
+          Counter.builder("rspace.conversion." + metricRole + ".rejected")
+              .description(displayName + " conversions rejected because all slots were busy")
+              .register(meterRegistry);
+      Gauge.builder("rspace.conversion." + metricRole + ".active", active, AtomicInteger::get)
+          .description(displayName + " conversions currently holding a slot")
+          .register(meterRegistry);
     }
-    active.incrementAndGet();
-    try {
-      return conversion.get();
-    } finally {
-      active.decrementAndGet();
-      slots.release();
+
+    private <T> T run(Supplier<T> conversion) {
+      if (!slots.tryAcquire()) {
+        rejected.increment();
+        throw new ConversionException(
+            HttpStatus.TOO_MANY_REQUESTS,
+            ConversionError.SERVICE_BUSY,
+            "All " + displayName + " conversion slots are busy");
+      }
+      active.incrementAndGet();
+      try {
+        return conversion.get();
+      } finally {
+        active.decrementAndGet();
+        slots.release();
+      }
     }
   }
 }

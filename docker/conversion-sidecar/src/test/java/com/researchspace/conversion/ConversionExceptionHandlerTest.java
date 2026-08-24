@@ -31,4 +31,15 @@ class ConversionExceptionHandlerTest {
             java.util.UUID.fromString(
                 response.getBody().getProperties().get("requestId").toString()));
   }
+
+  @Test
+  void unexpectedResponseIncludesRequestId() {
+    var response = new ConversionExceptionHandler().handleUnexpected(new RuntimeException("boom"));
+
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    assertDoesNotThrow(
+        () ->
+            java.util.UUID.fromString(
+                response.getBody().getProperties().get("requestId").toString()));
+  }
 }

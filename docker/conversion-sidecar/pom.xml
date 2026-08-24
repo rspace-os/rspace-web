@@ -19,6 +19,7 @@
   <properties>
     <java.version>25</java.version>
     <jodconverter.version>4.4.11</jodconverter.version>
+    <libreoffice.version>26.2.2</libreoffice.version>
   </properties>
 
   <dependencies>
@@ -34,6 +35,11 @@
       <groupId>org.jodconverter</groupId>
       <artifactId>jodconverter-local-lo</artifactId>
       <version>${jodconverter.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.libreoffice</groupId>
+      <artifactId>libreoffice</artifactId>
+      <version>${libreoffice.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
