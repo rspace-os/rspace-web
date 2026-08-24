@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import com.researchspace.core.util.IoUtils;
 import com.researchspace.core.util.MediaUtils;
+import com.researchspace.documentconversion.ext.DocumentConversionError;
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
@@ -24,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
 import lombok.EqualsAndHashCode;
@@ -32,6 +34,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -208,10 +211,10 @@ public class FileDownloadController extends BaseController {
   }
 
   /**
-   * Converts a document (e.g .text. .doc) to a viewable format in HTML page
+   * Converts an Office document to PDF for browser preview.
    *
    * @param docId url path variable - id of ecat media file
-   * @param outputformat One of 'png', 'pdf' or 'html'
+   * @param outputformat Must be {@code pdf}.
    * @param revisionId optional file revision number
    * @param response
    * @throws IOException
@@ -229,33 +232,87 @@ public class FileDownloadController extends BaseController {
     EcatMediaFile input =
         baseRecordManager.retrieveMediaFile(subject, docId, revisionId, null, null);
 
+    if (!"pdf".equalsIgnoreCase(outputformat)) {
+      response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      return new AjaxReturnObject<>(
+          null,
+          ErrorList.createErrListWithSingleMsg(
+              getText("errors.documentConversion.previewPdfOnly")));
+    }
+
+    if (!properties.isConversionEnabled()) {
+      response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
+      return new AjaxReturnObject<>(
+          null,
+          ErrorList.createErrListWithSingleMsg(
+              getText("errors.documentConversion.serviceUnavailable")));
+    }
+
     String fName = getFileStoreNameByChecksum(input.getFileProperty(), outputformat);
     FileProperty soughtFileProp = generateFileProperty(outputformat, input, fName, subject);
     // see if converted file exists already.
-    if (properties.isAsposeCachingEnabled() && fileStore.exists(soughtFileProp)) {
+    if (properties.isConversionCachingEnabled() && fileStore.exists(soughtFileProp)) {
       return new AjaxReturnObject<>(fileStore.findFile(soughtFileProp).getName(), null);
     }
     File tempFileForConvertedOutput = createOutfile(outputformat, fName);
-    ConversionResult result =
-        converter.convert(
-            new FileWrapper(fileStore, input), outputformat, tempFileForConvertedOutput);
-    if (!result.isSuccessful()) {
-      return new AjaxReturnObject<>(
-          null, ErrorList.createErrListWithSingleMsg(result.getErrorMsg()));
-    }
-    if (result
-        .getConverted()
-        .toURI()
-        .toString()
-        .equals(input.getFileProperty().getAbsolutePathUri())) {
-      return new AjaxReturnObject<>(result.getConverted().getName(), null);
-    }
     try {
-      FileProperty convertedFileProp =
-          saveConvertedInFileStore(outputformat, input, result, subject);
-      return new AjaxReturnObject<>(convertedFileProp.getFileName(), null);
-    } catch (Exception e) {
-      return new AjaxReturnObject<>(null, ErrorList.createErrListWithSingleMsg(e.getMessage()));
+      ConversionResult result =
+          converter.convert(
+              new FileWrapper(fileStore, input), outputformat, tempFileForConvertedOutput);
+      if (!result.isSuccessful()) {
+        response.setStatus(conversionErrorStatus(result.getErrorMsg()));
+        return new AjaxReturnObject<>(
+            null,
+            ErrorList.createErrListWithSingleMsg(conversionErrorMessage(result.getErrorMsg())));
+      }
+      if (result
+          .getConverted()
+          .toURI()
+          .toString()
+          .equals(input.getFileProperty().getAbsolutePathUri())) {
+        return new AjaxReturnObject<>(result.getConverted().getName(), null);
+      }
+      try {
+        FileProperty convertedFileProp =
+            saveConvertedInFileStore(outputformat, input, result, subject);
+        return new AjaxReturnObject<>(convertedFileProp.getFileName(), null);
+      } catch (Exception e) {
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        return new AjaxReturnObject<>(
+            null,
+            ErrorList.createErrListWithSingleMsg(
+                getText(DocumentConversionError.FAILED.messageKey())));
+      }
+    } finally {
+      deleteTemporaryOutput(tempFileForConvertedOutput);
+    }
+  }
+
+  private String conversionErrorMessage(String errorCode) {
+    return getText(DocumentConversionError.messageKeyForCode(errorCode));
+  }
+
+  private int conversionErrorStatus(String errorCode) {
+    return DocumentConversionError.fromCode(errorCode)
+        .map(
+            error ->
+                switch (error) {
+                  case SERVICE_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE.value();
+                  case INPUT_TOO_LARGE, OUTPUT_TOO_LARGE -> HttpStatus.PAYLOAD_TOO_LARGE.value();
+                  case INPUT_INVALID, OUTPUT_INVALID, UNSUPPORTED ->
+                      HttpStatus.UNPROCESSABLE_ENTITY.value();
+                  case SERVICE_BUSY -> HttpStatus.TOO_MANY_REQUESTS.value();
+                  case TIMEOUT -> HttpStatus.GATEWAY_TIMEOUT.value();
+                  case OUTPUT_CREATE_FAILED, FAILED -> HttpStatus.INTERNAL_SERVER_ERROR.value();
+                })
+        .orElse(HttpStatus.INTERNAL_SERVER_ERROR.value());
+  }
+
+  private void deleteTemporaryOutput(File output) {
+    try {
+      Files.deleteIfExists(output.toPath());
+    } catch (IOException e) {
+      log.warn("Could not delete temporary document-conversion output", e);
     }
   }
 
@@ -285,7 +342,11 @@ public class FileDownloadController extends BaseController {
     EcatMediaFile input = baseRecordManager.retrieveMediaFile(subject, docId, null, null, null);
     FileProperty fp =
         generateFileProperty(FilenameUtils.getExtension(fileName), input, fileName, subject);
-    doWriteToResponseFromFileProperty(response, fp);
+    doWriteToResponse(
+        response,
+        fp.getFileName(),
+        MediaUtils.getContentTypeForFileExtension(FilenameUtils.getExtension(fileName)),
+        fp);
   }
 
   private void doWriteToResponseFromFileProperty(HttpServletResponse response, FileProperty fp)

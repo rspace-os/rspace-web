@@ -161,8 +161,8 @@ Use only these Spring Boot starters:
 - `spring-boot-starter-test` in test scope.
 
 Do not add Spring Security, a database, ORM, sessions, messaging, a template engine, a UI,
-an application cache, or an OpenAPI runtime. Authenticate in a pre-multipart filter with a
-distinct bearer token for each RSpace deployment.
+an application cache, or an OpenAPI runtime. The sidecar accepts valid requests without
+application-level authentication.
 
 Configure Tomcat and Spring MVC as follows:
 
@@ -175,8 +175,6 @@ spring.mvc.async.request-timeout=185s
 server.error.include-message=never
 server.error.include-stacktrace=never
 management.endpoints.web.exposure.include=health
-converter.gotenberg.username=
-converter.gotenberg.passwordFile=
 ```
 
 The proxy adapter owns the fixed upstream origin `http://gotenberg:3000`. Do not expose a property
@@ -191,25 +189,18 @@ connector. A request with an extra file or form field is invalid. Set the conver
 deadline to 180 seconds and keep the asynchronous response deadline slightly longer so cleanup
 can complete.
 
-Load bearer tokens from separate owner-readable secret files. The sidecar serves HTTP only on
-the private endpoint carried by the secure tunnel and must not have a public listener or route.
+The sidecar serves HTTP only on the private endpoint carried by the secure tunnel and must not have
+a public listener or route.
 Map Actuator health groups to the existing `/health/live` and `/health/ready` paths and do
 not expose other Actuator endpoints.
-
-Map each configured bearer token to one RSpace deployment in server-side configuration. Compare
-tokens in constant time, retain only a non-reversible token fingerprint in memory and logs, and
-support a bounded old/new-token overlap for rotation. Never accept caller identity from a request
-header or form field.
 
 Set the multipart threshold to zero so Tomcat writes uploads to the temporary volume instead
 of heap. Move the upload into its request directory with `MultipartFile.transferTo`. Return
 the completed output with `StreamingResponseBody`; delete the request directory in that
 stream's `finally` block so disconnects also clean up.
 
-Use a filter before multipart parsing to authenticate the bearer token, apply its
-per-deployment admission limit, and create the server request ID. Release its permit after
-synchronous or asynchronous response handling finishes. This rejects excess work before multipart parsing writes a large upload.
-Reject invalid credentials before reserving capacity or writing request bytes.
+Generate a correlation ID for each Gotenberg conversion. Apply the admission limit before starting
+a converter and release its permit after synchronous or asynchronous response handling finishes.
 
 Use these classes and responsibilities:
 
@@ -219,13 +210,13 @@ Use these classes and responsibilities:
   forwards its validated temporary file to the fixed paired-container route and streams the result.
 - One conversion runner owns temporary files, the sandbox, the one-shot Office manager, and
   JODConverter options.
-- One admission module owns separate PDF and Word global and per-credential limits.
+- One admission module owns separate PDF and Word global limits.
 - One `@RestControllerAdvice` maps safe error categories to `ProblemDetail`.
 - Health indicators check the sandbox launcher, LibreOffice, temporary volume, and capacity.
 
 Do not add Java interfaces for these classes unless a second implementation is introduced.
-The sidecar's three-route HTTP interface is the seam used by RSpace and end-to-end tests;
-upstream Gotenberg authentication, routing, and response handling remain inside the proxy adapter.
+The sidecar's three-route HTTP interface is the seam used by RSpace and end-to-end tests.
+Gotenberg routing and response handling remain inside the proxy adapter.
 
 Before accepting the stack, rerun the baseline image tests with Java 25, Spring Boot 4.1.0,
 and JODConverter 4.4.11. The original check used Java 17 and JODConverter 4.4.7, so the new stack must
@@ -281,8 +272,8 @@ body. There are no job IDs, status calls, sessions, callbacks, or server-side ca
 - `/forms/libreoffice/convert` accepts one part named `files` and returns `application/pdf`.
   Reject every additional form
   field, file part, query parameter, and caller-supplied `Gotenberg-*` header. The adapter sends
-  only the generated correlation ID and the validated file to the fixed upstream LibreOffice
-  route. Accept only the PDF backend's format allowlist and replace the caller filename with a
+  only the generated correlation ID and validated file to the fixed upstream LibreOffice route.
+  Accept only the PDF backend's format allowlist and replace the caller filename with a
   generated name retaining only the validated extension. Do not forward caller authorization,
   cookies, proxy headers, filenames, or tracing baggage.
 - The two Word routes accept one part named `file`.
@@ -345,27 +336,25 @@ a sibling request directory or open a network connection. If isolation cannot st
 the converter unready and reject work; never fall back to an unsandboxed conversion.
 
 Multiple RSpace instances may share all three routes. Each deployment reaches the sidecar only
-through its secure tunnel link and uses a different bearer credential. Take caller identity only
-from the server-side credential mapping; do not accept a caller or tenant ID in form data or
-identity headers.
+through its private network or secure tunnel link. Do not accept a caller or tenant ID in form data
+or identity headers.
 
 Put the shared sidecar on a private application network and expose its HTTP interface only through
 the secure tunnel.
-Each authenticated client gets separate PDF-proxy and Word-conversion concurrency and queue
-limits so one RSpace deployment cannot consume every local worker or every upstream Gotenberg
-slot. Keep the Gotenberg connection pool and proxy queue bounded independently from the local
-LibreOffice workers. These counters are memory-only and contain no document data. They apply per
-sidecar/Gotenberg pair; deployments requiring strict fleet-wide quotas must enforce the same
-identity and limits at the tunnel ingress or load-balancer layer. Scale by adding complete pairs
+Use bounded PDF-proxy and Word-conversion concurrency so requests cannot exhaust local workers or
+upstream Gotenberg slots. Keep the Gotenberg connection pool and proxy queue bounded independently
+from the local LibreOffice workers. These counters are memory-only and contain no document data.
+They apply per sidecar/Gotenberg pair. Deployments requiring per-client quotas must enforce them at
+the tunnel ingress or load-balancer layer. Scale by adding complete pairs
 and route work only to a sidecar whose paired Gotenberg container is healthy; never scale either
 member independently.
 
 Place Gotenberg beside the sidecar on the same machine and on a private container network reachable
 only by that sidecar. Do not publish Gotenberg's port to the host, tunnel, RSpace, or public
 clients. Use only the code-owned `http://gotenberg:3000` origin and pin its private container DNS
-address. Disable redirects, cookies, retries, ambient proxy settings, and transparent
-compression. Use a dedicated upstream credential loaded from a secret file; never reuse or forward an RSpace bearer
-token. Apply the same acquisition, connect, wall-clock, idle, input, output, and problem-body
+address. Disable redirects, cookies, retries, ambient proxy settings, and transparent compression.
+Never forward caller authorization headers. Apply the same acquisition, connect, wall-clock, idle,
+input, output, and problem-body
 limits as the RSpace client. Validate Gotenberg's status, content type, PDF signature, and bounded
 response before returning it. Delete all partial files on upstream error, timeout, or downstream
 disconnect. Do not retry after the request body may have reached Gotenberg.
@@ -413,9 +402,8 @@ Use these responses:
 | Invalid or unavailable upstream Gotenberg response | `502` |
 | Unexpected service error | `500` |
 
-Errors use `application/problem+json`. Include a short safe message and the server-generated
-request ID. Do not return local paths, document content, client identity, or LibreOffice
-command output.
+Errors use `application/problem+json`. Include the logical error code and a generated request ID.
+Do not return local paths, document content, client identity, or LibreOffice command output.
 
 Add `GET /health/live` for the HTTP process, `GET /health/ready` for local sidecar readiness,
 and role-specific `GET /health/ready/word` and `GET /health/ready/pdf` checks. Word readiness
@@ -425,17 +413,17 @@ check requires both roles because every supported pair provides both. A Gotenber
 `/health/ready/word` available for diagnosis but marks `/health/ready` and
 `/health/ready/pdf` unready so the complete pair is removed from routing.
 
-`GET /v1/capabilities` requires the deployment bearer token and returns only a fixed sidecar
+`GET /v1/capabilities` accepts an unauthenticated request and returns only a fixed sidecar
 protocol identifier, protocol version, and the declared PDF and Word roles. It returns no
 upstream URL, credential, capacity, or deployment details. RSpace verifies this interface at
 startup whenever `conversion.url` is set, so a direct Gotenberg URL fails closed. Require both
-roles from that one sidecar; fail startup if the identity, protocol version, or either declaration
+roles from that one sidecar; fail startup if the protocol identifier, version, or either declaration
 is absent. Runtime readiness remains independent from this configuration check.
 
-Use a bounded number of one-shot workers, a bounded queue per authenticated client, and a
-180-second conversion timeout. Do not retry conversions inside the service. Log only the
-request ID, a safe credential identifier, input and output formats, byte count,
-duration, status, and a safe error category. Do not log filenames or document content.
+Use a bounded number of one-shot workers, a bounded queue for the sidecar, and a
+180-second conversion timeout. Do not retry conversions inside the service. Log only input and
+output formats, byte count, duration, status, and a safe error category. Do not log filenames or
+document content.
 
 This design removes application-level paths for data to cross between RSpace instances. A
 shared container cannot promise protection from a container-runtime or kernel escape. If
@@ -450,12 +438,11 @@ Test the service through its HTTP interface:
 - Check data-URI images in both directions with the baseline fixture.
 - Check every status in the table, including queue full and timeout.
 - Check that temporary files are removed after success, failure, and client disconnect.
-- Reject startup when the upstream credential is absent. Reject extra parts,
-  query parameters, control headers, unsupported formats,
+- Reject extra parts, query parameters, control headers, unsupported formats,
   redirects, oversized bodies, malformed responses, and every safe upstream error mapping.
-- Use a recording fake Gotenberg to confirm the sidecar sends only its upstream credential,
-  generated correlation ID, generated filename, and one `files` part, and never retries.
-- Send concurrent files with different canary text using two deployment credentials. Confirm
+- Use a recording fake Gotenberg to confirm the sidecar sends a generated filename and one `files`
+  part, and never retries.
+- Send concurrent files with different canary text from two deployments. Confirm
   that neither response, problem body, log, profile, nor temporary directory contains the
   other client's canary.
 - Preview the exact same file from two RSpace deployments. Confirm that the PDF backend
@@ -471,8 +458,8 @@ Test the service through its HTTP interface:
   abandoned directory.
 - Exercise the sidecar PDF route against a recording fake and the pinned Gotenberg image; require
   the same validated output and safe failure mapping.
-- Send simultaneous PDF and Word work under two deployment credentials. Confirm separate quota
-  accounting, no starvation between route groups, no credential forwarding to Gotenberg, and no
+- Send simultaneous PDF and Word work from two deployments. Confirm bounded work,
+  no starvation between route groups, no authorization-header forwarding to Gotenberg, and no
   cross-deployment response, log, or temporary-file leakage.
 - Start two complete sidecar/Gotenberg pairs and send unrelated requests to either pair to confirm
   there is no affinity or shared document state. Verify and document that quotas are per pair
@@ -485,10 +472,8 @@ Run Gotenberg 8.34.0's LibreOffice-only image, pinned by a separately tested mul
 manifest digest. Run exactly one Gotenberg container beside each sidecar container on the same
 machine and private container network. A pair may serve one or multiple RSpace deployments, but
 Gotenberg is never remote from, shared across, or scaled separately from its sidecar. RSpace has
-no direct Gotenberg route, credentials, or network access. The sidecar's
-`/forms/libreoffice/convert` interface maps each RSpace bearer
-credential to a deployment identity, enforces per-deployment quotas, filters the request, and
-authenticates to Gotenberg with a separate upstream credential. This requirement applies to both
+no direct Gotenberg route or network access. The sidecar's `/forms/libreoffice/convert` interface
+filters the request and enforces conversion limits. This requirement applies to both
 pairs dedicated to one RSpace deployment and pairs shared by several deployments, including local
 Docker development. The physical topology does not change when the pair is shared. The baseline
 full-image digest is compatibility evidence, not the production pin.
@@ -497,7 +482,7 @@ Set and test these Gotenberg controls (using the corresponding current flags/env
 variables):
 
 - `api-body-limit=200MB`, `api-timeout=180s`, a bounded LibreOffice queue, and a generated
-  correlation ID propagated from RSpace.
+  correlation ID sent as `Gotenberg-Trace`.
 - Disable `downloadFrom`, webhooks, Chromium routes, PDF-engine routes, and the debug route.
   Only the sidecar sends one `files` part to `/forms/libreoffice/convert`.
 - Deny both public and private LibreOffice outbound destinations and enforce deny-all egress at
@@ -530,12 +515,8 @@ Add these classes under `com.researchspace.documentconversion.ext`.
   - Validate the sidecar URL once at startup: absolute `http`, no user info, query, fragment,
     wildcard host, or path traversal. Reject every other scheme. Build route paths from constants;
     no request value may influence the origin.
-  - Require the host to match the deployment's explicit converter-host allowlist. Resolve and
-    pin the address used for each connection; reject loopback, link-local, multicast,
-    unspecified, and cloud-metadata destinations, including IPv4 embedded in IPv6. Private
-    tunnel ranges are allowed only when explicitly configured. Revalidate new DNS answers before
-    a pooled connection is opened. Reject startup unless the configured host is the assigned
-    secure-tunnel endpoint.
+  - Accept any host in the validated HTTP origin. Enforce allowed destinations at the secure
+    tunnel and deployment firewall, which are the network security boundary.
   - Disable redirects, cookies, automatic retries, and transparent response compression. Send
     `Accept-Encoding: identity`; bound the connection pool to conversion capacity.
   - Configure separate connection-acquisition, TCP-connect, conversion wall-clock, and
@@ -547,11 +528,10 @@ Add these classes under `com.researchspace.documentconversion.ext`.
 - **`PdfConversionClient`**
   - Implement `DocumentConversionService` and extend `AbstractDocumentConversionService`.
   - POST multipart `files=` to `{conversion.url}/forms/libreoffice/convert`.
-  - Support PDF output for Gotenberg's Office formats, excluding `md`.
+  - Support PDF output for the existing Gallery preview formats. Send Markdown through
+    LibreOffice's text filter because Gotenberg does not accept `.md` as an Office extension.
   - Return PDF input unchanged for PDF-to-PDF requests.
   - Use the configured `RestClient`; never load a response into `byte[]` and never retry.
-  - Authenticate to the sidecar with the deployment bearer token and propagate only the
-    generated correlation ID. The client never holds Gotenberg credentials.
   - Require `200`, `application/pdf`, a PDF signature, and a bounded body. Validate with the
     PDFBox 3.0.8 using temp-file-backed parsing before atomically publishing to cache:
     reject encryption, embedded files, JavaScript, launch actions, external-file actions,
@@ -559,12 +539,11 @@ Add these classes under `com.researchspace.documentconversion.ext`.
 
 - **`JodConverterClient`**
   - POST one `file` part to `/v1/convert/html` or `/v1/convert/docx`.
-  - Convert DOCX, ODT, and OTT to HTML.
+  - Convert DOC, DOCX, ODT, OTT, RTF, and TXT to HTML.
   - Convert HTML to DOCX. The service owns the Writer filter setting.
   - Stream all responses.
   - Map problem responses to bundle-based failed `ConversionResult` values.
   - Do not retry a request after its body may have reached the service.
-  - Send the RSpace deployment's bearer credential from an owner-readable secret file.
   - Require the expected content type and validate returned HTML or DOCX structure within the
     response budget. For DOCX, rerun the archive validator and reject macros, external
     relationships, traversal names, or malformed package metadata.
@@ -609,7 +588,7 @@ Update configuration as follows.
 - **`DocConverterProdConfig`**
   - Add `conversion.url` and `conversion.use.dummy.converter`.
   - The one URL must identify a conversion sidecar that provides both the Gotenberg-compatible
-    PDF route and JODConverter Word routes. Verify its authenticated protocol identifier and both
+    PDF route and JODConverter Word routes. Verify its protocol identifier and both
     capabilities at startup; never infer sidecar identity from a URL.
   - Use Aspose only when `conversion.url` is empty and `aspose.enabled=true`.
   - Never fail over to Aspose after a Gotenberg or JODConverter request fails.
@@ -625,14 +604,9 @@ Update configuration as follows.
   - Set Gotenberg's `--api-timeout` and the Word worker timeout to the 180-second conversion
     value. The outer response-idle timeout is longer only to permit final streaming and cleanup.
 
-- **Backend authentication and tunnel**
-  - Add one bearer-token secret file through the shared HTTP client factory. Both clients use the
-    same tunnel origin and deployment credential.
-  - Load credentials from mounted secret files or external deployment secrets, never
-    source-controlled defaults, command-line arguments, logs, or example environment files.
-  - Require the configured HTTP origin to resolve through the secure tunnel and require bearer
-    authentication outside the local Docker network. Fail startup on an invalid URL, missing
-    credential, unreadable secret, or non-tunnel host.
+- **Backend network boundary**
+  - Both clients use the same private-network or secure-tunnel origin.
+  - Do not publish the sidecar endpoint. Fail startup on an invalid URL or incompatible sidecar.
 
 Keep these Aspose classes for compatibility: `AsposeAppInvoker`, `AsposeWebAppClient`, `AsposeConversionChecker`, `AsyncDocConverterService`, `AsyncDocumentConverterService`, and `CustomerIDSupplier`.
 
@@ -642,7 +616,7 @@ Write new RSpace tests with the repository's JUnit 5 setup and `MockRestServiceS
 the `RestClient.Builder`. The standalone Boot service uses its managed JUnit Jupiter 6.0.3.
 
 - Add `PdfConversionClientTest` and `JodConverterClientTest`.
-- Test sidecar bearer authentication, fixed request origins/routes, redirect rejection,
+- Test unauthenticated access with valid requests, fixed request origins/routes, redirect rejection,
   tunnel-host validation, protocol/capability validation that rejects direct Gotenberg, separate deadlines,
   no retries, bounded
   success/error bodies, cleanup, and each failed
@@ -665,32 +639,25 @@ Add these defaults to `defaultDeployment.properties`.
 
 ```properties
 conversion.url=
-conversion.allowedHosts=
 conversion.cacheConverted=true
 conversion.connectionRequestTimeoutMs=2000
 conversion.connectTimeoutMs=5000
-conversion.conversionTimeoutMs=180000
 conversion.responseTimeoutMs=185000
 conversion.maxInputBytes=209715200
 conversion.maxOutputBytes=314572800
 conversion.maxHtmlBytes=52428800
 conversion.use.dummy.converter=false
-conversion.bearerTokenFile=
 ```
 
 Keep the existing `aspose.*` properties under a clear deprecation comment. Keep `aspose.enabled=false` as the default.
 
 Mirror the new properties in `deployments/dev/deployment.properties`. Leave the URLs empty and add a comment that points to the Docker dev stack.
 
-The classpath defaults contain paths and numeric limits only. Credential files and stores come
-from external deployment configuration with owner-only permissions. Secret-file contents must
-never be returned by deployment-property endpoints or included in diagnostic dumps.
-
 Do not add `conversion.*.type`. Each role has one target product.
 
 - **`IPropertyHolder` and `PropertyHolder`**
-  - Add `isPreviewConversionEnabled()` and `isWordConversionEnabled()`.
-  - Return both as true when `conversion.url` is set or Aspose is explicitly enabled.
+  - Add `isConversionEnabled()` and return true when `conversion.url` is set or Aspose is
+    explicitly enabled.
   - Add `isConversionCachingEnabled()`.
   - Use `conversion.cacheConverted` for new backends and `aspose.cacheConverted` for Aspose.
   - Keep old Aspose helpers only where the compatibility path still needs them.
@@ -698,7 +665,8 @@ Do not add `conversion.*.type`. Each role has one target product.
 
 - **Controllers**
   - Update `BaseController:436` to use the new helpers.
-  - In `WorkspaceController:1083` and `NotebookEditorController:163`, replace `asposeEnabled` with `previewConversionEnabled` and `wordConversionEnabled`.
+  - In `WorkspaceController` and `NotebookEditorController`, replace `asposeEnabled` with
+    `conversionEnabled`.
   - In `DeploymentPropertiesController:164,248`, add one `conversion.enabled` property. Both
     frontend capabilities derive from it because one validated sidecar always provides both roles.
   - Keep `aspose.enabled` only for legacy callers. Mark it deprecated and remove active frontend callers.
@@ -716,8 +684,8 @@ Do not add `conversion.*.type`. Each role has one target product.
     output hardening are not silently reused.
 
 - **Word Import and Export**
-  - Accept `.docx`, `.odt`, and `.ott` for Word Import. Reject other inputs before calling
-    the conversion backend.
+  - Preserve Word Import support for `.doc`, `.docx`, `.odt`, `.rtf`, and `.txt`, and add `.ott`.
+    Reject other inputs before calling the conversion backend.
   - In `MSWordProcessor`, change `doc` output to `docx`.
   - Replace the image-file and ZIP flow with the streaming inliner.
   - End export filenames with `.docx`.
@@ -728,8 +696,8 @@ Do not add `conversion.*.type`. Each role has one target product.
 - **Errors and tests**
   - Add bundle keys for unavailable conversion, failed conversion, invalid output format,
     unsupported Word import format, and oversized imports.
-  - Test that Word Import accepts `.docx`, `.odt`, and `.ott` and rejects `.doc`, `.dot`,
-    `.dotx`, and `.rtf` without calling the conversion backend.
+  - Test every accepted Word Import extension and reject `.dot` and `.dotx` without calling the
+    conversion backend.
   - Update `FileDownloadControllerTest` for the new properties and mocks.
 
 **Check:** run `mvn test -Dfast=true`, then `mvn clean test`.
@@ -738,22 +706,17 @@ Do not add `conversion.*.type`. Each role has one target product.
 
 ## 3. Update frontend flags and file lists
 
-- In `workspace.jsp` and `notebookEditor.jsp`, replace the Aspose data flag with `data-preview-conversion-enabled` and `data-word-conversion-enabled`.
-- In `global.js`, replace `RS.asposeEnabled` with the two new flags.
-- Limit the "From Word" file chooser and client-side validation to `.docx`, `.odt`, and
-  `.ott`.
-- Remove `md` and `csv` from the preview list.
-- Open `txt` files directly through `/Streamfile/<id>`. First confirm that this route serves text inline.
-- For direct text, require a detected plain-text type, reject binary/NUL content, return
-  `Content-Type: text/plain; charset=UTF-8`, `X-Content-Type-Options: nosniff`, and the existing
-  restrictive download/preview headers through `ResponseHeaders`. Do not render user-controlled
-  content as inferred HTML.
+- In `workspace.jsp` and `notebookEditor.jsp`, replace the Aspose data flag with
+  `data-conversion-enabled`.
+- In `global.js`, replace `RS.asposeEnabled` with `RS.conversionEnabled`.
+- Preserve the existing "From Word" and preview extension lists. Add `.ott` to Word Import and
+  `.odp` to preview. Convert Markdown through the sidecar's text-filter compatibility path.
 - Rename `CallableAsposePreview.tsx` to `CallableDocumentPreview.tsx`.
 - Rename `supportedAsposeFile` to `supportedPreviewFile` and remove Aspose from error text.
-- Update `primaryActionHooks.ts` to use the new names, raw text URL, and preview flag.
-- Rename `asposeEnabled` props in `ToolbarCreateMenu.tsx` and the Workspace and Notebook toolbars to `wordConversionEnabled`.
-- Use `wordConversionEnabled` to control "From Word".
-- Gate Word export in `FormatChoice.tsx` with `wordConversionEnabled`.
+- Update `primaryActionHooks.ts` to use the new names, raw text URL, and conversion flag.
+- Rename `asposeEnabled` props in `ToolbarCreateMenu.tsx` and the Workspace and Notebook toolbars
+  to `conversionEnabled`.
+- Use `conversionEnabled` to control "From Word" and Word export.
 - Update names in `Carousel.tsx` and `PdfPreviewDialogEntrypoint.tsx`.
 - Update `FormatChoice.test.tsx` and `PdfPreviewDialogEntrypoint.test.tsx`.
 - Update related test IDs and strings.
@@ -766,15 +729,14 @@ Do not add `conversion.*.type`. Each role has one target product.
 
 - Add the tested Gotenberg 8.34.0 LibreOffice-only image to
   `docker/dev/docker-compose.yml`, pinned by multi-architecture manifest digest with a version comment. Configure
-  the body, timeout, queue, route-disable, download-disable, webhook-disable, outbound-deny,
-  authentication, and correlation-ID controls from section 1. Never use mutable `:8` in release
+  the body, timeout, queue, route-disable, download-disable, webhook-disable, and outbound-deny
+  controls from section 1. Never use mutable `:8` in release
   or development Compose files.
 - Build and run the sidecar in `docker/conversion-sidecar/` as `conversion-sidecar`. The image is
   the only supported sidecar runtime; do not add host startup scripts or a non-container runbook.
 - Define `conversion-sidecar` and `gotenberg` as a co-located pair on a private Compose network
-  used only by that pair. Give the Gotenberg container the `gotenberg` network alias and configure
-  its upstream credential so the dev stack
-  exercises the proxy route. Do not publish Gotenberg's port or attach its private network to the
+  used only by that pair. Give the Gotenberg container the `gotenberg` network alias so the dev
+  stack exercises the proxy route. Do not publish Gotenberg's port or attach its private network to the
   RSpace container. Apply the same topology in production with Docker Compose or an equivalent
   same-host container tool.
 - Use the HTTP server stack and pinned Java, Spring Boot, Tomcat, and JODConverter versions
@@ -795,10 +757,9 @@ Do not add `conversion.*.type`. Each role has one target product.
 - Update `docker/dev/README.md` and the deployment documentation in this PR. Do not start the
   stack automatically. Document the single supported topology: a same-host sidecar/Gotenberg
   container pair on a private network. Explain that the pair may be dedicated to one RSpace
-  deployment or shared by several, plus credential rotation, secure-tunnel setup, pair-wise
-  scaling, and per-client concurrency limits. Every RSpace deployment routes through a sidecar
-  with one bearer credential and separate PDF and Word quotas; Gotenberg is always private behind
-  that sidecar. Do not put private keys or passwords in the image, repository, logs, or
+  deployment or shared by several, plus secure-tunnel setup, pair-wise scaling, and conversion
+  limits. Every RSpace deployment routes through a private sidecar; Gotenberg is always private
+  behind that sidecar. Do not put private keys or passwords in the image, repository, logs, or
   environment examples.
 - Generate and publish an SBOM, provenance, vulnerability report, and signature for every
   platform image. Verify digest and signature before deployment and document the security-update
@@ -828,19 +789,19 @@ Run the backend and frontend against real containers. Use the `rspace-dev-stack`
    conversion through the same shared sidecar, then uses only its own cache on the next
    preview.
 4. Check that an uploaded DOCX gets a thumbnail through the PDF-to-PNG chain.
-5. Check that TXT opens directly with `text/plain` and `nosniff`; a binary file renamed `.txt`
-   must download safely rather than render. MD/CSV have no preview button.
-6. Import DOCX, ODT, and OTT fixtures through Workspace → Create → From Word. For the
-   image-heavy DOCX and ODT fixtures, check the document, image order, and Gallery items.
+5. Preview TXT, Markdown, and CSV fixtures as PDFs through the sidecar.
+6. Import DOC, DOCX, ODT, OTT, RTF, and TXT fixtures through Workspace → Create → From Word. For
+   image-heavy fixtures, check the document, image order, and Gallery items.
 7. Export a document with images and a table. Check that the `.docx` opens in LibreOffice and contains the images.
 8. Clear `conversion.url` and disable Aspose. Restart, then check that previews, thumbnails,
    Word Import, and Word Export are disabled. Confirm `POST /api/v1/import/word` returns 422.
 9. Test a legacy Aspose setup with `conversion.url` empty. Check that preview, DOCX import, and DOCX export still work.
 10. Add the sidecar URL. Check that Gotenberg and JODConverter take priority over Aspose.
-11. Exercise missing, invalid, expired, wrong-host, and rotated backend credentials. Confirm an
-    invalid production URL or tunnel-host configuration prevents startup and no client follows a
-    redirect or retries a conversion POST. Confirm the sidecar never forwards an RSpace bearer
-    token to Gotenberg. Point `conversion.url` directly at Gotenberg and confirm the sidecar
+11. Send valid requests without an Authorization header, then send malformed and oversized
+    requests and confirm validation still rejects them. Confirm an invalid production URL or
+    tunnel-host configuration prevents startup and no client follows a redirect or retries a
+    conversion POST. Confirm the sidecar never forwards caller authorization headers to
+    Gotenberg. Point `conversion.url` directly at Gotenberg and confirm the sidecar
     protocol check prevents startup.
 12. Start the conversion stack only through its container definition. Confirm no setting can
     replace the fixed `http://gotenberg:3000` origin, Gotenberg has no published host port, and
@@ -861,8 +822,7 @@ not defer code, configuration, deployment files, documentation, or tests to a fo
 
 ## Out of scope
 
-- Importing `doc`, `dot`, `dotx`, or `rtf` files.
-- Previewing Markdown or CSV in the browser.
+- Importing `dot` or `dotx` files.
 - Removing Aspose in this change.
 - Building a streaming data-URI splitter before the size limit is reached in practice.
 - Database or Liquibase changes.

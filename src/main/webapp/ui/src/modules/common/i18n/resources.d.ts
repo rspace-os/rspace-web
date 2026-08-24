@@ -1861,7 +1861,7 @@ export default interface Resources {
       "nameStepLabel": "Name the Filestore",
       "noReadAccess": "(no read access; contact your sysadmin)"
     },
-    "callableAsposePreview": {
+    "callableDocumentPreview": {
       "generatePdfError": "Could not generate a PDF preview for .{fileExtension} documents.",
       "previewError": "Could not generate preview."
     },
@@ -9219,6 +9219,19 @@ export default interface Resources {
         "searchRequestFailed": "Unsuccessful search request to the chemistry service, status code: {0}.",
         "serviceCallFailed": "Chemistry service call failed"
       },
+      "documentConversion": {
+        "failed": "The document could not be converted.",
+        "inputInvalid": "The input document is invalid or unavailable.",
+        "inputTooLarge": "The input document exceeds the conversion limit.",
+        "outputCreateFailed": "The converted document could not be stored.",
+        "outputInvalid": "The conversion service returned an invalid document.",
+        "outputTooLarge": "The converted document exceeds the conversion limit.",
+        "previewPdfOnly": "Only PDF preview output is supported.",
+        "serviceBusy": "The document conversion service is busy. Try again later.",
+        "serviceUnavailable": "The document conversion service is unavailable.",
+        "timeout": "Document conversion timed out.",
+        "unsupported": "This document format cannot be converted."
+      },
       "stoichiometry": {
         "copyMoleculeFailed": "Problem saving molecule from SMILES during stoichiometry copy",
         "deleteFailed": "Error deleting stoichiometry with id {0}",
@@ -10252,7 +10265,7 @@ export default interface Resources {
           "filestoresSection": "Filestores",
           "formats": {
             "docAvailable": "MS Word version of your RSpace documents will be placed in the 'Exports' area of the Gallery.",
-            "docHeading": ".DOC file",
+            "docHeading": ".DOCX file",
             "elnExplanation": "An XML bundle with an RO-Crate metadata file, zipped into a .eln archive.",
             "elnHeading": "RO-Crate",
             "htmlExplanation": "Exported data, notebooks and attached files can be accessed offline with a browser.",

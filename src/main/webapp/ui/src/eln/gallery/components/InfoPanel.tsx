@@ -29,7 +29,7 @@ import usePrimaryAction from "../primaryActionHooks";
 import { useGalleryActions } from "../useGalleryActions";
 import { Description, Filestore, type GalleryFile, idToString, RemoteFile } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
-import { useAsposePreview } from "./CallableAsposePreview";
+import { useDocumentPreview } from "./CallableDocumentPreview";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
@@ -111,7 +111,7 @@ const PrimaryActionButton = ({
   const { openPdfPreview } = usePdfPreview();
   const { openSnapGenePreview } = useSnapGenePreview();
   const { openSnippetPreview } = useSnippetPreview();
-  const { openAsposePreview, loading: asposeLoading } = useAsposePreview();
+  const { openDocumentPreview, loading: documentPreviewLoading } = useDocumentPreview();
   const primaryAction = usePrimaryAction();
   const { openFolder } = useFolderOpen();
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -160,11 +160,11 @@ const PrimaryActionButton = ({
                 });
               },
             };
-          case "aspose":
+          case "documentPreview":
             return {
-              label: asposeLoading ? t("common:loading") : t("actionsMenu.view"),
+              label: documentPreviewLoading ? t("common:loading") : t("actionsMenu.view"),
               act: () => {
-                void openAsposePreview(file);
+                void openDocumentPreview(file);
               },
             };
           case "snapgene":
@@ -182,7 +182,7 @@ const PrimaryActionButton = ({
       return (
         <ActionButton
           label={label}
-          disabled={action.tag === "aspose" && asposeLoading}
+          disabled={action.tag === "documentPreview" && documentPreviewLoading}
           sx={sx}
           onClick={(event) => {
             /*

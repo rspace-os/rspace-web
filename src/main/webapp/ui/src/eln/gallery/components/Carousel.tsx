@@ -12,13 +12,13 @@ import { Document, Page } from "react-pdf";
 import { incrementForever, take } from "../../../util/iterators";
 import type { Optional } from "../../../util/optional";
 import usePrimaryAction, {
-  useAsposePreviewOfGalleryFile,
+  useDocumentPreviewOfGalleryFile,
   useImagePreviewOfGalleryFile,
   usePdfPreviewOfGalleryFile,
 } from "../primaryActionHooks";
 import { type GalleryFile, idToString } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
-import { useAsposePreview } from "./CallableAsposePreview";
+import { useDocumentPreview } from "./CallableDocumentPreview";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
@@ -68,7 +68,7 @@ const PreviewWrapper = ({
   const { openFolder } = useFolderOpen();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
-  const { openAsposePreview } = useAsposePreview();
+  const { openDocumentPreview } = useDocumentPreview();
   const { openSnapGenePreview } = useSnapGenePreview();
   const { openSnippetPreview } = useSnippetPreview();
   const primaryAction = usePrimaryAction();
@@ -154,8 +154,8 @@ const PreviewWrapper = ({
               void action.downloadHref().then(openPdfPreview);
               return;
             }
-            if (action.tag === "aspose") {
-              void openAsposePreview(file);
+            if (action.tag === "documentPreview") {
+              void openDocumentPreview(file);
             }
             if (action.tag === "snapgene") {
               void openSnapGenePreview(file);
@@ -189,8 +189,8 @@ const PreviewWrapper = ({
               void action.downloadHref().then(openPdfPreview);
               return;
             }
-            if (action.tag === "aspose") {
-              void openAsposePreview(file);
+            if (action.tag === "documentPreview") {
+              void openDocumentPreview(file);
             }
             if (action.tag === "snapgene") {
               void openSnapGenePreview(file);
@@ -208,9 +208,9 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
   const { t } = useTranslation("gallery");
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
-  const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+  const canPreviewDocument = useDocumentPreviewOfGalleryFile();
   const [numPages, setNumPages] = React.useState<number>(0);
-  const [asposePdfUrl, setAsposePdfUrl] = React.useState<
+  const [convertedPdfUrl, setConvertedPdfUrl] = React.useState<
     { tag: "loading" } | { tag: "loaded"; url: Url } | { tag: "error" } | null
   >(null);
   const [imageUrl, setImageUrl] = React.useState<
@@ -232,10 +232,10 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
       .orElseTry<
         | { key: "image"; getDownloadHref: () => Promise<Url> }
         | { key: "pdf"; getDownloadHref: () => Promise<Url> }
-        | { key: "aspose" }
+        | { key: "documentPreview" }
       >(() =>
-        canPreviewWithAspose(file).map(() => ({
-          key: "aspose",
+        canPreviewDocument(file).map(() => ({
+          key: "documentPreview",
         })),
       )
       .do((preview) => {
@@ -257,7 +257,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
               setPdfUrl({ tag: "error" });
             }
           } else {
-            setAsposePdfUrl({ tag: "loading" });
+            setConvertedPdfUrl({ tag: "loading" });
             try {
               const { data } = await axios.get<unknown>(
                 `/Streamfile/ajax/convert/${idToString(file.id).elseThrow()}?outputFormat=pdf`,
@@ -268,7 +268,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
                 .flatMap(Parsers.isString)
                 .orElse(null);
               if (fileName) {
-                setAsposePdfUrl({
+                setConvertedPdfUrl({
                   tag: "loaded",
                   url: `/Streamfile/direct/${idToString(file.id).elseThrow()}?fileName=${fileName}`,
                 });
@@ -289,7 +289,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
                   });
               }
             } catch {
-              setAsposePdfUrl({
+              setConvertedPdfUrl({
                 tag: "error",
               });
             }
@@ -305,7 +305,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
   let loadingLabel = null;
   if (imageUrl !== null && imageUrl.tag === "loading") loadingLabel = t("carousel.loadingImage");
   if (pdfUrl !== null && pdfUrl.tag === "loading") loadingLabel = t("carousel.loadingPdf");
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "loading") loadingLabel = t("carousel.generatingPdf");
+  if (convertedPdfUrl !== null && convertedPdfUrl.tag === "loading") loadingLabel = t("carousel.generatingPdf");
   if (loadingLabel !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
@@ -314,11 +314,11 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
     );
 
   let imageSrc = null;
-  if (imageUrl === null && pdfUrl === null && asposePdfUrl === null) imageSrc = file.thumbnailUrl;
+  if (imageUrl === null && pdfUrl === null && convertedPdfUrl === null) imageSrc = file.thumbnailUrl;
   if (imageUrl !== null && imageUrl.tag === "loaded") imageSrc = imageUrl.url;
   if (imageUrl !== null && imageUrl.tag === "error") imageSrc = file.thumbnailUrl;
   if (pdfUrl !== null && pdfUrl.tag === "error") imageSrc = file.thumbnailUrl;
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "error") imageSrc = file.thumbnailUrl;
+  if (convertedPdfUrl !== null && convertedPdfUrl.tag === "error") imageSrc = file.thumbnailUrl;
   if (imageSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={false} visible={visible}>
@@ -340,7 +340,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
 
   let pdfSrc = null;
   if (pdfUrl !== null && pdfUrl.tag === "loaded") pdfSrc = pdfUrl.url;
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "loaded") pdfSrc = asposePdfUrl.url;
+  if (convertedPdfUrl !== null && convertedPdfUrl.tag === "loaded") pdfSrc = convertedPdfUrl.url;
   if (pdfSrc !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>

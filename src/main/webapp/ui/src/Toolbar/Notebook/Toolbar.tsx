@@ -42,7 +42,7 @@ class NotebookToolbar extends React.Component<any, any> {
       canCreateRecord: props.domContainer.getAttribute("data-can-create-record") === "true",
       pioEnabled: props.domContainer.getAttribute("data-pio-enabled") === "true",
       evernoteEnabled: props.domContainer.getAttribute("data-evernote-enabled") === "true",
-      asposeEnabled: props.domContainer.getAttribute("data-aspose-enabled") === "true",
+      conversionEnabled: props.domContainer.getAttribute("data-conversion-enabled") === "true",
       canDelete: props.domContainer.getAttribute("data-can-delete") === "true",
       canShare: props.domContainer.getAttribute("data-can-share") === "true",
     };
@@ -82,7 +82,7 @@ class NotebookToolbar extends React.Component<any, any> {
             <CreateMenu
               pioEnabled={this.state.pioEnabled}
               evernoteEnabled={this.state.evernoteEnabled}
-              asposeEnabled={this.state.asposeEnabled}
+              conversionEnabled={this.state.conversionEnabled}
             />
           )}
           <Tooltip title={i18n.t("common:actions.edit")} enterDelay={300}>

@@ -159,6 +159,14 @@ if [ "${RSPACE_MAILPIT:-false}" = "true" ]; then
   echo "[entrypoint] Mailpit enabled — SMTP at mailpit:1025, UI/API on the published host port"
 fi
 
+CONVERSION_ARGS=()
+if [ -n "${CONVERSION_SERVICE_URL:-}" ]; then
+  CONVERSION_ARGS=(
+    "-Dconversion.url=${CONVERSION_SERVICE_URL}"
+  )
+  echo "[entrypoint] Document conversion enabled at ${CONVERSION_SERVICE_URL}"
+fi
+
 echo "[entrypoint] Starting RSpace (db mode: ${DB_MODE}) ..."
 echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_PUBLIC_PORT}"
 
@@ -169,6 +177,7 @@ exec mvn -B jetty:run \
   "${CHEMISTRY_ARGS[@]}" \
   "${E2E_MOCK_ARGS[@]}" \
   "${MAILPIT_ARGS[@]}" \
+  "${CONVERSION_ARGS[@]}" \
   -Denvironment="${DB_MODE}" \
   -Dspring.profiles.active=run \
   -DreactDevMode=true \
