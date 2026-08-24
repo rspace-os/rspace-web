@@ -178,7 +178,11 @@ const Form = observer(({ handleSearch }: FormArgs) => {
           },
         }}
       >
-        <BarcodeScanner onClose={() => setScannerAnchorEl(null)} onScan={handleScan} submitOnScan />
+        <BarcodeScanner
+          onClose={() => setScannerAnchorEl(null)}
+          onScan={handleScan}
+          cameraErrorMessage={t("barcodeScanner.cameraErrorSearchBox")}
+        />
       </Popover>
     </Box>
   );

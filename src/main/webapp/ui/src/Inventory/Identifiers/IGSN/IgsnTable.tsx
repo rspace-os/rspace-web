@@ -182,7 +182,7 @@ function Toolbar({
             setSearchTerm(result.rawValue);
           }}
           onClose={() => setScannerAnchorEl(null)}
-          submitOnScan
+          cameraErrorMessage={t("barcodeScanner.cameraErrorSearchBox")}
         />
       </Panel>
       <MenuWithSelectedState

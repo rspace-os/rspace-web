@@ -400,7 +400,6 @@ function FieldCard<
                       ],
                     });
                   }}
-                  submitOnScan
                 />
               </Popover>
               <CustomTooltip

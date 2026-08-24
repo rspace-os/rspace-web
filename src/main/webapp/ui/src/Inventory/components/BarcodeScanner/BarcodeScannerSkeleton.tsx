@@ -1,8 +1,6 @@
 import Alert, { alertClasses } from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CardActions from "@mui/material/CardActions";
-import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import type React from "react";
 import { useCallback, useEffect, useRef } from "react";
@@ -11,8 +9,6 @@ import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
 import { type Barcode, barcodeFormatAsString } from "@/util/barcode";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
-import FormField from "../../../components/Inputs/FormField";
-import StringField from "../../../components/Inputs/StringField";
 import useStores from "../../../stores/use-stores";
 
 export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
@@ -20,29 +16,23 @@ export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
 type BarcodeScannerSkeletonArgs = {
   onClose: () => void;
   onScan: (scannedBarcodeInput: BarcodeInput) => void;
-  buttonPrefix?: string;
   beforeScanHelpText: string;
   barcode: BarcodeInput | null;
-  setBarcode: (value: BarcodeInput | null) => void;
   loading: boolean;
   warning?: React.ReactNode;
   videoElem: React.RefObject<HTMLVideoElement | null>;
   error: boolean;
-  submitOnScan?: boolean;
 };
 
 export default function BarcodeScannerSkeleton({
   onClose,
   onScan,
-  buttonPrefix,
   beforeScanHelpText,
   barcode,
-  setBarcode,
   loading,
   warning,
   videoElem,
   error,
-  submitOnScan = false,
 }: BarcodeScannerSkeletonArgs): React.ReactNode {
   const { uiStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
@@ -82,11 +72,11 @@ export default function BarcodeScannerSkeleton({
    */
   const submitted = useRef(false);
   useEffect(() => {
-    if (submitOnScan && barcode?.rawValue && !submitted.current) {
+    if (barcode?.rawValue && !submitted.current) {
       submitted.current = true;
       handleOnSubmit();
     }
-  }, [submitOnScan, barcode, handleOnSubmit]);
+  }, [barcode, handleOnSubmit]);
 
   const alertContent = loading ? (
     t("barcodeScanner.loading")
@@ -103,130 +93,36 @@ export default function BarcodeScannerSkeleton({
 
   return (
     <Stack
-      sx={
-        submitOnScan
-          ? {
-              p: 1.5,
-              width: 440,
-              maxWidth: "80vw",
-              /*
-               * By default an Alert stretches its icon, message, and action
-               * slots to full height, leaving single-line text and the icon
-               * sitting high; centering the slots keeps them aligned.
-               */
-              [`& .${alertClasses.root}`]: { alignItems: "center" },
-            }
-          : { alignItems: "center" }
-      }
-      spacing={submitOnScan ? 1 : 0}
+      sx={{
+        p: 1.5,
+        width: 440,
+        maxWidth: "80vw",
+        /*
+         * By default an Alert stretches its icon, message, and action
+         * slots to full height, leaving single-line text and the icon
+         * sitting high; centering the slots keeps them aligned.
+         */
+        [`& .${alertClasses.root}`]: { alignItems: "center" },
+      }}
+      spacing={1}
     >
-      {submitOnScan ? (
-        <Alert severity="info" action={helpIcon}>
-          {alertContent}
-        </Alert>
-      ) : (
-        <Stack
-          direction="row"
-          sx={{
-            justifyContent: "space-around",
-            width: "100%",
-            marginBottom: "8px",
-          }}
-        >
-          <Alert severity="info">{alertContent}</Alert>
-          {helpIcon}
-        </Stack>
-      )}
-      {!submitOnScan && (
-        <CardActions>
-          <Button
-            onClick={() => {
-              onClose();
-            }}
-          >
-            {t("common:actions.cancel")}
-          </Button>
-          <Button
-            disabled={!barcode?.rawValue}
-            color="callToAction"
-            variant="contained"
-            disableElevation
-            onClick={handleOnSubmit}
-          >
-            {buttonPrefix}
-          </Button>
-          {barcode && (
-            <Button
-              onClick={() => {
-                setBarcode(null);
-              }}
-            >
-              {t("common:actions.clear")}
-            </Button>
-          )}
-        </CardActions>
-      )}
+      <Alert severity="info" action={helpIcon}>
+        {alertContent}
+      </Alert>
       {/* hide via CSS on detection (not on loading or scanner won't start in Safari)  */}
       <Box
         component="video"
         ref={videoElem}
-        sx={(theme) => ({
+        sx={{
           display: barcode?.rawValue || error ? "none" : "block",
-          ...(submitOnScan
-            ? { width: "100%", maxHeight: "45vh" }
-            : {
-                height: "37vh",
-                width: "37vw",
-                [theme.breakpoints.down("sm")]: {
-                  width: "100%",
-                  height: "100%",
-                  maxHeight: "50vh",
-                  maxWidth: "80vw",
-                },
-              }),
-        })}
+          width: "100%",
+          maxHeight: "45vh",
+        }}
       />
-      {warning !== null && <Box sx={submitOnScan ? { width: "100%" } : {}}>{warning}</Box>}
-      {submitOnScan && (
-        <Stack direction="row" sx={{ justifyContent: "flex-end", width: "100%" }}>
-          <Button
-            onClick={() => {
-              onClose();
-            }}
-          >
-            {t("common:actions.cancel")}
-          </Button>
-        </Stack>
-      )}
-      {!submitOnScan && (!barcode || barcode.format === "Unknown") && (
-        <>
-          <Box sx={{ width: "100%" }}>
-            <Box sx={{ m: 1 }}>
-              <Divider orientation="horizontal" />
-            </Box>
-          </Box>
-          <Box sx={{ alignSelf: "flex-start" }}>
-            <Box sx={{ m: 1 }}>
-              <FormField
-                label={t("barcodeScanner.altEntry")}
-                renderInput={(props) => (
-                  <StringField
-                    {...props}
-                    variant="standard"
-                    onChange={({ target: { value } }) => {
-                      setBarcode({
-                        rawValue: value,
-                        format: "Unknown",
-                      });
-                    }}
-                  />
-                )}
-                value={barcode?.rawValue ?? ""}
-              />
-            </Box>
-          </Box>
-        </>
-      )}
+      {warning !== null && <Box sx={{ width: "100%" }}>{warning}</Box>}
+      <Stack direction="row" sx={{ justifyContent: "flex-end", width: "100%" }}>
+        <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
+      </Stack>
     </Stack>
   );
 }
