@@ -482,7 +482,7 @@ export default interface Resources {
         "helpLink": "Cloud Storage integrations docs",
         "name": "Google Drive",
         "setup": {
-          "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the Google Drive icon in the text editor toolbar.</li></ol>",
+          "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the Google Drive icon in the text editor toolbar.</li><li>Sign in to Google and approve access. If Google asks for cookie access, select <strong>Allow cookies</strong> to open the file picker.</li></ol>",
           "toolbar": "When editing a document, click on the Google Drive icon in the text editor toolbar."
         },
         "usage": "You can include files from Google Drive in your RSpace documents. Files are embedded as links to the Google Drive location of that file."
@@ -2270,9 +2270,10 @@ export default interface Resources {
       "altEntry": "Alternatively, enter the data encoded in the barcode",
       "barcodeDetected": "Barcode detected: {format} format.",
       "cameraError": "Could not access camera, please enter code below.",
+      "cameraErrorSearchBox": "Could not access camera. Alternatively, enter the encoded data directly into the search box.",
       "helpTitle": "Info on using barcodes.",
       "loading": "Loading Barcode Scanner...",
-      "otherFormats": "To scan other formats, please try an Android device, or Chrome on a Mac (with a webcam).",
+      "otherFormats": "To scan other formats, please use Chrome or a Chromium-based browser.",
       "prompt": "Barcode Scanner: {helpText}.",
       "scanError": {
         "message": "Unable to search. Scan has not completed.",
@@ -3852,7 +3853,7 @@ export default interface Resources {
       "created": "Created",
       "globalId": "Global ID",
       "lastModified": "Last Modified",
-      "linkedDocuments": {
+      "linkedItems": {
         "columns": {
           "linkedVersion": "Linked version",
           "name": "Name",
@@ -3864,10 +3865,10 @@ export default interface Resources {
         "latest": "Latest",
         "noDocuments": "No documents",
         "noInventoryLinks": "No inventory links",
-        "show": "Show Linked Documents",
-        "title": "Linked Documents"
+        "show": "Show Linked Items",
+        "title": "Linked Items"
       },
-      "linkedDocumentsHelp": {
+      "linkedItemsHelp": {
         "linkField": "Other Inventory items that link to this item through a Link custom field will also be listed here.",
         "listOfMaterials": "Adding this item to a document's <helpDocs docLink=\"listOfMaterials\">List of Materials</helpDocs> will add an entry for the document in this panel."
       },
@@ -4279,6 +4280,8 @@ export default interface Resources {
         },
         "searchbar": {
           "clearSearch": "Clear search",
+          "scanBarcode": "Scan barcode",
+          "scanPlaceholder": "Search or scan a barcode",
           "search": "Search"
         },
         "sort": {
@@ -6787,6 +6790,7 @@ export default interface Resources {
           "unrecognizedFileType": "Unrecognized fileType: {0}"
         },
         "instrument": {
+          "fieldCountMismatch": "Number of incoming instrument fields [{0}] doesn''t match number of template fields [{1}]",
           "nameExists": "There is already an instrument named [{0}]",
           "notFound": "No instrument with id: {0}",
           "templateNotFound": "No instrument template with id: {0}",
@@ -7486,8 +7490,15 @@ export default interface Resources {
           "message": "Please confirm that you wish to cancel - the changes you made won't be saved."
         },
         "egnyte": {
+          "authError": "Egnyte authorization could not be verified. Please try connecting to Egnyte again.",
           "configMissing": "Egnyte is not configured properly on this RSpace instance. Please contact your System Admin",
           "domainMissing": "Egnyte Domain URL is not set, please go to Apps page and set it up."
+        },
+        "googleDrive": {
+          "authorizationIncomplete": "Google Drive authorization was not completed. Try again, keep the Google sign-in window open, and approve access when prompted.",
+          "pickerTitle": "Select a file from Google Drive",
+          "popupBlocked": "Google Drive sign-in was blocked. Allow pop-ups for this site, then try again.",
+          "signInFailed": "Google Drive sign-in could not be completed. Allow pop-ups and third-party cookies for this site, sign in to Google when prompted, then try again."
         },
         "handsontable": {
           "insertFailed": "Inserting calculation table failed."

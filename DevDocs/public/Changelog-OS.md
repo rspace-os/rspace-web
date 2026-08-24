@@ -4,6 +4,41 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.25.0 2026-08-19
+
+### Server
+
+RSpace 1.125 requires Tomcat 10. See [Migrating-RSpace-to-Tomcat-10.md](Migrating-RSpace-to-Tomcat-10.md) guide.
+
+### ELN Features
+
+- RSDEV-1250 revision history for Gallery items
+- RSDEV-998 S3 Filestore connector can now create metadata sidecar files summarizing content of the folder
+- RSDEV-1032 List of Materials can now reference instruments
+
+### ELN Bugfix
+
+- RSDEV-900 fix workspace search sometimes returning empty 'version 0' documents that had no content or valid path
+- RSDEV-1144 fix creator/last-modifier metadata on documents created from a shared template (was pointing to the template owner)
+- RSDEV-1153 fix broken pagination within PyRAT plugin
+
+### Inventory Features
+
+- RSDEV-1171 revision history for Instruments and Instrument Templates
+- RSDEV-1161 added a new default Instrument Template, based on PIDINST schema
+- RSDEV-1210 Containers UI now indicates whether a container can store instruments
+- RSDEV-1189 Inventory Links now work with Instruments
+- RSDEV-1180 new settings menu to configure PIDINST, and creation of PIDINSTs from the UI
+
+### Inventory Bugfix
+
+- RSDEV-1239 fix 'create from Instrument Template' showing all relation types instead of only the allowed ones
+- RSDEV-1229 fix minor issues and inconsistencies around custom fields of Instruments and Instrument Templates
+- RSDEV-1093 faster Inventory tag-search autocomplete
+- RSDEV-1293 fix date picker when creating IGSNs or PIDINSTs
+- RSDEV-1237 fix a problem where listing a limited-view item having a preview image could cause a full page reload
+- RSINV-507 fix an error popup appearing when viewing an item that was modified by user who was subsequently deleted
+
 # 2.24.0 2026-07-06
 
 ### ELN Features

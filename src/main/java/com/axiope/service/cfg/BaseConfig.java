@@ -1325,7 +1325,7 @@ public abstract class BaseConfig {
 
   @Bean(name = "rspaceToExternalProviderAdapter")
   public RspaceToExternalProviderAdapter getRspaceToExternalProviderAdapter() {
-    return new RspaceToExternalProviderAdapterImpl(propertyHolder());
+    return new RspaceToExternalProviderAdapterImpl();
   }
 
   @Bean(name = "pyrat")

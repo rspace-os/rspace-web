@@ -1,11 +1,11 @@
-Initial Installation notes for RSpace on Ubuntu 22 LTS : May 2022
+Initial Installation notes for RSpace on Ubuntu 22 LTS: May 2022
 ====================================================
 
 These notes give installation and configuration information for the latest 
 release of ResearchSpace.
-For RSpace application installation and configuration, please see:
 
-Rspace Configuration
+For RSpace application installation and configuration, please see:
+[RSpaceConfiguration.md](RSpaceConfiguration.md)
 
 Contents of the release bundle
 -------------------------------

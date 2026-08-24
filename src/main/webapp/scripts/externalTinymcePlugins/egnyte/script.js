@@ -37,6 +37,21 @@ function initEgnyteDialog() {
 	});
 }
 
+var EGNYTE_OAUTH_STATE_KEY = 'egnyteOAuthState';
+
+// Random nonce sent as the OAuth `state` param and checked when the token comes
+// back, so a token can only be accepted for a flow this browser started (guards
+// against an attacker pasting a dialog.html#access_token=... URL to a victim).
+function generateEgnyteOAuthState() {
+	var bytes = new Uint8Array(16);
+	window.crypto.getRandomValues(bytes);
+	var state = Array.from(bytes, function (b) {
+		return b.toString(16).padStart(2, '0');
+	}).join('');
+	sessionStorage.setItem(EGNYTE_OAUTH_STATE_KEY, state);
+	return state;
+}
+
 function openAuthorizationDialogForEgnyte(onSuccess, egnyteDomain) {
 
 	var jqxhr = $.get('/deploymentproperties/ajax/property', { name: 'egnyte.client.id' });
@@ -45,9 +60,15 @@ function openAuthorizationDialogForEgnyte(onSuccess, egnyteDomain) {
 			alert(RS.msg("legacyjs.tinymce.egnyte.configMissing"));
 			return;
 		}
-		var authUrl = egnyteDomain + "/puboauth/token?client_id=" + egnyteClientId
-			+ "&redirect_uri=https://" + window.location.host + "/scripts/externalTinymcePlugins/egnyte/dialog.html"
-			+ "&scope=Egnyte.filesystem Egnyte.link&response_type=token";
+		var redirectUri = "https://" + window.location.host
+			+ "/scripts/externalTinymcePlugins/egnyte/dialog.html";
+		var state = generateEgnyteOAuthState();
+		var authUrl = egnyteDomain + "/puboauth/token"
+			+ "?client_id=" + encodeURIComponent(egnyteClientId)
+			+ "&redirect_uri=" + encodeURIComponent(redirectUri)
+			+ "&scope=" + encodeURIComponent("Egnyte.filesystem Egnyte.link")
+			+ "&response_type=token"
+			+ "&state=" + encodeURIComponent(state);
 
 		window.location = authUrl;
 	});
@@ -106,8 +127,18 @@ var insertSimpleEgnyteLink = function (egnyteDomain, egnyteElem) {
 $(document).ready(function () {
 	var hash = window.location.hash;
 
-	if (hash && hash.startsWith('#access_token=')) {
-		egnyteToken = hash.substring('#access_token='.length, hash.indexOf('&'));
+	if (hash && hash.indexOf('access_token=') !== -1) {
+		var fragment = new URLSearchParams(hash.substring(1));
+		var returnedToken = fragment.get('access_token');
+		var returnedState = fragment.get('state');
+		var expectedState = sessionStorage.getItem(EGNYTE_OAUTH_STATE_KEY);
+		sessionStorage.removeItem(EGNYTE_OAUTH_STATE_KEY);
+
+		if (!expectedState || returnedState !== expectedState) {
+			alert(RS.msg("legacyjs.tinymce.egnyte.authError"));
+			return;
+		}
+		egnyteToken = returnedToken;
 		$.post('/egnyte/egnyteSessionToken', { token: egnyteToken });
 	}
 

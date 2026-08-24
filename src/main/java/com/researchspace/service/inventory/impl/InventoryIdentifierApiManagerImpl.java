@@ -9,6 +9,7 @@ import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.api.v1.model.ApiSample;
@@ -23,7 +24,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryRecord;
+import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RoRService;
@@ -32,6 +35,7 @@ import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.InventoryRecordRetriever;
+import com.researchspace.service.inventory.InventoryUrls;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -46,6 +50,7 @@ import java.util.stream.Collectors;
 import javax.naming.InvalidNameException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -354,7 +359,64 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     instrument.setId(invRec.getId());
     instrument.getIdentifiers().add(identifier);
     instrument.setTags(null); // skip tags update
+    seedLandingPageForNewPidinst(instrument, invRec, identifier);
     return instrument;
+  }
+
+  /**
+   * Puts the identifier's public landing page into the instrument's own Landing page field, so the
+   * field shows the address that was registered instead of drifting from it (RSDEV-1254, ADR 0006
+   * item 4). Rides this same update, so the value goes through the field's ordinary validation,
+   * Envers revision and save rather than a second write path of its own.
+   *
+   * <p>Only for a brand-new PIDINST registration, and only when the field holds nothing the user
+   * typed: a value of theirs is what PIDINST's LandingPage is for and is registered as-is, so
+   * overwriting it would both destroy their input and register something the field never showed. A
+   * landing page the retired auto-fill wrote counts as untyped, so registering replaces it.
+   *
+   * <p>Applied on the DataCite PIDINST path too, even though DataCite has no LandingPage property
+   * and so transmits it nowhere: the same user action should leave the instrument looking the same
+   * whichever provider a deployment has enabled.
+   *
+   * <p>Called while building the post-registration update, so the provider has already accepted: a
+   * failed registration never reaches here and leaves the field as it was.
+   */
+  private void seedLandingPageForNewPidinst(
+      ApiInstrument update, InventoryRecord invRec, ApiInventoryDOI identifier) {
+    if (!identifier.isRegisterIdentifierRequest() || !invRec.isInstrument()) {
+      return;
+    }
+    IdentifierType type = EnumUtils.getEnum(IdentifierType.class, identifier.getDoiType());
+    if (!InventorySettingType.PIDINST.equals(settingTypeFor(type))) {
+      return;
+    }
+    InstrumentEntity source = (InstrumentEntity) invRec;
+    Optional<InventoryEntityField> field = PidinstFields.landingPage(source);
+    if (field.isEmpty() || PidinstFields.userTypedLandingPage(source).isPresent()) {
+      return;
+    }
+    /*
+     * Guarded by the same rule the adapter applies to what it registers: the address is built from
+     * the deployment's server URL, which nothing validates for a scheme, and the field's own
+     * validation is lenient enough to store a scheme-less value. Storing one would leave the
+     * instrument permanently showing an address nobody can follow, so the field is left as it was
+     * and the operator gets a reason.
+     */
+    Optional<String> publicLandingPage =
+        InventoryUrls.publicLandingPageUrl(
+                properties.getServerUrl(), identifier.getPublicLinkSuffix())
+            .filter(PidinstFields::isResolvableAddress);
+    if (publicLandingPage.isEmpty()) {
+      log.warn(
+          "Leaving the Landing page of {} as it was: no usable public landing page could be built,"
+              + " which means no server URL is configured or it carries no http(s) scheme.",
+          invRec.getGlobalIdentifier());
+      return;
+    }
+    ApiInventoryEntityField fieldUpdate = new ApiInventoryEntityField();
+    fieldUpdate.setId(field.get().getId());
+    fieldUpdate.setContent(publicLandingPage.get());
+    update.getFields().add(fieldUpdate);
   }
 
   private ApiInventoryDOI createNewDoi(User user) {
@@ -373,10 +435,14 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
           dcException);
     }
     if (createdDoi == null || !"draft".equals(createdDoi.getAttributes().getState())) {
-      throw new IllegalStateException("DataCite registration failed");
+      throw new IllegalStateException(
+          messages.getMessage("errors.inventory.identifier.dataCiteRegisterNoDraft"));
     }
 
     ApiInventoryDOI newDoi = new ApiInventoryDOI(user, createdDoi);
+    // same invariant as the B2INST path: the entity adopts a DTO-generated suffix (RSDEV-1254);
+    // for DataCite nothing consumes it before entity creation, so behavior is unchanged
+    newDoi.generatePublicLinkSuffix();
     newDoi.setRegisterIdentifierRequest(true);
     newDoi.setCreatorName(user.getFullName());
     newDoi.setCreatorType("Personal");
@@ -416,9 +482,23 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
    * Registers a draft instrument record with B2INST and returns the RSpace DOI representation,
    * persisting the B2INST record id (RID) as the identifier. The Handle PID is minted only on
    * publish.
+   *
+   * <p>The identifier's public landing page address is generated before the registration call and
+   * registered as its LandingPage, unless the instrument carries a landing page the user typed
+   * themselves (RSDEV-1254, ADR 0006).
    */
   private ApiInventoryDOI createNewB2instDoi(InventoryRecord invRec, User user) {
-    B2instDoi b2instDoi = rspaceToExternalProviderAdapter.buildB2instDoi(invRec);
+    ApiInventoryDOI newDoi = new ApiInventoryDOI();
+    // the public landing page address must exist before the provider call so it can be part of
+    // the registered metadata; the same suffix later becomes the entity's publicLink, so the
+    // registered address and the page RSpace serves can never diverge (RSDEV-1254, ADR 0006)
+    newDoi.generatePublicLinkSuffix();
+    String publicLandingPageUrl =
+        InventoryUrls.publicLandingPageUrl(properties.getServerUrl(), newDoi.getPublicLinkSuffix())
+            .orElse(null);
+
+    B2instDoi b2instDoi =
+        rspaceToExternalProviderAdapter.buildB2instDoi(invRec, publicLandingPageUrl);
     B2instDraftRecord draft;
     try {
       draft = b2instConnector.registerDoi(b2instDoi);
@@ -430,10 +510,10 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
           b2instException);
     }
     if (draft == null || isBlank(draft.getId())) {
-      throw new IllegalStateException("B2INST registration failed");
+      throw new IllegalStateException(
+          messages.getMessage("errors.inventory.identifier.b2instRegisterNoDraft"));
     }
 
-    ApiInventoryDOI newDoi = new ApiInventoryDOI();
     newDoi.setRegisterIdentifierRequest(true);
     newDoi.setDoi(draft.getId()); // the draft RID; the Handle PID is minted on publish
     newDoi.setState("draft");

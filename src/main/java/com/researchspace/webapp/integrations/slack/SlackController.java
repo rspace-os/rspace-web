@@ -1,5 +1,7 @@
 package com.researchspace.webapp.integrations.slack;
 
+import static com.researchspace.session.SessionAttributeUtils.getSessionAttribute;
+
 import com.researchspace.analytics.service.AnalyticsEvent;
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.core.util.ISearchResults;
@@ -9,19 +11,21 @@ import com.researchspace.model.record.BaseRecord;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.ChatBotFunctionalityHandler;
 import com.researchspace.service.UserAppConfigManager;
+import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.slack.SlackAttachment;
 import com.researchspace.slack.SlackAuthToken;
 import com.researchspace.slack.SlackMessage;
 import com.researchspace.slack.SlackUser;
 import com.researchspace.webapp.controller.AjaxReturnObject;
-import com.researchspace.webapp.controller.BaseController;
+import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.List;
@@ -48,7 +52,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 /** Class responsible for handling connection between RSpace and Slack */
 @Controller
 @RequestMapping("/slack")
-public class SlackController extends BaseController {
+public class SlackController extends BaseOAuth2Controller {
   private static final String USER_ID = "user_id";
   private static final String TEAM_ID = "team_id";
   private static final String SAVE_CONVO_ERROR_GENERIC_MSG =
@@ -100,18 +104,48 @@ public class SlackController extends BaseController {
   @GetMapping("/oauthUrl")
   @ResponseBody
   public AjaxReturnObject<String> oauthUrl() {
+    String state = generateState();
     var url =
         slackOauthAuthorizeUrl
             + "?scope=incoming-webhook,commands,channels:history,users:read,files:read,groups:history,im:history,mpim:history&client_id="
-            + this.clientId;
+            + this.clientId
+            + "&redirect_uri="
+            + encodedRedirectUri()
+            + "&state="
+            + state;
     return new AjaxReturnObject<>(url, null);
+  }
+
+  /**
+   * Slack's oauth.access rejects the token exchange with {@code bad_redirect_uri} unless it is
+   * given the same redirect_uri that was sent to the authorize endpoint, so both callers build it
+   * here.
+   */
+  private String encodedRedirectUri() {
+    return URLEncoder.encode(props.getServerUrl() + "/slack/redirect_uri", StandardCharsets.UTF_8);
   }
 
   @GetMapping("/redirect_uri")
   public String handleSlackRedirect(
-      @RequestParam Map<String, String> params, Model model, HttpSession session) {
+      @RequestParam Map<String, String> params, Model model, HttpServletRequest request) {
     ConnectionResultPage.addConnectionAttributes(
         model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
+
+    try {
+      if (getSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE) == null) {
+        throw new IllegalStateException(getText("connect.authorizationError.stateMismatch"));
+      }
+      verifyStateParameter(request);
+    } catch (IllegalStateException e) {
+      log.warn("Slack OAuth state mismatch");
+      OauthAuthorizationError error =
+          getAuthErrorBuilder()
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {APP_DISPLAY_NAME}))
+              .errorDetails(e.getMessage())
+              .build();
+      model.addAttribute("connectionError", ConnectionResultPage.buildErrorMessage(error));
+      return CONNECTED_VIEW;
+    }
 
     if (params.containsKey("error")) {
       OauthAuthorizationError error =
@@ -132,7 +166,9 @@ public class SlackController extends BaseController {
               + "&client_secret="
               + clientSecret
               + "&code="
-              + authorizationCode;
+              + authorizationCode
+              + "&redirect_uri="
+              + encodedRedirectUri();
       String content = IOUtils.toString(new URL(slackUrl), StandardCharsets.UTF_8);
       model.addAttribute("connectionResponse", content);
       log.info("slack response retrieved fine");

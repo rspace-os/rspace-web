@@ -42,14 +42,15 @@ public class EgnyteController {
   @GetMapping("/egnyteSessionToken")
   @ResponseBody
   public String getEgnyteTokenFromSession(HttpSession session) {
-    log.info("requesting egnyte token, which is: " + session.getAttribute(SESSION_EGNYTE_TOKEN));
+    log.info("Egnyte session token requested");
     return (String) session.getAttribute(SESSION_EGNYTE_TOKEN);
   }
 
+  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"token"})
   @PostMapping("/egnyteSessionToken")
   @ResponseBody
   public String saveEgnyteTokenToSession(@RequestParam("token") String token, HttpSession session) {
-    log.info("saving egnyte token: " + token);
+    log.info("Saving Egnyte token to session");
     session.setAttribute(SESSION_EGNYTE_TOKEN, token);
     return "OK";
   }

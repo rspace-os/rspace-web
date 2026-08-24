@@ -12,6 +12,11 @@ prerequisites change and the database migration is one-way.
 
 ## Upgrading a server
 
+If you followed previous setup instructions, your RSpace is running on Ubuntu 22.04 LTS. 
+We recommend upgrading OS to Ubuntu 24.04 LTS, which will update Tomcat to version 10.
+
+More details in [Migrating RSpace to Tomcat 10](../public/Migrating-RSpace-to-Tomcat-10.md).
+
 ### Requirements
 
 | Component | Before | After |

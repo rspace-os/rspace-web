@@ -4,7 +4,7 @@ import { openDialog } from "./DialogHelpers";
 import { InventoryBatchActionBar } from "./InventoryBatchActionBar";
 import { SearchableResultsTable } from "./SearchableResultsTable";
 
-export type InventoryFilterChip = "Type" | "Owner" | "Bench" | "Status" | "Barcode" | "Tags" | "Baskets";
+export type InventoryFilterChip = "Type" | "Owner" | "Bench" | "Status" | "Tags" | "Baskets";
 
 export type InventoryViewMode = "List" | "Tree" | "Card" | "Grid";
 
