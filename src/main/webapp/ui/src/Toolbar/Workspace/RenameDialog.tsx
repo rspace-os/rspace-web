@@ -17,7 +17,7 @@ import Result from "@/util/result";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/workspace";
 import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import { Dialog } from "../../components/DialogBoundary";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
@@ -28,9 +28,7 @@ export default function Wrapper(): React.ReactNode {
         <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
           <Portal>
             <Alerts>
-              <DialogBoundary>
-                <RenameDialog />
-              </DialogBoundary>
+              <RenameDialog />
             </Alerts>
           </Portal>
         </ThemeProvider>
