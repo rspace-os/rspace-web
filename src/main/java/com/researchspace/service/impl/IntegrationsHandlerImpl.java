@@ -674,7 +674,16 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DSW_APP_NAME:
         return true;
     }
-    return isSingleOptionSetAppConfigIntegration(integrationName);
+    return isValidEmptyIntegration(integrationName)
+        || isSingleOptionSetAppConfigIntegration(integrationName);
+  }
+
+  private boolean isValidEmptyIntegration(String integrationName) {
+    switch (integrationName) {
+      case DBREPO_APP_NAME:
+        return true;
+    }
+    return false;
   }
 
   private boolean isSingleOptionSetAppConfigIntegration(String integrationName) {

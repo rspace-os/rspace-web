@@ -252,6 +252,15 @@ export default interface Resources {
         },
         "usage": "You can export your files and data directly from RSpace to Dataverse. You are able to specify various metadata and controlled vocabulary terms for the deposit."
       },
+      "dbrepo": {
+        "description": "DBRepo integration. TODO: replace this placeholder.",
+        "helpLink": "DBRepo integration docs",
+        "name": "DBRepo",
+        "setup": {
+          "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click the DBRepo icon in the text editor toolbar to open the dialog.</li></ol>"
+        },
+        "usage": "TODO: describe how this integration is used inside RSpace."
+      },
       "digitalCommonsData": {
         "alerts": {
           "connectError": "Could not connect to Digital Commons Data",
@@ -1001,6 +1010,7 @@ export default interface Resources {
       "createTemplate": "c8sxesdqpy-create-a-template",
       "createTemplateFromSample": "c8sxesdqpy-create-a-template#create_a_template_from_a_sample",
       "dataverse": "h14qd5tvjj-dataverse-integration",
+      "dbrepo": "TODO_DBREPO_DOC_ID",
       "dcd": "jj6grnzbdl-digital-commons-data-integration",
       "dmpassistant": "n88a3g86e0-dmp-assistant-integration",
       "dmponline": "pd84qoylzy-dmponline-integration",
@@ -5074,6 +5084,7 @@ export default interface Resources {
       },
       "dialogTitles": {
         "clustermarket": "Insert from Clustermarket",
+        "dbrepo": "DBRepo",
         "galaxy": "Use a Galaxy Workflow",
         "ketcher": "Insert from Ketcher",
         "omero": "Insert from Omero",
@@ -8711,6 +8722,7 @@ export default interface Resources {
           "boxLinkingEnabled": "Enables linking to Box in text field editor. Relevant only if 'box.available' is 'true'",
           "chemistryAvailable": "Makes chemistry integration available to the users. After enabling the integration, users can create and edit chemical sketches, and search for chemical structures in the Workspace",
           "clustermarketAvailable": "Makes Calira (formerly Clustermarket) integration available. After enabling the integration, users can link to data regarding laboratory equipment.",
+          "dbrepoAvailable": "Makes DBRepo integration available.",
           "digitalCommonsDataAvailable": "Makes DigitalCommonsData integration available.",
           "dmpAssistantAvailable": "Makes DMP Assistant integration available.",
           "dmpToolAvailable": "Makes DMPTool integration available.",

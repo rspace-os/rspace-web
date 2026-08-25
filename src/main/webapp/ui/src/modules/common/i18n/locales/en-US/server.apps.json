@@ -57,6 +57,7 @@
     },
     "dialogTitles": {
       "clustermarket": "Insert from Clustermarket",
+      "dbrepo": "DBRepo",
       "galaxy": "Use a Galaxy Workflow",
       "ketcher": "Insert from Ketcher",
       "omero": "Insert from Omero",

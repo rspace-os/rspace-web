@@ -226,6 +226,15 @@
       },
       "usage": "You can export your files and data directly from RSpace to Dataverse. You are able to specify various metadata and controlled vocabulary terms for the deposit."
     },
+    "dbrepo": {
+      "description": "A repository software for relational databases.",
+      "helpLink": "DBRepo integration docs",
+      "name": "DBRepo",
+      "setup": {
+        "instructions": "<ol><li>Provide your DBRepo credentials and click on Connect.</li><li>Enable the integration.</li><li>When editing a document, click on the DBRepo icon in the text editor toolbar to insert links to your DBRepo datasets.</li></ol>"
+      },
+      "usage": "You can insert links to your DBRepo datasets into RSpace documents."
+    },
     "digitalCommonsData": {
       "alerts": {
         "connectError": "Could not connect to Digital Commons Data",

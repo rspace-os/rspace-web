@@ -79,6 +79,7 @@ export type IntegrationStates = {
       }>
     >
   >;
+  DBREPO: IntegrationState<emptyObject>;
   DIGITALCOMMONSDATA: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
@@ -322,6 +323,13 @@ function decodeDataverse(data: FetchedState): IntegrationStates["DATAVERSE"] {
               : Optional.empty(),
           )
         : [],
+  };
+}
+
+function decodeDBRepo(data: FetchedState): IntegrationStates["DBREPO"] {
+  return {
+    mode: parseState(data),
+    credentials: {},
   };
 }
 
@@ -775,6 +783,7 @@ function decodeIntegrationStates(
     CHEMISTRY: decodeChemistry(data.CHEMISTRY),
     CLUSTERMARKET: decodeClustermarket(data.CLUSTERMARKET),
     DATAVERSE: decodeDataverse(data.DATAVERSE),
+    DBREPO: decodeDBRepo(data.DBREPO),
     DIGITALCOMMONSDATA: decodeDigitalCommonsData(data.DIGITALCOMMONSDATA),
     DMPASSISTANT: decodeDmpAssistant(data.DMPASSISTANT),
     DMPONLINE: decodeDmponline(data.DMPONLINE),
@@ -889,6 +898,14 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
           creds,
         ),
       ),
+    };
+  }
+  if (integration === "DBREPO") {
+    return {
+      name: "DBREPO",
+      available: data.mode !== "UNAVAILABLE",
+      enabled: data.mode === "ENABLED",
+      options: {},
     };
   }
   if (integration === "DIGITALCOMMONSDATA") {
@@ -1380,6 +1397,8 @@ export function useIntegrationsEndpoint(): {
               return decodeClustermarket(responseData.data) as IntegrationStates[I];
             case "DATAVERSE":
               return decodeDataverse(responseData.data) as IntegrationStates[I];
+            case "DBREPO":
+              return decodeDBRepo(responseData.data) as IntegrationStates[I];
             case "DIGITALCOMMONSDATA":
               return decodeDigitalCommonsData(responseData.data) as IntegrationStates[I];
             case "DMPASSISTANT":
@@ -1482,6 +1501,8 @@ export function useIntegrationsEndpoint(): {
           return decodeClustermarket(response.data.data) as IntegrationStates[I];
         case "DATAVERSE":
           return decodeDataverse(response.data.data) as IntegrationStates[I];
+        case "DBREPO":
+          return decodeDBRepo(response.data.data) as IntegrationStates[I];
         case "DIGITALCOMMONSDATA":
           return decodeDigitalCommonsData(response.data.data) as IntegrationStates[I];
         case "DMPASSISTANT":

@@ -12,6 +12,7 @@ import Box from "./integrations/Box";
 import Chemistry from "./integrations/Chemistry";
 import Clustermarket from "./integrations/Clustermarket";
 import Dataverse from "./integrations/Dataverse";
+import DBRepo from "./integrations/DBRepo";
 import DigitalCommonsData from "./integrations/DigitalCommonsData";
 import DMPAssistant from "./integrations/DMPAssistant";
 import DMPonline from "./integrations/DMPonline";
@@ -96,6 +97,15 @@ function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactN
       });
     },
     [update, integrationStates.DATAVERSE],
+  );
+
+  const dbrepoUpdate = React.useCallback(
+    (newState: IntegrationStates["DBREPO"]) => {
+      void runInAction(async () => {
+        integrationStates.DBREPO = await update("DBREPO", newState);
+      });
+    },
+    [update, integrationStates.DBREPO],
   );
 
   const digitalCommonsDataUpdate = React.useCallback(
@@ -353,6 +363,9 @@ function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactN
       )}
       {integrationStates.DATAVERSE.mode === mode && (
         <Dataverse integrationState={integrationStates.DATAVERSE} update={dataverseUpdate} />
+      )}
+      {integrationStates.DBREPO.mode === mode && (
+        <DBRepo integrationState={integrationStates.DBREPO} update={dbrepoUpdate} />
       )}
       {integrationStates.DIGITALCOMMONSDATA.mode === mode && (
         <DigitalCommonsData integrationState={integrationStates.DIGITALCOMMONSDATA} update={digitalCommonsDataUpdate} />
