@@ -39,7 +39,7 @@ import Result from "../util/result";
 import RsSet, { flattenWithIntersectionWithEq } from "../util/set";
 import Alerts from "./Alerts/Alerts";
 import Analytics from "./Analytics";
-import { Dialog, DialogBoundary } from "./DialogBoundary";
+import { Dialog } from "./DialogBoundary";
 import ErrorBoundary from "./ErrorBoundary";
 import FolderSelectionDialog from "./FolderSelectionDialog";
 import GroupDetails from "./GroupDetails";
@@ -74,9 +74,7 @@ export default function Wrapper(): React.ReactNode {
         <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
           <Portal>
             <Alerts>
-              <DialogBoundary>
-                <ShareDialogFromGlobalEvent />
-              </DialogBoundary>
+              <ShareDialogFromGlobalEvent />
             </Alerts>
           </Portal>
         </ThemeProvider>

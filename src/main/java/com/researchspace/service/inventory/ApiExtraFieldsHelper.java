@@ -187,8 +187,8 @@ public class ApiExtraFieldsHelper implements Validator {
    * would linger with {@code deleted=false} after its parent field is gone. (The
    * structured-link-field clear path differs deliberately: clearing a value dereferences the row,
    * which the orphanRemoval mapping hard-deletes at flush; see {@code
-   * SampleApiManagerImpl#applyLinkFieldValue}.) No-op for non-link fields or a link field that has
-   * no link yet.
+   * InventoryApiManagerImpl#applyLinkFieldValue}.) No-op for non-link fields or a link field that
+   * has no link yet.
    */
   private void softDeleteLinkIfPresent(ExtraField dbField, User user) {
     if (dbField instanceof ExtraLinkField) {

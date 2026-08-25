@@ -4,7 +4,6 @@ import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
-import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.api.v1.model.ApiSample;
@@ -25,7 +24,6 @@ import com.researchspace.dao.SampleDao;
 import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
-import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.events.InventoryAccessEvent;
 import com.researchspace.model.events.InventoryCreationEvent;
 import com.researchspace.model.events.InventoryDeleteEvent;
@@ -43,14 +41,10 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
-import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
-import com.researchspace.service.inventory.InventoryLinkManager;
-import com.researchspace.service.inventory.InventoryLinkValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -58,10 +52,8 @@ import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -81,7 +73,6 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
-  private @Autowired InventoryLinkManager inventoryLinkManager;
 
   @Override
   public ApiSampleSearchResult getSamplesForUser(
@@ -405,7 +396,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       InventoryEntityField inventoryEntityField = inventoryEntityFieldList.get(i);
 
       if (inventoryEntityField instanceof InventoryLinkField) {
-        applyLinkFieldValue((InventoryLinkField) inventoryEntityField, apiField, user);
+        applyLinkFieldValueOnCreate((InventoryLinkField) inventoryEntityField, apiField, user);
       } else if (inventoryEntityField.isOptionsStoringField()) {
         inventoryEntityField.setSelectedOptions(apiField.getSelectedOptions());
       } else {
@@ -415,143 +406,14 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   }
 
   /**
-   * Applies a sample's chosen link value to its structured link field, going through the {@link
-   * InventoryLinkManager} so the target is parsed/validated and the Envers revision captured (the
-   * same path used by extra-field links). An unchanged payload is a no-op (previously every save
-   * replaced the row, resetting its identity and creation date); a changed payload updates the
-   * field's existing InventoryLink row in place; clearing the value dereferences the row, which the
-   * field's {@code orphanRemoval} mapping hard-deletes at flush (an Envers DEL revision keeps the
-   * history in {@code InventoryLink_AUD}; a prior soft-delete write would be collapsed into that
-   * same DEL revision, so none is attempted). This differs deliberately from the extra-field delete
-   * path, where the FIELD itself is soft-deleted and its link row therefore survives soft-deleted
-   * alongside it. The chosen relation type must be permitted by the template field's
-   * allowed-relation-types whitelist (an empty whitelist permits all).
+   * Applies link values to an existing sample's (or sample template's) structured link fields. The
+   * shared implementation cannot read {@code isTemplate()} off {@link InventoryRecord}, so this
+   * passes it in.
    */
-  boolean applyLinkFieldValue(
-      InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
-    ApiInventoryLink apiLink = apiField.getLink();
-    String target = apiLink == null ? null : apiLink.getTargetGlobalId();
-    InventoryLink existing = field.getLink();
-    if (target == null || target.trim().isEmpty()) {
-      if (existing == null) {
-        return false; // no link before, none requested now
-      }
-      field.setLink(null); // orphanRemoval hard-deletes the dereferenced row at flush
-      return true;
-    }
-    Long effectivePin =
-        apiLink.derivedVersionPin() != null ? apiLink.derivedVersionPin() : apiLink.getVersionPin();
-    // compare on the parsed base id, not the raw string: the stored row holds the
-    // unsuffixed id (the pin lives in versionPin), so a suffixed incoming id like
-    // "SA2v4" would otherwise never compare equal and every save would fire a
-    // spurious update (and Envers revision). Mirrors ApiExtraFieldsHelper.linkChanged.
-    GlobalIdentifier incoming = parseTargetOrNull(target);
-    if (existing != null
-        && incoming != null
-        && incoming.getPrefix() == existing.getTargetPrefix()
-        && Objects.equals(incoming.getDbId(), existing.getTargetDbId())
-        && Objects.equals(effectivePin, existing.getVersionPin())
-        && Objects.equals(apiLink.getRelationType(), existing.getRelationType())) {
-      return false; // unchanged
-    }
-    assertRelationAllowed(field, apiLink.getRelationType());
-    if (existing != null) {
-      field.setLink(inventoryLinkManager.updateLink(existing, apiLink, user));
-    } else {
-      field.setLink(inventoryLinkManager.createLink(apiLink, user));
-    }
-    return true;
-  }
-
-  /**
-   * Applies link values to an existing sample's structured link fields (the update path). The DTO
-   * apply loop leaves link fields untouched because it cannot reach the service-layer {@link
-   * InventoryLinkManager}; this matches each modified link field by id and applies it here.
-   */
-  private boolean applyLinkFieldValuesOnUpdate(
-      ApiSampleWithoutSubSamples apiSample, Sample dbSample, User user) {
-    if (apiSample.getFields() == null) {
-      return false;
-    }
-    boolean changed = false;
-    for (ApiInventoryEntityField apiField : apiSample.getFields()) {
-      if (apiField.isNewFieldRequest()
-          || apiField.isDeleteFieldRequest()
-          || apiField.getId() == null) {
-        continue;
-      }
-      Optional<InventoryEntityField> dbFieldOpt =
-          dbSample.getActiveFields().stream()
-              .filter(
-                  f ->
-                      f instanceof InventoryLinkField
-                          && Objects.equals(f.getId(), apiField.getId()))
-              .findFirst();
-      if (dbFieldOpt.isPresent()) {
-        rejectSelfLink(apiField.getLink(), dbSample);
-        changed |= applyLinkFieldValue((InventoryLinkField) dbFieldOpt.get(), apiField, user);
-      }
-    }
-    return changed;
-  }
-
-  private void assertRelationAllowed(InventoryLinkField field, String relationType) {
-    // a chosen relation must be a real DataCite relation type, even when the whitelist is empty.
-    // ApiRuntimeException maps to a 422 with the resolved bundle message, where a raw
-    // IllegalArgumentException would surface as an unmapped 500.
-    if (!DataCiteRelationType.isValid(relationType)) {
-      throw new ApiRuntimeException("errors.inventory.field.linkRelationTypeInvalid", relationType);
-    }
-    String allowed = field.getAllowedRelationTypes();
-    if (allowed == null || allowed.trim().isEmpty()) {
-      return; // empty whitelist = all relation types allowed
-    }
-    if (!Arrays.asList(allowed.split("\\|")).contains(relationType)) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.linkRelationTypeNotPermitted", relationType, field.getName());
-    }
-  }
-
-  private void rejectSelfLink(ApiInventoryLink apiLink, Sample dbSample) {
-    if (apiLink == null || dbSample.getOid() == null) {
-      return;
-    }
-    GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
-    if (target == null) {
-      return; // malformed/blank targets are handled by the manager / clear path
-    }
-    if (InventoryLinkValidator.isSelfLink(target, dbSample.getOid().toString())) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
-    }
-  }
-
-  private GlobalIdentifier parseTargetOrNull(String targetGlobalId) {
-    try {
-      return new GlobalIdentifier(targetGlobalId);
-    } catch (IllegalArgumentException | NullPointerException ex) {
-      return null;
-    }
-  }
-
-  /**
-   * Soft-deletes the {@link InventoryLink} backing a structured link field once that field has been
-   * soft-deleted, so the link row (and its Envers audit trail) stays in step with the field. The
-   * field's {@code deleted} flag is flipped in the model layer (a template link-field delete, or
-   * its propagation to child samples through {@code Sample#updateToLatestTemplateVersion}), which
-   * cannot reach the service-layer {@link InventoryLinkManager}; a soft-delete is also an ordinary
-   * update rather than a JPA remove, so the {@code cascade}/{@code orphanRemoval} on {@code
-   * InventoryLinkField#link} never fires. Without this the link row would linger with {@code
-   * deleted=false} after its field is gone. No-op unless the field is a deleted {@link
-   * InventoryLinkField} whose link is still live.
-   */
-  void softDeleteLinkOfDeletedLinkField(InventoryEntityField field, User user) {
-    if (field instanceof InventoryLinkField && field.isDeleted()) {
-      InventoryLink link = ((InventoryLinkField) field).getLink();
-      if (link != null && !link.isDeleted()) {
-        inventoryLinkManager.deleteLink(link, user);
-      }
-    }
+  boolean applyLinkFieldValuesOnUpdate(
+      ApiSampleWithoutSubSamples apiSample, SampleEntity dbSample, User user) {
+    return applyLinkFieldValuesOnUpdate(
+        apiSample.getFields(), dbSample.getActiveFields(), dbSample, dbSample.isTemplate(), user);
   }
 
   private void publishAuditEventsForCreatedSample(User user, Sample savedSample) {
@@ -810,8 +672,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
         identifiersHelper.createAssignRequestedIdentifiers(
             apiSample.getIdentifiers(), dbSample, user);
     contentChanged |= apiSample.applyChangesToDatabaseSample(dbSample, user);
-    if (!dbSample.isTemplate()) {
-      contentChanged |= applyLinkFieldValuesOnUpdate(apiSample, (Sample) dbSample, user);
+    contentChanged |= applyLinkFieldValuesOnUpdate(apiSample, dbSample, user);
+    if (dbSample.isTemplate()) {
+      assertDefaultLinksMatchWhitelists(dbSample.getActiveFields());
     }
     contentChanged |= saveSharingACLForIncomingApiInvRec(dbSample, apiSample);
     contentChanged |= saveIncomingSampleImage(dbSample, apiSample, user);
@@ -1060,7 +923,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     sampleTemplate.setDefaultUnitId(apiSample.getDefaultUnitId());
     setBasicFieldsFromNewIncomingApiInventoryRecord(sampleTemplate, apiSample, user);
     setSampleCoreProperties(apiSample, sampleTemplate);
-    createFields(apiSample, sampleTemplate);
+    createFields(apiSample, sampleTemplate, user);
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(sampleTemplate);
     SampleTemplate savedSampleTemplate = sampleTemplateDao.persistSampleTemplate(sampleTemplate);
@@ -1072,11 +935,12 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     return rc;
   }
 
-  private void createFields(ApiSampleTemplatePost apiSample, SampleTemplate sample) {
+  void createFields(ApiSampleTemplatePost apiSample, SampleTemplate sample, User user) {
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         apiSample.getFields(), null);
     for (ApiInventoryEntityField field : apiSample.getFields()) {
       InventoryEntityField toAdd = apiFieldToModelFieldFactory.apiInventoryFieldToModelField(field);
+      applyDefaultLinkOfNewTemplateField(toAdd, field, sample, user);
       sample.addSampleField(toAdd);
     }
   }
@@ -1102,7 +966,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     return (ApiSampleTemplate) getOutgoingApiSample(dbTemplate, user);
   }
 
-  private boolean createDeleteRequestedFieldsInDbSampleTemplate(
+  boolean createDeleteRequestedFieldsInDbSampleTemplate(
       ApiSampleWithoutSubSamples apiSample, SampleTemplate dbTemplate, User user) {
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         apiSample.getFields(), null);
@@ -1111,6 +975,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       if (apiField.isNewFieldRequest()) {
         InventoryEntityField toAdd =
             apiFieldToModelFieldFactory.apiInventoryFieldToModelField(apiField);
+        applyDefaultLinkOfNewTemplateField(toAdd, apiField, dbTemplate, user);
         dbTemplate.addSampleField(toAdd);
         changed = true;
       }

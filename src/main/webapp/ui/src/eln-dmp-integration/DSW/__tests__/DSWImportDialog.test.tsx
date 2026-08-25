@@ -7,7 +7,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
-import type { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import type { DswConfig } from "@/eln-dmp-integration/DmpImportDialogs";
 import materialTheme from "../../../theme";
 import DSWImportDialog from "../DSWImportDialog";
 

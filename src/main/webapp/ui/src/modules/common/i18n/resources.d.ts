@@ -2919,7 +2919,7 @@ export default interface Resources {
         },
         "link": {
           "relationHelper": "Pick a DataCite relation type",
-          "targetHelper": "Paste a Global ID, or use the Browse buttons above.",
+          "targetHelper": "Paste a Global ID, or Browse",
           "targetNotFound": "{globalId} does not exist, or you do not have permission to view it."
         },
         "maxCharacters": "Must be no more than {max} characters.",
@@ -3201,7 +3201,10 @@ export default interface Resources {
           "pinVersion": "Pin version",
           "pinVersionFor": "Pin version for {globalId}",
           "pinnedVersion": "Pinned to v{version}",
-          "targetGlobalId": "Target Global ID"
+          "target": "Target",
+          "targetGlobalId": "Target Global ID",
+          "targetPlaceholder": "e.g. SA123",
+          "version": "Version"
         },
         "elnFolderBrowser": {
           "failedToLoadContents": "Failed to load contents",
@@ -3218,6 +3221,10 @@ export default interface Resources {
           "label": "Browse the ELN for a link target",
           "title": "Browse ELN",
           "workspaceTreeLabel": "Workspace tree"
+        },
+        "field": {
+          "label": "Link field",
+          "namedLabel": "Link field {name}"
         },
         "gallerySections": {
           "labels": {
@@ -3392,6 +3399,9 @@ export default interface Resources {
           "allowedRelationshipTypes": "Allowed relationship types",
           "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
           "allowedRelationshipTypesExplanationInstrument": "The DataCite relationship types that links may use on instruments created from this template. Leave empty to allow all relationship types.",
+          "defaultLink": "Default Link (optional)",
+          "defaultLinkExplanation": "An optional link applied to every item created from this template. Its relationship type must be one of the allowed types above. Items can change or remove it afterwards.",
+          "defaultLinkTarget": "Default link target",
           "none": "None"
         },
         "move": {
@@ -6728,10 +6738,11 @@ export default interface Resources {
           "unexportableUsers": "Cannot export data of users [{0}] - users not found, or no permission"
         },
         "field": {
-          "deleteRequestIdMissing": "''id'' property not provided for a field with ''deleteFieldRequest'' flag.",
+          "deleteRequestIdMissing": "'id' property not provided for a field with 'deleteFieldRequest' flag.",
           "deleteRequestIdUnknown": "Field id {0} doesn''t match the id of any pre-existing field.",
           "duplicateName": "Field name ''{0}'' is duplicated. Field names on a record must be unique.",
           "link": {
+            "defaultRelationTypeNotPermitted": "Field ''{1}'' has a default link using relation type ''{0}'', so that type cannot be removed from its allowed relationship types. Change or remove the default link first.",
             "selfLinkForbidden": "An item cannot link to itself: ''{0}''."
           },
           "linkRelationTypeInvalid": "Relation type ''{0}'' is not in the DataCite controlled vocabulary.",

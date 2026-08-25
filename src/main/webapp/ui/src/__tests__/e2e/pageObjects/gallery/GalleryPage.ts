@@ -84,8 +84,25 @@ export class GalleryPage extends BasePage {
     await this.searchInput.fill(name);
   }
 
-  async openDSWImport(alias: string): Promise<DSWImportDialogComponent> {
+  /**
+   * Finds all DSW items by the alias-independent suffix of their accessible name.
+   * Playwright uses substring matching because each name starts with its connection alias.
+   */
+  dswImportMenuItems(): Locator {
+    return this.page.getByRole("menuitem", { name: "DSW / FAIR Wizard" });
+  }
+
+  mountedCreateMenu(): Locator {
+    return this.page.getByRole("menu", { name: "Create", exact: true, includeHidden: true });
+  }
+
+  async openCreateMenu(): Promise<void> {
     await this.sidebar.createButton.click();
+    await this.page.getByRole("menu", { name: "Create", exact: true }).waitFor({ state: "visible" });
+  }
+
+  /** Requires an open Create menu. */
+  async clickDSWImport(alias: string): Promise<DSWImportDialogComponent> {
     await this.page.getByRole("menuitem", { name: `${alias} DSW / FAIR Wizard` }).click();
     const dialog = new DSWImportDialogComponent(this.page);
     await dialog.waitForOpen();

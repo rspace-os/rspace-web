@@ -18,21 +18,15 @@ beforeEach(() => {
 afterEach(cleanup);
 
 /*
- * PRT-1118. With a DMP integration enabled, dismissing the Gallery create menu
- * froze the page: a re-render landing while the menu was mid-exit cancelled
- * react-transition-group's `onExited` (mui/material-ui#32286), so the menu's
- * Modal never unmounted and its invisible (opacity-0) backdrop kept intercepting
- * every click. The fix (SidebarCreateMenu.tsx) makes the closed menu click-through.
+ * PRT-1118 and PRT-1135 cover mui/material-ui#32286. A Gallery Create menu could remain mounted
+ * after its exit, leaving an invisible backdrop and leaked `aria-hidden` attributes. MUI 9.3.1
+ * fixes the issue in PR #48881. DialogBoundary.spec.tsx verifies both upstream triggers.
  *
- * The freeze only manifests under a production React build (`-DgenerateReactDist`,
- * not `-DreactDevMode`, which StrictMode-masks it) and the underlying race is too
- * timing-dependent to reproduce deterministically here, so there is no automated
- * test for the frozen state. This spec guards the deterministic half in the
- * normal browser suite: the OPEN menu must stay interactive (the pointer-events
- * condition must never be inverted onto the open state).
+ * These tests verify removal of the `pointerEvents: "none"` workaround. The open menu remains
+ * interactive, stays mounted below a DMP dialog, and unmounts after the dialog closes.
  */
 describe("Gallery create menu (DMP enabled)", () => {
-  test("the open menu and its DMP option are interactive (pointer-events not disabled)", async () => {
+  test("the open menu and its DMP option are interactive", async () => {
     render(<CreateMenuStory />);
 
     await sidebar.openCreateMenu();
@@ -53,7 +47,8 @@ describe("Gallery create menu (DMP enabled)", () => {
 
     await expect.element(sidebar.dmpDialog).toBeVisible();
     expect(sidebar.modalZIndex(sidebar.dmpDialog)).toBeGreaterThan(menuZIndex);
-    await expect.element(sidebar.menu).toBeVisible();
+    /* Count menu lists because ModalManager hides the menu from role queries (RSDEV-1317). */
+    await expect.poll(() => sidebar.mountedMenuCount()).toBe(1);
   });
 
   test("the Gallery SPA keeps the create menu open until the DMP dialog closes", async () => {
@@ -65,10 +60,11 @@ describe("Gallery create menu (DMP enabled)", () => {
 
     await expect.element(sidebar.dmpDialog).toBeVisible();
     expect(sidebar.modalZIndex(sidebar.dmpDialog)).toBeGreaterThan(menuZIndex);
-    await expect.element(sidebar.menu).toBeVisible();
+    await expect.poll(() => sidebar.mountedMenuCount()).toBe(1);
 
     await sidebar.closeDmpDialog.click();
     await expect.element(sidebar.dmpDialog).not.toBeInTheDocument();
-    await expect.element(sidebar.menu).not.toBeInTheDocument();
+    /* Role queries cannot distinguish an unmounted menu from an aria-hidden menu (PRT-1135). */
+    await expect.poll(() => sidebar.mountedMenuCount()).toBe(0);
   });
 });
