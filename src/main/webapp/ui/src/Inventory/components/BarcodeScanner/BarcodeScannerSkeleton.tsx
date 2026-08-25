@@ -108,7 +108,7 @@ export default function BarcodeScannerSkeleton({
       spacing={1}
     >
       <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }} spacing={1}>
-        {/* the help icon stays outside the DialogTitle, which names the dialog */}
+        {/* keep the help icon out of the DialogTitle: its tooltip would land in the dialog's accessible name */}
         <DialogTitle sx={{ p: 0 }}>{t("barcodeScanner.heading")}</DialogTitle>
         <HelpLinkIcon link={helpDocsArticleUrl("barcodes")} title={t("barcodeScanner.helpTitle")} />
       </Stack>
