@@ -142,7 +142,11 @@ function Toolbar({
         {t("igsnTable.scan")}
       </Button>
       {/* a centered dialog: the video only grows once the camera starts, which would overflow an anchored popover */}
-      <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} aria-label={t("igsnTable.scan")}>
+      <Dialog
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        slotProps={{ paper: { "aria-label": t("igsnTable.scan") } }}
+      >
         <BarcodeScanner
           onScan={(result) => {
             setLocalSearchTerm(result.rawValue);

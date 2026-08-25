@@ -354,7 +354,7 @@ function FieldCard<
               <Dialog
                 open={scannerOpen}
                 onClose={() => setScannerOpen(false)}
-                aria-label={t("fields.barcodes.actions.scan")}
+                slotProps={{ paper: { "aria-label": t("fields.barcodes.actions.scan") } }}
               >
                 <BarcodeScanner
                   onClose={() => {
