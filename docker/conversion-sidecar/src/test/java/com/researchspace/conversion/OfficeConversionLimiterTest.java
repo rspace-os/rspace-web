@@ -18,9 +18,11 @@ class OfficeConversionLimiterTest {
   @Test
   void rejectsImmediatelyWhenAllSlotsAreBusyAndReleasesTheSlot() {
     limiter.runWord(
+        "deployment-a",
         () -> {
           ConversionException error =
-              assertThrows(ConversionException.class, () -> limiter.runWord(() -> null));
+              assertThrows(
+                  ConversionException.class, () -> limiter.runWord("deployment-a", () -> null));
           assertEquals(HttpStatus.TOO_MANY_REQUESTS, error.status());
           assertEquals(ConversionError.SERVICE_BUSY, error.error());
           assertEquals(1, metrics.counter("rspace.conversion.office.rejected").count());
@@ -28,7 +30,7 @@ class OfficeConversionLimiterTest {
           return null;
         });
 
-    assertEquals("available", limiter.runWord(() -> "available"));
+    assertEquals("available", limiter.runWord("deployment-a", () -> "available"));
     assertEquals(0, metrics.get("rspace.conversion.office.active").gauge().value());
   }
 
@@ -43,19 +45,36 @@ class OfficeConversionLimiterTest {
         IllegalStateException.class,
         () ->
             limiter.runWord(
+                "deployment-a",
                 () -> {
                   throw new IllegalStateException("failed");
                 }));
 
-    assertEquals("available", limiter.runWord(() -> "available"));
+    assertEquals("available", limiter.runWord("deployment-a", () -> "available"));
   }
 
   @Test
   void pdfAndWordUseIndependentSlots() {
     limiter.runPdf(
+        "deployment-a",
         () -> {
-          assertEquals("word", limiter.runWord(() -> "word"));
-          assertThrows(ConversionException.class, () -> limiter.runPdf(() -> null));
+          assertEquals("word", limiter.runWord("deployment-a", () -> "word"));
+          assertThrows(ConversionException.class, () -> limiter.runPdf("deployment-a", () -> null));
+          return null;
+        });
+  }
+
+  @Test
+  void deploymentLimitDoesNotConsumeAnotherDeploymentsSlot() {
+    OfficeConversionLimiter twoGlobalSlots =
+        new OfficeConversionLimiter(properties(2), new SimpleMeterRegistry());
+
+    twoGlobalSlots.runWord(
+        "deployment-a",
+        () -> {
+          assertThrows(
+              ConversionException.class, () -> twoGlobalSlots.runWord("deployment-a", () -> null));
+          assertEquals("other", twoGlobalSlots.runWord("deployment-b", () -> "other"));
           return null;
         });
   }
@@ -66,7 +85,9 @@ class OfficeConversionLimiterTest {
         Path.of("/tmp"),
         Duration.ofSeconds(1),
         capacity,
+        1,
         1024,
-        Path.of("/bin/true"));
+        Path.of("/bin/true"),
+        Path.of("/credentials"));
   }
 }
