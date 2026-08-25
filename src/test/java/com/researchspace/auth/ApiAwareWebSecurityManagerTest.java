@@ -3,7 +3,6 @@ package com.researchspace.auth;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,16 +40,23 @@ public class ApiAwareWebSecurityManagerTest {
 
   @Test
   public void statelessApiLoginKeepsArrivingSessionId() {
-    when(request.getAttribute(ApiAwareWebSecurityManager.STATELESS_API_LOGIN))
-        .thenReturn(Boolean.TRUE);
-
-    securityManager.beforeSuccessfulLogin(subjectWithSession());
+    ApiAwareWebSecurityManager.doStatelessLogin(
+        () -> securityManager.beforeSuccessfulLogin(subjectWithSession()));
 
     verify(request, never()).changeSessionId();
   }
 
   @Test
   public void ordinaryLoginStillRotatesSessionId() {
+    securityManager.beforeSuccessfulLogin(subjectWithSession());
+
+    verify(request).changeSessionId();
+  }
+
+  @Test
+  public void statelessMarkIsClearedAfterLogin() {
+    ApiAwareWebSecurityManager.doStatelessLogin(() -> {});
+
     securityManager.beforeSuccessfulLogin(subjectWithSession());
 
     verify(request).changeSessionId();
