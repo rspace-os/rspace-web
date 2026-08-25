@@ -148,23 +148,30 @@ describe("Omero", () => {
   });
   test("A failed disconnect leaves the card connected.", async () => {
     const user = userEvent.setup();
+    const addAlert = vi.fn();
     server.use(http.delete("/apps/omero/connect", () => new HttpResponse(null, { status: 500 })));
 
     render(
-      <Omero
-        integrationState={{
-          mode: "DISABLED",
-          credentials: { ACCESS_TOKEN: Optional.present("MASKED") },
-        }}
-        update={() => {}}
-      />,
+      <AlertContext.Provider value={{ addAlert, removeAlert: () => {} }}>
+        <Omero
+          integrationState={{
+            mode: "DISABLED",
+            credentials: { ACCESS_TOKEN: Optional.present("MASKED") },
+          }}
+          update={() => {}}
+        />
+      </AlertContext.Provider>,
     );
 
     await user.click(screen.getByRole("button"));
     await user.click(screen.getByRole("button", { name: "apps:actions.disconnect" }));
 
+    // wait for the 500 to be fully handled first: the Disconnect button is present from the
+    // start, so asserting on it immediately would pass even without the failure guard
+    await waitFor(() => expect(addAlert).toHaveBeenCalledWith(expect.objectContaining({ variant: "error" })));
+
     // the UserConnection row still exists, so the card must not claim to be disconnected
-    expect(await screen.findByRole("button", { name: "apps:actions.disconnect" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "apps:actions.disconnect" })).toBeVisible();
     expect(screen.queryByRole("textbox", { name: "apps:integrations.omero.fields.username" })).not.toBeInTheDocument();
   });
 

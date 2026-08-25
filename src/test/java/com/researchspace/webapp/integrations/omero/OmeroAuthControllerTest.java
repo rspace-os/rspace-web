@@ -149,6 +149,20 @@ class OmeroAuthControllerTest {
     assertReportsFailure(mav, "_,_");
   }
 
+  @ParameterizedTest
+  @CsvSource({"'user_,',pass", "'_,',pass"})
+  void connectRejectsCredentialsFormingTheDelimiterAcrossTheJoinBoundary(
+      String username, String password) throws Exception {
+    // neither half contains "_,_" on its own, but a username ending "_," forms a delimiter match
+    // before the true join boundary, so the stored string would split back into the wrong
+    // credentials and silently break every later OMERO call
+    ModelAndView mav = controller.connect(new OmeroUser(username, password));
+
+    assertNothingStored();
+    verify(jsonClient, never()).login(anyString(), anyString(), anyInt());
+    assertReportsFailure(mav, "_,_");
+  }
+
   @Test
   void connectExcludesTheOmeroPasswordFromTheRequestLog() throws Exception {
     // LoggingInterceptor is mapped to /** and logs every request parameter, so without this
@@ -162,6 +176,11 @@ class OmeroAuthControllerTest {
     assertTrue(
         List.of(annotation.ignoreRequestParams()).contains("omeropassword"),
         "omeropassword must be among the ignored request params");
+    // OmeroUser also has a writable webClientPassword property, so Spring will bind (and the
+    // interceptor would log) a request param of that name even though the UI never sends it
+    assertTrue(
+        List.of(annotation.ignoreRequestParams()).contains("webClientPassword"),
+        "webClientPassword must be among the ignored request params");
   }
 
   private JsonObject anOmeroLoginResponse() {

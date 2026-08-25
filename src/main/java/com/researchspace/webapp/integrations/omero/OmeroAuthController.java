@@ -68,8 +68,15 @@ public class OmeroAuthController extends BaseController {
         || StringUtils.isBlank(loginData.getOmeropassword())) {
       throw new IllegalArgumentException(getText("apps.omero.errors.blankCredentials"));
     }
-    if (loginData.getOmerousername().contains(OmeroAccessTokenReader.credentialsDelimiter)
-        || loginData.getOmeropassword().contains(OmeroAccessTokenReader.credentialsDelimiter)) {
+    // per-half contains() misses a delimiter formed across the join boundary (e.g. username
+    // "user_," + password "pass" stores "user_,_,_pass"), so the real guard is the round trip:
+    // the delimited string must split back into exactly the original two values
+    String[] roundTrip =
+        OmeroAccessTokenReader.createDelimitedStringFromOmeroLogin(loginData)
+            .split(OmeroAccessTokenReader.credentialsDelimiter);
+    if (roundTrip.length != 2
+        || !roundTrip[0].equals(loginData.getOmerousername())
+        || !roundTrip[1].equals(loginData.getOmeropassword())) {
       throw new IllegalArgumentException(
           getText(
               "apps.omero.errors.credentialsDelimiter",
@@ -78,7 +85,7 @@ public class OmeroAuthController extends BaseController {
   }
 
   @PostMapping("/connect")
-  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"omeropassword"})
+  @IgnoreInLoggingInterceptor(ignoreRequestParams = {"omeropassword", "webClientPassword"})
   public ModelAndView connect(OmeroUser loginData) {
     User subject = userManager.getAuthenticatedUserInSession();
     try {
