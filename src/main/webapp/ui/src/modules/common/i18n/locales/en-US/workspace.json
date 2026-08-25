@@ -279,6 +279,15 @@
       "selectedCount": "Selected: {count}",
       "tableLabel": "booking search results"
     },
+    "dbrepo": {
+      "databaseList": "DBRepo databases",
+      "empty": "No DBRepo databases were returned.",
+      "errors": {
+        "load": "Could not load DBRepo databases."
+      },
+      "insert": "Insert database link",
+      "loading": "Loading DBRepo databases..."
+    },
     "galaxy": {
       "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",
       "annotationMetadata": "The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.",

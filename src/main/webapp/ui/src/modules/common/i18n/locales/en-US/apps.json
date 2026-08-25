@@ -2,6 +2,7 @@
   "actions": {
     "connect": "Connect",
     "disconnect": "Disconnect",
+    "reconnect": "Reconnect",
     "refresh": "Refresh",
     "test": "Test"
   },
@@ -227,13 +228,26 @@
       "usage": "You can export your files and data directly from RSpace to Dataverse. You are able to specify various metadata and controlled vocabulary terms for the deposit."
     },
     "dbrepo": {
+      "alerts": {
+        "connectError": "Could not connect to DBRepo",
+        "connectSuccess": "Successfully connected to DBRepo.",
+        "disconnectError": "Could not disconnect from DBRepo",
+        "disconnectSuccess": "Successfully disconnected from DBRepo.",
+        "httpWarning": "This endpoint uses HTTP. DBRepo credentials may be sent without transport encryption."
+      },
+      "credentialsFormLabel": "DBRepo connection details",
       "description": "A repository software for relational databases.",
+      "fields": {
+        "password": "Password",
+        "url": "DBRepo URL",
+        "username": "Username"
+      },
       "helpLink": "DBRepo integration docs",
       "name": "DBRepo",
       "setup": {
-        "instructions": "<ol><li>Provide your DBRepo credentials and click on Connect.</li><li>Enable the integration.</li><li>When editing a document, click on the DBRepo icon in the text editor toolbar to insert links to your DBRepo datasets.</li></ol>"
+        "instructions": "<ol><li>Provide your DBRepo endpoint and credentials, then click Connect.</li><li>Enable the integration.</li><li>When editing a document, click on the DBRepo icon in the text editor toolbar to insert links to your DBRepo databases.</li></ol>"
       },
-      "usage": "You can insert links to your DBRepo datasets into RSpace documents."
+      "usage": "You can insert links to your DBRepo databases into RSpace documents."
     },
     "digitalCommonsData": {
       "alerts": {

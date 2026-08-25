@@ -180,6 +180,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case CLUSTERMARKET_APP_NAME:
         setSingleOAuthConnectionStatus(info, user, CLUSTERMARKET_APP_NAME);
         return;
+      case DBREPO_APP_NAME:
+        setSingleConnectionStatus(info, user, DBREPO_APP_NAME, DBREPO_CONNECTED);
+        return;
       case DMPTOOL_APP_NAME:
         setSingleOAuthConnectionStatus(info, user, DMPTOOL_APP_NAME);
         return;
@@ -288,6 +291,13 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     info.getOptions().put(ACCESS_TOKEN_SETTING, token);
     info.setOauthConnected(true);
     return token;
+  }
+
+  private void setSingleConnectionStatus(
+      IntegrationInfo info, User user, String appName, String connectedSetting) {
+    boolean connected = getTokenForProvider(user, appName).isPresent();
+    info.getOptions().put(connectedSetting, connected);
+    info.setOauthConnected(connected);
   }
 
   private Optional<String> getTokenForProvider(User user, String provider) {

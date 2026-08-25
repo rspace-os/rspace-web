@@ -79,7 +79,11 @@ export type IntegrationStates = {
       }>
     >
   >;
-  DBREPO: IntegrationState<emptyObject>;
+  DBREPO: IntegrationState<{
+    DBREPO_URL: Optional<string>;
+    DBREPO_CONNECTED: boolean;
+    optionsId: Optional<OptionsId>;
+  }>;
   DIGITALCOMMONSDATA: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
@@ -327,9 +331,25 @@ function decodeDataverse(data: FetchedState): IntegrationStates["DATAVERSE"] {
 }
 
 function decodeDBRepo(data: FetchedState): IntegrationStates["DBREPO"] {
+  const optionEntry = Object.entries(data.options).find(([, option]) => {
+    return Parsers.isObject(option)
+      .flatMap(Parsers.isNotNull)
+      .flatMap(Parsers.isRecord)
+      .map((optionRecord) => typeof optionRecord.DBREPO_URL === "string")
+      .orElse(false);
+  });
+  const optionRecord = optionEntry?.[1] as Record<string, unknown> | undefined;
+
   return {
     mode: parseState(data),
-    credentials: {},
+    credentials: {
+      DBREPO_URL:
+        optionRecord && typeof optionRecord.DBREPO_URL === "string"
+          ? Optional.present(optionRecord.DBREPO_URL)
+          : Optional.empty(),
+      DBREPO_CONNECTED: parseCredentialBoolean(data.options, "DBREPO_CONNECTED").orElse(false),
+      optionsId: optionEntry ? Optional.present(optionEntry[0]) : Optional.empty(),
+    },
   };
 }
 
@@ -901,11 +921,15 @@ const encodeIntegrationState = <I extends Integration>(integration: I, data: Int
     };
   }
   if (integration === "DBREPO") {
+    // @ts-expect-error Looks like this is a bug in TypeScript?
+    const creds: IntegrationStates["DBREPO"]["credentials"] = data.credentials;
     return {
       name: "DBREPO",
       available: data.mode !== "UNAVAILABLE",
       enabled: data.mode === "ENABLED",
-      options: {},
+      options: {
+        ...creds.DBREPO_URL.map((url) => ({ DBREPO_URL: url })).orElse({}),
+      },
     };
   }
   if (integration === "DIGITALCOMMONSDATA") {

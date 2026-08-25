@@ -7,6 +7,14 @@
         "download": "A problem occurred when trying to download the file from Box. Please close this window and try again."
       }
     },
+    "dbrepo": {
+      "errors": {
+        "connect": "Could not connect to DBRepo",
+        "invalidUrl": "Check that the DBRepo URL is valid.",
+        "status": "DBRepo returned status {0}.",
+        "unknown": "Unknown error"
+      }
+    },
     "deposit": {
       "errors": {
         "noFile": "No file to deposit"

@@ -28,6 +28,7 @@ export default interface Resources {
     "actions": {
       "connect": "Connect",
       "disconnect": "Disconnect",
+      "reconnect": "Reconnect",
       "refresh": "Refresh",
       "test": "Test"
     },
@@ -253,13 +254,26 @@ export default interface Resources {
         "usage": "You can export your files and data directly from RSpace to Dataverse. You are able to specify various metadata and controlled vocabulary terms for the deposit."
       },
       "dbrepo": {
-        "description": "DBRepo integration. TODO: replace this placeholder.",
+        "alerts": {
+          "connectError": "Could not connect to DBRepo",
+          "connectSuccess": "Successfully connected to DBRepo.",
+          "disconnectError": "Could not disconnect from DBRepo",
+          "disconnectSuccess": "Successfully disconnected from DBRepo.",
+          "httpWarning": "This endpoint uses HTTP. DBRepo credentials may be sent without transport encryption."
+        },
+        "credentialsFormLabel": "DBRepo connection details",
+        "description": "A repository software for relational databases.",
+        "fields": {
+          "password": "Password",
+          "url": "DBRepo URL",
+          "username": "Username"
+        },
         "helpLink": "DBRepo integration docs",
         "name": "DBRepo",
         "setup": {
-          "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click the DBRepo icon in the text editor toolbar to open the dialog.</li></ol>"
+          "instructions": "<ol><li>Provide your DBRepo endpoint and credentials, then click Connect.</li><li>Enable the integration.</li><li>When editing a document, click on the DBRepo icon in the text editor toolbar to insert links to your DBRepo databases.</li></ol>"
         },
-        "usage": "TODO: describe how this integration is used inside RSpace."
+        "usage": "You can insert links to your DBRepo databases into RSpace documents."
       },
       "digitalCommonsData": {
         "alerts": {
@@ -5077,6 +5091,14 @@ export default interface Resources {
           "download": "A problem occurred when trying to download the file from Box. Please close this window and try again."
         }
       },
+      "dbrepo": {
+        "errors": {
+          "connect": "Could not connect to DBRepo",
+          "invalidUrl": "Check that the DBRepo URL is valid.",
+          "status": "DBRepo returned status {0}.",
+          "unknown": "Unknown error"
+        }
+      },
       "deposit": {
         "errors": {
           "noFile": "No file to deposit"
@@ -6771,9 +6793,11 @@ export default interface Resources {
           "b2instDeleteFailed": "Could not delete the instrument PID from B2INST. {0}",
           "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
           "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
+          "b2instRegisterNoDraft": "Could not register a new instrument PID with B2INST: the service accepted the request but returned no draft record.",
           "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
           "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
           "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
+          "dataCiteRegisterNoDraft": "Could not register a new identifier with DataCite: the service accepted the request but returned no draft record.",
           "deleteNotOwner": "You can only delete an identifier that you own.",
           "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
@@ -10438,6 +10462,15 @@ export default interface Resources {
         "maintenanceOnly": "maintenance only",
         "selectedCount": "Selected: {count}",
         "tableLabel": "booking search results"
+      },
+      "dbrepo": {
+        "databaseList": "DBRepo databases",
+        "empty": "No DBRepo databases were returned.",
+        "errors": {
+          "load": "Could not load DBRepo databases."
+        },
+        "insert": "Insert database link",
+        "loading": "Loading DBRepo databases..."
       },
       "galaxy": {
         "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",

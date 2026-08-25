@@ -37,4 +37,23 @@
         </insert>
     </changeSet>
 
+    <changeSet id="2026-08-25c" context="run" author="agent">
+        <comment>Property descriptor for the DBRepo endpoint URL</comment>
+        <insert tableName="PropertyDescriptor">
+            <column name="id" type="NUMERIC" value="NULL"/>
+            <column name="defaultValue" type="STRING" value=""/>
+            <column name="name" type="STRING" value="DBREPO_URL"/>
+            <column name="type" type="NUMERIC" value="2"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="2026-08-25d" context="run" author="agent">
+        <comment>AppConfigElementDescriptor for the DBRepo endpoint URL</comment>
+        <sql>insert into AppConfigElementDescriptor (id, descriptor_id, app_id)
+            select null, pd.id, app.id
+            from PropertyDescriptor pd, App app
+            where app.name='app.dbrepo' and pd.name='DBREPO_URL';
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
