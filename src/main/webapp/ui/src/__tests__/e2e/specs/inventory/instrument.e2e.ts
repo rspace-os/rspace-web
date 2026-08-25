@@ -42,10 +42,7 @@ test.describe(`Instrument`, { tag: [tags.INVENTORY, tags.MOBILE] }, () => {
     await clientInventory.createInstrument({ name: instrumentName, templateId: template.id });
 
     await test.step("When a custom field is added to the template after the instrument already exists", async () => {
-      await page.goto("/inventory/search?resultType=INSTRUMENT_TEMPLATE");
-      await pageInventory.isLoaded();
-      await pageInventory.searchPanel.search(templateName);
-      await pageInventory.searchPanel.open(templateName);
+      await pageInventory.openRecord("INSTRUMENT_TEMPLATE", templateName);
 
       const customFields = pageInventory.detailsPanel.section("Custom Fields");
       await pageInventory.detailsPanel.enterEditMode();
@@ -57,10 +54,7 @@ test.describe(`Instrument`, { tag: [tags.INVENTORY, tags.MOBILE] }, () => {
       await componentToasts.dismissAll();
     });
 
-    await page.goto("/inventory/search?resultType=INSTRUMENT");
-    await pageInventory.isLoaded();
-    await pageInventory.searchPanel.search(instrumentName);
-    await pageInventory.searchPanel.open(instrumentName);
+    await pageInventory.openRecord("INSTRUMENT", instrumentName);
     await pageInventory.detailsPanel.expandSection("Custom Fields");
 
     await expect(pageInventory.detailsPanel.section("Custom Fields").getByText("Serial Number")).toHaveCount(0);
@@ -99,20 +93,17 @@ test.describe(`Instrument`, { tag: [tags.INVENTORY, tags.MOBILE] }, () => {
   test(`As a user, I can create an Instrument Template from an existing Instrument`, async ({
     pageInventory,
     clientInventory,
-    page,
   }) => {
     const instrumentName = uniqueName("e2e-instrument-for-template");
     const templateName = uniqueName("e2e-template-from-instrument");
 
     const instrument = await clientInventory.createInstrument({ name: instrumentName });
 
-    await page.goto(`/inventory/instrument/${instrument.id}`);
-    await pageInventory.isLoaded();
+    await pageInventory.openInstrument(instrument.id);
     const dialog = await pageInventory.detailsPanel.openCreateItemDialog();
     await dialog.createInstrumentTemplate(templateName);
 
-    await page.goto("/inventory/search?resultType=INSTRUMENT_TEMPLATE");
-    await pageInventory.isLoaded();
+    await pageInventory.openSearch("INSTRUMENT_TEMPLATE");
     await pageInventory.searchPanel.search(templateName);
     await expect(pageInventory.searchPanel.row(templateName)).toBeVisible();
   });

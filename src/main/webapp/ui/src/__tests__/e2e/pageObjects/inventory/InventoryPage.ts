@@ -13,6 +13,8 @@ import { FieldmarkDialogComponent } from "@/modules/fieldmark/__tests__/pageObje
 import { BasePage } from "../BasePage";
 import { InventoryImportPage } from "./InventoryImportPage";
 
+type InventoryResultType = "CONTAINER" | "SAMPLE" | "SUBSAMPLE" | "INSTRUMENT" | "INSTRUMENT_TEMPLATE";
+
 export class InventoryPage extends BasePage {
   readonly path = "/inventory";
 
@@ -38,17 +40,22 @@ export class InventoryPage extends BasePage {
     await this.isLoaded();
   }
 
-  async openSearch(resultType: "CONTAINER" | "SAMPLE" | "SUBSAMPLE", parentGlobalId?: string): Promise<void> {
+  async openSearch(resultType: InventoryResultType, parentGlobalId?: string): Promise<void> {
     const search = new URLSearchParams({ resultType });
     if (parentGlobalId) search.set("parentGlobalId", parentGlobalId);
-    await this.page.goto(`/inventory/search?${search}`);
+    await this.page.goto(`${this.path}/search?${search}`);
     await this.isLoaded();
   }
 
-  async openRecord(resultType: "CONTAINER" | "SAMPLE" | "SUBSAMPLE", name: string): Promise<void> {
+  async openRecord(resultType: InventoryResultType, name: string): Promise<void> {
     await this.openSearch(resultType);
     await this.searchPanel.search(name);
     await this.searchPanel.open(name);
+  }
+
+  async openInstrument(id: string | number): Promise<void> {
+    await this.page.goto(`${this.path}/instrument/${id}`);
+    await this.isLoaded();
   }
 
   async openNewContainerForm() {

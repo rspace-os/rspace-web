@@ -33,15 +33,31 @@ async function withSysadminPage<T>(
   }
 }
 
+function mockOrReal<T>(mock: T, real: T): T {
+  return env.integrationMode === "mock" ? mock : real;
+}
+
 async function configureDataciteProvider(
   clientSysadmin: SysadminClient,
   provider: "IGSN_DATACITE" | "PIDINST_DATACITE",
 ): Promise<void> {
-  const serverUrl = env.integrationMode === "mock" ? env.mockBackendBaseUrl : env.igsnServerUrl;
-  const username = env.integrationMode === "mock" ? "mock-igsn-account" : env.igsnAccountId;
-  const password = env.integrationMode === "mock" ? "mock-igsn-password" : env.igsnPassword;
-  const repositoryPrefix = env.integrationMode === "mock" ? "10.99999" : env.igsnRepoPrefix;
-  const account = { enabled: "true" as const, serverUrl, username, password, repositoryPrefix };
+  const account = {
+    enabled: "true" as const,
+    ...mockOrReal(
+      {
+        serverUrl: env.mockBackendBaseUrl,
+        username: "mock-igsn-account",
+        password: "mock-igsn-password",
+        repositoryPrefix: "10.99999",
+      },
+      {
+        serverUrl: env.igsnServerUrl,
+        username: env.igsnAccountId,
+        password: env.igsnPassword,
+        repositoryPrefix: env.igsnRepoPrefix,
+      },
+    ),
+  };
 
   if (provider === "IGSN_DATACITE") {
     await clientSysadmin.configureIgsn({ provider, ...account });
@@ -71,9 +87,14 @@ export const test = apiTest.extend<FlowFixtures>({
     await clientSysadmin.configurePidinst({
       provider: "PIDINST_B2INST",
       enabled: "true",
-      serverUrl: env.integrationMode === "mock" ? env.mockBackendBaseUrl : env.pidinstB2instServerUrl,
-      username: env.integrationMode === "mock" ? "mock-b2inst-community" : env.pidinstB2instCommunityId,
-      password: env.integrationMode === "mock" ? "mock-b2inst-token" : env.pidinstB2instToken,
+      ...mockOrReal(
+        { serverUrl: env.mockBackendBaseUrl, username: "mock-b2inst-community", password: "mock-b2inst-token" },
+        {
+          serverUrl: env.pidinstB2instServerUrl,
+          username: env.pidinstB2instCommunityId,
+          password: env.pidinstB2instToken,
+        },
+      ),
       repositoryPrefix: "",
     });
     if (!(await clientSysadmin.testPidinstConnection())) {
