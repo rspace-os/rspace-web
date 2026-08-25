@@ -23,7 +23,13 @@ type ApiFixtures = {
 export const apiTest = uiTest.extend<ApiFixtures>({
   // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
   apiContext: async ({}, use) => {
-    const context = await request.newContext({ baseURL: env.baseURL });
+    // Playwright request contexts inherit the project's storageState by default, which would
+    // send the signed-in user's session cookie alongside the apiKey header. API clients must be
+    // pure key clients, so start with an explicitly empty storage state.
+    const context = await request.newContext({
+      baseURL: env.baseURL,
+      storageState: { cookies: [], origins: [] },
+    });
     await use(context);
     await context.dispose();
   },

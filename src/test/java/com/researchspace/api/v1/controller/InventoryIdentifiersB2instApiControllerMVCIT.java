@@ -110,7 +110,7 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
 
     // Step A: a template carrying the filled PIDINST-shaped fields. POST /instruments cannot
     // create fields from a fields[] payload, so the instrument is created FROM a template: the
-    // copy path clones each field including its content.
+    // copy path clones each field including its content, bar the landing page (see below).
     ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
     templatePost.setName("PIDINST template copy");
     templatePost
@@ -202,7 +202,30 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
     assertEquals("Commissioned", sent.getDate().get(0).getDateType());
     // "Last calibrated" is not mapped; MeasuredVariable carries the measured quantity verbatim
     assertEquals(List.of("Air temperature"), sent.getMeasuredVariable());
-    assertEquals("https://lab.example.org/aws-42", sent.getLandingPage());
+    /*
+     * The one template field that deliberately does NOT copy across: a landing page names exactly
+     * one physical instrument, so a landing page inherited from the template must never be
+     * registered for the instrument created from it (RSDEV-1307). Nothing refills it either, since
+     * the auto-fill that used to write a /globalId/ address is retired (ADR 0006 item 3), so at this
+     * point the field is blank and what reaches B2INST is the identifier's own public landing page.
+     *
+     * This is the one assertion that composes the whole RSDEV-1254 invariant end to end: the suffix
+     * registered with B2INST is the same suffix the entity's publicLink adopted. The two halves are
+     * pinned separately by unit tests (InventoryIdentifierApiManagerImplUnitTest for DTO->payload,
+     * ApiIdentifiersHelperTest for DTO->entity), but only a full request exercises the seam between
+     * them - and that seam is fragile, because publicLinkSuffix is @JsonIgnore, so the DTO has to
+     * survive from createNewB2instDoi to the entity by object identity. Any serialisation
+     * round-trip introduced on that path would silently drop the suffix, the entity would
+     * self-generate a different one, and a "contains /public/inventory/" assertion would still
+     * pass while the registered address 404s forever.
+     */
+    assertNotNull(registeredDoi.getRsPublicId(), "the identifier must expose its public link");
+    assertTrue(
+        sent.getLandingPage().endsWith("/public/inventory/" + registeredDoi.getRsPublicId()),
+        "the address registered with B2INST must name the page RSpace will serve; registered: "
+            + sent.getLandingPage()
+            + ", identifier publicLink: "
+            + registeredDoi.getRsPublicId());
     assertEquals("Other", sent.getAlternateIdentifier().get(0).getAlternateIdentifierType());
     assertEquals(
         "INV-2025-0042", sent.getAlternateIdentifier().get(0).getAlternateIdentifierValue());

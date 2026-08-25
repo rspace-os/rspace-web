@@ -68,6 +68,15 @@ public interface SubSampleApiManager extends InventoryApiManager<SubSample> {
    */
   ApiSubSample addNewApiSubSampleToSample(ApiSubSample incomingSubSample, Long sampleId, User user);
 
+  /**
+   * Reduces the subsample's quantity by the given used amount (unit-aware, clamped at zero).
+   * Requires edit permission on the subsample. A usage that changes the stored quantity is a
+   * content edit: it bumps the subsample's user-facing version and is recorded in its revision
+   * history (RSDEV-1318). A usage that leaves the quantity unchanged (null or zero usage, or usage
+   * against already-empty stock) makes no change to the stored subsample.
+   *
+   * @return the updated subsample
+   */
   ApiSubSample registerApiSubSampleUsage(Long subsampleId, QuantityInfo usedQuantity, User user);
 
   ApiSubSample addSubSampleNote(Long subSampleId, ApiSubSampleNote subSampleNote, User user);

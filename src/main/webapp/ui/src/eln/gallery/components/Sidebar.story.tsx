@@ -12,7 +12,7 @@ import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { LandmarksProvider } from "@/components/LandmarksContext";
-import DMPToolAccentMenuItem from "@/eln-dmp-integration/DMPTool/DMPToolAccentMenuItem";
+import DmpImportDialogs, { type DmpImportTarget } from "@/eln-dmp-integration/DmpImportDialogs";
 import { UiPreferences } from "@/hooks/api/useUiPreference";
 import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
@@ -92,7 +92,8 @@ export function CreateMenuStory(): React.ReactNode {
 
 export function DMPToolCreateMenuStory({ isPicker }: { isPicker: boolean }): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
-  const { t } = useTranslation("common");
+  const [dmpTarget, setDmpTarget] = React.useState<DmpImportTarget | null>(null);
+  const { t } = useTranslation(["common", "apps"]);
   return (
     <BrowserRouter>
       <GalleryTheme>
@@ -110,8 +111,19 @@ export function DMPToolCreateMenuStory({ isPicker }: { isPicker: boolean }): Rea
             >
               <Button onClick={(event) => setAnchorEl(event.currentTarget)}>{t("actions.create")}</Button>
               <SidebarCreateMenu anchorEl={anchorEl} onClose={() => setAnchorEl(null)}>
-                <DMPToolAccentMenuItem onDialogClose={() => setAnchorEl(null)} />
+                <MenuItem onClick={() => setDmpTarget({ source: "dmptool" })}>
+                  {t("apps:dmpIntegrations.dmptool")}
+                </MenuItem>
               </SidebarCreateMenu>
+              {/* Match Sidebar by rendering the dialog outside the menu. */}
+              <DmpImportDialogs
+                target={dmpTarget}
+                onImport={() => {}}
+                onClose={() => {
+                  setDmpTarget(null);
+                  setAnchorEl(null);
+                }}
+              />
             </ThemeProvider>
           </Alerts>
         </UiPreferences>

@@ -54,20 +54,88 @@ resolved during design. This file is a glossary only — no implementation detai
   PIDINST property that fits them, and inventing one was tried and rejected. A
   documentation-only field is still an ordinary instrument field, so users fill,
   edit and read it as usual; it simply never leaves RSpace.
-- **Materialised default** — a value RSpace fills into a PIDINST-mapped field
-  the user left empty, applied whenever the Instrument is saved rather than at
-  PID registration, so the field is populated from the moment the instrument
-  exists and regardless of whether it is ever registered. Applies to the landing
-  page, whose default is the instrument's own public RSpace address. Only a blank
-  field is filled and a user's own value is never replaced; once written it is an
-  ordinary field value the user may edit, and clearing it and saving fills it
-  again. Instruments carrying no conforming field are untouched, and templates
-  are never filled, since one instrument's address must not be stamped onto every
-  instrument later created from that template.
+- **Legacy auto-filled landing page** — a landing page RSpace itself wrote into
+  an instrument's Landing page field, back when saving an instrument filled a
+  blank field with the record's own globalId address. RSpace no longer writes
+  these, and a blank Landing page now stays blank until a user types a value or
+  an identifier is registered. The ones already in the data are recognised by
+  their `/globalId/<globalId>` tail and are treated as an empty field wherever
+  the field is read: never registered with a provider, since the address needs an
+  RSpace sign-in, and replaced by the public landing page when an identifier is
+  registered. A user who deliberately types such an address is therefore also
+  overridden; that is accepted, because an address needing a sign-in is unfit
+  either way.
+- **Identity-bound field** — a field whose value names exactly one concrete
+  Instrument, so deriving a new record from an existing one must not carry it
+  over. The Landing page is identity-bound. Three derivation paths enforce this
+  today: duplicating an instrument, duplicating a template, and creating an
+  instrument from a template all start the derived record's Landing page blank,
+  whether the source value was written by RSpace or typed by a user. It then
+  stays blank, on an instrument as on a template, until a user types a value or
+  an identifier is registered for it. A value the user supplies directly *on the
+  new record itself* (e.g. typed into the creation form, or sent in the creation
+  request) is theirs and is kept: it is derivation that discards a landing page,
+  never user input. The one value that does *not* count as user input on the new
+  record is the source template's own Landing page echoed back unchanged in the
+  creation request, which is what a client posting a template's fields verbatim
+  sends; it is discarded like any other inherited value, so the guarantee is a
+  property of the service rather than of client cooperation. Because the rule
+  spans layers, the field is recognised by the same name-and-type test in the
+  service layer (`PidinstFields`, shared with the PIDINST mapping) and in the
+  Inventory UI (`InstrumentModel.tsx`), and those two must be changed together.
+  Both resolve a single field, so a record with two conforming fields has only
+  its first treated as identity-bound.
+  Three things are deliberately out of RSDEV-1307's scope. Syncing an instrument
+  to a newer template version keeps the instrument's existing Landing page
+  (correct — it is that instrument's own address) but a Landing page field newly
+  added by the sync stays blank until the next ordinary save, because that path
+  alone does not run the fill. Creating a *template from an instrument* copies
+  the instrument's Landing page into the new template only when the user
+  explicitly ticks that field in the create dialog (content is opt-in per field,
+  and defaults to off), which still leaves a reusable definition holding one
+  instrument's address. And records derived *before* this rule existed are not
+  backfilled: they keep their source's Landing page, and will not self-heal,
+  because the fill only ever writes into a blank field. A migration was not
+  written because a blanket update cannot distinguish an inherited value from
+  one the user legitimately typed.
+  Finally, the rule keys off the English display label "Landing page". If seeded
+  template field labels are ever localised, or a user names the field in another
+  language, every derivation path silently stops clearing it.
 - **Provider record page** — the registered record's own page on the issuing
   provider, distinct from a citable public URL: it exists from registration
   onwards and may require signing in to that provider, so it is never presented
   as the identifier's public address.
+- **Public link suffix** — the unguessable random token that names an
+  identifier's public landing page. Generated when a new identifier registration
+  begins — always before the identifier is created, and before the provider call
+  on the path whose payload carries the address — then immutable for the
+  identifier's lifetime. Every identifier has one, whichever provider registers
+  it. (ADR 0006 records the per-provider ordering and why it differs.)
+- **Public landing page** — the page RSpace serves anonymously for a published
+  identifier, addressed by the public link suffix
+  (`/public/inventory/<suffix>`). Distinct from the instrument's Landing page
+  field (a field value on the record), from the provider record page (the
+  record's page on the provider's site), and from the record's globalId address
+  (which needs an RSpace sign-in). The address exists from the moment
+  registration begins; the page itself resolves only once the identifier is
+  published.
+- **Registered landing page** — the LandingPage value RSpace sends to a PID
+  provider when registering an instrument identifier: the Landing page field
+  when it holds an absolute http(s) address the user typed themselves, otherwise
+  the identifier's public landing page. A legacy auto-filled landing page is
+  never registered — it is a login-walled address, and a landing page is baked into a
+  citable PID once a curator accepts — and neither is any value a resolver could
+  not follow. When no registrable address exists the property is omitted, a
+  missing property being recoverable where a wrong published one is not.
+
+  Registering an instrument identifier also writes that same address into the
+  Landing page field whenever the field held no address the user typed, so the
+  field afterwards shows exactly what was registered rather than drifting from
+  it. A value the user typed is left untouched. The write happens only once the
+  provider has accepted the registration, so a failed registration leaves the
+  field as it was. Deleting the identifier takes that address back out again,
+  leaving the field as empty as it started; here too a value the user typed, and
+  an address belonging to another identifier, are left alone.
 
 ## Record version history
 

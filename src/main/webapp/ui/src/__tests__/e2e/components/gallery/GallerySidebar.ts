@@ -14,7 +14,7 @@ export type GallerySection =
 
 export class GallerySidebar {
   readonly root: Locator;
-  private readonly createButton: Locator;
+  readonly createButton: Locator;
   private readonly openSidebarButton: Locator;
 
   constructor(page: Page) {

@@ -25,6 +25,7 @@ import type { GallerySection } from "../common";
 import { CallableAsposePreview } from "../components/CallableAsposePreview";
 import { CallableImagePreview } from "../components/CallableImagePreview";
 import { CallablePdfPreview } from "../components/CallablePdfPreview";
+import { CallableSnapGenePreview } from "../components/CallableSnapGenePreview";
 import { CallableSnippetPreview } from "../components/CallableSnippetPreview";
 import { CLOSED_MOBILE_INFO_PANEL_HEIGHT } from "../components/InfoPanel";
 import MainPanel from "../components/MainPanel";
@@ -197,24 +198,26 @@ const Picker = observer(
                           width: "calc(100% - 200px)",
                         }}
                       >
-                        <MainPanel
-                          selectedSection={selectedSection}
-                          path={path}
-                          setSelectedSection={(mediaType) => {
-                            setSelectedSection(mediaType);
-                            setPath([]);
-                            setAppliedSearchTerm("");
-                          }}
-                          galleryListing={galleryListing}
-                          folderId={folderId}
-                          refreshListing={refreshListing}
-                          sortOrder={sortOrder}
-                          orderBy={orderBy}
-                          setSortOrder={setSortOrder}
-                          setOrderBy={setOrderBy}
-                          appliedSearchTerm={appliedSearchTerm}
-                          setAppliedSearchTerm={setAppliedSearchTerm}
-                        />
+                        <CallableSnapGenePreview>
+                          <MainPanel
+                            selectedSection={selectedSection}
+                            path={path}
+                            setSelectedSection={(mediaType) => {
+                              setSelectedSection(mediaType);
+                              setPath([]);
+                              setAppliedSearchTerm("");
+                            }}
+                            galleryListing={galleryListing}
+                            folderId={folderId}
+                            refreshListing={refreshListing}
+                            sortOrder={sortOrder}
+                            orderBy={orderBy}
+                            setSortOrder={setSortOrder}
+                            setOrderBy={setOrderBy}
+                            appliedSearchTerm={appliedSearchTerm}
+                            setAppliedSearchTerm={setAppliedSearchTerm}
+                          />
+                        </CallableSnapGenePreview>
                         <DialogActions>
                           <Button onClick={() => onClose()}>{t("actions.cancel")}</Button>
                           <ValidatingSubmitButton

@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import FieldModel from "../../FieldModel";
+import { LANDING_PAGE_FIELD_NAME } from "../../InstrumentModel";
 import { fieldAttrs } from "../FieldModel/mocking";
 import { makeMockInstrument } from "./mocking";
 
@@ -119,6 +120,23 @@ describe("InstrumentModel.overrideFields", () => {
     instrument.overrideFields([source]);
     const fm = instrument.fields[0] as FieldModel;
     expect(fm.allowedRelationTypes).toEqual(["IsDerivedFrom", "IsPartOf"]);
+  });
+
+  test("copies content verbatim, including a URI field named Landing page", () => {
+    // Blanking a derived record's landing page (RSDEV-1307) belongs to setTemplate's
+    // new-instrument path, not here: overrideFields is a plain verbatim copy.
+    const instrument = makeMockInstrument();
+    const source = new FieldModel(
+      fieldAttrs({
+        type: "uri",
+        name: LANDING_PAGE_FIELD_NAME,
+        content: "https://lab.example.org/original",
+        columnIndex: 1,
+      }),
+      instrument,
+    );
+    instrument.overrideFields([source]);
+    expect(instrument.fields[0].content).toBe("https://lab.example.org/original");
   });
 
   test("preserves radio field options", () => {

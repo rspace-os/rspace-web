@@ -18,7 +18,7 @@ import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import Analytics from "../../components/Analytics";
 import Confirm from "../../components/Confirm";
 import CustomTooltip from "../../components/CustomTooltip";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import { Dialog } from "../../components/DialogBoundary";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
@@ -386,200 +386,196 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
       <ErrorBoundary topOfViewport>
         <Portal>
           <Alerts>
-            <DialogBoundary>
-              <Dialog
-                onClose={() => {
-                  materialsStore.setCurrentList(materialsStore.originalList);
-                  setOpen(false);
-                }}
-                open={open}
-                maxWidth="lg"
-                fullWidth
-                fullScreen={fullScreen}
-                slotProps={{
-                  paper: {
-                    sx: {
-                      overflow: "hidden",
-                      // this is to avoid intercom help button
-                      maxHeight: fullScreen ? "unset" : "86vh",
-                      // this is to ensure the picker has enough height even when list is empty
-                      minHeight: "86vh",
-                    },
+            <Dialog
+              onClose={() => {
+                materialsStore.setCurrentList(materialsStore.originalList);
+                setOpen(false);
+              }}
+              open={open}
+              maxWidth="lg"
+              fullWidth
+              fullScreen={fullScreen}
+              slotProps={{
+                paper: {
+                  sx: {
+                    overflow: "hidden",
+                    // Prevent the Intercom button from overlapping the dialog.
+                    maxHeight: fullScreen ? "unset" : "86vh",
+                    // Keep the picker tall enough to display an empty list.
+                    minHeight: "86vh",
                   },
-                }}
-                onClick={() => {
-                  setOpenPicker(false);
-                  setOpenExporter(false);
+                },
+              }}
+              onClick={() => {
+                setOpenPicker(false);
+                setOpenExporter(false);
+              }}
+            >
+              <DialogTitle sx={{ pb: 0.5 }}>
+                {currentList?.id === undefined
+                  ? t("materialsListing.dialog.newTitle")
+                  : t("materialsListing.dialog.title")}{" "}
+                <HelpLinkIcon
+                  link={helpDocsArticleUrl("listOfMaterials")}
+                  title={t("materialsListing.dialog.helpTitle")}
+                />
+                {!isSingleColumn && <MetadataBar currentList={currentList} canEdit={canEdit} isSingleColumn={false} />}
+              </DialogTitle>
+              <DialogContent
+                sx={{
+                  overscrollBehavior: "contain",
+                  WebkitOverflowScrolling: "unset",
                 }}
               >
-                <DialogTitle sx={{ pb: 0.5 }}>
-                  {currentList?.id === undefined
-                    ? t("materialsListing.dialog.newTitle")
-                    : t("materialsListing.dialog.title")}{" "}
-                  <HelpLinkIcon
-                    link={helpDocsArticleUrl("listOfMaterials")}
-                    title={t("materialsListing.dialog.helpTitle")}
-                  />
-                  {!isSingleColumn && (
-                    <MetadataBar currentList={currentList} canEdit={canEdit} isSingleColumn={false} />
-                  )}
-                </DialogTitle>
-                <DialogContent
-                  sx={{
-                    overscrollBehavior: "contain",
-                    WebkitOverflowScrolling: "unset",
-                  }}
-                >
-                  <Grid container>
-                    <Grid sx={disableBackgroundSx(openSlide)} size={12}>
-                      {isSingleColumn && (
-                        <MetadataBar currentList={currentList} canEdit={canEdit} isSingleColumn={isSingleColumn} />
-                      )}
-                      <ActionsBar
-                        setOpenPicker={setOpenPicker}
-                        currentList={currentList}
-                        standalonePage={standalonePage}
-                        onOpenStandalone={onOpenStandalone}
+                <Grid container>
+                  <Grid sx={disableBackgroundSx(openSlide)} size={12}>
+                    {isSingleColumn && (
+                      <MetadataBar currentList={currentList} canEdit={canEdit} isSingleColumn={isSingleColumn} />
+                    )}
+                    <ActionsBar
+                      setOpenPicker={setOpenPicker}
+                      currentList={currentList}
+                      standalonePage={standalonePage}
+                      onOpenStandalone={onOpenStandalone}
+                      canEdit={canEdit}
+                    />
+                    {currentList && (
+                      <MaterialsTable
+                        list={currentList}
+                        isSingleColumn={isSingleColumn}
+                        onRemove={(mat) => currentList.removeMaterial(mat)}
                         canEdit={canEdit}
                       />
-                      {currentList && (
-                        <MaterialsTable
-                          list={currentList}
-                          isSingleColumn={isSingleColumn}
-                          onRemove={(mat) => currentList.removeMaterial(mat)}
-                          canEdit={canEdit}
+                    )}
+                    {currentList && currentList.materials.length === 0 && (
+                      <Typography component="div" variant="body2" color="textPrimary" align="center">
+                        {t("materialsListing.dialog.emptyList")}
+                      </Typography>
+                    )}
+                  </Grid>
+                  <Slide in={openSlide} direction="left">
+                    <CardWrapper>
+                      {openPicker && currentList?.pickerSearch && (
+                        <InventoryPicker
+                          elevation={6}
+                          onAddition={(additions) => {
+                            if (currentList) {
+                              currentList.addMaterials(additions);
+                            }
+                            setOpenPicker(false);
+                          }}
+                          search={currentList.pickerSearch}
+                          header={t("materialsListing.dialog.pickInventoryItems")}
+                          showActions
                         />
                       )}
-                      {currentList && currentList.materials.length === 0 && (
-                        <Typography component="div" variant="body2" color="textPrimary" align="center">
-                          {t("materialsListing.dialog.emptyList")}
-                        </Typography>
+                      {openExporter && currentList && (
+                        <Exporter
+                          elevation={6}
+                          header={t("materialsListing.dialog.exportOptions")}
+                          showActions
+                          selectedResults={currentList.materials.map((m) => m.invRec)}
+                          setOpenExporter={setOpenExporter}
+                          exportOptions={exportOptions}
+                          setExportOptions={setExportOptions}
+                          onExport={() => {
+                            void currentList.export(exportOptions);
+                            setOpenExporter(false);
+                          }}
+                        />
                       )}
-                    </Grid>
-                    <Slide in={openSlide} direction="left">
-                      <CardWrapper>
-                        {openPicker && currentList?.pickerSearch && (
-                          <InventoryPicker
-                            elevation={6}
-                            onAddition={(additions) => {
-                              if (currentList) {
-                                currentList.addMaterials(additions);
-                              }
-                              setOpenPicker(false);
-                            }}
-                            search={currentList.pickerSearch}
-                            header={t("materialsListing.dialog.pickInventoryItems")}
-                            showActions
-                          />
-                        )}
-                        {openExporter && currentList && (
-                          <Exporter
-                            elevation={6}
-                            header={t("materialsListing.dialog.exportOptions")}
-                            showActions
-                            selectedResults={currentList.materials.map((m) => m.invRec)}
-                            setOpenExporter={setOpenExporter}
-                            exportOptions={exportOptions}
-                            setExportOptions={setExportOptions}
-                            onExport={() => {
-                              void currentList.export(exportOptions);
-                              setOpenExporter(false);
-                            }}
-                          />
-                        )}
-                      </CardWrapper>
-                    </Slide>
-                  </Grid>
-                </DialogContent>
-                {!materialsStore.isCurrentListUnchanged && (
-                  <Box sx={{ mr: 3 }}>
-                    <WarningBar />
-                  </Box>
-                )}
-                <DialogActions sx={[barWrapperSx, disableBackgroundSx(openSlide), hideWhenPrintingSx]}>
-                  <Box sx={spacedBetweenRowSx}>
+                    </CardWrapper>
+                  </Slide>
+                </Grid>
+              </DialogContent>
+              {!materialsStore.isCurrentListUnchanged && (
+                <Box sx={{ mr: 3 }}>
+                  <WarningBar />
+                </Box>
+              )}
+              <DialogActions sx={[barWrapperSx, disableBackgroundSx(openSlide), hideWhenPrintingSx]}>
+                <Box sx={spacedBetweenRowSx}>
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    disableElevation
+                    onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(() => {
+                      void (async () => {
+                        if (currentList) {
+                          const changed = materialsStore.hasListChanged;
+                          if (changed) {
+                            await showToastWhilstPending(
+                              t("materialsListing.dialog.savingChanges"),
+                              currentList.update(),
+                            );
+                            materialsStore.setCurrentList(currentList);
+                            refetch();
+                          }
+                          setOpenExporter(true);
+                        }
+                      })();
+                    })}
+                    disabled={!isListExisting || !isListValid}
+                  >
+                    {t("materialsListing.actions.export")}
+                  </Button>
+                  {isListExisting && (
                     <Button
-                      color="primary"
-                      variant="contained"
+                      sx={[{ color: "warningRed" }, { mx: 1 }]}
                       disableElevation
-                      onClick={preventEventBubbling<React.MouseEvent<HTMLButtonElement>>(() => {
-                        void (async () => {
-                          if (currentList) {
-                            const changed = materialsStore.hasListChanged;
-                            if (changed) {
-                              await showToastWhilstPending(
-                                t("materialsListing.dialog.savingChanges"),
-                                currentList.update(),
-                              );
-                              materialsStore.setCurrentList(currentList);
-                              refetch();
+                      onClick={() => void confirmListDeletion()}
+                      disabled={!canEdit}
+                    >
+                      {t("materialsListing.actions.deleteList")}
+                    </Button>
+                  )}
+                  <div>
+                    <Button
+                      sx={{ mx: 1 }}
+                      onClick={
+                        isUnchanged
+                          ? () => setOpen(false)
+                          : () => {
+                              materialsStore.setCurrentList(materialsStore.originalList);
+                              if (isListNew) setOpen(false);
                             }
-                            setOpenExporter(true);
+                      }
+                    >
+                      {isUnchanged ? t("common:actions.close") : t("common:actions.cancel")}
+                    </Button>
+                    <ValidatingSubmitButton
+                      onClick={() => {
+                        void (async () => {
+                          if (currentList && isListValid) {
+                            if (isListNew) {
+                              await showToastWhilstPending(
+                                t("materialsListing.dialog.creatingList"),
+                                currentList.create(),
+                              );
+                            }
+                            if (isListExisting) {
+                              const changed = materialsStore.hasListChanged;
+                              if (changed)
+                                await showToastWhilstPending(
+                                  t("materialsListing.dialog.updatingList"),
+                                  currentList.update(),
+                                );
+                            }
+                            materialsStore.setCurrentList(currentList);
+                            refetch();
                           }
                         })();
-                      })}
-                      disabled={!isListExisting || !isListValid}
+                      }}
+                      loading={isListLoading}
+                      validationResult={materialsStore.cantSaveCurrentList}
                     >
-                      {t("materialsListing.actions.export")}
-                    </Button>
-                    {isListExisting && (
-                      <Button
-                        sx={[{ color: "warningRed" }, { mx: 1 }]}
-                        disableElevation
-                        onClick={() => void confirmListDeletion()}
-                        disabled={!canEdit}
-                      >
-                        {t("materialsListing.actions.deleteList")}
-                      </Button>
-                    )}
-                    <div>
-                      <Button
-                        sx={{ mx: 1 }}
-                        onClick={
-                          isUnchanged
-                            ? () => setOpen(false)
-                            : () => {
-                                materialsStore.setCurrentList(materialsStore.originalList);
-                                if (isListNew) setOpen(false);
-                              }
-                        }
-                      >
-                        {isUnchanged ? t("common:actions.close") : t("common:actions.cancel")}
-                      </Button>
-                      <ValidatingSubmitButton
-                        onClick={() => {
-                          void (async () => {
-                            if (currentList && isListValid) {
-                              if (isListNew) {
-                                await showToastWhilstPending(
-                                  t("materialsListing.dialog.creatingList"),
-                                  currentList.create(),
-                                );
-                              }
-                              if (isListExisting) {
-                                const changed = materialsStore.hasListChanged;
-                                if (changed)
-                                  await showToastWhilstPending(
-                                    t("materialsListing.dialog.updatingList"),
-                                    currentList.update(),
-                                  );
-                              }
-                              materialsStore.setCurrentList(currentList);
-                              refetch();
-                            }
-                          })();
-                        }}
-                        loading={isListLoading}
-                        validationResult={materialsStore.cantSaveCurrentList}
-                      >
-                        {t("common:actions.save")}
-                      </ValidatingSubmitButton>
-                    </div>
-                  </Box>
-                </DialogActions>
-                <Confirm />
-              </Dialog>
-            </DialogBoundary>
+                      {t("common:actions.save")}
+                    </ValidatingSubmitButton>
+                  </div>
+                </Box>
+              </DialogActions>
+              <Confirm />
+            </Dialog>
           </Alerts>
         </Portal>
       </ErrorBoundary>

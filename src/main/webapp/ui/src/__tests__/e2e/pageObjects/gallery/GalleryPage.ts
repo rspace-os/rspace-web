@@ -129,7 +129,10 @@ export class GalleryPage extends BasePage {
 
   async downloadSelected(): Promise<Download> {
     await this.actions.open();
-    const [download] = await Promise.all([this.page.waitForEvent("download"), this.actions.clickAction("Download")]);
+    const [download] = await Promise.all([
+      this.page.waitForEvent("download"),
+      this.actions.menuItem("Download").click(),
+    ]);
     return download;
   }
 
@@ -175,24 +178,6 @@ export class GalleryPage extends BasePage {
       throw new Error(`${heading} submission failed: ${response.status()} ${response.statusText()}`);
     }
     await dialog.waitFor({ state: "hidden" });
-    await this.clearStaleAriaHidden();
-  }
-
-  // Reaching Create on mobile (GallerySidebar.clickCreate) force-dismisses the sidebar
-  // drawer's backdrop while its Create menu is still open. That leaves MUI's modal-stack
-  // sibling-hiding stuck: a stray aria-hidden="true" on an ancestor of the file grid that
-  // never gets cleared even once every dialog/menu from the flow has closed, silently
-  // breaking every getByRole query against the page (confirmed live via MCP — a real
-  // accessibility bug, not a test artifact; worth filing separately).
-  private async clearStaleAriaHidden(): Promise<void> {
-    if ((await this.page.getByRole("dialog").count()) > 0) return;
-    await this.page.evaluate(() => {
-      let el = document.querySelector('[role="grid"]');
-      while (el) {
-        if (el.getAttribute("aria-hidden") === "true") el.removeAttribute("aria-hidden");
-        el = el.parentElement;
-      }
-    });
   }
 
   async searchByName(name: string): Promise<void> {
@@ -202,8 +187,26 @@ export class GalleryPage extends BasePage {
     await this.searchInput.fill(name);
   }
 
-  async openDSWImport(alias: string): Promise<DSWImportDialogComponent> {
-    await this.sidebar.clickCreate();
+  /**
+   * Finds all DSW items by the alias-independent suffix of their accessible name.
+   * Playwright uses substring matching because each name starts with its connection alias.
+   */
+  dswImportMenuItems(): Locator {
+    return this.page.getByRole("menuitem", { name: "DSW / FAIR Wizard" });
+  }
+
+  mountedCreateMenu(): Locator {
+    return this.page.getByRole("menu", { name: "Create", exact: true, includeHidden: true });
+  }
+
+  async openCreateMenu(): Promise<void> {
+    await this.sidebar.ensureOpen();
+    await this.sidebar.createButton.click();
+    await this.page.getByRole("menu", { name: "Create", exact: true }).waitFor({ state: "visible" });
+  }
+
+  /** Requires an open Create menu. */
+  async clickDSWImport(alias: string): Promise<DSWImportDialogComponent> {
     await this.page.getByRole("menuitem", { name: `${alias} DSW / FAIR Wizard` }).click();
     const dialog = new DSWImportDialogComponent(this.page);
     await dialog.waitForOpen();
