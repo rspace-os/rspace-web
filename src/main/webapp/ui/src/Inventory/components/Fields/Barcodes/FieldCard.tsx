@@ -7,9 +7,9 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import Collapse from "@mui/material/Collapse";
+import Dialog from "@mui/material/Dialog";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
-import Popover from "@mui/material/Popover";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -323,7 +323,7 @@ function FieldCard<
   connectedItem?: InventoryRecord;
 }): ReactNode {
   const [open, setOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<EventTarget | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const { t } = useTranslation(["inventory", "common"]);
   const { uiStore } = useStores();
   const editable = fieldOwner.isFieldEditable("barcodes");
@@ -347,33 +347,18 @@ function FieldCard<
             <>
               <AddButton
                 disabled={!editable}
-                onClick={({ currentTarget }) => setAnchorEl(currentTarget)}
+                onClick={() => setScannerOpen(true)}
                 title={editable ? t("fields.barcodes.actions.scan") : t("fields.barcodes.actions.scanNeedsEdit")}
               />
-              <Popover
-                open={Boolean(anchorEl)}
-                anchorEl={anchorEl as HTMLElement}
-                onClose={() => setAnchorEl(null)}
-                anchorOrigin={{
-                  vertical: "center",
-                  horizontal: "left",
-                }}
-                transformOrigin={{
-                  vertical: "center",
-                  horizontal: "right",
-                }}
-                slotProps={{
-                  paper: {
-                    variant: "outlined",
-                    style: {
-                      minWidth: 300,
-                    },
-                  },
-                }}
+              {/* a centered dialog: the video only grows once the camera starts, which would overflow an anchored popover */}
+              <Dialog
+                open={scannerOpen}
+                onClose={() => setScannerOpen(false)}
+                aria-label={t("fields.barcodes.actions.scan")}
               >
                 <BarcodeScanner
                   onClose={() => {
-                    setAnchorEl(null);
+                    setScannerOpen(false);
                   }}
                   onScan={(barcode) => {
                     if (barcode.rawValue.length > 255) {
@@ -401,7 +386,7 @@ function FieldCard<
                     });
                   }}
                 />
-              </Popover>
+              </Dialog>
               <CustomTooltip
                 title={match<void, string>([
                   [() => barcodes.length === 0, t("fields.barcodes.toggle.none")],

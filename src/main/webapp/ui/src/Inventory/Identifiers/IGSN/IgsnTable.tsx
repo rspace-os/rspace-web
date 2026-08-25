@@ -2,9 +2,9 @@ import ClearIcon from "@mui/icons-material/Clear";
 import SearchIcon from "@mui/icons-material/Search";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
-import Popover from "@mui/material/Popover";
 import TextField from "@mui/material/TextField";
 import {
   DataGrid,
@@ -44,40 +44,6 @@ declare module "@mui/x-data-grid" {
   }
 }
 
-const Panel = ({
-  anchorEl,
-  children,
-  onClose,
-}: {
-  anchorEl: HTMLElement | null;
-  children: React.ReactNode;
-  onClose: () => void;
-}) => (
-  <Popover
-    open={Boolean(anchorEl)}
-    anchorEl={anchorEl}
-    onClose={onClose}
-    anchorOrigin={{
-      vertical: "bottom",
-      horizontal: "center",
-    }}
-    transformOrigin={{
-      vertical: "top",
-      horizontal: "center",
-    }}
-    slotProps={{
-      paper: {
-        variant: "outlined",
-        elevation: 0,
-        style: {
-          minWidth: 300,
-        },
-      },
-    }}
-  >
-    {Boolean(anchorEl) && children}
-  </Popover>
-);
 function Toolbar({
   setColumnsMenuAnchorEl,
   state,
@@ -128,7 +94,7 @@ function Toolbar({
     debouncedSetSearchTerm(value);
   };
 
-  const [scannerAnchorEl, setScannerAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [scannerOpen, setScannerOpen] = React.useState(false);
 
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
@@ -168,23 +134,24 @@ function Toolbar({
       />
       <Button
         color="primary"
-        onClick={(event) => {
-          setScannerAnchorEl(event.currentTarget);
+        onClick={() => {
+          setScannerOpen(true);
         }}
         startIcon={<SearchBarcodeIcon />}
       >
         {t("igsnTable.scan")}
       </Button>
-      <Panel anchorEl={scannerAnchorEl} onClose={() => setScannerAnchorEl(null)}>
+      {/* a centered dialog: the video only grows once the camera starts, which would overflow an anchored popover */}
+      <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} aria-label={t("igsnTable.scan")}>
         <BarcodeScanner
           onScan={(result) => {
             setLocalSearchTerm(result.rawValue);
             setSearchTerm(result.rawValue);
           }}
-          onClose={() => setScannerAnchorEl(null)}
+          onClose={() => setScannerOpen(false)}
           cameraErrorMessage={t("barcodeScanner.cameraErrorSearchBox")}
         />
-      </Panel>
+      </Dialog>
       <MenuWithSelectedState
         label={t("igsnTable.filters.state")}
         currentState={state ? stateLabelFor(state) : t("igsnTable.filters.all")}
