@@ -12,6 +12,7 @@ import RSpaceLogo from "@/assets/branding/rspace/logo.svg";
 import RSpaceLogoTight from "@/assets/branding/rspace/logo-tight.svg";
 import { useCurrentUserEventSync, useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { buttonVariants } from "@/modules/common/ui/button";
+import AccessibilityTips from "./AccessibilityTips";
 import AccountMenu from "./AccountMenu";
 import type { AppBarConfig, NavItem } from "./AppBar.types";
 import HelpMenu from "./HelpMenu";
@@ -136,6 +137,7 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
           <BellIcon />
           <span className="sr-only">{t("appBar.notifications")}</span>
         </a>
+        <AccessibilityTips />
         <AccountMenu currentUser={currentUser} bannerImageUrl={config.branding.bannerImageUrl} />
         <HelpMenu
           helpLinks={config.helpLinks}

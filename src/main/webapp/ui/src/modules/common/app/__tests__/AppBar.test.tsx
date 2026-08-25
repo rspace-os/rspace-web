@@ -3,7 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { type ComponentProps, type ReactElement, Suspense } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import AccountMenu, { formatFullName, logoutHrefForSession } from "@/modules/common/app/AccountMenu";
 import NewAppBar from "@/modules/common/app/AppBar";
@@ -88,10 +88,30 @@ const defaultHandlers = [
   http.get("/api/v2/maintenances", () => HttpResponse.json(maintenanceEnvelope([]))),
 ] as const;
 
+function matchMediaWithEnabledFeature(enabledFeature: string | null) {
+  return vi.fn(
+    (query: string): MediaQueryList => ({
+      matches: enabledFeature !== null && query.includes(enabledFeature),
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(() => true),
+    }),
+  );
+}
+
 beforeEach(() => {
+  vi.stubGlobal("matchMedia", matchMediaWithEnabledFeature(null));
   server.use(...defaultHandlers);
   vi.mocked(useOauthTokenQuery).mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);
   vi.mocked(useLighthouseSdk).mockReturnValue({ lighthouseReady: false, showLighthouse: vi.fn() });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 function renderAppBar() {
@@ -189,6 +209,20 @@ describe("NewAppBar (MSW-driven)", () => {
       currentUser: "ada",
     });
   });
+
+  it.each(["(prefers-contrast: more)", "(forced-colors: active)"])(
+    "reports high contrast as enabled for %s",
+    async (enabledFeature) => {
+      vi.stubGlobal("matchMedia", matchMediaWithEnabledFeature(enabledFeature));
+      const user = userEvent.setup();
+      renderAppBar();
+
+      await user.click(await screen.findByRole("button", { name: "common:accessibilityTips.buttonLabel" }));
+
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText("common:accessibilityTips.highContrast.enabled")).toBeVisible();
+    },
+  );
 });
 
 describe("HelpMenu", () => {

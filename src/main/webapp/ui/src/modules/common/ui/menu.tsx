@@ -43,7 +43,12 @@ function MenuLinkItem({ className, ...props }: MenuPrimitive.LinkItem.Props) {
 }
 
 function MenuSeparator({ className, ...props }: MenuPrimitive.Separator.Props) {
-  return <MenuPrimitive.Separator className={cn("my-1 h-px bg-border", className)} {...props} />;
+  return (
+    <MenuPrimitive.Separator
+      className={cn("my-1 h-px bg-border forced-colors:bg-[CanvasText]", className)}
+      {...props}
+    />
+  );
 }
 
 export { Menu, MenuContent, MenuItem, MenuLinkItem, MenuSeparator, MenuTrigger };
