@@ -2274,7 +2274,6 @@ export default interface Resources {
       "helpTitle": "Info on using barcodes.",
       "loading": "Loading Barcode Scanner...",
       "otherFormats": "To scan other formats, please use Chrome or a Chromium-based browser.",
-      "prompt": "{helpText}.",
       "scanError": {
         "message": "Unable to search. Scan has not completed.",
         "title": "An error occurred."
@@ -2285,8 +2284,8 @@ export default interface Resources {
         "title": "Unable to start camera with Barcode Detector."
       },
       "supportedFormats": {
-        "all": "All formats supported",
-        "qr": "QR format supported"
+        "all": "All formats supported.",
+        "qr": "QR format supported."
       }
     },
     "baseRecord": {

@@ -89,7 +89,7 @@ export default function BarcodeScannerSkeleton({
       {`${barcode.rawValue}`}
     </>
   ) : (
-    t("barcodeScanner.prompt", { helpText: beforeScanHelpText })
+    beforeScanHelpText
   );
 
   return (
