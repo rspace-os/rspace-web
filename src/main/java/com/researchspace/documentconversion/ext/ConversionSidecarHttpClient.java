@@ -52,6 +52,10 @@ public final class ConversionSidecarHttpClient {
     this(client, Long.MAX_VALUE, maxOutputBytes);
   }
 
+  ConversionSidecarHttpClient(RestClient.Builder builder, String bearerToken, long maxOutputBytes) {
+    this(authenticated(builder, bearerToken).build(), maxOutputBytes);
+  }
+
   ConversionSidecarHttpClient(RestClient client, long maxInputBytes, long maxOutputBytes) {
     this.client = client;
     this.maxInputBytes = maxInputBytes;
@@ -64,7 +68,8 @@ public final class ConversionSidecarHttpClient {
       Duration connectTimeout,
       Duration responseTimeout,
       long maxInputBytes,
-      long maxOutputBytes) {
+      long maxOutputBytes,
+      String bearerToken) {
     URI origin = validateOrigin(serviceUrl);
     RequestConfig requestConfig =
         RequestConfig.custom()
@@ -81,13 +86,20 @@ public final class ConversionSidecarHttpClient {
             .disableContentCompression()
             .build();
     this.client =
-        RestClient.builder()
-            .baseUrl(origin.toString())
-            .requestFactory(new HttpComponentsClientHttpRequestFactory(apacheClient))
-            .defaultHeader(HttpHeaders.ACCEPT_ENCODING, "identity")
+        authenticated(
+                RestClient.builder()
+                    .baseUrl(origin.toString())
+                    .requestFactory(new HttpComponentsClientHttpRequestFactory(apacheClient)),
+                bearerToken)
             .build();
     this.maxInputBytes = maxInputBytes;
     this.maxOutputBytes = maxOutputBytes;
+  }
+
+  private static RestClient.Builder authenticated(RestClient.Builder builder, String bearerToken) {
+    return builder
+        .defaultHeader(HttpHeaders.ACCEPT_ENCODING, "identity")
+        .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken);
   }
 
   public void requireCapabilities() {
@@ -198,7 +210,7 @@ public final class ConversionSidecarHttpClient {
 
   private static DocumentConversionError errorForStatus(int status) {
     return switch (status) {
-      case 401 -> DocumentConversionError.SERVICE_UNAVAILABLE;
+      case 401 -> DocumentConversionError.AUTHENTICATION_FAILED;
       case 413 -> DocumentConversionError.INPUT_TOO_LARGE;
       case 415 -> DocumentConversionError.UNSUPPORTED;
       case 422 -> DocumentConversionError.FAILED;
