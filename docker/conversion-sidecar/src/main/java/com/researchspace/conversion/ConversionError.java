@@ -2,6 +2,7 @@ package com.researchspace.conversion;
 
 /** Stable error codes returned to RSpace by the conversion sidecar. */
 enum ConversionError {
+  AUTHENTICATION_FAILED("conversion.authentication-failed"),
   FAILED("conversion.failed"),
   INPUT_INVALID("conversion.input-invalid"),
   INPUT_TOO_LARGE("conversion.input-too-large"),

@@ -2,25 +2,23 @@ package com.researchspace.documentconversion.ext;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import com.sun.net.httpserver.HttpServer;
 import java.net.ConnectException;
-import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.test.web.client.match.MockRestRequestMatchers;
 import org.springframework.web.client.RestClient;
 
 class ConversionSidecarHttpClientTest {
@@ -37,42 +35,47 @@ class ConversionSidecarHttpClientTest {
                 Duration.ofSeconds(1),
                 Duration.ofSeconds(1),
                 1024,
-                1024));
+                1024,
+                "test-token"));
   }
 
   @Test
-  void sendsValidRequestWithoutAuthorization() throws Exception {
-    var authorization = new AtomicReference<String>();
-    HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-    server.createContext(
-        "/v1/capabilities",
-        exchange -> {
-          authorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
-          byte[] response =
-              "{\"protocol\":\"rspace-conversion-sidecar\",\"version\":1,\"roles\":[\"pdf\",\"word\"]}"
-                  .getBytes(StandardCharsets.UTF_8);
-          exchange.getResponseHeaders().set("Content-Type", MediaType.APPLICATION_JSON_VALUE);
-          exchange.sendResponseHeaders(200, response.length);
-          try (var body = exchange.getResponseBody()) {
-            body.write(response);
-          }
-        });
-    server.start();
+  void sendsBearerAuthentication() {
+    RestClient.Builder builder = RestClient.builder().baseUrl("http://converter.test");
+    MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+    server
+        .expect(MockRestRequestMatchers.header(HttpHeaders.AUTHORIZATION, "Bearer test-token"))
+        .andRespond(
+            withSuccess(
+                "{\"protocol\":\"rspace-conversion-sidecar\",\"version\":1,\"roles\":[\"pdf\",\"word\"]}",
+                MediaType.APPLICATION_JSON));
 
-    try {
-      new ConversionSidecarHttpClient(
-              "http://127.0.0.1:" + server.getAddress().getPort(),
-              Duration.ofSeconds(1),
-              Duration.ofSeconds(1),
-              Duration.ofSeconds(1),
-              1024,
-              1024)
-          .requireCapabilities();
-    } finally {
-      server.stop(0);
-    }
+    new ConversionSidecarHttpClient(builder, "test-token", 1024).requireCapabilities();
 
-    assertNull(authorization.get());
+    server.verify();
+  }
+
+  @Test
+  void readsBearerTokenFromConfiguredFile() throws Exception {
+    String token = "0123456789abcdef0123456789abcdef";
+    Path tokenFile = directory.resolve("conversion-token");
+    Files.writeString(tokenFile, token + "\n");
+    var environment =
+        new MockEnvironment().withProperty("conversion.bearerTokenFile", tokenFile.toString());
+
+    assertEquals(token, ConversionSidecarClientFactory.readBearerToken(environment));
+  }
+
+  @Test
+  void rejectsShortBearerToken() throws Exception {
+    Path tokenFile = directory.resolve("conversion-token");
+    Files.writeString(tokenFile, "too-short");
+    var environment =
+        new MockEnvironment().withProperty("conversion.bearerTokenFile", tokenFile.toString());
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> ConversionSidecarClientFactory.readBearerToken(environment));
   }
 
   @Test

@@ -9220,6 +9220,7 @@ export default interface Resources {
         "serviceCallFailed": "Chemistry service call failed"
       },
       "documentConversion": {
+        "authenticationFailed": "The document conversion service rejected its configured credential.",
         "failed": "The document could not be converted.",
         "inputInvalid": "The input document is invalid or unavailable.",
         "inputTooLarge": "The input document exceeds the conversion limit.",

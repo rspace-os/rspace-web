@@ -76,6 +76,9 @@ jobs:
           - java-version: 17
             project: api
             shard: 1
+          - java-version: 17
+            project: conversion
+            shard: 1
     services:
       db:
         image: mariadb:12.3
@@ -132,6 +135,7 @@ jobs:
           case "${{ matrix.project }}" in
             mobile) echo "E2E_PW_BROWSER=chromium" >> "$GITHUB_ENV"; echo "E2E_SHARD_OF=${E2E_SHARD_TOTAL}" >> "$GITHUB_ENV" ;;
             api)    echo "E2E_PW_BROWSER=" >> "$GITHUB_ENV";          echo "E2E_SHARD_OF=1" >> "$GITHUB_ENV" ;;
+            conversion) echo "E2E_PW_BROWSER=chromium" >> "$GITHUB_ENV"; echo "E2E_SHARD_OF=1" >> "$GITHUB_ENV" ;;
             *)      echo "E2E_PW_BROWSER=${{ matrix.project }}" >> "$GITHUB_ENV"; echo "E2E_SHARD_OF=${E2E_SHARD_TOTAL}" >> "$GITHUB_ENV" ;;
           esac
 
@@ -155,6 +159,34 @@ jobs:
         run: |
           rm -rf "$RS_FILE_BASE"
           mkdir -p "$RS_FILE_BASE"
+
+      - name: Start document conversion services
+        if: matrix.project == 'conversion'
+        run: |
+          set -euo pipefail
+          install -d -m 755 /tmp/conversion-credentials
+          openssl rand -hex 32 | tee /tmp/conversion-credentials/e2e > /tmp/conversion-token
+          chmod 444 /tmp/conversion-credentials/e2e /tmp/conversion-token
+          docker network create conversion-e2e
+          docker run -d --name gotenberg --network conversion-e2e \
+            gotenberg/gotenberg@sha256:67097317623a503ba2a6a7e9ae8db6929a1f7e1bbd88077bacf2d325fbdab923 \
+            gotenberg --api-timeout=180s --chromium-disable-routes=true --webhook-disable=true
+          docker build -t rspace-conversion-sidecar:e2e docker/conversion-sidecar
+          docker run -d --name conversion-sidecar --network conversion-e2e \
+            -p 127.0.0.1:8081:8080 --read-only --cap-drop ALL \
+            --security-opt no-new-privileges=true --security-opt seccomp=unconfined \
+            --tmpfs /tmp:size=768m,mode=1777 \
+            --tmpfs /work:size=768m,mode=0700,uid=10001,gid=10001 \
+            -v /tmp/conversion-credentials:/run/secrets/conversion-credentials:ro \
+            rspace-conversion-sidecar:e2e
+          for i in $(seq 1 60); do
+            if curl --fail --silent http://localhost:8081/actuator/health > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs conversion-sidecar
+          exit 1
 
       # Start the app in the background first so its ~2.5 min boot overlaps the
       # pnpm/Playwright install below instead of stacking after it.
@@ -246,6 +278,13 @@ jobs:
               "-Dorcid.secret=$ORCID_CLIENT_SECRET"
             )
           fi
+          CONVERSION_ARGS=()
+          if [ "${{ matrix.project }}" = "conversion" ]; then
+            CONVERSION_ARGS=(
+              "-Dconversion.url=http://localhost:8081"
+              "-Dconversion.bearerTokenFile=/tmp/conversion-token"
+            )
+          fi
           nohup ./mvnw jetty:run-war \
             -DskipTests=true -Dmaven.war.skip=true \
             -Dtimestamp=${{ github.run_id }} \
@@ -267,6 +306,7 @@ jobs:
             -DRS_FILE_BASE="$RS_FILE_BASE" \
             -DRS.devlogLevel=INFO \
             "${INTEGRATION_ARGS[@]}" \
+            "${CONVERSION_ARGS[@]}" \
             > /tmp/jetty.log 2>&1 &
 
       - run: pnpm install --frozen-lockfile

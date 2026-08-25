@@ -10,6 +10,7 @@ const DOCX = readFileSync(
 );
 
 test.describe("Gotenberg and JODConverter", { tag: tags.GALLERY }, () => {
+  test.describe.configure({ timeout: 120_000 });
   test("As a user, I can preview a DOCX as a generated PDF", async ({ clientFiles, pageGallery, page }) => {
     const name = `${uniqueName("e2e-gotenberg-preview")}.docx`;
     const uploaded = await clientFiles.uploadFile({

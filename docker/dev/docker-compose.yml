@@ -111,6 +111,7 @@ services:
       # listener over the project network (mailpit:1025).
       RSPACE_MAILPIT: ${RSPACE_MAILPIT:-false}
       CONVERSION_SERVICE_URL: http://conversion-sidecar:8080
+      CONVERSION_BEARER_TOKEN_FILE: /run/secrets/conversion-token
     volumes:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
       - m2-repo:/root/.m2
@@ -122,6 +123,7 @@ services:
       - search-index:/var/rspace/search/hibernate
       - lucene-index:/var/rspace/search/lucene
       - filestore:/var/rspace/filestore
+      - ./.conversion-credentials/rspace-dev:/run/secrets/conversion-token:ro
     # Share the frontend's network namespace so the backend reaches Vite at
     # localhost:5173 (a host Vite trusts) instead of the service name "frontend"
     # (which Vite's host check rejects). The app is the dependent here because it
@@ -233,6 +235,10 @@ services:
         condition: service_healthy
     environment:
       CONVERTER_MAX_CONCURRENT_OFFICE_CONVERSIONS: ${CONVERTER_MAX_CONCURRENT_OFFICE_CONVERSIONS:-2}
+      CONVERTER_MAX_CONCURRENT_OFFICE_CONVERSIONS_PER_DEPLOYMENT: ${CONVERTER_MAX_CONCURRENT_OFFICE_CONVERSIONS_PER_DEPLOYMENT:-1}
+      CONVERTER_CREDENTIALS_DIRECTORY: /run/secrets/conversion-credentials
+    volumes:
+      - ./.conversion-credentials:/run/secrets/conversion-credentials:ro
     networks:
       - default
       - conversion

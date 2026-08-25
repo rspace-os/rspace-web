@@ -10,8 +10,8 @@ RSpace --> conversion sidecar --> Gotenberg --> PDF
                     +--> JODConverter/LibreOffice --> HTML or DOCX
 ```
 
-RSpace does not connect to Gotenberg directly. The sidecar accepts only the routes and multipart
-parts used by RSpace:
+RSpace does not connect to Gotenberg directly. Every listed route requires the deployment's bearer
+token. The sidecar accepts only the routes and multipart parts used by RSpace:
 
 | Route | Input | Output |
 | --- | --- | --- |
@@ -22,9 +22,10 @@ parts used by RSpace:
 
 Every Word conversion starts LibreOffice through a rootless bubblewrap sandbox. The process gets a
 private network namespace, a read-only view of the LibreOffice runtime, and access only to its own
-request directory. Its home and temporary files are request-private. JODConverter and LibreOffice
-share `/tmp` only for randomly named UNO sockets; uploads and conversion files stay on the separate
-`/work` tmpfs. Sandbox startup failure rejects the request. There is no unsandboxed fallback.
+request directory. Its home, temporary files, and UNO socket are request-private. JODConverter
+reaches the socket through one random host-side symlink, while LibreOffice sees only the request's
+IPC directory as `/tmp`. Sandbox startup failure rejects the request. There is no unsandboxed
+fallback.
 
 ## Supported RSpace workflows
 
@@ -45,6 +46,7 @@ Set these properties in the deployment properties file:
 
 ```properties
 conversion.url=http://conversion-sidecar:8080
+conversion.bearerTokenFile=/run/secrets/conversion-token
 conversion.cacheConverted=true
 conversion.connectionRequestTimeoutMs=2000
 conversion.connectTimeoutMs=5000
@@ -54,20 +56,25 @@ conversion.maxOutputBytes=314572800
 conversion.maxHtmlBytes=52428800
 ```
 
-`conversion.url` must be an absolute HTTP origin. Host filtering belongs to the deployment firewall
-and secure-tunnel configuration rather than application DNS checks. RSpace disables redirects and
-retries, and checks the sidecar protocol and protocol version at startup. The sidecar does not
-authenticate callers, so keep it on a private container network and do not publish it to the host or
-internet. Gotenberg is attached only to the internal `conversion` network.
+`conversion.url` must be an absolute HTTP origin. The token file must contain the credential assigned
+to this RSpace deployment. RSpace sends it as a bearer token. The sidecar reads credentials from
+`converter.credentials-directory`; each filename is a deployment ID and its contents are that
+deployment's token. Use a read-only secret mount for both files. Keep the sidecar on a private
+network even though conversion routes require authentication. Gotenberg remains on the internal
+`conversion` network.
+
+RSpace disables redirects and retries, then checks the sidecar protocol and protocol version at
+startup. Host filtering belongs to the deployment firewall and secure-tunnel configuration.
 
 The sidecar defaults live in `application.properties`. Spring Boot also accepts each setting as an
 environment variable, for example `converter.max-output-bytes` becomes
 `CONVERTER_MAX_OUTPUT_BYTES`. Docker deployments can use environment variables for every sidecar
 setting and keep the properties file as the defaults.
 
-The sidecar property `converter.max-concurrent-office-conversions` defaults to `2`. The sidecar
-applies that capacity independently to its PDF and Word roles, with no waiting queue. When every
-slot for a role is occupied, the sidecar
+The sidecar property `converter.max-concurrent-office-conversions` sets the global limit for each
+PDF and Word role. `converter.max-concurrent-office-conversions-per-deployment` limits each
+authenticated deployment within that global capacity. They default to `2` and `1`, respectively,
+and neither has a waiting queue. When every applicable slot is occupied, the sidecar
 returns HTTP 429 with `Retry-After: 1`, and RSpace displays its localized service-busy error.
 Actuator records active and rejected work under `rspace.conversion.office.*` and
 `rspace.conversion.pdf.*`.
@@ -81,6 +88,7 @@ and `detail` fields contain the same logical error code. The problem body also i
 
 | Code | Meaning |
 | --- | --- |
+| `conversion.authentication-failed` | The bearer credential is missing or invalid. |
 | `conversion.failed` | Conversion failed without a more specific result. |
 | `conversion.input-invalid` | The source file or request is invalid. |
 | `conversion.input-too-large` | The source file exceeds an input or expansion limit. |
@@ -123,9 +131,9 @@ creates Gallery records.
   tests.
 - `PdfConversionClientTest`, `JodConverterClientTest`, and `DataUriExtractorTest`: RSpace response
   validation and import sanitation tests.
-- `documentConversion.conversion.e2e.ts`: Docker-backed PDF preview, DOCX import with three images,
-  and DOCX export. The dedicated `conversion` Playwright project keeps these tests out of mocked CI
-  jobs that do not start the sidecar.
+- `documentConversion.conversion.e2e.ts`: PDF preview, DOCX import with three images, and DOCX
+  export against the sidecar and Gotenberg. The `conversion` Playwright project runs in its own CI
+  matrix entry.
 
 Run the browser test from the repository root after `./docker/dev/rspace-dev up --e2e`:
 

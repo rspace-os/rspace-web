@@ -22,7 +22,14 @@ class LibreOfficeSandboxTest {
     Files.createDirectories(request);
     var properties =
         new ConverterProperties(
-            Path.of("/office"), directory, Duration.ofSeconds(1), 2, 1024, executable);
+            Path.of("/office"),
+            directory,
+            Duration.ofSeconds(1),
+            2,
+            1,
+            1024,
+            executable,
+            directory);
 
     List<String> command = new LibreOfficeSandbox(properties).commandPrefix(request);
 
@@ -30,6 +37,10 @@ class LibreOfficeSandboxTest {
     assertTrue(command.contains("--clearenv"));
     assertEquals(2, command.stream().filter("--bind"::equals).count());
     assertTrue(command.contains("/tmp"));
+    assertTrue(command.contains(request.resolve("ipc").toAbsolutePath().toString()));
+    assertEquals(
+        request.resolve("ipc").toAbsolutePath().toString(),
+        command.get(command.indexOf("/tmp") - 1));
     assertTrue(command.contains("/proc"));
     assertTrue(command.indexOf("/tmp") < command.indexOf(request.toAbsolutePath().toString()));
     assertTrue(command.contains(request.toAbsolutePath().toString()));

@@ -298,7 +298,8 @@ public class FileDownloadController extends BaseController {
         .map(
             error ->
                 switch (error) {
-                  case SERVICE_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE.value();
+                  case AUTHENTICATION_FAILED, SERVICE_UNAVAILABLE ->
+                      HttpStatus.SERVICE_UNAVAILABLE.value();
                   case INPUT_TOO_LARGE, OUTPUT_TOO_LARGE -> HttpStatus.PAYLOAD_TOO_LARGE.value();
                   case INPUT_INVALID, OUTPUT_INVALID, UNSUPPORTED ->
                       HttpStatus.UNPROCESSABLE_ENTITY.value();
