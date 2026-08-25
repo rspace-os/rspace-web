@@ -100,7 +100,7 @@ test.describe("Record Info", () => {
     await test.step("Given a notebook with two entries", async () => {
       await pageWorkspace.open();
       notebook = await pageWorkspace.createNotebook(notebookName);
-      for (let i = 0; i < 2; i++) {
+      for (const _ of [...Array(2).keys()]) {
         const entry = await notebook.addEntry();
         const info = await entry.openRecordInfo();
         entryGlobalIds.push(await info.field("Unique Id"));

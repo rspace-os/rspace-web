@@ -268,5 +268,12 @@ applies the shared device preset from `viewports.ts` to every test it runs,
 so genuine mobile emulation only requires opting a spec into that project by
 tagging its top-level `describe` with `tags.MOBILE`:
 
+```ts
+import { tags } from "@/__tests__/e2e/tags";
+
+test.describe("Gallery", { tag: tags.MOBILE }, () => {
+  // ...
+});
+```
 
 See `viewports.ts` and `gallery.e2e.ts`'s mobile test for a worked example.

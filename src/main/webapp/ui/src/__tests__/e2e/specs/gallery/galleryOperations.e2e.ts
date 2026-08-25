@@ -86,8 +86,9 @@ test.describe("Gallery folder and file operations", { tag: tags.MOBILE }, () => 
   });
 
   test("As a user, I can duplicate a file and download it", async ({ pageGallery, clientFiles }) => {
-    const name = `${uniqueName("e2e-gallery-dup")}.png`;
-    const expectedDuplicateName = name.replace(/\.png$/, "_copy.png");
+    const baseName = uniqueName("e2e-gallery-dup");
+    const name = `${baseName}.png`;
+    const expectedDuplicateName = `${baseName}_copy.png`;
 
     await test.step("Given an uploaded file", async () => {
       const uploaded = await clientFiles.uploadFile({ name, mimeType: "image/png", buffer: TINY_PNG });
@@ -166,8 +167,11 @@ test.describe("Gallery folder and file operations", { tag: tags.MOBILE }, () => 
       await componentExportWizard.submit();
     });
 
-    await test.step("Then a completion notification eventually appears", async () => {
+    await test.step("Then the latest notification confirms this export completed successfully", async () => {
       await componentNotifications.waitForBadgeCountInUI(1);
+      const [latest] = await componentNotifications.fetchNotificationTexts();
+      expect(latest).toContain(name.replaceAll(".", ""));
+      expect(latest).toContain("is completed and generated an archive");
     });
   });
 });
