@@ -71,7 +71,7 @@ function InstrumentTemplateDetails(): ReactNode {
         <Box sx={{ mb: 1 }}>
           <Divider />
         </Box>
-        <InstrumentTemplatePicker setTemplate={handleSetTemplate} />
+        <InstrumentTemplatePicker setTemplate={handleSetTemplate} selectedTemplate={selectedTemplate} />
         {!createNewTemplate && !selectedTemplate ? (
           <Alert severity="info">{t("import.templateDetails.selectInstrumentTemplate")}</Alert>
         ) : null}

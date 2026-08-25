@@ -74,7 +74,7 @@ function TemplateDetails(): ReactNode {
         <Box sx={{ mb: 1 }}>
           <Divider />
         </Box>
-        <TemplatePicker setTemplate={handleSetTemplate} />
+        <TemplatePicker setTemplate={handleSetTemplate} selectedTemplate={importStore.importData?.template ?? null} />
         {!importStore.importData?.createNewTemplate && !importStore.importData?.template ? (
           <Alert severity="info">{t("import.templateDetails.selectTemplate")}</Alert>
         ) : null}
