@@ -27,7 +27,14 @@ class ConversionControllerTest {
   private final OfficeConversionLimiter limiter =
       new OfficeConversionLimiter(
           new ConverterProperties(
-              Path.of("/office"), directory, Duration.ofSeconds(1), 1, 1024, Path.of("/bin/true")),
+              Path.of("/office"),
+              directory,
+              Duration.ofSeconds(1),
+              1,
+              1,
+              1024,
+              Path.of("/bin/true"),
+              directory),
           new SimpleMeterRegistry());
   private final ConversionController controller =
       new ConversionController(archiveValidator, officeRunner, gotenbergProxy, limiter);
@@ -39,27 +46,29 @@ class ConversionControllerTest {
   }
 
   @Test
-  void wordImportAcceptsValidRequestWithoutAuthorization() throws Exception {
+  void wordImportAcceptsValidAuthenticatedRequest() throws Exception {
     MockMultipartHttpServletRequest request = request("file", "legacy.doc");
     java.nio.file.Path outputFile = directory.resolve("output.html");
     java.nio.file.Files.writeString(outputFile, "output");
     ConvertedFile output = new ConvertedFile(directory, outputFile, "text/html; charset=UTF-8");
     when(officeRunner.convert(
+            org.mockito.ArgumentMatchers.eq("deployment-a"),
             org.mockito.ArgumentMatchers.any(),
             org.mockito.ArgumentMatchers.eq("doc"),
             org.mockito.ArgumentMatchers.eq("html")))
         .thenAnswer(
             invocation -> {
-              java.nio.file.Files.deleteIfExists(invocation.getArgument(0));
+              java.nio.file.Files.deleteIfExists(invocation.getArgument(1));
               return output;
             });
 
-    controller.toHtml(request);
+    controller.toHtml("deployment-a", request);
 
     verify(archiveValidator, never())
         .validate(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
     verify(officeRunner)
         .convert(
+            org.mockito.ArgumentMatchers.eq("deployment-a"),
             org.mockito.ArgumentMatchers.any(),
             org.mockito.ArgumentMatchers.eq("doc"),
             org.mockito.ArgumentMatchers.eq("html"));
@@ -71,7 +80,7 @@ class ConversionControllerTest {
     request.addHeader("Gotenberg-Output-Filename", "chosen.pdf");
 
     ConversionException exception =
-        assertThrows(ConversionException.class, () -> controller.toPdf(request));
+        assertThrows(ConversionException.class, () -> controller.toPdf("deployment-a", request));
 
     assertEquals(ConversionError.INPUT_INVALID, exception.error());
     verify(gotenbergProxy, never())
@@ -97,7 +106,7 @@ class ConversionControllerTest {
               return output;
             });
 
-    controller.toPdf(request);
+    controller.toPdf("deployment-a", request);
 
     ArgumentCaptor<String> correlationId = ArgumentCaptor.forClass(String.class);
     verify(gotenbergProxy)
@@ -115,7 +124,7 @@ class ConversionControllerTest {
         new MockMultipartFile("extra", "extra.docx", "application/octet-stream", new byte[] {1}));
 
     ConversionException exception =
-        assertThrows(ConversionException.class, () -> controller.toHtml(request));
+        assertThrows(ConversionException.class, () -> controller.toHtml("deployment-a", request));
 
     assertEquals(ConversionError.INPUT_INVALID, exception.error());
   }

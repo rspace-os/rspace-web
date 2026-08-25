@@ -180,19 +180,21 @@ private Gotenberg container.
 Set these deployment properties to enable conversion:
 
 - **conversion.url** HTTP origin of the RSpace conversion sidecar.
+- **conversion.bearerTokenFile** Path to the file containing this deployment's sidecar bearer token.
 - **conversion.cacheConverted** Set to `true` to cache generated previews.
 
 Connection, conversion, response, and size limits use the remaining `conversion.*` properties in
 `defaultDeployment.properties`. The URL accepts any HTTP origin because network policy is the
-deployment security boundary. The sidecar does not authenticate callers. Keep it and Gotenberg
-firewalled: RSpace must reach only the sidecar, and Gotenberg must accept traffic only from the
-sidecar.
+deployment security boundary. Conversion routes require a deployment-specific bearer token. Mount
+the token file read-only in RSpace and configure the matching token in the sidecar credentials
+directory. Keep both services firewalled: RSpace must reach only the sidecar, and Gotenberg must
+accept traffic only from the sidecar.
 
 Aspose properties remain available for older deployments. They are deprecated. When
 `conversion.url` is set, the Gotenberg/JODConverter path takes precedence over Aspose.
 
-See [Document conversion](../DeveloperNotes/DocumentConversion.md) for supported formats,
-security boundaries, and parity evidence.
+See [Document conversion](../DeveloperNotes/DocumentConversion.md) for supported formats and
+security boundaries.
 
 ### Snapgene service
 
