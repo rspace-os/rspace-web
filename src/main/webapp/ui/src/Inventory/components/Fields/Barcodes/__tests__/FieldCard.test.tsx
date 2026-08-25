@@ -174,11 +174,7 @@ describe("FieldCard", () => {
 
       await user.click(screen.getByLabelText("inventory:fields.barcodes.actions.scan"));
 
-      /*
-       * The accessible name must be on the element with role="dialog" (MUI's
-       * paper slot), not the modal wrapper.
-       */
-      expect(screen.getByRole("dialog", { name: "inventory:fields.barcodes.actions.scan" })).toBeVisible();
+      expect(screen.getByRole("dialog", { name: "inventory:barcodeScanner.heading" })).toBeVisible();
     });
   });
 });

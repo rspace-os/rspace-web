@@ -2,7 +2,6 @@ import ClearIcon from "@mui/icons-material/Clear";
 import SearchIcon from "@mui/icons-material/Search";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
@@ -141,21 +140,15 @@ function Toolbar({
       >
         {t("igsnTable.scan")}
       </Button>
-      {/* a centered dialog: the video only grows once the camera starts, which would overflow an anchored popover */}
-      <Dialog
+      <BarcodeScanner
         open={scannerOpen}
+        onScan={(result) => {
+          setLocalSearchTerm(result.rawValue);
+          setSearchTerm(result.rawValue);
+        }}
         onClose={() => setScannerOpen(false)}
-        slotProps={{ paper: { "aria-label": t("igsnTable.scan") } }}
-      >
-        <BarcodeScanner
-          onScan={(result) => {
-            setLocalSearchTerm(result.rawValue);
-            setSearchTerm(result.rawValue);
-          }}
-          onClose={() => setScannerOpen(false)}
-          cameraErrorMessage={t("barcodeScanner.cameraErrorSearchBox")}
-        />
-      </Dialog>
+        cameraErrorMessage={t("barcodeScanner.cameraErrorSearchBox")}
+      />
       <MenuWithSelectedState
         label={t("igsnTable.filters.state")}
         currentState={state ? stateLabelFor(state) : t("igsnTable.filters.all")}

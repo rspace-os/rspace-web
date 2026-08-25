@@ -1,7 +1,8 @@
-import Alert, { alertClasses } from "@mui/material/Alert";
+import { alertClasses } from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,6 +13,12 @@ import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import useStores from "../../../stores/use-stores";
 
 export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
+
+/**
+ * The heading that names the enclosing dialog. Only one scanner can be open at
+ * a time, so a fixed id is enough for the dialog's aria-labelledby.
+ */
+export const BARCODE_SCANNER_TITLE_ID = "barcode-scanner-dialog-title";
 
 type BarcodeScannerSkeletonArgs = {
   onClose: () => void;
@@ -68,7 +75,7 @@ export default function BarcodeScannerSkeleton({
 
   /*
    * The ref guards against the camera re-detecting the same code on a later
-   * interval tick before the popover has finished closing.
+   * interval tick before the dialog has finished closing.
    */
   const submitted = useRef(false);
   useEffect(() => {
@@ -78,7 +85,7 @@ export default function BarcodeScannerSkeleton({
     }
   }, [barcode, handleOnSubmit]);
 
-  const alertContent = loading ? (
+  const status = loading ? (
     t("barcodeScanner.loading")
   ) : barcode?.rawValue ? (
     <>
@@ -89,7 +96,6 @@ export default function BarcodeScannerSkeleton({
   ) : (
     t("barcodeScanner.prompt", { helpText: beforeScanHelpText })
   );
-  const helpIcon = <HelpLinkIcon link={helpDocsArticleUrl("barcodes")} title={t("barcodeScanner.helpTitle")} />;
 
   return (
     <Stack
@@ -106,9 +112,20 @@ export default function BarcodeScannerSkeleton({
       }}
       spacing={1}
     >
-      <Alert severity="info" action={helpIcon}>
-        {alertContent}
-      </Alert>
+      <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }} spacing={1}>
+        {/*
+         * A plain heading rather than MUI's DialogTitle: DialogTitle adopts the
+         * dialog's aria-labelledby id, which would then cover the help icon's
+         * tooltip text as well as the heading.
+         */}
+        <Typography variant="h6" component="h2" id={BARCODE_SCANNER_TITLE_ID}>
+          {t("barcodeScanner.heading")}
+        </Typography>
+        <HelpLinkIcon link={helpDocsArticleUrl("barcodes")} title={t("barcodeScanner.helpTitle")} />
+      </Stack>
+      <Typography variant="body2" sx={{ color: "text.secondary" }}>
+        {status}
+      </Typography>
       {/* hide via CSS on detection (not on loading or scanner won't start in Safari)  */}
       <Box
         component="video"

@@ -7,7 +7,6 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import Collapse from "@mui/material/Collapse";
-import Dialog from "@mui/material/Dialog";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import Table from "@mui/material/Table";
@@ -350,43 +349,37 @@ function FieldCard<
                 onClick={() => setScannerOpen(true)}
                 title={editable ? t("fields.barcodes.actions.scan") : t("fields.barcodes.actions.scanNeedsEdit")}
               />
-              {/* a centered dialog: the video only grows once the camera starts, which would overflow an anchored popover */}
-              <Dialog
+              <BarcodeScanner
                 open={scannerOpen}
-                onClose={() => setScannerOpen(false)}
-                slotProps={{ paper: { "aria-label": t("fields.barcodes.actions.scan") } }}
-              >
-                <BarcodeScanner
-                  onClose={() => {
-                    setScannerOpen(false);
-                  }}
-                  onScan={(barcode) => {
-                    if (barcode.rawValue.length > 255) {
-                      uiStore.addAlert(
-                        mkAlert({
-                          title: t("fields.barcodes.alerts.unsupportedBarcode"),
-                          message: t("fields.barcodes.alerts.dataTooLong"),
-                          variant: "error",
+                onClose={() => {
+                  setScannerOpen(false);
+                }}
+                onScan={(barcode) => {
+                  if (barcode.rawValue.length > 255) {
+                    uiStore.addAlert(
+                      mkAlert({
+                        title: t("fields.barcodes.alerts.unsupportedBarcode"),
+                        message: t("fields.barcodes.alerts.dataTooLong"),
+                        variant: "error",
+                      }),
+                    );
+                    return;
+                  }
+                  fieldOwner.setFieldsDirty({
+                    barcodes: [
+                      ...barcodes,
+                      factory.newBarcode({
+                        data: barcode.rawValue,
+                        newBarcodeRequest: true,
+                        description: t("fields.barcodes.scannedDescription", {
+                          format: barcodeFormatAsString(barcode.format),
+                          value: barcode.rawValue,
                         }),
-                      );
-                      return;
-                    }
-                    fieldOwner.setFieldsDirty({
-                      barcodes: [
-                        ...barcodes,
-                        factory.newBarcode({
-                          data: barcode.rawValue,
-                          newBarcodeRequest: true,
-                          description: t("fields.barcodes.scannedDescription", {
-                            format: barcodeFormatAsString(barcode.format),
-                            value: barcode.rawValue,
-                          }),
-                        }),
-                      ],
-                    });
-                  }}
-                />
-              </Dialog>
+                      }),
+                    ],
+                  });
+                }}
+              />
               <CustomTooltip
                 title={match<void, string>([
                   [() => barcodes.length === 0, t("fields.barcodes.toggle.none")],

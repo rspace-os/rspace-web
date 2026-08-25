@@ -264,11 +264,7 @@ describe("IGSN Table", () => {
 
     await user.click(screen.getByRole("button", { name: "inventory:igsnTable.scan" }));
 
-    /*
-     * The accessible name must be on the element with role="dialog" (MUI's
-     * paper slot), not the modal wrapper.
-     */
-    expect(screen.getByRole("dialog", { name: "inventory:igsnTable.scan" })).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "inventory:barcodeScanner.heading" })).toBeVisible();
 
     /*
      * There is no confirmation step: the scanner polls once per second (longer

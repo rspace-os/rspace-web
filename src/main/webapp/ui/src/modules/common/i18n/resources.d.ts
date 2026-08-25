@@ -2270,10 +2270,11 @@ export default interface Resources {
       "barcodeDetected": "Barcode detected: {format} format.",
       "cameraError": "Could not access camera.",
       "cameraErrorSearchBox": "Could not access camera. Alternatively, enter the encoded data directly into the search box.",
+      "heading": "Scan a barcode",
       "helpTitle": "Info on using barcodes.",
       "loading": "Loading Barcode Scanner...",
       "otherFormats": "To scan other formats, please use Chrome or a Chromium-based browser.",
-      "prompt": "Barcode Scanner: {helpText}.",
+      "prompt": "{helpText}.",
       "scanError": {
         "message": "Unable to search. Scan has not completed.",
         "title": "An error occurred."
@@ -2284,7 +2285,7 @@ export default interface Resources {
         "title": "Unable to start camera with Barcode Detector."
       },
       "supportedFormats": {
-        "all": "all formats supported",
+        "all": "All formats supported",
         "qr": "QR format supported"
       }
     },
