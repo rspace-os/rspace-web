@@ -266,11 +266,7 @@ describe("IGSN Table", () => {
 
     expect(screen.getByRole("dialog", { name: "inventory:barcodeScanner.heading" })).toBeVisible();
 
-    /*
-     * There is no confirmation step: the scanner polls once per second (longer
-     * than waitFor's default timeout) and the first detected barcode is
-     * submitted automatically.
-     */
+    /* the scanner polls once per second, longer than waitFor's default timeout */
     await waitFor(
       () => {
         expect(identifiersRequestParams().some((params) => params.get("identifier") === "10.82316/khma-em96")).toBe(
