@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ACCENT_COLOR } from "@/assets/branding/chemistry";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
-import { DialogBoundary } from "@/components/DialogBoundary";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { createStoichiometryTheme } from "@/tinyMCE/stoichiometry/theme";
 import createAccentedTheme from "../../accentedTheme";
@@ -30,11 +29,9 @@ const StoichiometryDialogEntrypoint = (props: StandaloneDialogInnerProps) => {
           <ErrorBoundary>
             <Alerts>
               <QueryClientProvider client={queryClient}>
-                <DialogBoundary>
-                  <ConfirmProvider>
-                    <StoichiometryDialog {...props} />
-                  </ConfirmProvider>
-                </DialogBoundary>
+                <ConfirmProvider>
+                  <StoichiometryDialog {...props} />
+                </ConfirmProvider>
               </QueryClientProvider>
             </Alerts>
           </ErrorBoundary>
