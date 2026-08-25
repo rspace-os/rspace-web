@@ -7,10 +7,12 @@ import FormGroup from "@mui/material/FormGroup";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import { observer } from "mobx-react-lite";
-import type { ReactNode } from "react";
+import { type ReactNode, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import type InstrumentTemplateModel from "../../../stores/models/InstrumentTemplateModel";
 import useStores from "../../../stores/use-stores";
 import InstrumentTemplatePicker from "../../components/Picker/InstrumentTemplatePicker";
+import InstrumentTemplateSummaryInfo from "../../InstrumentTemplate/SummaryInfo";
 import TemplateName from "./TemplateName";
 
 function InstrumentTemplateDetails(): ReactNode {
@@ -21,6 +23,14 @@ function InstrumentTemplateDetails(): ReactNode {
   const createNewTemplate = importData?.instrumentCreateNewTemplate ?? true;
   const templateName = importData?.instrumentTemplateName ?? "";
   const selectedTemplate = importData?.instrumentTemplate ?? null;
+
+  const handleSetTemplate = useCallback(
+    (tmpl: InstrumentTemplateModel) => {
+      importData?.setInstrumentTemplate(tmpl);
+      importData?.setInstrumentCreateNewTemplate(false);
+    },
+    [importData],
+  );
 
   return (
     <RadioGroup
@@ -57,15 +67,11 @@ function InstrumentTemplateDetails(): ReactNode {
         label={t("import.templateDetails.chooseExistingTemplate")}
       />
       <Box sx={{ ml: 4 }}>
+        <InstrumentTemplateSummaryInfo template={selectedTemplate} />
         <Box sx={{ mb: 1 }}>
           <Divider />
         </Box>
-        <InstrumentTemplatePicker
-          setTemplate={(tmpl) => {
-            importData?.setInstrumentTemplate(tmpl);
-            importData?.setInstrumentCreateNewTemplate(false);
-          }}
-        />
+        <InstrumentTemplatePicker setTemplate={handleSetTemplate} />
         {!createNewTemplate && !selectedTemplate ? (
           <Alert severity="info">{t("import.templateDetails.selectInstrumentTemplate")}</Alert>
         ) : null}
