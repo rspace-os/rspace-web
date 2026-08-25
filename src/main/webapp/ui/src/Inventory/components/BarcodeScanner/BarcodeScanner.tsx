@@ -13,9 +13,7 @@ type BarcodeScannerArgs = {
 
 /*
  * A centered dialog holding the Barcode Detection API (AllBarcodeScanner)
- * where available, or else the qr-scanner library. The dialog is not anchored
- * to the button that opened it because the video only grows once the camera
- * starts, which would overflow a popover positioned before that.
+ * where available, or else the qr-scanner library.
  */
 function BarcodeScanner({ open, onClose, onScan, cameraErrorMessage }: BarcodeScannerArgs) {
   const barcodeDetectorApiSupported = "BarcodeDetector" in window;
