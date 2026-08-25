@@ -35,8 +35,10 @@ class OfficeConversionRunner {
     this.limiter = limiter;
   }
 
-  ConvertedFile convert(Path uploadedFile, String inputExtension, String outputExtension) {
-    return limiter.runWord(() -> convertWithinLimit(uploadedFile, inputExtension, outputExtension));
+  ConvertedFile convert(
+      String deploymentId, Path uploadedFile, String inputExtension, String outputExtension) {
+    return limiter.runWord(
+        deploymentId, () -> convertWithinLimit(uploadedFile, inputExtension, outputExtension));
   }
 
   private ConvertedFile convertWithinLimit(
@@ -50,8 +52,9 @@ class OfficeConversionRunner {
       Files.move(uploadedFile, input);
       Files.createDirectories(requestDirectory.resolve("home"));
       Files.createDirectories(requestDirectory.resolve("tmp"));
+      Files.createDirectories(requestDirectory.resolve("ipc"));
       String pipeName = "rspace-" + UUID.randomUUID();
-      pipeAlias = createPipeAlias(pipeName);
+      pipeAlias = createPipeAlias(requestDirectory, pipeName);
       manager =
           LocalOfficeManager.builder()
               .officeHome(properties.officeHome().toFile())
@@ -134,12 +137,13 @@ class OfficeConversionRunner {
     }
   }
 
-  private Path createPipeAlias(String pipeName) {
+  private Path createPipeAlias(Path requestDirectory, String pipeName) {
     try {
       String uid = Files.getAttribute(Path.of("/proc/self"), "unix:uid").toString();
       Path socketDirectory = Path.of("/tmp");
       Path alias = socketDirectory.resolve("OSL_PIPE_" + uid + "_" + pipeName);
-      Files.createSymbolicLink(alias, Path.of("OSL_PIPE_" + pipeName));
+      Path socket = requestDirectory.resolve("ipc").resolve("OSL_PIPE_" + pipeName);
+      Files.createSymbolicLink(alias, socket.toAbsolutePath());
       return alias;
     } catch (IOException | UnsupportedOperationException e) {
       throw new ConversionException(

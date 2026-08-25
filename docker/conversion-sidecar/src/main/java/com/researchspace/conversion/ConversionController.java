@@ -18,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -58,7 +59,9 @@ final class ConversionController {
   }
 
   @PostMapping(path = "/v1/convert/html", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  ResponseEntity<StreamingResponseBody> toHtml(MultipartHttpServletRequest request) {
+  ResponseEntity<StreamingResponseBody> toHtml(
+      @RequestAttribute(ConversionAuthenticationFilter.DEPLOYMENT_ATTRIBUTE) String deploymentId,
+      MultipartHttpServletRequest request) {
     MultipartFile file = requireOnlyFile(request, "file");
     String extension = extension(file);
     if (!WORD_INPUTS.contains(extension)) {
@@ -71,24 +74,29 @@ final class ConversionController {
               if (PACKAGED_WORD_INPUTS.contains(extension)) {
                 archiveValidator.validate(upload, extension);
               }
-              return officeRunner.convert(upload, extension, "html");
+              return officeRunner.convert(deploymentId, upload, extension, "html");
             }),
         "output.html");
   }
 
   @PostMapping(path = "/v1/convert/docx", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  ResponseEntity<StreamingResponseBody> toDocx(MultipartHttpServletRequest request) {
+  ResponseEntity<StreamingResponseBody> toDocx(
+      @RequestAttribute(ConversionAuthenticationFilter.DEPLOYMENT_ATTRIBUTE) String deploymentId,
+      MultipartHttpServletRequest request) {
     MultipartFile file = requireOnlyFile(request, "file");
     String extension = extension(file);
     if (!Set.of("html", "htm").contains(extension)) {
       unsupported();
     }
     return stream(
-        withUpload(file, upload -> officeRunner.convert(upload, extension, "docx")), "output.docx");
+        withUpload(file, upload -> officeRunner.convert(deploymentId, upload, extension, "docx")),
+        "output.docx");
   }
 
   @PostMapping(path = "/forms/libreoffice/convert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  ResponseEntity<StreamingResponseBody> toPdf(MultipartHttpServletRequest request) {
+  ResponseEntity<StreamingResponseBody> toPdf(
+      @RequestAttribute(ConversionAuthenticationFilter.DEPLOYMENT_ATTRIBUTE) String deploymentId,
+      MultipartHttpServletRequest request) {
     rejectGotenbergControls(request);
     MultipartFile file = requireOnlyFile(request, "files");
     String extension = extension(file);
@@ -100,6 +108,7 @@ final class ConversionController {
             file,
             upload ->
                 limiter.runPdf(
+                    deploymentId,
                     () -> gotenbergProxy.convert(upload, extension, UUID.randomUUID().toString()))),
         "output.pdf");
   }

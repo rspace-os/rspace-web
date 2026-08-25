@@ -54,9 +54,9 @@ final class LibreOfficeSandbox {
             "/proc",
             "--dev",
             "/dev",
-            // JODConverter and LibreOffice must share this hard-coded UNO socket location.
+            // Expose only this request's UNO socket directory inside the sandbox.
             "--bind",
-            "/tmp",
+            request.resolve("ipc").toString(),
             "/tmp"));
     addDirectoryParents(command, request);
     command.addAll(

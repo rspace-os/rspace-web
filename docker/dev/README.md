@@ -101,8 +101,8 @@ The first boot:
 4. compiles and starts the backend, and installs frontend deps + starts Vite.
 
 The stack also starts the RSpace conversion sidecar and its private Gotenberg container. The
-sidecar accepts valid requests without authentication and is not published outside the Compose
-network.
+launcher creates a gitignored bearer token on first use and mounts it read-only into RSpace and the
+sidecar. Neither conversion service is published outside the Compose network.
 
 This takes several minutes the first time (Maven and pnpm download
 dependencies). Watch progress with:

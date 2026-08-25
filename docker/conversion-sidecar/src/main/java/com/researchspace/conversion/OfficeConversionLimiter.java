@@ -3,6 +3,7 @@ package com.researchspace.conversion;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -18,28 +19,36 @@ final class OfficeConversionLimiter {
 
   OfficeConversionLimiter(ConverterProperties properties, MeterRegistry meterRegistry) {
     int capacity = properties.maxConcurrentOfficeConversions();
-    word = new RoleLimiter(capacity, "office", "LibreOffice", meterRegistry);
-    pdf = new RoleLimiter(capacity, "pdf", "PDF", meterRegistry);
+    int deploymentCapacity = properties.maxConcurrentOfficeConversionsPerDeployment();
+    word = new RoleLimiter(capacity, deploymentCapacity, "office", "LibreOffice", meterRegistry);
+    pdf = new RoleLimiter(capacity, deploymentCapacity, "pdf", "PDF", meterRegistry);
   }
 
-  <T> T runWord(Supplier<T> conversion) {
-    return word.run(conversion);
+  <T> T runWord(String deploymentId, Supplier<T> conversion) {
+    return word.run(deploymentId, conversion);
   }
 
-  <T> T runPdf(Supplier<T> conversion) {
-    return pdf.run(conversion);
+  <T> T runPdf(String deploymentId, Supplier<T> conversion) {
+    return pdf.run(deploymentId, conversion);
   }
 
   private static final class RoleLimiter {
 
     private final Semaphore slots;
+    private final int deploymentCapacity;
+    private final ConcurrentHashMap<String, Semaphore> deploymentSlots = new ConcurrentHashMap<>();
     private final AtomicInteger active = new AtomicInteger();
     private final Counter rejected;
     private final String displayName;
 
     private RoleLimiter(
-        int capacity, String metricRole, String displayName, MeterRegistry meterRegistry) {
+        int capacity,
+        int deploymentCapacity,
+        String metricRole,
+        String displayName,
+        MeterRegistry meterRegistry) {
       this.slots = new Semaphore(capacity);
+      this.deploymentCapacity = deploymentCapacity;
       this.displayName = displayName;
       rejected =
           Counter.builder("rspace.conversion." + metricRole + ".rejected")
@@ -50,13 +59,16 @@ final class OfficeConversionLimiter {
           .register(meterRegistry);
     }
 
-    private <T> T run(Supplier<T> conversion) {
+    private <T> T run(String deploymentId, Supplier<T> conversion) {
+      Semaphore deployment =
+          deploymentSlots.computeIfAbsent(
+              deploymentId, ignored -> new Semaphore(deploymentCapacity));
+      if (!deployment.tryAcquire()) {
+        reject();
+      }
       if (!slots.tryAcquire()) {
-        rejected.increment();
-        throw new ConversionException(
-            HttpStatus.TOO_MANY_REQUESTS,
-            ConversionError.SERVICE_BUSY,
-            "All " + displayName + " conversion slots are busy");
+        deployment.release();
+        reject();
       }
       active.incrementAndGet();
       try {
@@ -64,7 +76,16 @@ final class OfficeConversionLimiter {
       } finally {
         active.decrementAndGet();
         slots.release();
+        deployment.release();
       }
+    }
+
+    private void reject() {
+      rejected.increment();
+      throw new ConversionException(
+          HttpStatus.TOO_MANY_REQUESTS,
+          ConversionError.SERVICE_BUSY,
+          "All " + displayName + " conversion slots are busy");
     }
   }
 }

@@ -110,6 +110,19 @@ ensure_deployment_properties() {
   echo "rspace-dev: created ${dir}/deployment.properties from the .example template" >&2
 }
 
+ensure_conversion_credentials() {
+  local dir="${SCRIPT_DIR}/.conversion-credentials" file
+  file="${dir}/rspace-dev"
+  if [ -s "${file}" ]; then
+    return 0
+  fi
+  mkdir -p "${dir}"
+  chmod 700 "${dir}"
+  umask 077
+  openssl rand -hex 32 > "${file}"
+  echo "rspace-dev: created a document-conversion bearer token" >&2
+}
+
 ensure_env() {
   if [ -f "${ENV_FILE}" ]; then
     return 0
@@ -158,6 +171,7 @@ env_get() {
 compose() {
   ensure_env
   ensure_deployment_properties
+  ensure_conversion_credentials
   # Activate the optional chemistry profile when enabled in .env, so every
   # compose subcommand (up/down/ps/logs/...) consistently includes the service.
   local profiles=""
