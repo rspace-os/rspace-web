@@ -54,6 +54,15 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
       " from BaseRecord br inner join br.parents c where "
           + "c.recordInFolderDeleted=false and br.deleted=false and c.folder.id=:parentId ";
 
+  // Variant with a LEFT JOIN FETCH on EcatImage.originalImage so that the proxy is resolved
+  // within the current session when the result page is returned, avoiding
+  // LazyInitializationException
+  // when the gallery page size is exceeded and some originalImage references fall outside the page.
+  private static final String RECORDS_IN_FOLDER_QUERY_WITH_IMAGE_FETCH =
+      " from BaseRecord br inner join br.parents c"
+          + " left join fetch treat(br as EcatImage).originalImage"
+          + " where c.recordInFolderDeleted=false and br.deleted=false and c.folder.id=:parentId ";
+
   public RecordDaoHibernate() {
     super(Record.class);
   }
@@ -157,7 +166,7 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
       query =
           session.createQuery(
               "select br "
-                  + RECORDS_IN_FOLDER_QUERY
+                  + RECORDS_IN_FOLDER_QUERY_WITH_IMAGE_FETCH
                   + createInClause(recordFilter)
                   + "  "
                   + makeOrderBy(pgCrit),
@@ -191,10 +200,12 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
       if (EDIT_INFO_ORDER_BY_FIELDS.contains(field)) {
         field = "editInfo." + field;
       }
-      orderBy = " order by " + field + " " + pgCrit.getSortOrder();
+      // Qualify with the 'br' alias to avoid ambiguity when a JOIN FETCH introduces a second
+      // from-element that also exposes BaseRecord attributes (e.g. EcatImage.originalImage).
+      orderBy = " order by br." + field + " " + pgCrit.getSortOrder();
     } else {
       orderBy =
-          " order by editInfo."
+          " order by br.editInfo."
               + SearchUtils.BASE_RECORD_ORDER_BY_LAST_MODIFIED
               + " "
               + SortOrder.DESC;
