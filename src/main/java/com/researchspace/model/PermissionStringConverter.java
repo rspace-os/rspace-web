@@ -7,9 +7,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Converter
-public class PermissionStringConverter implements AttributeConverter<Set, String> {
+public class PermissionStringConverter implements AttributeConverter<Set<String>, String> {
   @Override
-  public String convertToDatabaseColumn(Set permissionList) {
+  public String convertToDatabaseColumn(Set<String> permissionList) {
     if (permissionList == null) {
       return null;
     }
