@@ -119,6 +119,18 @@
   --sidebar-ring: oklch(0.56 0.021 213.5);
 }
 
+@media (prefers-contrast: more) {
+  :root:not(.dark) {
+    --muted-foreground: oklch(0.46 0.021 213.5);
+    --border: oklch(0.665 0.005 214.3);
+    --ring: oklch(0.46 0.021 213.5);
+  }
+
+  .dark {
+    --border: oklch(1 0 0 / 40%);
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -179,5 +191,16 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  /* Windows High Contrast Mode suppresses box shadows and rings, so keyboard
+     focus needs a system-colour outline that survives forced colour mapping. */
+  @media (forced-colors: active) {
+    *:focus-visible {
+      outline: 2px solid;
+      outline-offset: 2px;
+    }
   }
 }
