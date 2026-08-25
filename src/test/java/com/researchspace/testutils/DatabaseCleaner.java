@@ -110,6 +110,7 @@ public class DatabaseCleaner {
     // This is a list of tables that are audited
     List<String> toDelete =
         Arrays.asList(
+            "BookableItemCalendarSubscription",
             "TimeSlotBooking",
             "BookingConfiguration",
             "RecordAttachment",

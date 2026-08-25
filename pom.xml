@@ -573,22 +573,11 @@
       <exclusions>
         <exclusion>
           <groupId>org.apache.commons</groupId>
-          <artifactId>commons-collections4</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
           <artifactId>commons-lang3</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
-        </exclusion>
-        <!-- ical4j 3.x (javax namespace) drags in com.sun.mail:javax.mail, whose javax-namespace
-             IMAPProvider is picked up by the jakarta.mail ServiceLoader and rejected as "not a
-             subtype of jakarta.mail.Provider". We use jakarta.mail; exclude the javax one. -->
-        <exclusion>
-          <groupId>com.sun.mail</groupId>
-          <artifactId>javax.mail</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -2722,6 +2711,7 @@
 
   <properties>
     <blaze-persistence.version>1.6.18</blaze-persistence.version>
+    <ical4j.version>4.3.0</ical4j.version>
     <spring.version>6.2.19</spring.version>
     <!-- jetty -->
     <jetty.version>12.1.11</jetty.version>

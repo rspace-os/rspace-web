@@ -113,6 +113,26 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
   }
 
   @Override
+  public List<TimeSlotBooking> findCalendarBookings(
+      Long configurationId, Date cutoff, int maximumRows) {
+    return getSession()
+        .createQuery(
+            "select booking from TimeSlotBooking booking"
+                + " join fetch booking.bookingConfiguration"
+                + " join fetch booking.requester"
+                + " where booking.bookingConfiguration.id = :configurationId"
+                + " and booking.deleted = false and booking.state = :state"
+                + " and booking.endTime > :cutoff"
+                + " order by booking.startTime, booking.id",
+            TimeSlotBooking.class)
+        .setParameter("configurationId", configurationId)
+        .setParameter("state", BookingState.CONFIRMED)
+        .setParameter("cutoff", cutoff)
+        .setMaxResults(maximumRows)
+        .getResultList();
+  }
+
+  @Override
   public TimeSlotBooking saveAndFlush(TimeSlotBooking booking) {
     TimeSlotBooking saved = save(booking);
     getSession().flush();
