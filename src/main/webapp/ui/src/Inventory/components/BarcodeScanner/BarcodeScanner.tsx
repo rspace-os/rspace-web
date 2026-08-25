@@ -1,7 +1,7 @@
-import Dialog from "@mui/material/Dialog";
 import { observer } from "mobx-react-lite";
+import { Dialog } from "@/components/DialogBoundary";
 import AllBarcodeScanner from "./AllBarcodeScanner";
-import { BARCODE_SCANNER_TITLE_ID, type BarcodeInput } from "./BarcodeScannerSkeleton";
+import type { BarcodeInput } from "./BarcodeScannerSkeleton";
 import QrCodeScanner from "./QrCodeScanner";
 
 type BarcodeScannerArgs = {
@@ -19,7 +19,7 @@ function BarcodeScanner({ open, onClose, onScan, cameraErrorMessage }: BarcodeSc
   const barcodeDetectorApiSupported = "BarcodeDetector" in window;
 
   return (
-    <Dialog open={open} onClose={onClose} aria-labelledby={BARCODE_SCANNER_TITLE_ID}>
+    <Dialog open={open} onClose={onClose}>
       {barcodeDetectorApiSupported ? (
         <AllBarcodeScanner onClose={onClose} onScan={onScan} cameraErrorMessage={cameraErrorMessage} />
       ) : (

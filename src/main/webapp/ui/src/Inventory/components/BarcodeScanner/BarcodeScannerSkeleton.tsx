@@ -1,6 +1,7 @@
 import { alertClasses } from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type React from "react";
@@ -13,12 +14,6 @@ import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import useStores from "../../../stores/use-stores";
 
 export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
-
-/**
- * The heading that names the enclosing dialog. Only one scanner can be open at
- * a time, so a fixed id is enough for the dialog's aria-labelledby.
- */
-export const BARCODE_SCANNER_TITLE_ID = "barcode-scanner-dialog-title";
 
 type BarcodeScannerSkeletonArgs = {
   onClose: () => void;
@@ -113,14 +108,8 @@ export default function BarcodeScannerSkeleton({
       spacing={1}
     >
       <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }} spacing={1}>
-        {/*
-         * A plain heading rather than MUI's DialogTitle: DialogTitle adopts the
-         * dialog's aria-labelledby id, which would then cover the help icon's
-         * tooltip text as well as the heading.
-         */}
-        <Typography variant="h6" component="h2" id={BARCODE_SCANNER_TITLE_ID}>
-          {t("barcodeScanner.heading")}
-        </Typography>
+        {/* the help icon stays outside the DialogTitle, which names the dialog */}
+        <DialogTitle sx={{ p: 0 }}>{t("barcodeScanner.heading")}</DialogTitle>
         <HelpLinkIcon link={helpDocsArticleUrl("barcodes")} title={t("barcodeScanner.helpTitle")} />
       </Stack>
       <Typography variant="body2" sx={{ color: "text.secondary" }}>
