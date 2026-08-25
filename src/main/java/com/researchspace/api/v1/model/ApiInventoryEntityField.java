@@ -68,15 +68,11 @@ public class ApiInventoryEntityField extends ApiField {
   private ApiInventoryLink link;
 
   /**
-   * Whether the incoming payload mentioned {@code link} at all, so that an explicit {@code "link":
-   * null} ("clear it") can be told apart from a partial update that simply does not mention it. Set
-   * by the hand-written {@link #setLink} below, which replaces Lombok's generated one.
-   *
-   * <p>Without the distinction, absent meant clear: a template PUT naming only the field's
-   * allowed-relation-types (exactly the request the whitelist-conflict error asks the user to make)
-   * silently destroyed that field's default link, and left the whitelist guard seeing a null link
-   * so it passed (RSDEV-1246). Excluded from JSON, equals and toString: it describes the payload,
-   * not the field.
+   * Whether the incoming payload mentioned {@code link} at all, telling an explicit {@code "link":
+   * null} apart from a partial update that never mentions it. Without the distinction, a template
+   * PUT naming only allowed-relation-types destroyed that field's default link (RSDEV-1246). Set by
+   * the hand-written {@link #setLink} below. Excluded from JSON, equals and toString: it describes
+   * the payload, not the field.
    */
   @JsonIgnore @EqualsAndHashCode.Exclude @ToString.Exclude private boolean linkProvided;
 
@@ -161,9 +157,8 @@ public class ApiInventoryEntityField extends ApiField {
       InventoryLinkField linkField = (InventoryLinkField) field;
       setAllowedRelationTypes(splitRelationTypes(linkField.getAllowedRelationTypes()));
       if (linkField.getLink() != null) {
-        // assign the field, not the setter: linkProvided means "the client sent a link key", and
-        // this is the outgoing direction. Going through setLink would make it true on every
-        // serialized field and rob the flag of its meaning.
+        // the field, not the setter: this is the outgoing direction, and setLink would set
+        // linkProvided on every serialized field, robbing the flag of its meaning
         this.link = new ApiInventoryLink(linkField.getLink());
       }
     }

@@ -295,8 +295,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       String newFieldContent = apiField.getContent();
       InventoryEntityField inventoryEntityField = inventoryEntityFieldList.get(i);
 
-      if (inventoryEntityField instanceof InventoryLinkField) {
-        applyLinkFieldValueOnCreate((InventoryLinkField) inventoryEntityField, apiField, user);
+      if (inventoryEntityField instanceof InventoryLinkField linkField) {
+        applyLinkFieldValueOnCreate(linkField, apiField, user);
       } else if (inventoryEntityField.isOptionsStoringField()) {
         inventoryEntityField.setSelectedOptions(apiField.getSelectedOptions());
       } else if (inventoryEntityField == landingPage
@@ -702,8 +702,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
           identifiersHelper.createAssignRequestedIdentifiers(
               apiTemplate.getIdentifiers(), dbTemplate, user);
       contentChanged |= apiTemplate.applyChangesToDatabaseInstrument(dbTemplate, user);
-      // a template link field carries an editable default link of its own (RSDEV-1246), so the
-      // template goes through the same link write path as a concrete instrument
+      // a template link field carries a default link of its own (RSDEV-1246), so it goes through
+      // the same write path as a concrete instrument
       contentChanged |= applyLinkFieldValuesOnUpdate(apiTemplate, dbTemplate, user);
       assertDefaultLinksMatchWhitelists(dbTemplate.getActiveFields());
       contentChanged |= saveSharingACLForIncomingApiInvRec(dbTemplate, apiTemplate);
@@ -738,9 +738,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
         changed = true;
       }
       if (apiField.isDeleteFieldRequest()) {
-        // externalized, and an ApiRuntimeException so it maps to a 422 with the resolved bundle
-        // message; a raw IllegalArgumentException reached API clients as untranslated English.
-        // Same keys the sample counterpart uses.
+        // ApiRuntimeException so it maps to a resolved 422; a raw IllegalArgumentException
+        // reached clients as untranslated English. Same keys as the sample counterpart.
         if (apiField.getId() == null) {
           throw new ApiRuntimeException("errors.inventory.field.deleteRequestIdMissing");
         }
@@ -868,10 +867,9 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     try {
       dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
       if (!dbTemplate.getVersion().equals(dbInstrument.getTemplateLinkedVersion())) {
-        // Snapshot the link fields before the sync: propagating a deleted template link-field marks
-        // the matching instrument field deleted in the model layer, which cannot soft-delete the
-        // field's InventoryLink. Reconcile those orphaned links once the sync has run, since
-        // getActiveFields() no longer returns them afterwards (RSDEV-1270).
+        // snapshot before the sync: it marks matching fields deleted in the model layer, which
+        // cannot soft-delete their InventoryLink, and getActiveFields() no longer returns them
+        // afterwards, so the orphans are reconciled from this list (RSDEV-1270)
         List<InventoryLinkField> linkFieldsBeforeUpdate =
             dbInstrument.getActiveFields().stream()
                 .filter(InventoryLinkField.class::isInstance)
@@ -898,23 +896,19 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   }
 
   /**
-   * Clears the link of any link field the template sync has just cloned onto this instrument, so a
-   * template's default link is stamped at creation only and never retro-applied (see the "Stamped"
-   * entry in {@code DevDocs/CONTEXT.md} and ADR-0006).
+   * Clears the link of any field the template sync has just cloned, so a default link is stamped at
+   * creation only and never retro-applied (ADR-0006).
    *
-   * <p>Needed because the two model-layer syncs differ: {@code
-   * Sample#updateToLatestTemplateVersion} calls {@code clearValue()} on each newly cloned field,
-   * which {@code InventoryLinkField} overrides to null its link, whereas {@code
-   * Instrument#updateToLatestTemplateVersion} calls {@code setFieldData(null)}, which link fields
-   * do not override. Without this an existing instrument would silently acquire a copy of the
-   * template's current default.
+   * <p>Compensates for a model-layer asymmetry: {@code Sample#updateToLatestTemplateVersion} calls
+   * {@code clearValue()}, which {@code InventoryLinkField} overrides to null its link, whereas
+   * {@code Instrument#updateToLatestTemplateVersion} calls {@code setFieldData(null)}, which it
+   * does not override.
    */
   void clearRetroStampedDefaultLinks(InstrumentEntity dbInstrument) {
     dbInstrument.getActiveFields().stream()
         .filter(InventoryLinkField.class::isInstance)
         .map(InventoryLinkField.class::cast)
-        // a field the sync has just cloned is exactly the one with no id yet, which is cheaper and
-        // more robust than comparing instance identity against a pre-sync snapshot
+        // a just-cloned field is exactly the one with no id yet
         .filter(field -> field.getId() == null)
         .forEach(InventoryLinkField::clearValue);
   }

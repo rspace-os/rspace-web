@@ -26,16 +26,11 @@ type LinkFieldValueArgs = {
    * the template editor tracks error state on its Name field only. */
   onChange?: () => void;
   /**
-   * Whether to surface the field name above the editor and inside the committed card. True on an
-   * item, whose FormField label is hidden. False in the template editor, where the name is already
-   * entered in the Name field just above and repeating it here is noise.
+   * Whether to surface the field name above the editor and in the committed card. False in the
+   * template editor, where the Name field just above already carries it.
    */
   showFieldName?: boolean;
-  /**
-   * Overrides the editor's "Target" group heading. The template editor passes "Default link target",
-   * since inside the Default link section the target being chosen belongs to the default, not to the
-   * record. Left unset on an item, where "Target" is right.
-   */
+  /** Overrides the editor's "Target" group heading; the template editor names the default's. */
   targetHeading?: string;
   /** Passed through to {@link LinkEditor}; see its docblock. */
   nestHeadings?: boolean;
@@ -106,24 +101,16 @@ function LinkFieldValue({
     stagedTargetGlobalId !== committedTargetGlobalId ||
     stagedVersionPin !== committedVersionPin;
 
-  // Block record Save while the link editor is open or holds unapplied changes; the
-  // `hasLink` guard keeps an empty optional field saveable. A dedicated flag, not
-  // field.error (see Field.linkEditInProgress), so an open editor reads as in-progress.
-  // In view mode (`disabled`) the editor - and its Apply/Discard buttons - is never shown, so a
-  // left-open editor must not keep the field flagged: that would block save with an "Apply or
-  // discard" message the user has no way to act on. A record Save happens while still editable
-  // (`disabled` is false), so gating on `!disabled` does not weaken the guard.
-  // The cleanup matters: the template editor unmounts this component when the field is marked for
-  // deletion (Template/Fields/CustomField swaps in the delete notice), and record validation walks
-  // every field including deleted ones. Without it, opening the editor on a link field and then
-  // removing that field leaves the flag set and blocks Save with an "Apply or discard" message the
-  // user has no editor left to act on.
+  // Block record Save while the editor is open or holds unapplied changes; the `hasLink` guard
+  // keeps an empty optional field saveable. A dedicated flag, not field.error, so an open editor
+  // reads as in-progress. Gated on `!disabled` because in view mode there are no Apply/Discard
+  // buttons to act on, and a record Save happens while still editable.
   useEffect(() => {
     field.setLinkEditInProgress(!disabled && (changed || (editing && hasLink)));
   }, [changed, editing, hasLink, disabled, field]);
-  // Separate from the effect above on purpose. React runs a cleanup before every re-run, not only
-  // on unmount, so keeping it there wrote false and then the real value on every dependency
-  // change: two MobX actions, and an observable transiently wrong in between.
+  // Separate from the effect above on purpose: React runs a cleanup before every re-run, not only
+  // on unmount, so keeping it there wrote false then the real value on every dependency change.
+  // Clears the flag when the template editor unmounts a field marked for deletion.
   useEffect(() => () => field.setLinkEditInProgress(false), [field]);
 
   const relationOptions =

@@ -64,9 +64,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 /**
  * Unit tests for the link-field persistence logic in {@link InstrumentEntityApiManagerImpl}.
  *
- * <p>{@code applyLinkFieldValue} now lives once on {@link InventoryApiManagerImpl}, so these cases
- * exercise it through the instrument manager: what is instrument-specific is the {@code isTemplate}
- * wiring of the update wrapper, the template-create path, and {@code
+ * <p>{@code applyLinkFieldValue} lives once on {@link InventoryApiManagerImpl}; what is
+ * instrument-specific is the {@code isTemplate} wiring, the template-create path, and {@code
  * clearRetroStampedDefaultLinks}.
  */
 @ExtendWith(MockitoExtension.class)
@@ -214,9 +213,8 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
   @Test
   void anItemUpdateThatOmitsTheLinkEntirelyStillClearsIt() {
-    // RSDEV-1131 semantics, which InstrumentEntityApiManagerTest.linkFieldValue_clearedWhenInstrume
-    // ntUpdated pins: an instrument's field list arrives complete, so a link field carrying no link
-    // at all means the user cleared it. Only a TEMPLATE's field list can be partial.
+    // RSDEV-1131 semantics: an instrument's field list arrives complete, so a link field carrying
+    // no link means the user cleared it. Only a TEMPLATE's field list can be partial.
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
 
     boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
@@ -228,8 +226,8 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
   @Test
   void aTemplatePutThatOmitsTheLinkKeepsTheDefault() {
-    // the whitelist-only template edit: {"fields":[{"id":N,"allowedRelationTypes":[...]}]}. Absence
-    // there cannot mean "clear", or a legitimate partial edit would destroy the default link.
+    // the whitelist-only template edit: absence there cannot mean "clear", or a legitimate partial
+    // edit would destroy the default link
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
 
     boolean changed = manager.applyLinkFieldValue(dbField, apiField, user, true);
@@ -785,9 +783,8 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
   @Test
   void theTemplateFieldDeleteErrorsResolveToRealMessages() {
     // ApiRuntimeException carries a bare string literal, so a code that no longer matches the
-    // catalogue compiles, passes every lint and fails only against a live server. A rebase across
-    // the JSON-catalogue migration left both of these pointing at renamed keys. Taking the code
-    // from the production path, rather than restating it, is what makes this a guard.
+    // catalogue compiles, lints clean and fails only against a live server. Taking the code from
+    // the production path, rather than restating it, is what makes this a guard.
     ApiInstrumentTemplate apiTemplate = new ApiInstrumentTemplate();
     ApiInventoryEntityField deleteWithoutId = new ApiInventoryEntityField();
     deleteWithoutId.setDeleteFieldRequest(true);
@@ -819,9 +816,7 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
   @Test
   void everyErrorCodeTheLinkPathsThrowResolves() {
-    // Same failure mode as above, for the codes reached from the shared link write path. They are
-    // bare string literals, so a renamed catalogue key compiles, lints and passes i18n:lint, and
-    // shows up only as an unresolved message against a live server.
+    // same failure mode as above, for the codes reached from the shared link write path
     assertResolves(
         "errors.inventory.field.link.defaultRelationTypeNotPermitted",
         "errors.inventory.field.link.selfLinkForbidden",
@@ -843,10 +838,9 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
   @Test
   void aLinkFieldTheTemplateSyncJustClonedHasItsDefaultCleared() {
-    // A template's default is stamped at creation only, never retro-applied (ADR-0006, and the
-    // "Stamped" entry in CONTEXT.md). This is instrument-only compensation: Sample's
-    // updateToLatestTemplateVersion calls clearValue(), which InventoryLinkField overrides to null
-    // its link, while Instrument's calls setFieldData(null), which link fields do not override.
+    // Stamped at creation only, never retro-applied (ADR-0006). Instrument-only compensation:
+    // Sample's updateToLatestTemplateVersion calls clearValue(), which InventoryLinkField overrides
+    // to null its link, while Instrument's calls setFieldData(null), which it does not override.
     Instrument dbInstrument = new Instrument();
 
     InventoryLinkField existingField = new InventoryLinkField();

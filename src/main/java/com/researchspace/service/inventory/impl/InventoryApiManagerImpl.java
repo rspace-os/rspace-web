@@ -64,6 +64,7 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
@@ -124,23 +125,20 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
    */
   static boolean isRelationPermitted(InventoryLinkField field, String relationType) {
     String allowed = field.getAllowedRelationTypes();
-    if (allowed == null || allowed.trim().isEmpty()) {
+    if (StringUtils.isBlank(allowed)) {
       return true;
     }
     return Arrays.asList(allowed.split("\\|")).contains(relationType);
   }
 
   /**
-   * Rejects a template edit that narrows a link field's allowed-relation-types whitelist so that
-   * the field's own default link (RSDEV-1246) would no longer be permitted. The per-link check in
-   * {@code assertRelationAllowed} below only sees an incoming link, and an unchanged default is a
-   * no-op on that path, so a whitelist-only edit would otherwise leave the template holding a
-   * default its own field forbids. Failing the edit is preferable to silently dropping the default.
+   * Rejects a template edit that narrows a link field's whitelist past its own default link
+   * (RSDEV-1246). An unchanged default is a no-op on the per-link path, so a whitelist-only edit
+   * would otherwise slip through. Failing the edit beats silently dropping the default.
    */
   static void assertDefaultLinksMatchWhitelists(List<InventoryEntityField> templateFields) {
     for (InventoryEntityField field : templateFields) {
-      if (field instanceof InventoryLinkField) {
-        InventoryLinkField linkField = (InventoryLinkField) field;
+      if (field instanceof InventoryLinkField linkField) {
         InventoryLink link = linkField.getLink();
         if (link != null && !isRelationPermitted(linkField, link.getRelationType())) {
           throw new ApiRuntimeException(
@@ -153,54 +151,38 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   }
 
   /**
-   * Soft-deletes the {@link InventoryLink} backing a structured link field once that field has been
-   * soft-deleted, so the link row (and its Envers audit trail) stays in step with the field. The
-   * field's {@code deleted} flag is flipped in the model layer (a template link-field delete, or
-   * its propagation to records through {@code updateToLatestTemplateVersion}), which cannot reach
-   * the service-layer {@link InventoryLinkManager}; a soft-delete is also an ordinary update rather
-   * than a JPA remove, so the {@code cascade}/{@code orphanRemoval} on {@code
-   * InventoryLinkField#link} never fires. Without this the link row would linger with {@code
-   * deleted=false} after its field is gone (RSDEV-1270). No-op unless the field is a deleted {@link
-   * InventoryLinkField} whose link is still live.
+   * Soft-deletes the {@link InventoryLink} behind a soft-deleted link field, keeping the row and
+   * its Envers trail in step with the field (RSDEV-1270). Needed because the field's flag is
+   * flipped in the model layer, out of reach of {@link InventoryLinkManager}, and because a
+   * soft-delete is an UPDATE, so {@code orphanRemoval} never fires.
    */
   void softDeleteLinkOfDeletedLinkField(InventoryEntityField field, User user) {
-    if (field instanceof InventoryLinkField && field.isDeleted()) {
-      InventoryLink link = ((InventoryLinkField) field).getLink();
+    if (field instanceof InventoryLinkField linkField && field.isDeleted()) {
+      InventoryLink link = linkField.getLink();
       if (link != null && !link.isDeleted()) {
         inventoryLinkManager.deleteLink(link, user);
       }
     }
   }
 
-  /**
-   * Item semantics: an omitted link clears. Equivalent to the four-argument form with {@code
-   * omittedLinkPreservesExisting = false}.
-   */
+  /** Item semantics: an omitted link clears. */
   boolean applyLinkFieldValue(
       InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
     return applyLinkFieldValue(field, apiField, user, false);
   }
 
   /**
-   * Applies a record's chosen link value to its structured link field, going through the {@link
-   * InventoryLinkManager} so the target is parsed/validated and the Envers revision captured (the
-   * same path used by extra-field links). An unchanged payload is a no-op (previously every save
-   * replaced the row, resetting its identity and creation date); a changed payload updates the
-   * field's existing InventoryLink row in place; clearing the value dereferences the row, which the
-   * field's {@code orphanRemoval} mapping hard-deletes at flush (an Envers DEL revision keeps the
-   * history in {@code InventoryLink_AUD}; a prior soft-delete write would be collapsed into that
-   * same DEL revision, so none is attempted). This differs deliberately from the extra-field delete
-   * path, where the FIELD itself is soft-deleted and its link row therefore survives soft-deleted
-   * alongside it. The chosen relation type must be permitted by the template field's
-   * allowed-relation-types whitelist (an empty whitelist permits all).
+   * Applies a record's chosen link value to its link field through {@link InventoryLinkManager}, so
+   * the target is validated and the Envers revision captured. An unchanged payload is a no-op; a
+   * changed one updates the row in place; clearing dereferences it, which {@code orphanRemoval}
+   * hard-deletes at flush. This differs from the extra-field delete path, where the FIELD is
+   * soft-deleted and its row survives soft-deleted alongside it.
    *
-   * @param omittedLinkPreservesExisting how to read a payload that carries no {@code link} key at
-   *     all. True for a <b>template</b> field, whose PUT accepts a partial field list: a
-   *     whitelist-only edit or a rename must not destroy the default link. False for an <b>item</b>
-   *     field, whose field list always arrives complete, so an absent link means the user cleared
-   *     it (RSDEV-1131, pinned by {@code
-   *     InstrumentEntityApiManagerTest.linkFieldValue_clearedWhenInstrumentUpdated}). An explicit
-   *     {@code "link": null} clears in both cases.
+   * @param omittedLinkPreservesExisting how to read a payload carrying no {@code link} key. True
+   *     for a <b>template</b>, whose PUT accepts a partial field list, so a whitelist-only edit
+   *     must not destroy the default. False for an <b>item</b>, whose field list always arrives
+   *     complete, so absent means cleared (RSDEV-1131). An explicit {@code "link": null} clears in
+   *     both cases.
    */
   boolean applyLinkFieldValue(
       InventoryLinkField field,
@@ -210,7 +192,7 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     ApiInventoryLink apiLink = apiField.getLink();
     String target = apiLink == null ? null : apiLink.getTargetGlobalId();
     InventoryLink existing = field.getLink();
-    if (target == null || target.trim().isEmpty()) {
+    if (StringUtils.isBlank(target)) {
       if (existing == null) {
         return false; // no link before, none requested now
       }
@@ -223,10 +205,8 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     }
     Long effectivePin =
         apiLink.derivedVersionPin() != null ? apiLink.derivedVersionPin() : apiLink.getVersionPin();
-    // compare on the parsed base id, not the raw string: the stored row holds the
-    // unsuffixed id (the pin lives in versionPin), so a suffixed incoming id like
-    // "SA2v4" would otherwise never compare equal and every save would fire a
-    // spurious update (and Envers revision). Mirrors ApiExtraFieldsHelper.linkChanged.
+    // compare on the parsed base id: the row holds the unsuffixed id (the pin lives in versionPin),
+    // so a suffixed "SA2v4" would never compare equal and every save would fire a spurious update
     GlobalIdentifier incoming = parseTargetOrNull(target);
     if (existing != null
         && incoming != null
@@ -246,12 +226,10 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   }
 
   /**
-   * Applies a link value while creating a record from a template. The template's default link has
-   * already been stamped onto the new field by {@code InventoryLinkField#shallowCopy()}, so a
-   * payload that lists the fields but says nothing about the link must leave that stamp alone
-   * rather than wipe it before it is ever persisted (ADR-0006: bulk, API and UI creation behave
-   * identically, and the UI always sends the link key). An explicit {@code "link": null} still
-   * clears, which is how a caller declines the default.
+   * Create-from-template: {@code InventoryLinkField#shallowCopy()} has already stamped the
+   * template's default onto the new field, so a payload that says nothing about the link must leave
+   * it alone rather than wipe it before it is ever persisted (ADR-0006). An explicit {@code "link":
+   * null} still clears, which is how a caller declines the default.
    */
   boolean applyLinkFieldValueOnCreate(
       InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
@@ -259,14 +237,10 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   }
 
   /**
-   * Applies link values to an existing record's structured link fields (the update path). The DTO
-   * apply loop leaves link fields untouched because it cannot reach the service-layer {@link
-   * InventoryLinkManager}; this matches each modified link field by id and applies it here.
-   *
-   * <p>Templates go through this same path as items: a template's link field carries an editable
-   * default link of its own (RSDEV-1246). Callers pass the pieces rather than their own record
-   * type, because {@code isTemplate()} lives on the sample and instrument entities rather than on
-   * {@link InventoryRecord}.
+   * Applies link values to an existing record's link fields. The DTO apply loop skips them because
+   * it cannot reach {@link InventoryLinkManager}; this matches each by id and applies it here.
+   * Templates use the same path, carrying a default link of their own (RSDEV-1246). Callers pass
+   * the pieces because {@code isTemplate()} lives on the entities, not on {@link InventoryRecord}.
    */
   boolean applyLinkFieldValuesOnUpdate(
       List<ApiInventoryEntityField> apiFields,
@@ -301,31 +275,25 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   }
 
   /**
-   * Applies a template link field's optional default link (RSDEV-1246). The stateless {@code
-   * ApiFieldToModelFieldFactory} sets only the allowed-relation-types whitelist, so the default has
-   * to be created here, through the same {@link InventoryLinkManager} write path an item's link
-   * uses: validated against the DataCite vocabulary and the field's own whitelist, with the Envers
-   * revision captured. Items created from the template are then stamped with a copy of it by {@code
-   * InventoryLinkField#shallowCopy()}, needing no further code. No-op for any other field type, and
-   * for a link field whose payload carries no link.
+   * Creates a new template link field's optional default link (RSDEV-1246). {@code
+   * ApiFieldToModelFieldFactory} sets only the whitelist, so the default is written here through
+   * the same {@link InventoryLinkManager} path an item's link uses. Items are then stamped with a
+   * copy by {@code InventoryLinkField#shallowCopy()}. No-op for any other field type.
    */
   void applyDefaultLinkOfNewTemplateField(
       InventoryEntityField toAdd,
       ApiInventoryEntityField apiField,
       InventoryRecord dbTemplate,
       User user) {
-    if (toAdd instanceof InventoryLinkField) {
-      // the same self-link rejection the edit path applies: adding a link field to an already-saved
-      // template must not be a way in for a default that targets that very template
+    if (toAdd instanceof InventoryLinkField linkField) {
+      // adding a link field to a saved template must not smuggle in a default targeting it
       rejectSelfLink(apiField.getLink(), dbTemplate);
-      applyLinkFieldValue((InventoryLinkField) toAdd, apiField, user, true);
+      applyLinkFieldValue(linkField, apiField, user, true);
     }
   }
 
   private void assertRelationAllowed(InventoryLinkField field, String relationType) {
-    // a chosen relation must be a real DataCite relation type, even when the whitelist is empty.
-    // ApiRuntimeException maps to a 422 with the resolved bundle message, where a raw
-    // IllegalArgumentException would surface as an unmapped 500.
+    // ApiRuntimeException maps to a resolved 422; a raw IllegalArgumentException would be a 500
     if (!DataCiteRelationType.isValid(relationType)) {
       throw new ApiRuntimeException("errors.inventory.field.linkRelationTypeInvalid", relationType);
     }
@@ -336,12 +304,9 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   }
 
   private void rejectSelfLink(ApiInventoryLink apiLink, InventoryRecord dbRecord) {
-    // getId() first: getOid() throws rather than returning null on an unsaved record, and this is
-    // reached while creating a template, which has no id yet (and so nothing to self-link to).
-    // Returning early there is not a hole: the template is not in the database yet either, so
-    // InventoryLinkManager.createLink's target-exists-and-readable check rejects its own future
-    // Global ID before any link row is written. Every path where a self-link IS reachable (a
-    // template or item that already exists) passes a saved record and so runs the check below.
+    // getId() first: getOid() throws on an unsaved record, and this is reached while creating a
+    // template. Not a hole: an unsaved template is not in the database either, so createLink's
+    // target-exists check rejects its own future Global ID before any row is written.
     if (apiLink == null || dbRecord.getId() == null || dbRecord.getOid() == null) {
       return;
     }
@@ -359,9 +324,8 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     try {
       return new GlobalIdentifier(targetGlobalId);
     } catch (IllegalArgumentException | NullPointerException ex) {
-      // deliberately swallowed: a malformed or blank target is not an error here. The callers
-      // either treat it as "no target" (the clear path) or hand it to InventoryLinkManager, which
-      // rejects it with a resolved 422 rather than this raw parse failure.
+      // deliberately swallowed: a blank or malformed target is not an error here. Callers either
+      // treat it as "no target" or hand it to InventoryLinkManager, which returns a resolved 422.
       return null;
     }
   }

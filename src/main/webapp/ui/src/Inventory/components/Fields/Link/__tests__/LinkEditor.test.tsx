@@ -1,4 +1,6 @@
+import { chipClasses } from "@mui/material/Chip";
 import { ThemeProvider } from "@mui/material/styles";
+import { textFieldClasses } from "@mui/material/TextField";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -98,7 +100,7 @@ describe("LinkEditor layout", () => {
     const { container } = renderEditor({ targetGlobalId: "SA42", onTargetChange });
 
     const chip = container.querySelector<HTMLElement>('[data-test-id="LinkTarget-globalId"]');
-    const deleteIcon = chip?.querySelector<HTMLElement>(".MuiChip-deleteIcon");
+    const deleteIcon = chip?.querySelector<HTMLElement>(`.${chipClasses.deleteIcon}`);
     expect(deleteIcon).toBeInTheDocument();
 
     await user.click(deleteIcon as HTMLElement);
@@ -110,7 +112,7 @@ describe("LinkEditor layout", () => {
 
     const field = within(row(container, "LinkEditor-targetRow"))
       .getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" })
-      .closest<HTMLElement>(".MuiTextField-root");
+      .closest<HTMLElement>(`.${textFieldClasses.root}`);
     // a Global ID tops out around 20 characters, so the field is sized rather than filling the row
     expect(window.getComputedStyle(field as HTMLElement).width).toBe("11em");
   });

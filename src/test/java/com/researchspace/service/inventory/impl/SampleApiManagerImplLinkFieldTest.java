@@ -152,9 +152,8 @@ class SampleApiManagerImplLinkFieldTest {
   @Test
   void clearingTheValueDereferencesTheRowForOrphanRemoval() {
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
-    // an explicit null link: the field's value is being cleared. (Absence is a different thing and
-    // now means "no change" for a template - see
-    // aTemplatePayloadThatNeverMentionsTheLinkLeavesItAlone.) The field's
+    // an explicit null link clears the value; absence is a different thing for a template. The
+    // field's
     // orphanRemoval mapping hard-deletes the dereferenced row at flush (with a
     // DEL revision in InventoryLink_AUD); an extra soft-delete write would be
     // collapsed away by Envers and is deliberately not attempted.
@@ -204,11 +203,9 @@ class SampleApiManagerImplLinkFieldTest {
 
   @Test
   void aTemplatePayloadThatNeverMentionsTheLinkLeavesItAlone() {
-    // A partial TEMPLATE update must not destroy the default link. This is the request the
-    // whitelist-conflict error tells the user to make (narrow the allowed types, no link key), and
-    // also a plain field rename. Treating absent as "clear" hard-deleted the row AND left
-    // assertDefaultLinksMatchWhitelists seeing link == null, so the guard passed and the 422 never
-    // fired.
+    // A partial TEMPLATE update must not destroy the default link: this is the very request the
+    // whitelist-conflict error tells the user to make. Treating absent as "clear" hard-deleted the
+    // row and left the guard seeing link == null, so the 422 never fired.
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
     apiField.setAllowedRelationTypes(List.of("IsCitedBy"));
 
@@ -221,10 +218,8 @@ class SampleApiManagerImplLinkFieldTest {
 
   @Test
   void aCreatePayloadThatOmitsTheLinkKeepsTheStampedDefault() {
-    // Creating an item from a template stamps the template's default onto the new field before the
-    // request's own field values are applied. A create payload that lists the fields but says
-    // nothing about the link must not wipe that stamp before it is ever persisted: ADR-0006 says
-    // bulk, API and UI creation behave identically, and the UI always sends the link key.
+    // The default is stamped onto the new field before the request's own values are applied, so a
+    // create payload that says nothing about the link must not wipe it (ADR-0006).
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
     apiField.setContent("");
 
@@ -237,10 +232,9 @@ class SampleApiManagerImplLinkFieldTest {
 
   @Test
   void anItemPayloadThatNeverMentionsTheLinkStillClearsIt() {
-    // The item contract is the opposite way round, and predates this work (RSDEV-1131): an item's
-    // field list arrives complete, so a link field with no link at all means the user cleared it.
-    // Only a template's field list can legitimately be partial, so only a template can read absence
-    // as "no change".
+    // The item contract is the opposite, and predates this work (RSDEV-1131): an item's field list
+    // arrives complete, so absence means cleared. Only a template's list can legitimately be
+    // partial.
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
 
     boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
@@ -333,10 +327,9 @@ class SampleApiManagerImplLinkFieldTest {
 
   @Test
   void aNewTemplateLinkFieldIsCreatedWithItsDefaultLink() {
-    // RSDEV-1246: a template's Link field may carry a default link, stored in the same link_id an
-    // item's link uses so that shallowCopy() stamps it onto items with no extra copy code. The
-    // stateless factory only sets the whitelist, so the manager must apply the default through
-    // InventoryLinkManager (which validates the target and captures the Envers revision).
+    // RSDEV-1246: a template Link field may carry a default, stored in the same link_id an item's
+    // link uses so shallowCopy() stamps it on for free. The stateless factory sets only the
+    // whitelist, so the manager applies the default through InventoryLinkManager.
     ApiSampleTemplatePost apiTemplate = new ApiSampleTemplatePost();
     ApiInventoryEntityField apiField = apiLinkField("SA2", "References", null);
     apiField.setType(ApiFieldType.LINK);

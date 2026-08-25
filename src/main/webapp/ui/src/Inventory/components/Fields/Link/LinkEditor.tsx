@@ -2,7 +2,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
+import Chip, { chipClasses } from "@mui/material/Chip";
 import FormHelperText from "@mui/material/FormHelperText";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
@@ -33,16 +33,12 @@ export interface LinkEditorProps {
   relationError?: boolean;
   relationHelperText?: string;
 
-  /**
-   * Heading for the target group. Defaults to "Target"; a template's default-link editor overrides
-   * it, since there the target being chosen is the default's, not the record's own.
-   */
+  /** Heading for the target group; defaults to "Target". */
   targetHeading?: string;
   /**
-   * Whether the group headings descend one level below the caller's own. True only where the
-   * caller actually renders a heading immediately above (the template editor's InputWrapper, whose
-   * FormControl emits one). The item and extra-field editors render a plain <label> in edit mode,
-   * because FieldLabel only emits a Heading when disabled, so nesting there would skip a level.
+   * Whether the group headings descend one level. True only where the caller really renders a
+   * heading above: the item and extra-field editors render a plain label in edit mode, so nesting
+   * there would skip a level.
    */
   nestHeadings?: boolean;
   /** Current target Global ID (controlled). */
@@ -64,20 +60,12 @@ export interface LinkEditorProps {
 }
 
 /**
- * The shared link-editor UI used by both the extra-field editor (UpdateField)
- * and the template-field editor (LinkFieldValue), in three labelled groups:
- * the target group (the Global ID field and the two Browse buttons on one
- * wrapping row, with the selected target's chip beneath), then the
- * relation-type field, then "Version" (the version pill and version-pin
- * control). Plus the three picker/version dialogs. The target group is headed
- * "Target" unless the caller renames it via `targetHeading`, which the
- * template's default-link editor does.
+ * The shared link-editor UI used by the extra-field editor (UpdateField) and the template-field
+ * editor (LinkFieldValue), in three groups: target (Global ID field, Browse buttons, selected chip),
+ * relation type, then version. Plus the three picker/version dialogs.
  *
- * Controlled and presentational: it owns only the open-state of its three
- * dialogs and a neutral vertical layout. All staged values, validation, the
- * commit buttons, and the commit logic stay with each caller, which differ
- * (constrained vs free-solo relations, a target name, Box vs Grid placement,
- * and different model-commit calls).
+ * Controlled and presentational: it owns only its dialogs' open-state and the layout. Staged
+ * values, validation and commit stay with each caller, which differ.
  */
 export default function LinkEditor({
   relationType,
@@ -106,9 +94,7 @@ export default function LinkEditor({
   const targetIcon = targetGlobalId ? iconForGlobalId(targetGlobalId) : null;
   const groupHeadingSx = { fontWeight: 700, fontSize: "1rem" } as const;
 
-  // The group headings take their level from the ambient context rather than being hardcoded: this
-  // component is mounted at two different depths. Only nest where the caller really did render a
-  // heading above (see nestHeadings), or the levels skip.
+  // headings take their level from the ambient context: this component mounts at two depths
   const body = (
     <Box>
       <Heading variant="h6" sx={groupHeadingSx}>
@@ -156,24 +142,15 @@ export default function LinkEditor({
           {t("fields.link.editor.browseEln")}
         </Button>
       </Stack>
-      {/* The selected target sits below the id field and pickers, not beside them: it is the
-          outcome of using them, and in the row it competed for width and had its delete icon
-          clipped (MuiChip-label is overflow: hidden, so a shrunk chip loses the X). */}
+      {/* Below the row, not in it: in the row the chip shrank, and a shrunk chip clips its own
+          delete icon. */}
       {targetGlobalId ? (
         <Box sx={{ mt: 1 }}>
           <Chip
-            // Match the committed (non-edit) LinkField pill. size="small"
-            // gives the same geometry; the pl restores the left padding
-            // the accented theme strips from deletable chips
-            // (`&.MuiChip-deletable { padding: 0 }`). Without it the type
-            // icon — which gets no MuiChip-icon margin because
-            // RecordTypeIcon wraps it in a tooltip — sits flush against
-            // the left edge instead of the non-edit pill's 4px
-            // (spacing(0.5)). The selector is repeated to out-specify the
-            // theme's two-class `.MuiChip-deletable` rule. The cancel
-            // button just widens the chip.
+            // the accented theme zeroes padding on deletable chips; restore the non-edit
+            // pill's 4px so the type icon is not flush against the edge
             size="small"
-            sx={{ "&.MuiChip-deletable": { pl: 0.5 } }}
+            sx={{ [`&.${chipClasses.deletable}`]: { pl: 0.5 } }}
             icon={targetIcon ? <RecordTypeIcon record={targetIcon} aria-hidden /> : undefined}
             label={targetName ? `${targetGlobalId} — ${targetName}` : targetGlobalId}
             onDelete={() => onTargetChange("", "")}

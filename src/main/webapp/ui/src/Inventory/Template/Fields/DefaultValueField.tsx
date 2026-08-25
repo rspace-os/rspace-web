@@ -2,6 +2,7 @@ import AddIcon from "@mui/icons-material/Add";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Paper from "@mui/material/Paper";
 import MuiTextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React from "react";
@@ -41,11 +42,9 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
   const key = React.useMemo(() => field.id ?? crypto.randomUUID(), [field.id]);
 
   /*
-   * A Link template field's "default value" has two parts: the whitelist of DataCite relationship
-   * types items created from this template may use (an empty whitelist means all of them), and an
-   * optional default link that is stamped onto those items (RSDEV-1246). The default is edited with
-   * the same LinkFieldValue editor an item's own link uses, so the relation options, self-link
-   * rejection, target-existence check and Apply/Discard guard all come for free.
+   * A Link template field's "default value" is two things: the whitelist of relationship types
+   * items may use (empty means all), and an optional default link stamped onto those items
+   * (RSDEV-1246). The default reuses the item's own LinkFieldValue editor.
    */
   if (field.type === "link") {
     // siblings, not nested: InputWrapper renders a labelled fieldset, so nesting would make the
@@ -92,39 +91,28 @@ function DefaultValueField({ field, editing, recordTypeName = "sample" }: Defaul
             }}
           />
         </InputWrapper>
-        {/* The default link is a whole sub-form (heading, explanation, target group, relationship
-          type, version), so without a boundary it reads as a continuation of the allowed-types
-          control above it. The border and inset give it one. */}
-        <Box
-          data-test-id="DefaultLinkSection"
-          sx={(theme) => ({
-            mt: 2,
-            p: 2,
-            border: `1px solid ${theme.palette.divider}`,
-            borderRadius: 1,
-          })}
-        >
+        {/* a whole sub-form, so without a boundary it reads as a continuation of the
+          allowed-types control above it */}
+        <Paper variant="outlined" data-test-id="DefaultLinkSection" sx={{ mt: 2, p: 2 }}>
           <InputWrapper
             label={t("fields.templateFields.defaultValue.defaultLink")}
             explanation={t("fields.templateFields.defaultValue.defaultLinkExplanation")}
           >
             <LinkFieldValue
               field={field}
-              // on an unsaved template this is "", which leaves the client-side self-link check
-              // inert. Harmless: a template with no Global ID has nothing to self-link to yet, and
-              // the server rejects it either way once the template exists.
+              // "" on an unsaved template, leaving the client-side self-link check inert; harmless,
+              // since a template with no Global ID has nothing to self-link to yet
               sourceGlobalId={field.owner.globalId ?? ""}
               disabled={!editing}
               // the name is already entered in the Name field above
               showFieldName={false}
               // inside this section "Target" alone would be ambiguous against the item's own link
               targetHeading={t("fields.templateFields.defaultValue.defaultLinkTarget")}
-              // InputWrapper renders the "Default Link (optional)" heading above, so these
-              // groups really are one level below it
+              // InputWrapper renders the heading above, so these groups sit one level below
               nestHeadings
             />
           </InputWrapper>
-        </Box>
+        </Paper>
       </>
     );
   }
