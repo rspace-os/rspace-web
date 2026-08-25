@@ -4,6 +4,7 @@ import static com.researchspace.model.booking.BookingSchedulingSettings.MAX_BOOK
 
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
+import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -13,6 +14,10 @@ import com.researchspace.model.booking.BookingPrivacy;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.collection.CollectionDescription.Operator;
+import com.researchspace.model.collection.FieldSelection;
+import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
@@ -20,6 +25,7 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -40,6 +46,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   private final BookingConfigurationDao configurationDao;
   private final InventoryPermissionUtils inventoryPermissions;
   private final BookingSchedulingPolicy schedulingPolicy;
+  private final InstrumentDao instrumentDao;
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
   private final ApplicationEventPublisher events;
 
@@ -48,12 +55,14 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
       InventoryPermissionUtils inventoryPermissions,
       BookingSchedulingPolicy schedulingPolicy,
+      InstrumentDao instrumentDao,
       ObjectProvider<ResourceRegistry> resourceRegistry,
       ApplicationEventPublisher events) {
     this.bookingDao = bookingDao;
     this.configurationDao = configurationDao;
     this.inventoryPermissions = inventoryPermissions;
     this.schedulingPolicy = schedulingPolicy;
+    this.instrumentDao = instrumentDao;
     this.resourceRegistry = resourceRegistry;
     this.events = events;
   }
@@ -79,6 +88,62 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     Optional<TimeSlotBooking> booking = bookingDao.findReadableById(id, targetAccess(actor));
     booking.ifPresent(value -> prepare(List.of(value), actor));
     return booking;
+  }
+
+  @Override
+  public Optional<CalendarSource> getCalendarSource(
+      Long configurationId, User actor, Date refreshedAt, int maxEvents) {
+    requireAuthenticated(actor);
+    Objects.requireNonNull(refreshedAt, "Calendar refresh time");
+    if (maxEvents < 1) {
+      throw new IllegalArgumentException("Calendar event limit must be positive");
+    }
+
+    RelationshipReadAccess access = targetAccess(actor);
+    Optional<BookingConfiguration> configuration =
+        configurationDao.getResources(idRequest(configurationId), 1, access).stream().findFirst();
+    if (configuration.isEmpty()) {
+      return Optional.empty();
+    }
+    BookableTargetReference target = configuration.get().getTarget();
+    if (target == null || target.type() != BookableTargetType.INSTRUMENT) {
+      return Optional.empty();
+    }
+    Optional<Instrument> instrument =
+        instrumentDao
+            .getReadableResources(idRequest(target.id()), access.result("instruments"))
+            .resources()
+            .stream()
+            .findFirst();
+    if (instrument.isEmpty() || instrument.get().isDeleted() || instrument.get().isTemplate()) {
+      return Optional.empty();
+    }
+
+    Date cutoff = Date.from(refreshedAt.toInstant().minus(30, ChronoUnit.DAYS));
+    List<TimeSlotBooking> bookings =
+        bookingDao.findCalendarBookings(configurationId, cutoff, maxEvents + 1);
+    if (bookings.size() > maxEvents) {
+      throw new CalendarSourceTooLargeException();
+    }
+    prepare(bookings, actor);
+    List<CalendarEvent> calendarEvents =
+        bookings.stream()
+            .map(
+                booking ->
+                    new CalendarEvent(
+                        booking.getId(),
+                        booking.getStartTime(),
+                        booking.getEndTime(),
+                        booking.getCreatedAt(),
+                        booking.getUpdatedAt(),
+                        booking.getPrivacy(),
+                        booking.getVisibleBookedBy(),
+                        booking.getVisiblePurpose(),
+                        booking.isCanEdit()))
+            .toList();
+    return Optional.of(
+        new CalendarSource(
+            instrument.get().getName(), configuration.get().getTimeZone(), calendarEvents));
   }
 
   @Override
@@ -247,6 +312,15 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
 
   private RelationshipReadAccess targetAccess(User actor) {
     return RelationshipReadAccess.forActor(resourceRegistry.getObject(), actor);
+  }
+
+  private static ResourceRequest idRequest(Long id) {
+    return new ResourceRequest(
+        new FilterExpression.Comparison("id", Operator.EQUAL, List.of(id), false),
+        List.of(),
+        new ResourceRequest.Page(1, 1),
+        FieldSelection.all(),
+        IncludeTree.empty());
   }
 
   private static void requireAuthenticated(User actor) {

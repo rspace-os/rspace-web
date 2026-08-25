@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
+import com.researchspace.dao.InstrumentDao;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
@@ -47,13 +48,20 @@ class TimeSlotBookingManagerTest {
   private final TimeSlotBookingDao bookingDao = mock(TimeSlotBookingDao.class);
   private final BookingConfigurationDao configurationDao = mock(BookingConfigurationDao.class);
   private final InventoryPermissionUtils permissions = mock(InventoryPermissionUtils.class);
+  private final InstrumentDao instrumentDao = mock(InstrumentDao.class);
   private final ObjectProvider<ResourceRegistry> registry = mock(ObjectProvider.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   private final BookingSchedulingPolicy schedulingPolicy = new BookingSchedulingPolicyImpl();
   private final User actor = mock(User.class);
   private final TimeSlotBookingManager manager =
       new TimeSlotBookingManagerImpl(
-          bookingDao, configurationDao, permissions, schedulingPolicy, registry, events);
+          bookingDao,
+          configurationDao,
+          permissions,
+          schedulingPolicy,
+          instrumentDao,
+          registry,
+          events);
 
   @BeforeEach
   void setUp() {

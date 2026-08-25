@@ -326,6 +326,11 @@ _Avoid_: runtime-failing flag, startup blocker
 - **Booking configuration** — the settings that make one inventory instrument
   bookable. It supplies the booking timezone and the lock used to serialize
   overlap checks for that instrument.
+- **Calendar subscription** — one user's revocable, read-only external calendar
+  feed for one booking configuration.
+- **Subscription link** — the bearer URL revealed when a calendar subscription
+  is created or replaced. It grants the owner's current privacy-shaped view of
+  that bookable item's events.
 - **Booking defaults** — the instance-wide scheduling values copied into a new
   booking configuration at creation time. Changing them does not alter an
   existing booking configuration.

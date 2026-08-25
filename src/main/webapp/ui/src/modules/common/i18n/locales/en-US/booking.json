@@ -221,6 +221,12 @@
     "detailLoading": "Loading bookings.",
     "detailUnavailable": "Bookings are unavailable.",
     "event": "Booking event",
+    "feed": {
+      "booked": "Booked",
+      "bookedBy": "Booked by: {0}",
+      "busy": "Busy",
+      "purpose": "Purpose: {0}"
+    },
     "fields": {
       "bookedBy": "Booked by",
       "createdAt": "Created",
