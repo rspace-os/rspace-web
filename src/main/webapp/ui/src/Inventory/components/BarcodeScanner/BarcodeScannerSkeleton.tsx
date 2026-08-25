@@ -119,7 +119,7 @@ export default function BarcodeScannerSkeleton({
           maxHeight: "45vh",
         }}
       />
-      {warning !== null && <Box sx={{ width: "100%" }}>{warning}</Box>}
+      {warning ? <Box sx={{ width: "100%" }}>{warning}</Box> : null}
       <Stack direction="row" sx={{ justifyContent: "flex-end", width: "100%" }}>
         <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
       </Stack>
