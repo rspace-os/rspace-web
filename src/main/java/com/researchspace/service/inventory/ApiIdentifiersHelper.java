@@ -8,7 +8,9 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.properties.IPropertyHolder;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Component;
  * API client.
  */
 @Component
+@Slf4j
 public class ApiIdentifiersHelper {
 
   private @Autowired IPropertyHolder properties;
@@ -58,12 +61,60 @@ public class ApiIdentifiersHelper {
     return changed;
   }
 
+  /**
+   * Records this RSpace's own public landing page for the identifier as its LOCAL_URL, built from
+   * whichever suffix the entity ended up with: the one pre-generated on the DTO before the provider
+   * was called, or the entity's own when the caller carried none (RSDEV-1254, ADR 0006).
+   *
+   * <p>Built through {@link InventoryUrls#publicLandingPageUrl}, the same builder the registered
+   * address goes through, so the two cannot be normalised differently. (The builder settles
+   * normalisation only; {@code applyChangesToDatabaseDOI} runs immediately after these calls and
+   * overwrites LOCAL_URL from the DTO's own url whenever that is non-null, which draft provider
+   * responses are not.)
+   *
+   * <p>With no server URL configured the property is left unset rather than stored as the literal
+   * "null/public/inventory/...", which would surface as the identifier's {@code url} over the API.
+   * Note what absence costs, because nothing fills it in later: LOCAL_URL becomes the DataCite
+   * target url, and DataCite needs a url to make a DOI findable, so an identifier minted while the
+   * server URL was blank cannot be published without a manual repair. Unset is still the better of
+   * the two, since a stored "null/..." is equally unpublishable and harder to spot. Hence the WARN.
+   */
+  private void addPublicLandingPageUrl(DigitalObjectIdentifier newDoi, String forWhat) {
+    Optional<String> url =
+        InventoryUrls.publicLandingPageUrl(properties.getServerUrl(), newDoi.getPublicLink());
+    url.ifPresentOrElse(
+        u -> newDoi.addOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL, u),
+        // Named so the message is actionable: a bulk allocation would otherwise emit the same
+        // undifferentiated line per identifier. The suffix itself is still kept out of the log: it
+        // is public from registration onward (it is sent to the provider), but a log is a wider
+        // audience than the provider record. An unset server URL is the sole reachable cause here,
+        // since the entity constructor always yields a non-blank publicLink.
+        () ->
+            log.warn(
+                "No public landing page stored for the new identifier on {}: no server URL is"
+                    + " configured. The identifier cannot be published until its url is set.",
+                forWhat));
+  }
+
   private void addRecordIdentifierForRegisteredApiIdentifier(
       ApiInventoryDOI apiIdentifier, InventoryRecord parentInvRec) {
-    DigitalObjectIdentifier newDoi = new DigitalObjectIdentifier(null, null);
-    newDoi.addOtherData(
-        DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL,
-        properties.getServerUrl() + "/public/inventory/" + newDoi.getPublicLink());
+    /*
+     * The entity generates its own publicLink when handed a blank suffix, which is correct for
+     * every path that has no address to preserve. This path is the exception: registration has
+     * already sent an address to the provider, so a freshly generated suffix would publish an
+     * address RSpace never serves - permanently, and irreversibly once a curator accepts. Refuse
+     * rather than lean on that fallback. Unreachable today (both producers generate before setting
+     * the flag), which is the point: reaching it means the suffix was lost in between. Left
+     * unlocalised deliberately, as a programmer-error guard rather than anything a user can act on.
+     */
+    if (StringUtils.isBlank(apiIdentifier.getPublicLinkSuffix())) {
+      throw new IllegalStateException(
+          "A registered identifier reached persistence with no public link suffix; the address"
+              + " already sent to the provider cannot be recovered here.");
+    }
+    DigitalObjectIdentifier newDoi =
+        new DigitalObjectIdentifier(null, null, apiIdentifier.getPublicLinkSuffix());
+    addPublicLandingPageUrl(newDoi, parentInvRec.getGlobalIdentifier());
     newDoi.setOwner(parentInvRec.getOwner());
     apiIdentifier.applyChangesToDatabaseDOI(newDoi);
     parentInvRec.addIdentifier(newDoi);
@@ -78,10 +129,9 @@ public class ApiIdentifiersHelper {
   }
 
   public DigitalObjectIdentifier createDoiToSave(ApiInventoryDOI apiIdentifier, User creator) {
-    DigitalObjectIdentifier newDoi = new DigitalObjectIdentifier(null, null);
-    newDoi.addOtherData(
-        DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL,
-        properties.getServerUrl() + "/public/inventory/" + newDoi.getPublicLink());
+    DigitalObjectIdentifier newDoi =
+        new DigitalObjectIdentifier(null, null, apiIdentifier.getPublicLinkSuffix());
+    addPublicLandingPageUrl(newDoi, "a bulk allocation for " + creator.getUsername());
     newDoi.setOwner(creator);
     apiIdentifier.applyChangesToDatabaseDOI(newDoi);
     return newDoi;

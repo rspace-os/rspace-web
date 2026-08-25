@@ -46,6 +46,11 @@ jobs:
         with:
           node-version: 24
       - run: corepack enable
+      - name: Seed dev deployment.properties
+        run: |
+          cp -f src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
+
       - name: Package WAR (frontend + backend)
         run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} -Dtimestamp=${{ github.run_id }}
       - name: Upload WAR

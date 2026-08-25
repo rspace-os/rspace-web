@@ -16,21 +16,16 @@ import { paperClasses } from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import { autorun } from "mobx";
 import { observer } from "mobx-react-lite";
-import React from "react";
+import React, { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import DSWAccentMenuItem, { type DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import DmpImportDialogs, { DmpImportMenuSection, type DmpImportTarget } from "@/eln-dmp-integration/DmpImportDialogs";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { Drawer } from "../../../components/DialogBoundary";
 import DrawerTab from "../../../components/DrawerTab";
 import EventBoundary from "../../../components/EventBoundary";
 import { useLandmark } from "../../../components/LandmarksContext";
 import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../../components/ValidatingSubmitButton";
-import ArgosAccentMenuItem from "../../../eln-dmp-integration/Argos/ArgosAccentMenuItem";
-import DMPAssistantAccentMenuItem from "../../../eln-dmp-integration/DMPAssistant/DMPAssistantAccentMenuItem";
-import DMPOnlineAccentMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineAccentMenuItem";
-import DMPToolAccentMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolAccentMenuItem";
-import { useIntegrationIsAllowedAndEnabled } from "../../../hooks/api/integrationHelpers";
 import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
@@ -39,7 +34,6 @@ import AnalyticsContext from "../../../stores/contexts/Analytics";
 import * as FetchingData from "../../../util/fetchingData";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
-import type { FetchedState, Integration } from "../../apps/useIntegrationsEndpoint";
 import { type GallerySection, gallerySectionIcon } from "../common";
 import { useGalleryActions } from "../useGalleryActions";
 import { asWritableS3Filestore, type GalleryFile, type Id, RemoteFile } from "../useGalleryListing";
@@ -340,81 +334,6 @@ const AddFilestoreMenuItem = ({
     </>
   );
 };
-type DmpMenuSectionArgs = {
-  onDialogClose: () => void;
-  showDmpPanel: () => void;
-};
-const DmpMenuSection = ({ onDialogClose, showDmpPanel }: DmpMenuSectionArgs) => {
-  const [dswConnections, setDswConnections] = React.useState<null | DswConfig[]>(null);
-  const showArgos = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("ARGOS")).orElse(false);
-  const showDmpAssistant = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("DMPASSISTANT")).orElse(
-    false,
-  );
-  const showDmponline = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("DMPONLINE")).orElse(false);
-  const showDmptool = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("DMPTOOL")).orElse(false);
-  const showDsw = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("DSW")).orElse(false);
-  React.useEffect(() => {
-    /*
-     * This is to maintain backwards compatibility with the old Gallery. It
-     * exposes a global function `gallery` to updates the current listing of
-     * files. Once we no longer need to maintain backwards compatibility, we
-     * could pass `showDmpPanel` down into each DMPDialog component.
-     */
-    // @ts-expect-error gallery is a global function
-    window.gallery = showDmpPanel;
-  }, [showDmpPanel]);
-  React.useEffect(() => {
-    void (async () => {
-      const ONE_MINUTE_IN_MS = 60 * 1000;
-      const api = axios.create({
-        baseURL: "/integration",
-        timeout: ONE_MINUTE_IN_MS,
-      });
-      try {
-        const states = await api.get<
-          | {
-              success: true;
-              data: { [integration in Integration]: FetchedState };
-              error: null;
-            }
-          | {
-              success: false;
-              data: null;
-              error: string;
-            }
-        >("allIntegrations");
-        if (states.data.success) {
-          const data = states.data.data;
-          const configs = Object.entries(data.DSW.options).map(([_optionsId, config]) => {
-            return config as DswConfig;
-          });
-          setDswConnections(configs);
-        }
-      } catch (e) {
-        console.error(e);
-        setDswConnections([]);
-      }
-    })();
-  }, []);
-
-  const { t } = useTranslation("gallery");
-  if (!showArgos && !showDmpAssistant && !showDmponline && !showDmptool && !showDsw) return null;
-  return (
-    <>
-      <Divider textAlign="left" aria-label={t("sidebar.dmpsLabel")}>
-        {t("sidebar.dmpImport")}
-      </Divider>
-      {showArgos && <ArgosAccentMenuItem onDialogClose={onDialogClose} />}
-      {showDmpAssistant && <DMPAssistantAccentMenuItem onDialogClose={onDialogClose} />}
-      {showDmponline && <DMPOnlineAccentMenuItem onDialogClose={onDialogClose} />}
-      {showDmptool && <DMPToolAccentMenuItem onDialogClose={onDialogClose} />}
-      {showDsw &&
-        dswConnections?.map((connection, _index) => {
-          return <DSWAccentMenuItem onDialogClose={onDialogClose} connection={connection} />;
-        })}
-    </>
-  );
-};
 type SidebarArgs = {
   selectedSection: GallerySection | null;
   setSelectedSection: (section: GallerySection) => void;
@@ -437,6 +356,7 @@ const Sidebar = ({
 }: SidebarArgs): React.ReactNode => {
   const sidebarRef = useLandmark("Navigation");
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState<HTMLElement | null>(null);
+  const [dmpImportTarget, setDmpImportTarget] = React.useState<DmpImportTarget | null>(null);
   const viewport = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   const { t } = useTranslation(["gallery", "common"]);
@@ -532,20 +452,31 @@ const Sidebar = ({
               if (viewport.isViewportSmall) setDrawerOpen(false);
             }}
           />
-          <DmpMenuSection
-            onDialogClose={() => {
-              setNewMenuAnchorEl(null);
-              if (viewport.isViewportSmall) setDrawerOpen(false);
-            }}
-            showDmpPanel={() => {
-              if (selectedSection === "DMPs") {
-                void refreshListing();
-              } else {
-                setSelectedSection("DMPs");
-              }
-            }}
-          />
+          {/* Keep other menu items visible while DMP translations load. */}
+          <Suspense fallback={null}>
+            <DmpImportMenuSection
+              onSelect={(target) => {
+                setDmpImportTarget(target);
+              }}
+            />
+          </Suspense>
         </SidebarCreateMenu>
+        {/* Render dialogs outside the menu so closing the menu does not unmount them. */}
+        <DmpImportDialogs
+          target={dmpImportTarget}
+          onClose={() => {
+            setDmpImportTarget(null);
+            setNewMenuAnchorEl(null);
+            if (viewport.isViewportSmall) setDrawerOpen(false);
+          }}
+          onImport={() => {
+            if (selectedSection === "DMPs") {
+              void refreshListing();
+            } else {
+              setSelectedSection("DMPs");
+            }
+          }}
+        />
       </Box>
       <Divider />
       <Box

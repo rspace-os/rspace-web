@@ -91,3 +91,6 @@ src/main/webapp/ui/coverage
 
 # Local test runner
 runcmd.sh
+
+# Local dev deployment properties, copied from deployment.properties.example (see PropertyFiles.md)
+src/main/resources/deployments/dev/deployment.properties

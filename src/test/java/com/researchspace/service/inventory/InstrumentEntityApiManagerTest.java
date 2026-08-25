@@ -15,6 +15,7 @@ import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentEntity;
 import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
@@ -40,6 +41,7 @@ import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -246,6 +248,153 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertEquals(template.getFields().get(0).getName(), created.getFields().get(0).getName());
   }
 
+  /**
+   * A persisted instrument template carrying a single "Landing page" field, the fixture the
+   * RSDEV-1307 derivation tests share.
+   */
+  private ApiInstrumentTemplate templateWithLandingPage(String content, boolean mandatory) {
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("template with landing page");
+    ApiInventoryEntityField landingPage =
+        createBasicApiSampleField("Landing page", ApiFieldType.URI, content);
+    landingPage.setMandatory(mandatory);
+    templatePost.getFields().add(landingPage);
+    return instrumentApiMgr.createInstrumentTemplate(templatePost, testUser);
+  }
+
+  /** The content of the record's "Landing page" field, matched by name rather than by position. */
+  private String landingPageContentOf(ApiInstrumentEntity record) {
+    return record.getFields().stream()
+        .filter(f -> "Landing page".equalsIgnoreCase(f.getName()))
+        .findFirst()
+        .map(ApiInventoryEntityField::getContent)
+        .orElse(null);
+  }
+
+  @Test
+  public void createInstrumentFromTemplate_templateSuppliedLandingPageIsNotInherited() {
+    ApiInstrumentTemplate template =
+        templateWithLandingPage("https://lab.example.org/original", false);
+
+    ApiInstrument request = new ApiInstrument();
+    request.setName("from-template-own-page");
+    request.setTemplateId(template.getId());
+
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
+
+    // RSDEV-1307: the template's landing page names no instrument, so it must not travel. It now
+    // stays blank rather than self-filling: RSpace no longer invents an address (ADR 0006 item 3)
+    assertTrue(StringUtils.isBlank(landingPageContentOf(created)));
+    // and the source template is untouched by the derivation
+    assertEquals(
+        "https://lab.example.org/original",
+        landingPageContentOf(
+            instrumentApiMgr.getApiInstrumentTemplateById(template.getId(), testUser)));
+  }
+
+  @Test
+  public void createInstrumentFromTemplate_requestSuppliedLandingPageIsKept() {
+    ApiInstrumentTemplate template =
+        templateWithLandingPage("https://lab.example.org/original", false);
+
+    ApiInstrument request = new ApiInstrument();
+    request.setName("with-own-landing-page");
+    request.setTemplateId(template.getId());
+    // the incoming field list is positional and must match the template's field count (1)
+    ApiInventoryEntityField landingPage = new ApiInventoryEntityField();
+    landingPage.setContent("https://user.example.org/chosen");
+    request.setFields(List.of(landingPage));
+
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
+
+    // a value supplied on the new record itself is user input and is kept
+    assertEquals("https://user.example.org/chosen", landingPageContentOf(created));
+  }
+
+  @Test
+  public void createInstrumentFromTemplate_mandatoryLandingPageStillCreatesSuccessfully() {
+    // a hand-authored template may mark Landing page mandatory; clearing the inherited value
+    // leaves it blank and nothing fills it any more, so the pre-save mandatory validation must
+    // still not reject it (RSDEV-1307, ADR 0006 item 3)
+    ApiInstrumentTemplate template =
+        templateWithLandingPage("https://lab.example.org/original", true);
+
+    ApiInstrument request = new ApiInstrument();
+    request.setName("from-mandatory-template");
+    request.setTemplateId(template.getId());
+
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
+
+    assertNotNull(created.getId());
+    assertTrue(StringUtils.isBlank(landingPageContentOf(created)));
+  }
+
+  @Test
+  public void createInstrumentFromTemplate_blankLandingPageInRequestIsAcceptedNotRejected() {
+    // the UI posts the whole field list with the Landing page deliberately blanked, so a blank
+    // incoming value must be treated as "leave this empty", not as a missing mandatory value
+    ApiInstrumentTemplate template =
+        templateWithLandingPage("https://lab.example.org/original", true);
+
+    ApiInstrument request = new ApiInstrument();
+    request.setName("from-ui-shaped-request");
+    request.setTemplateId(template.getId());
+    ApiInventoryEntityField blankLandingPage = new ApiInventoryEntityField();
+    blankLandingPage.setContent("");
+    request.setFields(List.of(blankLandingPage));
+
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
+
+    assertNotNull(created.getId());
+    assertTrue(StringUtils.isBlank(landingPageContentOf(created)));
+  }
+
+  @Test
+  public void createInstrumentFromTemplate_blankLandingPageInRequestIsAcceptedForOptionalField() {
+    // same request shape against a template that does not mark the field mandatory: a blank must
+    // be accepted in the ordinary case too, not only where the mandatory check would have fired
+    ApiInstrumentTemplate template =
+        templateWithLandingPage("https://lab.example.org/original", false);
+
+    ApiInstrument request = new ApiInstrument();
+    request.setName("from-ui-shaped-request-optional");
+    request.setTemplateId(template.getId());
+    ApiInventoryEntityField blankLandingPage = new ApiInventoryEntityField();
+    blankLandingPage.setContent("");
+    request.setFields(List.of(blankLandingPage));
+
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
+
+    assertNotNull(created.getId());
+    assertTrue(StringUtils.isBlank(landingPageContentOf(created)));
+  }
+
+  @Test
+  public void createInstrumentFromTemplate_otherMandatoryBlankFieldIsStillRejected() {
+    // the Landing page exemption must not swallow a genuinely missing mandatory value
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("template with two mandatory fields");
+    ApiInventoryEntityField mandatoryLandingPage =
+        createBasicApiSampleField(
+            "Landing page", ApiFieldType.URI, "https://lab.example.org/original");
+    mandatoryLandingPage.setMandatory(true);
+    ApiInventoryEntityField mandatorySerial =
+        createBasicApiSampleField("Serial number", ApiFieldType.TEXT, "");
+    mandatorySerial.setMandatory(true);
+    templatePost.getFields().add(mandatoryLandingPage);
+    templatePost.getFields().add(mandatorySerial);
+    ApiInstrumentTemplate template =
+        instrumentApiMgr.createInstrumentTemplate(templatePost, testUser);
+
+    ApiInstrument request = new ApiInstrument();
+    request.setName("from-two-mandatory-template");
+    request.setTemplateId(template.getId());
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> instrumentApiMgr.createNewApiInstrument(request, testUser));
+  }
+
   @Test
   public void createInstrumentWithoutTemplateLeavesTemplateIdNull() {
     ApiInstrument request = new ApiInstrument();
@@ -368,6 +517,24 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertFalse(copy.getId().equals(template.getId()));
     assertTrue(copy.isTemplate());
     verify(mockPublisher, Mockito.times(2)).publishEvent(Mockito.any(InventoryCreationEvent.class));
+  }
+
+  @Test
+  public void duplicateInstrumentTemplate_clearsLandingPage() {
+    ApiInstrumentTemplate template =
+        templateWithLandingPage("https://lab.example.org/original", false);
+    assertEquals("https://lab.example.org/original", landingPageContentOf(template));
+
+    ApiInstrumentTemplate copy =
+        instrumentApiMgr.duplicateInstrumentTemplate(template.getId(), testUser);
+
+    // RSDEV-1307: a landing page never belongs in a reusable definition, so the copy starts blank
+    assertTrue(StringUtils.isBlank(landingPageContentOf(copy)));
+
+    // and the source template keeps its value
+    ApiInstrumentTemplate original =
+        instrumentApiMgr.getApiInstrumentTemplateById(template.getId(), testUser);
+    assertEquals("https://lab.example.org/original", landingPageContentOf(original));
   }
 
   @Test

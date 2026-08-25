@@ -19,16 +19,17 @@ import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /** See {@link RspaceToExternalProviderAdapter}. */
+@Slf4j
 public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProviderAdapter {
 
   private static final String PIDINST_SCHEMA_VERSION = "1.0";
@@ -46,19 +47,12 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
   private static final String FIELD_COMMISSIONED = "Commissioned";
   private static final String FIELD_DECOMMISSIONED = "Decommissioned";
   private static final String FIELD_MEASURED_QUANTITY = "Measured quantity";
-  private static final String FIELD_LANDING_PAGE = "Landing page";
   private static final String FIELD_ALTERNATE_IDENTIFIER = "Alternate Identifier";
 
   // PIDINST controlled values ("DeCommissioned" deliberately differs from the field name).
   private static final String DATE_TYPE_COMMISSIONED = "Commissioned";
   private static final String DATE_TYPE_DECOMMISSIONED = "DeCommissioned";
   private static final String ALTERNATE_ID_TYPE_OTHER = "Other";
-
-  private final IPropertyHolder properties;
-
-  public RspaceToExternalProviderAdapterImpl(IPropertyHolder properties) {
-    this.properties = properties;
-  }
 
   /*
    * MANDATORY, not REQUIRED: this walks the instrument's lazy associations (getActiveFields, and the
@@ -78,7 +72,7 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
    */
   @Override
   @Transactional(propagation = Propagation.MANDATORY)
-  public B2instDoi buildB2instDoi(InventoryRecord instrument) {
+  public B2instDoi buildB2instDoi(InventoryRecord instrument, String publicLandingPageUrl) {
     if (instrument == null || !instrument.isInstrument()) {
       throw new IllegalArgumentException(
           "B2INST instrument PIDs can only be built for Instrument records (IN*)");
@@ -101,14 +95,48 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
     metadata.setDate(nullIfEmpty(dates(source)));
     metadata.setMeasuredVariable(nullIfEmpty(measuredVariables(source)));
     /*
-     * Omitted rather than sent site-relative when no server URL is configured: a LandingPage is baked
-     * into a citable PID once a curator accepts the record, and RSpace has no way to update a
-     * published B2INST record afterwards. A missing property is recoverable; a wrong published URL is
-     * not. See GlobalIdUrls.globalIdUrl.
+     * The registered landing page: the user's own value when they typed one, otherwise the
+     * identifier's public landing page. A legacy auto-filled landing page is recognised and never
+     * registered: it needs an RSpace sign-in, and a LandingPage is baked into a citable PID once a
+     * curator accepts, with no way to update the published record afterwards. With neither a typed
+     * value nor a public URL the property is omitted: a missing property is recoverable, a wrong
+     * published URL is not. See ADR 0006 and CONTEXT.md ("Registered landing page").
      */
-    mappedFieldData(source, FIELD_LANDING_PAGE, FieldType.URI)
-        .or(() -> GlobalIdUrls.globalIdUrl(properties, source.getGlobalIdentifier()))
-        .ifPresent(metadata::setLandingPage);
+    Optional<String> typed = PidinstFields.userTypedLandingPage(source);
+    Optional<String> registrableTyped = typed.filter(PidinstFields::isResolvableAddress);
+    if (typed.isPresent() && registrableTyped.isEmpty()) {
+      // Discarding a value the user typed is worth saying out loud: the field goes on displaying
+      // it,
+      // so nothing else tells them it was not the one registered. The value itself is not logged,
+      // only the record it belongs to. Deliberately silent on what replaced it - that is decided
+      // below and reported there, so the two lines cannot contradict each other.
+      log.warn(
+          "Not registering the Landing page of {} as its LandingPage: the value is not an absolute"
+              + " http(s) address.",
+          source.getGlobalIdentifier());
+    }
+    Optional<String> landingPage =
+        registrableTyped
+            // an unusable field value has already been filtered out, so it falls back here...
+            .or(() -> Optional.ofNullable(publicLandingPageUrl))
+            // ...and again after it, because the fallback needs the same guard: the public landing
+            // page is built from the deployment's server URL, which nothing validates for a scheme,
+            // so a deployment configured without one would register the very form we refuse from
+            // users. Failing this second check omits the property rather than falling back further.
+            .filter(PidinstFields::isResolvableAddress);
+    // LandingPage is mandatory in the PIDINST 1.0 schema asserted above, so omitting it is a
+    // deliberate, visible trade rather than a silent one: an operator who has left the server URL
+    // unconfigured should be able to see why a mandatory property left RSpace empty, instead of
+    // hearing it from a curator. Same reasoning as the WARN in
+    // InventoryIdentifierApiManagerImpl.seedLandingPageForNewPidinst.
+    landingPage.ifPresentOrElse(
+        metadata::setLandingPage,
+        () ->
+            log.warn(
+                "Registering {} without a LandingPage: no user-typed address and no public landing"
+                    + " page were available. The property is mandatory in PIDINST 1.0, but a wrong"
+                    + " address cannot be corrected once a curator accepts the record.",
+                source.getGlobalIdentifier()));
     mappedFieldData(source, FIELD_ALTERNATE_IDENTIFIER, FieldType.STRING)
         .ifPresent(
             a ->
@@ -129,7 +157,13 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
   /**
    * Exactly one Owner entry: ownerName from the "Owner" field when non-blank, else the record
    * owner's full name; ownerContact is always the record owner's email. Owner is the only
-   * PIDINST-mandatory property built from fields, hence the unconditional fallback.
+   * PIDINST-mandatory property given an unconditional fallback, hence the fallback here.
+   *
+   * <p>PIDINST 1.0 marks six properties mandatory: Identifier, SchemaVersion, LandingPage, Name,
+   * Owner and Manufacturer (see the RDA schema table). RSpace sets the first two itself, and the
+   * remaining four come from fields but are handled three different ways: Owner falls back, Name
+   * and Manufacturer are sent as found with no fallback and no warning, and LandingPage warns when
+   * omitted. Worth aligning deliberately rather than by accident, but that is its own change.
    */
   private B2instOwner ownerOf(InstrumentEntity instrument) {
     B2instOwner b2instOwner = new B2instOwner();
@@ -164,17 +198,9 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
     return measuredVariables;
   }
 
-  private Optional<InventoryEntityField> mappedField(
-      InstrumentEntity instrument, String canonicalName, FieldType expectedType) {
-    return instrument.getActiveFields().stream()
-        .filter(f -> f.getType() == expectedType)
-        .filter(f -> f.getName() != null && canonicalName.equalsIgnoreCase(f.getName().trim()))
-        .findFirst();
-  }
-
   private Optional<String> mappedFieldData(
       InstrumentEntity instrument, String canonicalName, FieldType expectedType) {
-    return mappedField(instrument, canonicalName, expectedType)
+    return PidinstFields.mappedField(instrument, canonicalName, expectedType)
         .map(InventoryEntityField::getFieldData)
         .filter(StringUtils::isNotBlank)
         .map(String::trim);
