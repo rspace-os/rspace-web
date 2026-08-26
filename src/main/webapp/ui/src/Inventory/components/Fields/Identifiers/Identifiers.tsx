@@ -343,7 +343,17 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
      */
     if (identifierState === "created") return <>{t("fields.identifiers.list.stateInfo.pidinstCreated")}</>;
     if (identifierState === "submitted") return <>{t("fields.identifiers.list.stateInfo.pidinstSubmitted")}</>;
-    if (identifierState === "accepted") return <>{t("fields.identifiers.list.stateInfo.pidinstAccepted")}</>;
+    /*
+     * "accepted" is the B2INST equivalent of DataCite's "findable": the PID is published and
+     * citable, so it gets the same landing-page explanation, linking id.url like findable does.
+     */
+    if (identifierState === "accepted")
+      return (
+        <TransRichText
+          i18nKey="inventory:fields.identifiers.list.stateInfo.pidinstAccepted"
+          values={{ link: identifierUrl || "" }}
+        />
+      );
     if (identifierState === "declined") return <>{t("fields.identifiers.list.stateInfo.pidinstDeclined")}</>;
     if (identifierState === "cancelled") return <>{t("fields.identifiers.list.stateInfo.pidinstCancelled")}</>;
     if (identifierState === "expired") return <>{t("fields.identifiers.list.stateInfo.pidinstExpired")}</>;

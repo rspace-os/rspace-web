@@ -52,18 +52,20 @@ public class DigitalObjectIdentifierDaoHibernate
       return Optional.empty();
     }
 
-    // starting from most recent revisions, find oldest doi in a published state
-    DigitalObjectIdentifier lastPublishedDoi = null;
-    for (int i = genericResults.size() - 1; i >= 0; i--) {
-      Object[] row = (Object[]) genericResults.get(i);
-      DigitalObjectIdentifier doi = (DigitalObjectIdentifier) row[0];
-      if (DigitalObjectIdentifier.isPublishedState(doi.getState())) {
-        lastPublishedDoi = doi;
-      } else {
-        break; // we've hit doi that's not published, stop here
-      }
-    }
-    return lastPublishedDoi == null ? Optional.empty() : Optional.of(lastPublishedDoi);
+    /*
+     * The page serves the identifier's most recent revision, and only while that revision is in a
+     * published state. Envers resolves the linked record as of that revision, so the page still
+     * shows the state from the moment of the last write that touched the identifier row (ordinary
+     * record edits do not). Deliberately the newest revision rather than the first of the
+     * published run: identifier-row changes made while published (the customFieldsOnPublicPage
+     * toggle, a B2INST refresh re-persisting "accepted") must reach the page, and a B2INST
+     * identifier has no republish operation to push them out with (RSDEV-1260).
+     */
+    Object[] newestRow = (Object[]) genericResults.get(genericResults.size() - 1);
+    DigitalObjectIdentifier newestDoi = (DigitalObjectIdentifier) newestRow[0];
+    return DigitalObjectIdentifier.isPublishedState(newestDoi.getState())
+        ? Optional.of(newestDoi)
+        : Optional.empty();
   }
 
   @Override

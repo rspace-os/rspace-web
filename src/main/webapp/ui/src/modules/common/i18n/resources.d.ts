@@ -3032,7 +3032,7 @@ export default interface Resources {
             "draftPidinst": "This PIDINST is a Draft. Metadata can be specified, but no information is publicly available.",
             "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
             "findablePidinst": "This PIDINST is Findable. The PIDINST is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
-            "pidinstAccepted": "The community accepted this submission. The instrument PID is registered and publicly resolvable.",
+            "pidinstAccepted": "This PIDINST ID is Accepted. The PIDINST ID is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
             "pidinstCancelled": "The submission was cancelled before review. The instrument PID remains a draft. You can delete this identifier and register a new one.",
             "pidinstCreated": "The review request was created but has not been submitted to the community yet. Press Publish to submit it.",
             "pidinstDeclined": "The community declined this submission. The instrument PID remains a draft. You can delete this identifier and register a new one.",

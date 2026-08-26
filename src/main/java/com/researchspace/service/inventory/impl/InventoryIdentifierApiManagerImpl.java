@@ -730,10 +730,12 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
         if (published.get().getLinks() != null) {
           refreshUpdate.setProviderUrl(published.get().getLinks().getSelfHtml());
         }
+        setLandingPageUrl(refreshUpdate, doi);
         return refreshUpdate;
       }
       if ("accepted".equals(reviewStatus)) {
         refreshUpdate.setState("accepted");
+        setLandingPageUrl(refreshUpdate, doi);
         return refreshUpdate;
       }
       if (b2instConnector.getDraftRecord(rid).isPresent()) {
@@ -748,6 +750,16 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
           b2instException);
     }
     throw new ApiRuntimeException("errors.inventory.identifier.b2instRecordGone");
+  }
+
+  /**
+   * An accepted B2INST PID is the PIDINST equivalent of DataCite's {@code findable}, whose {@code
+   * url} is the identifier's RSpace public landing page, so acceptance fills the same field from
+   * the identifier's own public link (RSDEV-1260).
+   */
+  private void setLandingPageUrl(ApiInventoryDOI refreshUpdate, DigitalObjectIdentifier doi) {
+    InventoryUrls.publicLandingPageUrl(properties.getServerUrl(), doi.getPublicLink())
+        .ifPresent(refreshUpdate::setUrl);
   }
 
   /**

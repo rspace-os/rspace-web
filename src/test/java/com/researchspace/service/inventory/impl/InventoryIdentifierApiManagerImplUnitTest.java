@@ -473,7 +473,10 @@ class InventoryIdentifierApiManagerImplUnitTest {
   void refreshMapsMissingReviewWithPublishedRecordToAccepted() throws Exception {
     InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
     B2instConnector b2instConnector = mock(B2instConnector.class);
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
     ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    ReflectionTestUtils.setField(mgr, "properties", properties);
     when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.empty());
     B2instDraftRecord published = new B2instDraftRecord();
     published.setPids(
@@ -483,11 +486,15 @@ class InventoryIdentifierApiManagerImplUnitTest {
     published.setLinks(links);
     when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.of(published));
 
-    ApiInventoryDOI result = (ApiInventoryDOI) refreshMethod().invoke(mgr, b2instDoi());
+    DigitalObjectIdentifier doi = b2instDoi();
+    ApiInventoryDOI result = (ApiInventoryDOI) refreshMethod().invoke(mgr, doi);
 
     assertEquals("accepted", result.getState());
     assertEquals("http://hdl.handle.net/21.T11975/k2j9p-7yh21", result.getPublicUrl());
     assertEquals("https://b2inst-test.gwdg.de/records/k2j9p-7yh21", result.getProviderUrl());
+    // accepted is the B2INST equivalent of findable, whose url is the RSpace landing page
+    assertEquals(
+        "https://rspace.example.com/public/inventory/" + doi.getPublicLink(), result.getUrl());
   }
 
   @Test

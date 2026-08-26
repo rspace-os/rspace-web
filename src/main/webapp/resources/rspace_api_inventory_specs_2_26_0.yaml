@@ -3107,6 +3107,22 @@ paths:
       responses:
         "200":
           description: Identifier is retracted and inventory item is hidden.
+  "/identifiers/{doiId}/refresh":
+    post:
+      summary: Refresh an identifier's status from its external provider
+      description: >
+        Re-reads the identifier's current status from the external provider and persists any change,
+        so the state RSpace shows matches what the provider holds. Meaningful for B2INST instrument
+        PIDs (PIDINST), whose community review is decided outside RSpace; identifiers of other types
+        are returned unchanged, without a provider call.
+
+      tags:
+        - External Identifiers
+      parameters:
+        - $ref: "#/components/parameters/digitalObjectIdentifierIdParam"
+      responses:
+        "200":
+          description: The refreshed identifier, carrying the provider's current state.
 
   '/identifiers/testIgsnConnection':
     get:
