@@ -310,9 +310,8 @@ public class DashboardController extends BaseController {
 
     model.addAttribute("paginationList", paginationList);
     model.addAttribute("messages", messages.getResults());
-    model.addAttribute("JOIN_LABGROUP_REQUEST", MessageType.REQUEST_JOIN_LAB_GROUP.getLabel());
-    model.addAttribute(
-        "JOIN_PROJECT_GROUP_REQUEST", MessageType.REQUEST_JOIN_PROJECT_GROUP.getLabel());
+    model.addAttribute("JOIN_LABGROUP_REQUEST", MessageType.REQUEST_JOIN_LAB_GROUP);
+    model.addAttribute("JOIN_PROJECT_GROUP_REQUEST", MessageType.REQUEST_JOIN_PROJECT_GROUP);
     // this is a timestamp on the search; any subsequent request from the
     // client to delete all notifications will only delete those earlier
     // than this date,

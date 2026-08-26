@@ -1,5 +1,7 @@
 package com.researchspace.service;
 
+import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import java.util.List;
 import java.util.Locale;
 import lombok.NoArgsConstructor;
@@ -29,6 +31,10 @@ public class MessageSourceUtils {
     return messages.getMessage(resolvable);
   }
 
+  public String getMessage(LocalizedIllegalArgumentException exception) {
+    return exception.resolve(this::getMessage);
+  }
+
   public String getMessage(String key, Object[] args) {
     return messages.getMessage(key, args);
   }
@@ -43,6 +49,12 @@ public class MessageSourceUtils {
 
   public String getMessage(MessageSourceResolvable resolvable, Locale locale) {
     return messages.getMessage(resolvable, locale);
+  }
+
+  /** Resolves message codes held by model validation errors. */
+  public ErrorList resolve(ErrorList errors) {
+    errors.resolveMessageCodes(this::getMessage);
+    return errors;
   }
 
   /** Accepts Velocity array literals, which are passed as {@link List Lists}. */

@@ -25,6 +25,7 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,6 +71,8 @@ public class ApiFieldsHelper {
   private @Autowired BaseRecordManager baseMgr;
 
   private @Autowired RSChemElementManager rsChemElementManager;
+
+  private @Autowired MessageSourceUtils messages;
 
   /**
    * Converts incoming content of API field so it's ready to be saved in DB.
@@ -256,7 +259,7 @@ public class ApiFieldsHelper {
     if (FieldType.CHOICE.equals(formField.getType())) {
       toValidate = convertChoiceFieldContentReceivedFromClient(incomingContent).getContent();
     }
-    return formField.validate(toValidate);
+    return messages.resolve(formField.validate(toValidate));
   }
 
   /**
