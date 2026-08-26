@@ -213,7 +213,7 @@ the dialog, but for other text use `<Typograph variant="body2">` from MUI.
 
 For OAuth-based integrations, this is when a "Connect" button needs to be added
 that triggers the opening of a new window for the user to authenticate. For
-examples, take a look at [Clustermarket](integrations/Clustermarket.js) or
+examples, take a look at [Clustermarket](integrations/Clustermarket.tsx) or
 [protocols.io](integrations/ProtocolsIO.js). Those files provide an explanation
 of how the authentication flow works and respective changes that need to be made
 to the pages that RSpace renders after the user has authenticated.

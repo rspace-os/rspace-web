@@ -22,6 +22,39 @@ public class UserConnectionIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  public void replaceConnectionLeavesExactlyOneDecryptableRow() {
+    User aUser = createInitAndLoginAnyUser();
+
+    UserConnection original = TestFactory.createUserConnection(aUser.getUsername());
+    String providerId = original.getId().getProviderId();
+    uConnMgr.save(original);
+
+    // reconnecting under the SAME provider user id must not trip the unique index: the bulk
+    // delete has to reach the database before the insert is flushed
+    UserConnection sameId = TestFactory.createUserConnection(aUser.getUsername());
+    sameId.setAccessToken("replacement-token-same-id");
+    uConnMgr.replaceConnection(sameId);
+
+    UserConnection fetched =
+        uConnMgr.findByUserNameProviderName(aUser.getUsername(), providerId).get();
+    assertEquals("replacement-token-same-id", fetched.getAccessToken());
+
+    // reconnecting under a DIFFERENT provider user id (a new OMERO username) must replace the
+    // old row, not add a second one, or findByUserNameProviderName throws NonUniqueResult
+    UserConnection differentId = TestFactory.createUserConnection(aUser.getUsername());
+    differentId.getId().setProviderUserId("another-provider-user");
+    differentId.setAccessToken("replacement-token-different-id");
+    uConnMgr.replaceConnection(differentId);
+
+    assertEquals(
+        1, uConnMgr.findListByUserNameProviderName(aUser.getUsername(), providerId).size());
+    // single-row lookup still works and the surviving row decrypts to the latest token
+    fetched = uConnMgr.findByUserNameProviderName(aUser.getUsername(), providerId).get();
+    assertEquals("replacement-token-different-id", fetched.getAccessToken());
+    assertEquals("another-provider-user", fetched.getId().getProviderUserId());
+  }
+
+  @Test
   public void testEncryptionDecryptionOfTokens() {
     User aUser = createInitAndLoginAnyUser();
 
