@@ -2267,14 +2267,13 @@ export default interface Resources {
       "empty": "The document has no connected Inventory items."
     },
     "barcodeScanner": {
-      "altEntry": "Alternatively, enter the data encoded in the barcode",
       "barcodeDetected": "Barcode detected: {format} format.",
-      "cameraError": "Could not access camera, please enter code below.",
+      "cameraError": "Could not access camera.",
       "cameraErrorSearchBox": "Could not access camera. Alternatively, enter the encoded data directly into the search box.",
+      "heading": "Scan a barcode",
       "helpTitle": "Info on using barcodes.",
       "loading": "Loading Barcode Scanner...",
       "otherFormats": "To scan other formats, please use Chrome or a Chromium-based browser.",
-      "prompt": "Barcode Scanner: {helpText}.",
       "scanError": {
         "message": "Unable to search. Scan has not completed.",
         "title": "An error occurred."
@@ -2285,8 +2284,8 @@ export default interface Resources {
         "title": "Unable to start camera with Barcode Detector."
       },
       "supportedFormats": {
-        "all": "all formats supported",
-        "qr": "QR format supported"
+        "all": "All formats supported.",
+        "qr": "QR format supported."
       }
     },
     "baseRecord": {
@@ -3596,7 +3595,6 @@ export default interface Resources {
       "noLinkedItem": "None",
       "noRows": "No IGSN IDs",
       "scan": "Scan",
-      "searchButtonPrefix": "Search for IGSN",
       "searchPlaceholder": "Search IGSN IDs...",
       "selectIgsn": "Select IGSN"
     },
@@ -6771,9 +6769,11 @@ export default interface Resources {
           "b2instDeleteFailed": "Could not delete the instrument PID from B2INST. {0}",
           "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
           "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
+          "b2instRegisterNoDraft": "Could not register a new instrument PID with B2INST: the service accepted the request but returned no draft record.",
           "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
           "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
           "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
+          "dataCiteRegisterNoDraft": "Could not register a new identifier with DataCite: the service accepted the request but returned no draft record.",
           "deleteNotOwner": "You can only delete an identifier that you own.",
           "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
