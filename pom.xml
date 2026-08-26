@@ -1377,6 +1377,10 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>org.javassist</groupId>
+      <artifactId>javassist</artifactId>
+    </dependency>
+    <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
       <version>2.10.14</version>
@@ -2700,6 +2704,8 @@
     <commons.fileupload.version>1.4</commons.fileupload.version>
     <guava.version>23.4-jre</guava.version>
     <icu4j.version>78.3</icu4j.version>
+    <!-- Overrides the parent's 3.24.0-GA, which cannot read Java 21 class files -->
+    <javassist.version>3.30.2-GA</javassist.version>
     <jsonwebtoken.version>0.11.2</jsonwebtoken.version>
     <jstl.version>3.0.0</jstl.version>
     <lucene.version>9.8.0</lucene.version>
