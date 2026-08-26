@@ -17,27 +17,24 @@ pre-commit:
     # sensible production value. Never your own `deployment.properties`: it is
     # git-ignored, so nobody else would ever see the change.
     # Escape hatch: `git commit --no-verify`.
+    # Single-quoted with no $(...): on Windows lefthook wraps `run` in sh -c "…", where inner double quotes and command substitution break the parse.
     secret-files:
       run: |
-        blocked=$(printf '%s\n' {staged_files} \
-          | grep -iE '(^|/)(\.env(\..+)?|deployment\.properties)$' \
-          | grep -viE '\.example$' \
-          | sed 's/^/  /' || true)
-        if [ -n "$blocked" ]; then
-          echo "Refusing to commit local secret/config files:" >&2
-          echo "$blocked" >&2
-          echo "To share a property change, edit deployment.properties.example (and" >&2
-          echo "defaultDeployment.properties if it has a production value) instead." >&2
-          echo "Unstage them (git restore --staged <file>), or use --no-verify if intentional." >&2
+        if printf '%s\n' {staged_files} | grep -iE '(^|/)(\.env(\..+)?|deployment\.properties)$' | grep -qviE '\.example$'; then
+          echo 'Refusing to commit local secret/config files:' >&2
+          printf '%s\n' {staged_files} | grep -iE '(^|/)(\.env(\..+)?|deployment\.properties)$' | grep -viE '\.example$' | sed 's/^/  /' >&2
+          echo 'To share a property change, edit deployment.properties.example (and' >&2
+          echo 'defaultDeployment.properties if it has a production value) instead.' >&2
+          echo 'Unstage them (git restore --staged <file>), or use --no-verify if intentional.' >&2
           exit 1
         fi
     # Fail the commit if any staged Java file is not spotless-formatted.
     # spotlessFiles matches the absolute path via String#matches, so each
     # staged (repo-relative) path is prefixed with `.*` to anchor correctly.
     # git reports forward slashes, but the absolute path spotless matches uses
-    # the OS separator (backslashes on Windows), so each `/` is turned into a
-    # `[/\\]` class; without this the pattern matches nothing on Windows and the
-    # check silently passes.
+    # the OS separator (backslashes on Windows), so each `/` becomes `.` (matches
+    # any separator on any OS). A `[/\\]` class would need backslashes that
+    # lefthook's Windows `sh -c "…"` wrapper halves into an invalid regex.
     # Guard against an empty list (drop blank lines) so we never fall back to
     # `-DspotlessFiles=".*"`, which would match every file in the repo.
     # -DspotlessStrict adds the CleanThat checks; scoped to staged files, so it
@@ -46,7 +43,7 @@ pre-commit:
       glob: "**/*.java"
       run: |
         spotless_files=$(printf '%s\n' {staged_files} \
-          | sed '/^$/d; s/[.[\](){}+^$|\\]/\\&/g; s#/#[/\\\\]#g; s#^#.*#' \
+          | sed '/^$/d; s/[.[\](){}+^$|\\]/\\&/g; s#/#.#g; s#^#.*#' \
           | paste -sd, -)
         if [ -n "$spotless_files" ]; then
           ./mvnw -q spotless:check -DspotlessStrict -DspotlessFiles="$spotless_files"
