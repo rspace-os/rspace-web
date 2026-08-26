@@ -1,7 +1,9 @@
 package com.researchspace.api.v1.auth;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.researchspace.auth.ApiAwareWebSecurityManager;
 import com.researchspace.model.User;
 import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.testutils.TestFactory;
@@ -36,10 +38,12 @@ public class ApiKeyAuthenticatorTest {
     }
 
     boolean loginOK = false;
+    boolean statelessScopeActive = false;
 
     @Override
     void doLogin(String apiKey, User u) {
       loginOK = true;
+      statelessScopeActive = ApiAwareWebSecurityManager.isStatelessApiLogin();
     }
   }
 
@@ -63,6 +67,17 @@ public class ApiKeyAuthenticatorTest {
     setUpExpectations(enabled);
     shiroAPIKeyAuthoriser.authenticate(mockRequest);
     assertTrue(shiroAPIKeyAuthoriser.loginOK);
+  }
+
+  @Test
+  public void loginRunsInsideTheStatelessScope() {
+    User enabled = TestFactory.createAnyUser("any");
+    setUpExpectations(enabled);
+
+    shiroAPIKeyAuthoriser.authenticate(mockRequest);
+
+    assertTrue(shiroAPIKeyAuthoriser.statelessScopeActive);
+    assertFalse(ApiAwareWebSecurityManager.isStatelessApiLogin());
   }
 
   @Test(expected = ApiAuthenticationException.class)

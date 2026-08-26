@@ -1,11 +1,13 @@
 package com.researchspace.auth;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.SimplePrincipalCollection;
 import org.apache.shiro.web.subject.support.WebDelegatingSubject;
@@ -71,6 +73,21 @@ public class ApiAwareWebSecurityManagerTest {
         });
 
     verify(request, never()).changeSessionId();
+
+    securityManager.beforeSuccessfulLogin(subjectWithSession());
+
+    verify(request).changeSessionId();
+  }
+
+  @Test
+  public void statelessMarkIsClearedWhenTheLoginThrows() {
+    assertThrows(
+        AuthenticationException.class,
+        () ->
+            ApiAwareWebSecurityManager.doStatelessLogin(
+                () -> {
+                  throw new AuthenticationException("bad api key");
+                }));
 
     securityManager.beforeSuccessfulLogin(subjectWithSession());
 
