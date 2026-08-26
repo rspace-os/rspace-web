@@ -160,14 +160,11 @@ function DBRepo({ integrationState, update }: DBRepoArgs): React.ReactNode {
                     htmlInput: {
                       name: "dbrepoPassword",
                       type: "password",
-                      autoComplete: "new-password",
                     },
                   }}
                 />
                 <Stack direction="row" spacing={1}>
-                  <Button type="submit" variant="contained">
-                    {connected ? t("actions.reconnect") : t("actions.connect")}
-                  </Button>
+                  <Button type="submit">{connected ? t("actions.reconnect") : t("actions.connect")}</Button>
                   {connected && (
                     <Button type="button" onClick={() => void handleDisconnect()}>
                       {t("actions.disconnect")}
