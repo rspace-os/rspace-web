@@ -16,7 +16,7 @@ import {
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Input } from "@/modules/common/ui/input";
-import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Label } from "@/modules/common/ui/label";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import {
@@ -62,7 +62,12 @@ const allBookableItemsConfig: CollectionConfig<BookingConfiguration> = {
                   href={`/globalId/${row.target.globalId}`}
                   idLinkLabel={i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })}
                   size="xs"
-                />
+                >
+                  <InventoryLocationLink
+                    name={row.target.value.parentContainerName}
+                    globalId={row.target.value.parentContainerGlobalId}
+                  />
+                </InventoryItem>
               ) : (
                 <UnknownItem size="xs" />
               ),

@@ -42,10 +42,16 @@ export const currentUser: CurrentUser = {
   },
 };
 
-const target = (id: number, name: string) => ({
+const target = (id: number, name: string, location?: { name: string; globalId: string } | null) => ({
   relationTo: "instruments" as const,
   globalId: `IN${id}`,
-  value: { id, name, deleted: false },
+  value: {
+    id,
+    name,
+    deleted: false,
+    parentContainerName: location === null ? null : (location?.name ?? `${name} room`),
+    parentContainerGlobalId: location === null ? null : (location?.globalId ?? `IC${id}`),
+  },
 });
 
 const timestamps = { createdAt: "2026-08-01T09:00:00Z", updatedAt: "2026-08-01T09:00:00Z" };
@@ -68,7 +74,7 @@ export const ownBooking: BookingListDocument = {
 export const otherBooking: BookingListDocument = {
   ...ownBooking,
   id: 42,
-  target: target(124, "Electron microscope"),
+  target: target(124, "Electron microscope", { name: "Workbench", globalId: "BE124" }),
   requesterId: 2,
   start: "2026-08-19T12:00:00Z",
   end: "2026-08-19T13:30:00Z",
@@ -87,6 +93,22 @@ export const busyBooking: BookingListDocument = {
   bookedBy: null,
   privacy: "busy",
   canEdit: false,
+};
+
+export const noParentBooking: BookingListDocument = {
+  ...ownBooking,
+  id: 44,
+  target: target(125, "Mass spectrometer", null),
+  start: "2026-08-20T08:00:00Z",
+  end: "2026-08-20T09:00:00Z",
+};
+
+export const deletedParentBooking: BookingListDocument = {
+  ...ownBooking,
+  id: 45,
+  target: target(126, "Microplate reader", null),
+  start: "2026-08-20T10:00:00Z",
+  end: "2026-08-20T11:00:00Z",
 };
 
 export function collectionResponse(

@@ -1,5 +1,5 @@
 import "@/__tests__/__mocks__/matchMedia";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
@@ -9,6 +9,8 @@ import {
   busyBooking,
   collectionResponse,
   currentUser,
+  deletedParentBooking,
+  noParentBooking,
   otherBooking,
   ownBooking,
   renderCalendar,
@@ -63,7 +65,7 @@ describe("CalendarPage", () => {
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/bookings", ({ request }) => {
         requests.push(new URL(request.url));
-        return HttpResponse.json(collectionResponse([ownBooking, otherBooking]));
+        return HttpResponse.json(collectionResponse([ownBooking, otherBooking, noParentBooking, deletedParentBooking]));
       }),
     );
     const user = userEvent.setup();
@@ -74,10 +76,19 @@ describe("CalendarPage", () => {
     await user.click(screen.getByRole("button", { name: "Resources" }));
     expect(screen.getByRole("region", { name: "Resources" })).toBeVisible();
     expect(screen.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
+    for (const locationLink of screen.getAllByRole("link", { name: "Confocal microscope room" })) {
+      expect(locationLink).toHaveAttribute("href", "/globalId/IC123");
+    }
+    for (const locationLink of screen.getAllByRole("link", { name: "Workbench" })) {
+      expect(locationLink).toHaveAttribute("href", "/globalId/BE124");
+    }
+    expect(within(screen.getByRole("region", { name: "Resource booking schedule" })).getAllByRole("link")).toHaveLength(
+      2,
+    );
 
     await user.click(screen.getByRole("button", { name: "Day" }));
     await waitFor(() => expect(requests.length).toBeGreaterThan(1));
-    expect(screen.getAllByTestId("day-timeline-scroller")).toHaveLength(2);
+    expect(screen.getAllByTestId("day-timeline-scroller")).toHaveLength(4);
 
     await user.click(screen.getByRole("button", { name: "Agenda" }));
     expect(screen.getByRole("region", { name: "Booking agenda" })).toBeVisible();

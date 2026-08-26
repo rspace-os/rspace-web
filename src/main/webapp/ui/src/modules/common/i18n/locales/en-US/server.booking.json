@@ -1,0 +1,29 @@
+{
+  "bookingFixtures": {
+    "description": "Docker development booking fixture",
+    "instruments": {
+      "confocal": "Confocal microscope",
+      "electronMicroscope": "Electron microscope",
+      "massSpectrometer": "Mass spectrometer",
+      "flowCytometer": "Flow cytometer",
+      "noParentCentrifuge": "No-parent centrifuge",
+      "deletedLocationSequencer": "Deleted-location sequencer",
+      "restrictedLocationPlateReader": "Restricted-location plate reader"
+    },
+    "containers": {
+      "imagingLab": "Imaging lab",
+      "cryoEmSuite": "Cryo-EM suite",
+      "longCellAnalysisFacility": "Cell analysis facility with a deliberately long location name",
+      "deletedInstrumentRoom": "Deleted instrument room",
+      "restrictedInstrumentRoom": "Restricted instrument room"
+    },
+    "purposes": {
+      "cellImaging": "Cell imaging",
+      "calibrationRun": "Calibration run",
+      "ultrastructureImaging": "Ultrastructure imaging",
+      "proteomicsRun": "Proteomics run",
+      "cellSorting": "Cell sorting",
+      "overnightAnalysis": "Overnight analysis"
+    }
+  }
+}

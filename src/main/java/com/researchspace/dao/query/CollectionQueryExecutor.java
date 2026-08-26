@@ -91,8 +91,20 @@ public final class CollectionQueryExecutor<T> {
       ResourceRequest request,
       Predicate restriction,
       RelationshipReadAccess targets) {
+    return page(factory, session, request, restriction, targets, List.of());
+  }
+
+  /** As {@link #page}, fetch-joining entity paths without adding them to the count query. */
+  public ResourcePage<T> page(
+      CriteriaBuilderFactory factory,
+      Session session,
+      ResourceRequest request,
+      Predicate restriction,
+      RelationshipReadAccess targets,
+      List<String> fetchPaths) {
     long firstResult = (long) (request.page().number() - 1) * request.page().size();
     CriteriaBuilder<T> query = query(factory, session, request, restriction, targets);
+    fetchPaths.forEach(path -> query.fetch(alias + "." + path));
     if (firstResult > Integer.MAX_VALUE) {
       return new ResourcePage<>(List.of(), totalMatching(query));
     }

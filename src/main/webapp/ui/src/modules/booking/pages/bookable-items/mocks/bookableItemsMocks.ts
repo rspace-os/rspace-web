@@ -123,7 +123,13 @@ export const bookableItemFixtures = [
     id: 7,
     target: {
       relationTo: "instruments",
-      value: { id: 123, name: "Confocal microscope", deleted: false },
+      value: {
+        id: 123,
+        name: "Confocal microscope",
+        deleted: false,
+        parentContainerName: "Imaging lab",
+        parentContainerGlobalId: "IC456",
+      },
       globalId: "IN123",
     },
     enabled: true,
@@ -135,7 +141,13 @@ export const bookableItemFixtures = [
     id: 8,
     target: {
       relationTo: "instruments",
-      value: { id: 124, name: "Electron microscope", deleted: false },
+      value: {
+        id: 124,
+        name: "Electron microscope",
+        deleted: false,
+        parentContainerName: "Workbench",
+        parentContainerGlobalId: "BE457",
+      },
       globalId: "IN124",
     },
     enabled: true,
@@ -157,12 +169,37 @@ export const bookableItemFixtures = [
     id: 10,
     target: {
       relationTo: "instruments",
-      value: { id: 126, name: "Flow cytometer", deleted: false },
+      value: {
+        id: 126,
+        name: "Flow cytometer",
+        deleted: false,
+        // The API uses the same null pair for an unreadable parent as it does
+        // for a parent that has since been deleted.
+        parentContainerName: null,
+        parentContainerGlobalId: null,
+      },
       globalId: "IN126",
     },
     enabled: true,
     timezone: "Asia/Singapore",
     updatedAt: "2026-08-13T13:00:00Z",
+  },
+  {
+    id: 11,
+    target: {
+      relationTo: "instruments",
+      value: {
+        id: 127,
+        name: "Microplate reader",
+        deleted: false,
+        parentContainerName: null,
+        parentContainerGlobalId: null,
+      },
+      globalId: "IN127",
+    },
+    enabled: true,
+    timezone: "Europe/Berlin",
+    updatedAt: "2026-08-14T14:00:00Z",
   },
 ] as const;
 

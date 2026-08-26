@@ -19,6 +19,7 @@ import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
+import { InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import {
   bookableItemFixtures,
   bookableItemsHandlers,
@@ -64,6 +65,16 @@ async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
 }
 
 describe("AllBookableItemsPage", () => {
+  it.each([
+    { name: null, globalId: "IC456" },
+    { name: "Imaging lab", globalId: null },
+    { name: undefined, globalId: undefined },
+  ])("does not render a partial inventory location link", ({ name, globalId }) => {
+    const { container } = render(<InventoryLocationLink name={name} globalId={globalId} />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it("shows booking availability and links to the routed booking form", async () => {
     let collectionRequest: Request | undefined;
     let bookingRequests = 0;
@@ -105,6 +116,18 @@ describe("AllBookableItemsPage", () => {
         within(screen.getByRole("table", { name: "All Bookable Items table" })).getByText("Confocal microscope"),
       ).toBeInTheDocument(),
     );
+    for (const locationLink of screen.getAllByRole("link", { name: "Imaging lab" })) {
+      expect(locationLink).toHaveAttribute("href", "/globalId/IC456");
+    }
+    for (const locationLink of screen.getAllByRole("link", { name: "Workbench" })) {
+      expect(locationLink).toHaveAttribute("href", "/globalId/BE457");
+    }
+    for (const itemName of ["Mass spectrometer", "Microplate reader"]) {
+      const row = within(screen.getByRole("table", { name: "All Bookable Items table" })).getByRole("row", {
+        name: new RegExp(itemName),
+      });
+      expect(within(row).getAllByRole("link")).toHaveLength(2);
+    }
     await waitFor(() =>
       expect(
         within(screen.getByRole("table", { name: "All Bookable Items table" })).getByRole("img", {
@@ -148,8 +171,10 @@ describe("AllBookableItemsPage", () => {
     expect(confocal).toHaveAccessibleDescription(/Current time:/);
     expect(flowCytometer).toHaveAccessibleDescription(/Current time:/);
     const markers = within(table).getAllByTitle(/Current time:/);
-    expect(markers).toHaveLength(2);
-    expect(markers[0].style.left).toBe(markers[1].style.left);
+    expect(markers.length).toBeGreaterThan(1);
+    for (const marker of markers.slice(1)) {
+      expect(marker.style.left).toBe(markers[0].style.left);
+    }
   });
 
   it("hides unverified rows while the complete quick-filter index loads", async () => {

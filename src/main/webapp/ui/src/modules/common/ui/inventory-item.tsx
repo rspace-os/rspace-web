@@ -1,4 +1,4 @@
-import { ExternalLinkIcon, MicroscopeIcon } from "lucide-react";
+import { ExternalLinkIcon, MapPinIcon, MicroscopeIcon } from "lucide-react";
 import type * as React from "react";
 
 import { Badge } from "@/modules/common/ui/badge";
@@ -19,6 +19,23 @@ function GlobalIdBadge({ globalId, href, label }: { globalId: string; href?: str
       <ExternalLinkIcon aria-hidden="true" />
       {globalId}
     </Badge>
+  );
+}
+
+function InventoryLocationLink({ name, globalId }: { name?: string | null; globalId?: string | null }) {
+  if (name == null || globalId == null) return null;
+
+  return (
+    <>
+      <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0" />
+      <a
+        href={`/globalId/${globalId}`}
+        className="inline-flex min-w-0 items-center gap-1 text-foreground hover:underline"
+      >
+        <span className="truncate">{name}</span>
+        <ExternalLinkIcon aria-hidden="true" className="size-3.5 shrink-0" />
+      </a>
+    </>
   );
 }
 
@@ -84,4 +101,4 @@ function InventoryItem({
 }
 
 export type { GlobalIdPlacement };
-export { InventoryItem };
+export { InventoryItem, InventoryLocationLink };

@@ -16,7 +16,7 @@ import { useTableList } from "@/modules/common/table-list/useTableList";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Input } from "@/modules/common/ui/input";
-import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Label } from "@/modules/common/ui/label";
 import { cn } from "@/modules/common/utils/cn";
 import { addCalendarDays, localToday } from "../all-bookable-items/calendarDate";
@@ -403,7 +403,12 @@ function ResourceSchedule({
               return (
                 <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)]">
                   <header className="border-r bg-muted/30 p-1">
-                    <InventoryItem name={resource.value.name} globalId={resource.globalId} size="xs" />
+                    <InventoryItem name={resource.value.name} globalId={resource.globalId} size="xs">
+                      <InventoryLocationLink
+                        name={resource.value.parentContainerName}
+                        globalId={resource.value.parentContainerGlobalId}
+                      />
+                    </InventoryItem>
                   </header>
                   <DayTimeline
                     date={date}
@@ -444,7 +449,12 @@ function ResourceSchedule({
             {resources.map((resource) => (
               <React.Fragment key={resource.globalId}>
                 <div className="sticky left-0 z-10 border-r border-b bg-background p-1">
-                  <InventoryItem name={resource.value.name} globalId={resource.globalId} size="xs" />
+                  <InventoryItem name={resource.value.name} globalId={resource.globalId} size="xs">
+                    <InventoryLocationLink
+                      name={resource.value.parentContainerName}
+                      globalId={resource.value.parentContainerGlobalId}
+                    />
+                  </InventoryItem>
                 </div>
                 {dates.map((day, dayIndex) => (
                   <div key={day} className="min-h-20 space-y-1 border-r border-b p-1">

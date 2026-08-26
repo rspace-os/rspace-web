@@ -3,7 +3,13 @@ import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 
 const BookingTargetSchema = v.object({
   relationTo: v.literal("instruments"),
-  value: v.object({ id: v.number(), name: v.string(), deleted: v.boolean() }),
+  value: v.object({
+    id: v.number(),
+    name: v.string(),
+    deleted: v.boolean(),
+    parentContainerName: v.optional(v.nullable(v.string())),
+    parentContainerGlobalId: v.optional(v.nullable(v.string())),
+  }),
   globalId: v.string(),
 });
 

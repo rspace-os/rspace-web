@@ -50,7 +50,8 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
         getSession(),
         request.restrict(ACTIVE),
         COLLECTION_QUERY.compileReadableRelationship("target", targetAccess),
-        targetAccess);
+        targetAccess,
+        List.of("bookingConfiguration"));
   }
 
   @Override
