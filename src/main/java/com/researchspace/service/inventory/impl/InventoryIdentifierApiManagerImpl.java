@@ -731,12 +731,12 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
         if (published.get().getLinks() != null) {
           refreshUpdate.setProviderUrl(published.get().getLinks().getSelfHtml());
         }
-        setLandingPageUrl(refreshUpdate, doi);
+        setLandingPageUrl(refreshUpdate, doi, landingPageOf(published.get()));
         return refreshUpdate;
       }
       if ("accepted".equals(reviewStatus)) {
         refreshUpdate.setState("accepted");
-        setLandingPageUrl(refreshUpdate, doi);
+        setLandingPageUrl(refreshUpdate, doi, null);
         return refreshUpdate;
       }
       if (b2instConnector.getDraftRecord(rid).isPresent()) {
@@ -754,13 +754,29 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   }
 
   /**
-   * An accepted B2INST PID is the PIDINST equivalent of DataCite's {@code findable}, whose {@code
-   * url} is the identifier's RSpace public landing page, so acceptance fills the same field from
-   * the identifier's own public link (RSDEV-1260).
+   * An accepted B2INST PID is the PIDINST equivalent of DataCite's {@code findable}, so acceptance
+   * fills the same {@code url} field. The value is the LandingPage B2INST holds for the record,
+   * read back rather than rebuilt: registration prefers a user-typed institutional address over
+   * RSpace's own public page (see {@code RspaceToExternalProviderAdapterImpl}), a curator bakes
+   * that address into the citable Handle, and the deployment's server URL may have changed since.
+   * Rebuilding it would report an address the minted PID does not resolve to (RSDEV-1260).
+   *
+   * <p>Falls back to the identifier's public page when the record carries no LandingPage, which is
+   * all that is available when acceptance is known from the review alone.
    */
-  private void setLandingPageUrl(ApiInventoryDOI refreshUpdate, DigitalObjectIdentifier doi) {
+  private void setLandingPageUrl(
+      ApiInventoryDOI refreshUpdate, DigitalObjectIdentifier doi, String registeredLandingPage) {
+    if (isNotBlank(registeredLandingPage)) {
+      refreshUpdate.setUrl(registeredLandingPage);
+      return;
+    }
     InventoryUrls.publicLandingPageUrl(properties.getServerUrl(), doi.getPublicLink())
         .ifPresent(refreshUpdate::setUrl);
+  }
+
+  /** The LandingPage B2INST holds for the record, or null when the response carries none. */
+  private String landingPageOf(B2instDraftRecord record) {
+    return record.getMetadata() == null ? null : record.getMetadata().getLandingPage();
   }
 
   /**

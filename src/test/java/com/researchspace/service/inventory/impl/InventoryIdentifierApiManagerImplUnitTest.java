@@ -22,6 +22,7 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
+import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRecordLinks;
@@ -568,5 +569,57 @@ class InventoryIdentifierApiManagerImplUnitTest {
         assertThrows(ApiRuntimeException.class, () -> mgr.refreshIdentifier(oid, new User("u")));
 
     assertEquals("errors.inventory.identifier.refreshNoIdentifier", thrown.getErrorCode());
+  }
+
+  /**
+   * The url reported after acceptance must be the address the minted Handle actually resolves to,
+   * which is the LandingPage B2INST holds for the record. Registration prefers a user-typed
+   * institutional address over RSpace's own public page, so rebuilding the RSpace page here would
+   * report an address the PID does not resolve to (Copilot review, PR 1066).
+   */
+  @Test
+  void refreshTakesUrlFromTheRegisteredLandingPageWhenTheRecordCarriesOne() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    ReflectionTestUtils.setField(mgr, "properties", properties);
+    when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.empty());
+    B2instDraftRecord published = new B2instDraftRecord();
+    B2instInstrumentMetadata metadata = new B2instInstrumentMetadata();
+    metadata.setLandingPage("https://institution.example.org/instruments/nmr-400");
+    published.setMetadata(metadata);
+    when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.of(published));
+
+    ApiInventoryDOI result = (ApiInventoryDOI) refreshMethod().invoke(mgr, b2instDoi());
+
+    assertEquals("accepted", result.getState());
+    assertEquals("https://institution.example.org/instruments/nmr-400", result.getUrl());
+  }
+
+  /**
+   * Acceptance known from the review alone carries no record to read a LandingPage from, so the
+   * identifier's own public page stays the only address available.
+   */
+  @Test
+  void refreshFallsBackToThePublicPageWhenAcceptanceComesFromTheReviewAlone() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    ReflectionTestUtils.setField(mgr, "properties", properties);
+    B2instRequestResponse review = new B2instRequestResponse();
+    review.setStatus("accepted");
+    when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.of(review));
+    when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.empty());
+
+    DigitalObjectIdentifier doi = b2instDoi();
+    ApiInventoryDOI result = (ApiInventoryDOI) refreshMethod().invoke(mgr, doi);
+
+    assertEquals("accepted", result.getState());
+    assertEquals(
+        "https://rspace.example.com/public/inventory/" + doi.getPublicLink(), result.getUrl());
   }
 }
