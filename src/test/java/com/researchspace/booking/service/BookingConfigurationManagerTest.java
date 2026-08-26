@@ -12,10 +12,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
@@ -25,6 +27,8 @@ import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationDefaults;
+import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription.Operator;
@@ -36,9 +40,8 @@ import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CollectionMutationException;
+import com.researchspace.service.JsonMessageSource;
 import jakarta.validation.ConstraintViolationException;
-import jakarta.validation.Validation;
-import jakarta.validation.ValidatorFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -51,23 +54,27 @@ import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 class BookingConfigurationManagerTest {
 
   private final BookingConfigurationDao dao = mock(BookingConfigurationDao.class);
+  private final BookingConfigurationDefaultsDao defaultsDao =
+      mock(BookingConfigurationDefaultsDao.class);
 
   private final User actor = mock(User.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   private final ObjectProvider<ResourceRegistry> resourceRegistry = mock(ObjectProvider.class);
-  private final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
+  private final LocalValidatorFactoryBean validator = validator();
   private final BookingConfigurationManager manager =
-      new BookingConfigurationManagerImpl(
-          dao, validatorFactory.getValidator(), events, resourceRegistry);
+      new BookingConfigurationManagerImpl(dao, defaultsDao, validator, events, resourceRegistry);
 
   @BeforeEach
   void setUp() {
     when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
     when(actor.getUsername()).thenReturn("sysadmin");
+    when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
+        .thenReturn(Optional.of(defaults(5, "00:00", "24:00", 0, 0, 0, false)));
     when(resourceRegistry.getObject())
         .thenReturn(
             new ResourceRegistry(
@@ -79,7 +86,14 @@ class BookingConfigurationManagerTest {
 
   @AfterEach
   void closeValidatorFactory() {
-    validatorFactory.close();
+    validator.close();
+  }
+
+  private static LocalValidatorFactoryBean validator() {
+    LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+    validator.setValidationMessageSource(new JsonMessageSource());
+    validator.afterPropertiesSet();
+    return validator;
   }
 
   @Test
@@ -131,8 +145,115 @@ class BookingConfigurationManagerTest {
     assertSame(actor, created.getCreatedBy());
     assertSame(actor, created.getUpdatedBy());
     assertEquals(created.getCreatedAt(), created.getUpdatedAt());
+    assertEquals(5, created.getSlotGranularityMinutes());
+    assertEquals("00:00", created.getOpeningStart());
+    assertEquals("24:00", created.getOpeningEnd());
     verify(dao).saveAndFlush(created);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
+  }
+
+  @Test
+  void copiesOneDefaultsSnapshotForBulkCreateAndHonoursExplicitOverrides() {
+    when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
+        .thenReturn(Optional.of(defaults(15, "08:00", "18:00", 10, 20, 120, true)));
+    when(dao.saveAndFlush(any(BookingConfiguration.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    List<BookingConfiguration> created =
+        manager.createConfigurations(
+            List.of(
+                new Create(true, "UTC", target(12L)),
+                new Create(
+                    true,
+                    "UTC",
+                    target(13L),
+                    new BookingSchedulingSettings.Patch(1L, null, null, 2L, null, 60L, false))),
+            actor,
+            actor);
+
+    assertEquals(15, created.get(0).getSlotGranularityMinutes());
+    assertEquals("08:00", created.get(0).getOpeningStart());
+    assertEquals(10, created.get(0).getBufferBeforeMinutes());
+    assertEquals(120, created.get(0).getMaxBookingDurationMinutes());
+    assertTrue(created.get(0).isAllowDoubleBooking());
+    assertEquals(1, created.get(1).getSlotGranularityMinutes());
+    assertEquals("18:00", created.get(1).getOpeningEnd());
+    assertEquals(2, created.get(1).getBufferBeforeMinutes());
+    assertEquals(20, created.get(1).getBufferAfterMinutes());
+    assertEquals(60, created.get(1).getMaxBookingDurationMinutes());
+    assertFalse(created.get(1).isAllowDoubleBooking());
+    verify(defaultsDao, times(1)).getSafeNull(BookingConfigurationDefaults.SINGLETON_ID);
+  }
+
+  @Test
+  void existingConfigurationsDoNotChangeWhenDefaultsChange() {
+    when(dao.saveAndFlush(any(BookingConfiguration.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    BookingConfiguration first =
+        manager.createConfiguration(new Create(true, "UTC", target(12L)), actor, actor);
+    when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
+        .thenReturn(Optional.of(defaults(15, "08:00", "18:00", 10, 20, 120, true)));
+
+    BookingConfiguration second =
+        manager.createConfiguration(new Create(true, "UTC", target(13L)), actor, actor);
+
+    assertEquals(5, first.getSlotGranularityMinutes());
+    assertEquals("24:00", first.getOpeningEnd());
+    assertFalse(first.isAllowDoubleBooking());
+    assertEquals(0, first.getMaxBookingDurationMinutes());
+    assertEquals(15, second.getSlotGranularityMinutes());
+    assertEquals("18:00", second.getOpeningEnd());
+    assertTrue(second.isAllowDoubleBooking());
+    assertEquals(120, second.getMaxBookingDurationMinutes());
+  }
+
+  @Test
+  void rejectsInvalidSchedulingSettingsBeforeSaving() {
+    assertFalse(BookingSchedulingSettings.areOpeningHoursValid("08:00", "24:00"));
+    Create invalid =
+        new Create(
+            true,
+            "UTC",
+            target(12L),
+            new BookingSchedulingSettings.Patch(7L, "18:00", "08:00", -1L, 10_081L, 8L, false));
+
+    InvalidBookingSchedulingSettingsException failure =
+        assertThrows(
+            InvalidBookingSchedulingSettingsException.class,
+            () -> manager.createConfiguration(invalid, actor, actor));
+
+    assertEquals(InvalidBookingSchedulingSettingsException.Reason.GRANULARITY, failure.reason());
+    verify(dao, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void validatesMaximumDurationAgainstTheSystemCapAndGranularity() {
+    assertTrue(BookingSchedulingSettings.isMaximumDurationValid(0, 5));
+    assertTrue(BookingSchedulingSettings.isMaximumDurationValid(5, 5));
+    assertTrue(BookingSchedulingSettings.isMaximumDurationValid(527_040, 15));
+    assertFalse(BookingSchedulingSettings.isMaximumDurationValid(-1, 5));
+    assertFalse(BookingSchedulingSettings.isMaximumDurationValid(4, 5));
+    assertFalse(BookingSchedulingSettings.isMaximumDurationValid(7, 5));
+    assertFalse(BookingSchedulingSettings.isMaximumDurationValid(527_041, 1));
+    assertFalse(BookingSchedulingSettings.isMaximumDurationValid(5, 0));
+
+    InvalidBookingSchedulingSettingsException failure =
+        assertThrows(
+            InvalidBookingSchedulingSettingsException.class,
+            () ->
+                manager.createConfiguration(
+                    new Create(
+                        true,
+                        "UTC",
+                        target(12L),
+                        new BookingSchedulingSettings.Patch(
+                            null, null, null, null, null, 7L, null)),
+                    actor,
+                    actor));
+
+    assertEquals(
+        InvalidBookingSchedulingSettingsException.Reason.MAXIMUM_DURATION, failure.reason());
+    verify(dao, never()).saveAndFlush(any());
   }
 
   @Test
@@ -213,10 +334,12 @@ class BookingConfigurationManagerTest {
     when(dao.saveAndFlush(configuration)).thenReturn(configuration);
 
     BookingConfiguration updated =
-        manager.updateConfiguration(42L, new Patch(true, null, null), actor, actor).orElseThrow();
+        manager.updateConfiguration(42L, new Patch(true, null), actor, actor).orElseThrow();
 
     assertTrue(updated.isEnabled());
     assertEquals("UTC", updated.getTimeZone());
+    assertEquals(
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L), updated.getTarget());
     assertSame(actor, updated.getUpdatedBy());
     assertTrue(updated.getUpdatedAt() != null);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
@@ -242,8 +365,7 @@ class BookingConfigurationManagerTest {
   void reportsAnAbsentConfigurationWithoutWriting() {
     when(dao.getSafeNull(42L)).thenReturn(Optional.empty());
 
-    assertFalse(
-        manager.updateConfiguration(42L, new Patch(true, null, null), actor, actor).isPresent());
+    assertFalse(manager.updateConfiguration(42L, new Patch(true, null), actor, actor).isPresent());
     assertFalse(manager.removeConfiguration(42L, actor, actor).isPresent());
 
     verify(dao, never()).save(any());
@@ -259,7 +381,7 @@ class BookingConfigurationManagerTest {
 
     assertThrows(
         AuthorizationException.class,
-        () -> manager.updateConfigurations(request, new Patch(true, null, null), actor, actor));
+        () -> manager.updateConfigurations(request, new Patch(true, null), actor, actor));
     verify(dao, never()).getResources(any(ResourceRequest.class), anyInt(), any());
 
     when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
@@ -271,7 +393,7 @@ class BookingConfigurationManagerTest {
 
     assertThrows(
         CollectionMutationException.class,
-        () -> manager.updateConfigurations(request, new Patch(true, null, null), actor, actor));
+        () -> manager.updateConfigurations(request, new Patch(true, null), actor, actor));
     verify(dao, never()).saveAndFlush(any());
   }
 
@@ -294,33 +416,6 @@ class BookingConfigurationManagerTest {
   }
 
   @Test
-  void replacesTheTargetAtomicallyAndRejectsTargetsUsedByAnotherConfiguration() {
-    BookingConfiguration configuration = new BookingConfiguration();
-    configuration.setId(42L);
-    configuration.setTimeZone("UTC");
-    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L));
-    when(dao.getSafeNull(42L)).thenReturn(Optional.of(configuration));
-    when(dao.saveAndFlush(configuration)).thenReturn(configuration);
-
-    BookingConfiguration updated =
-        manager
-            .updateConfiguration(42L, new Patch(null, null, target(13L)), actor, actor)
-            .orElseThrow();
-
-    assertEquals(
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, 13L), updated.getTarget());
-
-    BookingConfiguration other = new BookingConfiguration();
-    other.setId(99L);
-    when(dao.findByTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 14L)))
-        .thenReturn(Optional.of(other));
-
-    assertThrows(
-        BookingConfigurationTargetConflictException.class,
-        () -> manager.updateConfiguration(42L, new Patch(null, null, target(14L)), actor, actor));
-  }
-
-  @Test
   void rejectsDeletedTargetsBeforeSaving() {
     Instrument deleted = new Instrument();
     deleted.setId(12L);
@@ -332,49 +427,6 @@ class BookingConfigurationManagerTest {
     assertThrows(
         InvalidBookableTargetException.class,
         () -> manager.createConfiguration(new Create(true, "UTC", target), actor, actor));
-    verify(dao, never()).saveAndFlush(any());
-  }
-
-  @Test
-  void doesNotSaveWhenTheOnlyPatchValueIsTheCurrentTarget() {
-    BookingConfiguration configuration = new BookingConfiguration();
-    configuration.setId(42L);
-    configuration.setTimeZone("UTC");
-    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L));
-    when(dao.getSafeNull(42L)).thenReturn(Optional.of(configuration));
-
-    BookingConfiguration result =
-        manager
-            .updateConfiguration(42L, new Patch(null, null, target(12L)), actor, actor)
-            .orElseThrow();
-
-    assertEquals(configuration, result);
-    verify(dao, never()).saveAndFlush(any());
-  }
-
-  @Test
-  void bulkTargetPatchRequiresAtMostOneMatchingConfiguration() {
-    ResourceRequest request =
-        ResourceRequest.unpaged(
-            new FilterExpression.Comparison("id", Operator.IN, List.of(1L, 2L), false));
-    BookingConfiguration first = configuration(1L, 11L);
-    BookingConfiguration second = configuration(2L, 12L);
-    when(dao.getResources(
-            eq(request),
-            eq(ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1),
-            any()))
-        .thenReturn(List.of(first, second));
-
-    assertThrows(
-        BookingConfigurationTargetConflictException.class,
-        () ->
-            manager.updateConfigurations(
-                request, new Patch(null, null, target(13L)), actor, actor));
-
-    assertEquals(
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, 11L), first.getTarget());
-    assertEquals(
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L), second.getTarget());
     verify(dao, never()).saveAndFlush(any());
   }
 
@@ -414,5 +466,25 @@ class BookingConfigurationManagerTest {
     configuration.replaceTarget(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, targetId));
     return configuration;
+  }
+
+  private static BookingConfigurationDefaults defaults(
+      long granularity,
+      String openingStart,
+      String openingEnd,
+      long before,
+      long after,
+      long maximumDuration,
+      boolean doubleBooking) {
+    BookingConfigurationDefaults defaults = new BookingConfigurationDefaults();
+    defaults.setId(BookingConfigurationDefaults.SINGLETON_ID);
+    defaults.setSlotGranularityMinutes(granularity);
+    defaults.setOpeningStart(openingStart);
+    defaults.setOpeningEnd(openingEnd);
+    defaults.setBufferBeforeMinutes(before);
+    defaults.setBufferAfterMinutes(after);
+    defaults.setMaxBookingDurationMinutes(maximumDuration);
+    defaults.setAllowDoubleBooking(doubleBooking);
+    return defaults;
   }
 }

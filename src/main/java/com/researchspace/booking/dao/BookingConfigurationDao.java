@@ -11,6 +11,12 @@ public interface BookingConfigurationDao extends CollectionDao<BookingConfigurat
   /** Finds the configuration assigned to the complete target identity. */
   Optional<BookingConfiguration> findByTarget(BookableTargetReference target);
 
+  /** Locks and returns the configuration for one complete target identity. */
+  Optional<BookingConfiguration> lockByTarget(BookableTargetReference target);
+
+  /** Locks and returns one configuration by its identifier. */
+  Optional<BookingConfiguration> lockById(Long id);
+
   /** Saves and flushes one configuration so unique-target races fail inside the manager call. */
   BookingConfiguration saveAndFlush(BookingConfiguration configuration);
 }

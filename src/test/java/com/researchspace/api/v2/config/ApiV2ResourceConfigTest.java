@@ -16,7 +16,9 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.api.v2.user.UserResourceOperations;
 import com.researchspace.booking.api.v2.BookingConfigurationResourceOperations;
+import com.researchspace.booking.api.v2.TimeSlotBookingResourceOperations;
 import com.researchspace.booking.service.BookingConfigurationManager;
+import com.researchspace.booking.service.TimeSlotBookingManager;
 import com.researchspace.inventory.api.v2.InstrumentResourceOperations;
 import com.researchspace.maintenance.api.v2.MaintenanceResourceOperations;
 import com.researchspace.maintenance.service.MaintenanceManager;
@@ -27,6 +29,8 @@ import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
+import com.researchspace.service.inventory.InstrumentReadAccess;
+import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -60,9 +64,10 @@ class ApiV2ResourceConfigTest {
 
       assertTrue(context.containsBean("maintenanceApiV2Resource"));
       assertTrue(context.containsBean("userApiV2Resource"));
+      assertTrue(context.containsBean("timeSlotBookingApiV2Resource"));
       assertNotNull(context.getBean(ApiV2CrudController.class));
       assertEquals(
-          List.of("booking-configurations", "instruments", "maintenances", "users"),
+          List.of("booking-configurations", "bookings", "instruments", "maintenances", "users"),
           context.getBean(ApiV2ResourceCatalog.class).registry().resources().stream()
               .map(CollectionDescription::resourceName)
               .sorted()
@@ -84,13 +89,19 @@ class ApiV2ResourceConfigTest {
 
       ApiV2ResourceCatalog catalog = context.getBean(ApiV2ResourceCatalog.class);
       assertEquals(
-          List.of("booking-configurations", "instruments", "maintenances", "users", "widgets"),
+          List.of(
+              "booking-configurations",
+              "bookings",
+              "instruments",
+              "maintenances",
+              "users",
+              "widgets"),
           catalog.registry().resources().stream()
               .map(CollectionDescription::resourceName)
               .sorted()
               .toList());
       assertEquals(
-          5,
+          6,
           context.getBeansOfType(ApiV2ResourceSpec.class).size(),
           "the four built-in specs plus the contributed one");
       assertNotNull(context.getBean(ApiV2CrudController.class));
@@ -122,10 +133,15 @@ class ApiV2ResourceConfigTest {
     context.registerBean(FeatureFlagManager.class, () -> mock(FeatureFlagManager.class));
     context.registerBean(
         BookingConfigurationManager.class, () -> mock(BookingConfigurationManager.class));
+    context.registerBean(TimeSlotBookingManager.class, () -> mock(TimeSlotBookingManager.class));
     context.registerBean(
         InstrumentEntityApiManager.class, () -> mock(InstrumentEntityApiManager.class));
+    context.registerBean(
+        InstrumentReadAccess.class,
+        () -> new InstrumentReadAccess(mock(InventoryPermissionUtils.class)));
     context.register(
         BookingConfigurationResourceOperations.class,
+        TimeSlotBookingResourceOperations.class,
         InstrumentResourceOperations.class,
         MaintenanceResourceOperations.class,
         UserResourceOperations.class);

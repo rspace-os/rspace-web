@@ -904,7 +904,7 @@ public final class ApiV2OpenApiGenerator {
                 .getOrDefault(
                     Integer.valueOf(successStatus),
                     new OpenApiOperationDocumentation.Response(
-                        "Successful " + operation.name().toLowerCase(Locale.ROOT) + ".", null))
+                        "Successful " + operation.name().toLowerCase(Locale.ROOT) + ".", Map.of()))
                 .description(),
             "headers",
             rateLimitHeaders(),
@@ -931,7 +931,7 @@ public final class ApiV2OpenApiGenerator {
     responses.put("429", responseRef("TooManyRequests"));
     responses.put("500", responseRef("UnexpectedError"));
     documentation.responses().entrySet().stream()
-        .filter(entry -> entry.getValue().errorCode() != null)
+        .filter(entry -> !entry.getValue().errors().isEmpty())
         .forEach(
             entry ->
                 responses.put(
@@ -939,7 +939,7 @@ public final class ApiV2OpenApiGenerator {
                     problemResponse(
                         entry.getValue().description(),
                         entry.getKey(),
-                        entry.getValue().errorCode())));
+                        entry.getValue().errors())));
     documentation
         .responses()
         .forEach(
@@ -1332,6 +1332,37 @@ public final class ApiV2OpenApiGenerator {
   private static Map<String, Object> problemResponse(String description, int status, String code) {
     return ordered(
         "description", description, "content", problemContent(description, status, code));
+  }
+
+  private static Map<String, Object> problemResponse(
+      String description, int status, Map<String, String> errors) {
+    if (errors.size() == 1) {
+      Map.Entry<String, String> error = errors.entrySet().iterator().next();
+      return problemResponse(description, status, error.getKey());
+    }
+    Map<String, Object> examples = new LinkedHashMap<>();
+    errors.forEach(
+        (code, errorDescription) ->
+            examples.put(
+                code,
+                ordered(
+                    "summary",
+                    errorDescription,
+                    "value",
+                    ordered(
+                        "title",
+                        errorDescription,
+                        "status",
+                        status,
+                        "code",
+                        code,
+                        "detail",
+                        errorDescription))));
+    return ordered(
+        "description",
+        description,
+        "content",
+        Map.of(PROBLEM_JSON, ordered("schema", ref("ApiV2Problem"), "examples", examples)));
   }
 
   private static Map<String, Object> problemContent(String description, int status, String code) {

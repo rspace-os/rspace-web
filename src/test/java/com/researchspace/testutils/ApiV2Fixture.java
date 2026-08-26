@@ -6,15 +6,27 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.Constants;
+import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.core.util.CryptoUtils;
+import com.researchspace.featureflags.FeatureFlagResource;
+import com.researchspace.featureflags.FeatureFlags;
+import com.researchspace.model.Group;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.permissions.ConstraintBasedPermission;
+import com.researchspace.model.permissions.DefaultPermissionFactory;
 import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.FeatureFlagManager.Patch;
+import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.AbstractAppInitializor;
+import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.webapp.filter.ApiV2StatelessRequestFilter;
 import com.researchspace.webapp.filter.LocaleFilter;
@@ -28,6 +40,8 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockFilterConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
@@ -56,12 +70,18 @@ public final class ApiV2Fixture {
   @Autowired private UserManager userManager;
   @Autowired private UserApiKeyManager apiKeyManager;
   @Autowired private RoleManager roleManager;
+  @Autowired private GroupManager groupManager;
   @Autowired private IContentInitializer contentInitializer;
+  @Autowired private ContainerApiManager containerManager;
   @Autowired private InstrumentEntityApiManager instrumentManager;
+  @Autowired private TimeSlotBookingDao bookingDao;
+  @Autowired private FeatureFlagManager featureFlagManager;
+  @Autowired private PlatformTransactionManager transactionManager;
   @Autowired private IPermissionUtils permissionUtils;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final List<Runnable> teardown = new ArrayList<>();
+  private boolean bookingFlagEnabled;
 
   private MockMvc mockMvc;
   private String sysadminKey;
@@ -69,6 +89,7 @@ public final class ApiV2Fixture {
   private String userKey;
   private User otherUser;
   private String otherUserKey;
+  private User thirdUser;
 
   private ApiV2Fixture() {}
 
@@ -154,6 +175,47 @@ public final class ApiV2Fixture {
     return otherUserKey;
   }
 
+  /** A third ordinary user, for permission tests with distinct child and parent owners. */
+  public User thirdUser() {
+    if (thirdUser == null) {
+      thirdUser = createUser();
+    }
+    return thirdUser;
+  }
+
+  /** Makes {@code owner}'s records role-visible to {@code viewer} through a temporary lab group. */
+  public User makeOwnerRoleVisibleTo(User viewer, User owner) {
+    User pi = groupManager.promoteUserToPi(viewer, sysadmin());
+    Group group = new Group("apiv2" + UUID.randomUUID().toString().substring(0, 8), pi);
+    group.setDisplayName(group.getUniqueName());
+    for (ConstraintBasedPermission permission :
+        new DefaultPermissionFactory().createDefaultGlobalGroupPermissions(group)) {
+      group.addPermission(permission);
+    }
+    group = groupManager.saveGroup(group, pi);
+    groupManager.addMembersToGroup(group.getId(), List.of(owner, pi), pi.getUsername(), null, pi);
+    permissionUtils.refreshCache();
+    long groupId = group.getId();
+    long piId = pi.getId();
+    teardown.add(
+        () -> {
+          User currentPi = userManager.get(piId);
+          permissionUtils.notifyUserOrGroupToRefreshCache(currentPi);
+          permissionUtils.refreshCache();
+          RSpaceTestUtils.logout();
+          RSpaceTestUtils.login(currentPi.getUsername(), BaseManagerTestCaseBase.TESTPASSWD);
+          try {
+            groupManager.removeGroup(groupId, currentPi);
+          } finally {
+            RSpaceTestUtils.logout();
+          }
+        });
+    if (user != null && user.getId().equals(viewer.getId())) {
+      user = userManager.get(viewer.getId());
+    }
+    return userManager.get(viewer.getId());
+  }
+
   /**
    * Creates one maintenance window through {@code POST /api/v2/maintenances} and returns its ID.
    * The message is {@link #marker()}, so {@code ?where=message==<marker>} selects exactly this
@@ -177,8 +239,25 @@ public final class ApiV2Fixture {
     return instrumentManager.createNewApiInstrument(requested, owner).getId();
   }
 
+  /** Creates one list container in the owner's workbench. */
+  public ApiContainer container(User owner, String name) {
+    return containerManager.createNewApiContainer(
+        new ApiContainer(name, ContainerType.LIST), owner);
+  }
+
+  /** Creates an instrument and moves it into the supplied container. */
+  public long instrumentIn(User owner, String name, ApiContainer parent) {
+    long id = instrument(owner, name);
+    ApiInstrument move = new ApiInstrument();
+    move.setId(id);
+    move.setParentContainer(parent);
+    instrumentManager.updateApiInstrument(move, owner);
+    return id;
+  }
+
   /** Creates one booking configuration targeting {@code instrumentId} and returns its ID. */
   public long bookingConfiguration(long instrumentId, String timezone) {
+    enableBookings();
     String body =
         """
         {"enabled":true,"timezone":"%s","target":{"relationTo":"instruments","value":%d}}\
@@ -186,6 +265,22 @@ public final class ApiV2Fixture {
             .formatted(timezone, instrumentId);
     long id = idOf(postAsSysadmin("/api/v2/booking-configurations", body));
     teardown.add(() -> deleteAsSysadmin("/api/v2/booking-configurations/" + id));
+    return id;
+  }
+
+  /** Creates one confirmed booking through the public endpoint. */
+  public long booking(long instrumentId, Instant start, Instant end) {
+    enableBookings();
+    String body =
+        """
+        {"target":{"relationTo":"instruments","value":%d},"start":"%s","end":"%s"}\
+        """
+            .formatted(instrumentId, start, end);
+    long id = idOf(postJson("/api/v2/bookings", body, userKey()));
+    teardown.add(
+        () ->
+            new TransactionTemplate(transactionManager)
+                .executeWithoutResult(ignored -> bookingDao.remove(id)));
     return id;
   }
 
@@ -218,12 +313,46 @@ public final class ApiV2Fixture {
     return apiKeyManager.createKeyForUser(target).getApiKey();
   }
 
+  private User sysadmin() {
+    return userManager.getUserByUsername(AbstractAppInitializor.SYSADMIN_UNAME);
+  }
+
+  private void enableBookings() {
+    if (bookingFlagEnabled) {
+      return;
+    }
+    bookingFlagEnabled = true;
+    User target = sysadmin();
+    FeatureFlagResource original =
+        featureFlagManager
+            .getFeatureFlag(FeatureFlags.BOOKING_ENABLED, target)
+            .orElseThrow(
+                () -> new IllegalStateException("bookingEnabled feature flag is not registered"));
+    boolean previousBaseline = original.isBaselineValue();
+    featureFlagManager
+        .updateFeatureFlag(
+            FeatureFlags.BOOKING_ENABLED, new Patch(true, false, null), target, target)
+        .orElseThrow(
+            () -> new IllegalStateException("bookingEnabled feature flag is not registered"));
+    teardown.add(
+        () ->
+            featureFlagManager.updateFeatureFlag(
+                FeatureFlags.BOOKING_ENABLED,
+                new Patch(previousBaseline, false, null),
+                target,
+                target));
+  }
+
   private String postAsSysadmin(String path, String body) {
+    return postJson(path, body, sysadminKey());
+  }
+
+  private String postJson(String path, String body, String apiKey) {
     try {
       return mockMvc
           .perform(
               post(path)
-                  .header("apiKey", sysadminKey())
+                  .header("apiKey", apiKey)
                   .contentType(MediaType.APPLICATION_JSON)
                   .content(body))
           .andReturn()
