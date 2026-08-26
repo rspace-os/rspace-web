@@ -17,6 +17,14 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
@@ -38,6 +46,19 @@ public final class ConversionSidecarHttpClient {
 
   private static final String ERROR_HEADER = "X-RSpace-Conversion-Error";
   private static final Logger LOG = LoggerFactory.getLogger(ConversionSidecarHttpClient.class);
+  private static final ExecutorService REQUEST_EXECUTOR =
+      Executors.newFixedThreadPool(
+          4,
+          new ThreadFactory() {
+            private int sequence;
+
+            @Override
+            public synchronized Thread newThread(Runnable task) {
+              Thread thread = new Thread(task, "conversion-sidecar-request-" + ++sequence);
+              thread.setDaemon(true);
+              return thread;
+            }
+          });
 
   @FunctionalInterface
   interface OutputValidator {
@@ -47,29 +68,36 @@ public final class ConversionSidecarHttpClient {
   private final RestClient client;
   private final long maxInputBytes;
   private final long maxOutputBytes;
+  private final Duration conversionTimeout;
 
   ConversionSidecarHttpClient(RestClient client, long maxOutputBytes) {
-    this(client, Long.MAX_VALUE, maxOutputBytes);
+    this(client, Long.MAX_VALUE, maxOutputBytes, Duration.ofMinutes(3));
   }
 
-  ConversionSidecarHttpClient(RestClient.Builder builder, String bearerToken, long maxOutputBytes) {
-    this(authenticated(builder, bearerToken).build(), maxOutputBytes);
+  ConversionSidecarHttpClient(RestClient.Builder builder, long maxOutputBytes) {
+    this(configured(builder).build(), maxOutputBytes);
   }
 
   ConversionSidecarHttpClient(RestClient client, long maxInputBytes, long maxOutputBytes) {
+    this(client, maxInputBytes, maxOutputBytes, Duration.ofMinutes(3));
+  }
+
+  ConversionSidecarHttpClient(
+      RestClient client, long maxInputBytes, long maxOutputBytes, Duration conversionTimeout) {
     this.client = client;
     this.maxInputBytes = maxInputBytes;
     this.maxOutputBytes = maxOutputBytes;
+    this.conversionTimeout = conversionTimeout;
   }
 
   public ConversionSidecarHttpClient(
       String serviceUrl,
       Duration connectionRequestTimeout,
       Duration connectTimeout,
+      Duration conversionTimeout,
       Duration responseTimeout,
       long maxInputBytes,
-      long maxOutputBytes,
-      String bearerToken) {
+      long maxOutputBytes) {
     URI origin = validateOrigin(serviceUrl);
     RequestConfig requestConfig =
         RequestConfig.custom()
@@ -86,20 +114,18 @@ public final class ConversionSidecarHttpClient {
             .disableContentCompression()
             .build();
     this.client =
-        authenticated(
+        configured(
                 RestClient.builder()
                     .baseUrl(origin.toString())
-                    .requestFactory(new HttpComponentsClientHttpRequestFactory(apacheClient)),
-                bearerToken)
+                    .requestFactory(new HttpComponentsClientHttpRequestFactory(apacheClient)))
             .build();
     this.maxInputBytes = maxInputBytes;
     this.maxOutputBytes = maxOutputBytes;
+    this.conversionTimeout = conversionTimeout;
   }
 
-  private static RestClient.Builder authenticated(RestClient.Builder builder, String bearerToken) {
-    return builder
-        .defaultHeader(HttpHeaders.ACCEPT_ENCODING, "identity")
-        .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken);
+  private static RestClient.Builder configured(RestClient.Builder builder) {
+    return builder.defaultHeader(HttpHeaders.ACCEPT_ENCODING, "identity");
   }
 
   public void requireCapabilities() {
@@ -134,53 +160,106 @@ public final class ConversionSidecarHttpClient {
               ? DocumentConversionError.INPUT_TOO_LARGE.code()
               : DocumentConversionError.INPUT_INVALID.code());
     }
-    var body = new LinkedMultiValueMap<String, Object>();
-    body.add(partName, new FileSystemResource(input));
     Path partial = output.toPath().resolveSibling(output.getName() + ".partial");
+    AtomicBoolean abandoned = new AtomicBoolean();
+    Future<ConversionResult> request =
+        REQUEST_EXECUTOR.submit(
+            () ->
+                performPostFile(
+                    route, partName, input, output, expectedType, validator, partial, abandoned));
     try {
-      ConversionResult result =
-          client
-              .post()
-              .uri(route)
-              .contentType(MediaType.MULTIPART_FORM_DATA)
-              .accept(expectedType)
-              .body(body)
-              .exchange(
-                  (request, response) -> {
-                    if (!response.getStatusCode().is2xxSuccessful()) {
-                      int status = response.getStatusCode().value();
-                      String errorCode = response.getHeaders().getFirst(ERROR_HEADER);
-                      DocumentConversionError error =
-                          DocumentConversionError.fromCode(errorCode)
-                              .orElseGet(() -> errorForStatus(status));
-                      return new ConversionResult(error.code());
-                    }
-                    MediaType actualType = response.getHeaders().getContentType();
-                    if (actualType == null || !expectedType.isCompatibleWith(actualType)) {
-                      return new ConversionResult(DocumentConversionError.OUTPUT_INVALID.code());
-                    }
-                    try (InputStream inputStream = response.getBody()) {
-                      copyBounded(inputStream, partial, maxOutputBytes);
-                    }
-                    validator.validate(partial);
-                    Files.move(
-                        partial,
-                        output.toPath(),
-                        StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE);
-                    return new ConversionResult(output, expectedType.toString());
-                  });
+      ConversionResult result = request.get(conversionTimeout.toMillis(), TimeUnit.MILLISECONDS);
       if (!result.isSuccessful()) {
         deleteEmptyOutput(output);
       }
       return result;
-    } catch (Exception e) {
+    } catch (TimeoutException e) {
+      synchronized (abandoned) {
+        abandoned.set(true);
+      }
+      request.cancel(true);
+      FileUtils.deleteQuietly(output);
+      LOG.warn("Conversion sidecar request to {} exceeded its wall-clock timeout", route, e);
+      return new ConversionResult(DocumentConversionError.TIMEOUT.code());
+    } catch (InterruptedException e) {
+      synchronized (abandoned) {
+        abandoned.set(true);
+      }
+      request.cancel(true);
+      Thread.currentThread().interrupt();
+      FileUtils.deleteQuietly(output);
+      LOG.warn("Conversion sidecar request to {} was interrupted", route, e);
+      return new ConversionResult(DocumentConversionError.FAILED.code());
+    } catch (ExecutionException e) {
       deleteEmptyOutput(output);
       DocumentConversionError error = errorForException(e);
       LOG.warn("Conversion sidecar request to {} failed with {}", route, error.code(), e);
       return new ConversionResult(error.code());
     } finally {
       FileUtils.deleteQuietly(partial.toFile());
+    }
+  }
+
+  private ConversionResult performPostFile(
+      String route,
+      String partName,
+      File input,
+      File output,
+      MediaType expectedType,
+      OutputValidator validator,
+      Path partial,
+      AtomicBoolean abandoned) {
+    var body = new LinkedMultiValueMap<String, Object>();
+    body.add(partName, new FileSystemResource(input));
+    try {
+      return client
+          .post()
+          .uri(route)
+          .contentType(MediaType.MULTIPART_FORM_DATA)
+          .accept(expectedType)
+          .body(body)
+          .exchange(
+              (request, response) -> {
+                if (!response.getStatusCode().is2xxSuccessful()) {
+                  int status = response.getStatusCode().value();
+                  String errorCode = response.getHeaders().getFirst(ERROR_HEADER);
+                  DocumentConversionError error =
+                      DocumentConversionError.fromCode(errorCode)
+                          .orElseGet(() -> errorForStatus(status));
+                  return new ConversionResult(error.code());
+                }
+                MediaType actualType = response.getHeaders().getContentType();
+                if (actualType == null || !expectedType.isCompatibleWith(actualType)) {
+                  return new ConversionResult(DocumentConversionError.OUTPUT_INVALID.code());
+                }
+                try (InputStream inputStream = response.getBody()) {
+                  copyBounded(inputStream, partial, maxOutputBytes);
+                }
+                validator.validate(partial);
+                synchronized (abandoned) {
+                  if (abandoned.get() || Thread.currentThread().isInterrupted()) {
+                    throw new IOException(DocumentConversionError.TIMEOUT.code());
+                  }
+                  Files.move(
+                      partial,
+                      output.toPath(),
+                      StandardCopyOption.REPLACE_EXISTING,
+                      StandardCopyOption.ATOMIC_MOVE);
+                }
+                return new ConversionResult(output, expectedType.toString());
+              });
+    } catch (Exception e) {
+      throw new DocumentConversionRequestException(e);
+    } finally {
+      if (abandoned.get()) {
+        FileUtils.deleteQuietly(partial.toFile());
+      }
+    }
+  }
+
+  private static final class DocumentConversionRequestException extends RuntimeException {
+    private DocumentConversionRequestException(Throwable cause) {
+      super(cause);
     }
   }
 
@@ -210,7 +289,6 @@ public final class ConversionSidecarHttpClient {
 
   private static DocumentConversionError errorForStatus(int status) {
     return switch (status) {
-      case 401 -> DocumentConversionError.AUTHENTICATION_FAILED;
       case 413 -> DocumentConversionError.INPUT_TOO_LARGE;
       case 415 -> DocumentConversionError.UNSUPPORTED;
       case 422 -> DocumentConversionError.FAILED;

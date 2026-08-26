@@ -10,8 +10,8 @@ RSpace --> conversion sidecar --> Gotenberg --> PDF
                     +--> JODConverter/LibreOffice --> HTML or DOCX
 ```
 
-RSpace does not connect to Gotenberg directly. Every listed route requires the deployment's bearer
-token. The sidecar accepts only the routes and multipart parts used by RSpace:
+RSpace does not connect to Gotenberg directly. The sidecar accepts only the routes and multipart
+parts used by RSpace:
 
 | Route | Input | Output |
 | --- | --- | --- |
@@ -46,22 +46,18 @@ Set these properties in the deployment properties file:
 
 ```properties
 conversion.url=http://conversion-sidecar:8080
-conversion.bearerTokenFile=/run/secrets/conversion-token
 conversion.cacheConverted=true
 conversion.connectionRequestTimeoutMs=2000
 conversion.connectTimeoutMs=5000
+conversion.conversionTimeoutMs=180000
 conversion.responseTimeoutMs=185000
 conversion.maxInputBytes=209715200
 conversion.maxOutputBytes=314572800
 conversion.maxHtmlBytes=52428800
 ```
 
-`conversion.url` must be an absolute HTTP origin. The token file must contain the credential assigned
-to this RSpace deployment. RSpace sends it as a bearer token. The sidecar reads credentials from
-`converter.credentials-directory`; each filename is a deployment ID and its contents are that
-deployment's token. Use a read-only secret mount for both files. Keep the sidecar on a private
-network even though conversion routes require authentication. Gotenberg remains on the internal
-`conversion` network.
+`conversion.url` must be an absolute HTTP origin. Keep the sidecar on a private network that accepts
+traffic only from RSpace. Gotenberg remains on the internal `conversion` network.
 
 RSpace disables redirects and retries, then checks the sidecar protocol and protocol version at
 startup. Host filtering belongs to the deployment firewall and secure-tunnel configuration.
@@ -71,11 +67,9 @@ environment variable, for example `converter.max-output-bytes` becomes
 `CONVERTER_MAX_OUTPUT_BYTES`. Docker deployments can use environment variables for every sidecar
 setting and keep the properties file as the defaults.
 
-The sidecar property `converter.max-concurrent-office-conversions` sets the global limit for each
-PDF and Word role. `converter.max-concurrent-office-conversions-per-deployment` limits each
-authenticated deployment within that global capacity. They default to `2` and `1`, respectively,
-and neither has a waiting queue. When every applicable slot is occupied, the sidecar
-returns HTTP 429 with `Retry-After: 1`, and RSpace displays its localized service-busy error.
+The sidecar property `converter.max-concurrent-office-conversions` sets the limit for each role.
+The limit defaults to `2`. Neither role has a waiting queue. When each slot is occupied, the
+sidecar returns HTTP 429 with `Retry-After: 1`. RSpace displays its localized service-busy error.
 Actuator records active and rejected work under `rspace.conversion.office.*` and
 `rspace.conversion.pdf.*`.
 
@@ -88,7 +82,6 @@ and `detail` fields contain the same logical error code. The problem body also i
 
 | Code | Meaning |
 | --- | --- |
-| `conversion.authentication-failed` | The bearer credential is missing or invalid. |
 | `conversion.failed` | Conversion failed without a more specific result. |
 | `conversion.input-invalid` | The source file or request is invalid. |
 | `conversion.input-too-large` | The source file exceeds an input or expansion limit. |
@@ -104,11 +97,11 @@ incompatible sidecar to a general error based on the HTTP status. Before returni
 RSpace client, the controller resolves the code's `errors.documentConversion.*` key with the
 request locale.
 
-The container runtime must permit unprivileged user namespaces and the mount syscalls used by
-bubblewrap. The development Compose service uses an unconfined seccomp profile for that reason,
-while retaining a read-only root filesystem, `no-new-privileges`, and an empty capability set. A
-production runtime can instead use a custom seccomp profile that permits only the bubblewrap
-syscalls.
+The container runtime must permit the user namespaces and mount system calls that bubblewrap uses.
+The development Compose service uses a restricted profile that permits namespace isolation. The
+profile denies high-risk kernel operations. The container also has no capabilities. Tini runs as
+the container subreaper so that completed bubblewrap helpers cannot accumulate against the PID
+limit.
 
 ## Input and output boundaries
 

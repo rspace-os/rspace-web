@@ -35,10 +35,16 @@ class OfficeConversionRunner {
     this.limiter = limiter;
   }
 
-  ConvertedFile convert(
-      String deploymentId, Path uploadedFile, String inputExtension, String outputExtension) {
-    return limiter.runWord(
-        deploymentId, () -> convertWithinLimit(uploadedFile, inputExtension, outputExtension));
+  ConvertedFile convert(Path uploadedFile, String inputExtension, String outputExtension) {
+    OfficeConversionLimiter.Permit permit = limiter.acquireWord();
+    try {
+      return convertWithinLimit(uploadedFile, inputExtension, outputExtension)
+          .withCloseAction(permit::close);
+    } catch (RuntimeException e) {
+      permit.close();
+      LOG.warn("Word conversion failed after capacity was acquired", e);
+      throw e;
+    }
   }
 
   private ConvertedFile convertWithinLimit(
@@ -61,6 +67,7 @@ class OfficeConversionRunner {
               .workingDir(requestDirectory.toFile())
               .pipeNames(pipeName)
               .runAsArgs(sandbox.commandPrefix(requestDirectory).toArray(String[]::new))
+              .startFailFast(true)
               .taskQueueTimeout(properties.conversionTimeout().toMillis())
               .taskExecutionTimeout(properties.conversionTimeout().toMillis())
               .build();
@@ -109,9 +116,11 @@ class OfficeConversionRunner {
               : "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     } catch (ConversionException e) {
       deleteQuietly(requestDirectory);
+      LOG.warn("LibreOffice conversion was rejected", e);
       throw e;
     } catch (IOException e) {
       deleteQuietly(requestDirectory);
+      LOG.error("LibreOffice conversion failed while accessing request storage", e);
       throw new ConversionException(
           HttpStatus.INTERNAL_SERVER_ERROR,
           ConversionError.FAILED,
@@ -119,6 +128,7 @@ class OfficeConversionRunner {
           e);
     } catch (OfficeException e) {
       deleteQuietly(requestDirectory);
+      LOG.warn("LibreOffice rejected the conversion", e);
       throw new ConversionException(
           HttpStatus.UNPROCESSABLE_ENTITY,
           ConversionError.FAILED,
@@ -126,6 +136,7 @@ class OfficeConversionRunner {
           e);
     } catch (RuntimeException e) {
       deleteQuietly(requestDirectory);
+      LOG.error("LibreOffice conversion failed unexpectedly", e);
       throw new ConversionException(
           HttpStatus.INTERNAL_SERVER_ERROR,
           ConversionError.FAILED,
@@ -146,6 +157,7 @@ class OfficeConversionRunner {
       Files.createSymbolicLink(alias, socket.toAbsolutePath());
       return alias;
     } catch (IOException | UnsupportedOperationException e) {
+      LOG.error("Could not create the LibreOffice pipe alias", e);
       throw new ConversionException(
           HttpStatus.SERVICE_UNAVAILABLE,
           ConversionError.SERVICE_UNAVAILABLE,
@@ -174,6 +186,7 @@ class OfficeConversionRunner {
       }
       return directory;
     } catch (IOException e) {
+      LOG.error("Could not create conversion request storage", e);
       throw new ConversionException(
           HttpStatus.SERVICE_UNAVAILABLE,
           ConversionError.SERVICE_UNAVAILABLE,
@@ -185,8 +198,8 @@ class OfficeConversionRunner {
   private void deleteQuietly(Path directory) {
     try {
       new ConvertedFile(directory, directory, "").close();
-    } catch (IOException ignored) {
-      // Cleanup is best effort after the primary conversion failure.
+    } catch (IOException e) {
+      LOG.warn("Could not remove a failed LibreOffice conversion directory", e);
     }
   }
 }

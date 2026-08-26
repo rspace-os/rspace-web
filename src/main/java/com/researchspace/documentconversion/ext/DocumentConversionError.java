@@ -5,8 +5,6 @@ import java.util.Optional;
 
 /** Stable error codes returned by document-conversion adapters. */
 public enum DocumentConversionError {
-  AUTHENTICATION_FAILED(
-      "conversion.authentication-failed", "errors.documentConversion.authenticationFailed"),
   OUTPUT_CREATE_FAILED(
       "conversion.output-create-failed", "errors.documentConversion.outputCreateFailed"),
   UNSUPPORTED("conversion.unsupported", "errors.documentConversion.unsupported"),

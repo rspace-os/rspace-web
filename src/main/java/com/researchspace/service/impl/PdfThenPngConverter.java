@@ -8,9 +8,13 @@ import com.researchspace.documentconversion.spi.ConvertibleFile;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
 import java.io.File;
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Produces Office-document thumbnails through an intermediate validated PDF. */
 public final class PdfThenPngConverter implements DocumentConversionService {
+
+  private static final Logger LOG = LoggerFactory.getLogger(PdfThenPngConverter.class);
 
   private final DocumentConversionService pdfConverter;
   private final DocumentConversionService pdfToImageConverter;
@@ -29,6 +33,7 @@ public final class PdfThenPngConverter implements DocumentConversionService {
               "converted-thumbnail-", ".png", IoUtils.createOrGetSecureTempDirectory().toFile());
       return convert(convertible, outputExtension, output);
     } catch (IOException e) {
+      LOG.error("Could not create thumbnail output", e);
       return new ConversionResult(DocumentConversionError.OUTPUT_CREATE_FAILED.code());
     }
   }
@@ -48,10 +53,13 @@ public final class PdfThenPngConverter implements DocumentConversionService {
       }
       return pdfToImageConverter.convert(new ConvertibleFile(intermediate), "png", output);
     } catch (IOException e) {
+      LOG.error("Could not create intermediate PDF thumbnail input", e);
       return new ConversionResult(DocumentConversionError.OUTPUT_CREATE_FAILED.code());
     } finally {
       if (intermediate != null) {
-        intermediate.delete();
+        if (!intermediate.delete() && intermediate.exists()) {
+          LOG.warn("Could not remove intermediate PDF thumbnail input");
+        }
       }
     }
   }

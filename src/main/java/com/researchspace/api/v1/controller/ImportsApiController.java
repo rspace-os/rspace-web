@@ -6,7 +6,7 @@ import com.researchspace.api.v1.ImportApi;
 import com.researchspace.api.v1.model.ApiDocumentInfo;
 import com.researchspace.api.v1.model.ApiFolder;
 import com.researchspace.document.importer.ExternalFileImporter;
-import com.researchspace.documentconversion.ext.DocumentConversionError;
+import com.researchspace.documentconversion.ext.DocumentConversionException;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
@@ -50,10 +50,9 @@ public class ImportsApiController extends BaseApiController implements ImportApi
       ApiDocumentInfo docInfo = new ApiDocumentInfo(created.asStrucDoc(), user);
       buildAndAddSelfLink(DOCUMENTS_ENDPOINT, docInfo);
       return docInfo;
-    } catch (IllegalStateException e) { // if conversion failed.
+    } catch (DocumentConversionException e) {
       // will cause 422 code
-      throw new IllegalArgumentException(
-          getMessage(DocumentConversionError.messageKeyForCode(e.getMessage())), e);
+      throw new IllegalArgumentException(getMessage(e.error().messageKey()), e);
     }
   }
 

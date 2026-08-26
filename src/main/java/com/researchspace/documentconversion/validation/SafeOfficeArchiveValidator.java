@@ -1,4 +1,4 @@
-package com.researchspace.documentconversion.ext;
+package com.researchspace.documentconversion.validation;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -21,7 +21,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 /** Defense-in-depth validation for Office packages sent to or returned by the sidecar. */
-final class SafeOfficeArchiveValidator {
+public final class SafeOfficeArchiveValidator {
+
+  public static final String INPUT_INVALID = "conversion.input-invalid";
+  public static final String INPUT_TOO_LARGE = "conversion.input-too-large";
 
   private static final int MAX_ENTRIES = 10_000;
   private static final long MAX_ENTRY_BYTES = 100L * 1024 * 1024;
@@ -38,11 +41,11 @@ final class SafeOfficeArchiveValidator {
 
   private SafeOfficeArchiveValidator() {}
 
-  static void validateInput(Path archive, String extension) throws IOException {
+  public static void validateInput(Path archive, String extension) throws IOException {
     validate(archive, extension);
   }
 
-  static void validateDocx(Path archive) throws IOException {
+  public static void validateDocx(Path archive) throws IOException {
     validate(archive, "docx");
   }
 
@@ -306,14 +309,14 @@ final class SafeOfficeArchiveValidator {
   }
 
   private static IOException invalid() {
-    return new IOException(DocumentConversionError.INPUT_INVALID.code());
+    return new IOException(INPUT_INVALID);
   }
 
   private static IOException invalid(Exception cause) {
-    return new IOException(DocumentConversionError.INPUT_INVALID.code(), cause);
+    return new IOException(INPUT_INVALID, cause);
   }
 
   private static IOException tooLarge() {
-    return new IOException(DocumentConversionError.INPUT_TOO_LARGE.code());
+    return new IOException(INPUT_TOO_LARGE);
   }
 }
