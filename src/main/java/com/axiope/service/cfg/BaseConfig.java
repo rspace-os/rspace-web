@@ -214,6 +214,7 @@ import com.researchspace.service.impl.SysadminUserCreationHandlerImpl;
 import com.researchspace.service.impl.SystemConfigurationInitialisor;
 import com.researchspace.service.impl.SystemPropertyPermissionManagerImpl;
 import com.researchspace.service.impl.UserExternalIdResolverImpl;
+import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import com.researchspace.service.inventory.impl.RspaceToExternalProviderAdapterImpl;
 import com.researchspace.slack.SlackMessageSender;
@@ -1314,8 +1315,9 @@ public abstract class BaseConfig {
   }
 
   @Bean(name = "rspaceToExternalProviderAdapter")
-  public RspaceToExternalProviderAdapter getRspaceToExternalProviderAdapter() {
-    return new RspaceToExternalProviderAdapterImpl(propertyHolder());
+  public RspaceToExternalProviderAdapter getRspaceToExternalProviderAdapter(
+      LinkTargetResolver linkTargetResolver) {
+    return new RspaceToExternalProviderAdapterImpl(propertyHolder(), linkTargetResolver);
   }
 
   @Bean(name = "pyrat")

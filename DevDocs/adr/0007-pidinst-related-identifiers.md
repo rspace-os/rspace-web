@@ -39,17 +39,19 @@ B2INST draft metadata (`RelatedIdentifier`) and the DataCite attributes
 - Guard rails mirror the landing page: an address that would not be absolute http(s) is
   omitted with a WARN; an absent field, empty, deleted or target-less link is omitted
   silently.
-- **No read-permission re-check on the link target** at registration, publish or retract,
-  deliberately. READ is asserted where the link is written (`InventoryLinkManagerImpl`, on
-  create and update); from then on the target's globalId is part of the instrument's own
-  data, and RSpace already shows that id to every instrument viewer even when the target
-  itself is unreadable — the link summary redacts name and type, never the id
-  (`LinkTargetSnapshotResolverImpl`). The registered entry discloses exactly that id plus a
-  fixed label, never the target's name or content, and the address resolves only for
-  signed-in users who pass the target's own checks. Re-checking at publish time would also
-  key the permanent payload to whichever editor happens to click publish on a shared
-  instrument, so the same instrument could register different metadata depending on the
-  actor — a worse property than the disclosure it would prevent.
+- **The target is re-checked at registration time, as the instrument's owner**, and an
+  entry is omitted (with a WARN) when the target is deleted or the owner cannot read it.
+  Write-time READ (`InventoryLinkManagerImpl`) is not enough on its own: duplicating an
+  instrument copies its links with no target check, so a link can exist that nobody ever
+  verified; sharing can be revoked after the link was made; and deleting a record does not
+  delete links pointing at it, so an unchecked entry could permanently name a dead record.
+  The owner is the actor, not whoever triggers the registration, because the owner is
+  stable: the payload must not vary with which editor of a shared instrument happens to
+  click. The check runs through the same snapshot the link-card UI shows
+  (`LinkTargetSnapshotResolver`), so registration and display cannot disagree about a
+  target being deleted or redacted. What a qualifying entry still discloses publicly is the
+  bare globalId plus a fixed label, never a name or content, and the address resolves only
+  for signed-in users who pass the target's own checks.
 - B2INST receives the entries at draft-register time (its only metadata write). DataCite
   receives them on publish and again on retract, because both resend full metadata and
   the entries are computed from the instrument, not persisted on the DOI.
@@ -58,11 +60,23 @@ B2INST draft metadata (`RelatedIdentifier`) and the DataCite attributes
   explicit empty array; an absent or null property leaves the registered value alone. An
   instrument whose link fields were all cleared after registration therefore has to send
   `[]`, or the entries registered beforehand stay attached to a findable DOI with no way to
-  withdraw them. B2INST keeps sending null for empty, having no metadata-update call and so
-  nothing to clear.
+  withdraw them. The one exception is an **environment failure**: when no usable http(s)
+  server URL exists, no address can be built for any link, so an empty list would be
+  indistinguishable from "the user cleared the fields" and would strip entries that are
+  still correct — the property is left untouched instead, until the deployment is fixed.
+  Emptiness that reflects the data (fields cleared, targets deleted or no longer
+  owner-readable) does clear. B2INST keeps sending null for empty, having no
+  metadata-update call and so nothing to clear.
 
 *Last calibrated* stays documentation-only; PIDINST's `Date.dateType` vocabulary is
 still strictly Commissioned/DeCommissioned.
+
+Two wire-level caveats, accepted: DataCite's `relationTypeInformation` was introduced in
+Metadata Schema 4.7 (March 2026), so a registrar still on 4.6 or earlier silently drops
+the label while keeping the rest of the entry. And the same literal serves two subtly
+different slots — B2INST's `relatedIdentifierName` names the linked resource, DataCite's
+`relationTypeInformation` describes the relation — which is deliberate: one label per
+field keeps the two registries recognisably in step.
 
 ## Consequences
 

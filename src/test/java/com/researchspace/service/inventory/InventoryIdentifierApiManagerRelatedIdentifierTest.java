@@ -82,9 +82,12 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
   }
 
   @After
-  public void tearDown() {
-    // the manager is a singleton in a Spring context cached across test classes, so the real
-    // connector has to go back or later tests silently run against the mock
+  public void tearDown() throws Exception {
+    // the base tearDown re-enables custom content initialisation for the classes that run after
+    // this one in the same cached Spring context; skipping it would starve them of content
+    super.tearDown();
+    // the manager is a singleton in that same cached context, so the real connector has to go
+    // back or later tests silently run against the mock
     ReflectionTestUtils.setField(inventoryIdentifierApiMgr, "b2instConnector", realB2instConnector);
   }
 
@@ -183,6 +186,12 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
     inventoryIdentifierApiMgr.registerNewIdentifier(instrumentOid, user);
     assertNull(lastSentRelatedIdentifiers());
 
+    // detach everything built above so publish resolves the instrument and its links through
+    // Hibernate rather than the session cache, making the "against real persistence" claim real
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+    dataCiteConnectorDummy.doiSentToDatacite = null;
+
     ApiInventoryRecordInfo published =
         inventoryIdentifierApiMgr.publishIdentifier(instrumentOid, user);
     assertEquals("findable", published.getIdentifiers().get(0).getState());
@@ -198,6 +207,7 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
      * the DOI: they are recomputed from the instrument each time, which is exactly why a retract
      * that skipped the adapter would quietly strip them from the registered record.
      */
+    dataCiteConnectorDummy.doiSentToDatacite = null;
     inventoryIdentifierApiMgr.retractIdentifier(instrumentOid, user);
 
     List<DataCiteDoiAttributes.RelatedIdentifier> onRetract =
@@ -233,6 +243,34 @@ public class InventoryIdentifierApiManagerRelatedIdentifierTest extends SpringTr
     List<DataCiteDoiAttributes.RelatedIdentifier> sent = requireSentRelatedIdentifiers("publish");
     assertEquals("the cleared Measurement technique field must not be registered", 1, sent.size());
     assertNamesTheLinkedRecord(sent.get(0), "Calibration", calibrationId);
+  }
+
+  /**
+   * Clearing BOTH link fields must reach DataCite as an explicit empty list: [] is how the
+   * registered property is cleared, while an absent or null property would leave the previously
+   * registered entries attached forever.
+   */
+  @Test
+  public void publishSendsAnExplicitEmptyListWhenBothLinkFieldsAreCleared() {
+    ApiInstrument instrument = instrumentWithBothLinks();
+    GlobalIdentifier instrumentOid = instrument.getOid();
+    inventoryIdentifierApiMgr.registerNewIdentifier(instrumentOid, user);
+
+    ApiInventoryEntityField clearedTechnique = new ApiInventoryEntityField();
+    clearedTechnique.setId(fieldByName(instrument, MEASUREMENT_TECHNIQUE).getId());
+    ApiInventoryEntityField clearedCalibration = new ApiInventoryEntityField();
+    clearedCalibration.setId(fieldByName(instrument, CALIBRATION).getId());
+    ApiInstrument update = new ApiInstrument();
+    update.setId(instrument.getId());
+    update.setFields(List.of(clearedTechnique, clearedCalibration));
+    instrumentApiMgr.updateApiInstrument(update, user);
+
+    dataCiteConnectorDummy.doiSentToDatacite = null;
+    inventoryIdentifierApiMgr.publishIdentifier(instrumentOid, user);
+
+    List<DataCiteDoiAttributes.RelatedIdentifier> sent = lastSentRelatedIdentifiers();
+    assertNotNull("both fields cleared must clear the property with [], not leave it absent", sent);
+    assertEquals(0, sent.size());
   }
 
   /**

@@ -17,7 +17,6 @@ import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.datacite.model.DataCiteDoiAttributes;
 import com.researchspace.model.User;
-import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentEntity;
@@ -26,13 +25,13 @@ import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.inventory.InventoryUrls;
+import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.annotation.Propagation;
@@ -74,27 +73,19 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
   private static final String RELATION_TYPE_IS_DESCRIBED_BY = "IsDescribedBy";
   private static final String RELATED_ID_TYPE_URL = "URL";
 
-  /**
-   * Link target types whose version-suffixed globalId resolves to that version, mirroring {@code
-   * GlobalLookupController.VERSIONED_INVENTORY_PREFIXES}, which is the authority. A pin on any
-   * other allowed target is deliberately not registered: NB has no versioned route at all, and SD's
-   * and GL's lead to an audit view and a file stream rather than the record's page, so for those
-   * the unpinned address stays the safer thing to make permanent.
-   */
-  private static final Set<GlobalIdPrefix> VERSION_PINNABLE_TARGETS =
-      EnumSet.of(
-          GlobalIdPrefix.SA,
-          GlobalIdPrefix.SS,
-          GlobalIdPrefix.IC,
-          GlobalIdPrefix.IT,
-          GlobalIdPrefix.IN,
-          GlobalIdPrefix.NT);
+  /** A globalId already carrying a version suffix, e.g. {@code SA42v4}. */
+  private static final Pattern VERSION_SUFFIXED = Pattern.compile(".+v\\d+$");
 
   /** Deployment configuration; the server URL feeds the related-identifier addresses. */
   private final IPropertyHolder properties;
 
-  public RspaceToExternalProviderAdapterImpl(IPropertyHolder properties) {
+  /** Judges each link target's live state before it is allowed into a permanent registry entry. */
+  private final LinkTargetResolver linkTargetResolver;
+
+  public RspaceToExternalProviderAdapterImpl(
+      IPropertyHolder properties, LinkTargetResolver linkTargetResolver) {
     this.properties = properties;
+    this.linkTargetResolver = linkTargetResolver;
   }
 
   /*
@@ -281,6 +272,9 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
     if (link.isEmpty()) {
       return Optional.empty();
     }
+    if (!targetQualifiesForRegistration(link.get(), instrument, canonicalName)) {
+      return Optional.empty();
+    }
     Optional<String> url =
         InventoryUrls.globalIdPageUrl(
                 properties.getServerUrl(), registrableTargetGlobalId(link.get()))
@@ -297,20 +291,54 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
   }
 
   /**
+   * Whether the linked record still qualifies for a permanent registry entry: it must exist, not be
+   * deleted, and be readable by the instrument's owner. Judged live, by the owner rather than the
+   * acting user, because the owner is a stable actor: the payload must not vary with whichever
+   * editor happens to trigger the registration. Write-time READ alone is not enough, since
+   * duplicating an instrument copies its links with no target check, a target can be unshared after
+   * the link was made, and deleting a record does not delete links pointing at it. Built from the
+   * link's typed columns, never by parsing the stored string, so a malformed row disqualifies its
+   * own entry and can never throw out of the shared MANDATORY transaction and fail the whole
+   * registration. A disqualified link is omitted with a WARN, never sent: omission is recoverable,
+   * a published wrong entry is not.
+   */
+  private boolean targetQualifiesForRegistration(
+      InventoryLink link, InstrumentEntity instrument, String canonicalName) {
+    boolean qualifies =
+        link.getTargetPrefix() != null
+            && link.getTargetDbId() != null
+            && linkTargetResolver.targetIsLiveAndReadable(
+                new GlobalIdentifier(link.getTargetPrefix(), link.getTargetDbId()),
+                instrument.getOwner());
+    if (!qualifies) {
+      log.warn(
+          "Not registering the {} link of {} as a RelatedIdentifier: the linked record is deleted,"
+              + " unresolvable, or not readable by the instrument's owner.",
+          canonicalName,
+          instrument.getGlobalIdentifier());
+    }
+    return qualifies;
+  }
+
+  /**
    * The target globalId to register, carrying the link's version pin when the target type resolves
-   * a version-suffixed id. A pinned link names one version deliberately, and a registered address
-   * is permanent, so it must not quietly follow the record's latest state instead. The stored id is
-   * unsuffixed by contract ({@code InventoryLinkManagerImpl.applyApiToEntity} keeps the version in
-   * versionPin), and one already carrying a suffix is left alone rather than doubled.
+   * a version-suffixed id ({@link InventoryUrls#VERSIONED_PAGE_PREFIXES}). A pinned link names one
+   * version deliberately, and a registered address is permanent, so it must not quietly follow the
+   * record's latest state instead. Decided from the link's typed columns, never by parsing the
+   * stored string, so a malformed row can only mis-address its own entry and never throw out of the
+   * shared MANDATORY transaction and fail the whole registration. The stored id is unsuffixed by
+   * contract ({@code InventoryLinkManagerImpl.applyApiToEntity} keeps the version in versionPin),
+   * and one already carrying a suffix is left alone rather than doubled.
    */
   private String registrableTargetGlobalId(InventoryLink link) {
     String target = StringUtils.trimToEmpty(link.getTargetGlobalId());
     Long versionPin = link.getVersionPin();
-    if (versionPin == null) {
-      return target;
-    }
-    GlobalIdentifier oid = new GlobalIdentifier(target);
-    if (oid.hasVersionId() || !VERSION_PINNABLE_TARGETS.contains(oid.getPrefix())) {
+    // the null prefix guard is load-bearing: the immutable set throws on contains(null), and a
+    // malformed row must mis-address only its own entry, never fail the registration
+    if (versionPin == null
+        || link.getTargetPrefix() == null
+        || !InventoryUrls.VERSIONED_PAGE_PREFIXES.contains(link.getTargetPrefix())
+        || VERSION_SUFFIXED.matcher(target).matches()) {
       return target;
     }
     return target + "v" + versionPin;
@@ -336,18 +364,35 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
       return dataCiteDoi;
     }
     InstrumentEntity instrument = (InstrumentEntity) associatedRecord;
+    if (!PidinstFields.isResolvableAddress(properties.getServerUrl())) {
+      /*
+       * Environment failure, not data: with no usable server URL no address can be built for ANY
+       * link, so an empty list here would be indistinguishable from "the user cleared the fields"
+       * and would permanently strip entries that are still correct. Leave the property untouched
+       * (absent means "no change" at DataCite) until the deployment is fixed.
+       */
+      log.warn(
+          "Leaving the registered related identifiers of {} untouched: no usable http(s) address"
+              + " can be built, which means no server URL is configured or it carries no http(s)"
+              + " scheme.",
+          instrument.getGlobalIdentifier());
+      return dataCiteDoi;
+    }
     List<DataCiteDoiAttributes.RelatedIdentifier> related =
         relatedIdentifiers(
             instrument,
             (url, label) ->
                 new DataCiteDoiAttributes.RelatedIdentifier(
                     RELATION_TYPE_IS_DESCRIBED_BY, url, RELATED_ID_TYPE_URL, label));
-    // Set unconditionally, the empty list included. DataCite replaces the whole property with
-    // whatever the payload carries and clears it only when sent an explicit empty array; a property
-    // that is absent or null leaves the registered value alone. An instrument whose link fields
-    // have
-    // all been cleared therefore has to send [], or the entries registered before the user cleared
-    // them stay attached to a findable DOI with no way to withdraw them.
+    /*
+     * Set unconditionally, the empty list included. DataCite replaces the whole property with
+     * whatever the payload carries and clears it only when sent an explicit empty array; a
+     * property that is absent or null leaves the registered value alone. Once the environment
+     * guard above has passed, an empty list is a statement about the data - the fields are
+     * cleared, or their targets no longer qualify - so it must reach DataCite as [], or entries
+     * registered before the user cleared them stay attached to a findable DOI with no way to
+     * withdraw them.
+     */
     dataCiteDoi.getAttributes().setRelatedIdentifiers(related);
     return dataCiteDoi;
   }

@@ -1,7 +1,10 @@
 package com.researchspace.service.inventory;
 
+import com.researchspace.model.core.GlobalIdPrefix;
 import java.net.URI;
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -24,12 +27,37 @@ public final class InventoryUrls {
   private static final String PUBLIC_PAGE_PATH = "/public/inventory/";
 
   /**
+   * The globalId lookup route, consumed by {@code GlobalLookupController}'s request mapping so the
+   * route and the addresses composed here cannot move apart: a renamed route would silently strand
+   * every already-registered address (they are permanent), so the two halves share this constant.
+   */
+  public static final String GLOBAL_ID_MAPPING = "/globalId";
+
+  /**
    * Path segment marking an address as a record's globalId page. Composed by {@link
    * #globalIdPageUrl} for PIDINST related identifiers, and recognised by {@link
    * #namesGlobalIdPage}, which must still spot the ones the retired auto-fill wrote so they read as
    * an empty Landing page field rather than as something a user chose.
    */
-  private static final String GLOBAL_ID_PATH = "/globalId/";
+  private static final String GLOBAL_ID_PATH = GLOBAL_ID_MAPPING + "/";
+
+  /**
+   * The record types whose version-suffixed globalId ({@code SA42v4}) resolves to that version's
+   * read-only view. Consumed by {@code GlobalLookupController} (which routes those addresses) and
+   * by the PIDINST related-identifier mapping (which must not register a version suffix the route
+   * cannot resolve), so the router and the composer cannot drift: a drift here registers a
+   * permanently wrong address. SD and GL resolve version suffixes too, but to an audit view and a
+   * file stream rather than the record's page, so they are deliberately not in this set.
+   */
+  public static final Set<GlobalIdPrefix> VERSIONED_PAGE_PREFIXES =
+      Set.copyOf(
+          EnumSet.of(
+              GlobalIdPrefix.SA,
+              GlobalIdPrefix.SS,
+              GlobalIdPrefix.IC,
+              GlobalIdPrefix.IT,
+              GlobalIdPrefix.IN,
+              GlobalIdPrefix.NT));
 
   private InventoryUrls() {}
 

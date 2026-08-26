@@ -608,9 +608,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       publishResult = dataCiteConnector.publishDoi(doiToPublish, settingTypeFor(doi.getType()));
     } catch (DataCiteConnectionException dcException) {
       throw new DataCiteConnectionException(
-          "Error when publishing the DOI in DataCite. "
-              + "If the problem persists, please contact your System Admin",
-          dcException);
+          messages.getMessage("errors.inventory.identifier.dataCitePublishFailed"), dcException);
     }
     if (publishResult == null || !"findable".equals(publishResult.getAttributes().getState())) {
       throw new IllegalStateException("DataCite publish failed");
@@ -644,9 +642,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       retractResult = dataCiteConnector.retractDoi(doiToRetract, settingTypeFor(doi.getType()));
     } catch (DataCiteConnectionException dcException) {
       throw new DataCiteConnectionException(
-          "Error when retracting the DOI in DataCite. "
-              + "If the problem persists, please contact your System Admin",
-          dcException);
+          messages.getMessage("errors.inventory.identifier.dataCiteRetractFailed"), dcException);
     }
     if (retractResult == null || !"registered".equals(retractResult.getAttributes().getState())) {
       throw new IllegalStateException("datacite retract failed");

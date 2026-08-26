@@ -7,15 +7,14 @@ status: superseded
 > **Superseded (2026-07-27), during RSDEV-1220, before any of this shipped.**
 > The narratives were dropped. `MeasuredVariable` now carries only the *Measured
 > quantity* field's content verbatim, which is what the property was designed
-> for. *Measurement technique*, *Calibration* and *Last calibrated* are no longer
-> mapped to anything and stay on the template as documentation-only fields (see
-> `CONTEXT.md`). The reasoning below is kept because the underlying problem is
-> unchanged — PIDINST still has no home for those three facts — so anyone
-> proposing to map them again should start here and read the Considered options.
->
-> RSDEV-1253 later did map the two link fields, resolving the vocabulary clash by
-> fixing the sent relation to `IsDescribedBy`; see ADR 0007. *Last calibrated* alone
-> remains unmapped.
+> for. Nothing narrative reaches `MeasuredVariable` from the other fields.
+> *Measurement technique* and *Calibration* were documentation-only from then
+> until RSDEV-1253 mapped them to `RelatedIdentifier` entries, resolving the
+> vocabulary clash by fixing the sent relation to `IsDescribedBy` (see ADR
+> 0007). Only *Last calibrated* remains unmapped, PIDINST's Date vocabulary
+> still having no home for it. The reasoning below is kept because it explains
+> why the narrative route stays closed; anyone proposing to map these fields
+> another way should start here and read the Considered options.
 
 ## Context
 

@@ -50,9 +50,11 @@ public interface RspaceToExternalProviderAdapter {
    * PIDINST related identifiers appended from the Measurement technique and Calibration link fields
    * (RSDEV-1253, ADR 0007): the link target's globalId page as a URL, carrying the link's version
    * pin when the target type resolves one, always related as IsDescribedBy, labelled through
-   * relationTypeInformation. An instrument with no live links sends an explicit empty list, which
-   * is how DataCite is told to clear the property. Entries whose address would not be an absolute
-   * http(s) URL are omitted with a WARN rather than sent wrong.
+   * relationTypeInformation. A link whose target is deleted, or no longer readable by the
+   * instrument's owner, is omitted with a WARN. An instrument whose entries come to nothing sends
+   * an explicit empty list, which is how DataCite is told to clear the property - except when no
+   * usable http(s) server URL exists, an environment failure under which the property is left
+   * untouched rather than wrongly cleared.
    *
    * <p>Callers resending full metadata (publish and retract both do) must route through this
    * method, not {@code convertToDataCiteDoi()} directly, or the registered related identifiers

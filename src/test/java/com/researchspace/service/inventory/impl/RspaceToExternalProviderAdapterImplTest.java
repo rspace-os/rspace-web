@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +18,7 @@ import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.datacite.model.DataCiteDoiAttributes;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
@@ -28,7 +30,9 @@ import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryTextField;
 import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.inventory.LinkTargetResolver;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,12 +48,16 @@ class RspaceToExternalProviderAdapterImplTest {
 
   private RspaceToExternalProviderAdapterImpl adapter;
   private IPropertyHolder properties;
+  private LinkTargetResolver linkTargetResolver;
 
   @BeforeEach
   void setUp() {
     properties = mock(IPropertyHolder.class);
     when(properties.getServerUrl()).thenReturn(SERVER);
-    adapter = new RspaceToExternalProviderAdapterImpl(properties);
+    linkTargetResolver = mock(LinkTargetResolver.class);
+    // targets qualify by default; individual tests disqualify them
+    when(linkTargetResolver.targetIsLiveAndReadable(any(), any())).thenReturn(true);
+    adapter = new RspaceToExternalProviderAdapterImpl(properties, linkTargetResolver);
   }
 
   private Instrument templateShapedInstrument() {
@@ -99,6 +107,14 @@ class RspaceToExternalProviderAdapterImplTest {
     InventoryLink link = new InventoryLink();
     link.setTargetGlobalId(targetGlobalId);
     link.setRelationType(relationType);
+    // mirror the write path, which always stores the typed columns beside the string
+    try {
+      GlobalIdentifier gid = new GlobalIdentifier(StringUtils.trimToEmpty(targetGlobalId));
+      link.setTargetPrefix(gid.getPrefix());
+      link.setTargetDbId(gid.getDbId());
+    } catch (IllegalArgumentException | NullPointerException e) {
+      // deliberately malformed or blank: leave the typed columns unset
+    }
     field.setLink(link);
     return field;
   }
@@ -744,6 +760,47 @@ class RspaceToExternalProviderAdapterImplTest {
     assertEquals(SERVER + "/globalId/NB7", related.get(0).getRelatedIdentifierValue());
   }
 
+  /**
+   * A target that stopped qualifying after the link was written - deleted, unshared from the
+   * instrument's owner, or gone - must not be registered: deleting a record does not delete links
+   * pointing at it, and duplicating an instrument copies links no one re-checked. The judge is the
+   * instrument's owner, a stable actor, so the payload cannot vary with who triggers registration.
+   */
+  @Test
+  void relatedIdentifierOmitsATargetThatIsDeletedOrNotOwnerReadable() {
+    when(linkTargetResolver.targetIsLiveAndReadable(any(), any())).thenReturn(false);
+    Instrument instrument = templateShapedInstrument();
+    addField(instrument, linkField("Calibration", "IsCalibratedBy", "SA42"));
+
+    assertNull(
+        adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata().getRelatedIdentifier());
+  }
+
+  /**
+   * Qualification and the pin decision read the link's typed columns and never parse the stored id,
+   * so a malformed row (no typed prefix) disqualifies its own entry: it must not throw out of the
+   * shared transaction and fail the whole registration.
+   */
+  @Test
+  void relatedIdentifierToleratesAMalformedStoredTargetId() {
+    Instrument instrument = templateShapedInstrument();
+    InventoryLinkField malformed = linkField("Calibration", "IsCalibratedBy", "not-a-global-id");
+    malformed.getLink().setVersionPin(5L);
+    addField(instrument, malformed);
+
+    assertNull(
+        adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata().getRelatedIdentifier());
+  }
+
+  @Test
+  void relatedIdentifierIgnoresAWrongTypedFieldWithACanonicalName() {
+    Instrument instrument = templateShapedInstrument();
+    addField(instrument, stringField("Calibration", "a narrative, not a link"));
+
+    assertNull(
+        adapter.buildB2instDoi(instrument, PUBLIC_PAGE).getMetadata().getRelatedIdentifier());
+  }
+
   @Test
   void relatedIdentifierFieldNamesMatchCaseInsensitively() {
     Instrument instrument = templateShapedInstrument();
@@ -798,6 +855,52 @@ class RspaceToExternalProviderAdapterImplTest {
    * instrument whose link fields were cleared after registration would otherwise keep the entries
    * registered before the user cleared them, permanently, on a findable DOI.
    */
+  /**
+   * The empty-list clear is a statement about the data, so it must never fire on an environment
+   * failure: with no usable server URL nothing can be built for ANY link, and [] would permanently
+   * strip entries that are still correct. The property is left untouched instead.
+   */
+  @Test
+  void dataCiteDoiLeavesRelatedIdentifiersUntouchedWhenNoUsableServerUrlExists() {
+    when(properties.getServerUrl()).thenReturn("rspace.example.com"); // no scheme
+    Instrument instrument = templateShapedInstrument();
+    addField(instrument, linkField("Calibration", "IsCalibratedBy", "IN115"));
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.setDoi("10.82316/abc");
+    doi.setTitle("an instrument");
+
+    assertNull(adapter.buildDataCiteDoi(doi, instrument).getAttributes().getRelatedIdentifiers());
+  }
+
+  /**
+   * The DataCite JSON keys are the wire contract, and getter assertions bypass Jackson entirely;
+   * the RelatedIdentifier type also arrives from an unreleased client build, so pin the keys and
+   * the []-serialization the clearing behaviour depends on.
+   */
+  @Test
+  void dataCiteWireFormatNamesTheRelatedIdentifierProperties() throws Exception {
+    Instrument instrument = templateShapedInstrument();
+    addField(instrument, linkField("Measurement technique", "IsDocumentedBy", "IN114"));
+    ApiInventoryDOI doi = new ApiInventoryDOI();
+    doi.setDoi("10.82316/abc");
+    doi.setTitle("an instrument");
+
+    JsonNode attributes =
+        new ObjectMapper().valueToTree(adapter.buildDataCiteDoi(doi, instrument)).at("/attributes");
+    JsonNode entry = attributes.at("/relatedIdentifiers/0");
+    assertEquals("IsDescribedBy", entry.at("/relationType").asText());
+    assertEquals(SERVER + "/globalId/IN114", entry.at("/relatedIdentifier").asText());
+    assertEquals("URL", entry.at("/relatedIdentifierType").asText());
+    assertEquals("Measurement Technique", entry.at("/relationTypeInformation").asText());
+
+    JsonNode cleared =
+        new ObjectMapper()
+            .valueToTree(adapter.buildDataCiteDoi(doi, templateShapedInstrument()))
+            .at("/attributes/relatedIdentifiers");
+    assertTrue(cleared.isArray(), "the clear must serialize as [], not null");
+    assertEquals(0, cleared.size());
+  }
+
   @Test
   void dataCiteDoiSendsAnEmptyRelatedIdentifierListForAnInstrumentWithNoLiveLinks() {
     ApiInventoryDOI doi = new ApiInventoryDOI();
