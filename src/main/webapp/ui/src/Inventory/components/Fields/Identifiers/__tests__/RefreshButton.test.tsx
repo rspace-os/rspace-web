@@ -39,7 +39,7 @@ describe("RefreshButton", () => {
   });
 
   test("renders nothing unless the state is submitted", () => {
-    for (const state of ["draft", "created", "accepted", "declined", "findable"] as const) {
+    for (const state of ["draft", "created", "declined", "findable"] as const) {
       const { container } = render(
         <ThemeProvider theme={materialTheme}>
           <RefreshButton identifier={submittedPidinst({ state })} />
@@ -47,6 +47,34 @@ describe("RefreshButton", () => {
       );
       expect(container).toBeEmptyDOMElement();
     }
+  });
+
+  /*
+   * Acceptance takes the minted ePIC PID out of the published record's loosely typed `pids` block,
+   * which can come back without one. Refresh is the only action that can pick it up later, so it
+   * stays offered until there is a Handle (Copilot review, PR 1066).
+   */
+  test("stays available for an accepted identifier that has no Handle yet", () => {
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <RefreshButton identifier={submittedPidinst({ state: "accepted", publicUrl: null })} />
+      </ThemeProvider>,
+    );
+    expect(screen.getByRole("button", { name: "inventory:fields.identifiers.list.refresh" })).toBeInTheDocument();
+  });
+
+  test("retires once an accepted identifier has its Handle", () => {
+    const { container } = render(
+      <ThemeProvider theme={materialTheme}>
+        <RefreshButton
+          identifier={submittedPidinst({
+            state: "accepted",
+            publicUrl: "http://hdl.handle.net/21.T11975/k2j9p-7yh21",
+          })}
+        />
+      </ThemeProvider>,
+    );
+    expect(container).toBeEmptyDOMElement();
   });
 
   test("is disabled when the record is being edited", () => {

@@ -14,16 +14,23 @@ type RefreshButtonArgs = {
 };
 
 /**
- * Pulls the identifier's current review status from the provider (RSDEV-1260). Only rendered
- * while the B2INST community review is open ("submitted"), when the outcome is decided outside
- * RSpace and this is the one useful action.
+ * Pulls the identifier's current review status from the provider (RSDEV-1260). Rendered while the
+ * B2INST community review is open ("submitted"), when the outcome is decided outside RSpace and
+ * this is the one useful action.
+ *
+ * Also rendered for an accepted PID that has no Handle yet. Acceptance reads the minted ePIC PID
+ * out of the published record's `pids` block, which can come back without one, and this is the
+ * only action that can pick it up afterwards; hiding it there would leave the identifier
+ * permanently accepted with no resolvable PID (Copilot review, PR 1066).
  */
 function RefreshButton({ identifier, disabled }: RefreshButtonArgs): React.ReactNode {
   const [refreshing, setRefreshing] = React.useState(false);
   const { t } = useTranslation("inventory");
   const { uiStore } = useStores();
 
-  if (identifier.state !== "submitted") return null;
+  const reviewStillOpen = identifier.state === "submitted";
+  const acceptedWithoutHandle = identifier.state === "accepted" && !identifier.publicUrl;
+  if (!reviewStillOpen && !acceptedWithoutHandle) return null;
 
   return (
     <CustomTooltip title={t("fields.identifiers.list.tooltips.refresh")}>

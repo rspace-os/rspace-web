@@ -772,4 +772,44 @@ class B2instConnectorImplTest {
     // no expectations were set, so verify() passing means nothing was sent
     server.verify();
   }
+
+  /**
+   * A review that exists but was never submitted reports {@code is_open: false} (verified against
+   * b2inst-test.gwdg.de, July 2026), so it must not short-circuit: pressing Publish again has to
+   * re-PUT, which is what returns the submit link, and then post it. Without this the record would
+   * sit in {@code created} for good, which is what the UI keeps Publish enabled for.
+   *
+   * <p>Pins the behaviour rather than changing it - a Copilot review read the short-circuit as
+   * catching this case too (PR 1066).
+   */
+  @Test
+  void publishDoiResubmitsAReviewThatWasCreatedButNeverSubmitted() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    String submitUrl = "https://b2inst-test.gwdg.de/api/requests/REQ-1/actions/submit";
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"REQ-1\",\"status\":\"created\",\"is_open\":false}",
+                MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"REQ-1\",\"status\":\"created\",\"links\":{\"actions\":{\"submit\":\""
+                    + submitUrl
+                    + "\"}}}",
+                MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo(submitUrl))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withSuccess("{\"status\":\"submitted\"}", MediaType.APPLICATION_JSON));
+
+    assertEquals("submitted", connector.publishDoi("k2j9p-7yh21").getStatus());
+    server.verify();
+  }
 }
