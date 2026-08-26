@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThrows;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withResourceNotFound;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import java.util.List;
@@ -82,6 +83,81 @@ public class DBRepoClientTest {
 
     assertEquals(1, databases.size());
     assertEquals("db-2", databases.get(0).id());
+    server.verify();
+  }
+
+  @Test
+  public void listsDatabaseResourcesFromCurrentApi() {
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/table"))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Basic dXNlcjpwYXNz"))
+        .andRespond(
+            withSuccess(
+                "[{\"id\":\"table-1\",\"name\":\"Experiments\"}]", MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/view"))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Basic dXNlcjpwYXNz"))
+        .andRespond(
+            withSuccess(
+                "[{\"id\":\"view-1\",\"name\":\"Recent experiments\",\"query\":\"SELECT * FROM"
+                    + " experiments\"}]",
+                MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/subset"))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Basic dXNlcjpwYXNz"))
+        .andRespond(
+            withSuccess(
+                "[{\"id\":\"subset-1\",\"query\":\"SELECT * FROM experiments WHERE status ="
+                    + " 'open'\"}]",
+                MediaType.APPLICATION_JSON));
+
+    DBRepoDatabaseResourcesDTO resources =
+        client.listDatabaseResources(
+            "https://dbrepo.example", "db-1", new DBRepoCredentials("user", "pass"));
+
+    assertEquals(1, resources.tables().size());
+    assertEquals("table", resources.tables().get(0).type());
+    assertEquals("Experiments", resources.tables().get(0).label());
+    assertEquals(
+        "https://dbrepo.example/database/db-1/table/table-1", resources.tables().get(0).url());
+    assertEquals(1, resources.views().size());
+    assertEquals("Recent experiments", resources.views().get(0).label());
+    assertEquals("SELECT * FROM experiments", resources.views().get(0).secondaryText());
+    assertEquals(
+        "https://dbrepo.example/database/db-1/view/view-1", resources.views().get(0).url());
+    assertEquals(1, resources.subsets().size());
+    assertEquals(
+        "SELECT * FROM experiments WHERE status = 'open'", resources.subsets().get(0).label());
+    assertEquals(
+        "https://dbrepo.example/database/db-1/subset/subset-1", resources.subsets().get(0).url());
+    assertEquals(List.of(), resources.failedTypes());
+    server.verify();
+  }
+
+  @Test
+  public void keepsSuccessfulDatabaseResourcesWhenOneCategoryFails() {
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/table"))
+        .andRespond(
+            withSuccess(
+                "[{\"id\":\"table-1\",\"name\":\"Experiments\"}]", MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/view"))
+        .andRespond(withServerError());
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/subset"))
+        .andRespond(
+            withSuccess(
+                "[{\"id\":\"subset-1\",\"query\":\"SELECT 1\"}]", MediaType.APPLICATION_JSON));
+
+    DBRepoDatabaseResourcesDTO resources =
+        client.listDatabaseResources(
+            "https://dbrepo.example", "db-1", new DBRepoCredentials("user", "pass"));
+
+    assertEquals(1, resources.tables().size());
+    assertEquals(0, resources.views().size());
+    assertEquals(1, resources.subsets().size());
+    assertEquals(List.of("view"), resources.failedTypes());
     server.verify();
   }
 }

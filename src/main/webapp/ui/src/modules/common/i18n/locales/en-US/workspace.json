@@ -280,13 +280,27 @@
       "tableLabel": "booking search results"
     },
     "dbrepo": {
+      "categories": {
+        "subsets": "Subsets",
+        "tables": "Tables",
+        "views": "Views"
+      },
+      "categoryCount": "({count})",
+      "collapseDatabase": "Hide DBRepo resources for {{name}}",
       "databaseList": "DBRepo databases",
       "empty": "No DBRepo databases were returned.",
+      "emptyCategory": "No resources returned.",
       "errors": {
-        "load": "Could not load DBRepo databases."
+        "load": "Could not load DBRepo databases.",
+        "resources": "Could not load DBRepo resources.",
+        "subset": "Could not load subsets.",
+        "table": "Could not load tables.",
+        "view": "Could not load views."
       },
-      "insert": "Insert database link",
-      "loading": "Loading DBRepo databases..."
+      "expandDatabase": "Show DBRepo resources for {{name}}",
+      "insert": "Insert DBRepo link",
+      "loading": "Loading DBRepo databases...",
+      "loadingResources": "Loading DBRepo resources..."
     },
     "galaxy": {
       "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",

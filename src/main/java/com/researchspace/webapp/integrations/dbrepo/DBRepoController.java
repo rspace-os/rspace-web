@@ -30,6 +30,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -116,6 +117,23 @@ public class DBRepoController {
     DBRepoCredentials credentials =
         DBRepoCredentials.deserialize(connection.get().getAccessToken());
     return ResponseEntity.ok(dbRepoClient.listDatabases(baseUrl.get(), credentials));
+  }
+
+  @GetMapping("/databases/{databaseId}/resources")
+  public @ResponseBody ResponseEntity<DBRepoDatabaseResourcesDTO> resources(
+      @PathVariable String databaseId, Principal principal) {
+    User user = userManager.getUserByUsername(principal.getName());
+    Optional<String> baseUrl = findUrl(user);
+    Optional<UserConnection> connection =
+        userConnectionManager.findByUserNameProviderName(
+            principal.getName(), DBREPO_APP_NAME, CONNECTION_DISCRIMINANT);
+    if (baseUrl.isEmpty() || connection.isEmpty()) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    DBRepoCredentials credentials =
+        DBRepoCredentials.deserialize(connection.get().getAccessToken());
+    return ResponseEntity.ok(
+        dbRepoClient.listDatabaseResources(baseUrl.get(), databaseId, credentials));
   }
 
   private void saveUrl(User user, String normalizedUrl) {
