@@ -92,7 +92,7 @@ public class GroupControllerTest {
               messages.getMessage("label.name"), Organisation.MAX_INDEXABLE_UTF_LENGTH
             }),
         response.getError().getAllErrorMessagesAsStringsSeparatedBy(""));
-    Mockito.verifyZeroInteractions(publisher);
+    Mockito.verifyNoInteractions(publisher);
     verify(grpMgr, never()).saveGroup(group, false, userPI);
 
     response =

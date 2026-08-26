@@ -56,7 +56,7 @@ public class ProdProfileCanSetFromPropertiesTest {
     @Mock FormManager formMgr;
 
     private void initMocks() {
-      MockitoAnnotations.initMocks(ApiProdConfigTestHelper.class);
+      MockitoAnnotations.openMocks(ApiProdConfigTestHelper.class);
     }
 
     @Bean
@@ -92,7 +92,7 @@ public class ProdProfileCanSetFromPropertiesTest {
     @Mock RSFormApiHandler formApiHandler;
 
     private void initMocks() {
-      MockitoAnnotations.initMocks(ProdApiConfTss.class);
+      MockitoAnnotations.openMocks(ProdApiConfTss.class);
     }
 
     @Bean

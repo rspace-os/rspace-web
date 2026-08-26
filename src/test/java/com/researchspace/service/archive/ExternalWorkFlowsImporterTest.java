@@ -6,7 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
@@ -61,7 +61,7 @@ public class ExternalWorkFlowsImporterTest {
 
   @Before
   public void setUp() throws Exception {
-    initMocks(this);
+    openMocks(this);
     listFields = List.of(oldField);
     oldIdToNewGalleryItem = new HashMap<>();
     importer = new ExternalWorkFlowsImporter();

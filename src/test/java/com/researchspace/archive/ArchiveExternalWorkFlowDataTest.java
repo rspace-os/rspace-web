@@ -12,7 +12,7 @@ import static com.researchspace.integrations.galaxy.service.ExternalWorkFlowTest
 import static com.researchspace.model.externalWorkflows.ExternalWorkFlowData.ExternalService.GALAXY;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlow;
@@ -42,7 +42,7 @@ public class ArchiveExternalWorkFlowDataTest {
   @Before
   public void setUp() {
     invocations = new HashSet<>();
-    initMocks(this);
+    openMocks(this);
     ExternalWorkFlowData data =
         ExternalWorkFlowTestMother.createExternalWorkFlowDataWithInvocations(
             DEFAULT_EXT_CONTAINER_ID, DEFAULT_DATA_EXITID, HISTORY_ID_1, NEW_INVOCATION_STATUS);

@@ -69,7 +69,7 @@ public class DocConverterConfigTest {
     }
 
     private void initMocks() {
-      MockitoAnnotations.initMocks(DocConverterProdConfigTSS.class);
+      MockitoAnnotations.openMocks(DocConverterProdConfigTSS.class);
     }
 
     @Bean

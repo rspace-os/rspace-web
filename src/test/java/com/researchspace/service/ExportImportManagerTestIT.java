@@ -27,7 +27,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 
 import com.axiope.search.SearchConstants;
@@ -204,7 +204,7 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
 
   @Before
   public void setUp() throws Exception {
-    initMocks(this);
+    openMocks(this);
     super.setUp();
   }
 

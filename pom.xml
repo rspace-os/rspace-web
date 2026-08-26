@@ -81,7 +81,7 @@
         <artifactId>byte-buddy</artifactId>
         <!-- Keep >= the version Hibernate ORM ships (6.4.4 ships 1.14.11); pinned here for
              dependencyConvergence between Hibernate and Mockito -->
-        <version>1.14.11</version>
+        <version>1.17.5</version>
       </dependency>
       <dependency>
         <groupId>jakarta.activation</groupId>
@@ -203,6 +203,8 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <!-- Overrides the parent's 2.22.2, which cannot run tests on a Java 21 JVM -->
+        <version>3.5.6</version>
         <executions>
           <execution> <!-- honour -DskipUnitTests so the integration-test CI shard skips the test phase -->
             <id>default-test</id>
@@ -1392,10 +1394,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.javassist</groupId>
-      <artifactId>javassist</artifactId>
-    </dependency>
-    <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
       <version>2.10.14</version>
@@ -1871,7 +1869,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
-      <version>3.7.7</version>
+      <version>5.18.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -2735,7 +2733,6 @@
     <commons.fileupload.version>1.4</commons.fileupload.version>
     <guava.version>23.4-jre</guava.version>
     <icu4j.version>78.3</icu4j.version>
-    <javassist.version>3.24.0-GA</javassist.version>
     <jsonwebtoken.version>0.11.2</jsonwebtoken.version>
     <jstl.version>3.0.0</jstl.version>
     <lucene.version>9.8.0</lucene.version>

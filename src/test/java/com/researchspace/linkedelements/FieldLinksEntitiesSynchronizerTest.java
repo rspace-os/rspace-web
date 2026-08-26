@@ -180,7 +180,7 @@ public class FieldLinksEntitiesSynchronizerTest {
 
   private void assertInternalLinkNotDeleted() {
     verify(internalLinkDao, never()).deleteInternalLink(sourceId, targetId);
-    Mockito.verifyZeroInteractions(internalLinkDao);
+    Mockito.verifyNoInteractions(internalLinkDao);
   }
 
   private void assertInternalLinkDeleted() {

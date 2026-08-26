@@ -77,7 +77,7 @@ public class SysAdminControllerTest {
     when(delMgr.isUserRemovable(2L, noRestriction(), sysadmin))
         .thenReturn(new ServiceOperationResult<User>(null, false, "failed"));
     ctrller.removeUserAccount(2L);
-    Mockito.verifyZeroInteractions(userExportHandler);
+    Mockito.verifyNoInteractions(userExportHandler);
     verify(delMgr, Mockito.never()).removeUser(2L, noRestriction(), sysadmin);
   }
 
@@ -88,7 +88,7 @@ public class SysAdminControllerTest {
     when(userManager.getAuthenticatedUserInSession()).thenReturn(sysadmin);
     when(properties.getDeleteUser()).thenReturn(Boolean.FALSE.toString());
     CoreTestUtils.assertIllegalStateExceptionThrown(() -> ctrller.removeUserAccount(2L));
-    Mockito.verifyZeroInteractions(userExportHandler);
+    Mockito.verifyNoInteractions(userExportHandler);
     verify(delMgr, Mockito.never()).removeUser(2L, noRestriction(), sysadmin);
   }
 

@@ -112,7 +112,7 @@ public class ArchiveRemoverTest {
   }
 
   private void assertNoRemovalAttempted() {
-    Mockito.verifyZeroInteractions(comms);
+    Mockito.verifyNoInteractions(comms);
     Mockito.verify(archiveMgr, Mockito.never()).save(Mockito.any(ArchivalCheckSum.class));
   }
 

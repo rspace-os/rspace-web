@@ -2,7 +2,7 @@ package com.researchspace.netfiles.samba;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.hierynomus.msfscc.fileinformation.FileAllInformation;
 import org.junit.Before;
@@ -19,7 +19,7 @@ public class SambaUtilsTest {
   @Before
   public void setup() {
     testee = new SambaUtils();
-    initMocks(this);
+    openMocks(this);
     when(smbjFileInfo.getNameInformation()).thenReturn(A_SAMBA_NAME);
   }
 

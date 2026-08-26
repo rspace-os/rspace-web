@@ -72,7 +72,7 @@ public class DeleteFromSharedFolderExecutorTest {
     CompositeRecordOperationResult result = anyResults();
     executor.execute(result, plan);
     // unshare not called as we're deleting a single folder
-    Mockito.verifyZeroInteractions(sharingMgr);
+    Mockito.verifyNoInteractions(sharingMgr);
     assertEquals(1, result.getRecords().size());
   }
 
@@ -86,7 +86,7 @@ public class DeleteFromSharedFolderExecutorTest {
     CompositeRecordOperationResult result = anyResults();
     executor.execute(result, plan);
     // unshare not called as we're deleting  folders
-    Mockito.verifyZeroInteractions(sharingMgr);
+    Mockito.verifyNoInteractions(sharingMgr);
     // child folder removed
     Mockito.verify(folderMgr).removeBaseRecordFromFolder(child, toDelete.getId());
     assertEquals(2, result.getRecords().size());

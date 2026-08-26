@@ -57,7 +57,7 @@ public class UsernameReminderTest extends SpringTransactionalTest {
     // An email shouldn't be sent to a non-existing email -> no new log events
     usernameReminderByEmailHandlerTSS.sendUsernameReminderEmail(
         request, "non-existing-email@email.com");
-    Mockito.verifyZeroInteractions(logger);
+    Mockito.verifyNoInteractions(logger);
 
     usernameReminderByEmailHandlerTSS.sendUsernameReminderEmail(request, U2_EMAIL);
     Mockito.verify(logger)
