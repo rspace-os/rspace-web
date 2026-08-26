@@ -36,7 +36,15 @@ MariaDB:
 - Frontend: `src/main/webapp/ui/src`
 - Configuration and Liquibase: `src/main/resources`
 - Developer documentation: `DevDocs/DeveloperNotes`
-- Core domain models may live in the sibling `rspace-core-model` repository.
+- Core domain models, core utilities, and the audit-trail model live in-tree
+  (absorbed from the former `rspace-core-model`, `rspace-core-util`,
+  `rspace-audit`, and `rspace-test-util` repositories). A few libraries outside
+  this repository still consume the final `rspace-core-util` 2.0.0 release from
+  JitPack (the repository adapters, `rspace-rest-api-utils`, the chemistry
+  services, `aspose-web`), so treat the classes they use as a frozen API
+  surface: `JacksonUtil`, `TransformerUtils`, and the `zipprocessing` package.
+  Changing those in place will not reach those consumers; vendor the classes
+  into a consumer when one next needs a change.
 
 Backend dependencies flow downward:
 
@@ -200,7 +208,6 @@ sibling `REFERENCE.md`.
 Useful references:
 
 - Setup and workflows: `DevDocs/DeveloperNotes/GettingStarted`
-- Architecture: `DevDocs/DeveloperNotes/MavenModuleOverview.md`
 - Transactions: `DevDocs/DeveloperNotes/Transactions.md`
 - Security: `DevDocs/DeveloperNotes/SecurityAndPermissions.md`
 - Logging: `DevDocs/DeveloperNotes/Logging.md`

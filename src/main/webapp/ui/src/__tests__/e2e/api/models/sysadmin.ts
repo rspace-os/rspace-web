@@ -24,7 +24,7 @@ export type GroupMemberRole = "DEFAULT" | "RS_LAB_ADMIN" | "PI" | "GROUP_OWNER";
 
 export interface ApiSysadminGroupCreateRequest {
   displayName: string;
-  type: "LAB_GROUP";
+  type: "LAB_GROUP" | "PROJECT_GROUP";
   users: Array<{ username: string; roleInGroup: GroupMemberRole }>;
 }
 

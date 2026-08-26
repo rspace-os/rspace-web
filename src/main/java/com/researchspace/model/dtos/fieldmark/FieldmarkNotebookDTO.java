@@ -22,7 +22,7 @@ public class FieldmarkNotebookDTO {
   private String name;
   private String id;
   private String timestamp;
-  private Map<String, FieldmarkRecordDTO> records;
+  private Map<String, FieldmarkRecordDTO> records = new LinkedHashMap<>();
   private String doiIdentifierFieldName;
 
   private FieldmarkNotebookMetadata metadata;

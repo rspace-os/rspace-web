@@ -32,6 +32,10 @@ export class TinyMceEditor {
     return this.body.innerText();
   }
 
+  async getEmbeddedIframeSrc(): Promise<string | null> {
+    return this.frame.locator("iframe").first().getAttribute("src");
+  }
+
   async clickToolbarButton(name: string): Promise<void> {
     await this.container.getByRole("button", { name }).click();
   }
