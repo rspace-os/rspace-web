@@ -688,25 +688,25 @@ div.externalLinkedRecordNoticeDiv {
   margin: 10px 5px;
 }
 
-.nfsFileInfoPanel * {
+.nfsFileInfoPanel *, .dbrepoInfoPanel * {
     box-sizing: border-box;
 }
-.nfsFileInfoPanel .nfsInfoTable {
+.nfsFileInfoPanel .nfsInfoTable, .dbrepoInfoPanel .dbrepoInfoTable {
     padding: 10px 0 0 10px;
 }
-.nfsFileInfoPanel .nfsInfoTable td {
+.nfsFileInfoPanel .nfsInfoTable td, .dbrepoInfoPanel .dbrepoInfoTable td {
     word-break: break-all;
 }
 
-.nfsFileInfoPanel .nfsInfoTable .nfsInfoLabelCell {
+.nfsFileInfoPanel .nfsInfoTable .nfsInfoLabelCell, .dbrepoInfoPanel .dbrepoInfoTable .dbrepoInfoLabelCell {
     padding-right: 5px;
     width: 80px;
 }
-.nfsFileInfoPanel .nfsInfoPanelButtons {
+.nfsFileInfoPanel .nfsInfoPanelButtons, .dbrepoInfoPanel .dbrepoInfoPanelButtons {
     margin: 10px;
     text-align: center;
 }
-.nfsFileInfoPanel .nfsInfoPanelButtons .nfsInfoPanelBtn {
+.nfsFileInfoPanel .nfsInfoPanelButtons .nfsInfoPanelBtn, .dbrepoInfoPanel .dbrepoInfoPanelButtons .dbrepoInfoPanelBtn {
     width: auto;
     background-color: #00adef;
     color: #ffffff;
@@ -714,7 +714,7 @@ div.externalLinkedRecordNoticeDiv {
     padding: 10px;
 }
 
-.nfsFileInfoPanel .nfsInfoPanelButtons .nfsInfoPanelBtn:hover {
+.nfsFileInfoPanel .nfsInfoPanelButtons .nfsInfoPanelBtn:hover, .dbrepoInfoPanel .dbrepoInfoPanelButtons .dbrepoInfoPanelBtn:hover {
   background-color: #575c70;
   cursor: pointer;
 }

@@ -5097,6 +5097,18 @@ export default interface Resources {
           "invalidUrl": "Check that the DBRepo URL is valid.",
           "status": "DBRepo returned status {0}.",
           "unknown": "Unknown error"
+        },
+        "info": {
+          "dialog": {
+            "downloadButton": "Download CSV",
+            "downloadButtonTitle": "Download CSV through RSpace",
+            "header": "DBRepo link details",
+            "nameLabel": "Name:",
+            "openButton": "Open DBRepo",
+            "openButtonTitle": "Open DBRepo in a new tab",
+            "typeLabel": "Type:",
+            "urlLabel": "DBRepo URL:"
+          }
         }
       },
       "deposit": {
@@ -7058,6 +7070,9 @@ export default interface Resources {
         "media": {
           "loadingPlayer": "Loading the player ...",
           "playerNotAvailable": "Player not available"
+        },
+        "dbrepo": {
+          "dialogTitle": "DBRepo link details"
         },
         "nfs": {
           "actionFailed": "{0} action failed ({1}), if that does not work contact your System Admin",

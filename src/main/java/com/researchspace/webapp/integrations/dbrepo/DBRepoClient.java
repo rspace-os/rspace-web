@@ -30,6 +30,7 @@ public class DBRepoClient {
   private static final String TABLE_TYPE = "table";
   private static final String VIEW_TYPE = "view";
   private static final String SUBSET_TYPE = "subset";
+  private static final MediaType TEXT_CSV = MediaType.parseMediaType("text/csv");
 
   private final RestTemplate restTemplate;
 
@@ -112,6 +113,33 @@ public class DBRepoClient {
             failedTypes);
 
     return new DBRepoDatabaseResourcesDTO(databaseId, tables, views, subsets, failedTypes);
+  }
+
+  public byte[] downloadResourceCsv(
+      String baseUrl,
+      String databaseId,
+      String resourceType,
+      String resourceId,
+      DBRepoCredentials credentials) {
+    if (!TABLE_TYPE.equals(resourceType)
+        && !VIEW_TYPE.equals(resourceType)
+        && !SUBSET_TYPE.equals(resourceType)) {
+      throw new IllegalArgumentException("DBRepo CSV download is only supported for resources.");
+    }
+    String normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+    String url =
+        normalizedBaseUrl
+            + "/api/v1/database/"
+            + encodePathSegment(databaseId)
+            + "/"
+            + resourceType
+            + "/"
+            + encodePathSegment(resourceId)
+            + "/data";
+    ResponseEntity<byte[]> response =
+        restTemplate.exchange(
+            url, HttpMethod.GET, new HttpEntity<>(headers(credentials, TEXT_CSV)), byte[].class);
+    return response.getBody() == null ? new byte[0] : response.getBody();
   }
 
   private List<DBRepoLinkedResourceDTO> listResourcesAllowingFailure(
@@ -205,8 +233,12 @@ public class DBRepoClient {
   }
 
   private HttpHeaders headers(DBRepoCredentials credentials) {
+    return headers(credentials, MediaType.APPLICATION_JSON);
+  }
+
+  private HttpHeaders headers(DBRepoCredentials credentials, MediaType accept) {
     HttpHeaders headers = new HttpHeaders();
-    headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+    headers.setAccept(List.of(accept));
     headers.setBasicAuth(credentials.username(), credentials.password(), StandardCharsets.UTF_8);
     return headers;
   }

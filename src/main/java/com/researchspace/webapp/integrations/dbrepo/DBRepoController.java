@@ -16,8 +16,11 @@ import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
+import com.researchspace.webapp.controller.ResponseHeaders;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +48,7 @@ public class DBRepoController {
   static final String CONNECTION_DISCRIMINANT = "dbrepo";
   private static final String CONNECTION_CHANNEL = "rspace.apps.dbrepo.connection";
   private static final String CONNECTION_TYPE = "DBREPO_CONNECTED";
+  private static final String TEXT_CSV = "text/csv";
 
   private final DBRepoClient dbRepoClient;
   private final IntegrationsHandler integrationsHandler;
@@ -106,34 +110,52 @@ public class DBRepoController {
 
   @GetMapping("/databases")
   public @ResponseBody ResponseEntity<List<DBRepoDatabaseDTO>> databases(Principal principal) {
-    User user = userManager.getUserByUsername(principal.getName());
-    Optional<String> baseUrl = findUrl(user);
-    Optional<UserConnection> connection =
-        userConnectionManager.findByUserNameProviderName(
-            principal.getName(), DBREPO_APP_NAME, CONNECTION_DISCRIMINANT);
-    if (baseUrl.isEmpty() || connection.isEmpty()) {
+    Optional<DBRepoConnectionDetails> details = findConnectionDetails(principal);
+    if (details.isEmpty()) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
-    DBRepoCredentials credentials =
-        DBRepoCredentials.deserialize(connection.get().getAccessToken());
-    return ResponseEntity.ok(dbRepoClient.listDatabases(baseUrl.get(), credentials));
+    return ResponseEntity.ok(
+        dbRepoClient.listDatabases(details.get().baseUrl(), details.get().credentials()));
   }
 
   @GetMapping("/databases/{databaseId}/resources")
   public @ResponseBody ResponseEntity<DBRepoDatabaseResourcesDTO> resources(
       @PathVariable String databaseId, Principal principal) {
-    User user = userManager.getUserByUsername(principal.getName());
-    Optional<String> baseUrl = findUrl(user);
-    Optional<UserConnection> connection =
-        userConnectionManager.findByUserNameProviderName(
-            principal.getName(), DBREPO_APP_NAME, CONNECTION_DISCRIMINANT);
-    if (baseUrl.isEmpty() || connection.isEmpty()) {
+    Optional<DBRepoConnectionDetails> details = findConnectionDetails(principal);
+    if (details.isEmpty()) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
-    DBRepoCredentials credentials =
-        DBRepoCredentials.deserialize(connection.get().getAccessToken());
     return ResponseEntity.ok(
-        dbRepoClient.listDatabaseResources(baseUrl.get(), databaseId, credentials));
+        dbRepoClient.listDatabaseResources(
+            details.get().baseUrl(), databaseId, details.get().credentials()));
+  }
+
+  @GetMapping("/download/{resourceType}/{databaseId}/{resourceId}")
+  public @ResponseBody void downloadResourceCsv(
+      @PathVariable String resourceType,
+      @PathVariable String databaseId,
+      @PathVariable String resourceId,
+      Principal principal,
+      HttpServletResponse response)
+      throws IOException {
+    Optional<DBRepoConnectionDetails> details = findConnectionDetails(principal);
+    if (details.isEmpty()) {
+      response.sendError(HttpStatus.UNAUTHORIZED.value());
+      return;
+    }
+    byte[] csv =
+        dbRepoClient.downloadResourceCsv(
+            details.get().baseUrl(),
+            databaseId,
+            resourceType,
+            resourceId,
+            details.get().credentials());
+    ResponseHeaders.setContentTypeAndPreventSniffing(response, TEXT_CSV);
+    response.setContentLength(csv.length);
+    response.setHeader(
+        "Content-Disposition",
+        String.format("attachment; filename=\"%s\"", csvFilename(resourceType, resourceId)));
+    response.getOutputStream().write(csv);
   }
 
   private void saveUrl(User user, String normalizedUrl) {
@@ -155,6 +177,25 @@ public class DBRepoController {
         .map(AppConfigElement::getValue)
         .filter(StringUtils::isNotBlank)
         .findFirst();
+  }
+
+  private Optional<DBRepoConnectionDetails> findConnectionDetails(Principal principal) {
+    User user = userManager.getUserByUsername(principal.getName());
+    Optional<String> baseUrl = findUrl(user);
+    Optional<UserConnection> connection =
+        userConnectionManager.findByUserNameProviderName(
+            principal.getName(), DBREPO_APP_NAME, CONNECTION_DISCRIMINANT);
+    if (baseUrl.isEmpty() || connection.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new DBRepoConnectionDetails(
+            baseUrl.get(), DBRepoCredentials.deserialize(connection.get().getAccessToken())));
+  }
+
+  private String csvFilename(String resourceType, String resourceId) {
+    return ("dbrepo-" + resourceType + "-" + resourceId + ".csv")
+        .replaceAll("[^A-Za-z0-9._-]", "_");
   }
 
   private String propertyName(AppConfigElement element) {
@@ -193,4 +234,6 @@ public class DBRepoController {
     return StringUtils.defaultIfBlank(
         e.getMessage(), messages.getMessage("apps.dbrepo.errors.unknown"));
   }
+
+  private record DBRepoConnectionDetails(String baseUrl, DBRepoCredentials credentials) {}
 }

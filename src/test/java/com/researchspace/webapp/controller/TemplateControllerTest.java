@@ -63,6 +63,13 @@ public class TemplateControllerTest extends SpringTransactionalTest {
 
     String equationTemplate = templateController.getTemplate(TemplateController.EQUATION_TEMPLATE);
     assertAllPropsReplaced(equationTemplate);
+
+    String dbrepoTemplate = templateController.getTemplate(TemplateController.DBREPO_LINK_TEMPLATE);
+    assertAllPropsReplaced(dbrepoTemplate);
+    assertTrue(dbrepoTemplate.contains("class=\"dbrepo_link\""));
+    assertTrue(dbrepoTemplate.contains("id=\"dbrepoLink_{{id}}\""));
+    assertFalse(dbrepoTemplate.contains("attachmentLinked"));
+    assertFalse(dbrepoTemplate.contains("attachOnText_"));
   }
 
   private void assertAllPropsReplaced(String processedTemplate) {

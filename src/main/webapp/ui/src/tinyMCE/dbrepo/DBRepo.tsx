@@ -52,9 +52,11 @@ type ResourceState = {
 };
 
 type TemplateTarget = {
-  id?: string;
   name: string;
   url: string;
+  dbrepoType: "database" | DBRepoResourceType;
+  databaseId: string;
+  resourceId: string;
 };
 
 type TinyMceEditor = {
@@ -64,24 +66,20 @@ type TinyMceEditor = {
   };
 };
 
-export type ExternalDocumentTemplateData = {
+export type DBRepoLinkTemplateData = {
   id: string;
-  fileStore: "dbrepo";
   recordURL: string;
   name: string;
+  dbrepoType: "database" | DBRepoResourceType;
+  databaseId: string;
+  resourceId: string;
   iconPath: string;
-  badgeIconPath: string;
 };
 
 type ParentWindow = {
   tinymce?: { activeEditor?: TinyMceEditor };
   RS?: {
-    insertTemplateIntoTinyMCE?: (
-      templateId: string,
-      data: ExternalDocumentTemplateData,
-      editor?: TinyMceEditor,
-      callback?: () => void,
-    ) => void;
+    insertTemplateIntoTinyMCE?: (templateId: string, data: DBRepoLinkTemplateData, editor?: TinyMceEditor) => void;
   };
 };
 
@@ -102,23 +100,16 @@ function hashString(value: string): number {
   }, 0);
 }
 
-export function buildDatabaseTemplateData(database: TemplateTarget): ExternalDocumentTemplateData {
+export function buildDBRepoLinkTemplateData(target: TemplateTarget): DBRepoLinkTemplateData {
   return {
-    id: `dbrepo-${hashString(database.url)}`,
-    fileStore: "dbrepo",
-    recordURL: database.url,
-    name: database.name,
+    id: `dbrepo-${hashString(target.url)}`,
+    recordURL: target.url,
+    name: target.name,
+    dbrepoType: target.dbrepoType,
+    databaseId: target.databaseId,
+    resourceId: target.resourceId,
     iconPath: DBREPO_LOGO_PATH,
-    badgeIconPath: DBREPO_LOGO_PATH,
   };
-}
-
-export function removeExternalDocumentIcon(editor: TinyMceEditor, templateData: ExternalDocumentTemplateData): void {
-  const link = Array.from(editor.getBody().querySelectorAll(".attachmentLinked")).find(
-    (candidate) => candidate.id === `attachOnText_${templateData.id}`,
-  );
-  const externalAttachment = link?.closest(".externalAttachmentDiv");
-  externalAttachment?.firstElementChild?.remove();
 }
 
 function DBRepo(): React.ReactNode {
@@ -194,10 +185,7 @@ function DBRepo(): React.ReactNode {
     const editor = parentWindow.tinymce?.activeEditor;
     const insertTemplateIntoTinyMCE = parentWindow.RS?.insertTemplateIntoTinyMCE;
     if (!selectedTarget || !editor) return;
-    const templateData = buildDatabaseTemplateData(selectedTarget);
-    insertTemplateIntoTinyMCE?.("insertedExternalDocumentTemplate", templateData, editor, () =>
-      removeExternalDocumentIcon(editor, templateData),
-    );
+    insertTemplateIntoTinyMCE?.("dbrepoLink", buildDBRepoLinkTemplateData(selectedTarget), editor);
     editor.windowManager.close();
   };
 
@@ -397,7 +385,16 @@ function selectedTemplateTarget(
 ): TemplateTarget | undefined {
   if (selectedId.startsWith("database:")) {
     const databaseId = selectedId.slice("database:".length);
-    return databases.find((database) => database.id === databaseId);
+    const database = databases.find((candidate) => candidate.id === databaseId);
+    return database
+      ? {
+          name: database.name,
+          url: database.url,
+          dbrepoType: "database",
+          databaseId: database.id,
+          resourceId: "",
+        }
+      : undefined;
   }
   for (const [databaseId, resourceState] of Object.entries(resourcesByDatabase)) {
     const resources = [
@@ -407,7 +404,13 @@ function selectedTemplateTarget(
     ];
     const resource = resources.find((candidate) => selectedId === resourceSelectionId(databaseId, candidate));
     if (resource) {
-      return { name: resource.label, url: resource.url };
+      return {
+        name: resource.label,
+        url: resource.url,
+        dbrepoType: resource.type,
+        databaseId,
+        resourceId: resource.id,
+      };
     }
   }
   return undefined;

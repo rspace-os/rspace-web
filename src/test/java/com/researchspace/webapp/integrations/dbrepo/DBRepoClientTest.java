@@ -1,5 +1,6 @@
 package com.researchspace.webapp.integrations.dbrepo;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
@@ -8,6 +9,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -159,5 +161,38 @@ public class DBRepoClientTest {
     assertEquals(1, resources.subsets().size());
     assertEquals(List.of("view"), resources.failedTypes());
     server.verify();
+  }
+
+  @Test
+  public void downloadsResourceCsvFromCurrentApi() {
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/view/view-1/data"))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Basic dXNlcjpwYXNz"))
+        .andExpect(header(HttpHeaders.ACCEPT, "text/csv"))
+        .andRespond(withSuccess("id,name\n1,Experiment\n", MediaType.parseMediaType("text/csv")));
+
+    byte[] csv =
+        client.downloadResourceCsv(
+            "https://dbrepo.example",
+            "db-1",
+            "view",
+            "view-1",
+            new DBRepoCredentials("user", "pass"));
+
+    assertArrayEquals("id,name\n1,Experiment\n".getBytes(StandardCharsets.UTF_8), csv);
+    server.verify();
+  }
+
+  @Test
+  public void rejectsDatabaseCsvDownload() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            client.downloadResourceCsv(
+                "https://dbrepo.example",
+                "db-1",
+                "database",
+                "db-1",
+                new DBRepoCredentials("user", "pass")));
   }
 }

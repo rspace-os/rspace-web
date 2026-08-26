@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import axios from "@/common/axios";
-import DBRepo, { buildDatabaseTemplateData, type DBRepoDatabase, removeExternalDocumentIcon } from "../DBRepo";
+import DBRepo, { buildDBRepoLinkTemplateData } from "../DBRepo";
 
 const DBREPO_LOGO_PATH = "/images/icons/dbrepo.svg";
 
@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 describe("DBRepo dialog body", () => {
-  it("lists databases and inserts a selected external document template", async () => {
+  it("lists databases and inserts a selected DBRepo link template", async () => {
     const user = userEvent.setup();
     const insertTemplateIntoTinyMCE = vi.fn();
     const close = vi.fn();
@@ -46,16 +46,16 @@ describe("DBRepo dialog body", () => {
     await user.click(screen.getByRole("button", { name: "workspace:tinymce.dbrepo.insert" }));
 
     expect(insertTemplateIntoTinyMCE).toHaveBeenCalledWith(
-      "insertedExternalDocumentTemplate",
+      "dbrepoLink",
       expect.objectContaining({
-        fileStore: "dbrepo",
         recordURL: "https://dbrepo.example/database/db-1",
         name: "Research data",
+        dbrepoType: "database",
+        databaseId: "db-1",
+        resourceId: "",
         iconPath: DBREPO_LOGO_PATH,
-        badgeIconPath: DBREPO_LOGO_PATH,
       }),
       activeEditor,
-      expect.any(Function),
     );
     expect(close).toHaveBeenCalled();
   });
@@ -131,13 +131,15 @@ describe("DBRepo dialog body", () => {
     await user.click(screen.getByRole("button", { name: "workspace:tinymce.dbrepo.insert" }));
 
     expect(insertTemplateIntoTinyMCE).toHaveBeenCalledWith(
-      "insertedExternalDocumentTemplate",
+      "dbrepoLink",
       expect.objectContaining({
         recordURL: "https://dbrepo.example/database/db-1/view/view-1",
         name: "Recent experiments",
+        dbrepoType: "view",
+        databaseId: "db-1",
+        resourceId: "view-1",
       }),
       activeEditor,
-      expect.any(Function),
     );
     expect(close).toHaveBeenCalled();
   });
@@ -183,13 +185,15 @@ describe("DBRepo dialog body", () => {
     await user.click(screen.getByRole("button", { name: "workspace:tinymce.dbrepo.insert" }));
 
     expect(insertTemplateIntoTinyMCE).toHaveBeenCalledWith(
-      "insertedExternalDocumentTemplate",
+      "dbrepoLink",
       expect.objectContaining({
         recordURL: "https://dbrepo.example/database/db-2",
         name: "Archive data",
+        dbrepoType: "database",
+        databaseId: "db-2",
+        resourceId: "",
       }),
       activeEditor,
-      expect.any(Function),
     );
   });
 
@@ -242,13 +246,15 @@ describe("DBRepo dialog body", () => {
     await user.click(screen.getByRole("button", { name: "workspace:tinymce.dbrepo.insert" }));
 
     expect(insertTemplateIntoTinyMCE).toHaveBeenCalledWith(
-      "insertedExternalDocumentTemplate",
+      "dbrepoLink",
       expect.objectContaining({
         recordURL: "https://dbrepo.example/database/db-1/table/table-1",
         name: "Experiments",
+        dbrepoType: "table",
+        databaseId: "db-1",
+        resourceId: "table-1",
       }),
       activeEditor,
-      expect.any(Function),
     );
   });
 
@@ -260,45 +266,23 @@ describe("DBRepo dialog body", () => {
     expect(await screen.findByText("workspace:tinymce.dbrepo.empty")).toBeVisible();
   });
 
-  it("builds external document template data for a database", () => {
-    const database: DBRepoDatabase = {
-      id: "db-1",
-      name: "<script>alert(1)</script>",
-      url: "https://dbrepo.example/database/db-1",
-    };
-
-    expect(buildDatabaseTemplateData(database)).toEqual({
+  it("builds DBRepo link template data", () => {
+    expect(
+      buildDBRepoLinkTemplateData({
+        name: "<script>alert(1)</script>",
+        url: "https://dbrepo.example/database/db-1",
+        dbrepoType: "database",
+        databaseId: "db-1",
+        resourceId: "",
+      }),
+    ).toEqual({
       id: expect.stringMatching(/^dbrepo--?\d+$/),
-      fileStore: "dbrepo",
       recordURL: "https://dbrepo.example/database/db-1",
       name: "<script>alert(1)</script>",
+      dbrepoType: "database",
+      databaseId: "db-1",
+      resourceId: "",
       iconPath: DBREPO_LOGO_PATH,
-      badgeIconPath: DBREPO_LOGO_PATH,
     });
-  });
-
-  it("removes the upper template icon from inserted DBRepo attachments", () => {
-    const templateData = buildDatabaseTemplateData({
-      id: "db-1",
-      name: "Research data",
-      url: "https://dbrepo.example/database/db-1",
-    });
-    document.body.innerHTML = `
-      <div class="externalAttachmentDiv mceNonEditable">
-        <a href="${templateData.recordURL}" target="_blank">
-          <img class="attachmentIcon" src="${templateData.iconPath}" height="32" width="32" />
-        </a>
-        <p class="attachmentP">
-          <img class="externalLinkBadge" src="${templateData.badgeIconPath}" height="20" width="20" />
-          <a class="attachmentLinked" id="attachOnText_${templateData.id}" data-externalFileStore="dbrepo"
-            href="${templateData.recordURL}" target="_blank">${templateData.name}</a>
-        </p>
-      </div>`;
-
-    removeExternalDocumentIcon({ getBody: () => document.body, windowManager: { close: () => {} } }, templateData);
-
-    expect(document.body.querySelector(".attachmentIcon")).not.toBeInTheDocument();
-    expect(document.body.querySelector(".externalLinkBadge")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Research data" })).toBeVisible();
   });
 });
