@@ -63,6 +63,21 @@ public class ApiAwareWebSecurityManagerTest {
   }
 
   @Test
+  public void nestedStatelessLoginKeepsOuterMarkUntilOuterCallReturns() {
+    ApiAwareWebSecurityManager.doStatelessLogin(
+        () -> {
+          ApiAwareWebSecurityManager.doStatelessLogin(() -> {});
+          securityManager.beforeSuccessfulLogin(subjectWithSession());
+        });
+
+    verify(request, never()).changeSessionId();
+
+    securityManager.beforeSuccessfulLogin(subjectWithSession());
+
+    verify(request).changeSessionId();
+  }
+
+  @Test
   public void loginWithoutSessionRotatesNothing() {
     WebDelegatingSubject noSession =
         new WebDelegatingSubject(

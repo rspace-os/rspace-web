@@ -29,11 +29,16 @@ public class ApiAwareWebSecurityManager extends DefaultWebSecurityManager {
    * mark only spans the given callback, which should contain just the {@code subject.login} call.
    */
   public static void doStatelessLogin(Runnable login) {
+    Boolean previous = STATELESS_API_LOGIN.get();
     STATELESS_API_LOGIN.set(Boolean.TRUE);
     try {
       login.run();
     } finally {
-      STATELESS_API_LOGIN.remove();
+      if (previous == null) {
+        STATELESS_API_LOGIN.remove();
+      } else {
+        STATELESS_API_LOGIN.set(previous);
+      }
     }
   }
 
