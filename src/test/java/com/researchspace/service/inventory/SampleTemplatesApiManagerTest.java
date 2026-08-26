@@ -280,8 +280,8 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
   @Test
   public void templateCreateRejectsFieldNamedAfterUILabel() {
     // RSDEV-1066: SampleTemplate's displayed-label set includes "Subsample Alias", so
-    // core-model's verifyFieldNameAllowed rejects the field at Sample.addSampleField time
-    // with the legacy reserved-name IAE.
+    // InventoryRecord's verifyFieldNameAllowed rejects the field at Sample.addSampleField
+    // time with the legacy reserved-name IAE.
     ApiSampleTemplatePost post = getTemplatePostForTestTemplateWithTextField();
     post.getFields().add(createBasicApiSampleField("Subsample Alias", ApiFieldType.STRING, "v"));
 
