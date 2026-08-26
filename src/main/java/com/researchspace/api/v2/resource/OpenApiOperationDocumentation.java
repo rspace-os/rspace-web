@@ -16,15 +16,48 @@ public record OpenApiOperationDocumentation(
     Map<Integer, Response> responses,
     Map<String, Object> extensions) {
 
-  /** Documentation for one response. Error responses also carry their stable problem code. */
-  public record Response(String description, String errorCode) {
+  /** Documentation for one response. Error responses also carry their stable problem codes. */
+  public record Response(String description, Map<String, String> errors) {
+    public Response(String description, String errorCode) {
+      this(description, errorCode == null ? Map.of() : Map.of(errorCode, description));
+    }
+
     public Response {
       if (description == null || description.isBlank()) {
         throw new IllegalArgumentException("OpenAPI response description must not be blank");
       }
-      if (errorCode != null && errorCode.isBlank()) {
-        throw new IllegalArgumentException("OpenAPI error response code must not be blank");
+      errors = Map.copyOf(errors);
+      if (errors.entrySet().stream()
+          .anyMatch(
+              error ->
+                  error.getKey() == null
+                      || error.getKey().isBlank()
+                      || error.getValue() == null
+                      || error.getValue().isBlank())) {
+        throw new IllegalArgumentException(
+            "OpenAPI error responses require a code and description");
       }
+    }
+
+    /** Returns the only error code, or {@code null} when the response has zero or many codes. */
+    public String errorCode() {
+      return errors.size() == 1 ? errors.keySet().iterator().next() : null;
+    }
+
+    Response merge(Response other) {
+      Map<String, String> combinedErrors = new LinkedHashMap<>(errors);
+      other.errors.forEach(
+          (code, errorDescription) -> {
+            String existing = combinedErrors.putIfAbsent(code, errorDescription);
+            if (existing != null && !existing.equals(errorDescription)) {
+              throw new IllegalArgumentException("Conflicting OpenAPI descriptions for " + code);
+            }
+          });
+      String combinedDescription =
+          description.equals(other.description)
+              ? description
+              : description + " " + other.description;
+      return new Response(combinedDescription, combinedErrors);
     }
   }
 
@@ -46,7 +79,7 @@ public record OpenApiOperationDocumentation(
           if (status < 100 || status > 599 || response == null) {
             throw new IllegalArgumentException("OpenAPI responses require a valid HTTP status");
           }
-          if (response.errorCode() != null && status < 400) {
+          if (!response.errors().isEmpty() && status < 400) {
             throw new IllegalArgumentException("OpenAPI error response requires an error status");
           }
         });
@@ -129,7 +162,7 @@ public record OpenApiOperationDocumentation(
 
     public Builder responseDescription(int status, String value) {
       Response current = responses.get(status);
-      responses.put(status, new Response(value, current == null ? null : current.errorCode()));
+      responses.put(status, new Response(value, current == null ? Map.of() : current.errors()));
       return this;
     }
 

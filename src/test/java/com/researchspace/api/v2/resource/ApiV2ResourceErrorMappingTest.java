@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
@@ -111,6 +112,37 @@ class ApiV2ResourceErrorMappingTest {
             ChildFailure.class, () -> registration.count(ResourceRequest.unpaged(null), null));
 
     assertSame(failure, unchanged);
+  }
+
+  @Test
+  void documentsSeveralMappingsThatShareAStatus() {
+    ApiV2ResourceRegistration<Widget, Long> registration =
+        register(
+            Map.of(
+                ResourceOperation.LIST,
+                List.of(
+                    ApiV2ErrorMapping.of(
+                        ParentFailure.class,
+                        HttpStatus.CONFLICT,
+                        "errors.parent",
+                        "A parent failure."),
+                    ApiV2ErrorMapping.of(
+                        ChildFailure.class,
+                        HttpStatus.CONFLICT,
+                        "errors.child",
+                        "A child failure."))));
+
+    OpenApiOperationDocumentation.Response response =
+        registration
+            .operationDocumentation(ResourceOperation.LIST)
+            .responses()
+            .get(HttpStatus.CONFLICT.value());
+
+    assertEquals(
+        List.of("errors.child", "errors.parent"),
+        response.errors().keySet().stream().sorted().toList());
+    assertTrue(response.description().contains("A parent failure."));
+    assertTrue(response.description().contains("A child failure."));
   }
 
   private ApiV2ResourceRegistration<Widget, Long> register(

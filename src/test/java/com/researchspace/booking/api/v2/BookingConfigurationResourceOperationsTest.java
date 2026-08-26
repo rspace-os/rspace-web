@@ -16,6 +16,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
 import com.researchspace.model.collection.ParsedDocument;
@@ -73,8 +74,7 @@ class BookingConfigurationResourceOperationsTest {
 
     operations.update(42L, document, new ApiV2Caller(subject, originatingActor));
 
-    verify(manager)
-        .updateConfiguration(42L, new Patch(true, null, null), subject, originatingActor);
+    verify(manager).updateConfiguration(42L, new Patch(true, null), subject, originatingActor);
   }
 
   @Test
@@ -107,7 +107,7 @@ class BookingConfigurationResourceOperationsTest {
   void translatesRestPatchesAndDeletesToTheSharedManagerInterface() {
     ParsedDocument document = ParsedDocument.update(Map.of("enabled", true));
     BookingConfiguration configuration = new BookingConfiguration();
-    when(manager.updateConfiguration(42L, new Patch(true, null, null), actor, actor))
+    when(manager.updateConfiguration(42L, new Patch(true, null), actor, actor))
         .thenReturn(Optional.of(configuration));
     when(manager.removeConfiguration(42L, actor, actor)).thenReturn(Optional.of(configuration));
 
@@ -115,26 +115,28 @@ class BookingConfigurationResourceOperationsTest {
         configuration, operations.update(42L, document, ApiV2Caller.direct(actor)).orElseThrow());
     assertEquals(configuration, operations.delete(42L, ApiV2Caller.direct(actor)).orElseThrow());
 
-    verify(manager).updateConfiguration(42L, new Patch(true, null, null), actor, actor);
+    verify(manager).updateConfiguration(42L, new Patch(true, null), actor, actor);
     verify(manager).removeConfiguration(42L, actor, actor);
   }
 
   @Test
-  void translatesAResolvedTargetPatchToTheBookingDomainValue() {
+  void translatesMaximumBookingDurationPatchesToSchedulingSettings() {
     BookingConfiguration configuration = new BookingConfiguration();
-    ResolvedResourceReference<BookableTargetType, Long> resolved = resolved(18L);
-    ResolvedBookableTarget target = target(resolved);
-    when(manager.updateConfiguration(42L, new Patch(null, null, target), actor, actor))
+    BookingSchedulingSettings.Patch schedulingPatch =
+        new BookingSchedulingSettings.Patch(null, null, null, null, null, 60L, null);
+    when(manager.updateConfiguration(42L, new Patch(null, null, schedulingPatch), actor, actor))
         .thenReturn(Optional.of(configuration));
 
     assertEquals(
         configuration,
         operations
             .update(
-                42L, ParsedDocument.update(Map.of("target", resolved)), ApiV2Caller.direct(actor))
+                42L,
+                ParsedDocument.update(Map.of("maxBookingDurationMinutes", 60L)),
+                ApiV2Caller.direct(actor))
             .orElseThrow());
 
-    verify(manager).updateConfiguration(42L, new Patch(null, null, target), actor, actor);
+    verify(manager).updateConfiguration(42L, new Patch(null, null, schedulingPatch), actor, actor);
   }
 
   @Test

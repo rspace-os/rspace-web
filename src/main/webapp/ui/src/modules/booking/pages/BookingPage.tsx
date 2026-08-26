@@ -1,11 +1,12 @@
-import { type AnyRoute, createRoute, Outlet } from "@tanstack/react-router";
+import { type AnyRoute, createRoute, Link, linkOptions, Outlet } from "@tanstack/react-router";
 import {
   CalendarIcon,
+  CalendarPlusIcon,
   CheckSquareIcon,
   ChevronRightIcon,
   LayoutDashboardIcon,
+  LibraryBigIcon,
   ListIcon,
-  type LucideIcon,
   SettingsIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -23,22 +24,40 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/modules/common/ui/sidebar";
+import { localToday } from "./all-bookable-items/calendarDate";
 
 const items = [
   { key: "dashboard", icon: LayoutDashboardIcon },
-  { key: "calendar", icon: CalendarIcon },
-  { key: "myBookings", icon: ListIcon },
+  {
+    key: "calendar",
+    icon: CalendarIcon,
+    link: <Link {...linkOptions({ to: "/booking/calendar", search: () => ({ date: localToday() }) })} />,
+  },
+  {
+    key: "allItems",
+    icon: LibraryBigIcon,
+    link: <Link {...linkOptions({ to: "/booking/all-items", search: () => ({ date: localToday() }) })} />,
+  },
+  {
+    key: "addBooking",
+    icon: CalendarPlusIcon,
+    link: <Link {...linkOptions({ to: "/booking/calendar/bookings/add", search: () => ({ date: localToday() }) })} />,
+  },
+  {
+    key: "myBookings",
+    icon: ListIcon,
+    link: <Link {...linkOptions({ to: "/booking/my-bookings", search: { period: "upcoming" } })} />,
+  },
   {
     key: "administration",
     icon: SettingsIcon,
-    children: [{ key: "settings" }, { key: "bookableItems" }],
+    children: [
+      { key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> },
+      { key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> },
+    ],
   },
   { key: "approvalQueue", icon: CheckSquareIcon },
-] as const satisfies ReadonlyArray<{
-  key: string;
-  icon: LucideIcon;
-  children?: ReadonlyArray<{ key: string }>;
-}>;
+] as const;
 
 /** Content for the shared AppShell sidebar. The shell owns the surrounding layout. */
 export function BookingSidebar() {
@@ -47,6 +66,8 @@ export function BookingSidebar() {
   const labels = {
     dashboard: t("sidebar.dashboard"),
     calendar: t("sidebar.calendar"),
+    allItems: t("sidebar.allItems"),
+    addBooking: t("sidebar.addBooking"),
     myBookings: t("sidebar.myBookings"),
     administration: t("sidebar.administration"),
     settings: t("sidebar.settings"),
@@ -74,7 +95,8 @@ export function BookingSidebar() {
                   <SidebarMenuSub>
                     {item.children.map((child) => (
                       <SidebarMenuSubItem key={child.key}>
-                        <SidebarMenuSubButton render={<button type="button" />}>
+                        {/* an <a> without href has no role, so unrouted sub-items render as buttons */}
+                        <SidebarMenuSubButton render={"link" in child ? child.link : <button type="button" />}>
                           <span>{labels[child.key]}</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
@@ -84,8 +106,10 @@ export function BookingSidebar() {
               </Collapsible>
             ) : (
               <SidebarMenuItem key={item.key}>
-                {/* ponytail: no sub-routes exist yet; wire `render={<Link .../>}` when they do */}
-                <SidebarMenuButton tooltip={labels[item.key]}>
+                <SidebarMenuButton
+                  tooltip={labels[item.key]}
+                  render={"link" in item ? item.link : <button type="button" />}
+                >
                   <item.icon />
                   <span>{labels[item.key]}</span>
                 </SidebarMenuButton>

@@ -92,6 +92,18 @@ export const PrototypePromptCards: Story = {
   },
 };
 
+// Mirrors the "Booking rules" details card on the View Bookable Item page.
+export const PrototypeItemDetails: Story = {
+  args: { presentation: "item-details" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const term = await canvas.findByText("Title", { selector: "dt" });
+    const control = await canvas.findByRole("textbox", { name: "Title" });
+    await expect(term.getBoundingClientRect().right).toBeLessThan(control.getBoundingClientRect().left);
+    await expect(await canvas.findAllByRole("term")).toHaveLength(6);
+  },
+};
+
 export const Disabled: Story = {
   args: { disabled: true },
 };

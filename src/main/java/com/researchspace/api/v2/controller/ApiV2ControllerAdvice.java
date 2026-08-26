@@ -4,6 +4,9 @@ import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
+import com.researchspace.booking.service.BookingPolicyException;
+import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
+import com.researchspace.booking.service.StaleBookingSettingsException;
 import com.researchspace.core.util.throttling.ThrottlingException;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
@@ -128,6 +131,22 @@ public class ApiV2ControllerAdvice {
   public ResponseEntity<ApiV2Problem> handleBadRequest(ApiV2BadRequestException ex) {
     String detail = messages.getMessage(ex.getErrorCode(), ex.getArgs());
     return ApiV2Problem.response(HttpStatus.BAD_REQUEST, detail, ex.getErrorCode(), detail);
+  }
+
+  @ExceptionHandler(InvalidBookingSchedulingSettingsException.class)
+  public ResponseEntity<ApiV2Problem> handleInvalidBookingSettings(
+      InvalidBookingSchedulingSettingsException ex) {
+    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+  }
+
+  @ExceptionHandler(BookingPolicyException.class)
+  public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
+    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+  }
+
+  @ExceptionHandler(StaleBookingSettingsException.class)
+  public ResponseEntity<ApiV2Problem> handleStaleBookingSettings() {
+    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingConfiguration.stale");
   }
 
   @ExceptionHandler(ApiV2ResourceException.class)
