@@ -10,6 +10,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 
+const DBREPO_LOGO_PATH = "/images/icons/dbrepo.svg";
+
 export type DBRepoDatabase = {
   id: string;
   name: string;
@@ -18,19 +20,56 @@ export type DBRepoDatabase = {
 };
 
 type TinyMceEditor = {
-  execCommand: (command: string, ui: boolean, value: string) => void;
+  getBody: () => HTMLElement;
   windowManager: {
     close: () => void;
   };
 };
 
-export function buildDatabaseLinkHtml(database: DBRepoDatabase): string {
-  const link = document.createElement("a");
-  link.href = database.url;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  link.textContent = database.name;
-  return link.outerHTML;
+export type ExternalDocumentTemplateData = {
+  id: string;
+  fileStore: "dbrepo";
+  recordURL: string;
+  name: string;
+  iconPath: string;
+  badgeIconPath: string;
+};
+
+type ParentWindow = {
+  tinymce?: { activeEditor?: TinyMceEditor };
+  RS?: {
+    insertTemplateIntoTinyMCE?: (
+      templateId: string,
+      data: ExternalDocumentTemplateData,
+      editor?: TinyMceEditor,
+      callback?: () => void,
+    ) => void;
+  };
+};
+
+function hashString(value: string): number {
+  return value.split("").reduce((hash, character) => {
+    return ((hash << 5) - hash + character.charCodeAt(0)) | 0;
+  }, 0);
+}
+
+export function buildDatabaseTemplateData(database: DBRepoDatabase): ExternalDocumentTemplateData {
+  return {
+    id: `dbrepo-${hashString(database.url)}`,
+    fileStore: "dbrepo",
+    recordURL: database.url,
+    name: database.name,
+    iconPath: DBREPO_LOGO_PATH,
+    badgeIconPath: DBREPO_LOGO_PATH,
+  };
+}
+
+export function removeExternalDocumentIcon(editor: TinyMceEditor, templateData: ExternalDocumentTemplateData): void {
+  const link = Array.from(editor.getBody().querySelectorAll(".attachmentLinked")).find(
+    (candidate) => candidate.id === `attachOnText_${templateData.id}`,
+  );
+  const externalAttachment = link?.closest(".externalAttachmentDiv");
+  externalAttachment?.firstElementChild?.remove();
 }
 
 function DBRepo(): React.ReactNode {
@@ -65,9 +104,14 @@ function DBRepo(): React.ReactNode {
   const selectedDatabase = databases.find((database) => database.id === selectedId);
 
   const insertSelectedDatabase = () => {
-    const editor = (parent as unknown as { tinymce?: { activeEditor?: TinyMceEditor } })?.tinymce?.activeEditor;
+    const parentWindow = parent as unknown as ParentWindow;
+    const editor = parentWindow.tinymce?.activeEditor;
+    const insertTemplateIntoTinyMCE = parentWindow.RS?.insertTemplateIntoTinyMCE;
     if (!selectedDatabase || !editor) return;
-    editor.execCommand("mceInsertContent", false, buildDatabaseLinkHtml(selectedDatabase));
+    const templateData = buildDatabaseTemplateData(selectedDatabase);
+    insertTemplateIntoTinyMCE?.("insertedExternalDocumentTemplate", templateData, editor, () =>
+      removeExternalDocumentIcon(editor, templateData),
+    );
     editor.windowManager.close();
   };
 
