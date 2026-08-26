@@ -43,15 +43,13 @@ declare global {
 type AllBarcodeScannerArgs = {
   onClose: () => void;
   onScan: (scannedBarcodeInput: BarcodeInput) => void;
-  buttonPrefix?: string;
-  submitOnScan?: boolean;
+  cameraErrorMessage?: string;
 };
 
 export default function AllBarcodeScanner({
   onClose,
   onScan,
-  buttonPrefix,
-  submitOnScan,
+  cameraErrorMessage,
 }: AllBarcodeScannerArgs): React.ReactNode {
   const { uiStore } = useStores();
   const { t } = useTranslation("inventory");
@@ -139,20 +137,13 @@ export default function AllBarcodeScanner({
     <BarcodeScannerSkeleton
       onClose={onClose}
       onScan={onScan}
-      buttonPrefix={buttonPrefix}
-      submitOnScan={submitOnScan}
       beforeScanHelpText={t("barcodeScanner.supportedFormats.all")}
       videoElem={videoElem}
       barcode={barcode}
-      setBarcode={setBarcode}
       loading={loading}
       warning={
         error
-          ? !loading && (
-              <Alert severity="warning">
-                {submitOnScan ? t("barcodeScanner.cameraErrorSearchBox") : t("barcodeScanner.cameraError")}
-              </Alert>
-            )
+          ? !loading && <Alert severity="warning">{cameraErrorMessage ?? t("barcodeScanner.cameraError")}</Alert>
           : null
       }
       error={error}

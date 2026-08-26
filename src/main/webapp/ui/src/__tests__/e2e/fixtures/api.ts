@@ -4,6 +4,7 @@ import { DocumentsClient } from "../api/clients/DocumentsClient";
 import { FilesClient } from "../api/clients/FilesClient";
 import { FoldersClient } from "../api/clients/FoldersClient";
 import { InventoryClient } from "../api/clients/InventoryClient";
+import { MailpitClient } from "../api/clients/MailpitClient";
 import { SysadminClient } from "../api/clients/SysadminClient";
 import { env } from "../env";
 import { SYSADMIN } from "../users";
@@ -16,6 +17,7 @@ type ApiFixtures = {
   clientFolders: FoldersClient;
   clientInventory: InventoryClient;
   clientSysadmin: SysadminClient;
+  clientMailpit: MailpitClient;
 };
 
 export const apiTest = uiTest.extend<ApiFixtures>({
@@ -56,5 +58,12 @@ export const apiTest = uiTest.extend<ApiFixtures>({
         }
       }
     }
+  },
+
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
+  clientMailpit: async ({}, use) => {
+    const context = await request.newContext({ baseURL: env.mailpitBaseUrl });
+    await use(new MailpitClient(context));
+    await context.dispose();
   },
 });
