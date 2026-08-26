@@ -45,7 +45,11 @@ public class DigitalObjectIdentifierDaoHibernate
     AuditQuery q =
         ar.createQuery()
             .forRevisionsOfEntity(DigitalObjectIdentifier.class, false, false)
-            .add(AuditEntity.id().eq(id));
+            .add(AuditEntity.id().eq(id))
+            // Envers gives no ordering guarantee of its own, so the newest revision is asked for
+            // explicitly rather than inferred from the tail of an unordered list.
+            .addOrder(AuditEntity.revisionNumber().desc())
+            .setMaxResults(1);
 
     List<Object> genericResults = q.getResultList();
     if (genericResults.isEmpty()) {
@@ -61,7 +65,7 @@ public class DigitalObjectIdentifierDaoHibernate
      * toggle, a B2INST refresh re-persisting "accepted") must reach the page, and a B2INST
      * identifier has no republish operation to push them out with (RSDEV-1260).
      */
-    Object[] newestRow = (Object[]) genericResults.get(genericResults.size() - 1);
+    Object[] newestRow = (Object[]) genericResults.get(0);
     DigitalObjectIdentifier newestDoi = (DigitalObjectIdentifier) newestRow[0];
     return DigitalObjectIdentifier.isPublishedState(newestDoi.getState())
         ? Optional.of(newestDoi)

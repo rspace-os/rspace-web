@@ -89,6 +89,7 @@
         "deleteWrongState": "You can only delete identifiers in \"draft\" state, or B2INST instrument PIDs whose community review was declined, cancelled or expired.",
         "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
         "mintingUnsupportedType": "unsupported type for minting: {0}",
+        "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
         "typeUnsupported": "identifiers of type {0} are not supported yet"
       },
       "import": {

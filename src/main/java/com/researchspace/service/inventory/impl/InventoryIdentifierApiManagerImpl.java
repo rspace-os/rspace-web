@@ -327,8 +327,9 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   public ApiInventoryRecordInfo refreshIdentifier(GlobalIdentifier invRecOid, User user) {
     InventoryRecord invRec = invRecRetriever.getInvRecordByGlobalId(invRecOid);
     if (invRec.getActiveIdentifiers().isEmpty()) {
-      throw new IllegalArgumentException(
-          "record " + invRecOid.toString() + " has no identifier to refresh");
+      // Localized error code rather than developer text: refresh is reachable straight from the
+      // public API, so the whole path resolves errors.inventory.identifier.* keys consistently.
+      throw new ApiRuntimeException("errors.inventory.identifier.refreshNoIdentifier");
     }
     DigitalObjectIdentifier doi = invRec.getActiveIdentifiers().get(0);
     if (!isB2inst(doi.getType())) {

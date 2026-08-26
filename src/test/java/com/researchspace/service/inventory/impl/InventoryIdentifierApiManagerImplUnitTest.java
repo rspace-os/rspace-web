@@ -29,6 +29,7 @@ import com.researchspace.b2inst.model.response.B2instRequestResponse;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.Instrument;
@@ -37,6 +38,7 @@ import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.inventory.InventoryRecordRetriever;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectionException;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
@@ -546,5 +548,25 @@ class InventoryIdentifierApiManagerImplUnitTest {
 
     assertInstanceOf(B2instConnectionException.class, thrown.getCause());
     assertEquals("Could not refresh. reason", thrown.getCause().getMessage());
+  }
+
+  /**
+   * The refresh entry point rejected a record with no identifier using hard-coded developer text,
+   * which the API returns verbatim to clients. Every other refresh failure resolves an {@code
+   * errors.inventory.identifier.*} key, so this one does too (Copilot review, PR 1066).
+   */
+  @Test
+  void refreshWithoutIdentifierRaisesLocalizedErrorCode() {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    InventoryRecordRetriever retriever = mock(InventoryRecordRetriever.class);
+    ReflectionTestUtils.setField(mgr, "invRecRetriever", retriever);
+    GlobalIdentifier oid = new GlobalIdentifier("IT1");
+    Instrument withoutIdentifier = new Instrument();
+    when(retriever.getInvRecordByGlobalId(oid)).thenReturn(withoutIdentifier);
+
+    ApiRuntimeException thrown =
+        assertThrows(ApiRuntimeException.class, () -> mgr.refreshIdentifier(oid, new User("u")));
+
+    assertEquals("errors.inventory.identifier.refreshNoIdentifier", thrown.getErrorCode());
   }
 }
