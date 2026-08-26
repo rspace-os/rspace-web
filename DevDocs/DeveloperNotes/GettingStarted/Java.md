@@ -136,8 +136,9 @@ web application:
 -   The controller generally returns a path to a JSP to render the view,
     or a JSON object if called from Ajax, or direct to a response stream
     (e.g., for streaming images).
--   Entity classes that correspond to database tables are in separate
-    github project `rspace-core-model`, and are a maven dependency.
+-   Entity classes that correspond to database tables live in this project
+    under `com.researchspace.model` (they were previously the separate
+    `rspace-core-model` github project, merged back in with full history).
 -   The database stores all textual information stored in records,
     relations and meta-information. Images and media are stored in a
     FileStore and only their metadata is stored in the database.

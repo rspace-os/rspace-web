@@ -173,8 +173,16 @@ mysql -u "root" -p"password" -e "
   CREATE USER 'rspacedbuser'@'127.0.0.1' IDENTIFIED BY 'rspacedbpwd';
   CREATE DATABASE rspace collate 'utf8mb4_unicode_ci';
   GRANT ALL ON rspace.* TO 'rspacedbuser'@'127.0.0.1';
+  GRANT ALL ON hibtest.* TO 'rspacedbuser'@'127.0.0.1';
 "
 ```
+
+The second grant covers a scratch `hibtest` database used by the
+`HibernateTest` classes, which check the Hibernate mappings. They create that
+database themselves on first run and Hibernate builds and drops its schema each
+run, so nothing else is needed, but without the grant those tests skip rather
+than fail and the mappings go unchecked.
+
 **NOTE:** depending on OS and DB used, your may need to change the username in creation/grant commands
 from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`. (Or you may need to just use `'rspacedbuser'` with no host)
 You will know if running the tests/app gets you db authentication error for user `'rspacedbuser'@'localhost'`
