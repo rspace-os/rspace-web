@@ -32,9 +32,11 @@ pre-commit:
     # spotlessFiles matches the absolute path via String#matches, so each
     # staged (repo-relative) path is prefixed with `.*` to anchor correctly.
     # git reports forward slashes, but the absolute path spotless matches uses
-    # the OS separator (backslashes on Windows), so each `/` becomes `.` (matches
-    # any separator on any OS). A `[/\\]` class would need backslashes that
-    # lefthook's Windows `sh -c "…"` wrapper halves into an invalid regex.
+    # the OS separator (backslashes on Windows), so each `/` becomes `.`, a
+    # wildcard that matches the separator on any OS (and, harmlessly for these
+    # paths, any other char too). A separator-exact `[/\\]` class would need
+    # backslashes that lefthook's Windows `sh -c "…"` wrapper halves into an
+    # invalid regex.
     # Guard against an empty list (drop blank lines) so we never fall back to
     # `-DspotlessFiles=".*"`, which would match every file in the repo.
     # -DspotlessStrict adds the CleanThat checks; scoped to staged files, so it
