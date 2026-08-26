@@ -6,6 +6,8 @@
   - dbrepoType database, table, view, or subset
   - databaseId DBRepo database id
   - resourceId DBRepo resource id for table/view/subset links; blank for database links
+  - databaseName DBRepo database name
+  - query query for view/subset links; blank for database/table links
   - recordURL URL to the DBRepo resource
   - iconPath DBRepo icon path
 *#
@@ -14,7 +16,8 @@
 		<img class="externalLinkBadge" src="$iconPath" height="20" width="20"/>
 		<a class="dbrepo_link" id="dbrepoLink_$id"
 		   data-dbrepo-type="$dbrepoType" data-dbrepo-database-id="$databaseId"
-		   data-dbrepo-resource-id="$resourceId" data-dbrepo-url="$recordURL"
+		   data-dbrepo-resource-id="$resourceId" data-dbrepo-database-name="$databaseName"
+		   data-dbrepo-query="$query" data-dbrepo-url="$recordURL"
 		   href="$recordURL" target="_blank">$name</a>
 	</p>
 </div>&nbsp;

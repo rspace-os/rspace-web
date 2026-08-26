@@ -57,6 +57,8 @@ type TemplateTarget = {
   dbrepoType: "database" | DBRepoResourceType;
   databaseId: string;
   resourceId: string;
+  databaseName: string;
+  query: string;
 };
 
 type TinyMceEditor = {
@@ -73,6 +75,8 @@ export type DBRepoLinkTemplateData = {
   dbrepoType: "database" | DBRepoResourceType;
   databaseId: string;
   resourceId: string;
+  databaseName: string;
+  query: string;
   iconPath: string;
 };
 
@@ -108,6 +112,8 @@ export function buildDBRepoLinkTemplateData(target: TemplateTarget): DBRepoLinkT
     dbrepoType: target.dbrepoType,
     databaseId: target.databaseId,
     resourceId: target.resourceId,
+    databaseName: target.databaseName,
+    query: target.query,
     iconPath: DBREPO_LOGO_PATH,
   };
 }
@@ -393,10 +399,13 @@ function selectedTemplateTarget(
           dbrepoType: "database",
           databaseId: database.id,
           resourceId: "",
+          databaseName: database.name,
+          query: "",
         }
       : undefined;
   }
   for (const [databaseId, resourceState] of Object.entries(resourcesByDatabase)) {
+    const database = databases.find((candidate) => candidate.id === databaseId);
     const resources = [
       ...(resourceState.data?.tables ?? []),
       ...(resourceState.data?.views ?? []),
@@ -410,6 +419,8 @@ function selectedTemplateTarget(
         dbrepoType: resource.type,
         databaseId,
         resourceId: resource.id,
+        databaseName: database?.name ?? "",
+        query: resource.type === "subset" ? resource.label : (resource.secondaryText ?? ""),
       };
     }
   }

@@ -719,6 +719,12 @@ div.externalLinkedRecordNoticeDiv {
   cursor: pointer;
 }
 
+.dbrepoInfoPanel .dbrepoInfoPanel-query {
+    font-family: monospace;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
 .separateToolbarGroup button:first-of-type {
   margin-left: 6px; }
 

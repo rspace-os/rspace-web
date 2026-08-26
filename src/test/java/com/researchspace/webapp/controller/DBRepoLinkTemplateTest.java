@@ -18,6 +18,8 @@ class DBRepoLinkTemplateTest {
 
     assertTrue(template.contains("class=\"dbrepo_link\""));
     assertTrue(template.contains("id=\"dbrepoLink_$id\""));
+    assertTrue(template.contains("data-dbrepo-database-name=\"$databaseName\""));
+    assertTrue(template.contains("data-dbrepo-query=\"$query\""));
     assertFalse(template.contains("attachmentLinked"));
     assertFalse(template.contains("attachOnText_"));
   }

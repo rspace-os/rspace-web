@@ -1942,13 +1942,20 @@ RS.initAndOpenDBRepoInfoDialog = function ($link) {
   var name = $link.text();
   var dbrepoType = $link.data('dbrepoType');
   var databaseId = $link.data('dbrepoDatabaseId');
+  var databaseName = $link.data('dbrepoDatabaseName');
   var resourceId = $link.data('dbrepoResourceId');
+  var query = $link.data('dbrepoQuery');
   var dbrepoUrl = $link.data('dbrepoUrl') || $link.attr('href');
   var $infoPanel = $('.dbrepoInfoPanel');
 
-  $infoPanel.find('.dbrepoInfoPanel-name').text(name);
   $infoPanel.find('.dbrepoInfoPanel-type').text(dbrepoType);
-  $infoPanel.find('.dbrepoInfoPanel-url').text(dbrepoUrl);
+
+  $infoPanel.find('.dbrepoInfoPanel-name').text(name);
+  $infoPanel.find('.dbrepoInfoPanel-database').text(databaseName || "");
+  $infoPanel.find('.dbrepoInfoPanel-query').text(query || (dbrepoType === 'subset' ? name : ""));
+  $infoPanel.find('.dbrepoInfoPanel-name').closest('tr').toggle(dbrepoType !== 'subset');
+  $infoPanel.find('.dbrepoInfoDatabaseRow').toggle(dbrepoType !== 'database' && !!databaseName);
+  $infoPanel.find('.dbrepoInfoQueryRow').toggle(dbrepoType === 'view' || dbrepoType === 'subset');
 
   $infoPanel.find('.dbrepoOpenBtn').off('click').on("click", function () {
     window.open(dbrepoUrl, '_blank', 'noopener');

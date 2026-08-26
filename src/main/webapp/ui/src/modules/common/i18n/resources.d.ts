@@ -5102,12 +5102,13 @@ export default interface Resources {
           "dialog": {
             "downloadButton": "Download CSV",
             "downloadButtonTitle": "Download CSV through RSpace",
+            "databaseLabel": "Database:",
             "header": "DBRepo link details",
             "nameLabel": "Name:",
-            "openButton": "Open DBRepo",
+            "openButton": "Open in DBRepo",
             "openButtonTitle": "Open DBRepo in a new tab",
-            "typeLabel": "Type:",
-            "urlLabel": "DBRepo URL:"
+            "queryLabel": "Query:",
+            "typeLabel": "Type:"
           }
         }
       },

@@ -154,6 +154,8 @@ public class TemplateController extends BaseController {
           "dbrepoType",
           "databaseId",
           "resourceId",
+          "databaseName",
+          "query",
           "recordURL",
           "iconPath");
       templateFile = "dbrepoLink.vm";

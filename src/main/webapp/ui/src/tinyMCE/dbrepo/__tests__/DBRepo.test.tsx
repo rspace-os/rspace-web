@@ -53,6 +53,8 @@ describe("DBRepo dialog body", () => {
         dbrepoType: "database",
         databaseId: "db-1",
         resourceId: "",
+        databaseName: "Research data",
+        query: "",
         iconPath: DBREPO_LOGO_PATH,
       }),
       activeEditor,
@@ -138,6 +140,8 @@ describe("DBRepo dialog body", () => {
         dbrepoType: "view",
         databaseId: "db-1",
         resourceId: "view-1",
+        databaseName: "Research data",
+        query: "SELECT * FROM experiments",
       }),
       activeEditor,
     );
@@ -192,6 +196,8 @@ describe("DBRepo dialog body", () => {
         dbrepoType: "database",
         databaseId: "db-2",
         resourceId: "",
+        databaseName: "Archive data",
+        query: "",
       }),
       activeEditor,
     );
@@ -253,6 +259,8 @@ describe("DBRepo dialog body", () => {
         dbrepoType: "table",
         databaseId: "db-1",
         resourceId: "table-1",
+        databaseName: "Research data",
+        query: "",
       }),
       activeEditor,
     );
@@ -274,6 +282,8 @@ describe("DBRepo dialog body", () => {
         dbrepoType: "database",
         databaseId: "db-1",
         resourceId: "",
+        databaseName: "Research data",
+        query: "",
       }),
     ).toEqual({
       id: expect.stringMatching(/^dbrepo--?\d+$/),
@@ -282,6 +292,8 @@ describe("DBRepo dialog body", () => {
       dbrepoType: "database",
       databaseId: "db-1",
       resourceId: "",
+      databaseName: "Research data",
+      query: "",
       iconPath: DBREPO_LOGO_PATH,
     });
   });
