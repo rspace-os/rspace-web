@@ -4,7 +4,6 @@ import TableChartIcon from "@mui/icons-material/TableChart";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Collapse from "@mui/material/Collapse";
 import Divider from "@mui/material/Divider";
@@ -14,7 +13,7 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 
@@ -63,6 +62,8 @@ type TemplateTarget = {
 
 type TinyMceEditor = {
   getBody: () => HTMLElement;
+  on?: (eventName: string, callback: () => void) => void;
+  off?: (eventName: string, callback: () => void) => void;
   windowManager: {
     close: () => void;
   };
@@ -186,14 +187,27 @@ function DBRepo(): React.ReactNode {
 
   const selectedTarget = selectedTemplateTarget(selectedId, databases, resourcesByDatabase);
 
-  const insertSelectedDatabase = () => {
+  const insertSelectedDatabase = useCallback(() => {
     const parentWindow = parent as unknown as ParentWindow;
     const editor = parentWindow.tinymce?.activeEditor;
     const insertTemplateIntoTinyMCE = parentWindow.RS?.insertTemplateIntoTinyMCE;
     if (!selectedTarget || !editor) return;
     insertTemplateIntoTinyMCE?.("dbrepoLink", buildDBRepoLinkTemplateData(selectedTarget), editor);
     editor.windowManager.close();
-  };
+  }, [selectedTarget]);
+
+  useEffect(() => {
+    window.parent.postMessage({ mceAction: selectedTarget ? "enable" : "disable" }, "*");
+  }, [selectedTarget]);
+
+  useEffect(() => {
+    const parentWindow = parent as unknown as ParentWindow;
+    const editor = parentWindow.tinymce?.activeEditor;
+    editor?.on?.("dbrepo-insert", insertSelectedDatabase);
+    return () => {
+      editor?.off?.("dbrepo-insert", insertSelectedDatabase);
+    };
+  }, [insertSelectedDatabase]);
 
   if (loading) {
     return (
@@ -281,9 +295,6 @@ function DBRepo(): React.ReactNode {
           </Box>
         ))}
       </RadioGroup>
-      <Button variant="contained" disabled={!selectedTarget} onClick={insertSelectedDatabase}>
-        {t("tinymce.dbrepo.insert")}
-      </Button>
     </Stack>
   );
 }

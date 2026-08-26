@@ -18,11 +18,13 @@ afterEach(() => {
 
 describe("DBRepo dialog body", () => {
   it("lists databases and inserts a selected DBRepo link template", async () => {
-    const user = userEvent.setup();
+    const editorListeners = new Map<string, () => void>();
     const insertTemplateIntoTinyMCE = vi.fn();
     const close = vi.fn();
     const activeEditor = {
       getBody: () => document.body,
+      on: vi.fn((eventName: string, callback: () => void) => editorListeners.set(eventName, callback)),
+      off: vi.fn((eventName: string) => editorListeners.delete(eventName)),
       windowManager: { close },
     };
     (window as unknown as { tinymce?: unknown }).tinymce = {
@@ -43,7 +45,7 @@ describe("DBRepo dialog body", () => {
     render(<DBRepo />);
 
     expect(await screen.findByText("Research data")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "workspace:tinymce.dbrepo.insert" }));
+    editorListeners.get("dbrepo-insert")?.();
 
     expect(insertTemplateIntoTinyMCE).toHaveBeenCalledWith(
       "dbrepoLink",
@@ -64,10 +66,13 @@ describe("DBRepo dialog body", () => {
 
   it("loads resources when a database is expanded and inserts a selected resource", async () => {
     const user = userEvent.setup();
+    const editorListeners = new Map<string, () => void>();
     const insertTemplateIntoTinyMCE = vi.fn();
     const close = vi.fn();
     const activeEditor = {
       getBody: () => document.body,
+      on: vi.fn((eventName: string, callback: () => void) => editorListeners.set(eventName, callback)),
+      off: vi.fn((eventName: string) => editorListeners.delete(eventName)),
       windowManager: { close },
     };
     (window as unknown as { tinymce?: unknown }).tinymce = {
@@ -130,7 +135,7 @@ describe("DBRepo dialog body", () => {
     expect(screen.getByText("SELECT * FROM experiments WHERE status = 'open'")).toBeVisible();
 
     await user.click(screen.getByRole("radio", { name: /Recent experiments/ }));
-    await user.click(screen.getByRole("button", { name: "workspace:tinymce.dbrepo.insert" }));
+    editorListeners.get("dbrepo-insert")?.();
 
     expect(insertTemplateIntoTinyMCE).toHaveBeenCalledWith(
       "dbrepoLink",
@@ -150,10 +155,13 @@ describe("DBRepo dialog body", () => {
 
   it("selects a database when it is expanded", async () => {
     const user = userEvent.setup();
+    const editorListeners = new Map<string, () => void>();
     const insertTemplateIntoTinyMCE = vi.fn();
     const close = vi.fn();
     const activeEditor = {
       getBody: () => document.body,
+      on: vi.fn((eventName: string, callback: () => void) => editorListeners.set(eventName, callback)),
+      off: vi.fn((eventName: string) => editorListeners.delete(eventName)),
       windowManager: { close },
     };
     (window as unknown as { tinymce?: unknown }).tinymce = {
@@ -186,7 +194,7 @@ describe("DBRepo dialog body", () => {
 
     expect(await screen.findByText("Archive data")).toBeVisible();
     await user.click(screen.getAllByRole("button", { name: "workspace:tinymce.dbrepo.expandDatabase" })[1]);
-    await user.click(screen.getByRole("button", { name: "workspace:tinymce.dbrepo.insert" }));
+    editorListeners.get("dbrepo-insert")?.();
 
     expect(insertTemplateIntoTinyMCE).toHaveBeenCalledWith(
       "dbrepoLink",
@@ -205,10 +213,13 @@ describe("DBRepo dialog body", () => {
 
   it("shows category failures while leaving successful resources selectable", async () => {
     const user = userEvent.setup();
+    const editorListeners = new Map<string, () => void>();
     const insertTemplateIntoTinyMCE = vi.fn();
     const close = vi.fn();
     const activeEditor = {
       getBody: () => document.body,
+      on: vi.fn((eventName: string, callback: () => void) => editorListeners.set(eventName, callback)),
+      off: vi.fn((eventName: string) => editorListeners.delete(eventName)),
       windowManager: { close },
     };
     (window as unknown as { tinymce?: unknown }).tinymce = {
@@ -249,7 +260,7 @@ describe("DBRepo dialog body", () => {
     expect(screen.getByText("Experiments")).toBeVisible();
 
     await user.click(screen.getByRole("radio", { name: "Experiments" }));
-    await user.click(screen.getByRole("button", { name: "workspace:tinymce.dbrepo.insert" }));
+    editorListeners.get("dbrepo-insert")?.();
 
     expect(insertTemplateIntoTinyMCE).toHaveBeenCalledWith(
       "dbrepoLink",
