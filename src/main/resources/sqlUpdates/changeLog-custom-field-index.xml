@@ -16,14 +16,14 @@
     is why it is added now rather than with the original feature.
   -->
   <changeSet id="custom-field-definition-index" author="rspace" context="run">
-    <comment>
-      Index the template definition, deletion flag, and owning instrument used by runtime fields.
-    </comment>
     <preConditions onFail="MARK_RAN">
       <not>
         <indexExists tableName="InventoryEntityField" indexName="ix_invfield_def_deleted_instr"/>
       </not>
     </preConditions>
+    <comment>
+      Index the template definition, deletion flag, and owning instrument used by runtime fields.
+    </comment>
     <createIndex tableName="InventoryEntityField" indexName="ix_invfield_def_deleted_instr">
       <column name="templateField_id"/>
       <column name="deleted"/>
