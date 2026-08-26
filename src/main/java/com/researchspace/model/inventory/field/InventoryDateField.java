@@ -30,8 +30,7 @@ public class InventoryDateField extends InventoryEntityField {
   public ErrorList validate(String fieldData) {
     ErrorList errors = super.validate(fieldData);
     if (dateHasContentAndIsInvalid(fieldData)) {
-      errors.addErrorMsg(
-          String.format("%s is an invalid date format. Valid format is yyyy-MM-dd.", fieldData));
+      errors.addErrorMsgCode("validation.inventoryField.invalidDate", fieldData);
     }
     return errors;
   }

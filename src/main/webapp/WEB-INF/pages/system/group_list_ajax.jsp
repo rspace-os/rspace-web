@@ -39,7 +39,7 @@
 		</td>
  		<td class="table_listCell"> <fmt:formatNumber maxFractionDigits="1" >${grpInfo.fileUsage / 1000000} </fmt:formatNumber> </td>
  		<td class="table_listCell"> <rst:relDate input="${grpInfo.group.creationDate}" relativeForNDays="2"/></td>
-        <td class="table_listCell" style="text-align:left;"> ${grpInfo.group.groupType.label}</td>
+        <td class="table_listCell" style="text-align:left;"><spring:message code="${grpInfo.group.groupType.labelKey}"/></td>
  	</tr>
 </c:forEach>
 </table>

@@ -218,7 +218,7 @@ public class ContainerTest {
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> movingContainer.moveToNewParentWithCoords(gridContainer6by4, 2, 3));
-    assertEquals("Container IC3 can't hold record of type: CONTAINER", iae.getMessage());
+    assertEquals("errors.inventory.move.unsupportedRecordType", iae.getMessage());
     assertEquals(0, listContainer2.getContentCount());
     assertEquals(0, listContainer2.getLocations().size());
     assertEquals(1, gridContainer6by4.getContentCount());
@@ -463,7 +463,7 @@ public class ContainerTest {
     // try moving workbench
     IllegalArgumentException iae =
         assertThrows(IllegalArgumentException.class, () -> workbench.moveToNewParent(topContainer));
-    assertEquals("Workbench cannot be moved into other container", iae.getMessage());
+    assertEquals("errors.inventory.move.workbenchIntoContainer", iae.getMessage());
 
     // try copy workbench
     iae = assertThrows(IllegalArgumentException.class, () -> workbench.copy(anyUser));

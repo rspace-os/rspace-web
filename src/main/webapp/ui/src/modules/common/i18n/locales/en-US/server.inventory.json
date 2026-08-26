@@ -139,13 +139,18 @@
         "outsideNewGridDimensions": "Container has a location ({0},{1}) which would be outside new grid dimensions (columns: {2}, rows: {3})."
       },
       "move": {
+        "containerDeleted": "Cannot move into deleted container",
+        "containerIntoItself": "Cannot move container into itself",
+        "containerIntoSubcontainer": "Cannot move container into its subcontainer",
         "targetContainer": {
           "unavailable": "Cannot locate target container from provided target container and location details"
         },
         "targetLocation": {
           "notFoundInImageContainer": "Target location not found.",
           "requiredForGridOrImageContainer": "When moving to image/grid type container request has to specify target location"
-        }
+        },
+        "unsupportedRecordType": "Container {0} can''t hold record of type: {1}",
+        "workbenchIntoContainer": "Workbench cannot be moved into another container"
       },
       "publicLink": {
         "unavailable": "The item you try to see is not publicly available right now."
@@ -210,6 +215,7 @@
         "validationTooLong": "Name cannot be longer than 255 characters"
       },
       "template": {
+        "choiceDefinitionRequired": "Choice field must supply a definition",
         "emptyFieldName": "Field name cannot be empty",
         "emptyFieldType": "Field type cannot be empty",
         "fieldNameTooLong": "{0} is too long for a template field name, max length is {1}",
@@ -217,6 +223,7 @@
         "invalidRelationType": "{0} is not a valid DataCite relation type",
         "invalidUnitIdDefault": "Unit id was {0} must be the id of a unit (see /units)",
         "invalidUnitIdNotAmount": "Unit id {0} is not a valid sample-template default unit; must be a mass, volume, or dimensionless (\"items\") unit (see /units)",
+        "radioDefinitionRequired": "Radio field must supply a definition",
         "reservedFieldName": "{0} is a reserved field name, please choose a name other than {1}"
       }
     }

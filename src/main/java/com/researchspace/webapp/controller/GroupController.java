@@ -717,7 +717,8 @@ public class GroupController extends BaseController {
     grp = groupManager.getGroup(groupId);
     UserGroup ug = grp.getUserGroupForUser(toChange);
     return new AjaxReturnObject<>(
-        new RoleUpdateInfo(ug.isAdminViewDocsEnabled(), ug.getRoleInGroup().getLabel()), null);
+        new RoleUpdateInfo(ug.isAdminViewDocsEnabled(), getText(ug.getRoleInGroup().getLabelKey())),
+        null);
   }
 
   @PostMapping("/ajax/admin/changePiCanEditAll/{groupid}")
