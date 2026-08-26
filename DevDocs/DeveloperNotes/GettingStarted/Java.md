@@ -9,7 +9,7 @@ below describe setup for Eclipse IDE.
 
 ## After checking out the project
 
-Current location is https://github.com/ResearchSpace-ELN/rspace-web
+Current location is https://github.com/rspace-os/rspace-web
 
 Use a git client of your choice to checkout and manage source code.
 
