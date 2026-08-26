@@ -23,8 +23,8 @@ public class FieldmarkApiImportResult {
   private String containerName;
   private String sampleTemplateGlobalId;
   private Long sampleTemplateId;
-  private Set<String> sampleGlobalIds;
-  private Set<Long> sampleIds;
+  private Set<String> sampleGlobalIds = new HashSet<>();
+  private Set<Long> sampleIds = new HashSet<>();
 
   public FieldmarkApiImportResult(ApiContainer container, ApiSampleTemplate sampleTemplate) {
     this.containerGlobalId = container.getGlobalId();

@@ -43,6 +43,29 @@ class InventoryUrlsTest {
   }
 
   @Test
+  void globalIdPageUrlJoinsServerUrlAndGlobalId() {
+    assertEquals(
+        Optional.of(SERVER + "/globalId/IN114"), InventoryUrls.globalIdPageUrl(SERVER, "IN114"));
+    assertEquals(
+        Optional.of(SERVER + "/globalId/IN114"),
+        InventoryUrls.globalIdPageUrl(SERVER + "//", "IN114"),
+        "trailing slashes are stripped, same normalisation as publicLandingPageUrl");
+    assertEquals(
+        Optional.of(SERVER + "/globalId/IN114"),
+        InventoryUrls.globalIdPageUrl(SERVER, "  IN114  "),
+        "a padded global id must not reach the provider as part of the address");
+  }
+
+  /** Empty rather than "null/globalId/IN114", for the same reason as the public page. */
+  @Test
+  void globalIdPageUrlIsEmptyWhenEitherPartIsMissing() {
+    assertTrue(InventoryUrls.globalIdPageUrl(null, "IN114").isEmpty(), "null server URL");
+    assertTrue(InventoryUrls.globalIdPageUrl("  ", "IN114").isEmpty(), "no server URL");
+    assertTrue(InventoryUrls.globalIdPageUrl(SERVER, "  ").isEmpty(), "blank global id");
+    assertTrue(InventoryUrls.globalIdPageUrl(SERVER, null).isEmpty(), "null global id");
+  }
+
+  @Test
   void namesPublicLandingPageRecognisesRSpacesOwnAddressForThatSuffix() {
     assertTrue(
         InventoryUrls.namesPublicLandingPage(SERVER + "/public/inventory/" + SUFFIX, SUFFIX));

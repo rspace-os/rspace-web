@@ -60,7 +60,6 @@ import com.researchspace.model.audittrail.AuditTrailImpl;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.Log4jHistoryDAOImpl;
 import com.researchspace.model.comms.RequestFactory;
-import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
 import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.SymmetricTextEncryptor;
@@ -215,6 +214,7 @@ import com.researchspace.service.impl.SysadminUserCreationHandlerImpl;
 import com.researchspace.service.impl.SystemConfigurationInitialisor;
 import com.researchspace.service.impl.SystemPropertyPermissionManagerImpl;
 import com.researchspace.service.impl.UserExternalIdResolverImpl;
+import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import com.researchspace.service.inventory.impl.RspaceToExternalProviderAdapterImpl;
 import com.researchspace.slack.SlackMessageSender;
@@ -255,9 +255,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import javax.sql.DataSource;
 import org.apache.commons.lang3.StringUtils;
@@ -281,7 +279,6 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.annotation.SessionScope;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
@@ -807,12 +804,6 @@ public abstract class BaseConfig {
     return null;
   }
 
-  @Bean(name = "userNameToUserConnection")
-  @SessionScope
-  public Map<String, UserConnection> userUserConnectionMap() {
-    return new HashMap<String, UserConnection>();
-  }
-
   /**
    * We're not indexing files locally if they're stored in external file service
    *
@@ -1324,8 +1315,9 @@ public abstract class BaseConfig {
   }
 
   @Bean(name = "rspaceToExternalProviderAdapter")
-  public RspaceToExternalProviderAdapter getRspaceToExternalProviderAdapter() {
-    return new RspaceToExternalProviderAdapterImpl();
+  public RspaceToExternalProviderAdapter getRspaceToExternalProviderAdapter(
+      LinkTargetResolver linkTargetResolver) {
+    return new RspaceToExternalProviderAdapterImpl(propertyHolder(), linkTargetResolver);
   }
 
   @Bean(name = "pyrat")

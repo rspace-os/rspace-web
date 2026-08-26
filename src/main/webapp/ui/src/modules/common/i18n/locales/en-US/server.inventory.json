@@ -81,6 +81,8 @@
         "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
         "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
         "dataCiteRegisterNoDraft": "Could not register a new identifier with DataCite: the service accepted the request but returned no draft record.",
+        "dataCitePublishFailed": "Error when publishing the DOI in DataCite. If the problem persists, please contact your System Admin",
+        "dataCiteRetractFailed": "Error when retracting the DOI in DataCite. If the problem persists, please contact your System Admin",
         "deleteNotOwner": "You can only delete an identifier that you own.",
         "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
         "mintingUnsupportedType": "unsupported type for minting: {0}",

@@ -1,7 +1,10 @@
 package com.researchspace.service.inventory;
 
+import com.researchspace.model.core.GlobalIdPrefix;
 import java.net.URI;
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -15,7 +18,8 @@ import org.apache.commons.lang3.StringUtils;
  * this one, and the two halves of that invariant would silently stop matching.
  *
  * <p>Replaces {@code GlobalIdUrls}, whose builder went with the retired auto-fill (ADR 0006 item
- * 3), leaving only a path segment RSpace still has to recognise.
+ * 3), leaving only a path segment RSpace had to recognise. RSDEV-1253 gave that segment a composer
+ * again, for a different purpose: PIDINST related identifiers (ADR 0007).
  */
 public final class InventoryUrls {
 
@@ -23,11 +27,37 @@ public final class InventoryUrls {
   private static final String PUBLIC_PAGE_PATH = "/public/inventory/";
 
   /**
-   * Path segment marking an address as a record's globalId page. RSpace no longer composes these,
-   * since the auto-fill that did is retired, but it must still recognise the ones already written
-   * so they read as an empty field rather than as something a user chose.
+   * The globalId lookup route, consumed by {@code GlobalLookupController}'s request mapping so the
+   * route and the addresses composed here cannot move apart: a renamed route would silently strand
+   * every already-registered address (they are permanent), so the two halves share this constant.
    */
-  private static final String GLOBAL_ID_PATH = "/globalId/";
+  public static final String GLOBAL_ID_MAPPING = "/globalId";
+
+  /**
+   * Path segment marking an address as a record's globalId page. Composed by {@link
+   * #globalIdPageUrl} for PIDINST related identifiers, and recognised by {@link
+   * #namesGlobalIdPage}, which must still spot the ones the retired auto-fill wrote so they read as
+   * an empty Landing page field rather than as something a user chose.
+   */
+  private static final String GLOBAL_ID_PATH = GLOBAL_ID_MAPPING + "/";
+
+  /**
+   * The record types whose version-suffixed globalId ({@code SA42v4}) resolves to that version's
+   * read-only view. Consumed by {@code GlobalLookupController} (which routes those addresses) and
+   * by the PIDINST related-identifier mapping (which must not register a version suffix the route
+   * cannot resolve), so the router and the composer cannot drift: a drift here registers a
+   * permanently wrong address. SD and GL resolve version suffixes too, but to an audit view and a
+   * file stream rather than the record's page, so they are deliberately not in this set.
+   */
+  public static final Set<GlobalIdPrefix> VERSIONED_PAGE_PREFIXES =
+      Set.copyOf(
+          EnumSet.of(
+              GlobalIdPrefix.SA,
+              GlobalIdPrefix.SS,
+              GlobalIdPrefix.IC,
+              GlobalIdPrefix.IT,
+              GlobalIdPrefix.IN,
+              GlobalIdPrefix.NT));
 
   private InventoryUrls() {}
 
@@ -47,6 +77,25 @@ public final class InventoryUrls {
     // stripEnd, not removeEnd: repeated trailing slashes have to go too, because the recogniser
     // normalises them away and a builder that kept them would stop recognising its own output.
     return Optional.of(StringUtils.stripEnd(trimmed, "/") + PUBLIC_PAGE_PATH + suffix);
+  }
+
+  /**
+   * The globalId page address for a record, used as the RelatedIdentifier value when PIDINST
+   * registration maps the instrument's link fields (RSDEV-1253, ADR 0007). Empty when either part
+   * is blank, for the same reason as {@link #publicLandingPageUrl}: a missing related identifier is
+   * recoverable, a wrong registered one is not.
+   *
+   * <p>Reuses the same path segment {@link #namesGlobalIdPage} recognises, so builder and
+   * recogniser cannot drift apart. This deliberately revives a globalId-page builder after the
+   * auto-fill's one was retired: unlike a LandingPage, a RelatedIdentifier is not required to be
+   * anonymously resolvable, and the linked record generally has no public page to point at.
+   */
+  public static Optional<String> globalIdPageUrl(String serverUrl, String globalId) {
+    String trimmed = StringUtils.trimToEmpty(serverUrl);
+    if (trimmed.isEmpty() || StringUtils.isBlank(globalId)) {
+      return Optional.empty();
+    }
+    return Optional.of(StringUtils.stripEnd(trimmed, "/") + GLOBAL_ID_PATH + globalId.trim());
   }
 
   /**

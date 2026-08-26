@@ -769,18 +769,6 @@
       <version>5.4.3</version>
     </dependency>
     <dependency>
-      <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-test-util</artifactId>
-      <version>3.0.0</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
     </dependency>
@@ -794,11 +782,6 @@
           <artifactId>rspace-core-util</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-audit</artifactId>
-      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>org.reflections</groupId>
@@ -1597,42 +1580,26 @@
       <version>2.0.11</version>
     </dependency>
     <dependency>
-      <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-core-util</artifactId>
-      <version>2.0.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.shiro</groupId>
-          <artifactId>shiro-core</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>1.28.0</version>
     </dependency>
     <dependency>
-      <groupId>com.github.rspace-os</groupId>
-      <artifactId>rspace-core-model</artifactId>
-      <version>3.3.1</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-        <!-- core-model (>= 2.26.1) re-introduces ical4j (calendar/ICS), which drags in older
-             slf4j-api:1.7.25 and commons-lang3:3.8.1 and breaks dependency convergence (the rest
-             of the build uses 1.7.21 / 3.18.0). rspace-web does not use ICS (it built against
-             2.26.0 which had no ical4j), so exclude ical4j entirely. -->
-        <exclusion>
-          <groupId>org.mnode.ical4j</groupId>
-          <artifactId>ical4j</artifactId>
-        </exclusion>
-      </exclusions>
+      <!-- barcode/QR generation and decoding, used by com.researchspace.core.util.imageutils.BarcodeUtils -->
+      <groupId>com.google.zxing</groupId>
+      <artifactId>core</artifactId>
+      <version>3.5.4</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>javase</artifactId>
+      <version>3.5.4</version>
+    </dependency>
+    <dependency>
+      <!-- units of measurement (JSR 385) implementation, used by the inventory quantity model -->
+      <groupId>tech.units</groupId>
+      <artifactId>indriya</artifactId>
+      <version>2.0.2</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
@@ -1812,7 +1779,7 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>datacite-java-client</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
