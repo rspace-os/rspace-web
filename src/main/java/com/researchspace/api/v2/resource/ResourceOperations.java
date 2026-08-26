@@ -7,7 +7,9 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Collection-specific domain adapter used by the generic REST v2 CRUD dispatcher.
@@ -32,6 +34,32 @@ public interface ResourceOperations<T, ID> {
    * here. Relationship resolution uses this method, so it cannot bypass those permissions.
    */
   Optional<T> findById(ID id, User subject);
+
+  /**
+   * Supplies caller-specific field values after an entity is read.
+   *
+   * <p>The outer map uses resource identifiers. The inner map contains only fields whose rendered
+   * values need replacement. Implementations must resolve a whole page in one batch.
+   */
+  default Map<Object, Map<String, Object>> readOverrides(List<T> resources, User subject) {
+    return Map.of();
+  }
+
+  /** Names of fields that {@link #readOverrides} can replace. */
+  default Set<String> readOverrideFields() {
+    return Set.of();
+  }
+
+  /**
+   * Optionally supplies complete scalar documents for batched relationship expansion.
+   *
+   * <p>This lets a read-heavy target avoid hydrating a large domain aggregate. The registration
+   * still resolves the real entity lazily if a write uses the same relationship target.
+   */
+  default Optional<Map<Object, Map<String, Object>>> relationshipReadDocuments(
+      Set<ID> ids, User subject) {
+    return Optional.empty();
+  }
 
   default T create(ParsedDocument document, ApiV2Caller caller) {
     throw readOnly("create");

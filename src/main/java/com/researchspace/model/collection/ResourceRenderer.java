@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /** Renders selected attributes and included relationships from registered resource metadata. */
 public final class ResourceRenderer {
@@ -28,11 +29,56 @@ public final class ResourceRenderer {
 
   public record TargetKey(String resourceName, Object id) {}
 
-  public record ResolvedTarget(Object entity, FieldSelection fields) {
+  public static final class ResolvedTarget {
 
-    public ResolvedTarget {
-      Objects.requireNonNull(entity, "Resolved target entity");
-      Objects.requireNonNull(fields, "Resolved target fields");
+    private final Supplier<Object> entity;
+    private final FieldSelection fields;
+    private final Map<String, Object> readOverrides;
+    private final Map<String, Object> readDocument;
+
+    public ResolvedTarget(Object entity, FieldSelection fields, Map<String, Object> readOverrides) {
+      this(() -> entity, fields, readOverrides, Map.of());
+    }
+
+    public ResolvedTarget(Object entity, FieldSelection fields) {
+      this(entity, fields, Map.of());
+    }
+
+    public static ResolvedTarget lazy(
+        Supplier<Object> entity, FieldSelection fields, Map<String, Object> readDocument) {
+      return new ResolvedTarget(entity, fields, Map.of(), readDocument);
+    }
+
+    private ResolvedTarget(
+        Supplier<Object> entity,
+        FieldSelection fields,
+        Map<String, Object> readOverrides,
+        Map<String, Object> readDocument) {
+      this.entity = Objects.requireNonNull(entity, "Resolved target entity");
+      this.fields = Objects.requireNonNull(fields, "Resolved target fields");
+      this.readOverrides = immutable(readOverrides, "Read overrides");
+      this.readDocument = immutable(readDocument, "Read document");
+    }
+
+    public Object entity() {
+      return Objects.requireNonNull(entity.get(), "Resolved target entity");
+    }
+
+    public FieldSelection fields() {
+      return fields;
+    }
+
+    public Map<String, Object> readOverrides() {
+      return readOverrides;
+    }
+
+    public Map<String, Object> readDocument() {
+      return readDocument;
+    }
+
+    private static Map<String, Object> immutable(Map<String, Object> values, String name) {
+      return java.util.Collections.unmodifiableMap(
+          new LinkedHashMap<>(Objects.requireNonNull(values, name)));
     }
   }
 
@@ -61,7 +107,8 @@ public final class ResourceRenderer {
         fields,
         ResourceFieldSelections.root(fields),
         includes,
-        targetResolver);
+        targetResolver,
+        Map.of());
   }
 
   public <T> Map<String, Object> render(
@@ -70,10 +117,21 @@ public final class ResourceRenderer {
       ResourceFieldSelections selections,
       IncludeTree includes,
       TargetResolver targetResolver) {
+    return render(entity, description, selections, includes, targetResolver, Map.of());
+  }
+
+  public <T> Map<String, Object> render(
+      T entity,
+      CollectionDescription<T> description,
+      ResourceFieldSelections selections,
+      IncludeTree includes,
+      TargetResolver targetResolver,
+      Map<String, Object> readOverrides) {
     return renderAll(
             List.of(entity),
             description,
             ignored -> selections.root(),
+            ignored -> readOverrides,
             selections,
             includes,
             targetResolver)
@@ -85,6 +143,25 @@ public final class ResourceRenderer {
       List<T> entities,
       CollectionDescription<T> description,
       Function<T, FieldSelection> fieldsForEntity,
+      ResourceFieldSelections selections,
+      IncludeTree includes,
+      TargetResolver targetResolver) {
+    return renderAll(
+        entities,
+        description,
+        fieldsForEntity,
+        ignored -> Map.of(),
+        selections,
+        includes,
+        targetResolver);
+  }
+
+  /** Resolves relationships and applies caller-specific field values before field readers run. */
+  public <T> List<Map<String, Object>> renderAll(
+      List<T> entities,
+      CollectionDescription<T> description,
+      Function<T, FieldSelection> fieldsForEntity,
+      Function<T, Map<String, Object>> readOverridesForEntity,
       ResourceFieldSelections selections,
       IncludeTree includes,
       TargetResolver targetResolver) {
@@ -108,7 +185,8 @@ public final class ResourceRenderer {
                     fieldsForEntity.apply(entity),
                     selections,
                     includes,
-                    requestResolver))
+                    requestResolver,
+                    readOverridesForEntity.apply(entity)))
         .toList();
   }
 
@@ -160,6 +238,9 @@ public final class ResourceRenderer {
                 target -> {
                   CollectionDescription<?> targetDescription =
                       registry.requireResource(expansion.target().resourceName());
+                  if (targetDescription.relationships().isEmpty()) {
+                    return;
+                  }
                   next.add(
                       new RenderNode(
                           target.entity(),
@@ -218,10 +299,12 @@ public final class ResourceRenderer {
       FieldSelection fields,
       ResourceFieldSelections selections,
       IncludeTree includes,
-      TargetResolver targetResolver) {
+      TargetResolver targetResolver,
+      Map<String, Object> readOverrides) {
     Map<String, Object> document =
         new LinkedHashMap<>(
-            description.toDocument(entity, field -> fields.includes(field, description.idField())));
+            description.toDocument(
+                entity, field -> fields.includes(field, description.idField()), readOverrides));
     description
         .relationships()
         .forEach(
@@ -289,15 +372,23 @@ public final class ResourceRenderer {
           resolved
               .<Object>map(
                   targetEntity ->
-                      renderUnknown(
-                          targetEntity.entity(),
-                          targetDescription,
-                          targetEntity
-                              .fields()
-                              .intersect(requestedFields, targetDescription.idField()),
-                          selections,
-                          includes.orElseThrow(),
-                          targetResolver))
+                      targetEntity.readDocument().isEmpty()
+                          ? renderUnknown(
+                              targetEntity.entity(),
+                              targetDescription,
+                              targetEntity
+                                  .fields()
+                                  .intersect(requestedFields, targetDescription.idField()),
+                              selections,
+                              includes.orElseThrow(),
+                              targetResolver,
+                              targetEntity.readOverrides())
+                          : selectReadDocument(
+                              targetEntity.readDocument(),
+                              targetDescription,
+                              targetEntity
+                                  .fields()
+                                  .intersect(requestedFields, targetDescription.idField())))
               .orElse(renderedValue);
     }
     Map<String, Object> referenceDocument = new LinkedHashMap<>();
@@ -307,6 +398,17 @@ public final class ResourceRenderer {
       referenceDocument.put("globalId", target.globalIdPrefix() + reference.id());
     }
     return Optional.of(referenceDocument);
+  }
+
+  private static Map<String, Object> selectReadDocument(
+      Map<String, Object> document, CollectionDescription<?> description, FieldSelection fields) {
+    Map<String, Object> selected = new LinkedHashMap<>();
+    description.fields().stream()
+        .map(CollectionDescription.Field::name)
+        .filter(field -> fields.includes(field, description.idField()))
+        .filter(document::containsKey)
+        .forEach(field -> selected.put(field, document.get(field)));
+    return selected;
   }
 
   private static <V> Object serialize(CollectionFieldType<V> type, Object value) {
@@ -319,8 +421,10 @@ public final class ResourceRenderer {
       FieldSelection fields,
       ResourceFieldSelections selections,
       IncludeTree includes,
-      TargetResolver targetResolver) {
-    return renderCaptured(entity, description, fields, selections, includes, targetResolver);
+      TargetResolver targetResolver,
+      Map<String, Object> readOverrides) {
+    return renderCaptured(
+        entity, description, fields, selections, includes, targetResolver, readOverrides);
   }
 
   private <T> Map<String, Object> renderCaptured(
@@ -329,8 +433,10 @@ public final class ResourceRenderer {
       FieldSelection fields,
       ResourceFieldSelections selections,
       IncludeTree includes,
-      TargetResolver targetResolver) {
+      TargetResolver targetResolver,
+      Map<String, Object> readOverrides) {
     T typedEntity = description.entityType().cast(entity);
-    return render(typedEntity, description, fields, selections, includes, targetResolver);
+    return render(
+        typedEntity, description, fields, selections, includes, targetResolver, readOverrides);
   }
 }

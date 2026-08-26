@@ -99,11 +99,14 @@ public final class ApiV2CrudDispatcher<T, ID> {
         () -> {
           ResourcePage<T> page = operations.find(request, actor);
           TargetResolver targetResolver = targetResolver(actor);
+          Map<Object, Map<String, Object>> overrides =
+              readOverrides(page.resources(), fieldsForRow, actor);
           List<Map<String, Object>> documents =
               renderer.renderAll(
                   page.resources(),
                   description,
                   fieldsForRow,
+                  resource -> overrides.getOrDefault(description.idValue(resource), Map.of()),
                   request.fieldSelections(),
                   request.includes(),
                   targetResolver);
@@ -135,9 +138,39 @@ public final class ApiV2CrudDispatcher<T, ID> {
 
   private Map<String, Object> decorated(
       T resource, ResourceRequest request, User actor, DocumentDecorator<T> decorator) {
-    Map<String, Object> document = document(resource, request, targetResolver(actor));
+    Map<String, Object> document = document(resource, request, actor);
     decorator.decorate(List.of(resource), List.of(document));
     return document;
+  }
+
+  private Map<String, Object> document(T resource, ResourceRequest request, User actor) {
+    Map<Object, Map<String, Object>> overrides =
+        readOverrides(List.of(resource), ignored -> request.fields(), actor);
+    return renderer.render(
+        resource,
+        description,
+        request.fieldSelections(),
+        request.includes(),
+        targetResolver(actor),
+        overrides.getOrDefault(description.idValue(resource), Map.of()));
+  }
+
+  private Map<Object, Map<String, Object>> readOverrides(
+      List<T> resources, Function<T, FieldSelection> fieldsForResource, User actor) {
+    Set<String> overrideFields = operations.readOverrideFields();
+    if (overrideFields.isEmpty()
+        || resources.stream()
+            .noneMatch(
+                resource ->
+                    overrideFields.stream()
+                        .anyMatch(
+                            field ->
+                                fieldsForResource
+                                    .apply(resource)
+                                    .includes(field, description.idField())))) {
+      return Map.of();
+    }
+    return operations.readOverrides(resources, actor);
   }
 
   /**
@@ -232,24 +265,6 @@ public final class ApiV2CrudDispatcher<T, ID> {
     } catch (RuntimeException exception) {
       throw errorTranslator.apply(operation, exception);
     }
-  }
-
-  private Map<String, Object> document(
-      T resource, ResourceRequest request, TargetResolver targetResolver) {
-    return document(resource, request, request.fields(), targetResolver);
-  }
-
-  private Map<String, Object> document(
-      T resource,
-      ResourceRequest request,
-      FieldSelection rootFields,
-      TargetResolver targetResolver) {
-    return renderer.render(
-        resource,
-        description,
-        request.fieldSelections().withRoot(rootFields),
-        request.includes(),
-        targetResolver);
   }
 
   /**
