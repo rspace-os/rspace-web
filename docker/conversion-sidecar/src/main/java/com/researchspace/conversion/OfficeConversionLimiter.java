@@ -3,52 +3,51 @@ package com.researchspace.conversion;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 /** Bounds the number of LibreOffice processes owned by this sidecar. */
 @Component
-final class OfficeConversionLimiter {
+class OfficeConversionLimiter {
 
   private final RoleLimiter word;
   private final RoleLimiter pdf;
 
   OfficeConversionLimiter(ConverterProperties properties, MeterRegistry meterRegistry) {
     int capacity = properties.maxConcurrentOfficeConversions();
-    int deploymentCapacity = properties.maxConcurrentOfficeConversionsPerDeployment();
-    word = new RoleLimiter(capacity, deploymentCapacity, "office", "LibreOffice", meterRegistry);
-    pdf = new RoleLimiter(capacity, deploymentCapacity, "pdf", "PDF", meterRegistry);
+    word = new RoleLimiter(capacity, "office", "LibreOffice", meterRegistry);
+    pdf = new RoleLimiter(capacity, "pdf", "PDF", meterRegistry);
   }
 
-  <T> T runWord(String deploymentId, Supplier<T> conversion) {
-    return word.run(deploymentId, conversion);
+  Permit acquireWord() {
+    return word.acquire();
   }
 
-  <T> T runPdf(String deploymentId, Supplier<T> conversion) {
-    return pdf.run(deploymentId, conversion);
+  Permit acquirePdf() {
+    return pdf.acquire();
+  }
+
+  boolean hasWordCapacity() {
+    return word.hasCapacity();
+  }
+
+  boolean hasPdfCapacity() {
+    return pdf.hasCapacity();
   }
 
   private static final class RoleLimiter {
 
     private final Semaphore slots;
-    private final int deploymentCapacity;
-    private final ConcurrentHashMap<String, Semaphore> deploymentSlots = new ConcurrentHashMap<>();
     private final AtomicInteger active = new AtomicInteger();
     private final Counter rejected;
     private final String displayName;
 
     private RoleLimiter(
-        int capacity,
-        int deploymentCapacity,
-        String metricRole,
-        String displayName,
-        MeterRegistry meterRegistry) {
+        int capacity, String metricRole, String displayName, MeterRegistry meterRegistry) {
       this.slots = new Semaphore(capacity);
-      this.deploymentCapacity = deploymentCapacity;
       this.displayName = displayName;
       rejected =
           Counter.builder("rspace.conversion." + metricRole + ".rejected")
@@ -59,25 +58,20 @@ final class OfficeConversionLimiter {
           .register(meterRegistry);
     }
 
-    private <T> T run(String deploymentId, Supplier<T> conversion) {
-      Semaphore deployment =
-          deploymentSlots.computeIfAbsent(
-              deploymentId, ignored -> new Semaphore(deploymentCapacity));
-      if (!deployment.tryAcquire()) {
-        reject();
-      }
+    private Permit acquire() {
       if (!slots.tryAcquire()) {
-        deployment.release();
         reject();
       }
       active.incrementAndGet();
-      try {
-        return conversion.get();
-      } finally {
-        active.decrementAndGet();
-        slots.release();
-        deployment.release();
-      }
+      return new Permit(
+          () -> {
+            active.decrementAndGet();
+            slots.release();
+          });
+    }
+
+    private boolean hasCapacity() {
+      return slots.availablePermits() > 0;
     }
 
     private void reject() {
@@ -86,6 +80,23 @@ final class OfficeConversionLimiter {
           HttpStatus.TOO_MANY_REQUESTS,
           ConversionError.SERVICE_BUSY,
           "All " + displayName + " conversion slots are busy");
+    }
+  }
+
+  static final class Permit implements AutoCloseable {
+
+    private final Runnable release;
+    private final AtomicBoolean closed = new AtomicBoolean();
+
+    Permit(Runnable release) {
+      this.release = release;
+    }
+
+    @Override
+    public void close() {
+      if (closed.compareAndSet(false, true)) {
+        release.run();
+      }
     }
   }
 }

@@ -100,9 +100,8 @@ The first boot:
 3. creates the schema and sample data (`drop-recreate-db`),
 4. compiles and starts the backend, and installs frontend deps + starts Vite.
 
-The stack also starts the RSpace conversion sidecar and its private Gotenberg container. The
-launcher creates a gitignored bearer token on first use and mounts it read-only into RSpace and the
-sidecar. Neither conversion service is published outside the Compose network.
+The stack also starts the RSpace conversion sidecar and its private Gotenberg container. Neither
+conversion service is published outside the Compose network.
 
 This takes several minutes the first time (Maven and pnpm download
 dependencies). Watch progress with:
