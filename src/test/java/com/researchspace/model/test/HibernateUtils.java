@@ -1,5 +1,6 @@
 package com.researchspace.model.test;
 
+import com.researchspace.search.impl.RSpaceLuceneAnalysisConfigurer;
 import java.util.Properties;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
@@ -41,12 +42,12 @@ public class HibernateUtils {
     settings.put("hibernate.search.backend.type", "lucene");
     settings.put("hibernate.search.backend.directory.type", "local-filesystem");
     settings.put("hibernate.search.backend.directory.root", dbName);
-    // Hibernate Search 7 bootstraps strictly: every analyzer/normalizer referenced by an indexed
-    // entity
-    // must be defined or the SessionFactory build fails.
+    // Hibernate Search 7 bootstraps strictly: every analyzer and normalizer referenced by an
+    // indexed entity must be defined or the SessionFactory build fails. Use the production
+    // configurer so these tests fail when it stops matching the entity annotations.
     settings.put(
         "hibernate.search.backend.analysis.configurer",
-        TestLuceneAnalysisConfigurer.class.getName());
+        RSpaceLuceneAnalysisConfigurer.class.getName());
 
     settings.put(Environment.DIALECT, "org.hibernate.dialect.MySQLDialect");
     settings.put(Environment.SHOW_SQL, "true");
