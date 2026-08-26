@@ -106,6 +106,21 @@ if [ "${RSPACE_E2E_MOCKS:-false}" = "true" ]; then
   echo "[entrypoint] E2E integration mocks enabled at ${E2E_MOCK_URL}"
 fi
 
+# Optional Mailpit SMTP catcher (rspace-dev up --mailpit).
+MAILPIT_ARGS=()
+if [ "${RSPACE_MAILPIT:-false}" = "true" ]; then
+  MAILPIT_ARGS=(
+    -Demail.enabled=true
+    -Dmail.emailHost=mailpit
+    -Dmail.port=1025
+    -Dmail.emailAccount=mailpit
+    -Dmail.password=mailpit
+    -Dmail.ssl.enabled=false
+    -Dmail.from=noreply@rspace-e2e.local
+  )
+  echo "[entrypoint] Mailpit enabled — SMTP at mailpit:1025, UI/API on the published host port"
+fi
+
 echo "[entrypoint] Starting RSpace (db mode: ${DB_MODE}) ..."
 echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_PUBLIC_PORT}"
 
@@ -115,6 +130,7 @@ echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_P
 exec mvn -B jetty:run \
   "${CHEMISTRY_ARGS[@]}" \
   "${E2E_MOCK_ARGS[@]}" \
+  "${MAILPIT_ARGS[@]}" \
   -Denvironment="${DB_MODE}" \
   -Dspring.profiles.active=run \
   -DreactDevMode=true \

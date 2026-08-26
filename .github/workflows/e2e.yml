@@ -21,6 +21,7 @@ env:
   E2E_INTEGRATION_MODE: ${{ inputs.mode }}
   E2E_MOCK_PORT: "9099"
   RSPACE_BASE_URL: http://localhost:8080
+  MAILPIT_HTTP_URL: http://localhost:8025
   # Keep this in sync with matrix.shard below.
   E2E_SHARD_TOTAL: "3"
 
@@ -97,6 +98,16 @@ jobs:
         image: rspaceops/oss-chemistry:latest
         ports:
           - 8090:8090
+      # SMTP catcher for @mail tests, required in both modes — infra, not an
+      # integration under test, so it's not part of the mock/real split.
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+          - 8025:8025
+        env:
+          MP_SMTP_AUTH_ACCEPT_ANY: "1"
+          MP_SMTP_AUTH_ALLOW_INSECURE: "1"
 
     steps:
       - uses: actions/checkout@v7.0.0
@@ -175,6 +186,13 @@ jobs:
             -DreactDevMode=false \
             -Dchemistry.provider=indigo \
             -Dchemistry.service.url=http://localhost:8090 \
+            -Demail.enabled=true \
+            -Dmail.emailHost=localhost \
+            -Dmail.port=1025 \
+            -Dmail.emailAccount=mailpit \
+            -Dmail.password=mailpit \
+            -Dmail.ssl.enabled=false \
+            -Dmail.from=noreply@rspace-e2e.local \
             -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
             -Djdbc.db.maven=rspace \
             -DRS_FILE_BASE="$RS_FILE_BASE" \
