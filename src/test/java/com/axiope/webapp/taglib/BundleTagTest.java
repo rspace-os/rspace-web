@@ -123,6 +123,9 @@ public class BundleTagTest {
 
   @Test
   public void i18nMessagesTagRendersClassicViteBundle() throws JspException {
+    stubRequest();
+    stubServletContext();
+    stubWriter();
     manifest =
         BundleTag.ChunkManifest.fromBundles(
             Collections.singletonMap(
@@ -153,6 +156,8 @@ public class BundleTagTest {
 
   @Test
   public void i18nMessagesTagCacheBustsTheCatalogueUrl() throws JspException {
+    stubRequest();
+    stubServletContext();
     servletContext.setAttribute(FrontendCacheVersion.CACHE_VERSION_ATTR, "1.2.3");
     I18nMessagesTag i18nTag =
         new I18nMessagesTag() {
@@ -173,6 +178,9 @@ public class BundleTagTest {
 
   @Test
   public void i18nMessagesTagRendersClassicEntrypointInHmrMode() throws JspException {
+    stubRequest();
+    stubServletContext();
+    stubWriter();
     I18nMessagesTag i18nTag =
         new I18nMessagesTag() {
           @Override

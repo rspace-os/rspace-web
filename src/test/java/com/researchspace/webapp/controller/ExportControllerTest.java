@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -149,8 +148,6 @@ public class ExportControllerTest {
     exportController.setResponseUtil(new ResponseUtil());
 
     user = TestFactory.createAnyUser("user1a");
-
-    lenient().when(diskSpaceChecker.canStartArchiveProcess()).thenReturn(true);
   }
 
   private static ExportSelection createExportSelection(Long[] ids, String[] names, String[] types) {
@@ -377,6 +374,7 @@ public class ExportControllerTest {
 
   @Test
   public void exportArchiveSelectionValidation() throws Exception {
+    stubArchiveProcessCanStart();
     Long[] tooMany = ids(ExportController.maxIdsToProcess + 1);
     String[] tooManyTypes = types(ExportController.maxIdsToProcess + 1);
     String[] tooManyNames = names(ExportController.maxIdsToProcess + 1);
@@ -637,6 +635,7 @@ public class ExportControllerTest {
 
   @Test
   public void depositArchiveHappyCase() throws Exception {
+    stubArchiveProcessCanStart();
     Long[] ids = ids(5);
     String[] types = types(5);
     String[] names = names(5);
@@ -691,5 +690,9 @@ public class ExportControllerTest {
       Matcher m4 = ExportController.VALID_PDF_FILE_CHARS.matcher(pdf);
       assertTrue(m4.matches(), pdf + " doesn't match");
     }
+  }
+
+  private void stubArchiveProcessCanStart() {
+    when(diskSpaceChecker.canStartArchiveProcess()).thenReturn(true);
   }
 }

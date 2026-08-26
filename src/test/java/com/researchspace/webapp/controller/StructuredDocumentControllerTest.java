@@ -16,7 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -287,9 +286,6 @@ public class StructuredDocumentControllerTest {
 
     // invalid tags rejected
     tagText = "<img src='' onerror='alert(3);'>";
-    lenient()
-        .when(documentTagManager.saveTag(recordId, tagText, user))
-        .thenReturn(anySuccessResult());
 
     when(validator.validateAndGetErrorList(
             Mockito.any(RSpaceTag.class), Mockito.any(TagValidator.class)))
@@ -367,7 +363,6 @@ public class StructuredDocumentControllerTest {
     Field field = sd.getFields().iterator().next();
     field.setId(1L);
     final List<Field> rc = TransformerUtils.toList(field);
-    generalExpectations();
     when(fieldManager.getFieldsByRecordId(1L, null)).thenReturn(rc);
 
     // no temp fields, returns empty list
@@ -388,7 +383,7 @@ public class StructuredDocumentControllerTest {
   }
 
   private void generalExpectations() {
-    lenient().when(userMgr.getUserByUsername(eq(user.getUsername()))).thenReturn(user);
+    when(userMgr.getUserByUsername(eq(user.getUsername()))).thenReturn(user);
   }
 
   @Test
@@ -397,7 +392,6 @@ public class StructuredDocumentControllerTest {
 
     Field field = sd.getFields().iterator().next();
     field.setId(1L);
-    generalExpectations();
     verify(mediaMgr, never())
         .insertEcatComment(
             Mockito.any(String.class), Mockito.any(String.class), Mockito.any(User.class));
@@ -428,7 +422,6 @@ public class StructuredDocumentControllerTest {
     Field field = sd.getFields().iterator().next();
     field.setId(1L);
     final EcatComment createdComment = TestFactory.createEcatComment(1L, sd, 2L);
-    generalExpectations();
     verify(mediaMgr, never())
         .insertEcatComment(
             Mockito.any(String.class), Mockito.any(String.class), Mockito.any(User.class));

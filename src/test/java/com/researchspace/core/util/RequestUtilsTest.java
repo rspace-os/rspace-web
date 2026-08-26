@@ -3,7 +3,6 @@ package com.researchspace.core.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,7 +32,6 @@ public class RequestUtilsTest {
     assertEquals("unknown", RequestUtil.remoteAddr(mockRequest));
     // default
     when(mockRequest.getRemoteAddr()).thenReturn(defaultFRom);
-    lenient().when(mockRequest.getRemoteHost()).thenReturn(defaultFRom);
 
     assertEquals(defaultFRom, RequestUtil.remoteAddr(mockRequest));
     // but use this preferentially (RSPAC-553)

@@ -3,7 +3,6 @@ package com.researchspace.webapp.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -77,8 +76,8 @@ public class IntegrationControllerTest {
 
   @Test
   public void testGetAllIntegrationsInfo() {
-    lenient()
-        .when(handler.getIntegration(Mockito.eq(subject), Mockito.anyString()))
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(subject);
+    when(handler.getIntegration(Mockito.eq(subject), Mockito.anyString()))
         .thenReturn(new IntegrationInfo());
     AjaxReturnObject<Map<String, IntegrationInfo>> infos =
         integrationCtrller.getAllIntegrationsInfo(principal);

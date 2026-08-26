@@ -51,7 +51,7 @@ public class FilesApiControllerTest {
   }
 
   private void mockBaseUrl() {
-    Mockito.lenient().when(properties.getServerUrl()).thenReturn("http://somewhere.com");
+    Mockito.when(properties.getServerUrl()).thenReturn("http://somewhere.com");
   }
 
   @AfterEach

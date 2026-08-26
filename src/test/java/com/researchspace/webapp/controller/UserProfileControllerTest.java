@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -232,11 +231,6 @@ public class UserProfileControllerTest {
     when(usrMgr.getUser(2L + "")).thenReturn(anyUser);
     when(properties.isProfileHidingEnabled()).thenReturn(true);
     when(usrMgr.populateConnectedUserSet(sessionUser)).thenReturn(Collections.emptySet());
-    lenient()
-        .when(
-            messages.getMessage(
-                Mockito.eq("errors.resource.inaccessible"), Mockito.any(Long[].class)))
-        .thenReturn("error");
     sessionUser.setConnectedUsers(Collections.emptySet());
     anyUser.setPrivateProfile(true);
 
