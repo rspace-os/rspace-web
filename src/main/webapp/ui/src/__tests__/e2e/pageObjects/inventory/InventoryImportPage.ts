@@ -1,12 +1,12 @@
 import type { Locator, Page } from "@playwright/test";
 import { BasePage } from "../BasePage";
 
-export type InventoryImportRecordType = "CONTAINERS" | "SAMPLES" | "SUBSAMPLES";
+export type InventoryImportRecordType = "CONTAINERS" | "SAMPLES" | "SUBSAMPLES" | "INSTRUMENTS";
 
 export class InventoryImportPage extends BasePage {
   readonly path = "/inventory/import";
 
-  private readonly main: Locator;
+  readonly main: Locator;
   readonly importButton: Locator;
 
   readonly blockedWarning: Locator;
