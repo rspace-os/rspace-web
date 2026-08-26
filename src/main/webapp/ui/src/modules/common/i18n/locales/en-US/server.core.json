@@ -272,6 +272,10 @@
     "username": "Username",
     "yourComment": "your comment"
   },
+  "pagination": {
+    "first": "First",
+    "last": "Last"
+  },
   "requestType": {
     "passwordReminder": "password reminder",
     "usernameReminder": "username reminder"
@@ -322,8 +326,23 @@
       "optionsNotAllowed": "Some supplied values are not allowed options",
       "radioSingleOptionOnly": "Only one option can be selected on a radio field"
     },
+    "form": {
+      "fieldCountMismatch": "The field order must contain {0} fields, but contains {1}",
+      "inactiveFieldId": "Field ID [{0}] is not active on this form; active field IDs are [{1}]"
+    },
+    "preference": {
+      "unknownEnumValue": "Unknown value [{0}] for [{1}]; expected one of {2}"
+    },
     "quantity": {
-      "temperatureAboveAbsoluteZero": "Invalid temperature - must be a temperature measurement greater than absolute zero"
+      "parseFailed": "Could not parse quantity [{0}]",
+      "temperatureAboveAbsoluteZero": "Invalid temperature - must be a temperature measurement greater than absolute zero",
+      "unitUnrecognized": "Could not parse quantity because unit [{0}] is not recognized"
+    },
+    "settings": {
+      "invalidBoolean": "[{0}] is not a boolean value",
+      "invalidNumber": "[{0}] is not a number",
+      "textTooLong": "Text value is {0} characters long; the maximum is {1}",
+      "valueTooLong": "Value is {0} characters long; the maximum is {1}"
     },
     "scheduledMaintenance": {
       "endDateRequired": "End date is required.",

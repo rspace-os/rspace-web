@@ -139,7 +139,7 @@ public abstract class ExtraField extends InventoryRecordConnectedEntity implemen
   @Transient
   public abstract FieldType getType();
 
-  /** Validates provided data. */
+  /** Returns validation errors for {@code data}, or an empty list when it is valid. */
   @Transient
   public abstract ErrorList validateNewData(String data);
 

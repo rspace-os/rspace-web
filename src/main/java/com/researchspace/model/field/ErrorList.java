@@ -61,14 +61,13 @@ public class ErrorList implements Serializable {
     return StringUtils.join(resolved, delimiter);
   }
 
-  /** Gets a possibly-empty but non-null unmodifiable List of error objects */
+  /** Returns a snapshot containing resolved messages and unresolved message codes. */
   public List<String> getErrorMessages() {
     List<String> result = new ArrayList<>(errorMessages);
     messageCodes.stream().map(MessageCode::code).forEach(result::add);
     return result;
   }
 
-  /** Gets a possibly-empty but non-null unmodifiable List of error objects */
   public String getAllErrorMessagesAsStringsSeparatedBy(String delimiter) {
     return StringUtils.join(getErrorMessages(), delimiter);
   }
@@ -77,7 +76,6 @@ public class ErrorList implements Serializable {
     return getErrorMessages() + " has " + getErrorMessages().size() + " messages.";
   }
 
-  /** Boolean test for existence of error messages */
   public boolean hasErrorMessages() {
     return !errorMessages.isEmpty() || !messageCodes.isEmpty();
   }

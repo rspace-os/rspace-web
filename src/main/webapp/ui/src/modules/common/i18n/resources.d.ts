@@ -5657,6 +5657,10 @@ export default interface Resources {
       "username": "Username",
       "yourComment": "your comment"
     },
+    "pagination": {
+      "first": "First",
+      "last": "Last"
+    },
     "relativeDate": {
       "daysAgo": "{0, plural, one {# day ago at {1}} other {# days ago at {1}}}",
       "today": "Today at {0}",
@@ -5721,6 +5725,10 @@ export default interface Resources {
         "dateFormatRequired": "Date format is required.",
         "radioOptionsRequired": "Radio options are required."
       },
+      "form": {
+        "fieldCountMismatch": "The field order must contain {0} fields, but contains {1}",
+        "inactiveFieldId": "Field ID [{0}] is not active on this form; active field IDs are [{1}]"
+      },
       "inventoryField": {
         "extraNumberInvalid": "''{0}'' cannot be parsed into number",
         "invalidData": "{0}",
@@ -5736,12 +5744,23 @@ export default interface Resources {
         "optionsNotAllowed": "Some supplied values are not allowed options",
         "radioSingleOptionOnly": "Only one option can be selected on a radio field"
       },
+      "preference": {
+        "unknownEnumValue": "Unknown value [{0}] for [{1}]; expected one of {2}"
+      },
       "quantity": {
-        "temperatureAboveAbsoluteZero": "Invalid temperature - must be a temperature measurement greater than absolute zero"
+        "parseFailed": "Could not parse quantity [{0}]",
+        "temperatureAboveAbsoluteZero": "Invalid temperature - must be a temperature measurement greater than absolute zero",
+        "unitUnrecognized": "Could not parse quantity because unit [{0}] is not recognized"
       },
       "scheduledMaintenance": {
         "endDateRequired": "End date is required.",
         "startDateRequired": "Start date is required."
+      },
+      "settings": {
+        "invalidBoolean": "[{0}] is not a boolean value",
+        "invalidNumber": "[{0}] is not a number",
+        "textTooLong": "Text value is {0} characters long; the maximum is {1}",
+        "valueTooLong": "Value is {0} characters long; the maximum is {1}"
       }
     }
   },
@@ -6811,6 +6830,10 @@ export default interface Resources {
   "server.inventory": {
     "errors": {
       "inventory": {
+        "attachment": {
+          "sampleTemplateUnsupported": "Sample templates do not support file attachments yet",
+          "workbenchUnsupported": "Files cannot be attached to a workbench"
+        },
         "barcode": {
           "contentRequired": "Content parameter is required",
           "heightNonNegative": "Requested height cannot be less then zero",
@@ -6830,12 +6853,16 @@ export default interface Resources {
           "deletion": {
             "notEmpty": "Container {0} is not empty and cannot be deleted"
           },
+          "directLocationUnsupported": "{0} containers cannot add locations directly",
+          "explicitCoordinatesNotAllowed": "{0} container can''t use explicit location coordinates",
           "gridLayoutInvalidSize": "Provided grid size {0}x{1} is incorrect, must be between 1x1 and 24x24.",
           "gridLayoutMissingOptions": "Grid layout has to specify both columnsNumber and rowsNumber properties.",
           "gridLayoutRequired": "Grid layout must be set for a grid container.",
+          "imageContainerLocationRequired": "Image container must provide target location id, not coordinates",
           "imageTooLarge": "Container image cannot be larger than 10MB",
           "invalidCanStoreFlags": "'canStoreSamples', 'canStoreContainers', and 'canStoreInstruments' flags cannot all be set to 'false'.",
           "locationsImageTooLarge": "Container locations image cannot be larger than 10MB",
+          "noCoordinatesRequired": "{0} container cannot store content without providing specific coordinates",
           "notFound": "No container with id: {0}",
           "typeRequired": "Container type (cType) is required and must be one of {0}."
         },
@@ -6853,6 +6880,7 @@ export default interface Resources {
           "unexportableUsers": "Cannot export data of users [{0}] - users not found, or no permission"
         },
         "field": {
+          "attachmentUnsupported": "{0} fields do not support file attachments",
           "deleteRequestIdMissing": "'id' property not provided for a field with 'deleteFieldRequest' flag.",
           "deleteRequestIdUnknown": "Field id {0} doesn''t match the id of any pre-existing field.",
           "duplicateName": "Field name ''{0}'' is duplicated. Field names on a record must be unique.",
@@ -6937,9 +6965,11 @@ export default interface Resources {
           "descriptionTooLong": "Description cannot be longer than 255 chars",
           "elnFieldIdRequired": "elnFieldId cannot be null",
           "nameRequired": "name cannot be empty",
-          "nameTooLong": "Name cannot be longer than 255 chars"
+          "nameTooLong": "Name cannot be longer than 255 chars",
+          "negativeQuantity": "Record quantity cannot be negative: {0}"
         },
         "location": {
+          "occupied": "Location {0} is already occupied by record {1}",
           "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
           "outsideNewGridDimensions": "Container has a location ({0},{1}) which would be outside new grid dimensions (columns: {2}, rows: {3})."
         },

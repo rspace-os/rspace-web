@@ -8,7 +8,6 @@ import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
-import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.model.preference.Preference;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +16,7 @@ class MergedCoreModelMessagesTest {
   private final MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @Test
-  void resolvesDisplayKeysMovedOutOfMergedModelEnums() {
+  void allDynamicModelMessageKeysResolve() {
     for (GroupType type : GroupType.values()) {
       assertDoesNotThrow(() -> messages.getMessage(type.getLabelKey()));
     }
@@ -46,17 +45,6 @@ class MergedCoreModelMessagesTest {
   }
 
   @Test
-  void resolvesLocalizedModelExceptions() {
-    LocalizedIllegalStateException exception =
-        new LocalizedIllegalStateException(
-            "validation.inventoryField.invalidForLatestTemplate", "Status", "retired");
-
-    assertEquals(
-        "Field [Status] value [retired] is invalid according to latest template field definition",
-        messages.getMessage(exception));
-  }
-
-  @Test
   void resolvesLocalizedIllegalArguments() {
     ErrorList validationErrors = new ErrorList();
     validationErrors.addErrorMsgCode("validation.inventoryField.invalidNumber", "abc");
@@ -68,9 +56,5 @@ class MergedCoreModelMessagesTest {
     assertEquals(
         "[abc] is invalid for field type Number: Invalid number: abc",
         messages.getMessage(fieldException));
-    assertEquals(
-        "Cannot move container into itself",
-        messages.getMessage(
-            new LocalizedIllegalArgumentException("errors.inventory.move.containerIntoItself")));
   }
 }

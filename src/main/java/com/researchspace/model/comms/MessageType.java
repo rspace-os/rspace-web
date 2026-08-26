@@ -101,11 +101,6 @@ public enum MessageType implements PermissionsAdaptable {
   private final boolean isYesNoMessage;
   private final String moreInfoKey;
 
-  /**
-   * Gets general information about this request
-   *
-   * @return
-   */
   public String getMoreInfoKey() {
     return moreInfoKey;
   }
@@ -156,11 +151,6 @@ public enum MessageType implements PermissionsAdaptable {
     return validUpdateStatusesByRecipient;
   }
 
-  /**
-   * User-readable representation of the enum.
-   *
-   * @return
-   */
   public String getLabelKey() {
     return labelKey;
   }
