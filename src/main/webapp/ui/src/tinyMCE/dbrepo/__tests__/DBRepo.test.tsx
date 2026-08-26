@@ -142,6 +142,57 @@ describe("DBRepo dialog body", () => {
     expect(close).toHaveBeenCalled();
   });
 
+  it("selects a database when it is expanded", async () => {
+    const user = userEvent.setup();
+    const insertTemplateIntoTinyMCE = vi.fn();
+    const close = vi.fn();
+    const activeEditor = {
+      getBody: () => document.body,
+      windowManager: { close },
+    };
+    (window as unknown as { tinymce?: unknown }).tinymce = {
+      activeEditor,
+    };
+    (window as unknown as { RS?: unknown }).RS = {
+      insertTemplateIntoTinyMCE,
+    };
+    mockAxios.onGet("/apps/dbrepo/databases").reply(200, [
+      {
+        id: "db-1",
+        name: "Research data",
+        url: "https://dbrepo.example/database/db-1",
+      },
+      {
+        id: "db-2",
+        name: "Archive data",
+        url: "https://dbrepo.example/database/db-2",
+      },
+    ]);
+    mockAxios.onGet("/apps/dbrepo/databases/db-2/resources").reply(200, {
+      databaseId: "db-2",
+      tables: [],
+      views: [],
+      subsets: [],
+      failedTypes: [],
+    });
+
+    render(<DBRepo />);
+
+    expect(await screen.findByText("Archive data")).toBeVisible();
+    await user.click(screen.getAllByRole("button", { name: "workspace:tinymce.dbrepo.expandDatabase" })[1]);
+    await user.click(screen.getByRole("button", { name: "workspace:tinymce.dbrepo.insert" }));
+
+    expect(insertTemplateIntoTinyMCE).toHaveBeenCalledWith(
+      "insertedExternalDocumentTemplate",
+      expect.objectContaining({
+        recordURL: "https://dbrepo.example/database/db-2",
+        name: "Archive data",
+      }),
+      activeEditor,
+      expect.any(Function),
+    );
+  });
+
   it("shows category failures while leaving successful resources selectable", async () => {
     const user = userEvent.setup();
     const insertTemplateIntoTinyMCE = vi.fn();

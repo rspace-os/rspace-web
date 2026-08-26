@@ -180,6 +180,7 @@ function DBRepo(): React.ReactNode {
 
   const toggleDatabase = (databaseId: string) => {
     const nextExpandedDatabaseId = expandedDatabaseId === databaseId ? "" : databaseId;
+    setSelectedId(databaseSelectionId(databaseId));
     setExpandedDatabaseId(nextExpandedDatabaseId);
     if (nextExpandedDatabaseId) {
       loadResources(nextExpandedDatabaseId);
