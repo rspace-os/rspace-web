@@ -17,12 +17,9 @@ pre-commit:
     # sensible production value. Never your own `deployment.properties`: it is
     # git-ignored, so nobody else would ever see the change.
     # Escape hatch: `git commit --no-verify`.
-    # Kept simple for Windows: the previous version captured the match list with
-    # $(...) and printed it with double-quoted echoes, and that specific block
-    # failed to parse through lefthook 2.1.10's Git-for-Windows `sh -c` wrapper.
-    # This grep-gated form (no capture, single-quoted echoes) parses cleanly. It
-    # is NOT a blanket ban on $(...) or double quotes: the spotless hook below
-    # uses both fine; the wrapper only mangles certain quoting/metacharacter mixes.
+    # Kept simple for Windows: the previous $(...) capture with double-quoted
+    # echoes failed to parse through lefthook's Git-for-Windows `sh -c` wrapper.
+    # (Not a blanket rule; the spotless hook below uses both fine.)
     secret-files:
       run: |
         if printf '%s\n' {staged_files} | grep -iE '(^|/)(\.env(\..+)?|deployment\.properties)$' | grep -qviE '\.example$'; then
