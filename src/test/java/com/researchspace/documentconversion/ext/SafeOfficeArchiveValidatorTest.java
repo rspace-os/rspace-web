@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.researchspace.documentconversion.validation.SafeOfficeArchiveValidator;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

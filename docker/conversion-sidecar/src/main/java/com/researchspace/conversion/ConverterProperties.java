@@ -9,20 +9,17 @@ public record ConverterProperties(
     Path officeHome,
     Path workingDirectory,
     Duration conversionTimeout,
+    Duration connectionRequestTimeout,
+    Duration connectTimeout,
+    Duration responseTimeout,
     int maxConcurrentOfficeConversions,
-    int maxConcurrentOfficeConversionsPerDeployment,
     long maxOutputBytes,
-    Path sandboxExecutable,
-    Path credentialsDirectory) {
+    Path sandboxExecutable) {
 
   public ConverterProperties {
     if (maxConcurrentOfficeConversions < 1) {
       throw new IllegalArgumentException(
           "converter.max-concurrent-office-conversions must be positive");
-    }
-    if (maxConcurrentOfficeConversionsPerDeployment < 1) {
-      throw new IllegalArgumentException(
-          "converter.max-concurrent-office-conversions-per-deployment must be positive");
     }
   }
 }

@@ -4,18 +4,75 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /** Builds the rootless bubblewrap prefix used for every LibreOffice process. */
 @Component
-final class LibreOfficeSandbox {
+class LibreOfficeSandbox {
+
+  private static final Logger LOG = LoggerFactory.getLogger(LibreOfficeSandbox.class);
 
   private final Path executable;
+  private final ConverterProperties properties;
 
   LibreOfficeSandbox(ConverterProperties properties) {
+    this.properties = properties;
     executable = properties.sandboxExecutable();
     if (!Files.isRegularFile(executable) || !Files.isExecutable(executable)) {
       throw new IllegalStateException("The LibreOffice sandbox launcher is unavailable");
+    }
+  }
+
+  boolean isReady() {
+    try {
+      Files.createDirectories(properties.workingDirectory());
+      boolean filesReady =
+          Files.isRegularFile(executable)
+              && Files.isExecutable(executable)
+              && Files.isDirectory(properties.officeHome())
+              && Files.isWritable(properties.workingDirectory());
+      if (!filesReady) {
+        return false;
+      }
+      Process probe =
+          new ProcessBuilder(
+                  executable.toString(),
+                  "--die-with-parent",
+                  "--unshare-all",
+                  "--ro-bind",
+                  "/usr",
+                  "/usr",
+                  "--symlink",
+                  "usr/bin",
+                  "/bin",
+                  "--symlink",
+                  "usr/lib",
+                  "/lib",
+                  "--symlink",
+                  "usr/lib64",
+                  "/lib64",
+                  "--ro-bind",
+                  "/proc",
+                  "/proc",
+                  "--dev",
+                  "/dev",
+                  "--",
+                  "/usr/bin/true")
+              .redirectErrorStream(true)
+              .start();
+      boolean completed = probe.waitFor(2, java.util.concurrent.TimeUnit.SECONDS);
+      if (!completed) {
+        probe.destroyForcibly();
+      }
+      return completed && probe.exitValue() == 0;
+    } catch (RuntimeException | java.io.IOException | InterruptedException e) {
+      if (e instanceof InterruptedException) {
+        Thread.currentThread().interrupt();
+      }
+      LOG.warn("LibreOffice sandbox readiness check failed", e);
+      return false;
     }
   }
 

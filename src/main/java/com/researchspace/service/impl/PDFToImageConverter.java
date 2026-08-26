@@ -20,9 +20,13 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPageTree;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Specifically converts PDF files to thumbnail images */
 public class PDFToImageConverter implements DocumentConversionService {
+
+  private static final Logger LOG = LoggerFactory.getLogger(PDFToImageConverter.class);
 
   @Override
   public ConversionResult convert(Convertible toConvert, String outputExtension, File outfile) {
@@ -30,6 +34,7 @@ public class PDFToImageConverter implements DocumentConversionService {
     try {
       pdfFile = new File(new URI(toConvert.getFileUri()));
     } catch (URISyntaxException e2) {
+      LOG.warn("PDF thumbnail input URI is invalid", e2);
       return new ConversionResult(DocumentConversionError.INPUT_INVALID.code());
     }
 
@@ -43,6 +48,7 @@ public class PDFToImageConverter implements DocumentConversionService {
       BufferedImage image = pdfRenderer.renderImageWithDPI(0, 72, ImageType.RGB);
       return writeThumbnail(image, outfile);
     } catch (IOException e1) {
+      LOG.warn("PDF thumbnail input failed validation or rendering", e1);
       return new ConversionResult(DocumentConversionError.OUTPUT_INVALID.code());
     }
   }
@@ -59,6 +65,7 @@ public class PDFToImageConverter implements DocumentConversionService {
       FileUtils.writeByteArrayToFile(outfile, baos.toByteArray());
       return new ConversionResult(outfile, "image/png");
     } catch (IOException e) {
+      LOG.error("Could not write PDF thumbnail output", e);
       return new ConversionResult(DocumentConversionError.FAILED.code());
     }
   }
@@ -70,6 +77,7 @@ public class PDFToImageConverter implements DocumentConversionService {
       File outfile = File.createTempFile("pdfThumbnail", ".png", tmpDir);
       return convert(toConvert, outputExtension, outfile);
     } catch (IOException e) {
+      LOG.error("Could not create PDF thumbnail output", e);
       return new ConversionResult(DocumentConversionError.OUTPUT_CREATE_FAILED.code());
     }
   }
