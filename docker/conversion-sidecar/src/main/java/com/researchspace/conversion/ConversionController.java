@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -18,7 +20,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,12 +30,15 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 @RequestMapping
 final class ConversionController {
 
+  private static final Logger LOG = LoggerFactory.getLogger(ConversionController.class);
+
   private static final Set<String> PDF_INPUTS =
       Set.of(
           "csv", "doc", "docx", "md", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp", "rtf",
           "txt");
   private static final Set<String> WORD_INPUTS = Set.of("doc", "docx", "odt", "ott", "rtf", "txt");
   private static final Set<String> PACKAGED_WORD_INPUTS = Set.of("docx", "odt", "ott");
+  private static final Set<String> PACKAGED_PDF_INPUTS = Set.of("docx", "odt");
 
   private final ArchiveValidator archiveValidator;
   private final OfficeConversionRunner officeRunner;
@@ -59,9 +63,7 @@ final class ConversionController {
   }
 
   @PostMapping(path = "/v1/convert/html", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  ResponseEntity<StreamingResponseBody> toHtml(
-      @RequestAttribute(ConversionAuthenticationFilter.DEPLOYMENT_ATTRIBUTE) String deploymentId,
-      MultipartHttpServletRequest request) {
+  ResponseEntity<StreamingResponseBody> toHtml(MultipartHttpServletRequest request) {
     MultipartFile file = requireOnlyFile(request, "file");
     String extension = extension(file);
     if (!WORD_INPUTS.contains(extension)) {
@@ -74,29 +76,24 @@ final class ConversionController {
               if (PACKAGED_WORD_INPUTS.contains(extension)) {
                 archiveValidator.validate(upload, extension);
               }
-              return officeRunner.convert(deploymentId, upload, extension, "html");
+              return officeRunner.convert(upload, extension, "html");
             }),
         "output.html");
   }
 
   @PostMapping(path = "/v1/convert/docx", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  ResponseEntity<StreamingResponseBody> toDocx(
-      @RequestAttribute(ConversionAuthenticationFilter.DEPLOYMENT_ATTRIBUTE) String deploymentId,
-      MultipartHttpServletRequest request) {
+  ResponseEntity<StreamingResponseBody> toDocx(MultipartHttpServletRequest request) {
     MultipartFile file = requireOnlyFile(request, "file");
     String extension = extension(file);
     if (!Set.of("html", "htm").contains(extension)) {
       unsupported();
     }
     return stream(
-        withUpload(file, upload -> officeRunner.convert(deploymentId, upload, extension, "docx")),
-        "output.docx");
+        withUpload(file, upload -> officeRunner.convert(upload, extension, "docx")), "output.docx");
   }
 
   @PostMapping(path = "/forms/libreoffice/convert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  ResponseEntity<StreamingResponseBody> toPdf(
-      @RequestAttribute(ConversionAuthenticationFilter.DEPLOYMENT_ATTRIBUTE) String deploymentId,
-      MultipartHttpServletRequest request) {
+  ResponseEntity<StreamingResponseBody> toPdf(MultipartHttpServletRequest request) {
     rejectGotenbergControls(request);
     MultipartFile file = requireOnlyFile(request, "files");
     String extension = extension(file);
@@ -106,10 +103,21 @@ final class ConversionController {
     return stream(
         withUpload(
             file,
-            upload ->
-                limiter.runPdf(
-                    deploymentId,
-                    () -> gotenbergProxy.convert(upload, extension, UUID.randomUUID().toString()))),
+            upload -> {
+              if (PACKAGED_PDF_INPUTS.contains(extension)) {
+                archiveValidator.validate(upload, extension);
+              }
+              OfficeConversionLimiter.Permit permit = limiter.acquirePdf();
+              try {
+                return gotenbergProxy
+                    .convert(upload, extension, UUID.randomUUID().toString())
+                    .withCloseAction(permit::close);
+              } catch (RuntimeException e) {
+                permit.close();
+                LOG.warn("PDF conversion failed after capacity was acquired", e);
+                throw e;
+              }
+            }),
         "output.pdf");
   }
 
@@ -149,6 +157,7 @@ final class ConversionController {
       file.transferTo(upload);
       return upload;
     } catch (IOException e) {
+      LOG.error("Could not store the conversion upload", e);
       throw new ConversionException(
           HttpStatus.INTERNAL_SERVER_ERROR,
           ConversionError.FAILED,
@@ -163,8 +172,8 @@ final class ConversionController {
     } catch (RuntimeException e) {
       try {
         Files.deleteIfExists(upload);
-      } catch (IOException ignored) {
-        // Preserve the conversion failure; the upload is in disposable temporary storage.
+      } catch (IOException cleanupFailure) {
+        LOG.warn("Could not remove a failed conversion upload", cleanupFailure);
       }
       throw e;
     }

@@ -111,7 +111,6 @@ services:
       # listener over the project network (mailpit:1025).
       RSPACE_MAILPIT: ${RSPACE_MAILPIT:-false}
       CONVERSION_SERVICE_URL: http://conversion-sidecar:8080
-      CONVERSION_BEARER_TOKEN_FILE: /run/secrets/conversion-token
     volumes:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
       - m2-repo:/root/.m2
@@ -123,7 +122,6 @@ services:
       - search-index:/var/rspace/search/hibernate
       - lucene-index:/var/rspace/search/lucene
       - filestore:/var/rspace/filestore
-      - ./.conversion-credentials/rspace-dev:/run/secrets/conversion-token:ro
     # Share the frontend's network namespace so the backend reaches Vite at
     # localhost:5173 (a host Vite trusts) instead of the service name "frontend"
     # (which Vite's host check rejects). The app is the dependent here because it
@@ -227,7 +225,8 @@ services:
   # conversion network.
   conversion-sidecar:
     build:
-      context: ../conversion-sidecar
+      context: ../..
+      dockerfile: docker/conversion-sidecar/Dockerfile
     image: rspace-conversion-sidecar:dev
     container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-conversion-sidecar
     depends_on:
@@ -235,26 +234,26 @@ services:
         condition: service_healthy
     environment:
       CONVERTER_MAX_CONCURRENT_OFFICE_CONVERSIONS: ${CONVERTER_MAX_CONCURRENT_OFFICE_CONVERSIONS:-2}
-      CONVERTER_MAX_CONCURRENT_OFFICE_CONVERSIONS_PER_DEPLOYMENT: ${CONVERTER_MAX_CONCURRENT_OFFICE_CONVERSIONS_PER_DEPLOYMENT:-1}
-      CONVERTER_CREDENTIALS_DIRECTORY: /run/secrets/conversion-credentials
-    volumes:
-      - ./.conversion-credentials:/run/secrets/conversion-credentials:ro
     networks:
       - default
       - conversion
     tmpfs:
-      - /tmp:size=768m,mode=1777
-      - /work:size=768m,mode=0700,uid=10001,gid=10001
+      - /tmp:size=768m,mode=1777,nodev,nosuid,noexec
+      - /work:size=768m,mode=0700,uid=10001,gid=10001,nodev,nosuid,noexec
+    cpus: 2.0
+    mem_limit: 2g
+    pids_limit: 256
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 2048
     read_only: true
     cap_drop: ["ALL"]
     security_opt:
       - no-new-privileges:true
-      # Rootless bubblewrap needs user-namespace and mount syscalls that Docker's
-      # default seccomp profile blocks. The outer container still has no Linux
-      # capabilities, a read-only root, and no published port.
-      - seccomp:unconfined
+      - seccomp:../conversion-sidecar/seccomp-bubblewrap.json
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health/ready"]
       interval: 5s
       timeout: 3s
       retries: 30
@@ -267,11 +266,30 @@ services:
     command:
       - gotenberg
       - --api-timeout=180s
+      - --api-body-limit=200MB
+      - --api-disable-download-from=true
       - --chromium-disable-routes=true
+      - --pdfengines-disable-routes=true
+      - --libreoffice-max-queue-size=2
+      - --libreoffice-deny-private-ips=true
+      - --libreoffice-deny-public-ips=true
       - --webhook-disable=true
     networks:
       conversion:
         aliases: ["gotenberg"]
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=768m,mode=1777,nodev,nosuid,noexec
+    cpus: 2.0
+    mem_limit: 2g
+    pids_limit: 256
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 2048
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:3000/health"]
       interval: 5s

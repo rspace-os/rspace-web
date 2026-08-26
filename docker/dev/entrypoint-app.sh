@@ -163,7 +163,6 @@ CONVERSION_ARGS=()
 if [ -n "${CONVERSION_SERVICE_URL:-}" ]; then
   CONVERSION_ARGS=(
     "-Dconversion.url=${CONVERSION_SERVICE_URL}"
-    "-Dconversion.bearerTokenFile=${CONVERSION_BEARER_TOKEN_FILE}"
   )
   echo "[entrypoint] Document conversion enabled at ${CONVERSION_SERVICE_URL}"
 fi

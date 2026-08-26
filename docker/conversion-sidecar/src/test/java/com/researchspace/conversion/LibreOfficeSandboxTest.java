@@ -25,11 +25,12 @@ class LibreOfficeSandboxTest {
             Path.of("/office"),
             directory,
             Duration.ofSeconds(1),
+            Duration.ofSeconds(1),
+            Duration.ofSeconds(1),
+            Duration.ofSeconds(1),
             2,
-            1,
             1024,
-            executable,
-            directory);
+            executable);
 
     List<String> command = new LibreOfficeSandbox(properties).commandPrefix(request);
 

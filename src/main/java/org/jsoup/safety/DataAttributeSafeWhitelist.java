@@ -93,7 +93,7 @@ public class DataAttributeSafeWhitelist extends Safelist {
   }
 
   /** Delegates to superclass, in addition it will permit data- attributes */
-  protected boolean isSafeAttribute(String tagName, Element el, Attribute attr) {
+  public boolean isSafeAttribute(String tagName, Element el, Attribute attr) {
     boolean safe = super.isSafeAttribute(tagName, el, attr);
     if (!safe) {
       safe = attr.getKey().startsWith("data-");

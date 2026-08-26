@@ -158,6 +158,18 @@ public class FileDownloadControllerTest {
   }
 
   @Test
+  public void testRejectsNonPdfFormatBeforeUserOrRecordLookup() throws Exception {
+    AjaxReturnObject<String> result = ctrller.convertFile(123L, "docx", null, resp);
+
+    assertNull(result.getData());
+    assertEquals(400, resp.getStatus());
+    verify(userMgr, never()).getAuthenticatedUserInSession();
+    verify(baseRecordMgr, never())
+        .retrieveMediaFile(
+            Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+  }
+
+  @Test
   public void testConvertFailureHandling() throws Exception {
     final EcatMediaFile mediaFile = getAnyMediaFile();
     mediaFile.setOwner(user);

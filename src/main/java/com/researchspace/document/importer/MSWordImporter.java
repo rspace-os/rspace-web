@@ -5,6 +5,8 @@ import static org.apache.commons.io.FilenameUtils.getExtension;
 import static org.apache.commons.io.filefilter.FileFilterUtils.suffixFileFilter;
 
 import com.researchspace.core.util.IoUtils;
+import com.researchspace.documentconversion.ext.DocumentConversionError;
+import com.researchspace.documentconversion.ext.DocumentConversionException;
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.ConvertibleFile;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
@@ -22,10 +24,14 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /** Generates an RSpace document from an incoming Word file */
 public class MSWordImporter implements ExternalFileImporter {
+
+  private static final Logger LOG = LoggerFactory.getLogger(MSWordImporter.class);
 
   public void setFolderMgr(FolderManager folderMgr) {
     this.folderMgr = folderMgr;
@@ -64,7 +70,11 @@ public class MSWordImporter implements ExternalFileImporter {
         try {
           new DataUriExtractor().extract(html.toPath(), converted.tempFolder().toPath());
         } catch (IOException e) {
-          throw new IllegalStateException(e.getMessage(), e);
+          LOG.warn("Imported Word HTML contained invalid embedded image data", e);
+          throw new DocumentConversionException(
+              DocumentConversionError.fromCode(e.getMessage())
+                  .orElse(DocumentConversionError.INPUT_INVALID),
+              e);
         }
         HTMLContentProvider htmlProvider = new HTMLContentProvider(converted.tempFolder(), html);
         // create default image folder if one not already specified
@@ -76,7 +86,9 @@ public class MSWordImporter implements ExternalFileImporter {
         return creator.create(
             htmlProvider, targetFolder, imageFolder, converted.origDocName(), user);
       } else {
-        throw new IllegalStateException(converted.result().getErrorMsg());
+        throw new DocumentConversionException(
+            DocumentConversionError.fromCode(converted.result().getErrorMsg())
+                .orElse(DocumentConversionError.FAILED));
       }
     } finally {
       FileUtils.deleteQuietly(converted.tempInput());
@@ -106,6 +118,7 @@ public class MSWordImporter implements ExternalFileImporter {
       ConversionResult result = convert(wordFile, tempFile, tempFolder);
       return new TempConverterData(tempFolder, tempFile, origDocName, result);
     } catch (IOException | RuntimeException e) {
+      LOG.warn("Word import conversion failed", e);
       FileUtils.deleteQuietly(tempFile);
       FileUtils.deleteQuietly(tempFolder);
       throw e;

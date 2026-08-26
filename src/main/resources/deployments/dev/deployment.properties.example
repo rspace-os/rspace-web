@@ -174,8 +174,8 @@ zenodo.url=https://sandbox.zenodo.org/api
 
 # The Docker dev stack overrides these values when it starts its conversion services.
 conversion.url=
-conversion.bearerTokenFile=
 conversion.cacheConverted=true
+conversion.conversionTimeoutMs=180000
 conversion.connectionRequestTimeoutMs=2000
 conversion.connectTimeoutMs=5000
 conversion.responseTimeoutMs=185000

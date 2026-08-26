@@ -228,10 +228,6 @@ public class FileDownloadController extends BaseController {
       HttpServletResponse response)
       throws IOException {
 
-    User subject = userManager.getAuthenticatedUserInSession();
-    EcatMediaFile input =
-        baseRecordManager.retrieveMediaFile(subject, docId, revisionId, null, null);
-
     if (!"pdf".equalsIgnoreCase(outputformat)) {
       response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
       return new AjaxReturnObject<>(
@@ -239,6 +235,10 @@ public class FileDownloadController extends BaseController {
           ErrorList.createErrListWithSingleMsg(
               getText("errors.documentConversion.previewPdfOnly")));
     }
+
+    User subject = userManager.getAuthenticatedUserInSession();
+    EcatMediaFile input =
+        baseRecordManager.retrieveMediaFile(subject, docId, revisionId, null, null);
 
     if (!properties.isConversionEnabled()) {
       response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
@@ -298,8 +298,7 @@ public class FileDownloadController extends BaseController {
         .map(
             error ->
                 switch (error) {
-                  case AUTHENTICATION_FAILED, SERVICE_UNAVAILABLE ->
-                      HttpStatus.SERVICE_UNAVAILABLE.value();
+                  case SERVICE_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE.value();
                   case INPUT_TOO_LARGE, OUTPUT_TOO_LARGE -> HttpStatus.PAYLOAD_TOO_LARGE.value();
                   case INPUT_INVALID, OUTPUT_INVALID, UNSUPPORTED ->
                       HttpStatus.UNPROCESSABLE_ENTITY.value();

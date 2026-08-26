@@ -12,7 +12,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.core.util.progress.ProgressMonitorImpl;
 import com.researchspace.document.importer.ExternalFileImporter;
-import com.researchspace.documentconversion.ext.DocumentConversionError;
+import com.researchspace.documentconversion.ext.DocumentConversionException;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
@@ -231,7 +231,7 @@ public class StructuredDocumentController extends BaseController {
           log.error(error);
         }
       } catch (Exception e) {
-        String reason = getText(DocumentConversionError.messageKeyForCode(e.getMessage()));
+        String reason = getText(DocumentConversionException.errorFrom(e).messageKey());
         String error =
             getText(
                 "workspace.word.import.createFailedWithReason",

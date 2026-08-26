@@ -164,20 +164,16 @@ jobs:
         if: matrix.project == 'conversion'
         run: |
           set -euo pipefail
-          install -d -m 755 /tmp/conversion-credentials
-          openssl rand -hex 32 | tee /tmp/conversion-credentials/e2e > /tmp/conversion-token
-          chmod 444 /tmp/conversion-credentials/e2e /tmp/conversion-token
           docker network create conversion-e2e
           docker run -d --name gotenberg --network conversion-e2e \
             gotenberg/gotenberg@sha256:67097317623a503ba2a6a7e9ae8db6929a1f7e1bbd88077bacf2d325fbdab923 \
             gotenberg --api-timeout=180s --chromium-disable-routes=true --webhook-disable=true
-          docker build -t rspace-conversion-sidecar:e2e docker/conversion-sidecar
+          docker build -f docker/conversion-sidecar/Dockerfile -t rspace-conversion-sidecar:e2e .
           docker run -d --name conversion-sidecar --network conversion-e2e \
             -p 127.0.0.1:8081:8080 --read-only --cap-drop ALL \
             --security-opt no-new-privileges=true --security-opt seccomp=unconfined \
             --tmpfs /tmp:size=768m,mode=1777 \
             --tmpfs /work:size=768m,mode=0700,uid=10001,gid=10001 \
-            -v /tmp/conversion-credentials:/run/secrets/conversion-credentials:ro \
             rspace-conversion-sidecar:e2e
           for i in $(seq 1 60); do
             if curl --fail --silent http://localhost:8081/actuator/health > /dev/null; then
@@ -282,7 +278,6 @@ jobs:
           if [ "${{ matrix.project }}" = "conversion" ]; then
             CONVERSION_ARGS=(
               "-Dconversion.url=http://localhost:8081"
-              "-Dconversion.bearerTokenFile=/tmp/conversion-token"
             )
           fi
           nohup ./mvnw jetty:run-war \
