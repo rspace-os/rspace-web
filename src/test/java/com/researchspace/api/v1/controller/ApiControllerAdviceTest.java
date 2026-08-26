@@ -9,6 +9,7 @@ import com.researchspace.apiutils.BindErrorList;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.field.LocalizedIllegalStateException;
+import com.researchspace.model.field.LocalizedUnsupportedOperationException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -114,6 +115,22 @@ class ApiControllerAdviceTest {
 
     ApiError error = (ApiError) response.getBody();
     assertEquals("Field [Status] has no connected template field", error.getMessage());
+  }
+
+  @Test
+  void localizedUnsupportedOperationKeepsNotFoundMapping() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleResourceNotFound(
+            new LocalizedUnsupportedOperationException(
+                "errors.inventory.field.attachmentUnsupported", "TEXT"),
+            null);
+
+    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    ApiError error = (ApiError) response.getBody();
+    assertEquals("TEXT fields do not support file attachments", error.getMessage());
   }
 
   @Test

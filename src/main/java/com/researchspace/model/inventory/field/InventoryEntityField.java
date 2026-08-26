@@ -6,6 +6,7 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.field.LocalizedIllegalStateException;
+import com.researchspace.model.field.LocalizedUnsupportedOperationException;
 import com.researchspace.model.field.ValidatingField;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InventoryFile;
@@ -269,7 +270,8 @@ public abstract class InventoryEntityField
    */
   @Transient
   public void setAttachedFile(InventoryFile file) {
-    throw new UnsupportedOperationException(getType() + " field doesn't support file attachments");
+    throw new LocalizedUnsupportedOperationException(
+        "errors.inventory.field.attachmentUnsupported", getType());
   }
 
   /**

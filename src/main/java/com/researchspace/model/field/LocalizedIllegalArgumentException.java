@@ -16,6 +16,11 @@ public class LocalizedIllegalArgumentException extends IllegalArgumentException 
     this(code, (ErrorList) null, arguments);
   }
 
+  public LocalizedIllegalArgumentException(String code, Throwable cause, Object... arguments) {
+    this(code, arguments);
+    initCause(cause);
+  }
+
   public LocalizedIllegalArgumentException(
       String code, ErrorList nestedErrors, Object... arguments) {
     super(code);

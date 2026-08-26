@@ -64,7 +64,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
         new ApiError(
             HttpStatus.NOT_FOUND,
             ApiErrorCodes.CONFIGURED_UNAVAILABLE.getCode(),
-            ex.getLocalizedMessage(),
+            messages.getExceptionMessage(ex),
             "");
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }

@@ -341,9 +341,8 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   public ContainerLocation addToNewLocation(MovableInventoryRecord record) {
     if (!isListLayoutContainer() && !isWorkbench()) {
-      throw new IllegalArgumentException(
-          getContainerType()
-              + " container cannot store content without providing specific coordinates");
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.container.noCoordinatesRequired", getContainerType());
     }
     ContainerLocation newLocation = createOrRetrieveLocationWithCoords(locations.size() + 1, 1);
     setRecordInLocation(record, newLocation);
@@ -353,12 +352,12 @@ public class Container extends MovableInventoryRecord implements Serializable {
   public ContainerLocation addToNewLocationWithCoords(
       MovableInventoryRecord record, Integer coordX, Integer coordY) {
     if (isListLayoutContainer() || isWorkbench()) {
-      throw new IllegalArgumentException(
-          getContainerType() + " container can't use explicit location coordinates");
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.container.explicitCoordinatesNotAllowed", getContainerType());
     }
     if (isImageLayoutContainer()) {
-      throw new IllegalArgumentException(
-          "Image container must provide target location id, not coordinates");
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.container.imageContainerLocationRequired");
     }
     ContainerLocation targetLocation = createOrRetrieveLocationWithCoords(coordX, coordY);
     setRecordInLocation(record, targetLocation);
@@ -367,8 +366,8 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
   public ContainerLocation createNewImageContainerLocation(Integer coordX, Integer coordY) {
     if (!isImageLayoutContainer()) {
-      throw new IllegalArgumentException(
-          getContainerType() + " container cannot add locations directly");
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.container.directLocationUnsupported", getContainerType());
     }
     return createOrRetrieveLocationWithCoords(coordX, coordY);
   }
@@ -411,11 +410,12 @@ public class Container extends MovableInventoryRecord implements Serializable {
   private void validateNewCoordinates(Integer coordX, Integer coordY) {
     if (isGridLayoutContainer()) {
       if (coordX > getGridLayoutColumnsNumber() || coordY > getGridLayoutRowsNumber()) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Requested new location (%d,%d) "
-                    + "is outside grid container dimensions (columns:%d, rows:%d)",
-                coordX, coordY, getGridLayoutColumnsNumber(), getGridLayoutRowsNumber()));
+        throw new LocalizedIllegalArgumentException(
+            "errors.inventory.location.outsideGridDimensions",
+            coordX,
+            coordY,
+            getGridLayoutColumnsNumber(),
+            getGridLayoutRowsNumber());
       }
     }
   }
@@ -444,11 +444,10 @@ public class Container extends MovableInventoryRecord implements Serializable {
 
     InventoryRecord currentlyStoredRecord = location.getStoredRecord();
     if (currentlyStoredRecord != null && !currentlyStoredRecord.equals(record)) {
-      throw new IllegalArgumentException(
-          "Location: "
-              + location.getId()
-              + " is already taken by the record: "
-              + currentlyStoredRecord.getGlobalIdentifier());
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.location.occupied",
+          location.getId(),
+          currentlyStoredRecord.getGlobalIdentifier());
     }
     location.addStoredRecord(record);
     record.setParentLocation(location);
@@ -580,7 +579,8 @@ public class Container extends MovableInventoryRecord implements Serializable {
   @Override
   protected void assertCanStoreAttachments() {
     if (isWorkbench()) {
-      throw new IllegalArgumentException("Can't attach files to Workbench");
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.attachment.workbenchUnsupported");
     }
   }
 

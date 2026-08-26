@@ -4,6 +4,7 @@ import com.researchspace.core.util.DateUtil;
 import com.researchspace.core.util.LoggingUtils;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
@@ -19,6 +20,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.ModelAndView;
@@ -392,7 +394,11 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
     } else {
       StringBuffer message = new StringBuffer();
       while (e != null) {
-        message.append(e.getMessage() + "\n\n");
+        message.append(messages.getExceptionMessage(e)).append("\n\n");
+        if (e instanceof LocalizedIllegalArgumentException
+            || e instanceof MessageSourceResolvable) {
+          break;
+        }
         e = e.getCause();
         if (message.length() > exceptionMessageStringLength) {
           break;

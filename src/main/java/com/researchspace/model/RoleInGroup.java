@@ -21,11 +21,6 @@ public enum RoleInGroup {
   /** Leads a user collaboration group. */
   GROUP_OWNER("groups.roles.groupOwner");
 
-  /**
-   * A display string for display to end-users
-   *
-   * @return
-   */
   public String getLabelKey() {
     return labelKey;
   }

@@ -183,7 +183,7 @@ public class SampleTemplateTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> template.addAttachedFile(new InventoryFile(null, null)));
-    assertEquals("Sample Templates don't support file attachments yet", iae.getMessage());
+    assertEquals("errors.inventory.attachment.sampleTemplateUnsupported", iae.getMessage());
   }
 
   @Test

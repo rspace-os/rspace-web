@@ -35,6 +35,17 @@ public class MessageSourceUtils {
     return exception.resolve(this::getMessage);
   }
 
+  /** Resolves coded model exceptions and leaves ordinary exception messages unchanged. */
+  public String getExceptionMessage(Throwable exception) {
+    if (exception instanceof LocalizedIllegalArgumentException localizedException) {
+      return getMessage(localizedException);
+    }
+    if (exception instanceof MessageSourceResolvable resolvable) {
+      return getMessage(resolvable);
+    }
+    return exception.getMessage();
+  }
+
   public String getMessage(String key, Object[] args) {
     return messages.getMessage(key, args);
   }
