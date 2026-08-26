@@ -153,7 +153,20 @@ public class ApiInventoryDOI extends LinkableApiObject {
   @JsonProperty("publicationYear")
   private Integer publicationYear;
 
-  @JsonProperty("state")
+  /**
+   * The identifier's publication state, owned by the server.
+   *
+   * <p>{@link JsonProperty.Access#READ_ONLY} for the same reason as {@link #url}, {@link
+   * #publicUrl} and {@link #providerUrl}, and more pressingly: this is the gate on the
+   * unauthenticated public landing page. {@code DigitalObjectIdentifier.isPublishedState} opens
+   * that page for {@code findable} and {@code accepted}, and {@link
+   * #applyChangesToDatabaseDOI(DigitalObjectIdentifier)} copies this field straight onto the
+   * entity, so without this a record update carrying {@code "state": "accepted"} would publish the
+   * page with no provider registration and no B2INST curator review behind it. State only ever
+   * changes through the register, publish, retract and refresh operations, which set it in Java and
+   * are unaffected by this annotation.
+   */
+  @JsonProperty(value = "state", access = JsonProperty.Access.READ_ONLY)
   private String state;
 
   @JsonProperty("resourceType")

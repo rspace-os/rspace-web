@@ -599,27 +599,27 @@ class InventoryIdentifierApiManagerImplUnitTest {
   }
 
   /**
-   * Acceptance known from the review alone carries no record to read a LandingPage from, so the
-   * identifier's own public page stays the only address available.
+   * A review reporting {@code accepted} while {@code /records/{rid}} is not there yet leaves no way
+   * to name the minted Handle. Storing {@code accepted} anyway would open the unauthenticated
+   * public page for a PID the user cannot resolve, and would leave publicUrl and providerUrl empty,
+   * so the refresh refuses and keeps the stored state instead (parallel review, PR 1066).
    */
   @Test
-  void refreshFallsBackToThePublicPageWhenAcceptanceComesFromTheReviewAlone() throws Exception {
+  void refreshRefusesToPublishAnAcceptedReviewWhoseRecordIsNotAvailable() throws Exception {
     InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
     B2instConnector b2instConnector = mock(B2instConnector.class);
-    IPropertyHolder properties = mock(IPropertyHolder.class);
-    when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
     ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
-    ReflectionTestUtils.setField(mgr, "properties", properties);
     B2instRequestResponse review = new B2instRequestResponse();
     review.setStatus("accepted");
     when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.of(review));
     when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.empty());
 
-    DigitalObjectIdentifier doi = b2instDoi();
-    ApiInventoryDOI result = (ApiInventoryDOI) refreshMethod().invoke(mgr, doi);
+    InvocationTargetException thrown =
+        assertThrows(
+            InvocationTargetException.class, () -> refreshMethod().invoke(mgr, b2instDoi()));
 
-    assertEquals("accepted", result.getState());
+    ApiRuntimeException cause = assertInstanceOf(ApiRuntimeException.class, thrown.getCause());
     assertEquals(
-        "https://rspace.example.com/public/inventory/" + doi.getPublicLink(), result.getUrl());
+        "errors.inventory.identifier.b2instAcceptedRecordUnavailable", cause.getErrorCode());
   }
 }

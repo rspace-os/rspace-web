@@ -735,9 +735,16 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
         return refreshUpdate;
       }
       if ("accepted".equals(reviewStatus)) {
-        refreshUpdate.setState("accepted");
-        setLandingPageUrl(refreshUpdate, doi, null);
-        return refreshUpdate;
+        /*
+         * The review says accepted but the record it published is not readable, so the minted
+         * Handle cannot be named. Storing "accepted" would open the unauthenticated public page
+         * (isPublishedState treats it as published) for a PID the user cannot resolve, with
+         * publicUrl and providerUrl left empty. Refusing keeps the stored state and lets the user
+         * retry, which is the right answer for what is normally a transient provider state:
+         * acceptance publishes the record, so it should become readable.
+         */
+        throw new ApiRuntimeException(
+            "errors.inventory.identifier.b2instAcceptedRecordUnavailable");
       }
       if (b2instConnector.getDraftRecord(rid).isPresent()) {
         refreshUpdate.setState("draft");

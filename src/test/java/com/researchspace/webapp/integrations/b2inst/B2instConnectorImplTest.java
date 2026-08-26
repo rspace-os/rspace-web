@@ -38,6 +38,8 @@ import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -735,5 +737,39 @@ class B2instConnectorImplTest {
         .andRespond(withException(new IOException("connection reset")));
 
     assertThrows(B2instConnectionException.class, () -> connector.getReviewOf("k2j9p-7yh21"));
+  }
+
+  /**
+   * The record id reaches the connector from {@code DigitalObjectIdentifier.identifier}, which a
+   * record update can write, so a crafted value must never redirect these calls - and the bearer
+   * token they carry - to another path on the provider host. Refused before any request goes out;
+   * the URLs built for a legitimate id are pinned by the read tests above (parallel review, PR
+   * 1066).
+   */
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "../../admin",
+        "..",
+        ".",
+        "k2j9p-7yh21/../../admin",
+        "k2j9p-7yh21?x=1",
+        "k2j9p-7yh21#f",
+        "k2j9p 7yh21",
+        "http://elsewhere.example.org/",
+        ""
+      })
+  void recordCallsRefuseARecordIdRSpaceCouldNotHaveMinted(String craftedRid) {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+
+    assertThrows(B2instConnectionException.class, () -> connector.getReviewOf(craftedRid));
+    assertThrows(B2instConnectionException.class, () -> connector.getPublishedRecord(craftedRid));
+    assertThrows(B2instConnectionException.class, () -> connector.getDraftRecord(craftedRid));
+    assertThrows(B2instConnectionException.class, () -> connector.deleteDoi(craftedRid));
+
+    // no expectations were set, so verify() passing means nothing was sent
+    server.verify();
   }
 }

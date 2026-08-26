@@ -103,17 +103,15 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
   }
 
   /**
-   * The public page now serves the identifier's newest revision and treats B2INST's {@code
-   * accepted} as published. Both are persistence-level behaviours: the revision is chosen by an
-   * Envers query and the state by the DAO's predicate, so neither is exercised by the unit tests
-   * over the predicate alone (Copilot review, PR 1066).
+   * The public page picks its revision by provider, and both rules are persistence-level: the
+   * revision comes out of an Envers query and the published check out of the DAO's predicate, so
+   * neither is exercised by the unit tests over the predicate alone (parallel review, PR 1066).
    *
-   * <p>Writes the identifier row twice while it is published and asserts the page reflects the
-   * second write. Under the previous "first revision of the published run" rule the page would
-   * still show the values from the moment of publishing, so this fails if that rule comes back.
+   * <p>Writes the identifier row a second time while it is published and asserts what the page
+   * serves before and after the provider changes, so a regression either way fails here.
    */
   @Test
-  public void publicPageServesNewestIdentifierRevisionIncludingAcceptedState() throws Exception {
+  public void publicPagePicksItsRevisionByProvider() throws Exception {
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples createdSample = createComplexSampleForUser(user);
 
@@ -128,13 +126,14 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
             .getActiveIdentifiers()
             .get(0)
             .getPublicLink();
+
     ApiInventoryRecordInfo justPublished =
         inventoryIdentifierApiMgr.findPublishedItemVersionByPublicLink(publicLink);
     assertNotNull(justPublished, "a freshly published identifier must be served publicly");
     assertFalse(justPublished.getIdentifiers().get(0).getCustomFieldsOnPublicPage());
 
     // A second, committed write to the identifier row while it is published: a new Envers revision
-    // that no republish pushes out, which is the case a B2INST refresh creates.
+    // that no republish has pushed out.
     doInTransaction(
         () -> {
           DigitalObjectIdentifier doi = doiDao.get(doiId);
@@ -142,25 +141,36 @@ public class InventoryIdentifierApiManagerIT extends RealTransactionSpringTestBa
           doiDao.save(doi);
         });
 
-    ApiInventoryRecordInfo afterSecondWrite =
+    /*
+     * DataCite (this identifier is an IGSN): still the publication-time snapshot, so the later
+     * write is not public. Republishing is what pushes changes out, and a regression to "newest
+     * revision" would leak them without one.
+     */
+    ApiInventoryRecordInfo igsnAfterSecondWrite =
         inventoryIdentifierApiMgr.findPublishedItemVersionByPublicLink(publicLink);
-    assertNotNull(afterSecondWrite);
-    assertTrue(afterSecondWrite.getIdentifiers().get(0).getCustomFieldsOnPublicPage());
+    assertNotNull(igsnAfterSecondWrite);
+    assertFalse(igsnAfterSecondWrite.getIdentifiers().get(0).getCustomFieldsOnPublicPage());
 
-    // "accepted" is B2INST's published state, so the page stays available when the row carries it.
+    /*
+     * The same history read as B2INST: the newest revision, because a B2INST identifier has no
+     * republish operation to push a change out with. Type is the DAO's only input for this, so
+     * setting it is what selects the other branch.
+     */
     doInTransaction(
         () -> {
           DigitalObjectIdentifier doi = doiDao.get(doiId);
+          doi.setType(DigitalObjectIdentifier.IdentifierType.PIDINST_B2INST);
           doi.setState("accepted");
           doiDao.save(doi);
         });
 
-    ApiInventoryRecordInfo whileAccepted =
+    ApiInventoryRecordInfo asB2inst =
         inventoryIdentifierApiMgr.findPublishedItemVersionByPublicLink(publicLink);
-    assertNotNull(whileAccepted);
-    assertEquals("accepted", whileAccepted.getIdentifiers().get(0).getState());
+    assertNotNull(asB2inst, "an accepted B2INST identifier must be served publicly");
+    assertEquals("accepted", asB2inst.getIdentifiers().get(0).getState());
+    assertTrue(asB2inst.getIdentifiers().get(0).getCustomFieldsOnPublicPage());
 
-    // A non-published state on the newest revision hides the page again.
+    // A non-published newest revision hides the page again, whichever provider it belongs to.
     doInTransaction(
         () -> {
           DigitalObjectIdentifier doi = doiDao.get(doiId);

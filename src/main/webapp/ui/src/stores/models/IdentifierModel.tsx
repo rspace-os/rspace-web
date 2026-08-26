@@ -38,6 +38,7 @@ import type {
   IdentifierSubject,
   PublishingState,
 } from "../definitions/Identifier";
+import { identifierStateLabel } from "../definitions/Identifier";
 import GeoLocationModel from "./GeoLocationModel";
 
 type GeoLocationBox = {
@@ -670,7 +671,9 @@ export default class IdentifierModel implements Identifier {
       });
       addAlert(
         mkAlert({
-          message: i18n.t("inventory:identifierModel.alerts.refreshed", { state }),
+          message: i18n.t("inventory:identifierModel.alerts.refreshed", {
+            state: identifierStateLabel(state),
+          }),
           variant: "success",
         }),
       );

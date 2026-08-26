@@ -1,8 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
+import type InvApiService from "../../../../../common/InvApiService";
 import type { Identifier } from "../../../../../stores/definitions/Identifier";
+import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
+import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
+import IdentifierModel from "../../../../../stores/models/IdentifierModel";
+import { IdentifiersList } from "../Identifiers";
 import RefreshButton from "../RefreshButton";
-import { mockIGSNIdentifier } from "./mocking";
+import { mockIGSNAttrs, mockIGSNIdentifier } from "./mocking";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
@@ -51,5 +56,75 @@ describe("RefreshButton", () => {
       </ThemeProvider>,
     );
     expect(screen.getByRole("button", { name: "inventory:fields.identifiers.list.refresh" })).toBeDisabled();
+  });
+});
+
+/*
+ * The suite above covers "the button calls refresh" with refresh stubbed, and
+ * IdentifierModel.test.ts covers "the model applies the response". Neither shows the PR's headline
+ * behaviour: that a status pulled from B2INST actually reaches the rendered identifier. This joins
+ * them with a real IdentifierModel and only the HTTP call faked (parallel review, PR 1066).
+ */
+describe("a refreshed status reaching the UI", () => {
+  const submittedB2instRecord = (post: ReturnType<typeof vi.fn>): InventoryRecord => {
+    const record = makeMockSample();
+    record.identifiers = [
+      new IdentifierModel({ ...mockIGSNAttrs(), doiType: "PIDINST_B2INST", state: "submitted" }, "IN1", {
+        post,
+      } as unknown as typeof InvApiService),
+    ];
+    return record;
+  };
+
+  test("an accepted review replaces the state, retires Refresh and closes Publish", async () => {
+    const post = vi.fn().mockResolvedValue({
+      data: {
+        state: "accepted",
+        url: "https://institution.example.org/instruments/nmr-400",
+        publicUrl: "http://hdl.handle.net/21.T11975/k2j9p-7yh21",
+        providerUrl: "https://b2inst-test.gwdg.de/records/k2j9p-7yh21",
+      },
+    });
+    const record = submittedB2instRecord(post);
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <IdentifiersList activeResult={record} />
+      </ThemeProvider>,
+    );
+
+    // while the review is open: Submitted, Refresh offered, Publish held back
+    expect(screen.getByText("inventory:fields.identifiers.list.stateLabels.submitted")).toBeInTheDocument();
+    const refresh = screen.getByRole("button", { name: "inventory:fields.identifiers.list.refresh" });
+    expect(screen.getByRole("button", { name: /republish|publish/i })).toBeDisabled();
+
+    fireEvent.click(refresh);
+
+    // after the curator accepted: the new state is rendered, and Refresh has nothing left to do
+    await waitFor(() => {
+      expect(screen.getByText("inventory:fields.identifiers.list.stateLabels.accepted")).toBeInTheDocument();
+    });
+    expect(post).toHaveBeenCalledWith("/identifiers/1/refresh", {});
+    expect(screen.queryByRole("button", { name: "inventory:fields.identifiers.list.refresh" })).not.toBeInTheDocument();
+    // an accepted B2INST PID cannot be published again, and B2INST has no retract
+    expect(screen.getByRole("button", { name: /republish|publish/i })).toBeDisabled();
+  });
+
+  test("a declined review is rendered and also retires Refresh", async () => {
+    const post = vi.fn().mockResolvedValue({
+      data: { state: "declined", url: null, publicUrl: null, providerUrl: null },
+    });
+    const record = submittedB2instRecord(post);
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <IdentifiersList activeResult={record} />
+      </ThemeProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "inventory:fields.identifiers.list.refresh" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("inventory:fields.identifiers.list.stateLabels.declined")).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: "inventory:fields.identifiers.list.refresh" })).not.toBeInTheDocument();
   });
 });

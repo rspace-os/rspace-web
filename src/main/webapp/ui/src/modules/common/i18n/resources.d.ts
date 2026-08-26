@@ -6777,6 +6777,7 @@ export default interface Resources {
         },
         "identifier": {
           "assignTypeMismatch": "Identifier of type {0} cannot be assigned to inventory item [{1}]",
+          "b2instAcceptedRecordUnavailable": "B2INST accepted this submission but its record is not available yet, so the instrument PID cannot be shown. Please try again shortly.",
           "b2instDeleteFailed": "Could not delete the instrument PID from B2INST. {0}",
           "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
           "b2instRecordGone": "B2INST no longer holds this record, so there is no status to refresh. The record was removed on the provider side.",

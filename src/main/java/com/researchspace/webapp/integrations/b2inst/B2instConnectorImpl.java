@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * {@link B2instConnector} implementation over Spring {@link RestTemplate}. Reads its configuration
@@ -119,7 +121,7 @@ public class B2instConnectorImpl implements B2instConnector {
   @Override
   public boolean deleteDoi(String rid) {
     try {
-      restTemplate.delete(apiBase() + "/records/" + rid + "/draft");
+      restTemplate.delete(recordUrl(rid, "draft"));
       return true;
     } catch (RestClientException e) {
       String reason = describeFailure(e);
@@ -146,7 +148,7 @@ public class B2instConnectorImpl implements B2instConnector {
       B2instRequestResponse created =
           restTemplate
               .exchange(
-                  apiBase() + "/records/" + rid + "/draft/review",
+                  recordUrl(rid, "draft", "review"),
                   HttpMethod.PUT,
                   new HttpEntity<>(review),
                   B2instRequestResponse.class)
@@ -249,12 +251,47 @@ public class B2instConnectorImpl implements B2instConnector {
     return new HttpEntity<>("{}", headers);
   }
 
+  /**
+   * Pattern a record id (RID) must match before it is put into a URL. Both observed B2INST/Invenio
+   * forms fit it (for example {@code k2j9p-7yh21}, {@code abcde-12345}).
+   */
+  private static final Pattern VALID_RID = Pattern.compile("[A-Za-z0-9_-]{1,64}");
+
+  /**
+   * A record URL with the RID as one escaped path segment.
+   *
+   * <p>The RID is {@code DigitalObjectIdentifier.identifier}, which {@code
+   * ApiInventoryDOI.applyChangesToDatabaseDOI} writes from a record update, so it is not trusted
+   * input. Concatenated raw, a crafted value could point these calls - and the bearer token they
+   * carry - at other paths on the provider host, with parts of the answer reaching the user through
+   * the identifier's state, provider URL and failure message.
+   *
+   * <p>Guarded at both ends: the RID is checked against {@link #VALID_RID} first, which rules out
+   * the {@code .} and {@code ..} segments a URL normaliser could still collapse after escaping, and
+   * {@code pathSegment} then escapes anything else so a value can only ever be one segment. A
+   * rejected RID throws rather than being cleaned up: RSpace did not mint it, so there is no
+   * correct request to send.
+   */
+  private String recordUrl(String rid, String... trailingSegments) {
+    if (rid == null || !VALID_RID.matcher(rid).matches()) {
+      throw new B2instConnectionException(
+          "Refusing to call B2INST with an unexpected record id", "invalid record id", null);
+    }
+    return UriComponentsBuilder.fromUriString(apiBase())
+        .pathSegment("records")
+        .pathSegment(rid)
+        .pathSegment(trailingSegments)
+        .build()
+        .encode()
+        .toUriString();
+  }
+
   @Override
   public Optional<B2instRequestResponse> getReviewOf(String rid) {
     try {
       return Optional.ofNullable(
           restTemplate.getForObject(
-              apiBase() + "/records/" + rid + "/draft/review", B2instRequestResponse.class));
+              recordUrl(rid, "draft", "review"), B2instRequestResponse.class));
     } catch (HttpClientErrorException.NotFound e) {
       return Optional.empty();
     } catch (RestClientException e) {
@@ -266,12 +303,12 @@ public class B2instConnectorImpl implements B2instConnector {
 
   @Override
   public Optional<B2instDraftRecord> getPublishedRecord(String rid) {
-    return getRecord(apiBase() + "/records/" + rid, rid);
+    return getRecord(recordUrl(rid), rid);
   }
 
   @Override
   public Optional<B2instDraftRecord> getDraftRecord(String rid) {
-    return getRecord(apiBase() + "/records/" + rid + "/draft", rid);
+    return getRecord(recordUrl(rid, "draft"), rid);
   }
 
   private Optional<B2instDraftRecord> getRecord(String url, String rid) {

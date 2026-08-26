@@ -33,7 +33,7 @@ import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../../stores/contexts/Analytics";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
 import type { Identifier, IdentifierField, PublishingState } from "../../../../stores/definitions/Identifier";
-import { isPublishedState } from "../../../../stores/definitions/Identifier";
+import { identifierStateLabel, isPublishedState } from "../../../../stores/definitions/Identifier";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import RsSet from "../../../../util/set";
@@ -280,25 +280,6 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
   const { uiStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
   const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
-  /*
-   * PIDINST identifiers report the B2INST review-request status rather than a DataCite state, so
-   * this must cover both vocabularies. The final arm is a deliberate catch-all: the server passes
-   * the provider's status through verbatim, and an unrecognised value must degrade to showing the
-   * raw state rather than throwing out of render and blanking the whole page.
-   */
-  const identifierStateLabel = (state: PublishingState): string =>
-    match<PublishingState, string>([
-      [(s) => s === "draft", t("igsnTable.filters.stateOptions.draft.title")],
-      [(s) => s === "findable", t("igsnTable.filters.stateOptions.findable.title")],
-      [(s) => s === "registered", t("igsnTable.filters.stateOptions.registered.title")],
-      [(s) => s === "created", t("fields.identifiers.list.stateLabels.created")],
-      [(s) => s === "submitted", t("fields.identifiers.list.stateLabels.submitted")],
-      [(s) => s === "accepted", t("fields.identifiers.list.stateLabels.accepted")],
-      [(s) => s === "declined", t("fields.identifiers.list.stateLabels.declined")],
-      [(s) => s === "cancelled", t("fields.identifiers.list.stateLabels.cancelled")],
-      [(s) => s === "expired", t("fields.identifiers.list.stateLabels.expired")],
-      [() => true, String(state)],
-    ])(state);
 
   const StateInfo = ({
     identifierState,
