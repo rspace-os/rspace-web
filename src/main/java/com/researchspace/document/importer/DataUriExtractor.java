@@ -26,9 +26,13 @@ import org.jsoup.nodes.Element;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 import org.owasp.html.Sanitizers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Extracts embedded raster images and allowlist-sanitizes converted HTML. */
 final class DataUriExtractor {
+
+  private static final Logger LOG = LoggerFactory.getLogger(DataUriExtractor.class);
 
   private static final long MAX_HTML_BYTES = 50L * 1024 * 1024;
   private static final long MAX_IMAGE_BYTES = 20L * 1024 * 1024;
@@ -53,8 +57,13 @@ final class DataUriExtractor {
       Document sanitized = Jsoup.parse(HTML_POLICY.sanitize(document.body().html()));
       Files.writeString(htmlFile, sanitized.outerHtml(), StandardCharsets.UTF_8);
     } catch (IOException | RuntimeException e) {
+      LOG.warn("Converted Word HTML failed validation", e);
       for (Path extractedFile : extractedFiles) {
-        Files.deleteIfExists(extractedFile);
+        try {
+          Files.deleteIfExists(extractedFile);
+        } catch (IOException cleanupFailure) {
+          LOG.warn("Could not remove an extracted Word import image", cleanupFailure);
+        }
       }
       throw e;
     }
@@ -81,6 +90,7 @@ final class DataUriExtractor {
       try {
         bytes = Base64.getDecoder().decode(matcher.group(1));
       } catch (IllegalArgumentException e) {
+        LOG.warn("Converted Word HTML contained invalid Base64 image data", e);
         throw new IOException(DocumentConversionError.INPUT_INVALID.code(), e);
       }
       totalBytes += bytes.length;

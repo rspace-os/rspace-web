@@ -5,6 +5,7 @@ import com.researchspace.documentconversion.spi.AbstractDocumentConversionServic
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.documentconversion.spi.Convertible;
 import com.researchspace.documentconversion.spi.DocumentConversionService;
+import com.researchspace.documentconversion.validation.SafeOfficeArchiveValidator;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -15,11 +16,15 @@ import java.util.Locale;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 
 /** Converts Word import and export formats through the sidecar's JODConverter worker. */
 public final class JodConverterClient extends AbstractDocumentConversionService
     implements DocumentConversionService {
+
+  private static final Logger LOG = LoggerFactory.getLogger(JodConverterClient.class);
 
   private static final Set<String> WORD_INPUTS = Set.of("doc", "docx", "odt", "ott", "rtf", "txt");
   private static final MediaType DOCX =
@@ -47,6 +52,7 @@ public final class JodConverterClient extends AbstractDocumentConversionService
       }
       return result;
     } catch (IOException e) {
+      LOG.error("Could not create Word conversion output", e);
       FileUtils.deleteQuietly(output);
       return new ConversionResult(DocumentConversionError.OUTPUT_CREATE_FAILED.code());
     }
@@ -66,6 +72,7 @@ public final class JodConverterClient extends AbstractDocumentConversionService
         SafeOfficeArchiveValidator.validateInput(input.toPath(), inputExtension);
       }
     } catch (Exception e) {
+      LOG.warn("Word conversion input validation failed", e);
       deleteEmptyOutput(output);
       return new ConversionResult(DocumentConversionError.INPUT_INVALID.code());
     }
