@@ -89,5 +89,8 @@ src/main/webapp/ui/coverage
 # Playwright MCP output (snapshots, console logs, screenshots from browser driving)
 .playwright-mcp/
 
+# Local test runner
+runcmd.sh
+
 # Local dev deployment properties, copied from deployment.properties.example (see PropertyFiles.md)
 src/main/resources/deployments/dev/deployment.properties
