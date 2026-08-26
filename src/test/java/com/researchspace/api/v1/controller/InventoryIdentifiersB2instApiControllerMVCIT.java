@@ -36,10 +36,13 @@ import org.springframework.validation.BindingResult;
  * PIDINST-mapped field content to B2INST. A {@link B2instConnectorDummy} captures the payload, so
  * no B2INST instance is contacted.
  *
- * <p>Link-field narratives ("Measurement technique", "Calibration") are covered by {@code
- * RspaceToExternalProviderAdapterImplTest}; building an {@code InventoryLink} target through the
- * API would need a second record and relation setup, which adds nothing to the plumbing this test
- * exercises.
+ * <p>The two link fields ("Measurement technique", "Calibration") are deliberately absent here.
+ * They stopped being documentation-only in RSDEV-1253 and now map to RelatedIdentifier entries, but
+ * their value comes from a linked record rather than the field's own content, so exercising them
+ * needs a second record and relation setup that this template-copy flow does not otherwise use.
+ * They are covered against real persistence by {@code
+ * InventoryIdentifierApiManagerRelatedIdentifierTest}, which resolves the link through Hibernate
+ * for both providers, and by {@code RspaceToExternalProviderAdapterImplTest} for the mapping rules.
  */
 @WebAppConfiguration
 public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_InventoryTestBase {
