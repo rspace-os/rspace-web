@@ -133,11 +133,12 @@ describe("Identifiers section", () => {
     });
 
     /*
-     * B2INST has no retract operation, so retractDoi throws for every review state, and Delete is
-     * only offered for "draft". The button rendering at all is new: these states used to throw during
-     * render. It must therefore be disabled rather than offer an action that always errors.
+     * B2INST has no retract operation, so retractDoi throws for every review state. Closed reviews
+     * (declined, cancelled, expired) offer Delete instead (see "Delete for closed B2INST reviews"
+     * below); the open and published states must stay disabled rather than offer an action that
+     * always errors.
      */
-    test.each<PidinstPublishingState>(["created", "submitted", "accepted", "declined", "cancelled", "expired"])(
+    test.each<PidinstPublishingState>(["created", "submitted", "accepted"])(
       "Retract is disabled for the '%s' review state, since B2INST cannot retract",
       (state) => {
         const instrument: InventoryRecord = makeMockSample();
@@ -330,6 +331,20 @@ describe("Identifiers section", () => {
       );
     });
 
+    test("an accepted identifier gets the published highlight", () => {
+      const instrument: InventoryRecord = makeMockSample();
+      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state: "accepted" }];
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument} />
+        </ThemeProvider>,
+      );
+      const stateCell = screen.getByTestId("identifier-state");
+      // theme.palette.modifiedHighlight is "teal"; jsdom reports the computed rgb equivalent
+      expect(materialTheme.palette.modifiedHighlight).toBe("teal");
+      expect(stateCell).toHaveStyle({ color: "rgb(0, 128, 128)" });
+    });
+
     test("Publish stays enabled for a draft PIDINST identifier", () => {
       const instrument: InventoryRecord = makeMockSample();
       instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state: "draft" }];
@@ -341,6 +356,80 @@ describe("Identifiers section", () => {
       );
 
       expect(screen.getByRole("button", { name: /republish|publish/i })).toBeEnabled();
+    });
+  });
+
+  describe("PIDINST publish gating", () => {
+    test("a created review leaves Publish enabled", () => {
+      const instrument: InventoryRecord = makeMockSample();
+      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state: "created" }];
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument} />
+        </ThemeProvider>,
+      );
+      expect(screen.getByRole("button", { name: /publish/i })).toBeEnabled();
+    });
+
+    test("a submitted review disables Publish", () => {
+      const instrument: InventoryRecord = makeMockSample();
+      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state: "submitted" }];
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument} />
+        </ThemeProvider>,
+      );
+      expect(screen.getByRole("button", { name: /publish/i })).toBeDisabled();
+    });
+
+    test("an accepted B2INST identifier disables Publish and does not offer Republish", () => {
+      const instrument: InventoryRecord = makeMockSample();
+      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state: "accepted" }];
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument} />
+        </ThemeProvider>,
+      );
+      const button = screen.getByRole("button", { name: /publish/i });
+      expect(button).toBeDisabled();
+      expect(button).not.toHaveTextContent(/republish/i);
+    });
+  });
+
+  describe("Delete for closed B2INST reviews", () => {
+    test.each(["declined", "cancelled", "expired"] as const)("state '%s' offers an enabled Delete", (state) => {
+      const instrument: InventoryRecord = makeMockSample();
+      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state }];
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument} />
+        </ThemeProvider>,
+      );
+      const button = screen.getByRole("button", { name: /delete|retract/i });
+      expect(button).toBeEnabled();
+      expect(button).toHaveTextContent("fields.identifiers.list.deleteOrRetract.delete");
+    });
+
+    test.each(["submitted", "accepted", "created"] as const)("state '%s' keeps Delete/Retract disabled", (state) => {
+      const instrument: InventoryRecord = makeMockSample();
+      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state }];
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument} />
+        </ThemeProvider>,
+      );
+      expect(screen.getByRole("button", { name: /delete|retract/i })).toBeDisabled();
+    });
+
+    test("a created identifier explains itself", () => {
+      const instrument: InventoryRecord = makeMockSample();
+      instrument.identifiers = [{ ...mockIGSNIdentifier("sample"), doiType: "PIDINST_B2INST", state: "created" }];
+      const { container } = render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument} />
+        </ThemeProvider>,
+      );
+      expect(container).toHaveTextContent("fields.identifiers.list.stateInfo.pidinstCreated");
     });
   });
 });

@@ -33,6 +33,7 @@ import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../../stores/contexts/Analytics";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
 import type { Identifier, IdentifierField, PublishingState } from "../../../../stores/definitions/Identifier";
+import { isPublishedState } from "../../../../stores/definitions/Identifier";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import RsSet from "../../../../util/set";
@@ -42,6 +43,7 @@ import { type Identifier as IdentifierInTable, useIdentifiers } from "../../../u
 import MultipleInputHandler from "./MultipleInputHandler";
 import PublicPreviewDialog from "./PublicPreviewDialog";
 import PublishButton from "./PublishButton";
+import RefreshButton from "./RefreshButton";
 
 const IdentifierWrapper = observer(
   ({ activeResult, id, editable }: { activeResult: InventoryRecord; id: Identifier; editable: boolean }): ReactNode => {
@@ -255,8 +257,19 @@ const IdentifierWrapper = observer(
  * (InventoryIdentifierApiManagerImpl), so a state this frontend has never heard of is expected here —
  * the catch-alls in identifierStateLabel and StateInfo exist for exactly that. A state-keyed gate
  * would leave every such value on the old path with an enabled "Retract" that always errors.
+ * Closed reviews are carved back out by isDeletableClosedReview, an explicit allowlist.
  */
 const isB2instBeyondDraft = (id: Identifier): boolean => id.doiType === "PIDINST_B2INST" && id.state !== "draft";
+
+/*
+ * A closed, unpublished B2INST review (declined, cancelled, expired): the record is still only a
+ * draft on the provider side, so the identifier can be deleted, which is how the user clears a
+ * failed submission to register a new one (RSDEV-1260). Deliberately a known-state allowlist, the
+ * inverse of isB2instBeyondDraft's catch-all: an unknown state must stay disabled, not deletable.
+ */
+const CLOSED_REVIEW_STATES: ReadonlyArray<string> = ["declined", "cancelled", "expired"];
+const isDeletableClosedReview = (id: Identifier): boolean =>
+  id.doiType === "PIDINST_B2INST" && CLOSED_REVIEW_STATES.includes(id.state);
 
 type IdentifiersListArgs = { activeResult: InventoryRecord };
 
@@ -328,6 +341,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
      * PIDINST review states. Publishing a B2INST identifier submits it to a community for curator
      * review, so the outcome is decided outside RSpace and is only reported back here.
      */
+    if (identifierState === "created") return <>{t("fields.identifiers.list.stateInfo.pidinstCreated")}</>;
     if (identifierState === "submitted") return <>{t("fields.identifiers.list.stateInfo.pidinstSubmitted")}</>;
     if (identifierState === "accepted") return <>{t("fields.identifiers.list.stateInfo.pidinstAccepted")}</>;
     if (identifierState === "declined") return <>{t("fields.identifiers.list.stateInfo.pidinstDeclined")}</>;
@@ -345,7 +359,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
    *IGSNs in other states have no RoR data set by back end code.
    */
   const fetchAndSetRoRData = async (id: Identifier): Promise<void> => {
-    if (id.state !== "findable") {
+    if (!isPublishedState(id.state)) {
       try {
         const idResponse: { data: string } = await axios.get("/global/ror/existingGlobalRoRID");
         const nameResponse: { data: string } = await axios.get("/global/ror/existingGlobalRoRName");
@@ -399,152 +413,173 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
             {t("fields.identifiers.list.editFirst")}
           </Alert>
         )}
-        {activeResult.identifiers.map((id) => (
-          <Grid key={id.doi} sx={{ width: "100%" }}>
-            <Grid container direction="row" spacing={1} sx={{ width: "100%", marginBottom: "8px", fontWeight: "bold" }}>
-              <Grid size={6}>{t("fields.identifiers.list.headers.identifier")}</Grid>
-              <Grid size={2}>{t("fields.identifiers.list.headers.type")}</Grid>
-              <Grid size={2}>{t("fields.identifiers.list.headers.state")}</Grid>
-              <Grid size={2}>{openIdForm ? t("fields.identifiers.list.hide") : t("fields.identifiers.list.show")}</Grid>
-            </Grid>
-            <Grid container direction="row" spacing={1} sx={{ width: "100%", marginBottom: "8px" }}>
-              <Grid sx={{ padding: "6px" }} size={6}>
-                {/*
-                 * Keyed on the URLs available rather than on the state, since the two providers
-                 * reach a linkable URL at different points. A citable public URL wins when present
-                 * (DataCite, once findable). Otherwise the provider's own record page is used, which
-                 * a PIDINST identifier has from registration onwards; the identifier value is the
-                 * link text there, since the provider URL itself is noise to the reader. With
-                 * neither, the identifier is shown as plain text.
-                 */}
-                {id.publicUrl ? (
-                  <a href={id.publicUrl} target="_blank" rel="noreferrer">
-                    {id.publicUrl}
-                  </a>
-                ) : id.providerUrl ? (
-                  <a href={id.providerUrl} target="_blank" rel="noreferrer">
-                    {id.doi}
-                  </a>
-                ) : (
-                  id.doi
+        {activeResult.identifiers.map((id) => {
+          const deletable = id.state === "draft" || isDeletableClosedReview(id);
+          return (
+            <Grid key={id.doi} sx={{ width: "100%" }}>
+              <Grid
+                container
+                direction="row"
+                spacing={1}
+                sx={{ width: "100%", marginBottom: "8px", fontWeight: "bold" }}
+              >
+                <Grid size={6}>{t("fields.identifiers.list.headers.identifier")}</Grid>
+                <Grid size={2}>{t("fields.identifiers.list.headers.type")}</Grid>
+                <Grid size={2}>{t("fields.identifiers.list.headers.state")}</Grid>
+                <Grid size={2}>
+                  {openIdForm ? t("fields.identifiers.list.hide") : t("fields.identifiers.list.show")}
+                </Grid>
+              </Grid>
+              <Grid container direction="row" spacing={1} sx={{ width: "100%", marginBottom: "8px" }}>
+                <Grid sx={{ padding: "6px" }} size={6}>
+                  {/*
+                   * Keyed on the URLs available rather than on the state, since the two providers
+                   * reach a linkable URL at different points. A citable public URL wins when present
+                   * (DataCite, once findable). Otherwise the provider's own record page is used, which
+                   * a PIDINST identifier has from registration onwards; the identifier value is the
+                   * link text there, since the provider URL itself is noise to the reader. With
+                   * neither, the identifier is shown as plain text.
+                   */}
+                  {id.publicUrl ? (
+                    <a href={id.publicUrl} target="_blank" rel="noreferrer">
+                      {id.publicUrl}
+                    </a>
+                  ) : id.providerUrl ? (
+                    <a href={id.providerUrl} target="_blank" rel="noreferrer">
+                      {id.doi}
+                    </a>
+                  ) : (
+                    id.doi
+                  )}
+                </Grid>
+                <Grid size={2}>{id.doiTypeLabel}</Grid>
+                <Grid
+                  sx={isPublishedState(id.state) ? { color: theme.palette.modifiedHighlight } : undefined}
+                  data-testid="identifier-state"
+                  size={2}
+                >
+                  {identifierStateLabel(id.state)}
+                </Grid>
+                <Grid size={2}>
+                  <CustomTooltip
+                    title={match<void, string>([
+                      [() => openIdForm, t("fields.identifiers.list.toggleId.hide")],
+                      [() => true, t("fields.identifiers.list.toggleId.show")],
+                    ])()}
+                  >
+                    <IconButton
+                      onClick={() => setOpenIdForm(!openIdForm)}
+                      disabled={false}
+                      aria-label={t("fields.identifiers.list.toggleId.label")}
+                    >
+                      <ExpandCollapseIcon open={openIdForm} />
+                    </IconButton>
+                  </CustomTooltip>
+                </Grid>
+              </Grid>
+              <Grid
+                container
+                direction="row"
+                spacing={2}
+                sx={{
+                  justifyContent: "flex-start",
+                  width: "100%",
+                  marginBottom: "12px",
+                }}
+              >
+                <Grid>
+                  <CustomTooltip
+                    title={
+                      id.isValid
+                        ? t("fields.identifiers.list.tooltips.previewPage")
+                        : t("fields.identifiers.list.tooltips.missingData")
+                    }
+                  >
+                    <Button
+                      color="callToAction"
+                      variant="outlined"
+                      size="small"
+                      onClick={() => void handlePreview(id)}
+                      disabled={
+                        activeResult.state === "edit" ||
+                        !id.isValid ||
+                        // the preview dialog contains a publish action
+                        Boolean(activeResult.historicalVersion)
+                      }
+                    >
+                      {t("fields.identifiers.list.preview")}
+                    </Button>
+                  </CustomTooltip>
+                </Grid>
+                <Grid>
+                  <PublishButton
+                    identifier={id}
+                    disabled={activeResult.state === "edit" || Boolean(activeResult.historicalVersion)}
+                  />
+                </Grid>
+                <Grid>
+                  <CustomTooltip
+                    title={
+                      id.state === "draft"
+                        ? t("fields.identifiers.list.tooltips.deleteDraft")
+                        : isDeletableClosedReview(id)
+                          ? t("fields.identifiers.list.tooltips.deleteClosedReview")
+                          : id.state === "findable"
+                            ? t("fields.identifiers.list.tooltips.retract")
+                            : isB2instBeyondDraft(id)
+                              ? t("fields.identifiers.list.tooltips.pidinstNotRetractable")
+                              : t("fields.identifiers.list.tooltips.notPublished")
+                    }
+                  >
+                    <Button
+                      color="secondary"
+                      variant="outlined"
+                      size="small"
+                      onClick={deletable ? () => handleDelete(id) : () => handleRetract(id)}
+                      disabled={
+                        activeResult.state === "edit" ||
+                        id.state === "registered" ||
+                        (isB2instBeyondDraft(id) && !isDeletableClosedReview(id)) ||
+                        Boolean(activeResult.historicalVersion)
+                      }
+                    >
+                      {deletable
+                        ? t("fields.identifiers.list.deleteOrRetract.delete")
+                        : t("fields.identifiers.list.deleteOrRetract.retract")}
+                    </Button>
+                  </CustomTooltip>
+                </Grid>
+                {/* last in the row, after Delete/Retract, per the RSDEV-1260 mockup */}
+                <Grid>
+                  <RefreshButton
+                    identifier={id}
+                    disabled={activeResult.state === "edit" || Boolean(activeResult.historicalVersion)}
+                  />
+                </Grid>
+                {!id.isValid && (
+                  <Grid sx={{ mb: 1 }}>
+                    <Alert severity="warning">{t("fields.identifiers.missingDetails")}</Alert>
+                  </Grid>
                 )}
               </Grid>
-              <Grid size={2}>{id.doiTypeLabel}</Grid>
-              <Grid
-                sx={id.state === "findable" ? { color: theme.palette.modifiedHighlight } : undefined}
-                data-testid="identifier-state"
-                size={2}
-              >
-                {identifierStateLabel(id.state)}
-              </Grid>
-              <Grid size={2}>
-                <CustomTooltip
-                  title={match<void, string>([
-                    [() => openIdForm, t("fields.identifiers.list.toggleId.hide")],
-                    [() => true, t("fields.identifiers.list.toggleId.show")],
-                  ])()}
+              <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
+                <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
+                <a
+                  href={helpDocsArticleUrl(isInstrument ? "pidinstIdentifiers" : "igsnIdentifiers")}
+                  target="_blank"
+                  rel="noreferrer"
                 >
-                  <IconButton
-                    onClick={() => setOpenIdForm(!openIdForm)}
-                    disabled={false}
-                    aria-label={t("fields.identifiers.list.toggleId.label")}
-                  >
-                    <ExpandCollapseIcon open={openIdForm} />
-                  </IconButton>
-                </CustomTooltip>
-              </Grid>
+                  {isInstrument
+                    ? t("fields.identifiers.list.pidinstDocLink")
+                    : t("fields.identifiers.list.igsnDocLink")}
+                </a>
+              </Alert>
+              <Collapse in={openIdForm}>
+                <IdentifierWrapper activeResult={activeResult} id={id} editable={editable} />
+              </Collapse>
             </Grid>
-            <Grid
-              container
-              direction="row"
-              spacing={2}
-              sx={{
-                justifyContent: "flex-start",
-                width: "100%",
-                marginBottom: "12px",
-              }}
-            >
-              <Grid>
-                <CustomTooltip
-                  title={
-                    id.isValid
-                      ? t("fields.identifiers.list.tooltips.previewPage")
-                      : t("fields.identifiers.list.tooltips.missingData")
-                  }
-                >
-                  <Button
-                    color="callToAction"
-                    variant="outlined"
-                    size="small"
-                    onClick={() => void handlePreview(id)}
-                    disabled={
-                      activeResult.state === "edit" ||
-                      !id.isValid ||
-                      // the preview dialog contains a publish action
-                      Boolean(activeResult.historicalVersion)
-                    }
-                  >
-                    {t("fields.identifiers.list.preview")}
-                  </Button>
-                </CustomTooltip>
-              </Grid>
-              <Grid>
-                <PublishButton
-                  identifier={id}
-                  disabled={activeResult.state === "edit" || Boolean(activeResult.historicalVersion)}
-                />
-              </Grid>
-              <Grid>
-                <CustomTooltip
-                  title={
-                    id.state === "draft"
-                      ? t("fields.identifiers.list.tooltips.deleteDraft")
-                      : id.state === "findable"
-                        ? t("fields.identifiers.list.tooltips.retract")
-                        : isB2instBeyondDraft(id)
-                          ? t("fields.identifiers.list.tooltips.pidinstNotRetractable")
-                          : t("fields.identifiers.list.tooltips.notPublished")
-                  }
-                >
-                  <Button
-                    color="secondary"
-                    variant="outlined"
-                    size="small"
-                    onClick={id.state === "draft" ? () => handleDelete(id) : () => handleRetract(id)}
-                    disabled={
-                      activeResult.state === "edit" ||
-                      id.state === "registered" ||
-                      isB2instBeyondDraft(id) ||
-                      Boolean(activeResult.historicalVersion)
-                    }
-                  >
-                    {id.state === "draft"
-                      ? t("fields.identifiers.list.deleteOrRetract.delete")
-                      : t("fields.identifiers.list.deleteOrRetract.retract")}
-                  </Button>
-                </CustomTooltip>
-              </Grid>
-              {!id.isValid && (
-                <Grid sx={{ mb: 1 }}>
-                  <Alert severity="warning">{t("fields.identifiers.missingDetails")}</Alert>
-                </Grid>
-              )}
-            </Grid>
-            <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
-              <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
-              <a
-                href={helpDocsArticleUrl(isInstrument ? "pidinstIdentifiers" : "igsnIdentifiers")}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {isInstrument ? t("fields.identifiers.list.pidinstDocLink") : t("fields.identifiers.list.igsnDocLink")}
-              </a>
-            </Alert>
-            <Collapse in={openIdForm}>
-              <IdentifierWrapper activeResult={activeResult} id={id} editable={editable} />
-            </Collapse>
-          </Grid>
-        ))}
+          );
+        })}
       </Grid>
       {selectedIdentifier && (
         <PublicPreviewDialog

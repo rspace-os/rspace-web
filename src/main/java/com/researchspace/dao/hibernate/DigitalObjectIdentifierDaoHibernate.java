@@ -52,12 +52,12 @@ public class DigitalObjectIdentifierDaoHibernate
       return Optional.empty();
     }
 
-    // starting from most recent revisions, find oldest doi in "findable" state
+    // starting from most recent revisions, find oldest doi in a published state
     DigitalObjectIdentifier lastPublishedDoi = null;
     for (int i = genericResults.size() - 1; i >= 0; i--) {
       Object[] row = (Object[]) genericResults.get(i);
       DigitalObjectIdentifier doi = (DigitalObjectIdentifier) row[0];
-      if ("findable".equals(doi.getState())) {
+      if (DigitalObjectIdentifier.isPublishedState(doi.getState())) {
         lastPublishedDoi = doi;
       } else {
         break; // we've hit doi that's not published, stop here

@@ -20,6 +20,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
+import com.researchspace.b2inst.model.response.B2instRequestResponse;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
@@ -53,6 +55,8 @@ class B2instConnectorImplTest {
 
   private static final String REVIEW_URL =
       "https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21/draft/review";
+  private static final String RECORD_URL = "https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21";
+  private static final String DRAFT_URL = RECORD_URL + "/draft";
 
   @Mock private SystemPropertyManager mockSysPropMgr;
   @InjectMocks private B2instConnectorImpl connector;
@@ -642,5 +646,94 @@ class B2instConnectorImplTest {
     connector.reloadClient();
 
     assertThrows(UnsupportedOperationException.class, () -> connector.retractDoi("k2j9p-7yh21"));
+  }
+
+  @Test
+  void getReviewOfReturnsReviewWhateverItsStatus() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"status\":\"declined\",\"is_open\":false,\"is_closed\":true}",
+                MediaType.APPLICATION_JSON));
+
+    Optional<B2instRequestResponse> review = connector.getReviewOf("k2j9p-7yh21");
+
+    assertTrue(review.isPresent());
+    assertEquals("declined", review.get().getStatus());
+    server.verify();
+  }
+
+  @Test
+  void getReviewOfReturnsEmptyOn404() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    assertTrue(connector.getReviewOf("k2j9p-7yh21").isEmpty());
+    server.verify();
+  }
+
+  @Test
+  void getPublishedRecordReturnsRecordWithPidsAndLinks() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(RECORD_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"k2j9p-7yh21\",\"is_published\":true,"
+                    + "\"pids\":{\"epic\":{\"identifier\":\"http://hdl.handle.net/21.T11975/k2j9p-7yh21\"}},"
+                    + "\"links\":{\"self_html\":\"https://b2inst-test.gwdg.de/records/k2j9p-7yh21\"}}",
+                MediaType.APPLICATION_JSON));
+
+    Optional<B2instDraftRecord> record = connector.getPublishedRecord("k2j9p-7yh21");
+
+    assertTrue(record.isPresent());
+    assertEquals(
+        "https://b2inst-test.gwdg.de/records/k2j9p-7yh21", record.get().getLinks().getSelfHtml());
+    assertTrue(record.get().getPids().containsKey("epic"));
+    server.verify();
+  }
+
+  @Test
+  void getPublishedRecordAndDraftReturnEmptyOn404() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(RECORD_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    assertTrue(connector.getPublishedRecord("k2j9p-7yh21").isEmpty());
+    assertTrue(connector.getDraftRecord("k2j9p-7yh21").isEmpty());
+    server.verify();
+  }
+
+  @Test
+  void getReviewOfWrapsTransportErrors() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andRespond(withException(new IOException("connection reset")));
+
+    assertThrows(B2instConnectionException.class, () -> connector.getReviewOf("k2j9p-7yh21"));
   }
 }

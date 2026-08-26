@@ -45,6 +45,7 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.time.Year;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.naming.InvalidNameException;
@@ -320,6 +321,23 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
     return updateInventoryRecordWithDoiUpdate(
         user, invRec, createUpdateWithRetractedDoi(invRec, user));
+  }
+
+  @Override
+  public ApiInventoryRecordInfo refreshIdentifier(GlobalIdentifier invRecOid, User user) {
+    InventoryRecord invRec = invRecRetriever.getInvRecordByGlobalId(invRecOid);
+    if (invRec.getActiveIdentifiers().isEmpty()) {
+      throw new IllegalArgumentException(
+          "record " + invRecOid.toString() + " has no identifier to refresh");
+    }
+    DigitalObjectIdentifier doi = invRec.getActiveIdentifiers().get(0);
+    if (!isB2inst(doi.getType())) {
+      // DataCite state changes only through RSpace's own publish/retract calls, so the stored
+      // state is already current and there is no provider read to make.
+      return ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(invRec);
+    }
+    return updateInventoryRecordWithDoiUpdate(
+        user, invRec, createUpdateWithRefreshedB2instDoi(doi));
   }
 
   private ApiSample getApiSampleUpdateWithIdentifier(
@@ -678,6 +696,70 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       publishDoi.setState(result.getStatus());
     }
     return publishDoi;
+  }
+
+  /**
+   * Pulls the identifier's current status from B2INST and builds the sparse update that persists it
+   * (RSDEV-1260). The community review's status is stored verbatim when the review is readable. A
+   * review that answers 404 is disambiguated by the record itself: accepting a submission publishes
+   * the record and removes the draft, taking the review URL with it, so a published record means
+   * {@code accepted} (and carries the minted Handle PID and the now-public record page); a
+   * surviving draft means there is no review left to wait on, so the identifier drops back to
+   * {@code draft} and can be published or deleted again; nothing at all means the record was
+   * removed on the provider side, which is reported rather than silently keeping stale state.
+   */
+  private ApiInventoryDOI createUpdateWithRefreshedB2instDoi(DigitalObjectIdentifier doi) {
+    String rid = doi.getIdentifier();
+    ApiInventoryDOI refreshUpdate = new ApiInventoryDOI();
+    refreshUpdate.setId(doi.getId());
+    try {
+      String reviewStatus =
+          b2instConnector
+              .getReviewOf(rid)
+              .map(B2instRequestResponse::getStatus)
+              .filter(status -> isNotBlank(status))
+              .orElse(null);
+      if (reviewStatus != null && !"accepted".equals(reviewStatus)) {
+        refreshUpdate.setState(reviewStatus);
+        return refreshUpdate;
+      }
+      Optional<B2instDraftRecord> published = b2instConnector.getPublishedRecord(rid);
+      if (published.isPresent()) {
+        refreshUpdate.setState("accepted");
+        refreshUpdate.setPublicUrl(epicPidOf(published.get()));
+        if (published.get().getLinks() != null) {
+          refreshUpdate.setProviderUrl(published.get().getLinks().getSelfHtml());
+        }
+        return refreshUpdate;
+      }
+      if ("accepted".equals(reviewStatus)) {
+        refreshUpdate.setState("accepted");
+        return refreshUpdate;
+      }
+      if (b2instConnector.getDraftRecord(rid).isPresent()) {
+        refreshUpdate.setState("draft");
+        return refreshUpdate;
+      }
+    } catch (B2instConnectionException b2instException) {
+      throw B2instConnectionException.wrapping(
+          messages.getMessage(
+              "errors.inventory.identifier.b2instRefreshFailed",
+              new Object[] {b2instException.getReason()}),
+          b2instException);
+    }
+    throw new ApiRuntimeException("errors.inventory.identifier.b2instRecordGone");
+  }
+
+  /**
+   * The record's minted ePIC Handle PID (for example {@code
+   * http://hdl.handle.net/21.T11975/<rid>}), or null when the response carries none. The {@code
+   * pids} block is kept loosely typed on the model, so it is dug out here.
+   */
+  private String epicPidOf(B2instDraftRecord record) {
+    if (record.getPids() == null || !(record.getPids().get("epic") instanceof Map<?, ?> epic)) {
+      return null;
+    }
+    return epic.get("identifier") instanceof String identifier ? identifier : null;
   }
 
   private ApiInventoryDOI createUpdateWithRetractedB2instDoi(DigitalObjectIdentifier doi) {

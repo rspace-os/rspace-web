@@ -13,6 +13,7 @@ import jakarta.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -248,6 +249,43 @@ public class B2instConnectorImpl implements B2instConnector {
     return new HttpEntity<>("{}", headers);
   }
 
+  @Override
+  public Optional<B2instRequestResponse> getReviewOf(String rid) {
+    try {
+      return Optional.ofNullable(
+          restTemplate.getForObject(
+              apiBase() + "/records/" + rid + "/draft/review", B2instRequestResponse.class));
+    } catch (HttpClientErrorException.NotFound e) {
+      return Optional.empty();
+    } catch (RestClientException e) {
+      String reason = describeFailure(e);
+      throw new B2instConnectionException(
+          "Error reading B2INST review of record " + rid + ": " + reason, reason, e);
+    }
+  }
+
+  @Override
+  public Optional<B2instDraftRecord> getPublishedRecord(String rid) {
+    return getRecord(apiBase() + "/records/" + rid, rid);
+  }
+
+  @Override
+  public Optional<B2instDraftRecord> getDraftRecord(String rid) {
+    return getRecord(apiBase() + "/records/" + rid + "/draft", rid);
+  }
+
+  private Optional<B2instDraftRecord> getRecord(String url, String rid) {
+    try {
+      return Optional.ofNullable(restTemplate.getForObject(url, B2instDraftRecord.class));
+    } catch (HttpClientErrorException.NotFound e) {
+      return Optional.empty();
+    } catch (RestClientException e) {
+      String reason = describeFailure(e);
+      throw new B2instConnectionException(
+          "Error reading B2INST record " + rid + ": " + reason, reason, e);
+    }
+  }
+
   /**
    * The record's review request when one is already open, otherwise {@code null}.
    *
@@ -263,14 +301,7 @@ public class B2instConnectorImpl implements B2instConnector {
    * is both accepted by B2INST and necessary, since it returns the submit link the caller needs.
    */
   private B2instRequestResponse openReviewOf(String rid) {
-    try {
-      B2instRequestResponse review =
-          restTemplate.getForObject(
-              apiBase() + "/records/" + rid + "/draft/review", B2instRequestResponse.class);
-      return review != null && Boolean.TRUE.equals(review.getIsOpen()) ? review : null;
-    } catch (HttpClientErrorException.NotFound e) {
-      return null; // no review yet: the ordinary first-publish path
-    }
+    return getReviewOf(rid).filter(review -> Boolean.TRUE.equals(review.getIsOpen())).orElse(null);
   }
 
   private String submitUrlOf(B2instRequestResponse created) {

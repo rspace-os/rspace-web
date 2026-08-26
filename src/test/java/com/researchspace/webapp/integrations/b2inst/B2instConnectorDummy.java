@@ -4,6 +4,7 @@ import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRecordLinks;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import java.util.Optional;
 import lombok.Getter;
 
 /**
@@ -44,6 +45,21 @@ public class B2instConnectorDummy implements B2instConnector {
   @Override
   public B2instRequestResponse retractDoi(String rid) {
     throw new UnsupportedOperationException("B2INST has no retract operation");
+  }
+
+  @Override
+  public Optional<B2instRequestResponse> getReviewOf(String rid) {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<B2instDraftRecord> getPublishedRecord(String rid) {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<B2instDraftRecord> getDraftRecord(String rid) {
+    return Optional.empty();
   }
 
   @Override

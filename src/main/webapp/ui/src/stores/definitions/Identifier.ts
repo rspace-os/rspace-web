@@ -83,6 +83,12 @@ export type PidinstPublishingState = "created" | "submitted" | "accepted" | "dec
  */
 export type PublishingState = IGSNPublishingState | PidinstPublishingState;
 
+/**
+ * True when the identifier's metadata is published: DataCite's "findable", or B2INST's
+ * "accepted" (the community review outcome that publishes the record).
+ */
+export const isPublishedState = (state: PublishingState): boolean => state === "findable" || state === "accepted";
+
 export type IdentifierDate = { value: Date; type: IGSNDateType };
 
 /*
@@ -186,6 +192,7 @@ export interface Identifier {
     addAlert: (alert: Alert) => void;
   }): Promise<void>;
   republish({ addAlert }: { addAlert: (alert: Alert) => void }): Promise<void>;
+  refresh({ addAlert }: { addAlert: (alert: Alert) => void }): Promise<void>;
 
   toJson(): object;
 }
