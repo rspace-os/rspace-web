@@ -21,14 +21,15 @@
     <legend class="prefsGroupLabel"><spring:message code="userProfile.message.notify.label"/>:</legend>
     <c:forEach items="${preferences.prefs}" var="pref" >
       <c:if test="${(pref.preference.category eq 'MESSAGING') && (pref.numeric ne 'true')}">
+      <spring:message code="${pref.preference.displayMessageKey}" var="preferenceLabel"/>
       <input 
         class="cbox" 
         type="checkbox" 
         name="messageCheckboxes" 
         value="${pref.preference}"
-        aria-label="${pref.preference.displayMessage}"
+        aria-label="${preferenceLabel}"
         ${pref.value == 'TRUE' or pref.value == 'true' ?'checked':'' }/
-      > ${pref.preference.displayMessage} <br/>
+      > ${preferenceLabel} <br/>
       </c:if>
     </c:forEach>
   </fieldset>
@@ -37,14 +38,15 @@
     <legend class="prefsGroupLabel"><spring:message code="userProfile.message.delivery.label"/>:</legend>
     <c:forEach items="${preferences.prefs}" var="pref" >
       <c:if test="${(pref.preference.category eq 'MESSAGING_BROADCAST') && (pref.numeric ne 'true')}">
+        <spring:message code="${pref.preference.displayMessageKey}" var="preferenceLabel"/>
         <input 
           class="cbox" 
           type="checkbox" 
           name="messageCheckboxes" 
           value="${pref.preference}"
-          aria-label="${pref.preference.displayMessage}"
+          aria-label="${preferenceLabel}"
           ${pref.value == 'TRUE' or pref.value == 'true' ?'checked':'' }
-        /> ${pref.preference.displayMessage} <br/>
+        /> ${preferenceLabel} <br/>
       </c:if>
     </c:forEach>
   </fieldset>

@@ -16,7 +16,8 @@ import net.fortuna.ical4j.util.UidGenerator;
 /** Generates a basic .ics file for a Request */
 public class ICSEventGenerator {
 
-  public net.fortuna.ical4j.model.Calendar createICalEventFor(MessageOrRequest mor) {
+  public net.fortuna.ical4j.model.Calendar createICalEventFor(
+      MessageOrRequest mor, String summary) {
     Calendar icalendar = getIcal4jCalendarInstance();
     java.util.Calendar calendar = java.util.Calendar.getInstance();
 
@@ -25,9 +26,7 @@ public class ICSEventGenerator {
 
     // initialise as an all-day event..
     VEvent deadline =
-        new VEvent(
-            new net.fortuna.ical4j.model.DateTime(calendar.getTime()),
-            "RS request from " + mor.getOriginator().getFullName());
+        new VEvent(new net.fortuna.ical4j.model.DateTime(calendar.getTime()), summary);
 
     Description des = new Description(mor.getMessage());
     deadline.getProperties().add(des);

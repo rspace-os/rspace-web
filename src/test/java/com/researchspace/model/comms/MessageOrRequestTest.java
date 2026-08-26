@@ -25,7 +25,7 @@ public class MessageOrRequestTest {
   @Test
   public void testMEssageType() {
     for (MessageType mt : MessageType.values()) {
-      assertFalse(StringUtils.isBlank(mt.getLabel()));
+      assertFalse(StringUtils.isBlank(mt.getLabelKey()));
       if (mt.equals(MessageType.REQUEST_EXTERNAL_SHARE)) {
         assertFalse(
             ArrayUtils.contains(mt.getValidStatusesByRecipient(), CommunicationStatus.REPLIED));

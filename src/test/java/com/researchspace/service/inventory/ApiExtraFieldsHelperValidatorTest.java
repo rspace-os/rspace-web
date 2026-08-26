@@ -5,13 +5,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.model.record.RecordFactory;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
 public class ApiExtraFieldsHelperValidatorTest {
 
   ApiExtraFieldsHelper helper = new ApiExtraFieldsHelper(new RecordFactory());
+
+  @BeforeEach
+  public void setUp() {
+    ReflectionTestUtils.setField(
+        helper, "messages", new MessageSourceUtils(new JsonMessageSource()));
+  }
 
   @Test
   public void validateApiExtraField() {

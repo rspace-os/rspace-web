@@ -9,7 +9,10 @@ import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOpera
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
+import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
@@ -66,5 +69,26 @@ class InventoryBulkOperationHandlerGuardTest {
         0, result.getErrorCount(), "delete-only constraint must not fail a successful update");
     assertEquals(
         1, result.getSuccessCount(), "an already-committed update must be reported as a success");
+  }
+
+  @Test
+  void localizedValidationExceptionIsResolvedForBulkErrors() {
+    InventoryBulkOperationHandler handler = new InventoryBulkOperationHandler();
+    ReflectionTestUtils.setField(
+        handler, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    ErrorList validationErrors = new ErrorList();
+    validationErrors.addErrorMsgCode("validation.inventoryField.optionsNotAllowed");
+
+    ApiError error =
+        handler.convertExceptionToApiError(
+            new LocalizedIllegalArgumentException(
+                "validation.inventoryField.invalidForFieldType",
+                validationErrors,
+                "invalid",
+                "Radio"));
+
+    assertEquals(
+        "[invalid] is invalid for field type Radio: Some supplied values are not allowed options",
+        error.getErrors().get(0));
   }
 }

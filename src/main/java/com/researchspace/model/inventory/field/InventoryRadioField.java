@@ -2,6 +2,8 @@ package com.researchspace.model.inventory.field;
 
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedIllegalStateException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -89,7 +91,8 @@ public class InventoryRadioField extends InventoryEntityField {
     } else if (selectedOptions.size() == 1) {
       setFieldData(selectedOptions.get(0));
     } else {
-      throw new IllegalArgumentException("only one option can be selected on radio field");
+      throw new LocalizedIllegalArgumentException(
+          "validation.inventoryField.radioSingleOptionOnly");
     }
   }
 
@@ -114,13 +117,8 @@ public class InventoryRadioField extends InventoryEntityField {
     if (currentRadioDefId != null && !currentRadioDefId.equals(templateRadioDef.getId())) {
       ErrorList validationResult = templateRadioDef.validate(getData());
       if (validationResult.hasErrorMessages()) {
-        throw new IllegalStateException(
-            "Field ["
-                + getName()
-                + "] value ["
-                + getData()
-                + "] "
-                + "is invalid according to latest template field definition");
+        throw new LocalizedIllegalStateException(
+            "validation.inventoryField.invalidForLatestTemplate", getName(), getData());
       }
       // switch to latest radio def
       setRadioDef(templateRadioDef);

@@ -3,12 +3,16 @@ package com.researchspace.model.field;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import org.apache.commons.lang3.StringUtils;
 
 /** Holds validation errors to return to client/browser in a Spring MVC-independent manner. */
 public class ErrorList implements Serializable {
   private static final long serialVersionUID = 1658698239631269737L;
   private final List<String> errorMessages = new ArrayList<>();
+  private final List<MessageCode> messageCodes = new ArrayList<>();
+
+  private record MessageCode(String code, Object[] arguments) implements Serializable {}
 
   /** Create an ErrorList of error messages */
   public static ErrorList of(String... messages) {
@@ -38,23 +42,44 @@ public class ErrorList implements Serializable {
     errorMessages.add(msg);
   }
 
+  /** Adds a message code for resolution at the controller or service boundary. */
+  public void addErrorMsgCode(String code, Object... arguments) {
+    messageCodes.add(new MessageCode(code, arguments));
+  }
+
+  /** Resolves all message codes, retaining any already-resolved legacy messages. */
+  public void resolveMessageCodes(BiFunction<String, Object[], String> resolver) {
+    messageCodes.forEach(code -> errorMessages.add(resolver.apply(code.code(), code.arguments())));
+    messageCodes.clear();
+  }
+
+  /** Resolves all message codes and joins them without changing this error list. */
+  public String resolveMessagesAndJoin(
+      BiFunction<String, Object[], String> resolver, String delimiter) {
+    List<String> resolved = new ArrayList<>(errorMessages);
+    messageCodes.forEach(code -> resolved.add(resolver.apply(code.code(), code.arguments())));
+    return StringUtils.join(resolved, delimiter);
+  }
+
   /** Gets a possibly-empty but non-null unmodifiable List of error objects */
   public List<String> getErrorMessages() {
-    return errorMessages;
+    List<String> result = new ArrayList<>(errorMessages);
+    messageCodes.stream().map(MessageCode::code).forEach(result::add);
+    return result;
   }
 
   /** Gets a possibly-empty but non-null unmodifiable List of error objects */
   public String getAllErrorMessagesAsStringsSeparatedBy(String delimiter) {
-    return StringUtils.join(errorMessages, delimiter);
+    return StringUtils.join(getErrorMessages(), delimiter);
   }
 
   public String toString() {
-    return errorMessages.toString() + " has " + errorMessages.size() + " messages.";
+    return getErrorMessages() + " has " + getErrorMessages().size() + " messages.";
   }
 
   /** Boolean test for existence of error messages */
   public boolean hasErrorMessages() {
-    return errorMessages.size() > 0;
+    return !errorMessages.isEmpty() || !messageCodes.isEmpty();
   }
 
   /**
@@ -63,8 +88,7 @@ public class ErrorList implements Serializable {
    * @param el An {@link ErrorList} to merge with this object's error messages.
    */
   public void addErrorList(final ErrorList el) {
-    for (String message : el.getErrorMessages()) {
-      addErrorMsg(message);
-    }
+    errorMessages.addAll(el.errorMessages);
+    messageCodes.addAll(el.messageCodes);
   }
 }

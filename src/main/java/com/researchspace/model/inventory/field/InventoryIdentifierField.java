@@ -35,7 +35,7 @@ public class InventoryIdentifierField extends InventoryEntityField {
   public ErrorList validate(String fieldData) {
     ErrorList errorList = super.validate(fieldData);
     if (StringUtils.isNotBlank(fieldData) && !isValidDOI(fieldData)) {
-      errorList.addErrorMsg("Invalid IGSN format: [" + fieldData + "]");
+      errorList.addErrorMsgCode("validation.inventoryField.invalidIgsn", fieldData);
     }
     return errorList;
   }

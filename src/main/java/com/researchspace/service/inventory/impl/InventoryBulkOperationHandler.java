@@ -26,12 +26,14 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.User;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import java.util.List;
 import java.util.function.BiFunction;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindException;
@@ -173,11 +175,17 @@ public class InventoryBulkOperationHandler {
     if (cause instanceof BindException) {
       return apiControllerAdvice.getApiErrorFromBindException((BindException) cause);
     }
+    String errorMessage =
+        cause instanceof LocalizedIllegalArgumentException localized
+            ? messages.getMessage(localized)
+            : cause instanceof MessageSourceResolvable resolvable
+                ? messages.getMessage(resolvable)
+                : e.getMessage();
     return new ApiError(
         HttpStatus.BAD_REQUEST,
         ApiErrorCodes.INVALID_FIELD.getCode(),
         messages.getMessage("api.errors.detected", new Object[] {1}),
-        e.getMessage());
+        errorMessage);
   }
 
   private ApiInventoryRecordInfo createInventoryRecord(ApiInventoryRecordInfo recInfo, User user) {

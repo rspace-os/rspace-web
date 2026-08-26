@@ -288,6 +288,47 @@
     "property": "Property"
   },
   "validation": {
+    "fieldForm": {
+      "choiceOptionsRequired": "Choice options are required.",
+      "dateFormatRequired": "Date format is required.",
+      "radioOptionsRequired": "Radio options are required."
+    },
+    "fieldData": {
+      "dateAfterMaximum": "Input date [{0}] after maximum [{1}]",
+      "dateBeforeMinimum": "Input date [{0}] before minimum [{1}]",
+      "invalidChoice": "Invalid data for Choice Field [{0}]",
+      "invalidDateFormat": "Invalid date format [{0}]",
+      "invalidGlobalIdPrefix": "The prefix {0} is not a globalIdPrefix. It must belong to GlobalIdPrefix enumset",
+      "invalidNumberFormat": "Invalid number format [{0}].",
+      "invalidRadio": "Invalid data for Radio Field [{0}]",
+      "invalidReference": "Invalid data ({0}) for Source Field [{1}] - must be parsable into GlobalIds",
+      "invalidUri": "Invalid URI syntax; {0}",
+      "numberAboveMaximum": "Data [{0}] greater than maximum [{1}]",
+      "numberBelowMinimum": "Data [{0}] smaller than minimum [{1}]",
+      "tooManyDecimalPlaces": "Data [{0}] has too many decimal places (should be [{1}] )."
+    },
+    "inventoryField": {
+      "invalidData": "{0}",
+      "invalidDate": "{0} is an invalid date format. Valid format is yyyy-MM-dd.",
+      "extraNumberInvalid": "''{0}'' cannot be parsed into number",
+      "invalidForFieldType": "[{0}] is invalid for field type {1}: {2}",
+      "invalidIgsn": "Invalid IGSN format: [{0}]",
+      "invalidNumber": "Invalid number: {0}",
+      "invalidTime": "{0} is an invalid 24hour time format. Valid format is HH:mm.",
+      "invalidForLatestTemplate": "Field [{0}] value [{1}] is invalid according to latest template field definition",
+      "mandatoryContentMissing": "Field [{0}] is mandatory, but no content is provided",
+      "mandatoryInLatestTemplate": "Field [{0}] is empty, but is mandatory in latest template field definition",
+      "noConnectedTemplate": "Field [{0}] has no connected template field",
+      "optionsNotAllowed": "Some supplied values are not allowed options",
+      "radioSingleOptionOnly": "Only one option can be selected on a radio field"
+    },
+    "quantity": {
+      "temperatureAboveAbsoluteZero": "Invalid temperature - must be a temperature measurement greater than absolute zero"
+    },
+    "scheduledMaintenance": {
+      "endDateRequired": "End date is required.",
+      "startDateRequired": "Start date is required."
+    },
     "errors": {
       "allVersionsRequired": "allVersions is a required field.",
       "archiveTypeRequired": "archiveType is a required field.",

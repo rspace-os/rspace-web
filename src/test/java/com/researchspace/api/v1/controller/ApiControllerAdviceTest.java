@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.BindErrorList;
+import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -96,5 +99,43 @@ class ApiControllerAdviceTest {
 
     ApiError error = (ApiError) response.getBody();
     assertEquals("Invalid user credentials.", error.getMessage());
+  }
+
+  @Test
+  void localizedModelExceptionIsResolvedAtApiBoundary() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleLocalizedIllegalStateException(
+            new LocalizedIllegalStateException(
+                "validation.inventoryField.noConnectedTemplate", "Status"),
+            null);
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals("Field [Status] has no connected template field", error.getMessage());
+  }
+
+  @Test
+  void localizedIllegalArgumentWithNestedValidationErrorsIsResolvedAtApiBoundary() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    ErrorList validationErrors = new ErrorList();
+    validationErrors.addErrorMsgCode("validation.inventoryField.optionsNotAllowed");
+
+    ResponseEntity<Object> response =
+        advice.handleLocalizedIllegalArgumentException(
+            new LocalizedIllegalArgumentException(
+                "validation.inventoryField.invalidForFieldType",
+                validationErrors,
+                "invalid",
+                "Radio"),
+            null);
+
+    assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(
+        "[invalid] is invalid for field type Radio: Some supplied values are not allowed options",
+        error.getMessage());
   }
 }

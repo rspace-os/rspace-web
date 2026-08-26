@@ -7,6 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.inventory.field.ExtraField;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -485,26 +486,27 @@ public class Container extends MovableInventoryRecord implements Serializable {
     }
 
     if (isDeleted()) {
-      throw new IllegalArgumentException("Cannot move into deleted container");
+      throw new LocalizedIllegalArgumentException("errors.inventory.move.containerDeleted");
     }
     if (record.isContainer()) {
       if (record.getId() != null && record.getId().equals(getId())) {
-        throw new IllegalArgumentException("Cannot move container into itself");
+        throw new LocalizedIllegalArgumentException("errors.inventory.move.containerIntoItself");
       }
       if (hasRecordOnParentList((Container) record)) {
-        throw new IllegalArgumentException("Cannot move container into its subcontainer");
+        throw new LocalizedIllegalArgumentException(
+            "errors.inventory.move.containerIntoSubcontainer");
       }
       Container container = (Container) record;
       if (container.isWorkbench()) {
-        throw new IllegalArgumentException("Workbench cannot be moved into other container");
+        throw new LocalizedIllegalArgumentException("errors.inventory.move.workbenchIntoContainer");
       }
     }
 
     if (!(record.isContainer() && canStoreContainers)
         && !(record.isSubSample() && canStoreSamples)
         && !(record.isInstrument() && canStoreInstruments)) {
-      throw new IllegalArgumentException(
-          "Container " + getGlobalIdentifier() + " can't hold record of type: " + record.getType());
+      throw new LocalizedIllegalArgumentException(
+          "errors.inventory.move.unsupportedRecordType", getGlobalIdentifier(), record.getType());
     }
   }
 

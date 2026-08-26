@@ -21,9 +21,9 @@ class ExtraLinkFieldTest {
   @Test
   void validateNewDataAcceptsAnyString() {
     ExtraLinkField field = new ExtraLinkField();
-    assertNull(field.validateNewData(""));
-    assertNull(field.validateNewData("anything"));
-    assertNull(field.validateNewData(null));
+    assertFalse(field.validateNewData("").hasErrorMessages());
+    assertFalse(field.validateNewData("anything").hasErrorMessages());
+    assertFalse(field.validateNewData(null).hasErrorMessages());
   }
 
   @Test

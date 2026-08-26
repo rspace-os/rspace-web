@@ -997,7 +997,7 @@ public class StructuredDocumentController extends BaseController {
     User user = getUserByUsername(principal.getName());
 
     Field field = fieldManager.get(fieldId, user).get();
-    ErrorList el = field.getFieldForm().validate(data);
+    ErrorList el = messages.resolve(field.getFieldForm().validate(data));
     if (el.hasErrorMessages()) {
       return new AjaxReturnObject<Boolean>(null, el);
     }

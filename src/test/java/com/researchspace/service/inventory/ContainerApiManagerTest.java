@@ -1079,7 +1079,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> containerApiMgr.updateApiContainer(updateRequest, testUser));
-    assertEquals("Cannot move container into itself", iae.getMessage());
+    assertEquals("errors.inventory.move.containerIntoItself", iae.getMessage());
 
     // moving parent to its child is rejected
     updateRequest.setId(topLevelContainer.getId());
@@ -1088,7 +1088,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> containerApiMgr.updateApiContainer(updateRequest, testUser));
-    assertEquals("Cannot move container into its subcontainer", iae.getMessage());
+    assertEquals("errors.inventory.move.containerIntoSubcontainer", iae.getMessage());
 
     // cannot move into deleted container
     ApiContainer deletedContainer =
@@ -1107,7 +1107,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> containerApiMgr.updateApiContainer(updateRequest, testUser));
-    assertEquals("Cannot move into deleted container", iae.getMessage());
+    assertEquals("errors.inventory.move.containerDeleted", iae.getMessage());
 
     // cannot move into other user's container
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));

@@ -8,6 +8,7 @@ import jakarta.servlet.jsp.tagext.TagSupport;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 public class UserRoleInGroup extends TagSupport {
 
@@ -48,6 +49,9 @@ public class UserRoleInGroup extends TagSupport {
   }
 
   String getString() {
-    return group.getRoleForUser(user).getLabel();
+    return WebApplicationContextUtils.getRequiredWebApplicationContext(
+            pageContext.getServletContext())
+        .getMessage(
+            group.getRoleForUser(user).getLabelKey(), null, pageContext.getRequest().getLocale());
   }
 }

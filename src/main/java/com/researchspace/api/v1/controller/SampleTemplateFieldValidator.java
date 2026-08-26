@@ -4,8 +4,10 @@ import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v1.model.ApiField;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.DataCiteRelationType;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
@@ -19,6 +21,7 @@ import org.springframework.validation.Validator;
 abstract class SampleTemplateFieldValidator implements Validator {
 
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
+  private @Autowired MessageSourceUtils messages;
 
   private final Set<String> reservedFieldNames = (new Sample()).getReservedFieldNames();
 
@@ -57,6 +60,12 @@ abstract class SampleTemplateFieldValidator implements Validator {
       try {
         // this internally calls model.validate
         apiFieldToModelFieldFactory.apiInventoryFieldToModelField(apiTemplateField);
+      } catch (LocalizedIllegalArgumentException e) {
+        errors.rejectValue(
+            "content",
+            "errors.inventory.template.invalidFieldContent",
+            new Object[] {messages.getMessage(e)},
+            null);
       } catch (IllegalArgumentException e) {
         errors.rejectValue(
             "content",

@@ -102,7 +102,7 @@ public class InventoryChoiceFieldDef extends InventoryFieldDef implements Serial
     }
     List<String> values = getOptionListFromString(data);
     if (!CollectionUtils.isSubCollection(values, getChoiceOptionsList())) {
-      el.addErrorMsg("Some supplied values are not allowed options");
+      el.addErrorMsgCode("validation.inventoryField.optionsNotAllowed");
     }
     return el;
   }
