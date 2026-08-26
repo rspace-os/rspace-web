@@ -51,12 +51,39 @@ storing only the entity's final state. An inventory record's user-facing
 transaction: a second bump would move the version past any revision carrying
 it, leaving that version with no resolvable snapshot (RSDEV-1319).
 
-`InventoryApiManagerImpl.increaseVersionOncePerTransaction` enforces this for
-all inventory managers, tracking bumped records in a transaction-bound
-resource keyed by global identifier. It is unbound on completion (commit or
-rollback) and unbound/rebound around suspension, so a nested `REQUIRES_NEW`
-transaction gets its own set. Never call `increaseVersion()` on an inventory
-record directly; route bumps through this helper.
+Worked example of the bug. One HTTP request is one transaction, and
+`POST /api/v1/subSamples` with `numSubSamples: 3` saves the parent sample
+three times inside it:
+
+```text
+POST /subSamples { sampleId: 123, numSubSamples: 3 }     <- tx starts
+  createNewSubSamplesForSample
+    3x addNewApiSubSampleToSample
+        -> saveDbSampleUpdate -> increaseVersion()       <- old code: 3 bumps
+tx commits -> Envers writes ONE sample revision (final state only)
+```
+
+The live sample then said `version: 4` while history held revisions only for
+v1 and v4. Versions 2 and 3 were never a committed state, so
+`GET /samples/123/revisions/{n}` found nothing for them and a version pin
+silently degraded to live data. The bump cannot simply move outside the
+transaction either: the version is a column on the audited entity, so a
+separate follow-up transaction writes a second revision and leaves the
+revision holding the real content change stamped with the *old* version,
+corrupting that snapshot instead of gapping it.
+
+The fix: every inventory manager routes bumps through
+`InventoryApiManagerImpl.increaseVersionOncePerTransaction`, which delegates
+to `TransactionScopedVersionBumpGuard`. The guard remembers which records
+already bumped in the current transaction (a transaction-bound set keyed by
+global identifier, so `SA5` and `SS5` never collide) and drops the second and
+later bumps. The set is removed on completion (commit or rollback) and
+detached/reattached around suspension, so a nested `REQUIRES_NEW` transaction
+gets its own set and its own bump. Each lifecycle rule is pinned by a plain
+unit test in `TransactionScopedVersionBumpGuardTest`.
+
+Never call `increaseVersion()` on an inventory record directly; route bumps
+through the helper.
 
 ## Transactions in tests
 

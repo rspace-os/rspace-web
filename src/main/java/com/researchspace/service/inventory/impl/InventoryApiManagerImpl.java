@@ -50,29 +50,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Slf4j
 public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     implements InventoryApiManager<T> {
 
   static final int THUMBNAIL_MAX_SIZE_IN_PX = 150;
-
-  private static final String BUMPED_IN_TX =
-      InventoryApiManagerImpl.class.getName() + ".versionBumped";
   final Long DEFAULT_ICON_ID = -1L;
   protected @Autowired IRecordFactory recordFactory;
   protected @Autowired ApiExtraFieldsHelper extraFieldHelper;
@@ -404,62 +397,12 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   }
 
   /**
-   * Bumps the record's user-facing version, at most once per record per transaction. Envers writes
-   * one revision per entity per transaction and stores only the final state, so a second bump would
-   * advance the version past any revision carrying it, leaving that version unresolvable
-   * (RSDEV-1319).
-   *
-   * <p>Records are tracked by global identifier, so records of different types sharing a numeric id
-   * do not collide, and the guard is shared by every manager: a transaction that edits the same
-   * record through two different code paths still bumps it once.
-   *
-   * <p>Outside a real transaction every save commits on its own and gets its own revision, and an
-   * unsaved record (null id) has no revision yet, so in both cases there is nothing to deduplicate
-   * against and the bump always goes ahead.
-   *
-   * <p>The set is bound to the thread, unbound in {@code afterCompletion} (commit and rollback
-   * alike, or a pooled thread would keep suppressing bumps forever), and unbound/rebound around
-   * transaction suspension so a nested {@code REQUIRES_NEW} transaction gets its own set and its
-   * own bump.
+   * Bumps the record's user-facing version, at most once per record per transaction, because Envers
+   * writes one revision per entity per transaction (RSDEV-1319). The why and the lifecycle rules
+   * live on {@link TransactionScopedVersionBumpGuard}.
    */
   protected void increaseVersionOncePerTransaction(InventoryRecord dbRecord) {
-    if (firstVersionBumpInTransaction(dbRecord)) {
-      dbRecord.increaseVersion();
-    }
-  }
-
-  private boolean firstVersionBumpInTransaction(InventoryRecord dbRecord) {
-    if (!TransactionSynchronizationManager.isActualTransactionActive()
-        || !TransactionSynchronizationManager.isSynchronizationActive()
-        || dbRecord.getId() == null) {
-      return true;
-    }
-    @SuppressWarnings("unchecked")
-    Set<String> bumped = (Set<String>) TransactionSynchronizationManager.getResource(BUMPED_IN_TX);
-    if (bumped == null) {
-      Set<String> newSet = new HashSet<>();
-      // register before binding: if registration fails nothing is left bound
-      TransactionSynchronizationManager.registerSynchronization(
-          new TransactionSynchronization() {
-            @Override
-            public void suspend() {
-              TransactionSynchronizationManager.unbindResourceIfPossible(BUMPED_IN_TX);
-            }
-
-            @Override
-            public void resume() {
-              TransactionSynchronizationManager.bindResource(BUMPED_IN_TX, newSet);
-            }
-
-            @Override
-            public void afterCompletion(int status) {
-              TransactionSynchronizationManager.unbindResourceIfPossible(BUMPED_IN_TX);
-            }
-          });
-      bumped = newSet;
-      TransactionSynchronizationManager.bindResource(BUMPED_IN_TX, bumped);
-    }
-    return bumped.add(dbRecord.getGlobalIdentifier());
+    TransactionScopedVersionBumpGuard.increaseVersionOncePerTransaction(dbRecord);
   }
 
   /**

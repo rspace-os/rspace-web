@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static com.researchspace.service.inventory.impl.TransactionScopedVersionBumpGuard.increaseVersionOncePerTransaction;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -10,23 +11,18 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
- * Pure unit tests for {@link InventoryApiManagerImpl#increaseVersionOncePerTransaction}, driving
- * {@link TransactionSynchronizationManager} directly the way Spring's transaction manager would
+ * Pure unit tests for {@link TransactionScopedVersionBumpGuard}, driving {@link
+ * TransactionSynchronizationManager} directly the way Spring's transaction manager would
  * (RSDEV-1319). No Spring context or database.
  */
-public class InventoryApiManagerImplVersionBumpTest {
+public class TransactionScopedVersionBumpGuardTest {
 
   private static final String BUMPED_IN_TX =
-      InventoryApiManagerImpl.class.getName() + ".versionBumped";
-
-  @SuppressWarnings("unchecked")
-  private final InventoryApiManagerImpl<InventoryRecord> manager =
-      mock(InventoryApiManagerImpl.class, Mockito.CALLS_REAL_METHODS);
+      TransactionScopedVersionBumpGuard.class.getName() + ".versionBumped";
 
   @BeforeEach
   public void startTransaction() {
@@ -63,8 +59,8 @@ public class InventoryApiManagerImplVersionBumpTest {
   public void sameRecordBumpsOncePerTransaction() {
     InventoryRecord sample = record(5L, "SA5");
 
-    manager.increaseVersionOncePerTransaction(sample);
-    manager.increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(sample);
 
     verify(sample, times(1)).increaseVersion();
   }
@@ -74,8 +70,8 @@ public class InventoryApiManagerImplVersionBumpTest {
     InventoryRecord sample = record(5L, "SA5");
     InventoryRecord otherSample = record(6L, "SA6");
 
-    manager.increaseVersionOncePerTransaction(sample);
-    manager.increaseVersionOncePerTransaction(otherSample);
+    increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(otherSample);
 
     verify(sample).increaseVersion();
     verify(otherSample).increaseVersion();
@@ -86,8 +82,8 @@ public class InventoryApiManagerImplVersionBumpTest {
     InventoryRecord sample = record(5L, "SA5");
     InventoryRecord subSample = record(5L, "SS5");
 
-    manager.increaseVersionOncePerTransaction(sample);
-    manager.increaseVersionOncePerTransaction(subSample);
+    increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(subSample);
 
     verify(sample).increaseVersion();
     verify(subSample).increaseVersion();
@@ -100,9 +96,9 @@ public class InventoryApiManagerImplVersionBumpTest {
     InventoryRecord transientA = record(null, null);
     InventoryRecord transientB = record(null, null);
 
-    manager.increaseVersionOncePerTransaction(transientA);
-    manager.increaseVersionOncePerTransaction(transientB);
-    manager.increaseVersionOncePerTransaction(transientB);
+    increaseVersionOncePerTransaction(transientA);
+    increaseVersionOncePerTransaction(transientB);
+    increaseVersionOncePerTransaction(transientB);
 
     verify(transientA).increaseVersion();
     verify(transientB, times(2)).increaseVersion();
@@ -113,8 +109,8 @@ public class InventoryApiManagerImplVersionBumpTest {
     completeTransaction(TransactionSynchronization.STATUS_COMMITTED);
     InventoryRecord sample = record(5L, "SA5");
 
-    manager.increaseVersionOncePerTransaction(sample);
-    manager.increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(sample);
 
     verify(sample, times(2)).increaseVersion();
   }
@@ -122,12 +118,12 @@ public class InventoryApiManagerImplVersionBumpTest {
   @Test
   public void guardResetsAfterCommit() {
     InventoryRecord sample = record(5L, "SA5");
-    manager.increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(sample);
     completeTransaction(TransactionSynchronization.STATUS_COMMITTED);
 
     TransactionSynchronizationManager.initSynchronization();
     TransactionSynchronizationManager.setActualTransactionActive(true);
-    manager.increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(sample);
 
     verify(sample, times(2)).increaseVersion();
   }
@@ -137,12 +133,12 @@ public class InventoryApiManagerImplVersionBumpTest {
     // if afterCompletion only fired on commit, a rolled-back transaction would leave the set
     // bound to the pooled thread and suppress this record's bumps forever
     InventoryRecord sample = record(5L, "SA5");
-    manager.increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(sample);
     completeTransaction(TransactionSynchronization.STATUS_ROLLED_BACK);
 
     TransactionSynchronizationManager.initSynchronization();
     TransactionSynchronizationManager.setActualTransactionActive(true);
-    manager.increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(sample);
 
     verify(sample, times(2)).increaseVersion();
   }
@@ -152,7 +148,7 @@ public class InventoryApiManagerImplVersionBumpTest {
     // REQUIRES_NEW: Spring suspends the outer transaction's synchronizations, runs the inner
     // transaction (its own Envers revision, so its own bump), then resumes the outer one
     InventoryRecord sample = record(5L, "SA5");
-    manager.increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(sample);
 
     List<TransactionSynchronization> outerSyncs =
         TransactionSynchronizationManager.getSynchronizations();
@@ -161,7 +157,7 @@ public class InventoryApiManagerImplVersionBumpTest {
 
     // inner transaction: must get its own set, and its own bump for the same record
     TransactionSynchronizationManager.initSynchronization();
-    manager.increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(sample);
     verify(sample, times(2)).increaseVersion();
     completeTransaction(TransactionSynchronization.STATUS_COMMITTED);
 
@@ -169,7 +165,7 @@ public class InventoryApiManagerImplVersionBumpTest {
     TransactionSynchronizationManager.initSynchronization();
     TransactionSynchronizationManager.setActualTransactionActive(true);
     outerSyncs.forEach(TransactionSynchronization::resume);
-    manager.increaseVersionOncePerTransaction(sample);
+    increaseVersionOncePerTransaction(sample);
     verify(sample, times(2)).increaseVersion();
   }
 }
