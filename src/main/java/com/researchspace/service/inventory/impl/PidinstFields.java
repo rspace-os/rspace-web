@@ -88,7 +88,7 @@ final class PidinstFields {
 
   /**
    * Whether a typed Landing page is an address a resolver could actually follow. The field's own
-   * validation is only {@code new URI(...)} parsing (core-model's InventoryUriField), which accepts
+   * validation is only {@code new URI(...)} parsing (see {@code InventoryUriField}), which accepts
    * a bare host, a relative path, and non-web schemes such as {@code javascript:} and {@code
    * data:}. None of those identify the instrument to someone resolving the PID, and a LandingPage
    * is baked into a citable PID once a curator accepts, so anything that is not an absolute http(s)

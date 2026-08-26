@@ -59,7 +59,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
 
   @Test
   public void containerCreateRejectsExtraFieldNamedAfterUILabel() {
-    // RSDEV-1066: Container's displayed-label set includes "Type", so core-model's
+    // RSDEV-1066: Container's displayed-label set includes "Type", so InventoryRecord's
     // verifyFieldNameAllowed rejects the field at addExtraField time with the legacy
     // reserved-name IAE.
     ApiContainer toCreate = new ApiContainer();
@@ -182,7 +182,7 @@ public class InventoryExtraFieldUniquenessTest extends SpringTransactionalTest {
 
   @Test
   public void sampleCreateRejectsExtraFieldNamedAfterUILabel() {
-    // Proves core-model verifyFieldNameAllowed is wired into the Sample create path.
+    // Proves InventoryRecord.verifyFieldNameAllowed is wired into the Sample create path.
     ApiSampleWithFullSubSamples toCreate = new ApiSampleWithFullSubSamples(getRandomName(10));
     toCreate.setExtraFields(List.of(extraField("Subsamples", "x")));
 
