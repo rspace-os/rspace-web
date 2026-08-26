@@ -53,7 +53,7 @@
     "events": {
       "busy": "Busy",
       "count": "{count, plural, one {# event} other {# events}}",
-      "edit": "Edit booking",
+      "edit": "Edit",
       "empty": "No events",
       "error": {
         "description": "RSpace could not load these events.",

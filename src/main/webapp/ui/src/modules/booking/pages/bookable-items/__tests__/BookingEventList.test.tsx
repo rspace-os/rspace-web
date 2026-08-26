@@ -8,7 +8,7 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { useState } from "react";
@@ -46,11 +46,14 @@ const busyBooking = {
   canEdit: false,
 };
 
-function envelope(docs: unknown[], options: { page?: number; hasPrevPage?: boolean; hasNextPage?: boolean } = {}) {
+function envelope(
+  docs: unknown[],
+  options: { page?: number; hasPrevPage?: boolean; hasNextPage?: boolean; totalDocs?: number } = {},
+) {
   const page = options.page ?? 1;
   return {
     docs,
-    totalDocs: docs.length,
+    totalDocs: options.totalDocs ?? docs.length,
     limit: 10,
     page,
     pagingCounter: (page - 1) * 10 + 1,
@@ -114,15 +117,17 @@ describe("BookingEventList", () => {
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([fullBooking, busyBooking]))));
     renderList();
 
-    expect(await screen.findAllByText("Ada Lovelace (ada)")).toHaveLength(2);
-    expect(screen.getByText("Cell imaging")).toBeVisible();
-    expect(screen.getByText("booking:bookableItemDetails.events.busy")).toBeVisible();
-    expect(screen.getAllByRole("time")).toHaveLength(2);
-    expect(screen.getByRole("link", { name: "booking:bookableItemDetails.events.edit" })).toHaveAttribute(
+    await screen.findAllByText("Ada Lovelace (ada)");
+    const table = screen.getByRole("table");
+    expect(within(table).getByText("Ada Lovelace (ada)")).toBeVisible();
+    expect(within(table).getByText("Cell imaging")).toBeVisible();
+    expect(within(table).getByText("booking:bookableItemDetails.events.busy")).toBeVisible();
+    expect(within(table).getAllByRole("time")).toHaveLength(2);
+    expect(within(table).getByRole("link", { name: "booking:bookableItemDetails.events.edit" })).toHaveAttribute(
       "href",
       "/booking/calendar/bookings/41",
     );
-    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(within(table).getAllByRole("link")).toHaveLength(1);
   });
 
   it("reformats for a timezone change without another request", async () => {
@@ -136,11 +141,12 @@ describe("BookingEventList", () => {
     );
     renderList({ controls: true });
 
-    const time = await screen.findByRole("time");
+    const table = await screen.findByRole("table");
+    const time = await within(table).findByRole("time");
     const utcText = time.textContent;
     await user.click(screen.getByRole("button", { name: changeTimezoneLabel }));
 
-    expect(screen.getByRole("time")).not.toHaveTextContent(utcText ?? "");
+    expect(within(table).getByRole("time")).not.toHaveTextContent(utcText ?? "");
     expect(requests).toBe(1);
   });
 
@@ -161,14 +167,15 @@ describe("BookingEventList", () => {
             page,
             hasPrevPage: page > 1,
             hasNextPage: page === 1,
+            totalDocs: 11,
           }),
         );
       }),
     );
     renderList({ controls: true });
 
-    await user.click(await screen.findByRole("button", { name: "common:actions.next" }));
-    expect(await screen.findByText("booking:bookableItemDetails.events.page")).toBeVisible();
+    await user.click(await screen.findByRole("button", { name: "common:tableList.actions.nextPage" }));
+    expect(await screen.findByText("common:tableList.page")).toBeVisible();
     await user.click(screen.getByRole("button", { name: changeTargetLabel }));
 
     await expect.poll(() => pages.at(-1)).toEqual([expect.stringContaining("target==IN13"), "1"]);
@@ -188,7 +195,7 @@ describe("BookingEventList", () => {
     fail = false;
     await user.click(screen.getByRole("button", { name: "common:actions.retry" }));
 
-    expect(await screen.findByText("booking:bookableItemDetails.events.empty")).toBeVisible();
+    expect((await screen.findAllByText("booking:bookableItemDetails.events.empty"))[0]).toBeVisible();
   });
 
   it("can return from an empty later page", async () => {
@@ -198,17 +205,17 @@ describe("BookingEventList", () => {
         const page = Number(new URL(request.url).searchParams.get("page"));
         return HttpResponse.json(
           page === 1
-            ? envelope([fullBooking], { page: 1, hasNextPage: true })
-            : envelope([], { page: 2, hasPrevPage: true }),
+            ? envelope([fullBooking], { page: 1, hasNextPage: true, totalDocs: 11 })
+            : envelope([], { page: 2, hasPrevPage: true, totalDocs: 11 }),
         );
       }),
     );
     renderList();
 
-    await user.click(await screen.findByRole("button", { name: "common:actions.next" }));
-    expect(await screen.findByText("booking:bookableItemDetails.events.empty")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "common:actions.previous" }));
+    await user.click(await screen.findByRole("button", { name: "common:tableList.actions.nextPage" }));
+    expect((await screen.findAllByText("booking:bookableItemDetails.events.empty"))[0]).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "common:tableList.actions.previousPage" }));
 
-    expect(await screen.findByText("Cell imaging")).toBeVisible();
+    expect((await screen.findAllByText("Cell imaging"))[0]).toBeVisible();
   });
 });

@@ -16,6 +16,7 @@ export async function fetchBookableItemEvents(input: {
   period: BookingEventPeriod;
   cutoff: string;
   page: number;
+  limit: number;
   token: string;
   signal?: AbortSignal;
 }): Promise<BookableItemEvents> {
@@ -36,7 +37,7 @@ export async function fetchBookableItemEvents(input: {
     where,
     sort: input.period === "upcoming" ? "start,id" : "-end,-id",
     page: String(input.page + 1),
-    limit: "10",
+    limit: String(input.limit),
     depth: "1",
     "fields[bookings]": BOOKING_READ_FIELDS,
   });

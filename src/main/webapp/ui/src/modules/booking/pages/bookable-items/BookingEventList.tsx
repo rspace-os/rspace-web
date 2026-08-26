@@ -1,10 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import type { Booking } from "@/modules/booking/domain/booking";
+import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
+import { useTableList } from "@/modules/common/table-list/useTableList";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
 import { type BookingEventPeriod, fetchBookableItemEvents } from "./bookableItemEvents";
 
@@ -15,146 +18,148 @@ type BookingEventListProps = {
   cutoff: string;
 };
 
-function EventPagination({
-  page,
-  totalPages,
-  hasPrevious,
-  hasNext,
-  onPrevious,
-  onNext,
-}: {
-  page: number;
-  totalPages: number;
-  hasPrevious: boolean;
-  hasNext: boolean;
-  onPrevious: () => void;
-  onNext: () => void;
-}) {
-  const { t } = useTranslation("booking");
-  const { t: commonT } = useTranslation("common");
-  return (
-    <nav aria-label={t("bookableItemDetails.events.pagination")} className="flex items-center justify-between">
-      <Button type="button" variant="outline" disabled={!hasPrevious} onClick={onPrevious}>
-        {commonT("actions.previous")}
-      </Button>
-      <span>{t("bookableItemDetails.events.page", { page, totalPages })}</span>
-      <Button type="button" variant="outline" disabled={!hasNext} onClick={onNext}>
-        {commonT("actions.next")}
-      </Button>
-    </nav>
-  );
-}
-
-export function BookingEventList({ globalId, timezone, period, cutoff }: BookingEventListProps) {
+function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventListProps) {
   const { t, i18n } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const [page, setPage] = useState(0);
-
-  useEffect(() => setPage(0), [globalId, period, cutoff]);
-
-  const events = useQuery({
-    queryKey: ["api-v2", "bookings", "bookable-item-events", globalId, period, cutoff, page],
-    queryFn: ({ signal }) => fetchBookableItemEvents({ globalId, period, cutoff, page, token, signal }),
+  const formatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(i18n.language, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: timezone,
+      }),
+    [i18n.language, timezone],
+  );
+  const config = useMemo(
+    () =>
+      resolveCollectionConfig({
+        slug: `bookable-item-${period}-events`,
+        idField: "id",
+        useAsTitle: "bookedBy",
+        defaultColumns: ["start", "bookedBy", "purpose"],
+        pagination: { defaultLimit: 10, limits: [10] },
+        labels: {
+          singularKey: "booking:calendar.event",
+          pluralKey:
+            period === "upcoming" ? "booking:bookableItemDetails.upcoming" : "booking:bookableItemDetails.past",
+        },
+        fields: [
+          { name: "id", type: "number", labelKey: "booking:calendar.fields.id", list: false },
+          {
+            name: "start",
+            type: "dateTime",
+            labelKey: "booking:bookings.form.time",
+            list: {
+              width: 280,
+              minWidth: 220,
+              dependencies: ["end"],
+              renderCell: ({ row }) => (
+                <time dateTime={row.start}>{formatter.formatRange(new Date(row.start), new Date(row.end))}</time>
+              ),
+            },
+          },
+          { name: "end", type: "dateTime", labelKey: "booking:myBookings.fields.end", list: false },
+          {
+            name: "bookedBy",
+            type: "text",
+            nullable: true,
+            labelKey: "booking:bookableItemDetails.events.requester",
+            list: {
+              width: 220,
+              renderCell: ({ row }) => (row.privacy === "busy" ? t("bookableItemDetails.events.busy") : row.bookedBy),
+            },
+          },
+          {
+            name: "purpose",
+            type: "text",
+            nullable: true,
+            labelKey: "booking:bookableItemDetails.events.purpose",
+            list: { renderCell: ({ row }) => (row.privacy === "full" ? row.purpose : null) },
+          },
+        ],
+      } satisfies CollectionConfig<Booking>),
+    [formatter, period, t],
+  );
+  const table = useTableList<Booking>({
+    config,
+    dataSource: {
+      type: "remote",
+      queryKey: (state) => [
+        "api-v2",
+        "bookings",
+        "bookable-item-events",
+        globalId,
+        period,
+        cutoff,
+        state.page.pageIndex,
+        state.page.pageSize,
+      ],
+      fetch: async (state, { signal }) => {
+        const result = await fetchBookableItemEvents({
+          globalId,
+          period,
+          cutoff,
+          page: state.page.pageIndex,
+          limit: state.page.pageSize,
+          token,
+          signal,
+        });
+        return { rows: result.docs, rowCount: result.totalDocs };
+      },
+      keepPreviousData: true,
+      retry: false,
+    },
+    features: { filtering: false, sorting: false, columns: false },
+    queryString: false,
+    reserveEmptyRows: false,
   });
-  const formatter = new Intl.DateTimeFormat(i18n.language, {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: timezone,
-  });
+  const rowActions = useMemo<TableListRowActions<Booking>>(
+    () => ({
+      id: "actions",
+      label: t("calendar.actions.label"),
+      width: 130,
+      minWidth: 120,
+      renderCell: ({ row }) =>
+        row.canEdit ? (
+          <Link
+            className={buttonVariants({ size: "sm" })}
+            to="/booking/calendar/bookings/$id"
+            params={{ id: String(row.id) }}
+          >
+            {t("bookableItemDetails.events.edit")}
+          </Link>
+        ) : null,
+      renderInteraction: () => null,
+    }),
+    [t],
+  );
 
-  if (events.isPending) {
-    return <p role="status">{t("bookableItemDetails.events.loading")}</p>;
-  }
-  if (events.isError) {
+  if (table.tableProps.status === "error") {
     return (
       <Empty className="border">
         <EmptyHeader>
           <EmptyTitle>{t("bookableItemDetails.events.error.title")}</EmptyTitle>
           <EmptyDescription>{t("bookableItemDetails.events.error.description")}</EmptyDescription>
         </EmptyHeader>
-        <Button type="button" variant="outline" onClick={() => void events.refetch()}>
+        <Button type="button" variant="outline" onClick={() => void table.refetch()}>
           {commonT("actions.retry")}
         </Button>
       </Empty>
     );
   }
-  if (events.data.docs.length === 0) {
-    return (
-      <div className="space-y-4">
-        <Empty className="border">
-          <EmptyHeader>
-            <EmptyTitle>{t("bookableItemDetails.events.empty")}</EmptyTitle>
-          </EmptyHeader>
-        </Empty>
-        {events.data.hasPrevPage ? (
-          <EventPagination
-            page={events.data.page}
-            totalPages={events.data.totalPages}
-            hasPrevious
-            hasNext={false}
-            onPrevious={() => setPage((current) => Math.max(0, current - 1))}
-            onNext={() => undefined}
-          />
-        ) : null}
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        {t("bookableItemDetails.events.count", { count: events.data.totalDocs })}
-      </p>
-      <ol className="space-y-3">
-        {events.data.docs.map((booking) => (
-          <li key={booking.id}>
-            <Card size="sm">
-              <CardHeader>
-                <CardTitle>
-                  {booking.privacy === "busy" ? t("bookableItemDetails.events.busy") : booking.bookedBy}
-                </CardTitle>
-                {booking.canEdit ? (
-                  <CardAction>
-                    <Link
-                      className={buttonVariants({ size: "sm", variant: "outline" })}
-                      to="/booking/calendar/bookings/$id"
-                      params={{ id: String(booking.id) }}
-                    >
-                      {t("bookableItemDetails.events.edit")}
-                    </Link>
-                  </CardAction>
-                ) : null}
-              </CardHeader>
-              <CardContent>
-                <time dateTime={booking.start}>
-                  {formatter.formatRange(new Date(booking.start), new Date(booking.end))}
-                </time>
-                {booking.privacy === "full" ? (
-                  <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-                    <dt>{t("bookableItemDetails.events.requester")}</dt>
-                    <dd>{booking.bookedBy}</dd>
-                    {booking.purpose === null ? null : (
-                      <>
-                        <dt>{t("bookableItemDetails.events.purpose")}</dt>
-                        <dd>{booking.purpose}</dd>
-                      </>
-                    )}
-                  </dl>
-                ) : null}
-              </CardContent>
-            </Card>
-          </li>
-        ))}
-      </ol>
-      <EventPagination
-        page={events.data.page}
-        totalPages={events.data.totalPages}
-        hasPrevious={events.data.hasPrevPage}
-        hasNext={events.data.hasNextPage}
-        onPrevious={() => setPage((current) => Math.max(0, current - 1))}
-        onNext={() => setPage((current) => current + 1)}
-      />
-    </div>
+    <TableList
+      {...table.tableProps}
+      hideHeader
+      emptyDescription={t("bookableItemDetails.events.empty")}
+      presentations={{ table: "wide", cards: "narrow" }}
+      rowActions={rowActions}
+    />
   );
+}
+
+export function BookingEventList(props: BookingEventListProps) {
+  return <BookingEventTable {...props} key={`${props.globalId}:${props.period}:${props.cutoff}`} />;
 }

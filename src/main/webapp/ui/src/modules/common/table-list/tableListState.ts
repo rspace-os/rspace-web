@@ -207,6 +207,8 @@ export type TableListProps<TDocument extends Record<string, unknown>> = {
   /** Replace the default empty-state guidance while preserving TableList controls. */
   emptyDescription?: ReactNode;
   variant?: TableListVariant;
+  /** Hide the collection heading when another page section labels this embedded list. */
+  hideHeader?: boolean;
   /** Reserve the height of ten data rows for the empty state. Set this to `false` for a compact display. */
   reserveEmptyRows?: boolean;
   /** Persist filters, sorting, and visible columns in the URL and browser storage. Set this to `false` to disable both. */

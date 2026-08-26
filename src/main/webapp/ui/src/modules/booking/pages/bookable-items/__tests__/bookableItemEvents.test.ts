@@ -57,6 +57,7 @@ describe("bookable item events", () => {
         period,
         cutoff: "2026-08-24T12:00:00Z",
         page: 2,
+        limit: 10,
         token: "token",
       }),
     ).resolves.toEqual(envelope([booking], 3));
@@ -88,6 +89,7 @@ describe("bookable item events", () => {
         period: "upcoming",
         cutoff: "2026-08-24T12:00:00Z",
         page: 0,
+        limit: 10,
         token: "token",
       }),
     ).resolves.toEqual(envelope([booking, busy]));
@@ -113,6 +115,7 @@ describe("bookable item events", () => {
       period: "past",
       cutoff: "2026-08-24T12:00:00Z",
       page: 0,
+      limit: 10,
       token: "token",
     });
   });
@@ -123,6 +126,7 @@ describe("bookable item events", () => {
       period: "upcoming" as const,
       cutoff: "2026-08-24T12:00:00Z",
       page: 0,
+      limit: 10,
       token: "token",
     };
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([{ id: 1 }]))));

@@ -40,6 +40,7 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   renderRows,
   emptyDescription,
   variant = "card",
+  hideHeader = false,
   reserveEmptyRows,
   onSelectRuntimeField,
   runtimeFieldDefinitions,
@@ -68,16 +69,18 @@ function TableListContent<TDocument extends Record<string, unknown>>({
   return (
     <TooltipProvider delay={250}>
       <section className="text-foreground [&_[data-inventory-item]]:p-0 [&_[data-slot=badge]]:rounded-sm [&_[data-slot=button]]:rounded-sm [&_[data-slot=input]]:rounded-sm [&_svg]:size-3.5!">
-        <div className={cn(variant === "card" && "mb-5")}>
-          <TableListHeader
-            config={config}
-            collectionLabel={collectionLabel}
-            onCreate={onCreate}
-            createAction={createAction}
-            createLabel={createLabel}
-            divided={variant === "transparent"}
-          />
-        </div>
+        {hideHeader ? null : (
+          <div className={cn(variant === "card" && "mb-5")}>
+            <TableListHeader
+              config={config}
+              collectionLabel={collectionLabel}
+              onCreate={onCreate}
+              createAction={createAction}
+              createLabel={createLabel}
+              divided={variant === "transparent"}
+            />
+          </div>
+        )}
         <div className={cn(variant === "card" && "rounded-sm border bg-card px-3")}>
           <TableListToolbar
             config={config}

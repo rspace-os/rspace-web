@@ -116,17 +116,15 @@ describe("AllBookableItemsPage", () => {
         within(screen.getByRole("table", { name: "All Bookable Items table" })).getByText("Confocal microscope"),
       ).toBeInTheDocument(),
     );
-    for (const locationLink of screen.getAllByRole("link", { name: "Imaging lab" })) {
-      expect(locationLink).toHaveAttribute("href", "/globalId/IC456");
-    }
-    for (const locationLink of screen.getAllByRole("link", { name: "Workbench" })) {
-      expect(locationLink).toHaveAttribute("href", "/globalId/BE457");
-    }
-    for (const itemName of ["Mass spectrometer", "Microplate reader"]) {
+    // The rows are compact, so the second line is dropped and no parent-container
+    // link is rendered, not even for the items that have one.
+    expect(screen.queryByRole("link", { name: "Imaging lab" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Workbench" })).toBeNull();
+    for (const itemName of ["Confocal microscope", "Mass spectrometer", "Microplate reader"]) {
       const row = within(screen.getByRole("table", { name: "All Bookable Items table" })).getByRole("row", {
         name: new RegExp(itemName),
       });
-      // The item link, plus the "View details" and "Book" actions; no location link.
+      // The global-ID link, plus the "View details" and "Book" actions.
       expect(within(row).getAllByRole("link")).toHaveLength(3);
     }
     await waitFor(() =>

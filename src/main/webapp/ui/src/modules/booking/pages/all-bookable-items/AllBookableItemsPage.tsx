@@ -16,7 +16,7 @@ import {
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Input } from "@/modules/common/ui/input";
-import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
+import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Label } from "@/modules/common/ui/label";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import {
@@ -62,13 +62,9 @@ const allBookableItemsConfig: CollectionConfig<BookingConfiguration> = {
                   globalId={row.target.globalId}
                   href={`/globalId/${row.target.globalId}`}
                   idLinkLabel={i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })}
+                  compact
                   size="xs"
-                >
-                  <InventoryLocationLink
-                    name={row.target.value.parentContainerName}
-                    globalId={row.target.value.parentContainerGlobalId}
-                  />
-                </InventoryItem>
+                />
               ) : (
                 <UnknownItem size="xs" />
               ),
@@ -148,7 +144,7 @@ export default function AllBookableItemsPage({ clock = currentDate }: { clock?: 
         return (
           <div className="flex flex-wrap gap-2">
             <Link
-              className={buttonVariants({ size: "sm", variant: "outline" })}
+              className={buttonVariants({ size: "sm" })}
               to="/booking/bookable-items/$globalId"
               params={{ globalId: row.target.globalId }}
             >
