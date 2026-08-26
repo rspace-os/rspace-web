@@ -1,11 +1,13 @@
 package com.researchspace.zipprocessing;
 
-import java.io.File;
 import java.util.zip.ZipEntry;
 
-/** Processes a single Zip entry that is available as a {@link File}. */
+/**
+ * Processes a single {@link ZipEntry}. See {@link ZipEntryFileProcessor} for the variant that
+ * receives the entry extracted to a file.
+ */
 @FunctionalInterface
 public interface ZipEntryProcessor {
 
-  void process(ZipEntry entryAsFile);
+  void process(ZipEntry entry);
 }
