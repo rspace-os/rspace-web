@@ -7,25 +7,35 @@
 
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib uri="jakarta.tags.functions" prefix="fn" %>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 
 <%-- This sets the links to previous /next pages  assuming an Ajax
  based handling to parse the link out of the ID--%>
 <ul class="pagination new">
   <c:forEach var="page" items="${paginationList}">
+    <c:set var="pageLabel" value="${page.name}"/>
+    <c:choose>
+      <c:when test="${page.name eq 'First'}">
+        <spring:message code="pagination.first" var="pageLabel"/>
+      </c:when>
+      <c:when test="${page.name eq 'Last'}">
+        <spring:message code="pagination.last" var="pageLabel"/>
+      </c:when>
+    </c:choose>
     <c:choose>
       <c:when test="${page.link=='#'}">
-        <li class="active"><span aria-current="page">${page.name}</span></li>
+        <li class="active"><span aria-current="page">${pageLabel}</span></li>
       </c:when>
       <c:otherwise>
         <c:choose>
           <c:when test="${empty omitATagLinkId or omitATagLinkId eq 'false'}">
             <li>
-              <a class="${page.className}" id="page_${page.link}" href="#">${page.name}</a>
+              <a class="${page.className}" data-page-name="${page.name}" id="page_${page.link}" href="#">${pageLabel}</a>
             </li>
           </c:when>
           <c:otherwise>
             <li>
-              <a class="${page.className}" data-pageNumber="${page.pageNumber}" href="#">${page.name}</a>
+              <a class="${page.className}" data-page-name="${page.name}" data-pageNumber="${page.pageNumber}" href="#">${pageLabel}</a>
             </li>
           </c:otherwise>
       </c:choose>

@@ -933,9 +933,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
       containerApiMgr.createNewApiContainer(otherSubContainer, testUser);
       fail("was able to save into occupied location");
     } catch (IllegalArgumentException iae) {
-      assertThat(iae.getMessage())
-          .as(iae.getMessage())
-          .contains("is already taken by the record: IC");
+      assertEquals("errors.inventory.location.occupied", iae.getMessage());
     }
   }
 

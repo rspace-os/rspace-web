@@ -1,6 +1,7 @@
 package com.researchspace.model.preference;
 
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 
 /**
  * Contains hard-coded information about preferences. By convention, these preferences about
@@ -251,14 +252,18 @@ public enum Preference {
     this.prefValidator = validator;
   }
 
+  /** Returns a coded exception when {@code value} is invalid, or {@code null} when valid. */
+  public LocalizedIllegalArgumentException getInvalidExceptionForValue(String value) {
+    return prefValidator.getExceptionIfInvalid(value);
+  }
+
   /**
-   * If <code>value</code> is invalid, returns an error message. O
-   *
-   * @param value
-   * @return An error string, or <code>null</code> if is not an invalid value.
+   * @deprecated use {@link #getInvalidExceptionForValue(String)} for localizable arguments.
    */
+  @Deprecated
   public String getInvalidErrorMessageForValue(String value) {
-    return prefValidator.getMsgIfInvalid(value);
+    LocalizedIllegalArgumentException exception = getInvalidExceptionForValue(value);
+    return exception == null ? null : exception.getMessage();
   }
 
   /**
@@ -268,14 +273,9 @@ public enum Preference {
    * @return <code>true</code> if a valid value, <code>false</code> otherwise
    */
   public boolean isValid(String value) {
-    return getInvalidErrorMessageForValue(value) == null;
+    return getInvalidExceptionForValue(value) == null;
   }
 
-  /**
-   * Gets a user-friendly string explaining the preference
-   *
-   * @return
-   */
   public String getDisplayMessageKey() {
     return displayMessageKey;
   }

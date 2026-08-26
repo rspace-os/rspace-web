@@ -1,17 +1,22 @@
 package com.researchspace.model.preference;
 
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+
 public interface PreferenceValidator {
   /**
    * @param value
-   * @return a string error message on failure, otherwise null on success
+   * @return a localized exception on failure, otherwise null on success
    */
-  String getMsgIfInvalid(String value);
+  LocalizedIllegalArgumentException getExceptionIfInvalid(String value);
 
-  PreferenceValidator ALWAYS_TRUE =
-      new PreferenceValidator() {
-        @Override
-        public String getMsgIfInvalid(String value) {
-          return null;
-        }
-      };
+  /**
+   * @deprecated use {@link #getExceptionIfInvalid(String)} so arguments can be localized.
+   */
+  @Deprecated
+  default String getMsgIfInvalid(String value) {
+    LocalizedIllegalArgumentException exception = getExceptionIfInvalid(value);
+    return exception == null ? null : exception.getMessage();
+  }
+
+  PreferenceValidator ALWAYS_TRUE = value -> null;
 }

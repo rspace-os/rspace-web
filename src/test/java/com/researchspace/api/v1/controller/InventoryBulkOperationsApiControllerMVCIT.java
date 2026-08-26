@@ -431,7 +431,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     assertEquals(1, bulkOpResult.getErrorCount());
     assertEquals(InventoryBulkOperationStatus.REVERTED_ON_ERROR, bulkOpResult.getStatus());
     assertThat(bulkOpResult.getResults().get(0).getError().getErrors().get(0))
-        .contains("is already taken by the record");
+        .contains("is already occupied by record");
 
     // confirm subsamples not moved
     retrievedSubSample1 = subSampleApiMgr.getApiSubSampleById(subSample1.getId(), anyUser);

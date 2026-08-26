@@ -49,7 +49,7 @@ public class ContainerTest {
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> listContainer.createNewImageContainerLocation(2, 2));
-    assertEquals("LIST container cannot add locations directly", iae.getMessage());
+    assertEquals("errors.inventory.container.directLocationUnsupported", iae.getMessage());
     assertThat(listContainer.getLocations()).isEmpty();
     assertEquals(0, listContainer.getLocationsCount());
 
@@ -69,7 +69,7 @@ public class ContainerTest {
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> listContainer.addToNewLocationWithCoords(subSample, 2, 2));
-    assertEquals("LIST container can't use explicit location coordinates", iae.getMessage());
+    assertEquals("errors.inventory.container.explicitCoordinatesNotAllowed", iae.getMessage());
     assertEquals(1, listContainer.getContentCount()); // previously added
     assertThat(listContainer.getLocations()).hasSize(1);
     assertEquals(0, listContainer.getLocationsCount());
@@ -104,7 +104,7 @@ public class ContainerTest {
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> gridContainer6by4.createNewImageContainerLocation(2, 2));
-    assertEquals("GRID container cannot add locations directly", iae.getMessage());
+    assertEquals("errors.inventory.container.directLocationUnsupported", iae.getMessage());
     assertThat(gridContainer6by4.getLocations()).isEmpty();
     assertEquals(24, gridContainer6by4.getLocationsCount());
 
@@ -114,9 +114,7 @@ public class ContainerTest {
     iae =
         Assertions.assertThrows(
             IllegalArgumentException.class, () -> gridContainer6by4.addToNewLocation(subSample));
-    assertEquals(
-        "GRID container cannot store content without providing specific coordinates",
-        iae.getMessage());
+    assertEquals("errors.inventory.container.noCoordinatesRequired", iae.getMessage());
     assertEquals(0, gridContainer6by4.getContentCount());
     assertThat(gridContainer6by4.getLocations()).isEmpty();
 
@@ -125,9 +123,7 @@ public class ContainerTest {
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> gridContainer6by4.addToNewLocationWithCoords(subSample, 7, 2));
-    assertEquals(
-        "Requested new location (7,2) is outside grid container dimensions (columns:6, rows:4)",
-        iae.getMessage());
+    assertEquals("errors.inventory.location.outsideGridDimensions", iae.getMessage());
     assertEquals(0, gridContainer6by4.getContentCount());
     assertThat(gridContainer6by4.getLocations()).isEmpty();
 
@@ -135,9 +131,7 @@ public class ContainerTest {
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> gridContainer6by4.addToNewLocationWithCoords(subSample, 2, 5));
-    assertEquals(
-        "Requested new location (2,5) is outside grid container dimensions (columns:6, rows:4)",
-        iae.getMessage());
+    assertEquals("errors.inventory.location.outsideGridDimensions", iae.getMessage());
     assertEquals(0, gridContainer6by4.getContentCount());
     assertThat(gridContainer6by4.getLocations()).isEmpty();
 
@@ -167,9 +161,7 @@ public class ContainerTest {
     IllegalArgumentException iae =
         Assertions.assertThrows(
             IllegalArgumentException.class, () -> imageContainer.addToNewLocation(subSample));
-    assertEquals(
-        "IMAGE container cannot store content without providing specific coordinates",
-        iae.getMessage());
+    assertEquals("errors.inventory.container.noCoordinatesRequired", iae.getMessage());
     assertEquals(0, imageContainer.getContentCount());
     assertThat(imageContainer.getLocations()).hasSize(1);
 
@@ -179,8 +171,7 @@ public class ContainerTest {
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> imageContainer.addToNewLocationWithCoords(subSample, 2, 2));
-    assertEquals(
-        "Image container must provide target location id, not coordinates", iae.getMessage());
+    assertEquals("errors.inventory.container.imageContainerLocationRequired", iae.getMessage());
     assertEquals(0, imageContainer.getContentCount());
     assertThat(imageContainer.getLocations()).hasSize(1);
     // image container can add using location though
@@ -497,6 +488,6 @@ public class ContainerTest {
     // try attaching a file to workbench
     InventoryFile attachment = new InventoryFile(null, null);
     iae = assertThrows(IllegalArgumentException.class, () -> workbench.addAttachedFile(attachment));
-    assertEquals("Can't attach files to Workbench", iae.getMessage());
+    assertEquals("errors.inventory.attachment.workbenchUnsupported", iae.getMessage());
   }
 }

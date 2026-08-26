@@ -269,7 +269,8 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
         }
         csvProcessingResult.addSuccessResult(apiSample);
       } catch (RuntimeException | InvalidNameException iae) {
-        csvProcessingResult.addError(getBadRequestIllegalArgumentApiError(iae.getMessage()));
+        csvProcessingResult.addError(
+            getBadRequestIllegalArgumentApiError(messages.getExceptionMessage(iae)));
       }
 
       resultCount++;

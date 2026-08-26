@@ -104,7 +104,7 @@ public class InventoryBulkOperationApiManagerTest extends SpringTransactionalTes
             () -> inventoryBulkOpApiMgr.runBulkOperation(bulkOpConfig));
     assertThat(boe.getMessage())
         .as(boe.getMessage())
-        .contains("is already taken by the record: SS");
+        .contains("is already occupied by record SS");
   }
 
   @Test
