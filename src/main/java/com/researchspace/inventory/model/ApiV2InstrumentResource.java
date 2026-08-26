@@ -49,6 +49,39 @@ public final class ApiV2InstrumentResource {
                 // Derived from the ID, so there is no column to filter or sort on.
                 .withQueryCapabilities(false, false)
                 .documented(documentation("Global ID", "RSpace global identifier.", "IN123")),
+            Field.<Instrument, String>readOnly(
+                    "parentContainerName",
+                    "parentLocation.container.editInfo.name",
+                    CollectionFieldTypes.text(255),
+                    instrument ->
+                        instrument.getParentContainer() == null
+                            ? null
+                            : instrument.getParentContainer().getName())
+                .allowNull()
+                .withQueryCapabilities(false, false)
+                .documented(
+                    deprecatedDocumentation(
+                        "Location",
+                        "Deprecated. Display name of the instrument's immediate parent container. "
+                            + "A future parentContainer relationship will replace this field.",
+                        "Imaging lab")),
+            Field.<Instrument, String>readOnly(
+                    "parentContainerGlobalId",
+                    "parentLocation.container.globalIdentifier",
+                    CollectionFieldTypes.text(),
+                    instrument ->
+                        instrument.getParentContainer() == null
+                            ? null
+                            : instrument.getParentContainer().getGlobalIdentifier())
+                .allowNull()
+                .withQueryCapabilities(false, false)
+                .documented(
+                    deprecatedDocumentation(
+                        "Location global ID",
+                        "Deprecated. RSpace global identifier of the instrument's immediate parent "
+                            + "container. A future parentContainer relationship will replace this "
+                            + "field.",
+                        "IC456")),
             Field.<Instrument, Boolean>readOnly(
                     "deleted", "deleted", CollectionFieldTypes.bool(), Instrument::isDeleted)
                 .withQueryCapabilities(true, false)
@@ -87,5 +120,11 @@ public final class ApiV2InstrumentResource {
       String title, String description, String example) {
     return new OpenApiSchemaDocumentation(
         title, description, example, null, null, null, List.of(), false);
+  }
+
+  private static OpenApiSchemaDocumentation deprecatedDocumentation(
+      String title, String description, String example) {
+    return new OpenApiSchemaDocumentation(
+        title, description, example, null, null, null, List.of(), true);
   }
 }

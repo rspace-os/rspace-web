@@ -124,6 +124,21 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
+  void marksTemporaryInstrumentLocationFieldsDeprecatedAndNullable() {
+    Map<String, Object> instrumentProperties =
+        objectMap(objectMap(schemas(document()).get("InstrumentsRead")).get("properties"));
+
+    for (String field : List.of("parentContainerName", "parentContainerGlobalId")) {
+      Map<String, Object> location = objectMap(instrumentProperties.get(field));
+      assertEquals(true, location.get("deprecated"));
+      assertTrue(
+          String.valueOf(location.get("description"))
+              .contains("future parentContainer relationship"));
+      assertTrue(((List<?>) location.get("type")).contains("null"));
+    }
+  }
+
+  @Test
   void generatesOperationSpecificSchemasSecurityAndQueryMetadata() {
     Map<String, Object> document = document();
     Map<String, Object> paths = objectMap(document.get("paths"));

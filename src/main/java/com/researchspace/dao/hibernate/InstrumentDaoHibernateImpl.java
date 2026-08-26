@@ -14,10 +14,15 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentParentLocationSummary;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.search.customfield.RuntimeFieldTextSearch;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.query.Query;
@@ -62,6 +67,72 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     } catch (IndexedTextNarrowing.NoMatch noMatch) {
       return 0;
     }
+  }
+
+  @Override
+  public Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(
+      Set<Long> instrumentIds) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    return getSession()
+        .createQuery(
+            "select instrument.id, parent.id, parent.editInfo.name, parent.containerType "
+                + "from Instrument instrument "
+                + "join instrument.parentLocation location "
+                + "join location.container parent "
+                + "where instrument.id in (:instrumentIds) "
+                + "and location.storedInstrument.id = instrument.id",
+            Object[].class)
+        .setParameter("instrumentIds", instrumentIds)
+        .getResultStream()
+        .collect(
+            Collectors.toMap(
+                row -> (Long) row[0],
+                row ->
+                    new InstrumentParentLocationSummary(
+                        (Long) row[1], (String) row[2], (ContainerType) row[3])));
+  }
+
+  @Override
+  public Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    List<String> groupMembers =
+        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
+    List<String> groupNames = user.getGroups().stream().map(Group::getUniqueName).toList();
+    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
+    String permission =
+        getInventoryReadPermissionSqlPredicate(
+            user, groupMembers, groupNames, visibleOwners, "instrument.");
+    Query<Object[]> query =
+        getSession()
+            .createQuery(
+                "select instrument.id, instrument.editInfo.name, instrument.deleted, "
+                    + "parent.id, parent.editInfo.name, parent.containerType "
+                    + "from Instrument instrument "
+                    + "left join instrument.parentLocation location "
+                    + "with location.storedInstrument.id = instrument.id "
+                    + "left join location.container parent "
+                    + "where instrument.id in (:instrumentIds) "
+                    + "and instrument.deleted = false and "
+                    + permission,
+                Object[].class)
+            .setParameter("instrumentIds", instrumentIds);
+    addQueryParams(null, user, query, visibleOwners, groupMembers, groupNames);
+    return query
+        .getResultStream()
+        .map(
+            row ->
+                new InstrumentReadSummary(
+                    (Long) row[0],
+                    (String) row[1],
+                    (Boolean) row[2],
+                    (Long) row[3],
+                    (String) row[4],
+                    (ContainerType) row[5]))
+        .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
   }
 
   private ResourceRequest narrowed(ResourceRequest request) {

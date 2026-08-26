@@ -14,10 +14,14 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
+import com.researchspace.model.inventory.InstrumentParentLocationSummary;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /** Handles API actions around Inventory Instrument. */
 public interface InstrumentEntityApiManager extends InventoryApiManager<InstrumentEntity> {
@@ -179,6 +183,16 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
 
   /** Counts the instruments the user may read that match a REST API v2 collection request. */
   long countReadableInstruments(ResourceRequest request, User user);
+
+  /** Returns current immediate parent-container data keyed by instrument ID. */
+  Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(Set<Long> instrumentIds);
+
+  /** Returns readable active instrument scalars for relationship expansion. */
+  Map<Long, InstrumentReadSummary> getReadableInstrumentSummaries(
+      Set<Long> instrumentIds, User user);
+
+  /** Returns the requested active parent-container IDs that the user may read. */
+  Set<Long> getReadableParentContainerIds(Set<Long> containerIds, User user);
 
   Instrument assertUserCanDeleteInstrument(Long dbId, User user);
 

@@ -61,6 +61,32 @@ class ResourceRegistryTest {
   }
 
   @Test
+  void appliesReadOverridesToExpandedTargets() {
+    ResourceRegistry registry = new ResourceRegistry(List.of(PARENTS, CHILDREN));
+    Child child = new Child(10L, "classified");
+    Parent parent = new Parent(1L, child);
+
+    Map<String, Object> document =
+        new ResourceRenderer(registry)
+            .render(
+                parent,
+                PARENTS,
+                FieldSelection.all(),
+                IncludeTree.toDepth(PARENTS, registry, 1),
+                (resource, id) ->
+                    Optional.of(
+                        new ResourceRenderer.ResolvedTarget(
+                            child,
+                            FieldSelection.all(),
+                            java.util.Collections.singletonMap("name", null))));
+
+    Map<?, ?> relationship = (Map<?, ?>) document.get("primaryChild");
+    Map<?, ?> expanded = (Map<?, ?>) relationship.get("value");
+    assertTrue(expanded.containsKey("name"));
+    assertEquals(null, expanded.get("name"));
+  }
+
+  @Test
   void exposesFieldAndRelationshipSchemaMetadata() {
     CollectionDescription.ResourceSchema schema = PARENTS.schema();
 

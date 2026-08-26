@@ -15,6 +15,7 @@ import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.InventoryEntityFieldDao;
@@ -36,6 +37,8 @@ import com.researchspace.model.events.InventoryTransferEvent;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
+import com.researchspace.model.inventory.InstrumentParentLocationSummary;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
@@ -54,8 +57,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -72,6 +77,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   public static final String INSTRUMENT_DEFAULT_NAME = "Generic Instrument";
 
   private @Autowired InstrumentDao instrumentDao;
+  private @Autowired ContainerDao containerDao;
   private @Autowired InstrumentReadAccess instrumentReadAccess;
   private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   private @Autowired InventoryEntityFieldDao inventoryEntityFieldDao;
@@ -1006,6 +1012,23 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   @Override
   public long countReadableInstruments(ResourceRequest request, User user) {
     return instrumentDao.countReadableResources(request, readAccess(user));
+  }
+
+  @Override
+  public Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(
+      Set<Long> instrumentIds) {
+    return instrumentDao.getParentLocationSummaries(instrumentIds);
+  }
+
+  @Override
+  public Map<Long, InstrumentReadSummary> getReadableInstrumentSummaries(
+      Set<Long> instrumentIds, User user) {
+    return instrumentDao.getReadableSummaries(instrumentIds, user);
+  }
+
+  @Override
+  public Set<Long> getReadableParentContainerIds(Set<Long> containerIds, User user) {
+    return containerDao.getReadableActiveContainerIds(containerIds, user);
   }
 
   private AccessResult readAccess(User user) {

@@ -9,12 +9,17 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentParentLocationSummary;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.service.inventory.ExtraFieldRuntimeManager;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.service.inventory.impl.ExtraFieldRuntimeManagerImpl;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,6 +42,9 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration(proxyBeanMethods = false)
 public class InstrumentResourceOperations implements ResourceOperations<Instrument, Long> {
+
+  private static final Set<String> LOCATION_FIELDS =
+      Set.of("parentContainerName", "parentContainerGlobalId");
 
   private final InstrumentEntityApiManager instrumentManager;
   private final InstrumentReadAccess readAccess;
@@ -114,7 +122,74 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
     return instrumentManager.findReadableInstrument(id, actor).filter(this::isActive);
   }
 
+  @Override
+  public Map<Object, Map<String, Object>> readOverrides(List<Instrument> instruments, User actor) {
+    Set<Long> instrumentIds =
+        instruments.stream().map(Instrument::getId).collect(java.util.stream.Collectors.toSet());
+    Map<Long, InstrumentParentLocationSummary> locations =
+        instrumentManager.getParentLocationSummaries(instrumentIds);
+    Set<Long> parentIds =
+        locations.values().stream()
+            .map(InstrumentParentLocationSummary::containerId)
+            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+    Set<Long> readable = instrumentManager.getReadableParentContainerIds(parentIds, actor);
+    Map<Object, Map<String, Object>> overrides = new LinkedHashMap<>();
+    for (Instrument instrument : instruments) {
+      InstrumentParentLocationSummary location = locations.get(instrument.getId());
+      boolean show = location != null && readable.contains(location.containerId());
+      Map<String, Object> values = new LinkedHashMap<>();
+      values.put("parentContainerName", show ? location.containerName() : null);
+      values.put(
+          "parentContainerGlobalId",
+          show ? containerGlobalId(location.containerId(), location.containerType()) : null);
+      overrides.put(instrument.getId(), values);
+    }
+    return overrides;
+  }
+
+  @Override
+  public Set<String> readOverrideFields() {
+    return LOCATION_FIELDS;
+  }
+
+  @Override
+  public Optional<Map<Object, Map<String, Object>>> relationshipReadDocuments(
+      Set<Long> ids, User actor) {
+    Map<Long, InstrumentReadSummary> summaries =
+        instrumentManager.getReadableInstrumentSummaries(ids, actor);
+    Set<Long> parentIds =
+        summaries.values().stream()
+            .map(InstrumentReadSummary::parentContainerId)
+            .filter(java.util.Objects::nonNull)
+            .collect(java.util.stream.Collectors.toSet());
+    Set<Long> readableParents = instrumentManager.getReadableParentContainerIds(parentIds, actor);
+    Map<Object, Map<String, Object>> documents = new LinkedHashMap<>();
+    summaries.forEach(
+        (id, summary) -> {
+          boolean showParent =
+              summary.parentContainerId() != null
+                  && readableParents.contains(summary.parentContainerId());
+          Map<String, Object> document = new LinkedHashMap<>();
+          document.put("id", summary.id());
+          document.put("name", summary.name());
+          document.put("globalId", "IN" + summary.id());
+          document.put("parentContainerName", showParent ? summary.parentContainerName() : null);
+          document.put(
+              "parentContainerGlobalId",
+              showParent
+                  ? containerGlobalId(summary.parentContainerId(), summary.parentContainerType())
+                  : null);
+          document.put("deleted", summary.deleted());
+          documents.put(id, document);
+        });
+    return Optional.of(documents);
+  }
+
   private boolean isActive(Instrument instrument) {
     return !instrument.isDeleted();
+  }
+
+  private static String containerGlobalId(long id, ContainerType type) {
+    return (type == ContainerType.WORKBENCH ? "BE" : "IC") + id;
   }
 }

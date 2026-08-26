@@ -1237,12 +1237,25 @@ public final class CollectionDescription<T> {
 
   /** Reads only selected fields, avoiding work for fields omitted from the response. */
   public Map<String, Object> toDocument(T entity, Predicate<String> selection) {
+    return toDocument(entity, selection, Map.of());
+  }
+
+  /** Reads selected fields, substituting caller-specific values before their readers run. */
+  public Map<String, Object> toDocument(
+      T entity, Predicate<String> selection, Map<String, Object> readOverrides) {
     Objects.requireNonNull(entity, "Entity");
     Objects.requireNonNull(selection, "Selection");
+    Objects.requireNonNull(readOverrides, "Read overrides");
     Map<String, Object> document = new LinkedHashMap<>();
     fields.values().stream()
         .filter(field -> selection.test(field.name()))
-        .forEach(field -> document.put(field.name(), field.documentValue(entity)));
+        .forEach(
+            field ->
+                document.put(
+                    field.name(),
+                    readOverrides.containsKey(field.name())
+                        ? readOverrides.get(field.name())
+                        : field.documentValue(entity)));
     return document;
   }
 

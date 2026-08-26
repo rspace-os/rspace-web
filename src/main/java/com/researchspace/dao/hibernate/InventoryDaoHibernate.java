@@ -83,38 +83,57 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
 
     String ownedAndPermittedItemsFragment =
         StringUtils.isEmpty(ownedBy) ? "" : "and " + relatedItemPrefix + "owner.username=:ownedBy ";
-    if (user.hasSysadminRole()) {
-      ownedAndPermittedItemsFragment += ""; // for sysadmin there is no permission-limiting query
-    } else {
+    if (!user.hasSysadminRole()) {
       ownedAndPermittedItemsFragment +=
-          "and (" + relatedItemPrefix + "owner.username=:currentUser ";
-      if (CollectionUtils.isNotEmpty(visibleOwners)) {
-        ownedAndPermittedItemsFragment +=
-            " or (" + relatedItemPrefix + "owner.username in (:visibleOwners)) ";
-      }
-      if (CollectionUtils.isNotEmpty(userGroupMembers)) {
-        ownedAndPermittedItemsFragment +=
-            " or ("
-                + relatedItemPrefix
-                + "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.OWNER_GROUPS"
-                + " and "
-                + relatedItemPrefix
-                + "owner.username in (:userGroupMembers)) ";
-      }
-      for (int i = 0; i < userGroupsUniqueNames.size(); i++) {
-        ownedAndPermittedItemsFragment +=
-            "or ("
-                + relatedItemPrefix
-                + "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.WHITELIST"
-                + " and "
-                + relatedItemPrefix
-                + "sharingACL.acl LIKE :userGroupUniqueName"
-                + i
-                + ") ";
-      }
-      ownedAndPermittedItemsFragment += ") ";
+          "and "
+              + getInventoryReadPermissionSqlPredicate(
+                  user, userGroupMembers, userGroupsUniqueNames, visibleOwners, relatedItemPrefix)
+              + " ";
     }
     return ownedAndPermittedItemsFragment;
+  }
+
+  /** The inventory read rule without a leading {@code and}, for use inside larger predicates. */
+  protected String getInventoryReadPermissionSqlPredicate(
+      User user,
+      List<String> userGroupMembers,
+      List<String> userGroupsUniqueNames,
+      List<String> visibleOwners,
+      String relatedItemPrefix) {
+    if (user.hasSysadminRole()) {
+      return "1=1";
+    }
+    StringBuilder predicate =
+        new StringBuilder("(").append(relatedItemPrefix).append("owner.username=:currentUser ");
+    if (CollectionUtils.isNotEmpty(visibleOwners)) {
+      predicate
+          .append(" or (")
+          .append(relatedItemPrefix)
+          .append("owner.username in (:visibleOwners)) ");
+    }
+    if (CollectionUtils.isNotEmpty(userGroupMembers)) {
+      predicate
+          .append(" or (")
+          .append(relatedItemPrefix)
+          .append(
+              "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.OWNER_GROUPS")
+          .append(" and ")
+          .append(relatedItemPrefix)
+          .append("owner.username in (:userGroupMembers)) ");
+    }
+    for (int i = 0; i < userGroupsUniqueNames.size(); i++) {
+      predicate
+          .append("or (")
+          .append(relatedItemPrefix)
+          .append(
+              "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.WHITELIST")
+          .append(" and ")
+          .append(relatedItemPrefix)
+          .append("sharingACL.acl LIKE :userGroupUniqueName")
+          .append(i)
+          .append(") ");
+    }
+    return predicate.append(")").toString();
   }
 
   protected String getOrderBySqlFragmentForInventoryRecord(
