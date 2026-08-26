@@ -231,6 +231,8 @@ describe("booking sidebar", () => {
     renderAt("/booking/bookable-items/IN123");
 
     expect(await screen.findByRole("button", { name: "booking:sidebar.dashboard" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "booking:bookableItemDetails.title" })).toBeVisible();
+    // The bookable item itself is the page heading; "Bookable item" is now the
+    // eyebrow label above it.
+    expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toBeVisible();
   });
 });

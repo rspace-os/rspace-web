@@ -43,6 +43,31 @@
     "summary": "Availability period: {period}. {states}"
   },
   "bookableItemDetails": {
+    "audit": {
+      "singular": "Audit event",
+      "plural": "Audit events",
+      "period": "Period",
+      "lastDays": "{count, plural, one {Last # day} other {Last # days}}",
+      "from": "From date",
+      "to": "To date",
+      "apply": "Load audit events",
+      "empty": "No recorded changes in this period.",
+      "pagination": "Audit event pages",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page, number} of {totalPages, number}",
+      "fields": {
+        "rowId": "Row",
+        "timestamp": "Time",
+        "actor": "Changed by",
+        "fullName": "Full name",
+        "action": "Action",
+        "description": "Description",
+        "domain": "Domain",
+        "values": "Recorded values"
+      }
+    },
+    "cancelEdit": "Cancel",
     "disabled": "Disabled",
     "edit": "Edit configuration",
     "enabled": "Enabled",
@@ -81,6 +106,10 @@
     "notAvailable": "Not available",
     "past": "Past events",
     "rules": "Booking rules",
+    "tabs": {
+      "details": "Details",
+      "audit": "Audit log"
+    },
     "title": "Bookable item details",
     "unlimited": "Unlimited",
     "upcoming": "Upcoming events",

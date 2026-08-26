@@ -805,6 +805,31 @@ export default interface Resources {
       "summary": "Availability period: {period}. {states}"
     },
     "bookableItemDetails": {
+      "audit": {
+        "apply": "Load audit events",
+        "empty": "No recorded changes in this period.",
+        "fields": {
+          "action": "Action",
+          "actor": "Changed by",
+          "description": "Description",
+          "domain": "Domain",
+          "fullName": "Full name",
+          "rowId": "Row",
+          "timestamp": "Time",
+          "values": "Recorded values"
+        },
+        "from": "From date",
+        "lastDays": "{count, plural, one {Last # day} other {Last # days}}",
+        "next": "Next",
+        "page": "Page {page, number} of {totalPages, number}",
+        "pagination": "Audit event pages",
+        "period": "Period",
+        "plural": "Audit events",
+        "previous": "Previous",
+        "singular": "Audit event",
+        "to": "To date"
+      },
+      "cancelEdit": "Cancel",
       "disabled": "Disabled",
       "edit": "Edit configuration",
       "enabled": "Enabled",
@@ -843,6 +868,10 @@ export default interface Resources {
       "notAvailable": "Not available",
       "past": "Past events",
       "rules": "Booking rules",
+      "tabs": {
+        "audit": "Audit log",
+        "details": "Details"
+      },
       "title": "Bookable item details",
       "unlimited": "Unlimited",
       "upcoming": "Upcoming events",
@@ -983,6 +1012,12 @@ export default interface Resources {
       "detailLoading": "Loading bookings.",
       "detailUnavailable": "Bookings are unavailable.",
       "event": "Booking event",
+      "feed": {
+        "booked": "Booked",
+        "bookedBy": "Booked by: {0}",
+        "busy": "Busy",
+        "purpose": "Purpose: {0}"
+      },
       "fields": {
         "bookedBy": "Booked by",
         "createdAt": "Created",

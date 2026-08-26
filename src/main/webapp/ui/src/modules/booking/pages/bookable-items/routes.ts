@@ -1,4 +1,5 @@
 import { type AnyRoute, createRoute } from "@tanstack/react-router";
+import { createLoader, parseAsBoolean, parseAsStringLiteral } from "nuqs";
 import AddBookableItemPage from "./AddBookableItemPage";
 import BookableItemPage from "./BookableItemPage";
 import BookableItemsPage from "./BookableItemsPage";
@@ -29,10 +30,39 @@ export function createAddBookableItemRoute<TParentRoute extends AnyRoute>(bookin
   });
 }
 
+// Tab and edit mode live in the URL so both are linkable, back-button-able and
+// survive a reload. `history: "replace"` keeps the two from filling the stack.
+export const bookableItemTabParser = parseAsStringLiteral(["details", "audit"] as const)
+  .withDefault("details")
+  .withOptions({ history: "replace", clearOnDefault: true });
+export const bookableItemEditParser = parseAsBoolean
+  .withDefault(false)
+  .withOptions({ history: "replace", clearOnDefault: true });
+
+const loadBookableItemSearch = createLoader({ tab: bookableItemTabParser, edit: bookableItemEditParser });
+
+// Both keys stay optional in the output. A required key would force every
+// existing `<Link to="/booking/bookable-items/$globalId">` to pass `search`,
+// and `clearOnDefault` already means the defaults never appear in the URL.
+export function bookableItemSearch(search: Record<string, unknown>): {
+  tab?: "details" | "audit";
+  edit?: boolean;
+} {
+  const loaded = loadBookableItemSearch({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+    edit: typeof search.edit === "string" || typeof search.edit === "boolean" ? String(search.edit) : undefined,
+  });
+  return {
+    ...(loaded.tab === "details" ? {} : { tab: loaded.tab }),
+    ...(loaded.edit ? { edit: true } : {}),
+  };
+}
+
 export function createBookableItemRoute<TParentRoute extends AnyRoute>(bookingRoute: TParentRoute) {
   return createRoute({
     getParentRoute: () => bookingRoute,
     path: "/bookable-items/$globalId",
+    validateSearch: bookableItemSearch,
     component: BookableItemPage,
   });
 }

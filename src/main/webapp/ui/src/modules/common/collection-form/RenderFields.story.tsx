@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Switch } from "@/modules/common/ui/switch";
 import { RenderFields } from "./RenderFields";
@@ -222,7 +223,15 @@ export function RenderFieldsStory({
   sectionVariant,
 }: {
   disabled?: boolean;
-  presentation?: "sectioned" | "compact" | "split" | "progressive" | "settings" | "aligned" | "prompt-cards";
+  presentation?:
+    | "sectioned"
+    | "compact"
+    | "split"
+    | "progressive"
+    | "settings"
+    | "aligned"
+    | "prompt-cards"
+    | "item-details";
   sectionVariant?: "card" | "transparent";
 }) {
   const { t } = useTranslation("common");
@@ -345,6 +354,32 @@ export function RenderFieldsStory({
             </div>
           ))}
         </div>
+      );
+      break;
+    // Mirrors the "Booking rules" card on the View Bookable Item page
+    // (BookableItemPage.tsx): a Card wrapping a two-column dl whose label
+    // column is max-content. `sm:contents` lets each dt/dd pair join the outer
+    // grid at sm and up, and stack as its own block below that. The only
+    // change is that each dd holds the field's control instead of its value.
+    case "item-details":
+      fields = (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("collectionForm.examples.recordDetails")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-[max-content_1fr]">
+              {presentationFormFields.map((field) => (
+                <div className="grid gap-1 sm:contents" key={field.name}>
+                  <dt className="font-medium">{t(field.labelKey as never)}</dt>
+                  <dd>
+                    <RenderFields {...fieldProps} className={controlOnlyClassName} fields={[field]} />
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </CardContent>
+        </Card>
       );
       break;
     case "prompt-cards":
