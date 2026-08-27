@@ -55,8 +55,8 @@ public class SandboxTest extends SpringTransactionalTest {
     FileProperty retrieved =
         session
             .createQuery(
-                "from FileProperty where replace(replace(relPath, '/', ''), '\\\\', '') in"
-                    + " :paths",
+                "from FileProperty where replace(replace(relPath, '/', ''),"
+                    + " function('char', 92), '') in :paths",
                 FileProperty.class)
             .setParameterList("paths", List.of(pathWithoutBackslashes))
             .uniqueResult();
@@ -71,7 +71,7 @@ public class SandboxTest extends SpringTransactionalTest {
     FileProperty backslashPath = saveFileProperty(session, "a\\b\\c\\12346.jpg");
     String query =
         "from FileProperty fileProperty where :value like concat('%',"
-            + " replace(replace(fileProperty.relPath, '/', ''), '\\\\', ''), '%')";
+            + " replace(replace(fileProperty.relPath, '/', ''), function('char', 92), ''), '%')";
 
     FileProperty retrievedForwardSlashPath =
         session
@@ -92,7 +92,7 @@ public class SandboxTest extends SpringTransactionalTest {
         session
             .createQuery(
                 "from FileProperty fileProperty where replace(replace(fileProperty.relPath, '/',"
-                    + " ''), '\\\\', '') in (:paths)",
+                    + " ''), function('char', 92), '') in (:paths)",
                 FileProperty.class)
             .setParameterList(
                 "paths",
