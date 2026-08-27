@@ -8,10 +8,17 @@ export interface ApiInventoryInstrumentField {
   content?: string;
 }
 
+export interface ApiInventoryInstrumentExtraField {
+  name: string;
+  type?: "text" | "number" | "link";
+  content?: string;
+}
+
 export interface ApiInventoryInstrumentCreateRequest {
   name: string;
   templateId?: number;
   fields?: ApiInventoryInstrumentField[];
+  extraFields?: ApiInventoryInstrumentExtraField[];
 }
 
 export type ApiInventoryInstrumentTemplate = ApiInventoryRecordInfo;

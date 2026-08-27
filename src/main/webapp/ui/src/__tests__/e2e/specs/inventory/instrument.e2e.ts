@@ -96,15 +96,37 @@ test.describe(`Instrument`, { tag: [tags.INVENTORY, tags.MOBILE] }, () => {
   }) => {
     const instrumentName = uniqueName("e2e-instrument-for-template");
     const templateName = uniqueName("e2e-template-from-instrument");
+    const copiedFieldName = "Serial Number";
+    const copiedFieldContent = "SN-001";
+    const uncopiedFieldName = "Internal Notes";
+    const uncopiedFieldContent = "should not carry over";
 
-    const instrument = await clientInventory.createInstrument({ name: instrumentName });
+    const instrument = await clientInventory.createInstrument({
+      name: instrumentName,
+      extraFields: [
+        { name: copiedFieldName, type: "text", content: copiedFieldContent },
+        { name: uncopiedFieldName, type: "text", content: uncopiedFieldContent },
+      ],
+    });
 
     await pageInventory.openInstrument(instrument.id);
     const dialog = await pageInventory.detailsPanel.openCreateItemDialog();
-    await dialog.createInstrumentTemplate(templateName);
+    await dialog.createInstrumentTemplate(templateName, { copyContentForFields: [copiedFieldName] });
 
     await pageInventory.openSearch("INSTRUMENT_TEMPLATE");
     await pageInventory.searchPanel.search(templateName);
     await expect(pageInventory.searchPanel.row(templateName)).toBeVisible();
+
+    await test.step("And its custom fields survived the move", async () => {
+      await pageInventory.searchPanel.open(templateName);
+      await pageInventory.detailsPanel.expandSection("Custom Fields");
+      const customFields = pageInventory.detailsPanel.section("Custom Fields");
+
+      await expect(customFields.getByText(copiedFieldName)).toBeVisible();
+      await expect(customFields.getByText(uncopiedFieldName)).toBeVisible();
+
+      await expect(customFields.getByText(copiedFieldContent)).toBeVisible();
+      await expect(customFields.getByText(uncopiedFieldContent)).toHaveCount(0);
+    });
   });
 });

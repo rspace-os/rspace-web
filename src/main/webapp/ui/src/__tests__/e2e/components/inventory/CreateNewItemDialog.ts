@@ -85,20 +85,27 @@ export class CreateNewItemDialog {
     await this.root.waitFor({ state: "detached" });
   }
 
-  private async createTemplateVia(radio: Locator, name: string): Promise<void> {
+  private async createTemplateVia(
+    radio: Locator,
+    name: string,
+    options?: { copyContentForFields?: string[] },
+  ): Promise<void> {
     await radio.click();
     await this.root.getByRole("textbox", { name: "Name" }).fill(name);
     await this.root.getByRole("button", { name: "Next" }).click();
+    for (const fieldName of options?.copyContentForFields ?? []) {
+      await this.root.getByRole("row").filter({ hasText: fieldName }).getByRole("checkbox").check();
+    }
     await this.createButton.click();
     await this.root.waitFor({ state: "detached" });
   }
 
-  async createTemplate(name: string): Promise<void> {
-    await this.createTemplateVia(this.templateRadio, name);
+  async createTemplate(name: string, options?: { copyContentForFields?: string[] }): Promise<void> {
+    await this.createTemplateVia(this.templateRadio, name, options);
   }
 
-  async createInstrumentTemplate(name: string): Promise<void> {
-    await this.createTemplateVia(this.instrumentTemplateRadio, name);
+  async createInstrumentTemplate(name: string, options?: { copyContentForFields?: string[] }): Promise<void> {
+    await this.createTemplateVia(this.instrumentTemplateRadio, name, options);
   }
 
   async cancel(): Promise<void> {
