@@ -195,4 +195,158 @@ public class DBRepoClientTest {
                 "db-1",
                 new DBRepoCredentials("user", "pass")));
   }
+
+  @Test
+  public void getsTableMetadataWithOrderedColumns() {
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/table/table-1"))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Basic dXNlcjpwYXNz"))
+        .andRespond(
+            withSuccess(
+                """
+                {
+                  "id":"table-1",
+                  "name":"Experiments",
+                  "columns":[
+                    {"id":"col-2","name":"Title","internal_name":"title","type":"varchar","size":255,"ord":2},
+                    {"id":"col-1","name":"Experiment ID","internal_name":"experiment_id","type":"int","ord":1}
+                  ]
+                }
+                """,
+                MediaType.APPLICATION_JSON));
+
+    DBRepoResourceMetadataDTO metadata =
+        client.getResourceMetadata(
+            "https://dbrepo.example",
+            "db-1",
+            "table",
+            "table-1",
+            new DBRepoCredentials("user", "pass"));
+
+    assertEquals("table-1", metadata.id());
+    assertEquals("table", metadata.type());
+    assertEquals("Experiments", metadata.name());
+    assertEquals(2, metadata.columns().size());
+    assertEquals("Experiment ID", metadata.columns().get(0).name());
+    assertEquals("int", metadata.columns().get(0).type());
+    assertEquals("title", metadata.columns().get(1).internalName());
+    assertEquals(Integer.valueOf(255), metadata.columns().get(1).size());
+    server.verify();
+  }
+
+  @Test
+  public void getsViewMetadataWithQuery() {
+    server
+        .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/view/view-1"))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Basic dXNlcjpwYXNz"))
+        .andRespond(
+            withSuccess(
+                """
+                {
+                  "id":"view-1",
+                  "name":"Recent experiments",
+                  "query":"SELECT * FROM experiments",
+                  "columns":[
+                    {"id":"col-1","name":"Title","internal_name":"title","type":"varchar","ord":1}
+                  ]
+                }
+                """,
+                MediaType.APPLICATION_JSON));
+
+    DBRepoResourceMetadataDTO metadata =
+        client.getResourceMetadata(
+            "https://dbrepo.example",
+            "db-1",
+            "view",
+            "view-1",
+            new DBRepoCredentials("user", "pass"));
+
+    assertEquals("Recent experiments", metadata.name());
+    assertEquals("SELECT * FROM experiments", metadata.query());
+    assertEquals(1, metadata.columns().size());
+    server.verify();
+  }
+
+  @Test
+  public void getsResourceRowsWithJsonAcceptAndCountHeader() {
+    server
+        .expect(
+            requestTo("https://dbrepo.example/api/v1/database/db-1/view/view-1/data?page=1&size=5"))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Basic dXNlcjpwYXNz"))
+        .andExpect(header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE))
+        .andRespond(
+            withSuccess(
+                """
+                [
+                  {"Experiment ID":1,"Title":"Alpha"},
+                  {"Experiment ID":2,"Title":"Beta"}
+                ]
+                """,
+                MediaType.APPLICATION_JSON));
+    server
+        .expect(
+            requestTo("https://dbrepo.example/api/v1/database/db-1/view/view-1/data?page=1&size=5"))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, "Basic dXNlcjpwYXNz"))
+        .andRespond(withSuccess().header("X-Count", "12"));
+
+    DBRepoRowPageDTO page =
+        client.getResourceRows(
+            "https://dbrepo.example",
+            "db-1",
+            "view",
+            "view-1",
+            1,
+            5,
+            new DBRepoCredentials("user", "pass"));
+
+    assertEquals(1, page.page());
+    assertEquals(5, page.size());
+    assertEquals(Long.valueOf(12), page.totalCount());
+    assertEquals(2, page.rows().size());
+    assertEquals("Alpha", page.rows().get(0).get("Title"));
+    server.verify();
+  }
+
+  @Test
+  public void returnsRowsWithoutTotalCountWhenHeadFails() {
+    server
+        .expect(
+            requestTo(
+                "https://dbrepo.example/api/v1/database/db-1/table/table-1/data?page=0&size=10"))
+        .andRespond(withSuccess("{\"data\":[{\"id\":1}]}", MediaType.APPLICATION_JSON));
+    server
+        .expect(
+            requestTo(
+                "https://dbrepo.example/api/v1/database/db-1/table/table-1/data?page=0&size=10"))
+        .andRespond(withServerError());
+
+    DBRepoRowPageDTO page =
+        client.getResourceRows(
+            "https://dbrepo.example",
+            "db-1",
+            "table",
+            "table-1",
+            0,
+            10,
+            new DBRepoCredentials("user", "pass"));
+
+    assertEquals(null, page.totalCount());
+    assertEquals(1, page.rows().size());
+    server.verify();
+  }
+
+  @Test
+  public void rejectsRowsForUnsupportedResourceTypes() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            client.getResourceRows(
+                "https://dbrepo.example",
+                "db-1",
+                "subset",
+                "subset-1",
+                0,
+                10,
+                new DBRepoCredentials("user", "pass")));
+  }
 }

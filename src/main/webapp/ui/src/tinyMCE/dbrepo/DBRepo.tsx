@@ -4,14 +4,27 @@ import TableChartIcon from "@mui/icons-material/TableChart";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
 import Collapse from "@mui/material/Collapse";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TablePagination from "@mui/material/TablePagination";
+import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -50,6 +63,31 @@ type ResourceState = {
   error?: string;
 };
 
+type DBRepoColumn = {
+  id: string;
+  name: string;
+  internalName: string;
+  type: string;
+  size?: number;
+};
+
+type DBRepoResourceMetadata = {
+  id: string;
+  type: "table" | "view";
+  name: string;
+  query: string;
+  columns: DBRepoColumn[];
+};
+
+type DBRepoRowPage = {
+  rows: DBRepoRow[];
+  page: number;
+  size: number;
+  totalCount: number | null;
+};
+
+type DBRepoRow = Record<string, unknown>;
+
 type TemplateTarget = {
   name: string;
   url: string;
@@ -60,8 +98,11 @@ type TemplateTarget = {
   query: string;
 };
 
+type RowTemplateTarget = TemplateTarget & { dbrepoType: "table" | "view" };
+
 type TinyMceEditor = {
   getBody: () => HTMLElement;
+  execCommand: (command: string, ui: boolean, value?: string) => void;
   on?: (eventName: string, callback: () => void) => void;
   off?: (eventName: string, callback?: () => void) => void;
   windowManager: {
@@ -125,6 +166,7 @@ function DBRepo(): React.ReactNode {
   const [selectedId, setSelectedId] = useState("");
   const [expandedDatabaseId, setExpandedDatabaseId] = useState("");
   const [resourcesByDatabase, setResourcesByDatabase] = useState<Record<string, ResourceState>>({});
+  const [rowPickerTarget, setRowPickerTarget] = useState<TemplateTarget | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -186,6 +228,7 @@ function DBRepo(): React.ReactNode {
   };
 
   const selectedTarget = selectedTemplateTarget(selectedId, databases, resourcesByDatabase);
+  const canInsertRows = selectedTarget?.dbrepoType === "table" || selectedTarget?.dbrepoType === "view";
 
   const insertSelectedDatabase = useCallback(() => {
     const parentWindow = parent as unknown as ParentWindow;
@@ -196,19 +239,34 @@ function DBRepo(): React.ReactNode {
     editor.windowManager.close();
   }, [selectedTarget]);
 
+  const openRowPicker = useCallback(() => {
+    if (canInsertRows) {
+      setRowPickerTarget(selectedTarget);
+    }
+  }, [canInsertRows, selectedTarget]);
+
   useEffect(() => {
-    window.parent.postMessage({ mceAction: selectedTarget ? "enable" : "disable" }, "*");
-  }, [selectedTarget]);
+    window.parent.postMessage(
+      {
+        mceAction: selectedTarget && !rowPickerTarget ? "enable" : "disable",
+        rowsAction: canInsertRows && !rowPickerTarget ? "enable" : "disable",
+      },
+      "*",
+    );
+  }, [canInsertRows, rowPickerTarget, selectedTarget]);
 
   useEffect(() => {
     const parentWindow = parent as unknown as ParentWindow;
     const editor = parentWindow.tinymce?.activeEditor;
     editor?.off?.("dbrepo-insert");
+    editor?.off?.("dbrepo-insert-rows");
     editor?.on?.("dbrepo-insert", insertSelectedDatabase);
+    editor?.on?.("dbrepo-insert-rows", openRowPicker);
     return () => {
       editor?.off?.("dbrepo-insert", insertSelectedDatabase);
+      editor?.off?.("dbrepo-insert-rows", openRowPicker);
     };
-  }, [insertSelectedDatabase]);
+  }, [insertSelectedDatabase, openRowPicker]);
 
   if (loading) {
     return (
@@ -296,7 +354,310 @@ function DBRepo(): React.ReactNode {
           </Box>
         ))}
       </RadioGroup>
+      {rowPickerTarget && isRowTemplateTarget(rowPickerTarget) && (
+        <DBRepoRowPicker
+          target={rowPickerTarget}
+          onClose={() => setRowPickerTarget(undefined)}
+          onInserted={() => {
+            const parentWindow = parent as unknown as ParentWindow;
+            parentWindow.tinymce?.activeEditor?.windowManager.close();
+          }}
+        />
+      )}
     </Stack>
+  );
+}
+
+function DBRepoRowPicker({
+  target,
+  onClose,
+  onInserted,
+}: {
+  target: RowTemplateTarget;
+  onClose: () => void;
+  onInserted: () => void;
+}): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
+  const [metadata, setMetadata] = useState<DBRepoResourceMetadata | undefined>();
+  const [rows, setRows] = useState<DBRepoRow[]>([]);
+  const [selectedRows, setSelectedRows] = useState<Map<string, DBRepoRow>>(new Map());
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [loadingMetadata, setLoadingMetadata] = useState(true);
+  const [loadingRows, setLoadingRows] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingMetadata(true);
+    setError("");
+    void axios
+      .get<DBRepoResourceMetadata>(resourceApiPath(target, "metadata"))
+      .then(({ data }) => {
+        if (!cancelled) setMetadata(data);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : t("tinymce.dbrepo.rows.metadataError"));
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMetadata(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [target, t]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingRows(true);
+    setError("");
+    void axios
+      .get<DBRepoRowPage>(resourceApiPath(target, "rows"), {
+        params: { page, size: rowsPerPage },
+      })
+      .then(({ data }) => {
+        if (cancelled) return;
+        setRows(data.rows);
+        setTotalCount(data.totalCount);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : t("tinymce.dbrepo.rows.rowsError"));
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingRows(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [page, rowsPerPage, target, t]);
+
+  const columns = metadata?.columns ?? [];
+  const selectedRowKeys = new Set(selectedRows.keys());
+
+  const toggleRow = (key: string, row: DBRepoRow) => {
+    setSelectedRows((current) => {
+      const next = new Map(current);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.set(key, row);
+      }
+      return next;
+    });
+  };
+
+  const toggleCurrentPage = (checked: boolean) => {
+    setSelectedRows((current) => {
+      const next = new Map(current);
+      rows.forEach((row, index) => {
+        const key = rowKey(page, index, row);
+        if (checked) {
+          next.set(key, row);
+        } else {
+          next.delete(key);
+        }
+      });
+      return next;
+    });
+  };
+
+  const insertRows = () => {
+    const parentWindow = parent as unknown as ParentWindow;
+    const editor = parentWindow.tinymce?.activeEditor;
+    if (!editor || !metadata) return;
+    const table = createDBRepoTinyMceTable(target, metadata, Array.from(selectedRows.values()));
+    editor.execCommand("mceInsertContent", false, table.outerHTML);
+    onInserted();
+  };
+
+  const selectedOnPage = rows.filter((row, index) => selectedRowKeys.has(rowKey(page, index, row))).length;
+  const count = totalCount ?? -1;
+
+  return (
+    <Dialog open={true} onClose={onClose} fullWidth maxWidth="lg">
+      <DialogTitle>{t("tinymce.dbrepo.rows.dialogTitle", { name: target.name })}</DialogTitle>
+      <DialogContent>
+        <Stack spacing={1.5}>
+          <Typography variant="body2" color="text.secondary">
+            {t("tinymce.dbrepo.rows.resourceContext", {
+              name: <b>{target.name}</b>,
+              database: <b>{target.databaseName}</b>,
+            })}
+          </Typography>
+          {target.query && (
+            <Typography variant="caption" sx={{ fontFamily: "monospace", overflowWrap: "anywhere" }}>
+              {target.query}
+            </Typography>
+          )}
+          {error && <Alert severity="error">{error}</Alert>}
+          {(loadingMetadata || loadingRows) && (
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <CircularProgress size={18} />
+              <Typography variant="body2">{t("tinymce.dbrepo.rows.loading")}</Typography>
+            </Stack>
+          )}
+          {!loadingMetadata && columns.length === 0 && (
+            <Alert severity="warning">{t("tinymce.dbrepo.rows.noColumns")}</Alert>
+          )}
+          {metadata && columns.length > 0 && (
+            <DBRepoRowsTable
+              columns={columns}
+              rows={rows}
+              page={page}
+              selectedRowKeys={selectedRowKeys}
+              selectedOnPage={selectedOnPage}
+              totalSelected={selectedRows.size}
+              rowsPerPage={rowsPerPage}
+              count={count}
+              loading={loadingRows}
+              onToggleRow={toggleRow}
+              onToggleCurrentPage={toggleCurrentPage}
+              onPageChange={setPage}
+              onRowsPerPageChange={(nextRowsPerPage) => {
+                setRowsPerPage(nextRowsPerPage);
+                setPage(0);
+              }}
+            />
+          )}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
+        <Button
+          disabled={!metadata || columns.length === 0 || selectedRows.size === 0}
+          color="callToAction"
+          variant="contained"
+          onClick={insertRows}
+        >
+          {t("tinymce.dbrepo.rows.insert")}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function DBRepoRowsTable({
+  columns,
+  rows,
+  page,
+  selectedRowKeys,
+  selectedOnPage,
+  totalSelected,
+  rowsPerPage,
+  count,
+  loading,
+  onToggleRow,
+  onToggleCurrentPage,
+  onPageChange,
+  onRowsPerPageChange,
+}: {
+  columns: DBRepoColumn[];
+  rows: DBRepoRow[];
+  page: number;
+  selectedRowKeys: Set<string>;
+  selectedOnPage: number;
+  totalSelected: number;
+  rowsPerPage: number;
+  count: number;
+  loading: boolean;
+  onToggleRow: (key: string, row: DBRepoRow) => void;
+  onToggleCurrentPage: (checked: boolean) => void;
+  onPageChange: (page: number) => void;
+  onRowsPerPageChange: (rowsPerPage: number) => void;
+}): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
+  return (
+    <>
+      <TableContainer sx={{ mb: "40px", maxHeight: 420 }}>
+        <Table stickyHeader aria-label={t("tinymce.dbrepo.rows.tableLabel")}>
+          <TableHead>
+            <TableRow sx={{ background: "#F6F6F6" }}>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  color="primary"
+                  checked={rows.length > 0 && selectedOnPage === rows.length}
+                  indeterminate={selectedOnPage > 0 && selectedOnPage < rows.length}
+                  disabled={rows.length === 0 || loading}
+                  slotProps={{
+                    input: { "aria-label": t("tinymce.dbrepo.rows.selectCurrentPage") },
+                  }}
+                  onChange={({ target: { checked } }) => onToggleCurrentPage(checked)}
+                />
+              </TableCell>
+              {columns.map((column) => (
+                <TableCell key={columnKey(column)}>
+                  <Stack>
+                    <Typography variant="body2">
+                      <b>{column.name}</b>
+                    </Typography>
+                    {column.type && (
+                      <Typography variant="caption" color="text.secondary">
+                        {column.size ? `${column.type}(${column.size})` : column.type}
+                      </Typography>
+                    )}
+                  </Stack>
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map((row, index) => {
+              const key = rowKey(page, index, row);
+              const selected = selectedRowKeys.has(key);
+              return (
+                <TableRow
+                  key={key}
+                  sx={{
+                    [`&.${tableRowClasses.selected}`]: {
+                      backgroundColor: "#e3f2fd",
+                    },
+                    [`&.${tableRowClasses.selected}:hover`]: {
+                      backgroundColor: "#e3f2fd",
+                    },
+                  }}
+                  hover
+                  tabIndex={-1}
+                  role="checkbox"
+                  onClick={() => onToggleRow(key, row)}
+                  aria-checked={selected}
+                  selected={selected}
+                >
+                  <TableCell padding="checkbox">
+                    <Checkbox color="primary" checked={selected} />
+                  </TableCell>
+                  {columns.map((column) => (
+                    <TableCell key={columnKey(column)}>{stringValue(valueForColumn(row, column))}</TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          width: "100%",
+          backgroundColor: "#f6f6f6",
+        }}
+      >
+        <Typography sx={{ pl: "16px" }} component="span" variant="body2" color="textPrimary">
+          {t("tinymce.dbrepo.rows.selectedCount", { count: totalSelected })}
+        </Typography>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          component="div"
+          count={count}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={(_, nextPage) => onPageChange(nextPage)}
+          onRowsPerPageChange={(event) => onRowsPerPageChange(Number(event.target.value))}
+        />
+      </Box>
+    </>
   );
 }
 
@@ -394,6 +755,99 @@ function databaseSelectionId(databaseId: string): string {
 
 function resourceSelectionId(databaseId: string, resource: DBRepoLinkedResource): string {
   return `${resource.type}:${databaseId}:${resource.id}`;
+}
+
+function isRowTemplateTarget(target: TemplateTarget | undefined): target is RowTemplateTarget {
+  return target?.dbrepoType === "table" || target?.dbrepoType === "view";
+}
+
+function resourceApiPath(target: RowTemplateTarget, suffix: "metadata" | "rows"): string {
+  return `/apps/dbrepo/databases/${encodeURIComponent(target.databaseId)}/${target.dbrepoType}/${encodeURIComponent(
+    target.resourceId,
+  )}/${suffix}`;
+}
+
+function rowKey(page: number, index: number, row: DBRepoRow): string {
+  return `${page}:${index}:${JSON.stringify(row)}`;
+}
+
+function columnKey(column: DBRepoColumn): string {
+  return column.id || column.internalName || column.name;
+}
+
+function valueForColumn(row: DBRepoRow, column: DBRepoColumn): unknown {
+  if (hasOwn(row, column.name)) {
+    return row[column.name];
+  }
+  if (hasOwn(row, column.internalName)) {
+    return row[column.internalName];
+  }
+  if (hasOwn(row, column.id)) {
+    return row[column.id];
+  }
+  return undefined;
+}
+
+function hasOwn(row: DBRepoRow, key: string): boolean {
+  return key ? Object.hasOwn(row, key) : false;
+}
+
+function stringValue(value: unknown): string {
+  if (value === null || typeof value === "undefined") {
+    return "";
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+export function createDBRepoTinyMceTable(
+  target: RowTemplateTarget,
+  metadata: DBRepoResourceMetadata,
+  selectedRows: DBRepoRow[],
+): HTMLTableElement {
+  const dbrepoTable = document.createElement("table");
+  dbrepoTable.setAttribute("data-tableSource", "dbrepo");
+  dbrepoTable.style.fontSize = "0.7em";
+
+  const linkRow = document.createElement("tr");
+  const linkCell = document.createElement("th");
+  linkCell.appendChild(document.createTextNode("Imported from DBRepo "));
+  linkCell.appendChild(document.createTextNode(`${target.dbrepoType} `));
+  const anchor = document.createElement("a");
+  anchor.href = target.url;
+  anchor.rel = "noreferrer";
+  anchor.textContent = `${target.name} (${target.databaseName})`;
+  linkCell.appendChild(anchor);
+  linkCell.appendChild(document.createTextNode(" on "));
+  linkCell.appendChild(document.createTextNode(new Date().toDateString()));
+  linkCell.appendChild(document.createTextNode(" "));
+  linkCell.appendChild(document.createTextNode(new Date().toLocaleTimeString()));
+  linkCell.colSpan = metadata.columns.length;
+  linkCell.style.fontWeight = "400";
+  linkRow.appendChild(linkCell);
+  dbrepoTable.appendChild(linkRow);
+
+  const tableHeader = document.createElement("tr");
+  metadata.columns.forEach((column) => {
+    const columnName = document.createElement("th");
+    columnName.textContent = column.name;
+    tableHeader.appendChild(columnName);
+  });
+  dbrepoTable.appendChild(tableHeader);
+
+  selectedRows.forEach((selectedRow) => {
+    const row = document.createElement("tr");
+    metadata.columns.forEach((column) => {
+      const cell = document.createElement("td");
+      cell.textContent = stringValue(valueForColumn(selectedRow, column));
+      row.appendChild(cell);
+    });
+    dbrepoTable.appendChild(row);
+  });
+
+  return dbrepoTable;
 }
 
 function selectedTemplateTarget(
