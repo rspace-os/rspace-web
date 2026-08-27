@@ -18,6 +18,13 @@ import type {
   ApiInventoryContainerCreateRequest,
   ApiInventoryContainerUpdateRequest,
 } from "../models/inventoryContainer";
+import type { ApiInventoryImportInstrumentsSettings, ApiInventoryImportResult } from "../models/inventoryImport";
+import type {
+  ApiInventoryInstrument,
+  ApiInventoryInstrumentCreateRequest,
+  ApiInventoryInstrumentTemplate,
+  ApiInventoryInstrumentTemplateCreateRequest,
+} from "../models/inventoryInstrument";
 import { BaseApiClient } from "./BaseApiClient";
 
 export class InventoryClient extends BaseApiClient {
@@ -106,5 +113,57 @@ export class InventoryClient extends BaseApiClient {
     await this.requestVoid("delete", `/api/inventory/v1/identifiers/${doiId}`, {
       action: "deleteInventoryIdentifier",
     });
+  }
+
+  async createInstrument(instrument: ApiInventoryInstrumentCreateRequest): Promise<ApiInventoryInstrument> {
+    return this.requestJson("post", "/api/inventory/v1/instruments", {
+      data: instrument,
+      action: "createInventoryInstrument",
+    });
+  }
+
+  async createInstrumentTemplate(
+    template: ApiInventoryInstrumentTemplateCreateRequest,
+  ): Promise<ApiInventoryInstrumentTemplate> {
+    return this.requestJson("post", "/api/inventory/v1/instrumentTemplates", {
+      data: template,
+      action: "createInventoryInstrumentTemplate",
+    });
+  }
+
+  async deleteInstrumentTemplate(instrumentTemplateId: number): Promise<void> {
+    await this.requestVoid("delete", `/api/inventory/v1/instrumentTemplates/${instrumentTemplateId}`, {
+      action: "deleteInventoryInstrumentTemplate",
+    });
+  }
+
+  async getListOfMaterialsForInventoryItem(globalId: string): Promise<Array<{ id: number; name: string }>> {
+    return this.requestJson("get", `/api/inventory/v1/listOfMaterials/forInventoryItem/${globalId}`, {
+      action: "getListOfMaterialsForInventoryItem",
+    });
+  }
+
+  async findInstrumentTemplateIdByExactName(name: string): Promise<number | undefined> {
+    const result = await this.requestJson<{ records: Array<{ id: number; name: string }> }>(
+      "get",
+      `/api/inventory/v1/search?query=${encodeURIComponent(name)}&resultType=INSTRUMENT_TEMPLATE`,
+      { action: "searchInstrumentTemplates" },
+    );
+    return result.records.find((r) => r.name === name)?.id;
+  }
+
+  async importInstruments(
+    file: { name: string; mimeType: string; buffer: Buffer },
+    settings: ApiInventoryImportInstrumentsSettings,
+  ): Promise<ApiInventoryImportResult> {
+    const res = await this.request.post("/api/inventory/v1/import/importFiles", {
+      headers: this.headers(),
+      multipart: {
+        instrumentsFile: file,
+        importSettings: JSON.stringify({ instrumentSettings: settings }),
+      },
+    });
+    await this.assertOk(res, "importInstruments");
+    return res.json() as Promise<ApiInventoryImportResult>;
   }
 }

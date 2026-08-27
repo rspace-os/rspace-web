@@ -16,8 +16,8 @@ export class SearchableResultsTable {
     return this.root.getByRole("row", { name });
   }
 
-  async findRow(name: string): Promise<Locator> {
-    const row = this.row(name);
+  async findRow(name: string, options: { exact?: boolean } = {}): Promise<Locator> {
+    const row = this.row(name, options);
     for (;;) {
       const appeared = await row
         .first()
@@ -32,9 +32,9 @@ export class SearchableResultsTable {
     }
   }
 
-  async open(name: string): Promise<void> {
-    const row = await this.findRow(name);
-    await row.getByRole("cell", { name }).click();
+  async open(name: string, options: { exact?: boolean } = {}): Promise<void> {
+    const row = await this.findRow(name, options);
+    await row.getByRole("cell", { name, exact: options.exact }).click();
   }
 
   async select(name: string): Promise<void> {

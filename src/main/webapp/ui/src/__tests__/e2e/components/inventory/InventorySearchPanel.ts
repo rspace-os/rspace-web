@@ -96,8 +96,8 @@ export class InventorySearchPanel {
     return this.table.row(name, options);
   }
 
-  async open(name: string): Promise<void> {
-    await this.table.open(name);
+  async open(name: string, options: { exact?: boolean } = {}): Promise<void> {
+    await this.table.open(name, options);
     await this.activeDetailsHeading.filter({ hasText: name }).waitFor({ state: "visible" });
   }
 

@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { openDialog } from "@/__tests__/e2e/components/inventory/DialogHelpers";
 import { ExportDialogComponent } from "@/__tests__/e2e/components/inventory/ExportDialogComponent";
+import { IdentifierSettingsDialog } from "@/__tests__/e2e/components/inventory/IdentifierSettingsDialog";
 import {
   InventoryCreateMenu,
   type InventoryCsvImportItem,
@@ -11,6 +12,8 @@ import { InventorySidebar } from "@/__tests__/e2e/components/inventory/Inventory
 import { FieldmarkDialogComponent } from "@/modules/fieldmark/__tests__/pageObjects/FieldmarkDialogComponent";
 import { BasePage } from "../BasePage";
 import { InventoryImportPage } from "./InventoryImportPage";
+
+type InventoryResultType = "CONTAINER" | "SAMPLE" | "SUBSAMPLE" | "INSTRUMENT" | "INSTRUMENT_TEMPLATE";
 
 export class InventoryPage extends BasePage {
   readonly path = "/inventory";
@@ -37,17 +40,22 @@ export class InventoryPage extends BasePage {
     await this.isLoaded();
   }
 
-  async openSearch(resultType: "CONTAINER" | "SAMPLE" | "SUBSAMPLE", parentGlobalId?: string): Promise<void> {
+  async openSearch(resultType: InventoryResultType, parentGlobalId?: string): Promise<void> {
     const search = new URLSearchParams({ resultType });
     if (parentGlobalId) search.set("parentGlobalId", parentGlobalId);
-    await this.page.goto(`/inventory/search?${search}`);
+    await this.page.goto(`${this.path}/search?${search}`);
     await this.isLoaded();
   }
 
-  async openRecord(resultType: "CONTAINER" | "SAMPLE" | "SUBSAMPLE", name: string): Promise<void> {
+  async openRecord(resultType: InventoryResultType, name: string): Promise<void> {
     await this.openSearch(resultType);
     await this.searchPanel.search(name);
     await this.searchPanel.open(name);
+  }
+
+  async openInstrument(id: string | number): Promise<void> {
+    await this.page.goto(`${this.path}/instrument/${id}`);
+    await this.isLoaded();
   }
 
   async openNewContainerForm() {
@@ -80,5 +88,9 @@ export class InventoryPage extends BasePage {
 
   async openExportData(): Promise<ExportDialogComponent> {
     return openDialog(() => this.sidebar.navigateTo("Export Data"), new ExportDialogComponent(this.page));
+  }
+
+  async openIdentifierSettings(): Promise<IdentifierSettingsDialog> {
+    return openDialog(() => this.sidebar.navigateTo("Settings"), new IdentifierSettingsDialog(this.page));
   }
 }

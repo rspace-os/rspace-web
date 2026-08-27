@@ -55,7 +55,7 @@ Default target: `http://localhost:8080` (local dev stack). Override:
 RSPACE_BASE_URL=https://pangolin8086.researchspace.com pnpm run test-e2e
 ```
 
-Tests that mutate instance-global state (`flowIgsnConfig`, `dynamicUserTest`,
+Tests that mutate instance-global state (`flowIgsnConfig`, `flowPidinstDataciteConfig`, `flowPidinstB2instConfig`, `dynamicUserTest`,
 anything creating sysadmin-owned accounts) refuse to run against a non-local
 `RSPACE_BASE_URL` — those mutations have no teardown/restore step and would
 corrupt a shared instance. Set `E2E_ALLOW_GLOBAL_MUTATIONS=true` only if you
