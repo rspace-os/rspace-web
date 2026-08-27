@@ -86,9 +86,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.util.ThreadContext;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -114,7 +112,8 @@ import org.springframework.web.multipart.MultipartFile;
     value = {DependencyInjectionTestExecutionListener.class, SqlScriptsTestExecutionListener.class})
 @Configuration()
 @Profile("dev")
-public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
+public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
+    implements DatabaseCleanerLifecycle {
 
   /*
    * Creates a JdbCTemplate for use in some convenient JdbcTestUtil methods
@@ -153,15 +152,12 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
 
   @BeforeEach
   public void beforeEach() {
-    DatabaseCleaner.register(getClass(), dataSource);
     sampleTemplateDao.resetDefaultTemplateOwner();
   }
 
-  @AfterAll
-  public static void after(TestInfo testInfo) {
-    if (!TestRunnerController.isFastRun()) {
-      DatabaseCleaner.cleanUp(testInfo.getTestClass().orElseThrow());
-    }
+  @Override
+  public DataSource getDataSourceForCleanup() {
+    return dataSource;
   }
 
   /**

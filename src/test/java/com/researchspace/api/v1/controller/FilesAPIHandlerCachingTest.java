@@ -7,34 +7,29 @@ import static org.hamcrest.Matchers.sameInstance;
 import com.researchspace.api.v1.model.ApiFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
-import com.researchspace.testutils.DatabaseCleaner;
+import com.researchspace.testutils.DatabaseCleanerLifecycle;
 import com.researchspace.testutils.SpringTransactionalTest;
-import com.researchspace.testutils.TestRunnerController;
 import java.io.IOException;
 import javax.sql.DataSource;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.transaction.TestTransaction;
 
-public class FilesAPIHandlerCachingTest extends SpringTransactionalTest {
+public class FilesAPIHandlerCachingTest extends SpringTransactionalTest
+    implements DatabaseCleanerLifecycle {
 
   private @Autowired FilesAPIHandler handler;
   private @Autowired DataSource dataSource;
 
-  @BeforeEach
-  public void setUp() throws Exception {
-    DatabaseCleaner.register(getClass(), dataSource);
-    super.setUp();
+  @Override
+  public DataSource getDataSourceForCleanup() {
+    return dataSource;
   }
 
-  @AfterAll
-  public static void after(TestInfo testInfo) {
-    if (!TestRunnerController.isFastRun()) {
-      DatabaseCleaner.cleanUp(testInfo.getTestClass().orElseThrow());
-    }
+  @BeforeEach
+  public void setUp() throws Exception {
+    super.setUp();
   }
 
   @Test

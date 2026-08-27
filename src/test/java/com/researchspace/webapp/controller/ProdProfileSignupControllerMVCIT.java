@@ -9,38 +9,20 @@ import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.researchspace.model.User;
-import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.testutils.ProdProfileTestConfiguration;
-import com.researchspace.testutils.WithSpringContext;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
-@ProdProfileTestConfiguration
-@WebAppConfiguration
 /** Runs production-profile signup and content initialisation procedure. */
+@ProdProfileTestConfiguration
 @EnabledIfSystemProperty(named = "nightly", matches = ".*")
-@WithSpringContext
-public class ProdProfileSignupControllerMVCIT {
+public class ProdProfileSignupControllerMVCIT extends MVCTestBase {
 
   private @Autowired JdbcTemplate jdbcTemplate;
-  private @Autowired IMutablePropertyHolder propertyHolder;
-  private @Autowired WebApplicationContext wac;
-
-  private MockMvc mockMvc;
-
-  @BeforeEach
-  public void setUp() throws Exception {
-    this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
-  }
 
   @Test
   @Disabled

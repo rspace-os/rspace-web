@@ -16,30 +16,25 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.client.RestTemplate;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = PIOComponentDiscoverabilityIT.class)
 @Slf4j
 @EnabledIfSystemProperty(named = "weekly", matches = ".*")
 public class PIOComponentDiscoverabilityIT {
 
-  private final String PIO_API_KEY =
+  private static final String PIO_API_KEY =
       "586bc6074e8672fb12cbb7ddc85af7e5d50b45c51562cc12675e9b25431fc308";
 
   private RestTemplate restTemplate;
   private ObjectMapper objectMapper;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  public void setUp() {
     objectMapper = new ObjectMapper();
     objectMapper.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
 
