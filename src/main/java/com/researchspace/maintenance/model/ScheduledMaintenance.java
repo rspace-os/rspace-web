@@ -140,7 +140,10 @@ public class ScheduledMaintenance {
     }
   }
 
-  @Size(min = 0, max = User.DEFAULT_MAXFIELD_LEN, message = "{message} {errors.string.max}")
+  @Size(
+      min = 0,
+      max = User.DEFAULT_MAXFIELD_LEN,
+      message = "{validation.scheduledMaintenance.messageStringMax}")
   public String getMessage() {
     return message;
   }

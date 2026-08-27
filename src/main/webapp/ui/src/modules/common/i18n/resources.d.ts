@@ -5752,6 +5752,7 @@ export default interface Resources {
       },
       "scheduledMaintenance": {
         "endDateRequired": "End date is required.",
+        "messageStringMax": "Message must be no more than {max} characters.",
         "startDateRequired": "Start date is required."
       },
       "settings": {
