@@ -103,7 +103,7 @@ export class InventorySearchPanel {
 
   async openFirstResult(): Promise<void> {
     const row = this.resultsTable.locator("tbody").getByRole("row").first();
-    await row.click();
+    await row.locator("td").nth(1).click();
     await this.activeDetailsHeading.waitFor({ state: "visible" });
   }
 
