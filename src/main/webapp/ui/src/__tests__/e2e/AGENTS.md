@@ -261,13 +261,18 @@ mutate persistent account-level state which affects later rendering.
 
 It only resizes the viewport — it can't set user agent, touch support,
 `isMobile`, or device pixel ratio, all of which real mobile browsers set and
-which some responsive code paths key off. For genuine mobile emulation use the
-shared device preset with `test.use`:
+which some responsive code paths key off.
+
+The `mobile` Playwright project (see `playwright-e2e.config.ts`) already
+applies the shared device preset from `viewports.ts` to every test it runs,
+so genuine mobile emulation only requires opting a spec into that project by
+tagging its top-level `describe` with `tags.MOBILE`:
 
 ```ts
-test.describe("mobile", () => {
-  test.use(MOBILE_DEVICE);
-  // tests tagged with tags.MOBILE
+import { tags } from "@/__tests__/e2e/tags";
+
+test.describe("Gallery", { tag: tags.MOBILE }, () => {
+  // ...
 });
 ```
 

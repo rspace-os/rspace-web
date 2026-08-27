@@ -1,5 +1,5 @@
 import type { ElementHandle, Locator, Page } from "@playwright/test";
-import { WorkspaceRecordInfoDialog } from "./WorkspaceRecordInfoDialog";
+import { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
 import { WorkspaceSelectionBar } from "./WorkspaceSelectionBar";
 
 export async function waitForTableSwap(page: Page, staleTable: ElementHandle | null): Promise<void> {
@@ -62,9 +62,9 @@ export class WorkspaceTable {
     await this.row(name).getByRole("link", { name, exact: true }).click();
   }
 
-  async openInfoFor(name: string): Promise<WorkspaceRecordInfoDialog> {
+  async openInfoFor(name: string): Promise<RecordInfoDialog> {
     await this.row(name).getByRole("link", { name: "Record Info" }).click();
-    const dialog = new WorkspaceRecordInfoDialog(this.page);
+    const dialog = new RecordInfoDialog(this.page);
     await dialog.waitUntilVisible();
     return dialog;
   }

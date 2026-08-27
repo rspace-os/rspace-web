@@ -1,6 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
+import { CreateSnippetDialogComponent } from "@/__tests__/e2e/components/document/CreateSnippetDialogComponent";
 import { resolveFieldId } from "@/__tests__/e2e/components/document/DocumentFieldHelpers";
 import { DocumentToolbar } from "@/__tests__/e2e/components/document/DocumentToolbar";
+import { InternalLinkDialogComponent } from "@/__tests__/e2e/components/document/InternalLinkDialogComponent";
 import { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor";
 import { VideoEmbedDialogComponent } from "@/__tests__/e2e/components/document/VideoEmbedDialogComponent";
 import { GalleryPickerComponent } from "@/__tests__/e2e/components/shared/GalleryPickerComponent";
@@ -27,6 +29,8 @@ export class DocumentEditorPage extends DocumentPage {
   readonly externalWorkflowDialog: ExternalWorkflowDialogComponent;
   readonly pyratDialog: PyratDialogComponent;
   readonly omeroDialog: OmeroDialogComponent;
+  readonly createSnippetDialog: CreateSnippetDialogComponent;
+  readonly internalLinkDialog: InternalLinkDialogComponent;
   readonly caliraDialog: CaliraDialogComponent;
   readonly egnyteDialog: EgnyteDialogComponent;
   readonly owncloudDialog: OwnCloudDialogComponent;
@@ -45,6 +49,8 @@ export class DocumentEditorPage extends DocumentPage {
     this.externalWorkflowDialog = new ExternalWorkflowDialogComponent(page);
     this.pyratDialog = new PyratDialogComponent(page);
     this.omeroDialog = new OmeroDialogComponent(page);
+    this.createSnippetDialog = new CreateSnippetDialogComponent(page);
+    this.internalLinkDialog = new InternalLinkDialogComponent(page);
     this.caliraDialog = new CaliraDialogComponent(page);
     this.egnyteDialog = new EgnyteDialogComponent(page);
     this.owncloudDialog = new OwnCloudDialogComponent(page);
@@ -173,5 +179,25 @@ export class DocumentEditorPage extends DocumentPage {
     const [popup] = await Promise.all([this.page.waitForEvent("popup"), this.onedriveToolbarButton.click()]);
     await popup.waitForLoadState();
     return popup;
+  }
+
+  get createSnippetButton(): Locator {
+    return this.page.getByRole("button", { name: "Create a snippet" });
+  }
+
+  async openCreateSnippetDialog(): Promise<CreateSnippetDialogComponent> {
+    await this.createSnippetButton.click();
+    await this.createSnippetDialog.waitForOpen();
+    return this.createSnippetDialog;
+  }
+
+  get insertInternalLinkButton(): Locator {
+    return this.page.getByRole("button", { name: "Insert internal link" });
+  }
+
+  async openInsertInternalLinkDialog(): Promise<InternalLinkDialogComponent> {
+    await this.insertInternalLinkButton.click();
+    await this.internalLinkDialog.waitForOpen();
+    return this.internalLinkDialog;
   }
 }
