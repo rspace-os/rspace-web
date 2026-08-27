@@ -9,12 +9,17 @@ import TextField, { textFieldClasses } from "@mui/material/TextField";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
+import SearchBarcodeIcon from "../../../assets/graphics/SearchBarcode";
 import CustomTooltip from "../../../components/CustomTooltip";
 import SearchDialog from "../../../components/SearchDialog";
 import useIsTextWiderThanField from "../../../hooks/ui/useIsTextWiderThanField";
+import NavigateContext from "../../../stores/contexts/Navigate";
 import SearchContext from "../../../stores/contexts/Search";
+import { isInventoryPermalink } from "../../../util/Util";
+import BarcodeScanner from "../../components/BarcodeScanner/BarcodeScanner";
+import type { BarcodeInput } from "../../components/BarcodeScanner/BarcodeScannerSkeleton";
 
 type FormArgs = {
   handleSearch: (query: string) => void;
@@ -23,6 +28,8 @@ type FormArgs = {
 const Form = observer(({ handleSearch }: FormArgs) => {
   const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
+  const { useNavigate } = useContext(NavigateContext);
+  const navigate = useNavigate();
 
   const handleChange = ({ target: { value } }: { target: { value: string } }) => {
     runInAction(() => {
@@ -41,6 +48,24 @@ const Form = observer(({ handleSearch }: FormArgs) => {
     });
   };
 
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  const handleScan = (barcode: BarcodeInput) => {
+    if (isInventoryPermalink(barcode.rawValue)) {
+      /*
+       * isInventoryPermalink guarantees a same-origin URL, so navigating by
+       * pathname through the navigation context keeps this a normal in-app
+       * navigation that host contexts (e.g. dialogs) can intercept.
+       */
+      navigate(new URL(barcode.rawValue).pathname);
+    } else {
+      runInAction(() => {
+        search.fetcher.query = barcode.rawValue;
+      });
+      handleSearch(barcode.rawValue);
+    }
+  };
+
   const { inputRef, textTooWide } = useIsTextWiderThanField();
 
   return (
@@ -54,7 +79,11 @@ const Form = observer(({ handleSearch }: FormArgs) => {
     >
       <TextField
         data-test-id="s-search-input-normal"
-        placeholder={t("search.controls.searchbar.search")}
+        placeholder={
+          search.showBarcodeScan
+            ? t("search.controls.searchbar.scanPlaceholder")
+            : t("search.controls.searchbar.search")
+        }
         value={search.fetcher.query ?? ""}
         onChange={handleChange}
         sx={{ flexGrow: 1 }}
@@ -73,21 +102,36 @@ const Form = observer(({ handleSearch }: FormArgs) => {
                 </IconButton>
               </InputAdornment>
             ),
-            ...(search.fetcher.query
+            ...(search.showBarcodeScan || search.fetcher.query
               ? {
                   endAdornment: (
                     <InputAdornment position="end">
-                      <CustomTooltip title={t("search.controls.searchbar.clearSearch")}>
-                        <IconButton
-                          size="small"
-                          data-test-id="reset-search"
-                          aria-label={t("search.controls.searchbar.clearSearch")}
-                          color="inherit"
-                          onClick={handleReset}
-                        >
-                          <CloseIcon fontSize="small" />
-                        </IconButton>
-                      </CustomTooltip>
+                      {Boolean(search.fetcher.query) && (
+                        <CustomTooltip title={t("search.controls.searchbar.clearSearch")}>
+                          <IconButton
+                            size="small"
+                            data-test-id="reset-search"
+                            aria-label={t("search.controls.searchbar.clearSearch")}
+                            color="inherit"
+                            onClick={handleReset}
+                          >
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        </CustomTooltip>
+                      )}
+                      {search.showBarcodeScan && (
+                        <CustomTooltip title={t("search.controls.searchbar.scanBarcode")}>
+                          <IconButton
+                            size="small"
+                            data-test-id="s-search-scan"
+                            aria-label={t("search.controls.searchbar.scanBarcode")}
+                            color="inherit"
+                            onClick={() => setScannerOpen(true)}
+                          >
+                            <SearchBarcodeIcon fontSize="small" />
+                          </IconButton>
+                        </CustomTooltip>
+                      )}
                     </InputAdornment>
                   ),
                 }
@@ -95,7 +139,9 @@ const Form = observer(({ handleSearch }: FormArgs) => {
           },
 
           htmlInput: {
-            "aria-label": t("search.controls.searchbar.search"),
+            "aria-label": search.showBarcodeScan
+              ? t("search.controls.searchbar.scanPlaceholder")
+              : t("search.controls.searchbar.search"),
             type: "search",
             ref: inputRef,
           },
@@ -106,6 +152,12 @@ const Form = observer(({ handleSearch }: FormArgs) => {
         onSubmit={onSearch}
         query={search.fetcher.query ?? ""}
         setQuery={handleChange}
+      />
+      <BarcodeScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScan}
+        cameraErrorMessage={t("barcodeScanner.cameraErrorSearchBox")}
       />
     </Box>
   );

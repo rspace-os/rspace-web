@@ -36,10 +36,13 @@ import org.springframework.validation.BindingResult;
  * PIDINST-mapped field content to B2INST. A {@link B2instConnectorDummy} captures the payload, so
  * no B2INST instance is contacted.
  *
- * <p>Link-field narratives ("Measurement technique", "Calibration") are covered by {@code
- * RspaceToExternalProviderAdapterImplTest}; building an {@code InventoryLink} target through the
- * API would need a second record and relation setup, which adds nothing to the plumbing this test
- * exercises.
+ * <p>The two link fields ("Measurement technique", "Calibration") are deliberately absent here.
+ * They stopped being documentation-only in RSDEV-1253 and now map to RelatedIdentifier entries, but
+ * their value comes from a linked record rather than the field's own content, so exercising them
+ * needs a second record and relation setup that this template-copy flow does not otherwise use.
+ * They are covered against real persistence by {@code
+ * InventoryIdentifierApiManagerRelatedIdentifierTest}, which resolves the link through Hibernate
+ * for both providers, and by {@code RspaceToExternalProviderAdapterImplTest} for the mapping rules.
  */
 @WebAppConfiguration
 public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_InventoryTestBase {
@@ -204,19 +207,28 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
     assertEquals(List.of("Air temperature"), sent.getMeasuredVariable());
     /*
      * The one template field that deliberately does NOT copy across: a landing page names exactly
-     * one physical instrument, so the new instrument gets its own address instead of the template's
-     * (RSDEV-1307). That own address is what gets registered.
+     * one physical instrument, so a landing page inherited from the template must never be
+     * registered for the instrument created from it (RSDEV-1307). Nothing refills it either, since
+     * the auto-fill that used to write a /globalId/ address is retired (ADR 0006 item 3), so at this
+     * point the field is blank and what reaches B2INST is the identifier's own public landing page.
      *
-     * Note this assertion no longer discriminates the landing page mapping itself: the mapped-field
-     * branch and the GlobalIdUrls fallback both produce this same "/globalId/..." string, so it
-     * would still pass if the field mapping were dropped. The mapping is pinned discriminatingly by
-     * the unit tests in RspaceToExternalProviderAdapterImplTest (see
-     * landingPageFromTheFieldSurvivesAnUnsetServerUrl); what this MVCIT pins is that a landing page
-     * reaches B2INST at all on the create-from-template path.
+     * This is the one assertion that composes the whole RSDEV-1254 invariant end to end: the suffix
+     * registered with B2INST is the same suffix the entity's publicLink adopted. The two halves are
+     * pinned separately by unit tests (InventoryIdentifierApiManagerImplUnitTest for DTO->payload,
+     * ApiIdentifiersHelperTest for DTO->entity), but only a full request exercises the seam between
+     * them - and that seam is fragile, because publicLinkSuffix is @JsonIgnore, so the DTO has to
+     * survive from createNewB2instDoi to the entity by object identity. Any serialisation
+     * round-trip introduced on that path would silently drop the suffix, the entity would
+     * self-generate a different one, and a "contains /public/inventory/" assertion would still
+     * pass while the registered address 404s forever.
      */
+    assertNotNull(registeredDoi.getRsPublicId(), "the identifier must expose its public link");
     assertTrue(
-        sent.getLandingPage().endsWith("/globalId/" + instrumentGlobalId),
-        "expected the instrument's own landing page, got: " + sent.getLandingPage());
+        sent.getLandingPage().endsWith("/public/inventory/" + registeredDoi.getRsPublicId()),
+        "the address registered with B2INST must name the page RSpace will serve; registered: "
+            + sent.getLandingPage()
+            + ", identifier publicLink: "
+            + registeredDoi.getRsPublicId());
     assertEquals("Other", sent.getAlternateIdentifier().get(0).getAlternateIdentifierType());
     assertEquals(
         "INV-2025-0042", sent.getAlternateIdentifier().get(0).getAlternateIdentifierValue());

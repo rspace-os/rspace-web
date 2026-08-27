@@ -187,6 +187,26 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     Mockito.verifyNoMoreInteractions(mockPublisher);
   }
 
+  @Test
+  public void twoSampleUpdatesInOneTransactionBumpVersionOnce() {
+    // RSDEV-1319: Envers writes one revision per entity per transaction, so a second update in
+    // the same transaction must not advance the version past the single revision carrying it
+    ApiSampleWithFullSubSamples newSample = createBasicSampleForUser(testUser);
+
+    ApiSample firstUpdate = new ApiSample();
+    firstUpdate.setId(newSample.getId());
+    firstUpdate.setName("first rename");
+    sampleApiMgr.updateApiSample(firstUpdate, testUser);
+
+    ApiSample secondUpdate = new ApiSample();
+    secondUpdate.setId(newSample.getId());
+    secondUpdate.setName("second rename");
+    ApiSample updatedSample = sampleApiMgr.updateApiSample(secondUpdate, testUser);
+
+    assertEquals("second rename", updatedSample.getName());
+    assertEquals(2, updatedSample.getVersion());
+  }
+
   private ApiSampleSearchResult getUserSamples(boolean includeDeleted) {
     PaginationCriteria<Sample> pgCrit = PaginationCriteria.createDefaultForClass(Sample.class);
     pgCrit.setGetAllResults();
@@ -368,6 +388,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSample sampleUpdates = new ApiSample();
     sampleUpdates.setId(retrievedSample.getId());
     ApiInventoryDOI newIdentifier = new ApiInventoryDOI();
+    newIdentifier.generatePublicLinkSuffix();
     newIdentifier.setRegisterIdentifierRequest(true);
     newIdentifier.setTitle("testDOItitle");
     newIdentifier.setPublisher("ResearchSpace");

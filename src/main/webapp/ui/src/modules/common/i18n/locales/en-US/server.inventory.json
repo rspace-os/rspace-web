@@ -49,10 +49,11 @@
         "unexportableUsers": "Cannot export data of users [{0}] - users not found, or no permission"
       },
       "field": {
-        "deleteRequestIdMissing": "''id'' property not provided for a field with ''deleteFieldRequest'' flag.",
+        "deleteRequestIdMissing": "'id' property not provided for a field with 'deleteFieldRequest' flag.",
         "deleteRequestIdUnknown": "Field id {0} doesn''t match the id of any pre-existing field.",
         "duplicateName": "Field name ''{0}'' is duplicated. Field names on a record must be unique.",
         "link": {
+          "defaultRelationTypeNotPermitted": "Field ''{1}'' has a default link using relation type ''{0}'', so that type cannot be removed from its allowed relationship types. Change or remove the default link first.",
           "selfLinkForbidden": "An item cannot link to itself: ''{0}''."
         },
         "linkRelationTypeInvalid": "Relation type ''{0}'' is not in the DataCite controlled vocabulary.",
@@ -75,9 +76,13 @@
         "b2instDeleteFailed": "Could not delete the instrument PID from B2INST. {0}",
         "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
         "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
+        "b2instRegisterNoDraft": "Could not register a new instrument PID with B2INST: the service accepted the request but returned no draft record.",
         "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
         "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
         "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
+        "dataCiteRegisterNoDraft": "Could not register a new identifier with DataCite: the service accepted the request but returned no draft record.",
+        "dataCitePublishFailed": "Error when publishing the DOI in DataCite. If the problem persists, please contact your System Admin",
+        "dataCiteRetractFailed": "Error when retracting the DOI in DataCite. If the problem persists, please contact your System Admin",
         "deleteNotOwner": "You can only delete an identifier that you own.",
         "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
         "mintingUnsupportedType": "unsupported type for minting: {0}",
@@ -169,6 +174,7 @@
       "stoichiometry": {
         "actualAmountRequired": "Molecule actual amount must be set for deduction",
         "alreadyLinked": "Stoichiometry molecule already has an inventory link",
+        "deductionFailed": "An internal error occurred while deducting stock",
         "insufficientStock": "Insufficient stock to perform this action. Attempting to use {0} of stock amount {1} for {2}",
         "linkNotFound": "Stoichiometry link not found: id={0}",
         "linkNotInStoichiometry": "Link with id {0} does not belong to stoichiometry with id {1}",

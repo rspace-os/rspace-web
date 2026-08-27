@@ -4,13 +4,13 @@
     "empty": "The document has no connected Inventory items."
   },
   "barcodeScanner": {
-    "altEntry": "Alternatively, enter the data encoded in the barcode",
     "barcodeDetected": "Barcode detected: {format} format.",
-    "cameraError": "Could not access camera, please enter code below.",
+    "cameraError": "Could not access camera.",
+    "cameraErrorSearchBox": "Could not access camera. Alternatively, enter the encoded data directly into the search box.",
+    "heading": "Scan a barcode",
     "helpTitle": "Info on using barcodes.",
     "loading": "Loading Barcode Scanner...",
-    "otherFormats": "To scan other formats, please try an Android device, or Chrome on a Mac (with a webcam).",
-    "prompt": "Barcode Scanner: {helpText}.",
+    "otherFormats": "To scan other formats, please use Chrome or a Chromium-based browser.",
     "scanError": {
       "message": "Unable to search. Scan has not completed.",
       "title": "An error occurred."
@@ -21,8 +21,8 @@
       "title": "Unable to start camera with Barcode Detector."
     },
     "supportedFormats": {
-      "all": "all formats supported",
-      "qr": "QR format supported"
+      "all": "All formats supported.",
+      "qr": "QR format supported."
     }
   },
   "baseRecord": {
@@ -655,7 +655,7 @@
       },
       "link": {
         "relationHelper": "Pick a DataCite relation type",
-        "targetHelper": "Paste a Global ID, or use the Browse buttons above.",
+        "targetHelper": "Paste a Global ID, or Browse",
         "targetNotFound": "{globalId} does not exist, or you do not have permission to view it."
       },
       "maxCharacters": "Must be no more than {max} characters.",
@@ -937,7 +937,10 @@
         "pinnedVersion": "Pinned to v{version}",
         "pinVersion": "Pin version",
         "pinVersionFor": "Pin version for {globalId}",
-        "targetGlobalId": "Target Global ID"
+        "target": "Target",
+        "targetGlobalId": "Target Global ID",
+        "targetPlaceholder": "e.g. SA123",
+        "version": "Version"
       },
       "elnFolderBrowser": {
         "failedToLoadContents": "Failed to load contents",
@@ -954,6 +957,10 @@
         "label": "Browse the ELN for a link target",
         "title": "Browse ELN",
         "workspaceTreeLabel": "Workspace tree"
+      },
+      "field": {
+        "label": "Link field",
+        "namedLabel": "Link field {name}"
       },
       "gallerySections": {
         "labels": {
@@ -1128,6 +1135,9 @@
         "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
         "allowedRelationshipTypesExplanationInstrument": "The DataCite relationship types that links may use on instruments created from this template. Leave empty to allow all relationship types.",
         "allRelationshipTypes": "All relationship types",
+        "defaultLink": "Default Link (optional)",
+        "defaultLinkExplanation": "An optional link applied to every item created from this template. Its relationship type must be one of the allowed types above. Items can change or remove it afterwards.",
+        "defaultLinkTarget": "Default link target",
         "none": "None"
       },
       "move": {
@@ -1322,7 +1332,6 @@
     "noLinkedItem": "None",
     "noRows": "No IGSN IDs",
     "scan": "Scan",
-    "searchButtonPrefix": "Search for IGSN",
     "searchPlaceholder": "Search IGSN IDs...",
     "selectIgsn": "Select IGSN"
   },
@@ -2016,6 +2025,8 @@
       },
       "searchbar": {
         "clearSearch": "Clear search",
+        "scanBarcode": "Scan barcode",
+        "scanPlaceholder": "Search or scan a barcode",
         "search": "Search"
       },
       "sort": {

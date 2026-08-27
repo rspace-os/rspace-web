@@ -2,12 +2,16 @@ import { expect, type Locator, type Page } from "@playwright/test";
 import { ToastsComponent } from "./ToastsComponent";
 
 export class NotificationsDialogComponent {
-  readonly badge: Locator;
+  readonly bellButton: Locator;
+  readonly headerLink: Locator;
+  readonly badgeCount: Locator;
   readonly root: Locator;
   private readonly toasts: ToastsComponent;
 
   constructor(private readonly page: Page) {
-    this.badge = page.getByRole("button", { name: "Notifications", exact: true });
+    this.headerLink = page.getByRole("link", { name: "Notifications", exact: true });
+    this.bellButton = page.getByRole("button", { name: "Notifications", exact: true });
+    this.badgeCount = page.locator(".MuiBadge-root").filter({ has: this.headerLink }).locator(".MuiBadge-badge");
     this.root = page.getByRole("dialog", { name: "Notifications" });
     this.toasts = new ToastsComponent(page);
   }
@@ -24,13 +28,16 @@ export class NotificationsDialogComponent {
   }
 
   private async readBadgeFromDom(): Promise<number> {
-    const text = (await this.badge.textContent())?.trim();
+    if ((await this.badgeCount.count()) === 0) {
+      return 0;
+    }
+    const text = (await this.badgeCount.textContent())?.trim();
     return text ? Number.parseInt(text, 10) : 0;
   }
 
   async open(): Promise<void> {
     await this.toasts.dismissAll();
-    await this.badge.click();
+    await this.bellButton.click();
     await this.root.waitFor({ state: "visible" });
     // AJAX-rendered rows have no accessible name; this class distinguishes notifications.
     await this.root.locator("tr.notificationRow").first().waitFor({ state: "visible" });
@@ -38,6 +45,17 @@ export class NotificationsDialogComponent {
 
   async getNotificationTexts(): Promise<Array<string>> {
     return this.root.locator("tr.notificationRow").allInnerTexts();
+  }
+
+  // Some pages (e.g. Gallery) render the bell as a plain link to /dashboard rather than a
+  // button that opens this dialog in place.
+  async fetchNotificationTexts(): Promise<Array<string>> {
+    const originalUrl = this.page.url();
+    await this.headerLink.click();
+    await this.page.waitForURL((url) => url.pathname === "/dashboard");
+    const texts = await this.page.getByRole("row").allInnerTexts();
+    await this.page.goto(originalUrl);
+    return texts;
   }
 
   async close(): Promise<void> {

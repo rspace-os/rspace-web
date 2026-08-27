@@ -34,6 +34,12 @@ export class AppsPage {
     await this.clickEnableOrClose(dialog, enabled ? "ENABLE" : "DISABLE");
   }
 
+  async setEnabledForBox(name: string): Promise<void> {
+    const dialog = await this.openCard(name);
+    await dialog.getByRole("button", { name: "Save" }).click();
+    await this.clickEnableOrClose(dialog);
+  }
+
   async setEnabledWithApiKey(
     name: string,
     apiKey: string,
@@ -82,6 +88,38 @@ export class AppsPage {
     await this.clickEnableOrClose(dialog);
   }
 
+  async setEnabledWithWebhook(
+    name: string,
+    opts: { channelName: string; webhookUrl: string; channelNameFieldLabel?: string; webhookUrlFieldLabel?: string },
+  ): Promise<void> {
+    const dialog = await this.openCard(name);
+
+    const alreadyConfigured = await dialog.getByRole("cell", { name: opts.channelName, exact: true }).count();
+    if (alreadyConfigured === 0) {
+      await dialog.getByRole("button", { name: "Add", exact: true }).click();
+      const newForm = dialog.locator("form").last();
+      await newForm
+        .getByRole("textbox", { name: opts.channelNameFieldLabel ?? "Channel Connector Name" })
+        .fill(opts.channelName);
+      await newForm.getByRole("textbox", { name: opts.webhookUrlFieldLabel ?? "Webhook URL" }).fill(opts.webhookUrl);
+      await this.toasts.dismissAll();
+      await newForm.getByRole("button", { name: "Save" }).click();
+      await this.toasts.byVariant("success", "Successfully added channel.").first().waitFor({ state: "visible" });
+      await this.toasts.dismissAll();
+    }
+
+    await this.clickEnableOrClose(dialog);
+  }
+
+  async openSlackAddChannelPopup(name: string): Promise<Page> {
+    const dialog = await this.openCard(name);
+    const [popup] = await Promise.all([
+      this.page.waitForEvent("popup"),
+      dialog.getByRole("button", { name: "Add", exact: true }).click(),
+    ]);
+    return popup;
+  }
+
   async setEnabledForOmero(name: string, opts: { username: string; password: string }): Promise<void> {
     const dialog = await this.openCard(name);
 
@@ -89,6 +127,56 @@ export class AppsPage {
     await dialog.getByRole("textbox", { name: "Password" }).fill(opts.password);
     await dialog.getByRole("button", { name: "Connect" }).click();
     await this.page.getByText("Successfully connected to OMERO.").waitFor({ state: "visible", timeout: 10_000 });
+
+    await this.clickEnableOrClose(dialog);
+  }
+
+  async setEnabledWithOAuthConnect(
+    name: string,
+    opts?: { successName?: string; onExternalAuth?: (popup: Page) => Promise<void> },
+  ): Promise<void> {
+    const dialog = await this.openCard(name);
+
+    if (opts?.onExternalAuth) {
+      const [popup] = await Promise.all([
+        this.page.waitForEvent("popup"),
+        dialog.getByRole("button", { name: "Connect", exact: true }).click(),
+      ]);
+      await opts.onExternalAuth(popup);
+    } else {
+      await dialog.getByRole("button", { name: "Connect", exact: true }).click();
+    }
+    await this.page
+      .getByText(`Successfully connected to ${opts?.successName ?? name}.`)
+      .waitFor({ state: "visible", timeout: 10_000 });
+
+    await this.clickEnableOrClose(dialog);
+  }
+
+  async setEnabledWithOAuthConnectMultiServer(
+    name: string,
+    alias: string,
+    opts?: { onExternalAuth?: (popup: Page) => Promise<void> },
+  ): Promise<void> {
+    const dialog = await this.openCard(name);
+
+    await dialog.getByRole("button", { name: "Add", exact: true }).click();
+
+    await this.page.getByRole("menuitem", { name: alias }).click();
+    await this.page.getByText("Successfully added new RAiD server.").waitFor({ state: "visible", timeout: 10_000 });
+
+    if (opts?.onExternalAuth) {
+      const [popup] = await Promise.all([
+        this.page.waitForEvent("popup"),
+        dialog.getByRole("button", { name: "Connect", exact: true }).click(),
+      ]);
+      await opts.onExternalAuth(popup);
+    } else {
+      await dialog.getByRole("button", { name: "Connect", exact: true }).click();
+    }
+    await this.page
+      .getByText(`Successfully connected to ${alias} RAiD server.`)
+      .waitFor({ state: "visible", timeout: 15_000 });
 
     await this.clickEnableOrClose(dialog);
   }

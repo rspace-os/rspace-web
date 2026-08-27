@@ -245,8 +245,9 @@ describe("InstrumentModel.setTemplate", () => {
           {
             id: 2,
             globalId: "IF2",
-            // differs only by case, so the name-distinctness check does not reject it while the
-            // case-insensitive predicate still matches it
+            // Deliberately a shape the API would not accept: assertNoDuplicateFieldNames folds
+            // case, so a real template cannot carry both "Landing page" and "landing page". It is
+            // constructed here only to pin which field the case-insensitive lookup picks.
             name: "landing page",
             type: "uri",
             content: "https://lab.example.org/second",
@@ -262,8 +263,9 @@ describe("InstrumentModel.setTemplate", () => {
       const instrument = makeUnsavedInstrument();
       await instrument.setTemplate(template);
 
-      // the backend clears and refills exactly one field; blanking both here would leave the
-      // second permanently empty, since nothing would ever fill it
+      // Exactly one field is blanked, the first whose name matches, mirroring the backend's
+      // PidinstFields.landingPage which resolves a single field. Nothing refills either of them:
+      // the auto-fill that used to write a /globalId/ address is retired (ADR 0006 item 3).
       expect(instrument.fields[0].content).toBe("");
       expect(instrument.fields[1].content).toBe("https://lab.example.org/second");
     });

@@ -29,6 +29,10 @@ export class GalleryInfoPanel {
     return this.relatedInventoryGrid.getByRole("row").filter({ hasText: name });
   }
 
+  linkedDocumentsRow(name: string): Locator {
+    return this.linkedDocumentsGrid.getByRole("row").filter({ hasText: name });
+  }
+
   async waitUntilSelected(name: string): Promise<void> {
     const fileName = this.root.getByRole("heading", { level: 3 }).or(this.root.getByRole("textbox", { name: "Name" }));
     await expect(fileName).toBeVisible();

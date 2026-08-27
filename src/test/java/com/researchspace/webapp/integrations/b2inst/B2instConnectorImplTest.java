@@ -157,10 +157,10 @@ class B2instConnectorImplTest {
 
     assertEquals("k2j9p-7yh21", created.getId());
     /*
-     * The whole providerUrl feature hangs off @JsonProperty("self_html") on B2instRecordLinks, which
-     * lives in rspace-core-model. Nothing else parses it: without this assertion a rename there (or a
-     * key change at B2INST) would leave providerUrl silently null with every test, including the
-     * MVCIT, still green, because the MVCIT's connector dummy fabricates the value by hand.
+     * The whole providerUrl feature hangs off @JsonProperty("self_html") on B2instRecordLinks.
+     * Nothing else parses it: without this assertion a rename there (or a key change at B2INST)
+     * would leave providerUrl silently null with every test, including the MVCIT, still green,
+     * because the MVCIT's connector dummy fabricates the value by hand.
      */
     assertNotNull(created.getLinks());
     assertEquals(

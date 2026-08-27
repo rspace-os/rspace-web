@@ -10,8 +10,8 @@ import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInstrumentTemplateSearchResult;
+import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
-import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
@@ -34,29 +34,25 @@ import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
-import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
-import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
-import com.researchspace.service.inventory.InventoryLinkManager;
-import com.researchspace.service.inventory.InventoryLinkValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
+import com.researchspace.service.inventory.InventoryUrls;
 import com.researchspace.service.inventory.SampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,12 +65,10 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   public static final String INSTRUMENT_DEFAULT_NAME = "Generic Instrument";
 
-  private @Autowired IPropertyHolder properties;
   private @Autowired InstrumentDao instrumentDao;
   private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   private @Autowired InventoryEntityFieldDao inventoryEntityFieldDao;
   private @Autowired SampleApiManager sampleApiManager;
-  private @Autowired InventoryLinkManager inventoryLinkManager;
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
@@ -149,10 +143,6 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(instrumentToSave);
     Instrument savedInstrument = instrumentDao.save(instrumentToSave);
-    // needs the persisted id, since the default is built from the instrument's own global id
-    if (fillBlankLandingPage(savedInstrument, user)) {
-      savedInstrument = instrumentDao.save(savedInstrument);
-    }
     saveIncomingInstrumentImage(savedInstrument, apiInstrument, user);
 
     publisher.publishEvent(new InventoryCreationEvent(savedInstrument, user));
@@ -171,54 +161,61 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   }
 
   /**
-   * Gives an instrument shaped by the PIDINST template a landing page whenever the user leaves the
-   * field empty, filling it with the instrument's own public RSpace address. A value the user typed
-   * is never replaced, and saving an instrument whose field is already filled changes nothing, so
-   * this is safe to run on every save. Instruments carrying no such field are untouched.
+   * Takes the Landing page away with the identifier that wrote it: when an update deletes an
+   * identifier, an address RSpace put there at registration is cleared, so the instrument stops
+   * pointing at a public page that no longer exists (ADR 0006).
    *
-   * <p>Deliberately applied to concrete Instruments only. Filling an InstrumentTemplate's field
-   * would stamp one instrument's address onto every instrument later created from that template.
+   * <p>Only an address RSpace wrote is cleared, recognised by {@link
+   * InventoryUrls#namesPublicLandingPage}. That is the same asymmetry registration applies in
+   * reverse: a value the user chose is theirs, so it survives both the write and this clear. An
+   * address belonging to a *different* identifier is left alone too.
    *
-   * @return whether the instrument was changed, so the caller knows it needs saving
+   * <p>Reads {@code getIdentifiers()} rather than {@code getActiveIdentifiers()}: the caller has
+   * already soft-deleted the identifier by this point, so an active-only view would no longer find
+   * the suffix to recognise.
+   *
+   * <p>Cleared through {@link InventoryEntityField#clearValue()}, not {@code setFieldData("")}, for
+   * the same reason the derivation paths do: a template may mark Landing page mandatory, and that
+   * check would reject the blank.
+   *
+   * @return whether the instrument was changed, so the caller knows the update has content
    */
-  private boolean fillBlankLandingPage(Instrument instrument, User user) {
-    if (instrument.getId() == null) {
+  static boolean clearLandingPageOfDeletedIdentifier(
+      List<ApiInventoryDOI> incomingIdentifiers, InstrumentEntity instrument) {
+    if (CollectionUtils.isEmpty(incomingIdentifiers)) {
       return false;
     }
-    Optional<InventoryEntityField> blankLandingPage =
-        landingPageField(instrument).filter(field -> StringUtils.isBlank(field.getFieldData()));
-    if (blankLandingPage.isEmpty()) {
+    InventoryEntityField landingPage = landingPageField(instrument).orElse(null);
+    if (landingPage == null || StringUtils.isBlank(landingPage.getFieldData())) {
       return false;
     }
-    /*
-     * Persisting a site-relative "/globalId/IN123" would be a one-way door: the field would no longer
-     * be blank, so this fill could never repair it once the property is set, and the bad value would
-     * survive in the row and in the Envers revision. InventoryUriField.validate accepts a relative
-     * reference, so nothing downstream would reject it either. GlobalIdUrls returns empty rather than
-     * a relative address for exactly this reason; a blank field is the recoverable state.
-     */
-    Optional<String> defaultUrl =
-        GlobalIdUrls.globalIdUrl(properties, instrument.getGlobalIdentifier());
-    if (defaultUrl.isEmpty()) {
-      log.warn(
-          "Leaving the Landing page of {} blank: no server URL is configured, and a site-relative"
-              + " default could not be corrected once persisted.",
-          instrument.getGlobalIdentifier());
-      return false;
+    boolean writtenByADeletedIdentifier =
+        incomingIdentifiers.stream()
+            .filter(ApiInventoryDOI::isDeleteIdentifierRequest)
+            .map(ApiInventoryDOI::getId)
+            .filter(Objects::nonNull)
+            .flatMap(
+                deletedId ->
+                    instrument.getIdentifiers().stream()
+                        .filter(doi -> deletedId.equals(doi.getId())))
+            .anyMatch(
+                doi ->
+                    InventoryUrls.namesPublicLandingPage(
+                        landingPage.getFieldData(), doi.getPublicLink()));
+    if (writtenByADeletedIdentifier) {
+      landingPage.clearValue();
+      return true;
     }
-    ApiInventoryEntityField update = new ApiInventoryEntityField();
-    update.setContent(defaultUrl.get());
-    return update.applyChangesToDatabaseField(blankLandingPage.get(), user);
+    return false;
   }
 
   /**
    * Blanks the Landing page field of a record derived from another record — a duplicated
    * instrument, a duplicated template, or an instrument created from a template. The landing page
    * names exactly one physical instrument, so a derived record must never start out pointing at its
-   * source's page, whether the source value was system-generated or typed by a user (RSDEV-1307).
-   * On a concrete Instrument the blanked field is refilled with the record's own address by {@link
-   * #fillBlankLandingPage}; on an InstrumentTemplate it stays blank, since templates are never
-   * filled.
+   * source's page, whether the source value was written by RSpace or typed by a user (RSDEV-1307).
+   * The blanked field then stays blank on an Instrument as on an InstrumentTemplate, until a user
+   * types a value or an identifier is registered for the record (ADR 0006 item 3).
    */
   private static void clearLandingPage(InstrumentEntity derivedRecord) {
     landingPageField(derivedRecord).ifPresent(InventoryEntityField::clearValue);
@@ -241,9 +238,9 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   /**
    * Validates the defaults a new instrument inherited from its template. A blank Landing page is
-   * exempt: {@link #clearLandingPage} has just blanked the template-inherited value and {@link
-   * #fillBlankLandingPage} writes the instrument's own address immediately after the save, so at
-   * this point a blank is a materialised default in flight, not missing user input (RSDEV-1307).
+   * exempt: {@link #clearLandingPage} has just blanked the template-inherited value, and a blank is
+   * now the field's ordinary resting state rather than missing user input — nothing fills it until
+   * a user types a value or an identifier is registered (RSDEV-1307, ADR 0006 item 3).
    *
    * <p>The exemption is deliberately narrowed to a blank rather than to the field, so that a
    * non-blank Landing page reaching here is still validated. No current path produces one, since
@@ -270,12 +267,12 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
    * the field, and {@code inheritedLandingPage}, the template's own value echoed back unchanged by
    * a client that posted the template's fields verbatim. Neither is user input about this
    * instrument, so both are applied with the validation-free {@link
-   * InventoryEntityField#clearValue()} and {@link #fillBlankLandingPage} writes the real value once
-   * the save has assigned an id. That keeps the RSDEV-1307 guarantee a property of the service
-   * rather than of client cooperation, and routing a blank through {@code setFieldData} would in
-   * any case fail the mandatory check on a template that marks the field mandatory. Any other
-   * non-blank Landing page is the user's own input for this record: it is kept and validated like
-   * every other value, so a malformed URI is still rejected.
+   * InventoryEntityField#clearValue()} and the field is simply left blank. That keeps the
+   * RSDEV-1307 guarantee a property of the service rather than of client cooperation, and routing a
+   * blank through {@code setFieldData} would in any case fail the mandatory check on a template
+   * that marks the field mandatory. Any other non-blank Landing page is the user's own input for
+   * this record: it is kept and validated like every other value, so a malformed URI is still
+   * rejected.
    */
   private void saveNewApiFieldsIntoInstrumentFields(
       List<ApiInventoryEntityField> apiFieldList,
@@ -298,8 +295,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       String newFieldContent = apiField.getContent();
       InventoryEntityField inventoryEntityField = inventoryEntityFieldList.get(i);
 
-      if (inventoryEntityField instanceof InventoryLinkField) {
-        applyLinkFieldValue((InventoryLinkField) inventoryEntityField, apiField, user);
+      if (inventoryEntityField instanceof InventoryLinkField linkField) {
+        applyLinkFieldValueOnCreate(linkField, apiField, user);
       } else if (inventoryEntityField.isOptionsStoringField()) {
         inventoryEntityField.setSelectedOptions(apiField.getSelectedOptions());
       } else if (inventoryEntityField == landingPage
@@ -332,108 +329,18 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   }
 
   /**
-   * Applies a link value to a structured link field, going through the {@link InventoryLinkManager}
-   * so the target is parsed/validated and the Envers revision captured. Mirrors the implementation
-   * in {@link SampleApiManagerImpl}.
+   * Applies link values to an existing instrument's (or instrument template's) structured link
+   * fields. The shared implementation cannot read {@code isTemplate()} off {@link InventoryRecord},
+   * so this passes it in.
    */
-  boolean applyLinkFieldValue(
-      InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
-    ApiInventoryLink apiLink = apiField.getLink();
-    String target = apiLink == null ? null : apiLink.getTargetGlobalId();
-    InventoryLink existing = field.getLink();
-    if (target == null || target.trim().isEmpty()) {
-      if (existing == null) {
-        return false;
-      }
-      field.setLink(null);
-      return true;
-    }
-    Long effectivePin =
-        apiLink.derivedVersionPin() != null ? apiLink.derivedVersionPin() : apiLink.getVersionPin();
-    GlobalIdentifier incoming = parseTargetOrNull(target);
-    if (existing != null
-        && incoming != null
-        && incoming.getPrefix() == existing.getTargetPrefix()
-        && Objects.equals(incoming.getDbId(), existing.getTargetDbId())
-        && Objects.equals(effectivePin, existing.getVersionPin())
-        && Objects.equals(apiLink.getRelationType(), existing.getRelationType())) {
-      return false;
-    }
-    assertRelationAllowed(field, apiLink.getRelationType());
-    if (existing != null) {
-      field.setLink(inventoryLinkManager.updateLink(existing, apiLink, user));
-    } else {
-      field.setLink(inventoryLinkManager.createLink(apiLink, user));
-    }
-    return true;
-  }
-
-  /**
-   * Applies link values to an existing instrument's structured link fields (the update path). The
-   * DTO apply loop leaves link fields untouched because it cannot reach the service-layer {@link
-   * InventoryLinkManager}; this matches each modified link field by id and applies it here.
-   */
-  private boolean applyLinkFieldValuesOnUpdate(
-      ApiInstrument apiInstrument, Instrument dbInstrument, User user) {
-    if (apiInstrument.getFields() == null) {
-      return false;
-    }
-    boolean changed = false;
-    for (ApiInventoryEntityField apiField : apiInstrument.getFields()) {
-      if (apiField.isNewFieldRequest()
-          || apiField.isDeleteFieldRequest()
-          || apiField.getId() == null) {
-        continue;
-      }
-      Optional<InventoryEntityField> dbFieldOpt =
-          dbInstrument.getActiveFields().stream()
-              .filter(
-                  f ->
-                      f instanceof InventoryLinkField
-                          && Objects.equals(f.getId(), apiField.getId()))
-              .findFirst();
-      if (dbFieldOpt.isPresent()) {
-        rejectSelfLink(apiField.getLink(), dbInstrument);
-        changed |= applyLinkFieldValue((InventoryLinkField) dbFieldOpt.get(), apiField, user);
-      }
-    }
-    return changed;
-  }
-
-  private void assertRelationAllowed(InventoryLinkField field, String relationType) {
-    if (!DataCiteRelationType.isValid(relationType)) {
-      throw new ApiRuntimeException("errors.inventory.field.linkRelationTypeInvalid", relationType);
-    }
-    String allowed = field.getAllowedRelationTypes();
-    if (allowed == null || allowed.trim().isEmpty()) {
-      return;
-    }
-    if (!Arrays.asList(allowed.split("\\|")).contains(relationType)) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.linkRelationTypeNotPermitted", relationType, field.getName());
-    }
-  }
-
-  private void rejectSelfLink(ApiInventoryLink apiLink, Instrument dbInstrument) {
-    if (apiLink == null || dbInstrument.getOid() == null) {
-      return;
-    }
-    GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
-    if (target == null) {
-      return;
-    }
-    if (InventoryLinkValidator.isSelfLink(target, dbInstrument.getOid().toString())) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
-    }
-  }
-
-  private GlobalIdentifier parseTargetOrNull(String targetGlobalId) {
-    try {
-      return new GlobalIdentifier(targetGlobalId);
-    } catch (IllegalArgumentException | NullPointerException ex) {
-      return null;
-    }
+  boolean applyLinkFieldValuesOnUpdate(
+      ApiInstrumentEntity apiInstrument, InstrumentEntity dbInstrument, User user) {
+    return applyLinkFieldValuesOnUpdate(
+        apiInstrument.getFields(),
+        dbInstrument.getActiveFields(),
+        dbInstrument,
+        dbInstrument.isTemplate(),
+        user);
   }
 
   @Override
@@ -510,13 +417,14 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       contentChanged |=
           identifiersHelper.createDeleteRequestedIdentifiers(
               apiInstrument.getIdentifiers(), dbInstrument, user);
+      // after the deletion above, which is what makes the identifier's suffix findable as deleted
+      contentChanged |=
+          clearLandingPageOfDeletedIdentifier(apiInstrument.getIdentifiers(), dbInstrument);
       contentChanged |=
           identifiersHelper.createAssignRequestedIdentifiers(
               apiInstrument.getIdentifiers(), dbInstrument, user);
       contentChanged |= apiInstrument.applyChangesToDatabaseInstrument(dbInstrument, user);
       contentChanged |= applyLinkFieldValuesOnUpdate(apiInstrument, dbInstrument, user);
-      // after the incoming changes, so clearing the field on this same save refills it
-      contentChanged |= fillBlankLandingPage(dbInstrument, user);
       contentChanged |= saveSharingACLForIncomingApiInvRec(dbInstrument, apiInstrument);
       contentChanged |= saveIncomingInstrumentImage(dbInstrument, apiInstrument, user);
       InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(dbInstrument);
@@ -551,7 +459,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private void saveDbInstrumentUpdate(Instrument dbInstrument, User user) {
     dbInstrument.setModificationDate(new Date());
     dbInstrument.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
-    dbInstrument.increaseVersion();
+    increaseVersionOncePerTransaction(dbInstrument);
     instrumentDao.save(dbInstrument);
     publisher.publishEvent(new InventoryEditingEvent(dbInstrument, user));
   }
@@ -646,10 +554,6 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     clearLandingPage(copy);
     setWorkbenchAsParentForNewInstrument(copy, user);
     copy = instrumentDao.save(copy);
-    // Fill needs to be done after the save, as it needs the actual persisted id
-    if (fillBlankLandingPage(copy, user)) {
-      copy = instrumentDao.save(copy);
-    }
     publisher.publishEvent(new InventoryCreationEvent(copy, user));
     ApiInstrument result = new ApiInstrument(copy);
     populateOutgoingApiInstrumentEntity(result, copy, user);
@@ -734,7 +638,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     template.setCreatedBy(user.getUsername());
     template.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
     setBasicFieldsFromNewIncomingApiInventoryRecord(template, post, user);
-    addFieldsToNewInstrumentTemplate(post, template);
+    addFieldsToNewInstrumentTemplate(post, template, user);
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(template);
     InstrumentTemplate savedTemplate = instrumentTemplateDao.persistInstrumentTemplate(template);
     saveIncomingInstrumentImage(savedTemplate, post, user);
@@ -746,11 +650,12 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     return result;
   }
 
-  private void addFieldsToNewInstrumentTemplate(
-      ApiInstrumentTemplatePost post, InstrumentTemplate template) {
+  void addFieldsToNewInstrumentTemplate(
+      ApiInstrumentTemplatePost post, InstrumentTemplate template, User user) {
     for (ApiInventoryEntityField apiField : post.getFields()) {
       InventoryEntityField toAdd =
           apiFieldToModelFieldFactory.apiInventoryFieldToModelField(apiField);
+      applyDefaultLinkOfNewTemplateField(toAdd, apiField, template, user);
       addNewFieldToInstrumentTemplate(template, toAdd);
     }
   }
@@ -784,7 +689,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     try {
       dbTemplate = (InstrumentTemplate) getIfExists(dbTemplate.getId());
       boolean contentChanged =
-          createDeleteRequestedFieldsInDbInstrumentTemplate(apiTemplate, dbTemplate);
+          createDeleteRequestedFieldsInDbInstrumentTemplate(apiTemplate, dbTemplate, user);
       contentChanged |=
           extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseInstrument(
               apiTemplate, dbTemplate, user);
@@ -797,6 +702,10 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
           identifiersHelper.createAssignRequestedIdentifiers(
               apiTemplate.getIdentifiers(), dbTemplate, user);
       contentChanged |= apiTemplate.applyChangesToDatabaseInstrument(dbTemplate, user);
+      // a template link field carries a default link of its own (RSDEV-1246), so it goes through
+      // the same write path as a concrete instrument
+      contentChanged |= applyLinkFieldValuesOnUpdate(apiTemplate, dbTemplate, user);
+      assertDefaultLinksMatchWhitelists(dbTemplate.getActiveFields());
       contentChanged |= saveSharingACLForIncomingApiInvRec(dbTemplate, apiTemplate);
       contentChanged |= saveIncomingInstrumentImage(dbTemplate, apiTemplate, user);
       if (contentChanged) {
@@ -815,8 +724,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     return result;
   }
 
-  private boolean createDeleteRequestedFieldsInDbInstrumentTemplate(
-      ApiInstrumentTemplate apiTemplate, InstrumentTemplate dbTemplate) {
+  boolean createDeleteRequestedFieldsInDbInstrumentTemplate(
+      ApiInstrumentTemplate apiTemplate, InstrumentTemplate dbTemplate, User user) {
     InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
         apiTemplate.getFields(), null);
     boolean changed = false;
@@ -824,26 +733,26 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       if (apiField.isNewFieldRequest()) {
         InventoryEntityField toAdd =
             apiFieldToModelFieldFactory.apiInventoryFieldToModelField(apiField);
+        applyDefaultLinkOfNewTemplateField(toAdd, apiField, dbTemplate, user);
         addNewFieldToInstrumentTemplate(dbTemplate, toAdd);
         changed = true;
       }
       if (apiField.isDeleteFieldRequest()) {
+        // ApiRuntimeException so it maps to a resolved 422; a raw IllegalArgumentException
+        // reached clients as untranslated English. Same keys as the sample counterpart.
         if (apiField.getId() == null) {
-          throw new IllegalArgumentException(
-              "'id' property not provided "
-                  + "for a template field with 'deleteFieldRequest' flag");
+          throw new ApiRuntimeException("errors.inventory.field.deleteRequestIdMissing");
         }
         Optional<InventoryEntityField> dbFieldOpt =
             dbTemplate.getActiveFields().stream()
                 .filter(f -> apiField.getId().equals(f.getId()))
                 .findFirst();
         if (dbFieldOpt.isEmpty()) {
-          throw new IllegalArgumentException(
-              "Field id: "
-                  + apiField.getId()
-                  + " doesn't match id of any pre-existing template field");
+          throw new ApiRuntimeException(
+              "errors.inventory.field.deleteRequestIdUnknown", apiField.getId());
         }
         dbTemplate.deleteInstrumentField(dbFieldOpt.get(), apiField.isDeleteFieldOnSampleUpdate());
+        softDeleteLinkOfDeletedLinkField(dbFieldOpt.get(), user);
         changed = true;
       }
     }
@@ -853,7 +762,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private void saveDbInstrumentTemplateUpdate(InstrumentTemplate dbTemplate, User user) {
     dbTemplate.setModificationDate(new Date());
     dbTemplate.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
-    dbTemplate.increaseVersion();
+    increaseVersionOncePerTransaction(dbTemplate);
     instrumentTemplateDao.save(dbTemplate);
     publisher.publishEvent(new InventoryEditingEvent(dbTemplate, user));
   }
@@ -958,12 +867,22 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     try {
       dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
       if (!dbTemplate.getVersion().equals(dbInstrument.getTemplateLinkedVersion())) {
+        // snapshot before the sync: it marks matching fields deleted in the model layer, which
+        // cannot soft-delete their InventoryLink, and getActiveFields() no longer returns them
+        // afterwards, so the orphans are reconciled from this list (RSDEV-1270)
+        List<InventoryLinkField> linkFieldsBeforeUpdate =
+            dbInstrument.getActiveFields().stream()
+                .filter(InventoryLinkField.class::isInstance)
+                .map(InventoryLinkField.class::cast)
+                .collect(Collectors.toList());
         boolean updated = dbInstrument.updateToLatestTemplateVersion();
         // the model sync above does not copy link-field allowed-relation-types whitelists, so an
         // existing instrument would otherwise keep its create-time whitelist after a template edit
         // (RSDEV-1200) — mirror the sample path and re-apply them here.
         boolean whitelistsChanged =
             syncLinkFieldWhitelistsFromTemplate(dbInstrument.getActiveFields());
+        clearRetroStampedDefaultLinks(dbInstrument);
+        linkFieldsBeforeUpdate.forEach(field -> softDeleteLinkOfDeletedLinkField(field, user));
         if (updated || whitelistsChanged) {
           saveDbInstrumentUpdate(dbInstrument, user);
         }
@@ -974,6 +893,24 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       }
     }
     return getApiInstrumentById(instrumentId, user);
+  }
+
+  /**
+   * Clears the link of any field the template sync has just cloned, so a default link is stamped at
+   * creation only and never retro-applied (ADR-0006).
+   *
+   * <p>Compensates for a model-layer asymmetry: {@code Sample#updateToLatestTemplateVersion} calls
+   * {@code clearValue()}, which {@code InventoryLinkField} overrides to null its link, whereas
+   * {@code Instrument#updateToLatestTemplateVersion} calls {@code setFieldData(null)}, which it
+   * does not override.
+   */
+  void clearRetroStampedDefaultLinks(InstrumentEntity dbInstrument) {
+    dbInstrument.getActiveFields().stream()
+        .filter(InventoryLinkField.class::isInstance)
+        .map(InventoryLinkField.class::cast)
+        // a just-cloned field is exactly the one with no id yet
+        .filter(field -> field.getId() == null)
+        .forEach(InventoryLinkField::clearValue);
   }
 
   @Override

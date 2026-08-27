@@ -35,4 +35,13 @@ export class GallerySidebar {
     await this.ensureOpen();
     await this.root.getByRole("button", { name: section, exact: true }).click();
   }
+
+  async clickCreate(): Promise<void> {
+    await this.ensureOpen();
+    await this.createButton.click();
+    await this.root
+      .locator(".MuiBackdrop-root")
+      .click({ timeout: 2_000 })
+      .catch(() => {});
+  }
 }

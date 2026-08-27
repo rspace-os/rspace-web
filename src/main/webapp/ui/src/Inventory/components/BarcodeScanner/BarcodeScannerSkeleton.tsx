@@ -1,17 +1,16 @@
-import Alert from "@mui/material/Alert";
+import { alertClasses } from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CardActions from "@mui/material/CardActions";
-import Divider from "@mui/material/Divider";
+import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import type React from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
 import { type Barcode, barcodeFormatAsString } from "@/util/barcode";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
-import FormField from "../../../components/Inputs/FormField";
-import StringField from "../../../components/Inputs/StringField";
 import useStores from "../../../stores/use-stores";
 
 export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
@@ -19,10 +18,8 @@ export type BarcodeInput = Barcode | { rawValue: string; format: "Unknown" };
 type BarcodeScannerSkeletonArgs = {
   onClose: () => void;
   onScan: (scannedBarcodeInput: BarcodeInput) => void;
-  buttonPrefix: string;
   beforeScanHelpText: string;
   barcode: BarcodeInput | null;
-  setBarcode: (value: BarcodeInput | null) => void;
   loading: boolean;
   warning?: React.ReactNode;
   videoElem: React.RefObject<HTMLVideoElement | null>;
@@ -32,10 +29,8 @@ type BarcodeScannerSkeletonArgs = {
 export default function BarcodeScannerSkeleton({
   onClose,
   onScan,
-  buttonPrefix,
   beforeScanHelpText,
   barcode,
-  setBarcode,
   loading,
   warning,
   videoElem,
@@ -44,7 +39,7 @@ export default function BarcodeScannerSkeleton({
   const { uiStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
 
-  function handleOnSubmit() {
+  const handleOnSubmit = useCallback(() => {
     try {
       if (!barcode || typeof barcode.rawValue !== "string") {
         uiStore.addAlert(
@@ -71,106 +66,69 @@ export default function BarcodeScannerSkeleton({
     } finally {
       onClose();
     }
-  }
+  }, [barcode, onScan, onClose, uiStore, t]);
+
+  /*
+   * The ref guards against the camera re-detecting the same code on a later
+   * interval tick before the dialog has finished closing.
+   */
+  const submitted = useRef(false);
+  useEffect(() => {
+    if (barcode?.rawValue && !submitted.current) {
+      submitted.current = true;
+      handleOnSubmit();
+    }
+  }, [barcode, handleOnSubmit]);
+
+  const status = loading ? (
+    t("barcodeScanner.loading")
+  ) : barcode?.rawValue ? (
+    <>
+      {t("barcodeScanner.barcodeDetected", { format: barcodeFormatAsString(barcode.format) })}
+      <br />
+      {`${barcode.rawValue}`}
+    </>
+  ) : (
+    beforeScanHelpText
+  );
 
   return (
-    <Stack sx={{ alignItems: "center" }}>
-      <Stack
-        direction="row"
-        sx={{
-          justifyContent: "space-around",
-          width: "100%",
-          marginBottom: "8px",
-        }}
-      >
-        <Alert severity="info">
-          {loading ? (
-            t("barcodeScanner.loading")
-          ) : barcode?.rawValue ? (
-            <>
-              {t("barcodeScanner.barcodeDetected", { format: barcodeFormatAsString(barcode.format) })}
-              <br />
-              {`${barcode.rawValue}`}
-            </>
-          ) : (
-            t("barcodeScanner.prompt", { helpText: beforeScanHelpText })
-          )}
-        </Alert>
+    <Stack
+      sx={{
+        p: 1.5,
+        width: 440,
+        maxWidth: "80vw",
+        /*
+         * By default an Alert stretches its icon, message, and action
+         * slots to full height, leaving single-line text and the icon
+         * sitting high; centering the slots keeps them aligned.
+         */
+        [`& .${alertClasses.root}`]: { alignItems: "center" },
+      }}
+      spacing={1}
+    >
+      <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }} spacing={1}>
+        {/* keep the help icon out of the DialogTitle: its tooltip would land in the dialog's accessible name */}
+        <DialogTitle sx={{ p: 0 }}>{t("barcodeScanner.heading")}</DialogTitle>
         <HelpLinkIcon link={helpDocsArticleUrl("barcodes")} title={t("barcodeScanner.helpTitle")} />
       </Stack>
-      <CardActions>
-        <Button
-          onClick={() => {
-            onClose();
-          }}
-        >
-          {t("common:actions.cancel")}
-        </Button>
-        <Button
-          disabled={!barcode?.rawValue}
-          color="callToAction"
-          variant="contained"
-          disableElevation
-          onClick={handleOnSubmit}
-        >
-          {buttonPrefix}
-        </Button>
-        {barcode && (
-          <Button
-            onClick={() => {
-              setBarcode(null);
-            }}
-          >
-            {t("common:actions.clear")}
-          </Button>
-        )}
-      </CardActions>
+      <Typography variant="body2" sx={{ color: "text.secondary" }}>
+        {status}
+      </Typography>
       {/* hide via CSS on detection (not on loading or scanner won't start in Safari)  */}
       <Box
         component="video"
         ref={videoElem}
-        sx={(theme) => ({
+        sx={{
           display: barcode?.rawValue || error ? "none" : "block",
-          height: "37vh",
-          width: "37vw",
-          [theme.breakpoints.down("sm")]: {
-            width: "100%",
-            height: "100%",
-            maxHeight: "50vh",
-            maxWidth: "80vw",
-          },
-        })}
+          width: "100%",
+          maxHeight: "45vh",
+        }}
       />
-      {warning !== null && <Box>{warning}</Box>}
-      {(!barcode || barcode.format === "Unknown") && (
-        <>
-          <Box sx={{ width: "100%" }}>
-            <Box sx={{ m: 1 }}>
-              <Divider orientation="horizontal" />
-            </Box>
-          </Box>
-          <Box sx={{ alignSelf: "flex-start" }}>
-            <Box sx={{ m: 1 }}>
-              <FormField
-                label={t("barcodeScanner.altEntry")}
-                renderInput={(props) => (
-                  <StringField
-                    {...props}
-                    variant="standard"
-                    onChange={({ target: { value } }) => {
-                      setBarcode({
-                        rawValue: value,
-                        format: "Unknown",
-                      });
-                    }}
-                  />
-                )}
-                value={barcode?.rawValue ?? ""}
-              />
-            </Box>
-          </Box>
-        </>
-      )}
+      {warning ? <Box sx={{ width: "100%" }}>{warning}</Box> : null}
+      <Stack direction="row" sx={{ justifyContent: "flex-end", width: "100%" }}>
+        <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
+      </Stack>
     </Stack>
   );
 }

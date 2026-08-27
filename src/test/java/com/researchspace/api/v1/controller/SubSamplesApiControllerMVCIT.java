@@ -88,6 +88,45 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
+  public void createMultipleSubSamplesInOneRequestBumpSampleVersionOnce() throws Exception {
+    // RSDEV-1319: creating N subsamples in one request updates the parent sample N times inside
+    // one transaction. Envers writes one revision per entity per transaction, so the sample's
+    // version must advance exactly once, otherwise the skipped versions have no revision and
+    // GET /samples/{id}/revisions can never resolve them
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(anyUser);
+    assertEquals(1L, basicSample.getVersion().longValue());
+
+    String threeNewSubSamplesConfigJson =
+        "{ \"sampleId\" : " + basicSample.getId() + ", \"numSubSamples\": 3 }";
+    mockMvc
+        .perform(
+            createBuilderForPostWithJSONBody(
+                apiKey, "/subSamples", anyUser, threeNewSubSamplesConfigJson))
+        .andExpect(status().is2xxSuccessful());
+
+    ApiSample reloadedSample = getSampleThroughApi(anyUser, apiKey, basicSample.getId());
+    assertEquals(4, reloadedSample.getSubSamplesCount());
+    assertEquals(
+        2L,
+        reloadedSample.getVersion().longValue(),
+        "three sample updates in one transaction are one version");
+
+    ApiInventoryRecordRevisionList history =
+        getSampleRevisions(anyUser, apiKey, basicSample.getId());
+    assertEquals(2, history.getRevisions().size(), "one transaction writes one revision");
+    ApiSample revision2 =
+        getSampleRevisionSnapshot(
+            anyUser, apiKey, basicSample.getId(), history.getRevisions().get(1).getRevisionId());
+    assertEquals(
+        2L, revision2.getVersion().longValue(), "the live version must resolve to a revision");
+    // guard reset across transactions is covered by the guard's unit test and by
+    // ListOfMaterialsApiControllerMVCIT.twoUsagesOfOneSubSampleInOneRequestBumpVersionOnce
+  }
+
+  @Test
   public void createMoreSubSamplesValidation() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
@@ -293,9 +332,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     verifyAuditAction(AuditAction.WRITE, 1);
 
     //  total sample volume should be updated
-    MvcResult retrieveSampleResult =
-        this.mockMvc.perform(getSampleById(anyUser, apiKey, basicSample.getId())).andReturn();
-    ApiSample sample = getFromJsonResponseBody(retrieveSampleResult, ApiSample.class);
+    ApiSample sample = getSampleThroughApi(anyUser, apiKey, basicSample.getId());
     assertEquals(newAmount, sample.getQuantity().getNumericValue().longValue());
     verifyAuditAction(AuditAction.READ, 2);
 
@@ -327,12 +364,7 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
     assertApiErrorContainsMessage(err, "incompatible with stored unit");
 
     // ensure retrieved Sample has updated subSample metadata
-    MvcResult retrievedSampleResult =
-        this.mockMvc.perform(getSampleById(anyUser, apiKey, basicSample.getId())).andReturn();
-    assertNull(
-        retrievedSampleResult.getResolvedException(),
-        "exception: " + retrievedSampleResult.getResolvedException());
-    ApiSample retrievedSample = getFromJsonResponseBody(retrievedSampleResult, ApiSample.class);
+    ApiSample retrievedSample = getSampleThroughApi(anyUser, apiKey, basicSample.getId());
     assertNotNull(retrievedSample);
     assertEquals("newSubSampleName", retrievedSample.getSubSamples().get(0).getName());
     verifyAuditAction(AuditAction.READ, 3);
@@ -795,5 +827,44 @@ public class SubSamplesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .get(0)
             .getLink()
             .endsWith("/revisions/" + subSampleRev1.getRevisionId()));
+  }
+
+  private ApiSample getSampleThroughApi(User user, String apiKey, Long sampleId) throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(getSampleById(user, apiKey, sampleId))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return getFromJsonResponseBody(result, ApiSample.class);
+  }
+
+  private ApiInventoryRecordRevisionList getSampleRevisions(User user, String apiKey, Long sampleId)
+      throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE, apiKey, "/samples/" + sampleId + "/revisions", user))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
+  }
+
+  private ApiSample getSampleRevisionSnapshot(
+      User user, String apiKey, Long sampleId, Long revisionId) throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/samples/" + sampleId + "/revisions/" + revisionId,
+                    user))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(result.getResolvedException());
+    return getFromJsonResponseBody(result, ApiSample.class);
   }
 }

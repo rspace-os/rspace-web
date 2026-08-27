@@ -27,6 +27,7 @@ export class SysadminClient extends BaseApiClient {
   }
 
   async createGroup(group: ApiSysadminGroupCreateRequest): Promise<ApiSysadminGroup> {
+    env.assertGlobalMutationsAllowed("createGroup");
     return this.requestJson("post", "/api/v1/sysadmin/groups", { data: group, action: "createSysadminGroup" });
   }
 

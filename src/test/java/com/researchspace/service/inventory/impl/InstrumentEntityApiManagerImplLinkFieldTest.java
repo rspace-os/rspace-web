@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -16,7 +17,12 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentTemplate;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
+import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.dao.ContainerDao;
@@ -26,6 +32,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InstrumentTemplate;
@@ -35,7 +42,7 @@ import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.model.record.RecordFactory;
-import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
@@ -43,6 +50,8 @@ import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.testutils.TestFactory;
+import java.util.List;
+import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,9 +64,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 /**
  * Unit tests for the link-field persistence logic in {@link InstrumentEntityApiManagerImpl}.
  *
- * <p>The {@code applyLinkFieldValue} method is the creation/update hot-path for structured
- * link-type template fields on instruments. It mirrors the equivalent in {@link
- * SampleApiManagerImpl}; these tests guard against independent drift or regression.
+ * <p>{@code applyLinkFieldValue} lives once on {@link InventoryApiManagerImpl}; what is
+ * instrument-specific is the {@code isTemplate} wiring, the template-create path, and {@code
+ * clearRetroStampedDefaultLinks}.
  */
 @ExtendWith(MockitoExtension.class)
 class InstrumentEntityApiManagerImplLinkFieldTest {
@@ -67,7 +76,6 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
   @Mock private InstrumentTemplateDao instrumentTemplateDao;
   @Mock private InventoryPermissionUtils invPermissions;
   @Mock private ContainerDao containerDao;
-  @Mock private IPropertyHolder properties;
   @Mock private ApplicationEventPublisher publisher;
   @Mock private UserManager userManager;
   @Mock private ApiExtraFieldsHelper extraFieldHelper;
@@ -90,12 +98,14 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     ReflectionTestUtils.setField(manager, "recordFactory", new RecordFactory());
     ReflectionTestUtils.setField(manager, "invPermissions", invPermissions);
     ReflectionTestUtils.setField(manager, "containerDao", containerDao);
-    ReflectionTestUtils.setField(manager, "properties", properties);
     ReflectionTestUtils.setField(manager, "publisher", publisher);
     ReflectionTestUtils.setField(manager, "userManager", userManager);
     ReflectionTestUtils.setField(manager, "extraFieldHelper", extraFieldHelper);
     ReflectionTestUtils.setField(manager, "inventoryMoveHelper", inventoryMoveHelper);
     ReflectionTestUtils.setField(manager, "messages", messages);
+    // the real factory is stateless, so the template-create path is exercised end to end
+    ReflectionTestUtils.setField(
+        manager, "apiFieldToModelFieldFactory", new ApiFieldToModelFieldFactory());
     user = TestFactory.createAnyUser("any");
     dbLink = new InventoryLink();
     dbLink.setRelationType("References");
@@ -178,11 +188,52 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
   @Test
   void clearingTheValueDereferencesTheRowForOrphanRemoval() {
     ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+    apiField.setLink(null);
 
     boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
 
     assertTrue(changed);
     assertNull(dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aCreatePayloadThatOmitsTheLinkKeepsTheStampedDefault() {
+    // as the sample counterpart: the template's default is already stamped on the field by
+    // shallowCopy() before the create payload is applied, and an unmentioned link must not wipe it
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+    apiField.setContent("");
+
+    boolean changed = manager.applyLinkFieldValueOnCreate(dbField, apiField, user);
+
+    assertFalse(changed);
+    assertSame(dbLink, dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void anItemUpdateThatOmitsTheLinkEntirelyStillClearsIt() {
+    // RSDEV-1131 semantics: an instrument's field list arrives complete, so a link field carrying
+    // no link means the user cleared it. Only a TEMPLATE's field list can be partial.
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+
+    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user);
+
+    assertTrue(changed);
+    assertNull(dbField.getLink());
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aTemplatePutThatOmitsTheLinkKeepsTheDefault() {
+    // the whitelist-only template edit: absence there cannot mean "clear", or a legitimate partial
+    // edit would destroy the default link
+    ApiInventoryEntityField apiField = new ApiInventoryEntityField();
+
+    boolean changed = manager.applyLinkFieldValue(dbField, apiField, user, true);
+
+    assertFalse(changed);
+    assertSame(dbLink, dbField.getLink());
     verifyNoInteractions(inventoryLinkManager);
   }
 
@@ -288,22 +339,19 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
   }
 
   @Test
-  void duplicatingSystemGeneratedLandingPageGivesTheCopyItsOwnAddress() {
-    String serverUrl = "https://rspace.example.com";
-    // Source IN1 has the system-generated landing page for IN1
-    Instrument source = instrumentWithLandingPage(1L, serverUrl + "/globalId/IN1");
+  void duplicatingALandingPageRSpaceWroteLeavesTheCopyBlank() {
+    // Source IN1 carries a landing page the retired auto-fill wrote for IN1
+    Instrument source = instrumentWithLandingPage(1L, "https://rspace.example.com/globalId/IN1");
 
-    when(properties.getServerUrl()).thenReturn(serverUrl);
     stubDuplicateInfrastructure(source);
 
     manager.duplicateInstrument(1L, user);
 
-    // First save creates the copy (id=2); second save persists the filled landing page
+    // one save only: the clear happens before it, and nothing fills the field afterwards
     ArgumentCaptor<Instrument> captor = ArgumentCaptor.forClass(Instrument.class);
-    verify(instrumentDao, times(2)).save(captor.capture());
+    verify(instrumentDao, times(1)).save(captor.capture());
 
-    String copyLandingPage = landingPageFieldData(captor.getAllValues().get(1));
-    assertEquals(serverUrl + "/globalId/IN2", copyLandingPage);
+    assertNull(landingPageFieldData(captor.getValue()));
   }
 
   @Test
@@ -318,46 +366,28 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
     manager.duplicateInstrument(1L, user);
 
-    // fillBlankLandingPage found nothing to fill — only one save
+    // nothing fills the Landing page any more — only one save
     verify(instrumentDao, times(1)).save(any());
   }
 
   /*
-   * Deliberately traverses the same code as the system-generated case above: RSDEV-1261 cleared
-   * only a system-generated value, RSDEV-1307 made the clear unconditional, so the two scenarios
-   * now converge. Kept as a pair because they document the distinction that used to matter, and
-   * would diverge again the moment the clear started inspecting the source value.
+   * Deliberately traverses the same code as the case above: RSDEV-1261 cleared only a
+   * system-generated value, RSDEV-1307 made the clear unconditional, so the two scenarios
+   * converge. Kept as a pair because they document the distinction that used to matter, and would
+   * diverge again the moment the clear started inspecting the source value.
+   *
+   * The server URL no longer takes part at all, so the "without a server URL" variant this pair
+   * used to carry would now be a third copy of the same assertion and has gone.
    */
   @Test
-  void duplicatingUserTypedLandingPageGivesTheCopyItsOwnAddress() {
-    String serverUrl = "https://rspace.example.com";
-    String userTypedUrl = "https://external.lab.example.com/my-instrument";
-    Instrument source = instrumentWithLandingPage(1L, userTypedUrl);
+  void duplicatingAUserTypedLandingPageLeavesTheCopyBlank() {
+    Instrument source =
+        instrumentWithLandingPage(1L, "https://external.lab.example.com/my-instrument");
 
-    when(properties.getServerUrl()).thenReturn(serverUrl);
     stubDuplicateInfrastructure(source);
 
     manager.duplicateInstrument(1L, user);
 
-    // First save creates the copy (id=2); second save persists the filled landing page
-    ArgumentCaptor<Instrument> captor = ArgumentCaptor.forClass(Instrument.class);
-    verify(instrumentDao, times(2)).save(captor.capture());
-
-    assertEquals(serverUrl + "/globalId/IN2", landingPageFieldData(captor.getAllValues().get(1)));
-  }
-
-  @Test
-  void duplicatingUserTypedLandingPageWithoutServerUrlLeavesItBlank() {
-    String userTypedUrl = "https://external.lab.example.com/my-instrument";
-    Instrument source = instrumentWithLandingPage(1L, userTypedUrl);
-
-    // No server URL configured: the fill cannot build the copy's own address
-    when(properties.getServerUrl()).thenReturn(null);
-    stubDuplicateInfrastructure(source);
-
-    manager.duplicateInstrument(1L, user);
-
-    // Clear happened, fill had nothing to write — blank is the recoverable state, one save only
     ArgumentCaptor<Instrument> captor = ArgumentCaptor.forClass(Instrument.class);
     verify(instrumentDao, times(1)).save(captor.capture());
 
@@ -366,19 +396,19 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
   @Test
   void duplicatingAMandatoryLandingPageDoesNotBlowUp() {
-    String serverUrl = "https://rspace.example.com";
     // A mandatory field rejects blank content through setFieldData, so the clear must bypass
-    // validation — the refill immediately writes a valid URL anyway
-    Instrument source = instrumentWithMandatoryLandingPage(1L, serverUrl + "/globalId/IN1");
+    // validation. It matters more than it used to: nothing refills the field afterwards, so the
+    // copy is saved with a mandatory field left empty and must still go through.
+    Instrument source =
+        instrumentWithMandatoryLandingPage(1L, "https://rspace.example.com/globalId/IN1");
 
-    when(properties.getServerUrl()).thenReturn(serverUrl);
     stubDuplicateInfrastructure(source);
 
     manager.duplicateInstrument(1L, user);
 
     ArgumentCaptor<Instrument> captor = ArgumentCaptor.forClass(Instrument.class);
-    verify(instrumentDao, times(2)).save(captor.capture());
-    assertEquals(serverUrl + "/globalId/IN2", landingPageFieldData(captor.getAllValues().get(1)));
+    verify(instrumentDao, times(1)).save(captor.capture());
+    assertNull(landingPageFieldData(captor.getValue()));
   }
 
   @Test
@@ -396,14 +426,13 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     lp.setFieldData(serverUrl + "/globalId/IN1");
     addField(source, lp);
 
-    when(properties.getServerUrl()).thenReturn(serverUrl);
     stubDuplicateInfrastructure(source);
 
     manager.duplicateInstrument(1L, user);
 
     ArgumentCaptor<Instrument> captor = ArgumentCaptor.forClass(Instrument.class);
-    verify(instrumentDao, times(2)).save(captor.capture());
-    Instrument copy = captor.getAllValues().get(1);
+    verify(instrumentDao, times(1)).save(captor.capture());
+    Instrument copy = captor.getValue();
     // only the Landing page is identity-bound; an unrelated URI field is copied as-is
     assertEquals(
         "https://docs.example.org/manual",
@@ -412,13 +441,12 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
             .findFirst()
             .map(InventoryEntityField::getFieldData)
             .orElse(null));
-    // and the right field was still found and refilled, despite not being first
-    assertEquals(serverUrl + "/globalId/IN2", landingPageFieldData(copy));
+    // and the right field was still found and cleared, despite not being first
+    assertNull(landingPageFieldData(copy));
   }
 
   @Test
   void landingPageIsMatchedIgnoringCaseAndSurroundingWhitespace() {
-    String serverUrl = "https://rspace.example.com";
     Instrument source = new Instrument();
     source.setId(1L);
     source.setName("Odd Field Name");
@@ -427,17 +455,15 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     lp.setFieldData("https://external.lab.example.com/my-instrument");
     addField(source, lp);
 
-    when(properties.getServerUrl()).thenReturn(serverUrl);
     stubDuplicateInfrastructure(source);
 
     manager.duplicateInstrument(1L, user);
 
     // the name predicate trims and ignores case, so this field is still identity-bound
     ArgumentCaptor<Instrument> captor = ArgumentCaptor.forClass(Instrument.class);
-    verify(instrumentDao, times(2)).save(captor.capture());
-    assertEquals(
-        serverUrl + "/globalId/IN2",
-        captor.getAllValues().get(1).getActiveFields().stream()
+    verify(instrumentDao, times(1)).save(captor.capture());
+    assertNull(
+        captor.getValue().getActiveFields().stream()
             .filter(f -> f.getType() == FieldType.URI)
             .findFirst()
             .map(InventoryEntityField::getFieldData)
@@ -503,12 +529,10 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
   }
 
   @Test
-  void createFromTemplateWithALandingPageEchoedBackFromTheTemplateGivesItsOwnAddress() {
-    String serverUrl = "https://rspace.example.com";
+  void createFromTemplateWithALandingPageEchoedBackFromTheTemplateLeavesItBlank() {
     String templateLandingPage = "https://external.lab.example.com/original";
     InstrumentTemplate template = templateWithLandingPage(1L, templateLandingPage);
 
-    when(properties.getServerUrl()).thenReturn(serverUrl);
     stubCreateFromTemplateInfrastructure(template);
 
     // a client that reads the template and posts its fields straight back must not be able to
@@ -516,8 +540,8 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     manager.createNewApiInstrument(creationRequestEchoing(1L, templateLandingPage), user);
 
     ArgumentCaptor<Instrument> captor = ArgumentCaptor.forClass(Instrument.class);
-    verify(instrumentDao, times(2)).save(captor.capture());
-    assertEquals(serverUrl + "/globalId/IN2", landingPageFieldData(captor.getAllValues().get(1)));
+    verify(instrumentDao, times(1)).save(captor.capture());
+    assertNull(landingPageFieldData(captor.getValue()));
   }
 
   @Test
@@ -535,8 +559,6 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     ArgumentCaptor<Instrument> captor = ArgumentCaptor.forClass(Instrument.class);
     verify(instrumentDao, times(1)).save(captor.capture());
     assertEquals(userTyped, landingPageFieldData(captor.getValue()));
-    // one save only: nothing was blank, so the fill had nothing to write
-    verify(properties, never()).getServerUrl();
   }
 
   @Test
@@ -565,12 +587,10 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     assertNull(landingPageFieldData(captor.getValue()));
     // and the source template keeps its own value
     assertEquals("https://external.lab.example.com/original", landingPageFieldData(source));
-    verify(properties, never()).getServerUrl();
   }
 
   @Test
   void createFromTemplateExemptsTheLandingPageByNameNotByPosition() {
-    String serverUrl = "https://rspace.example.com";
     String templateLandingPage = "https://external.lab.example.com/original";
     InstrumentTemplate template = new InstrumentTemplate();
     template.setId(1L);
@@ -584,11 +604,10 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
     lp.setFieldData(templateLandingPage);
     addTemplateField(template, lp);
 
-    when(properties.getServerUrl()).thenReturn(serverUrl);
     stubCreateFromTemplateInfrastructure(template);
 
-    // the landing page is echoed back rather than blanked: a blank would be stored and refilled
-    // identically whichever field the exemption picked, so it could not tell the two apart
+    // the landing page is echoed back rather than blanked: a blank would be stored identically
+    // whichever field the exemption picked, so it could not tell the two apart
     ApiInstrument request = new ApiInstrument();
     request.setTemplateId(1L);
     request.setName("New Instrument");
@@ -597,12 +616,12 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
 
     manager.createNewApiInstrument(request, user);
 
-    // exempting by index instead would store the echoed value, leaving nothing blank to fill and
-    // so producing a single save holding the template's address
+    // exempting by index instead would store the echoed value, so the template's address would
+    // survive onto the new instrument rather than the field coming out blank
     ArgumentCaptor<Instrument> captor = ArgumentCaptor.forClass(Instrument.class);
-    verify(instrumentDao, times(2)).save(captor.capture());
-    Instrument created = captor.getAllValues().get(1);
-    assertEquals(serverUrl + "/globalId/IN2", landingPageFieldData(created));
+    verify(instrumentDao, times(1)).save(captor.capture());
+    Instrument created = captor.getValue();
+    assertNull(landingPageFieldData(created));
     assertEquals(
         "Zeiss",
         created.getActiveFields().stream()
@@ -610,24 +629,6 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
             .findFirst()
             .map(InventoryEntityField::getFieldData)
             .orElse(null));
-  }
-
-  @Test
-  void createFromTemplateWithoutAServerUrlLeavesTheLandingPageBlank() {
-    String templateLandingPage = "https://external.lab.example.com/original";
-    InstrumentTemplate template = templateWithLandingPage(1L, templateLandingPage);
-
-    // no server URL configured: the fill cannot build the new instrument's own address
-    when(properties.getServerUrl()).thenReturn(null);
-    stubCreateFromTemplateInfrastructure(template);
-
-    manager.createNewApiInstrument(creationRequestEchoing(1L, templateLandingPage), user);
-
-    // the mirror of the duplicate path: cleared, nothing to fill, and blank is the recoverable
-    // state rather than a half-written address
-    ArgumentCaptor<Instrument> captor = ArgumentCaptor.forClass(Instrument.class);
-    verify(instrumentDao, times(1)).save(captor.capture());
-    assertNull(landingPageFieldData(captor.getValue()));
   }
 
   @Test
@@ -695,5 +696,256 @@ class InstrumentEntityApiManagerImplLinkFieldTest {
             manager.createNewApiInstrument(creationRequestEchoing(1L, "http://[not a uri"), user));
 
     verify(instrumentDao, never()).save(any());
+  }
+
+  // --- clearing the Landing page when the identifier that wrote it is deleted ---
+
+  private static final String SUFFIX = "abc123XYZ_-456789";
+
+  private static ApiInventoryDOI deleteRequestFor(long identifierId) {
+    ApiInventoryDOI request = new ApiInventoryDOI();
+    request.setId(identifierId);
+    request.setDeleteIdentifierRequest(true);
+    return request;
+  }
+
+  private Instrument instrumentWithIdentifier(String landingPage, String publicLinkSuffix) {
+    Instrument instrument = instrumentWithLandingPage(1L, landingPage);
+    DigitalObjectIdentifier doi = new DigitalObjectIdentifier(null, null, publicLinkSuffix);
+    doi.setId(9L);
+    instrument.addIdentifier(doi);
+    return instrument;
+  }
+
+  /**
+   * The counterpart of the registration-time write: deleting the identifier takes the address away
+   * with it, rather than leaving the instrument pointing at a page that no longer exists.
+   */
+  @Test
+  void deletingAnIdentifierClearsTheLandingPageItWrote() {
+    Instrument instrument =
+        instrumentWithIdentifier("https://rspace.example.com/public/inventory/" + SUFFIX, SUFFIX);
+
+    boolean changed =
+        InstrumentEntityApiManagerImpl.clearLandingPageOfDeletedIdentifier(
+            List.of(deleteRequestFor(9L)), instrument);
+
+    assertTrue(changed);
+    assertNull(landingPageFieldData(instrument));
+  }
+
+  /**
+   * Symmetry with the write rule: what the user chose is theirs, and deletion does not touch it.
+   */
+  @Test
+  void deletingAnIdentifierLeavesAUserTypedLandingPageAlone() {
+    Instrument instrument = instrumentWithIdentifier("https://lab.example.org/aws-42", SUFFIX);
+
+    boolean changed =
+        InstrumentEntityApiManagerImpl.clearLandingPageOfDeletedIdentifier(
+            List.of(deleteRequestFor(9L)), instrument);
+
+    assertFalse(changed);
+    assertEquals("https://lab.example.org/aws-42", landingPageFieldData(instrument));
+  }
+
+  /** An update that deletes nothing must not clear anything. */
+  @Test
+  void anUpdateWithNoIdentifierDeletionLeavesTheLandingPageAlone() {
+    String ours = "https://rspace.example.com/public/inventory/" + SUFFIX;
+    Instrument instrument = instrumentWithIdentifier(ours, SUFFIX);
+
+    ApiInventoryDOI notADeletion = new ApiInventoryDOI();
+    notADeletion.setId(9L);
+
+    boolean changed =
+        InstrumentEntityApiManagerImpl.clearLandingPageOfDeletedIdentifier(
+            List.of(notADeletion), instrument);
+
+    assertFalse(changed);
+    assertEquals(ours, landingPageFieldData(instrument));
+  }
+
+  /** Deleting one identifier must not clear an address that belongs to a different one. */
+  @Test
+  void deletingAnIdentifierLeavesAnotherIdentifiersPublicPageAlone() {
+    String otherPage = "https://rspace.example.com/public/inventory/someoneElsesSuffix";
+    Instrument instrument = instrumentWithIdentifier(otherPage, SUFFIX);
+
+    boolean changed =
+        InstrumentEntityApiManagerImpl.clearLandingPageOfDeletedIdentifier(
+            List.of(deleteRequestFor(9L)), instrument);
+
+    assertFalse(changed);
+    assertEquals(otherPage, landingPageFieldData(instrument));
+  }
+
+  @Test
+  void theTemplateFieldDeleteErrorsResolveToRealMessages() {
+    // ApiRuntimeException carries a bare string literal, so a code that no longer matches the
+    // catalogue compiles, lints clean and fails only against a live server. Taking the code from
+    // the production path, rather than restating it, is what makes this a guard.
+    ApiInstrumentTemplate apiTemplate = new ApiInstrumentTemplate();
+    ApiInventoryEntityField deleteWithoutId = new ApiInventoryEntityField();
+    deleteWithoutId.setDeleteFieldRequest(true);
+    apiTemplate.setFields(List.of(deleteWithoutId));
+
+    ApiRuntimeException missingId =
+        assertThrows(
+            ApiRuntimeException.class,
+            () ->
+                manager.createDeleteRequestedFieldsInDbInstrumentTemplate(
+                    apiTemplate, new InstrumentTemplate(), user));
+
+    ApiInventoryEntityField deleteUnknownId = new ApiInventoryEntityField();
+    deleteUnknownId.setDeleteFieldRequest(true);
+    deleteUnknownId.setId(404L);
+    apiTemplate.setFields(List.of(deleteUnknownId));
+
+    ApiRuntimeException unknownId =
+        assertThrows(
+            ApiRuntimeException.class,
+            () ->
+                manager.createDeleteRequestedFieldsInDbInstrumentTemplate(
+                    apiTemplate, new InstrumentTemplate(), user));
+
+    assertEquals("errors.inventory.field.deleteRequestIdMissing", missingId.getErrorCode());
+    assertEquals("errors.inventory.field.deleteRequestIdUnknown", unknownId.getErrorCode());
+    assertResolves(missingId.getErrorCode(), unknownId.getErrorCode());
+  }
+
+  @Test
+  void everyErrorCodeTheLinkPathsThrowResolves() {
+    // same failure mode as above, for the codes reached from the shared link write path
+    assertResolves(
+        "errors.inventory.field.link.defaultRelationTypeNotPermitted",
+        "errors.inventory.field.link.selfLinkForbidden",
+        "errors.inventory.field.linkRelationTypeInvalid",
+        "errors.inventory.field.linkRelationTypeNotPermitted",
+        "errors.inventory.field.linkTargetNotFound",
+        "errors.inventory.field.linkTargetKindUnsupported");
+  }
+
+  private static void assertResolves(String... errorCodes) {
+    JsonMessageSource messages = new JsonMessageSource();
+    Locale enUs = Locale.forLanguageTag("en-US");
+    for (String code : errorCodes) {
+      assertDoesNotThrow(
+          () -> messages.getMessage(code, new Object[] {"a", "b"}, enUs),
+          () -> code + " is thrown by a link path but resolves to no message");
+    }
+  }
+
+  @Test
+  void aLinkFieldTheTemplateSyncJustClonedHasItsDefaultCleared() {
+    // Stamped at creation only, never retro-applied (ADR-0006). Instrument-only compensation:
+    // Sample's updateToLatestTemplateVersion calls clearValue(), which InventoryLinkField overrides
+    // to null its link, while Instrument's calls setFieldData(null), which it does not override.
+    Instrument dbInstrument = new Instrument();
+
+    InventoryLinkField existingField = new InventoryLinkField();
+    existingField.setName("already here");
+    existingField.setId(11L);
+    existingField.setColumnIndex(1);
+    InventoryLink keptLink = new InventoryLink();
+    existingField.setLink(keptLink);
+
+    InventoryLinkField clonedField = new InventoryLinkField();
+    clonedField.setName("just arrived from the template");
+    clonedField.setColumnIndex(2);
+    clonedField.setLink(new InventoryLink());
+
+    dbInstrument.getFields().add(existingField);
+    dbInstrument.getFields().add(clonedField);
+    dbInstrument.refreshActiveFieldsAndColumnIndex();
+
+    manager.clearRetroStampedDefaultLinks(dbInstrument);
+
+    assertNull(clonedField.getLink(), "a newly cloned field must not inherit the current default");
+    assertSame(keptLink, existingField.getLink(), "an existing field's own link is untouched");
+  }
+
+  @Test
+  void deletingAnInstrumentLinkFieldSoftDeletesItsLink() {
+    // RSDEV-1270: the instrument manager had no equivalent of the sample manager's reconciliation,
+    // so a deleted link field left its InventoryLink row with deleted=false
+    dbField.setDeleted(true);
+
+    manager.softDeleteLinkOfDeletedLinkField(dbField, user);
+
+    verify(inventoryLinkManager).deleteLink(dbLink, user);
+  }
+
+  @Test
+  void aDeletedInstrumentLinkFieldWhoseLinkIsAlreadyDeletedIsLeftAlone() {
+    dbLink.setDeleted(true);
+    dbField.setDeleted(true);
+
+    manager.softDeleteLinkOfDeletedLinkField(dbField, user);
+
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aLiveInstrumentLinkFieldKeepsItsLink() {
+    manager.softDeleteLinkOfDeletedLinkField(dbField, user);
+
+    verifyNoInteractions(inventoryLinkManager);
+  }
+
+  @Test
+  void aNewInstrumentTemplateLinkFieldIsCreatedWithItsDefaultLink() {
+    // RSDEV-1246: mirrors the sample template create path
+    ApiInstrumentTemplatePost post = new ApiInstrumentTemplatePost();
+    ApiInventoryEntityField apiField = apiLinkField("SA2", "References", null);
+    apiField.setType(ApiFieldType.LINK);
+    apiField.setName("default related sample");
+    post.setFields(List.of(apiField));
+    InventoryLink created = new InventoryLink();
+    when(inventoryLinkManager.createLink(apiField.getLink(), user)).thenReturn(created);
+
+    InstrumentTemplate dbTemplate = new InstrumentTemplate();
+    manager.addFieldsToNewInstrumentTemplate(post, dbTemplate, user);
+
+    InventoryLinkField added = (InventoryLinkField) dbTemplate.getActiveFields().get(0);
+    assertSame(created, added.getLink());
+  }
+
+  @Test
+  void aLinkFieldAddedToAnExistingInstrumentTemplateIsCreatedWithItsDefaultLink() {
+    ApiInstrumentTemplate apiTemplate = new ApiInstrumentTemplate();
+    ApiInventoryEntityField apiField = apiLinkField("SA2", "References", null);
+    apiField.setType(ApiFieldType.LINK);
+    apiField.setName("default related sample");
+    apiField.setNewFieldRequest(true);
+    apiTemplate.setFields(List.of(apiField));
+    InventoryLink created = new InventoryLink();
+    when(inventoryLinkManager.createLink(apiField.getLink(), user)).thenReturn(created);
+
+    InstrumentTemplate dbTemplate = new InstrumentTemplate();
+    assertTrue(
+        manager.createDeleteRequestedFieldsInDbInstrumentTemplate(apiTemplate, dbTemplate, user));
+
+    InventoryLinkField added = (InventoryLinkField) dbTemplate.getActiveFields().get(0);
+    assertSame(created, added.getLink());
+  }
+
+  @Test
+  void editingAnInstrumentTemplatesDefaultLinkUpdatesItsRowInPlace() {
+    ApiInstrumentTemplate apiTemplate = new ApiInstrumentTemplate();
+    ApiInventoryEntityField apiField = apiLinkField("SA3", "References", null);
+    apiField.setId(7L);
+    apiTemplate.setFields(List.of(apiField));
+    when(inventoryLinkManager.updateLink(dbLink, apiField.getLink(), user)).thenReturn(dbLink);
+
+    InstrumentTemplate dbTemplate = new InstrumentTemplate();
+    dbTemplate.setId(1L);
+    dbField.setId(7L);
+    dbField.setInventoryRecord(dbTemplate);
+    dbTemplate.getFields().add(dbField);
+    dbTemplate.refreshActiveFieldsAndColumnIndex();
+
+    assertTrue(manager.applyLinkFieldValuesOnUpdate(apiTemplate, dbTemplate, user));
+    verify(inventoryLinkManager).updateLink(dbLink, apiField.getLink(), user);
   }
 }

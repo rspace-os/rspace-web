@@ -192,6 +192,43 @@ public class StoichiometryInventoryLinkManagerImplTest {
   }
 
   @Test
+  public void repeatedLinkIdIsDeductedOnce() {
+    StoichiometryInventoryLink original = new StoichiometryInventoryLink();
+    original.setId(321L);
+    long stoichiometryId = 55L;
+    molecule.getStoichiometry().setId(stoichiometryId);
+    molecule.setActualAmount(10.0);
+    original.setStoichiometryMolecule(molecule);
+    original.setInventoryRecord(invSubSample);
+
+    invSubSample.setQuantity(new QuantityInfo(BigDecimal.valueOf(100), RSUnitDef.GRAM.getId()));
+
+    when(linkDao.getSafeNull(321L)).thenReturn(java.util.Optional.of(original));
+    when(moleculeManager.getDocContainingMolecule(molecule)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    doNothing()
+        .when(invPerms)
+        .assertUserCanEditInventoryRecord(original.getInventoryRecord(), user);
+
+    StockDeductionResult result =
+        manager.deductStock(stoichiometryId, List.of(321L, 321L, 321L), user);
+
+    // the repeat is dropped before any stock is touched, so the amount comes off once (RSDEV-1319)
+    verify(subSampleMgr)
+        .registerApiSubSampleUsage(eq(invSubSample.getId()), any(QuantityInfo.class), eq(user));
+    // but the public API contract is one result row per submitted entry, so the response
+    // cardinality is unchanged: three rows, all reporting the single deduction's outcome
+    assertEquals(3, result.getResults().size());
+    result
+        .getResults()
+        .forEach(
+            row -> {
+              assertEquals(321L, row.getLinkId().longValue());
+              assertTrue(row.isSuccess());
+            });
+  }
+
+  @Test
   public void deductStockWithInsufficientStockReturnsErrorResult() {
     StoichiometryInventoryLink original = new StoichiometryInventoryLink();
     original.setId(321L);

@@ -4,7 +4,7 @@ import { openDialog } from "./DialogHelpers";
 import { InventoryBatchActionBar } from "./InventoryBatchActionBar";
 import { SearchableResultsTable } from "./SearchableResultsTable";
 
-export type InventoryFilterChip = "Type" | "Owner" | "Bench" | "Status" | "Barcode" | "Tags" | "Baskets";
+export type InventoryFilterChip = "Type" | "Owner" | "Bench" | "Status" | "Tags" | "Baskets";
 
 export type InventoryViewMode = "List" | "Tree" | "Card" | "Grid";
 
@@ -103,7 +103,7 @@ export class InventorySearchPanel {
 
   async openFirstResult(): Promise<void> {
     const row = this.resultsTable.locator("tbody").getByRole("row").first();
-    await row.dispatchEvent("click");
+    await row.locator("td").nth(1).click();
     await this.activeDetailsHeading.waitFor({ state: "visible" });
   }
 
