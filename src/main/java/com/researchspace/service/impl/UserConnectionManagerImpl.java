@@ -67,4 +67,14 @@ public class UserConnectionManagerImpl extends GenericManagerImpl<UserConnection
   public UserConnection save(UserConnection connection) {
     return super.save(connection);
   }
+
+  @Override
+  @CacheEvict(value = INTEGRATION_INFO, key = SAVE_CONNECTION_SPEL)
+  public UserConnection replaceConnection(UserConnection connection) {
+    // one transaction, so a failed save cannot leave the user with no connection at all. Goes
+    // straight to the DAO because a self-invocation would bypass the transactional proxy anyway.
+    userConnectionDao.deleteByUserAndProvider(
+        connection.getId().getUserId(), connection.getId().getProviderId());
+    return userConnectionDao.save(connection);
+  }
 }

@@ -10,6 +10,7 @@ import { WorkspaceTable } from "@/__tests__/e2e/components/workspace/WorkspaceTa
 import { WorkspaceTemplatePickerDialog } from "@/__tests__/e2e/components/workspace/WorkspaceTemplatePickerDialog";
 import { WorkspaceToolbar } from "@/__tests__/e2e/components/workspace/WorkspaceToolbar";
 import { WorkspaceTree } from "@/__tests__/e2e/components/workspace/WorkspaceTree";
+import { EvernoteImportDialog } from "@/modules/evernote/__tests__/pageObjects/EvernoteImportDialog";
 import { BasePage } from "../BasePage";
 import { DocumentEditorPage } from "../document/DocumentEditorPage";
 import { NotebookPage } from "../notebook/NotebookPage";
@@ -110,6 +111,13 @@ export class WorkspacePage extends BasePage {
     const dialog = new CreateFolderDialog(this.page);
     await dialog.waitUntilVisible();
     await dialog.create(path, { navigate });
+  }
+
+  async openEvernoteImportDialog(): Promise<EvernoteImportDialog> {
+    await this.toolbar.createMenu.create("From Evernote");
+    const dialog = new EvernoteImportDialog(this.page);
+    await dialog.waitForOpen();
+    return dialog;
   }
 
   async createDocumentFromTemplate(templateName: string, newDocName: string): Promise<DocumentEditorPage> {

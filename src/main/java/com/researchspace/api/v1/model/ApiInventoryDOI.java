@@ -190,7 +190,7 @@ public class ApiInventoryDOI extends LinkableApiObject {
    * constructor, which backs Jackson and the sparse update DTOs.
    */
   // No setter: generatePublicLinkSuffix() is the only way to populate this, so a brand-new
-  // entity can never be handed an already-persisted publicLink. core-model's counterpart
+  // entity can never be handed an already-persisted publicLink. The counterpart entity field
   // DigitalObjectIdentifier.publicLink is locked down the same way.
   // ToString.Exclude so the "kept out of logs" rule is enforced by the generated toString
   // rather than left to every future caller to remember.

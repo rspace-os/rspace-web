@@ -9,7 +9,6 @@ import CardHeader from "@mui/material/CardHeader";
 import Collapse from "@mui/material/Collapse";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
-import Popover from "@mui/material/Popover";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -323,7 +322,7 @@ function FieldCard<
   connectedItem?: InventoryRecord;
 }): ReactNode {
   const [open, setOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<EventTarget | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const { t } = useTranslation(["inventory", "common"]);
   const { uiStore } = useStores();
   const editable = fieldOwner.isFieldEditable("barcodes");
@@ -347,62 +346,40 @@ function FieldCard<
             <>
               <AddButton
                 disabled={!editable}
-                onClick={({ currentTarget }) => setAnchorEl(currentTarget)}
+                onClick={() => setScannerOpen(true)}
                 title={editable ? t("fields.barcodes.actions.scan") : t("fields.barcodes.actions.scanNeedsEdit")}
               />
-              <Popover
-                open={Boolean(anchorEl)}
-                anchorEl={anchorEl as HTMLElement}
-                onClose={() => setAnchorEl(null)}
-                anchorOrigin={{
-                  vertical: "center",
-                  horizontal: "left",
+              <BarcodeScanner
+                open={scannerOpen}
+                onClose={() => {
+                  setScannerOpen(false);
                 }}
-                transformOrigin={{
-                  vertical: "center",
-                  horizontal: "right",
-                }}
-                slotProps={{
-                  paper: {
-                    variant: "outlined",
-                    style: {
-                      minWidth: 300,
-                    },
-                  },
-                }}
-              >
-                <BarcodeScanner
-                  onClose={() => {
-                    setAnchorEl(null);
-                  }}
-                  onScan={(barcode) => {
-                    if (barcode.rawValue.length > 255) {
-                      uiStore.addAlert(
-                        mkAlert({
-                          title: t("fields.barcodes.alerts.unsupportedBarcode"),
-                          message: t("fields.barcodes.alerts.dataTooLong"),
-                          variant: "error",
+                onScan={(barcode) => {
+                  if (barcode.rawValue.length > 255) {
+                    uiStore.addAlert(
+                      mkAlert({
+                        title: t("fields.barcodes.alerts.unsupportedBarcode"),
+                        message: t("fields.barcodes.alerts.dataTooLong"),
+                        variant: "error",
+                      }),
+                    );
+                    return;
+                  }
+                  fieldOwner.setFieldsDirty({
+                    barcodes: [
+                      ...barcodes,
+                      factory.newBarcode({
+                        data: barcode.rawValue,
+                        newBarcodeRequest: true,
+                        description: t("fields.barcodes.scannedDescription", {
+                          format: barcodeFormatAsString(barcode.format),
+                          value: barcode.rawValue,
                         }),
-                      );
-                      return;
-                    }
-                    fieldOwner.setFieldsDirty({
-                      barcodes: [
-                        ...barcodes,
-                        factory.newBarcode({
-                          data: barcode.rawValue,
-                          newBarcodeRequest: true,
-                          description: t("fields.barcodes.scannedDescription", {
-                            format: barcodeFormatAsString(barcode.format),
-                            value: barcode.rawValue,
-                          }),
-                        }),
-                      ],
-                    });
-                  }}
-                  buttonPrefix={t("common:actions.save")}
-                />
-              </Popover>
+                      }),
+                    ],
+                  });
+                }}
+              />
               <CustomTooltip
                 title={match<void, string>([
                   [() => barcodes.length === 0, t("fields.barcodes.toggle.none")],

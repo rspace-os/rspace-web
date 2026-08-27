@@ -89,5 +89,12 @@ src/main/webapp/ui/coverage
 # Playwright MCP output (snapshots, console logs, screenshots from browser driving)
 .playwright-mcp/
 
+# Local test runner
+runcmd.sh
+
 # Local dev deployment properties, copied from deployment.properties.example (see PropertyFiles.md)
 src/main/resources/deployments/dev/deployment.properties
+
+# Lucene index written by the HibernateTest-based model tests (Hibernate Search
+# local-filesystem backend rooted at the test db name)
+hibtest/

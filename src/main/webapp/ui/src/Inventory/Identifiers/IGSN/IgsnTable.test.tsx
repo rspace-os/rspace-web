@@ -1,9 +1,10 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import { setMockScannedBarcode } from "@/__tests__/__mocks__/barcode-detection-api";
 import { expectAccessible } from "@/__tests__/accessibility";
 import axios from "@/common/axios";
 import identifiersJson from "../../__tests__/identifiers.json";
@@ -69,6 +70,7 @@ describe("IGSN Table", () => {
 
   afterEach(() => {
     mockAxios.reset();
+    vi.restoreAllMocks();
   });
 
   test("When the researcher is viewing the IGSN table, a table should be shown.", () => {
@@ -253,27 +255,26 @@ describe("IGSN Table", () => {
     expect(headerRow[0]).toBeVisible();
   });
 
-  test("Scanning a QR code updates the search term", async () => {
+  test("Scanning a barcode updates the search term", async () => {
     const user = userEvent.setup();
+    vi.spyOn(HTMLVideoElement.prototype, "play").mockImplementation(() => Promise.resolve());
+    setMockScannedBarcode("10.82316/khma-em96");
     render(<SimpleIgsnTable />);
     await waitForTableLoaded();
 
     await user.click(screen.getByRole("button", { name: "inventory:igsnTable.scan" }));
-    /*
-     * Since we can't easily mock the camera API in tests, we simulate manual
-     * entry which is an alternative in the UI.
-     */
-    await user.type(
-      await screen.findByRole("textbox", {
-        name: "inventory:barcodeScanner.altEntry",
-      }),
-      "test",
-    );
-    await user.click(screen.getByRole("button", { name: "inventory:igsnTable.searchButtonPrefix" }));
 
-    await waitFor(() => {
-      expect(identifiersRequestParams().some((params) => params.get("identifier") === "test")).toBe(true);
-    });
+    expect(screen.getByRole("dialog", { name: "inventory:barcodeScanner.heading" })).toBeVisible();
+
+    /* the scanner polls once per second, longer than waitFor's default timeout */
+    await waitFor(
+      () => {
+        expect(identifiersRequestParams().some((params) => params.get("identifier") === "10.82316/khma-em96")).toBe(
+          true,
+        );
+      },
+      { timeout: 3000 },
+    );
   });
 
   test("The toolbar controls should be in the order: search, scan, then filters", () => {

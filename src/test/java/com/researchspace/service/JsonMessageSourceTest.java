@@ -77,6 +77,15 @@ class JsonMessageSourceTest {
         () -> SOURCE.getMessage("no.such.key.exists.anywhere", null, EN_US));
   }
 
+  @Test
+  void zeroArgumentMessagesShipTheirApostrophesUnescaped() {
+    // getMessageInternal returns the raw pattern when args are empty, so an ICU-escaped '' in a
+    // message no call site ever formats reaches the user as two apostrophes.
+    assertMessage(
+        "'id' property not provided for a field with 'deleteFieldRequest' flag.",
+        "errors.inventory.field.deleteRequestIdMissing");
+  }
+
   private static void assertMessage(String expected, String key, Object... arguments) {
     assertEquals(expected, SOURCE.getMessage(key, arguments, EN_US));
   }
