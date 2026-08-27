@@ -459,7 +459,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private void saveDbInstrumentUpdate(Instrument dbInstrument, User user) {
     dbInstrument.setModificationDate(new Date());
     dbInstrument.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
-    dbInstrument.increaseVersion();
+    increaseVersionOncePerTransaction(dbInstrument);
     instrumentDao.save(dbInstrument);
     publisher.publishEvent(new InventoryEditingEvent(dbInstrument, user));
   }
@@ -762,7 +762,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private void saveDbInstrumentTemplateUpdate(InstrumentTemplate dbTemplate, User user) {
     dbTemplate.setModificationDate(new Date());
     dbTemplate.setModifiedBy(user.getUsername(), IActiveUserStrategy.CHECK_OPERATE_AS);
-    dbTemplate.increaseVersion();
+    increaseVersionOncePerTransaction(dbTemplate);
     instrumentTemplateDao.save(dbTemplate);
     publisher.publishEvent(new InventoryEditingEvent(dbTemplate, user));
   }

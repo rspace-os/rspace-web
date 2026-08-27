@@ -671,6 +671,26 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void twoContainerUpdatesInOneTransactionBumpVersionOnce() {
+    // RSDEV-1319: Envers writes one revision per entity per transaction, so a second update in
+    // the same transaction must not advance the version past the single revision carrying it
+    ApiContainer newContainer = createBasicContainerForUser(testUser);
+
+    ApiContainer firstUpdate = new ApiContainer();
+    firstUpdate.setId(newContainer.getId());
+    firstUpdate.setName("first rename");
+    containerApiMgr.updateApiContainer(firstUpdate, testUser);
+
+    ApiContainer secondUpdate = new ApiContainer();
+    secondUpdate.setId(newContainer.getId());
+    secondUpdate.setName("second rename");
+    ApiContainer updatedContainer = containerApiMgr.updateApiContainer(secondUpdate, testUser);
+
+    assertEquals("second rename", updatedContainer.getName());
+    assertEquals(2L, updatedContainer.getVersion());
+  }
+
+  @Test
   public void updateImageContainerLocations() throws IOException, InterruptedException {
 
     // create new image container to check location modifications
