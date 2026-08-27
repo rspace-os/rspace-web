@@ -196,7 +196,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             HttpStatus.UNPROCESSABLE_ENTITY,
             ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
             resolvedMessage,
-            "");
+            resolvedMessage);
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 

@@ -247,5 +247,6 @@ class ApiControllerAdviceTest {
     assertEquals(
         "[invalid] is invalid for field type Radio: Some supplied values are not allowed options",
         error.getMessage());
+    assertEquals(List.of(error.getMessage()), error.getErrors());
   }
 }
