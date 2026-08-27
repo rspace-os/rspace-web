@@ -63,7 +63,7 @@ type TemplateTarget = {
 type TinyMceEditor = {
   getBody: () => HTMLElement;
   on?: (eventName: string, callback: () => void) => void;
-  off?: (eventName: string, callback: () => void) => void;
+  off?: (eventName: string, callback?: () => void) => void;
   windowManager: {
     close: () => void;
   };
@@ -203,6 +203,7 @@ function DBRepo(): React.ReactNode {
   useEffect(() => {
     const parentWindow = parent as unknown as ParentWindow;
     const editor = parentWindow.tinymce?.activeEditor;
+    editor?.off?.("dbrepo-insert");
     editor?.on?.("dbrepo-insert", insertSelectedDatabase);
     return () => {
       editor?.off?.("dbrepo-insert", insertSelectedDatabase);

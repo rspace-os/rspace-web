@@ -826,6 +826,7 @@ function initTinyMCE(selector) {
 		if (dbrepoEnabled) {
 			localTinymcesetup.external_plugins["dbrepo"] = "/scripts/externalTinymcePlugins/dbrepo/plugin.min.js";
 			addToToolbarIfNotPresent(localTinymcesetup, " | dbrepo");
+			addToMenuIfNotPresent(localTinymcesetup, " | optDBRepo");
 		}
 		if (omeroEnabled) {
 			localTinymcesetup.external_plugins["omero"] = "/scripts/externalTinymcePlugins/omero/plugin.min.js";
