@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "true")
 public class BioPortalOntologiesServiceNightlyTest {
   private BioPortalOntologiesClient bioportalClient = new BioPortalOntologiesClient();
   private BioPortalOntologiesService service = new BioPortalOntologiesService(bioportalClient);

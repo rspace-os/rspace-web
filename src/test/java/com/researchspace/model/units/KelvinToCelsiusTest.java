@@ -15,7 +15,7 @@ import tech.units.indriya.format.SimpleUnitFormat;
 import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.unit.Units;
 
-public class KelvinToCelsius {
+public class KelvinToCelsiusTest {
 
   @Test
   public void test() {

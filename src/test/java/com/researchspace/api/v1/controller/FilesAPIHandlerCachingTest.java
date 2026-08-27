@@ -11,24 +11,30 @@ import com.researchspace.testutils.DatabaseCleaner;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestRunnerController;
 import java.io.IOException;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.transaction.TestTransaction;
 
 public class FilesAPIHandlerCachingTest extends SpringTransactionalTest {
 
   private @Autowired FilesAPIHandler handler;
+  private @Autowired DataSource dataSource;
 
   @BeforeEach
   public void setUp() throws Exception {
+    DatabaseCleaner.register(getClass(), dataSource);
     super.setUp();
   }
 
   @AfterAll
-  public static void after() {
-    if (!TestRunnerController.isFastRun()) DatabaseCleaner.cleanUp();
+  public static void after(TestInfo testInfo) {
+    if (!TestRunnerController.isFastRun()) {
+      DatabaseCleaner.cleanUp(testInfo.getTestClass().orElseThrow());
+    }
   }
 
   @Test

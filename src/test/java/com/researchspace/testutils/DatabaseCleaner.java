@@ -3,33 +3,31 @@ package com.researchspace.testutils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.sql.DataSource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
 
 /** Tidies up after transactional tests */
-@Component
 public class DatabaseCleaner {
 
-  public static JdbcTemplate jdbcTemplate;
+  private static final Map<Class<?>, JdbcTemplate> jdbcTemplates = new ConcurrentHashMap<>();
 
-  @Autowired
-  public void setDataSource(DataSource dataSource) {
-    jdbcTemplate = new JdbcTemplate(dataSource);
+  public static void register(Class<?> testClass, DataSource dataSource) {
+    jdbcTemplates.put(testClass, new JdbcTemplate(dataSource));
   }
 
   /** Manually deletes records and folders from tables. */
-  public static void cleanUp() {
+  public static void cleanUp(Class<?> testClass) {
+    JdbcTemplate jdbcTemplate = jdbcTemplates.remove(testClass);
     if (jdbcTemplate == null) {
-      // Nothing was ever injected, so no context loaded in this fork and there is nothing to clean.
-      // Callers already skip this on a fast run; this covers the other way @AfterAll can be reached
-      // without a context, namely a context *load failure*, which Jupiter follows with @AfterAll
-      // where JUnit 4 skipped @AfterClass. Without this, that NPEs here and hides the Spring error.
+      // No test in this class reached @BeforeEach, so it made no changes that need cleanup. This
+      // includes a class whose context failed to load. The per-class lookup avoids reusing a
+      // template left by an earlier test class.
       return;
     }
     // delete from Batch tables
-    deleteFromBatchTables();
+    deleteFromBatchTables(jdbcTemplate);
     // remove FK relationships so that items can be deleted from DB
     jdbcTemplate.update("update UserPreference set user_id = NULL");
     jdbcTemplate.update("update RSForm set previousVersion_id = NULL");
@@ -192,7 +190,7 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from REVINFO");
   }
 
-  private static void deleteFromBatchTables() {
+  private static void deleteFromBatchTables(JdbcTemplate jdbcTemplate) {
     // table ordering derived from drop-table-mysql in spring batch core jar package o.s.batch.core
     jdbcTemplate.update("delete from BATCH_STEP_EXECUTION_CONTEXT");
     jdbcTemplate.update("delete from BATCH_JOB_EXECUTION_CONTEXT");
