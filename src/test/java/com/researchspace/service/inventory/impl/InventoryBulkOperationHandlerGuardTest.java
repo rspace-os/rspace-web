@@ -15,15 +15,18 @@ import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@ExtendWith(MockitoExtension.class)
 class InventoryBulkOperationHandlerGuardTest {
 
   private final BiFunction<ApiInventoryRecordInfo, User, ApiInventoryRecordInfo>
       returnsUndeletable =
           (rec, user) -> {
-            ApiSample undeletable = mock(ApiSample.class);
-            when(undeletable.getCanBeDeleted()).thenReturn(false);
+            ApiSample undeletable = new ApiSample();
+            undeletable.setCanBeDeleted(false);
             return undeletable;
           };
 
