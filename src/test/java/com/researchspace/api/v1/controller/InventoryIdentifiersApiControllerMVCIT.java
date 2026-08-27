@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings;
@@ -221,6 +223,26 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
     registeredDoi.setDates(List.of(testDate));
   }
 
+  /*
+   * ApiInventoryDOI.state is @JsonProperty READ_ONLY (a record update carrying "state" could
+   * otherwise open the unauthenticated public page), so a plain readValue of the response drops it
+   * and every state assertion in this class would compare against null. These helpers re-attach it
+   * from the response JSON, the only place it can be observed.
+   */
+  private ApiInventoryDOI doiWithStateFromJson(MvcResult result) throws Exception {
+    ApiInventoryDOI doi = getFromJsonResponseBody(result, ApiInventoryDOI.class);
+    doi.setState(readStateOf(readResponseJson(result)));
+    return doi;
+  }
+
+  private JsonNode readResponseJson(MvcResult result) throws Exception {
+    return new ObjectMapper().readTree(result.getResponse().getContentAsString());
+  }
+
+  private String readStateOf(JsonNode doiJson) {
+    return doiJson.path("state").asText(null);
+  }
+
   private ApiInventoryDOI registerNewIdentifier(User anyUser, String apiKey, String parentGlobalId)
       throws Exception {
     String post = "{ \"parentGlobalId\": \"" + parentGlobalId + "\" }";
@@ -229,8 +251,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
             .perform(createBuilderForPostWithJSONBody(apiKey, "/identifiers", anyUser, post))
             .andReturn();
     assertNull(result.getResolvedException());
-    ApiInventoryDOI registeredDoi = getFromJsonResponseBody(result, ApiInventoryDOI.class);
-    return registeredDoi;
+    return doiWithStateFromJson(result);
   }
 
   private ApiInventoryDOI assignIdentifier(
@@ -272,7 +293,13 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
             .andExpect(status().is(HttpStatus.CREATED.value()))
             .andReturn();
     assertNull(result.getResolvedException());
-    return Arrays.asList(getFromJsonResponseBody(result, ApiInventoryDOI[].class));
+    List<ApiInventoryDOI> dois =
+        Arrays.asList(getFromJsonResponseBody(result, ApiInventoryDOI[].class));
+    JsonNode doisJson = readResponseJson(result);
+    for (int i = 0; i < dois.size(); i++) {
+      dois.get(i).setState(readStateOf(doisJson.path(i)));
+    }
+    return dois;
   }
 
   private Boolean deleteDraftDataCiteDoiForItem(User anyUser, String apiKey, Long identifierId)
@@ -298,7 +325,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
                     anyUser))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    return getFromJsonResponseBody(result, ApiInventoryDOI.class);
+    return doiWithStateFromJson(result);
   }
 
   private ApiInventoryDOI retractPublishedIdentifier(User anyUser, String apiKey, Long identifierId)
@@ -313,6 +340,6 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
                     anyUser))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    return getFromJsonResponseBody(result, ApiInventoryDOI.class);
+    return doiWithStateFromJson(result);
   }
 }
