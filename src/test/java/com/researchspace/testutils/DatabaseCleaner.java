@@ -21,6 +21,11 @@ public class DatabaseCleaner {
 
   /** Manually deletes records and folders from tables. */
   public static void cleanUp() {
+    if (jdbcTemplate == null) {
+      // no Spring context was ever loaded (e.g. every test in the class was
+      // skipped by ConditionalTestRunner), so there is nothing to clean
+      return;
+    }
     // delete from Batch tables
     deleteFromBatchTables();
     // remove FK relationships so that items can be deleted from DB
