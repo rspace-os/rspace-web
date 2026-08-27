@@ -2,7 +2,6 @@ package com.researchspace.service.impl;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.RecordDao;
@@ -15,7 +14,6 @@ import com.researchspace.model.record.RecordFactory;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.IContentInitialiserUtils;
 import com.researchspace.service.UserFolderSetup;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 /**
@@ -29,15 +27,13 @@ public class MockFolderStructure {
   FolderDao folderDao = Mockito.mock(FolderDao.class);
   UserDao userDao = Mockito.mock(UserDao.class);
   RecordDao recordDao = Mockito.mock(RecordDao.class);
-  @Mock private FolderManager folderManagerMock;
+  private FolderManager folderManagerMock = Mockito.mock(FolderManager.class);
 
   public UserFolderSetup create(User subject) {
-    return create(subject, null, null);
+    return create(subject, null);
   }
 
-  public UserFolderSetup create(
-      User subject, FolderManager extfolderManagerMock, Folder extfolderMock) {
-    openMocks(this);
+  public UserFolderSetup create(User subject, FolderManager extfolderManagerMock) {
     if (extfolderManagerMock != null) {
       folderManagerMock = extfolderManagerMock;
     }

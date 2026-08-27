@@ -624,14 +624,6 @@ public class IntegrationsHandlerTest {
                 new PropertyDescriptor(DSW_APIKEY, SettingsType.STRING, null)),
             origDswToken));
 
-    UserConnection existingConnection = new UserConnection();
-    existingConnection.setDisplayName("DSW Display Name");
-    existingConnection.setRank(1);
-    existingConnection.setId(
-        new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
-    existingConnection.setExpireTime(0l);
-    existingConnection.setAccessToken(origDswToken);
-
     when(appCfgMgr.findByAppConfigElementSetId(1l)).thenReturn(Optional.of(aces));
 
     Map<String, String> dswOptions = new HashMap<>();
@@ -642,6 +634,8 @@ public class IntegrationsHandlerTest {
     handler.saveAppOptions(1l, dswOptions, DSW_APP_NAME, false, subject);
     // There will be no interactions with the userConnectionManager methods since
     // the URL is not stored in the UserConnection table.
+    Mockito.verify(userConnectionManager, never())
+        .findByUserNameProviderName(subject.getUsername(), DSW_APP_NAME, origDswAlias);
     Mockito.verify(userConnectionManager, times(0))
         .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
     Mockito.verify(userConnectionManager, times(0)).save(any());

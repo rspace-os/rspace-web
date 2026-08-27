@@ -16,9 +16,12 @@ import com.researchspace.properties.IPropertyHolder;
 import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@ExtendWith(MockitoExtension.class)
 public class MsTeamsMessageSenderTest {
 
   private final ObjectMapper mapper = new ObjectMapper();

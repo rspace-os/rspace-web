@@ -92,6 +92,7 @@ public class WorkspacePermissionsDTOBuilderTest {
     // can't copy or move from workspace
     assertFalse(can(result, DOC_ID, PermissionType.SEND));
     assertFalse(can(result, DOC_ID, PermissionType.COPY));
+    Mockito.verify(recMger, Mockito.never()).canMove(media, parentFolder, user);
   }
 
   @Test
@@ -154,6 +155,7 @@ public class WorkspacePermissionsDTOBuilderTest {
             parentFolder, user, model, results.getResults(), parentFolderId, true);
     assertFalse(can(result, DOC_ID, PermissionType.SEND));
     assertFalse(can(result, DOC_ID, PermissionType.EXPORT));
+    Mockito.verify(recMger, Mockito.never()).canMove(snip, parentFolder, user);
   }
 
   @Test

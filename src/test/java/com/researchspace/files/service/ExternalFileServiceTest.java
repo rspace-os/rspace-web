@@ -17,9 +17,10 @@ import java.io.File;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -29,9 +30,8 @@ import org.springframework.http.HttpStatus;
  * test exceptional cases;
  */
 @EgnyteTestConfig
+@ExtendWith(MockitoExtension.class)
 public class ExternalFileServiceTest extends SpringTransactionalTest {
-
-  private AutoCloseable mocks;
 
   private @Autowired ExternalFileService extFS;
   private @Autowired FileMetadataDao fileMetaDao;
@@ -52,7 +52,6 @@ public class ExternalFileServiceTest extends SpringTransactionalTest {
     // getTargetObject(mediaMgr, MediaManagerImpl.class).setFileStore(localFs);
     mediaFile = addDocumentToGallery(anyUser);
     someFile = RSpaceTestUtils.getAnyAttachment();
-    mocks = MockitoAnnotations.openMocks(this);
     // this stores access token
     uc =
         createAndSaveEgnyteUserConnectionWithAccessToken(
@@ -100,10 +99,5 @@ public class ExternalFileServiceTest extends SpringTransactionalTest {
   private ExtFileOperationStatus<ExternalFileId> createMockFailureEgnyteSaveResult() {
     return new ExtFileOperationStatus<ExternalFileId>(
         HttpStatus.BAD_REQUEST.value(), "Some error message", null);
-  }
-
-  @AfterEach
-  void closeMocks() throws Exception {
-    mocks.close();
   }
 }

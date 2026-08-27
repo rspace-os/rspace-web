@@ -380,7 +380,7 @@ public class FolderApiControllerTest {
   }
 
   @Test
-  public void listSubfolderHasNonNullParentFolderLink() throws BindException {
+  public void listSubfolderReturnsEmptyListingWithFolderId() throws BindException {
     DocumentApiPaginationCriteria pgCriteria = new DocumentApiPaginationCriteria();
     mockBaseUrl();
     Folder subFolder = TestFactory.createAFolder("any", subject);

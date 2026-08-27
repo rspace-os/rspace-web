@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.auth.PermissionUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.GroupDao;
@@ -45,6 +46,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest {
 
   private PermissionFactory perFactory = new DefaultPermissionFactory();
+  private PermissionUtils permissionUtils = new PermissionUtils();
 
   @InjectMocks protected RecordSharingManagerImpl recordSharingManager;
 
@@ -88,7 +90,7 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
     when(permissnUtils.createFromString(anyString()))
         .thenAnswer(
             invocation ->
-                PermissionType.valueOf(invocation.getArgument(0, String.class).toUpperCase()));
+                permissionUtils.createFromString(invocation.getArgument(0, String.class)));
   }
 
   @Test

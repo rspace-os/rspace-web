@@ -88,6 +88,7 @@ public class LdapRealmTest {
   @Test
   public void testUserNotExistsReturnsNullIfUserSignupNotEnabled() throws Exception {
     when(userManager.userExists(any())).thenReturn(false);
+    when(properties.isUserSignup()).thenReturn(false);
     assertNull(ldapRealm.doGetAuthenticationInfo(token));
   }
 

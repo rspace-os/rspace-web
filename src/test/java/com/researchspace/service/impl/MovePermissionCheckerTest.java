@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.FolderDao;
@@ -106,10 +107,12 @@ public class MovePermissionCheckerTest {
   }
 
   @Test
-  public void someoneElseshomeFolderMoveOKDoesNotCallDatabaseMethod()
+  public void moveToSomeoneElsesHomeFolderIsRejectedWithoutDatabaseLookup()
       throws IllegalAddChildOperation {
+    when(permUtil.isPermitted(rootFolder, PermissionType.FOLDER_RECEIVE, other)).thenReturn(false);
+
     assertFalse(checker.checkMovePermissions(other, rootFolder, toMove));
-    verify(fDao, never()).getUserSharedFolder(user);
+    verifyNoInteractions(fDao);
   }
 
   protected void setUpPermissionsOK(Folder target) {

@@ -113,6 +113,8 @@ public class ImageProcessorImplTest {
     // set up as tiff
     img.setExtension("tif");
     img.setWorkingImage(anyImageBlob());
+    int originalWidth = img.getWidth();
+    int originalHeight = img.getHeight();
 
     //		when(mediaFac.updateThumbnailImage(Mockito.eq(img), Mockito.any(BufferedImage.class)))
     //		  .thenReturn(img);
@@ -121,8 +123,8 @@ public class ImageProcessorImplTest {
     imgHandler.rotate(img, (byte) 1, anyUser);
 
     verify(rcdMgr, never()).save(img, anyUser);
-    assertEquals(img.getWidth(), img.getWidth());
-    assertEquals(img.getHeight(), img.getHeight());
+    assertEquals(originalWidth, img.getWidth());
+    assertEquals(originalHeight, img.getHeight());
     assertEquals(0, img.getRotation());
   }
 

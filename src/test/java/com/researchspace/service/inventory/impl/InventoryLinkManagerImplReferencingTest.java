@@ -76,7 +76,7 @@ class InventoryLinkManagerImplReferencingTest {
     verify(linkDao).findReferencingLinkFields(GlobalIdPrefix.SA, 42L);
   }
 
-  private InventoryRecord parent(String globalIdString, String name, boolean deleted) {
+  private InventoryRecord parent(boolean deleted) {
     InventoryRecord rec = mock(InventoryRecord.class, RETURNS_DEEP_STUBS);
     when(rec.isDeleted()).thenReturn(deleted);
     return rec;
@@ -106,8 +106,8 @@ class InventoryLinkManagerImplReferencingTest {
   void buildsRowsOnlyForSourcesTheActorCanRead() {
     // inverting or dropping this filter would leak names/ids of items the
     // caller may not read into the back-links panels
-    InventoryRecord readable = parent("SA10", "visible sample", false);
-    InventoryRecord hidden = parent("SA11", "secret sample", false);
+    InventoryRecord readable = parent(false);
+    InventoryRecord hidden = parent(false);
     stubSourceIdentity(readable, "SA10", "visible sample");
     InventoryLink linkA = linkWith("References", 2L, new Date(1700000000000L));
     InventoryLink linkB = linkWith("Cites", null, null);
@@ -133,7 +133,7 @@ class InventoryLinkManagerImplReferencingTest {
 
   @Test
   void skipsSoftDeletedSourceRecords() {
-    InventoryRecord deleted = parent("SA12", "binned sample", true);
+    InventoryRecord deleted = parent(true);
     ExtraLinkField row = extraFieldRow(deleted, linkWith("References", null, null));
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SD, 123L)).thenReturn(List.of(row));
 
@@ -142,7 +142,7 @@ class InventoryLinkManagerImplReferencingTest {
 
   @Test
   void toleratesRowWithoutModificationDate() {
-    InventoryRecord rec = parent("SA13", "no date", false);
+    InventoryRecord rec = parent(false);
     stubSourceIdentity(rec, "SA13", "no date");
     ExtraLinkField row = extraFieldRow(rec, linkWith("References", null, null));
     when(linkDao.findReferencingLinkFields(GlobalIdPrefix.SD, 123L)).thenReturn(List.of(row));
@@ -159,7 +159,7 @@ class InventoryLinkManagerImplReferencingTest {
     // template-defined link fields are first-class links; a sample linking to
     // the target through one must appear in the back-references like an
     // extra-field link does
-    InventoryRecord sample = parent("SA20", "templated sample", false);
+    InventoryRecord sample = parent(false);
     stubSourceIdentity(sample, "SA20", "templated sample");
     InventoryLink link = linkWith("IsPartOf", null, null);
     InventoryLinkField structured = mock(InventoryLinkField.class);

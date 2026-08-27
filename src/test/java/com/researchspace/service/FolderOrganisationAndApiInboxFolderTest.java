@@ -64,7 +64,7 @@ public class FolderOrganisationAndApiInboxFolderTest {
     ReflectionTestUtils.setField(
         folderMgr, "messageSourceUtils", new MessageSourceUtils(new JsonMessageSource()));
 
-    setup = FolderTestUtils.createDefaultFolderStructure(user, folderManagerMock, folderMock);
+    setup = FolderTestUtils.createDefaultFolderStructure(user, folderManagerMock);
   }
 
   @AfterEach

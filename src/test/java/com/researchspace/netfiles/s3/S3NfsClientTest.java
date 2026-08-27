@@ -35,19 +35,25 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class S3NfsClientTest {
 
-  private final S3Utilities s3Utilities = mock(S3Utilities.class);
-  private final S3NfsClient client = new S3NfsClient("testUser", s3Utilities);
+  @Mock private S3Utilities s3Utilities;
+  private S3NfsClient client;
 
-  /**
-   * Wires the source client's bucket name and returns a fresh destination client backed by its own
-   * mock {@link S3Utilities}. Use this in any test that exercises {@link S3NfsClient#copyObject}.
-   */
-  private DestClientFixture newDestClient(String sourceBucketName) {
-    when(s3Utilities.getBucketName()).thenReturn(sourceBucketName);
+  @BeforeEach
+  void setUp() {
+    client = new S3NfsClient("testUser", s3Utilities);
+  }
+
+  /** Returns a fresh destination client backed by its own mock {@link S3Utilities}. */
+  private DestClientFixture newDestClient() {
     S3Utilities destS3Utilities = mock(S3Utilities.class);
     return new DestClientFixture(new S3NfsClient("destUser", destS3Utilities), destS3Utilities);
   }
@@ -332,7 +338,8 @@ public class S3NfsClientTest {
   @Test
   public void copyObject_toAnotherS3Client_callsCopyObjectFromBucketOnDestination()
       throws IOException {
-    DestClientFixture dest = newDestClient("source-bucket");
+    DestClientFixture dest = newDestClient();
+    when(s3Utilities.getBucketName()).thenReturn("source-bucket");
 
     String resultKey = client.copyObject("source/file.txt", dest.client, "dest/file.txt");
 
@@ -344,7 +351,8 @@ public class S3NfsClientTest {
 
   @Test
   public void copyObject_withMetadata_passesMetadataToCopyObjectFromBucket() throws IOException {
-    DestClientFixture dest = newDestClient("source-bucket");
+    DestClientFixture dest = newDestClient();
+    when(s3Utilities.getBucketName()).thenReturn("source-bucket");
     Map<String, String> metadata = Map.of("rspace-user", "alice");
 
     String resultKey = client.copyObject("source/file.txt", dest.client, "dest/file.txt", metadata);
@@ -356,7 +364,8 @@ public class S3NfsClientTest {
 
   @Test
   public void copyObject_stripsLeadingSlashesFromBothSourceAndDestKeys() throws IOException {
-    DestClientFixture dest = newDestClient("source-bucket");
+    DestClientFixture dest = newDestClient();
+    when(s3Utilities.getBucketName()).thenReturn("source-bucket");
 
     String resultKey = client.copyObject("/source/file.txt", dest.client, "/dest/file.txt");
 
@@ -378,7 +387,7 @@ public class S3NfsClientTest {
 
   @Test
   public void copyObject_sourceOver5GB_throwsIOExceptionAndDoesNotCallCopy() {
-    DestClientFixture dest = newDestClient("source-bucket");
+    DestClientFixture dest = newDestClient();
     long fiveGbPlusOne = 5L * 1024L * 1024L * 1024L + 1L;
     S3FolderContentItem huge =
         new S3FolderContentItem("huge.bin", false, fiveGbPlusOne, Instant.now());
@@ -394,7 +403,7 @@ public class S3NfsClientTest {
 
   @Test
   public void copyObject_destinationKeyAlreadyExists_throwsIOExceptionAndDoesNotCopy() {
-    DestClientFixture dest = newDestClient("source-bucket");
+    DestClientFixture dest = newDestClient();
     when(dest.mockS3Utilities.getObjectDetails("dest/file.txt"))
         .thenReturn(new S3FolderContentItem("file.txt", false, 100L, Instant.now()));
 
@@ -410,7 +419,7 @@ public class S3NfsClientTest {
   public void copyObject_destinationIsExistingFolder_throwsIOExceptionAndDoesNotCopy() {
     // A folder at the dest key must also block the copy, else file dest/x sits beside folder
     // dest/x/.
-    DestClientFixture dest = newDestClient("source-bucket");
+    DestClientFixture dest = newDestClient();
     when(dest.mockS3Utilities.getObjectDetails("dest/photos"))
         .thenReturn(new S3FolderContentItem("photos", true, null, null));
 

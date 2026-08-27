@@ -183,11 +183,13 @@ public class SelfServiceLabGroupControllerTest {
   }
 
   @Test
-  public void shouldNotDeleteLabGroupWhenNotSelfServiceEVenWhenPIisCreator() {
+  public void shouldNotDeleteLabGroupWhenNotSelfServiceEvenWhenPIIsCreator() {
     Long groupID = 1L;
+    Group nonSelfServiceLabGroup = new Group();
+    nonSelfServiceLabGroup.setOwner(piUser);
+    nonSelfServiceLabGroup.setSelfService(false);
     when(userManager.getAuthenticatedUserInSession()).thenReturn(piUser);
-    when(groupManager.getGroup(eq(groupID))).thenReturn(newLabGroup);
-    when(newLabGroup.isSelfService()).thenReturn(false);
+    when(groupManager.getGroup(eq(groupID))).thenReturn(nonSelfServiceLabGroup);
     // Note that the redirect is actually handled by JS code.
     assertThrows(AuthorizationException.class, () -> controller.removeGroup(groupID));
   }

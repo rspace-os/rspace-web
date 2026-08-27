@@ -603,17 +603,18 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
   public void doNotRaiseExceptionDisablingUserAccountWhenNoLicense() throws Exception {
     // given
     mockWhiteListedIP(true, sysadmin);
-    User userToEnable = createAnyUser("disabled_to_enable");
-    userToEnable.setEnabled(false);
-    userToEnable.addRole(Role.USER_ROLE);
-    when(userMgr.get(userToEnable.getId())).thenReturn(userToEnable);
+    User userToDisable = createAnyUser("enabled_to_disable_without_license");
+    userToDisable.setEnabled(true);
+    userToDisable.addRole(Role.USER_ROLE);
+    when(userMgr.get(userToDisable.getId())).thenReturn(userToDisable);
+
     // when
-    controller.disableUser(request, sysadmin, userToEnable.getId());
+    controller.disableUser(request, sysadmin, userToDisable.getId());
 
     // then
-    verify(userMgr, times(0)).save(userToEnable);
-    verify(userEnablementUtils, times(0)).auditUserEnablementChangeEvent(true, userToEnable);
-    verify(userEnablementUtils, times(0))
-        .notifyByEmailUserEnablementChange(userToEnable, sysadmin, true);
+    verify(userMgr).save(userToDisable);
+    verify(userEnablementUtils, never()).checkLicenseForUserInRole(anyInt(), any(Role.class));
+    verify(userEnablementUtils).auditUserEnablementChangeEvent(false, userToDisable);
+    verify(userEnablementUtils).notifyByEmailUserEnablementChange(userToDisable, sysadmin, false);
   }
 }

@@ -188,6 +188,11 @@ public class ImageRetrieverHelperTest {
     // nothing returned if permissions return false
     setPermissionsToReturn(annotation, false);
     assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(annotationLink, config));
+
+    // authorization failures retrieving the original image also return the fallback image
+    setPermissionsToReturn(annotation, true);
+    when(mediaMgr.getImage(rawimg.getId(), config.getExporter(), true))
+        .thenThrow(AuthorizationException.class);
     assertArrayEquals(fallback, imgRetriever.getImageBytesFromImgSrc(annotationLink, config));
   }
 
