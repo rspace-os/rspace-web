@@ -817,10 +817,11 @@ export function createDBRepoTinyMceTable(
 ): HTMLTableElement {
   const dbrepoTable = document.createElement("table");
   dbrepoTable.setAttribute("data-tableSource", "dbrepo");
-  dbrepoTable.style.fontSize = "0.7em";
+  dbrepoTable.style.fontSize = "1em";
 
   const linkRow = document.createElement("tr");
   const linkCell = document.createElement("th");
+  linkCell.style.fontSize = "0.7em";
   linkCell.appendChild(document.createTextNode("Imported from DBRepo "));
   linkCell.appendChild(document.createTextNode(`${target.dbrepoType} `));
   const anchor = document.createElement("a");
