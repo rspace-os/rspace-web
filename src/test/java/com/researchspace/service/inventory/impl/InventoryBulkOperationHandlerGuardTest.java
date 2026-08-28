@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -13,6 +14,7 @@ import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
@@ -90,5 +92,19 @@ class InventoryBulkOperationHandlerGuardTest {
     assertEquals(
         "[invalid] is invalid for field type Radio: Some supplied values are not allowed options",
         error.getErrors().get(0));
+  }
+
+  @Test
+  void localizedExceptionWithCauseIsResolvedForBulkErrors() {
+    InventoryBulkOperationHandler handler = new InventoryBulkOperationHandler();
+    ReflectionTestUtils.setField(
+        handler, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    LocalizedIllegalArgumentException exception =
+        assertThrows(
+            LocalizedIllegalArgumentException.class, () -> QuantityUtils.parseQuantityInfo("asdf"));
+
+    ApiError error = handler.convertExceptionToApiError(exception);
+
+    assertEquals("Could not parse quantity [asdf]", error.getErrors().get(0));
   }
 }
