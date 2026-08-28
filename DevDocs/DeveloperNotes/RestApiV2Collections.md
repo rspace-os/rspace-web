@@ -484,7 +484,8 @@ When `auditFields` is true, the framework looks for these entity properties:
 
 Do not add discovered audit fields to the record or to the explicit relationships. The audit fields
 are nullable and read-only. Clients can read, filter, and sort the date fields. Clients can use
-normal relationship selectors for user fields, such as `createdBy.value`.
+normal relationship selectors for user fields, such as `createdBy.value`; see
+[Current user in relationship filters](#current-user-in-relationship-filters) for the `me` alias.
 
 A creator or updater property of type `User` becomes a relationship to the `users` resource. An
 old entity can return a username. In that case, the API keeps a scalar compatibility field. New
@@ -689,6 +690,25 @@ Examples:
 The response always contains the ID. A field access rule can hide a field. A client cannot use a
 hidden field in `where` or `sort`.
 
+### Current user in relationship filters
+
+On a relationship whose targets are all `users`, its ID selectors accept `me` as the authenticated
+effective subject's numeric user ID:
+
+```text
+?where=createdBy.value==me
+?where=createdBy.id=="me"
+?where=createdBy.value=in=(me,42)
+```
+
+Both `.value` and `.id` have the same meaning. The alias works in eligible mixed `=in=` lists when
+the selector's existing operator allowlist permits `=in=`. Quoted and unquoted exact lowercase
+`me` are equivalent. Other spellings, including `ME`, are ordinary values and normally fail numeric
+ID parsing.
+
+During run-as, `me` means the effective subject, not the administrator acting for that subject. The
+same resolution is used by collection list and count requests and by filtered bulk update and bulk
+delete requests.
 ### Per-actor fields
 
 A collection can publish fields that exist only for one caller and therefore cannot appear in the

@@ -12,15 +12,19 @@ import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
+import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.collection.ApiV2UserResource;
+import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.CollectionQueryLimits;
+import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRenderer;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RsqlFilterParser;
+import com.researchspace.model.collection.RuntimeFieldContext;
 import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -149,6 +153,34 @@ class ApiV2QuerySupportTest {
                 "target.name=contains=confocal",
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 registry));
+  }
+
+  @Test
+  void resolvesTheCurrentSubjectOnContextAwareBulkRoutes() {
+    ResourceRegistry registry =
+        new ResourceRegistry(
+            List.of(
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                ApiV2InstrumentResource.DESCRIPTION,
+                ApiV2UserResource.DESCRIPTION));
+    User subject = new User("subject");
+    subject.setId(73L);
+
+    ResourceRequest request =
+        ApiV2ResourceRequestParser.bulk(
+            "createdBy.value==me",
+            ApiV2BookingConfigurationResource.DESCRIPTION,
+            registry,
+            new RuntimeFieldContext(List.of(), subject));
+
+    assertEquals(
+        new FilterExpression.Comparison("createdBy.value", Operator.EQUAL, List.of(73L), false),
+        request.filter());
+    assertThrows(
+        CollectionQueryException.class,
+        () ->
+            ApiV2ResourceRequestParser.bulk(
+                "createdBy.value==me", ApiV2BookingConfigurationResource.DESCRIPTION, registry));
   }
 
   @Test

@@ -55,6 +55,8 @@ public final class RsqlFilterParser {
           Map.entry(LIKE, Operator.LIKE),
           Map.entry(EXISTS, Operator.EXISTS));
   private static final Set<ComparisonOperator> OPERATORS;
+  private static final String CURRENT_SUBJECT_ALIAS = "me";
+  private static final String USERS_RESOURCE = "users";
 
   static {
     Set<ComparisonOperator> operators = new HashSet<>(RSQLOperators.defaultOperators());
@@ -350,18 +352,46 @@ public final class RsqlFilterParser {
     return mapped;
   }
 
-  private static Object parse(FilterSelector<?> selector, String argument) {
+  private Object parse(FilterSelector<?> selector, String argument) {
     try {
-      return selector.parse(argument);
+      return selector.parse(resolveCurrentSubjectAlias(selector, argument));
     } catch (RuntimeException ex) {
       throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
     }
   }
 
-  private static List<Object> parseAll(FilterSelector<?> selector, List<String> arguments) {
+  private List<Object> parseAll(FilterSelector<?> selector, List<String> arguments) {
     List<Object> values = new ArrayList<>(arguments.size());
     arguments.forEach(argument -> values.add(parse(selector, argument)));
     return List.copyOf(values);
+  }
+
+  private String resolveCurrentSubjectAlias(FilterSelector<?> selector, String argument) {
+    if (!CURRENT_SUBJECT_ALIAS.equals(argument) || !isUserRelationshipId(selector)) {
+      return argument;
+    }
+    Long subjectId = runtimeFields.actor() == null ? null : runtimeFields.actor().getId();
+    return subjectId == null ? argument : subjectId.toString();
+  }
+
+  private boolean isUserRelationshipId(FilterSelector<?> selector) {
+    if (selector instanceof FilterSelector.RelationshipPart<?> relationshipPart) {
+      return relationshipPart.part() == FilterSelector.RelationshipComponent.ID
+          && relationshipPart.relationship().targets().stream()
+              .allMatch(target -> USERS_RESOURCE.equals(target.resourceName()));
+    }
+    if (!(selector instanceof FilterSelector.RelationshipProperty<?>) || registry == null) {
+      return false;
+    }
+    ResourceRegistry.RelationshipQueryPath path =
+        registry
+            .findRelationshipQueryPath(description.resourceName(), selector.name())
+            .orElse(null);
+    return path != null
+        && path.relationship().targets().stream()
+            .allMatch(target -> USERS_RESOURCE.equals(target.resourceName()))
+        && path.targets().stream()
+            .allMatch(target -> path.targetField().equals(target.description().idField()));
   }
 
   private static final class State {

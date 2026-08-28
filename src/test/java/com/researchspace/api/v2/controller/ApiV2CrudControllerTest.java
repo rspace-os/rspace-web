@@ -33,6 +33,7 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.CollectionDescription.Sort;
+import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.CollectionQueryLimits;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.ParsedDocument;
@@ -40,10 +41,14 @@ import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeCollectionFields;
+import com.researchspace.model.collection.RuntimeFieldBinding;
 import com.researchspace.model.collection.RuntimeFieldCatalogPage;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
+import com.researchspace.model.collection.RuntimeFieldDefinition;
+import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -139,14 +144,15 @@ class ApiV2CrudControllerTest {
 
   @Test
   void pagesAllFutureMaintenancesThroughTheEnvelope() throws Exception {
+    ScheduledMaintenance first = futureMaintenance(2, "Planned database upgrade");
+    first.setId(1L);
+    ScheduledMaintenance second = futureMaintenance(26, "Second window");
+    second.setId(2L);
+    ScheduledMaintenance third = futureMaintenance(50, "Third window");
+    third.setId(3L);
     when(maintenanceManager.getResources(any(ResourceRequest.class), any()))
         .thenReturn(
-            new ResourcePage<>(
-                List.of(
-                    futureMaintenance(2, "Planned database upgrade"),
-                    futureMaintenance(26, "Second window")),
-                3),
-            new ResourcePage<>(List.of(futureMaintenance(50, "Third window")), 3));
+            new ResourcePage<>(List.of(first, second), 3), new ResourcePage<>(List.of(third), 3));
 
     mockMvc
         .perform(get(ENDPOINT).param("limit", "2"))
@@ -576,6 +582,100 @@ class ApiV2CrudControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bulk.filter.required"));
+  }
+
+  @Test
+  void bulkFiltersResolveRuntimeFieldsForTheSubjectRatherThanTheActor() throws Exception {
+    User subject = mock(User.class);
+    User actor = mock(User.class);
+    when(subject.getId()).thenReturn(73L);
+    when(actor.getId()).thenReturn(91L);
+    when(subject.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
+    CapturingRuntimeFields runtimeFields = new CapturingRuntimeFields();
+    ApiV2ResourceSpec<ScheduledMaintenance, Long> withRuntimeFields =
+        new ApiV2ResourceSpec<>(
+            ApiV2MaintenanceResource.DESCRIPTION,
+            new MaintenanceResourceOperations(maintenanceManager),
+            Long::valueOf,
+            "errors.api.v2.invalidRequest",
+            "errors.api.v2.maintenance.patch",
+            EnumSet.allOf(ResourceOperation.class),
+            Map.of(),
+            Map.of(),
+            CollectionMutationLimits.DEFAULT,
+            List.of(runtimeFields));
+    MockMvc runtimeMvc =
+        MockMvcBuilders.standaloneSetup(
+                new ApiV2CrudController(new ApiV2ResourceCatalog(List.of(withRuntimeFields))))
+            .setControllerAdvice(problemAdvice())
+            .setValidator(validator)
+            .build();
+    ApiV2Caller caller = new ApiV2Caller(subject, actor);
+    when(maintenanceManager.updateResources(
+            any(ResourceRequest.class), any(ParsedDocument.class), eq(subject)))
+        .thenReturn(List.of());
+    when(maintenanceManager.removeResources(any(ResourceRequest.class), eq(subject)))
+        .thenReturn(List.of());
+
+    runtimeMvc
+        .perform(
+            patch(ENDPOINT)
+                .param("where", "customFields.SF1==mine")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"Updated\"}"))
+        .andExpect(status().isOk());
+    runtimeMvc
+        .perform(
+            delete(ENDPOINT)
+                .param("where", "customFields.SF1==mine")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller))
+        .andExpect(status().isOk());
+
+    assertEquals(List.of(subject, subject), runtimeFields.resolvedBy);
+  }
+
+  private static final class CapturingRuntimeFields
+      implements RuntimeCollectionFields<ScheduledMaintenance> {
+
+    private final List<User> resolvedBy = new ArrayList<>();
+
+    @Override
+    public String namespace() {
+      return "customFields";
+    }
+
+    @Override
+    public RuntimeFieldCatalogPage discover(User actor, RuntimeFieldCatalogQuery query) {
+      return RuntimeFieldCatalogPage.empty();
+    }
+
+    @Override
+    public Optional<ResolvedRuntimeField> resolve(String selector, User actor) {
+      resolvedBy.add(actor);
+      if (!"customFields.SF1".equals(selector)) {
+        return Optional.empty();
+      }
+      RuntimeFieldDefinition definition =
+          new RuntimeFieldDefinition(
+              "SF1",
+              selector,
+              "Owner",
+              RuntimeFieldValueType.TEXT,
+              "maintenance",
+              "Maintenance",
+              List.of());
+      return Optional.of(
+          new ResolvedRuntimeField(
+              definition,
+              new RuntimeFieldBinding(ScheduledMaintenance.class, "id", "message", Map.of())));
+    }
+
+    @Override
+    public Map<Object, Map<String, Object>> values(
+        List<ScheduledMaintenance> resources, Set<String> fieldIds, User actor) {
+      return Map.of();
+    }
   }
 
   private void stubPage(

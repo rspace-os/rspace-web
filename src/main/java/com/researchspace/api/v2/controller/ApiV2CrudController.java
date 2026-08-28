@@ -273,7 +273,11 @@ public class ApiV2CrudController {
     ApiV2ResourceRegistration<?, ?> registration =
         requireResource(resource, ResourceOperation.BULK_UPDATE);
     return registration.updateMany(
-        ApiV2ResourceRequestParser.bulk(where, registration.description(), registration.registry()),
+        ApiV2ResourceRequestParser.bulk(
+            where,
+            registration.description(),
+            registration.registry(),
+            registration.runtimeFieldContext(subject(caller), this::runtimeFieldsOf)),
         body,
         caller);
   }
@@ -296,7 +300,11 @@ public class ApiV2CrudController {
     ApiV2ResourceRegistration<?, ?> registration =
         requireResource(resource, ResourceOperation.BULK_DELETE);
     return registration.deleteMany(
-        ApiV2ResourceRequestParser.bulk(where, registration.description(), registration.registry()),
+        ApiV2ResourceRequestParser.bulk(
+            where,
+            registration.description(),
+            registration.registry(),
+            registration.runtimeFieldContext(subject(caller), this::runtimeFieldsOf)),
         caller);
   }
 

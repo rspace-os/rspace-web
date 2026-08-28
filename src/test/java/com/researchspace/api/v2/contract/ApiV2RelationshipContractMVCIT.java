@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.contract;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -295,6 +296,85 @@ class ApiV2RelationshipContractMVCIT {
                   .param("where", "target.nosuchfield==1"))
           .andExpect(status().isBadRequest())
           .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON));
+    }
+  }
+
+  @Nested
+  @DisplayName("the current-user relationship alias")
+  class CurrentUserRelationshipAlias {
+
+    @Test
+    @DisplayName("list and count resolve createdBy.value me to the authenticated user")
+    void listAndCountResolveValueToTheAuthenticatedUser() throws Exception {
+      long id = fixture.bookingConfiguration(instrumentId, "UTC");
+      String where = "id==%d;createdBy.value==me".formatted(id);
+
+      mockMvc
+          .perform(get(CONFIGURATIONS).header("apiKey", sysadminKey).param("where", where))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.totalDocs").value(1))
+          .andExpect(jsonPath("$.docs[0].id").value(id));
+
+      mockMvc
+          .perform(
+              get(CONFIGURATIONS + "/count").header("apiKey", sysadminKey).param("where", where))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.totalDocs").value(1));
+    }
+
+    @Test
+    @DisplayName("createdBy.id accepts me and resolves it for each authenticated user")
+    void idAliasResolvesForEachAuthenticatedUser() throws Exception {
+      long id = fixture.bookingConfiguration(instrumentId, "UTC");
+      String where = "id==%d;createdBy.id==me".formatted(id);
+
+      mockMvc
+          .perform(get(CONFIGURATIONS).header("apiKey", sysadminKey).param("where", where))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.totalDocs").value(1))
+          .andExpect(jsonPath("$.docs[0].id").value(id));
+
+      mockMvc
+          .perform(get(CONFIGURATIONS).header("apiKey", fixture.userKey()).param("where", where))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.totalDocs").value(0));
+    }
+
+    @Test
+    @DisplayName("bulk update accepts me on a relationship value")
+    void bulkUpdateAcceptsValueAlias() throws Exception {
+      long id = fixture.bookingConfiguration(instrumentId, "UTC");
+
+      mockMvc
+          .perform(
+              patch(CONFIGURATIONS)
+                  .header("apiKey", sysadminKey)
+                  .param("where", "id==%d;createdBy.value==me".formatted(id))
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content("{\"enabled\":false}"))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.docs", Matchers.hasSize(1)))
+          .andExpect(jsonPath("$.docs[0].id").value(id))
+          .andExpect(jsonPath("$.docs[0].enabled").value(false));
+    }
+
+    @Test
+    @DisplayName("bulk delete accepts me on a relationship id")
+    void bulkDeleteAcceptsIdAlias() throws Exception {
+      long id = fixture.bookingConfiguration(instrumentId, "UTC");
+
+      mockMvc
+          .perform(
+              delete(CONFIGURATIONS)
+                  .header("apiKey", sysadminKey)
+                  .param("where", "id==%d;createdBy.id==me".formatted(id)))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.docs", Matchers.hasSize(1)))
+          .andExpect(jsonPath("$.docs[0].id").value(id));
+
+      mockMvc
+          .perform(get(CONFIGURATIONS + "/" + id).header("apiKey", sysadminKey))
+          .andExpect(status().isNotFound());
     }
   }
 

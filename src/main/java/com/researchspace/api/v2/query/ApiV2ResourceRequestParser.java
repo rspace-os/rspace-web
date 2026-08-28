@@ -100,10 +100,18 @@ public final class ApiV2ResourceRequestParser {
 
   public static ResourceRequest bulk(
       String where, CollectionDescription<?> description, ResourceRegistry registry) {
+    return bulk(where, description, registry, RuntimeFieldContext.empty());
+  }
+
+  public static ResourceRequest bulk(
+      String where,
+      CollectionDescription<?> description,
+      ResourceRegistry registry,
+      RuntimeFieldContext runtimeFields) {
     if (where == null || where.isBlank()) {
       throw new ApiV2BadRequestException("errors.api.v2.bulk.filter.required");
     }
-    return filtered(where, description, registry, RuntimeFieldContext.empty());
+    return filtered(where, description, registry, runtimeFields);
   }
 
   /**

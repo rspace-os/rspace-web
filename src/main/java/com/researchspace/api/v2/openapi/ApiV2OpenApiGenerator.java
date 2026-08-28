@@ -605,6 +605,9 @@ public final class ApiV2OpenApiGenerator {
             ordered("type", "string", "maxLength", CollectionQueryLimits.MAX_WHERE_LENGTH),
             "Bounded RSQL filter expression. Available selectors and operators are provided in"
                 + " x-rspace-filter."
+                + " For ID selectors on relationships whose targets are all users, exact me"
+                + " resolves to the authenticated effective subject's numeric ID; for example,"
+                + " createdBy.value==me."
                 + (runtimeFields.isEmpty()
                     ? ""
                     : " Further per-caller selectors are listed by the catalog named in"

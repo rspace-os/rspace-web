@@ -214,6 +214,9 @@ class ApiV2OpenApiGeneratorTest {
             .orElseThrow();
     Map<String, Object> bookingSelectors =
         objectMap(objectMap(bookingWhere.get("x-rspace-filter")).get("selectors"));
+    String bookingWhereDescription = (String) bookingWhere.get("description");
+    assertTrue(bookingWhereDescription.contains("createdBy.value==me"));
+    assertTrue(bookingWhereDescription.contains("authenticated effective subject"));
     assertTrue(bookingSelectors.containsKey("target.name"));
     assertTrue(bookingSelectors.containsKey("createdBy.username"));
     assertTrue(bookingSelectors.containsKey("updatedBy.username"));
