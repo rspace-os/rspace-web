@@ -8,6 +8,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
+import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
@@ -28,11 +29,13 @@ import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.FeatureFlagManager;
+import java.time.Clock;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -44,11 +47,15 @@ public final class BookingConfigurationResourceOperations
 
   private final BookingConfigurationManager manager;
   private final FeatureFlagManager featureFlags;
+  private final Clock institutionClock;
 
   public BookingConfigurationResourceOperations(
-      BookingConfigurationManager manager, FeatureFlagManager featureFlags) {
+      BookingConfigurationManager manager,
+      FeatureFlagManager featureFlags,
+      @Qualifier(BookingTimeConfig.INSTITUTION_CLOCK) Clock institutionClock) {
     this.manager = manager;
     this.featureFlags = featureFlags;
+    this.institutionClock = institutionClock;
   }
 
   @Bean
@@ -82,8 +89,6 @@ public final class BookingConfigurationResourceOperations
                     Map.of(
                         "enabled",
                         true,
-                        "timezone",
-                        "Europe/Berlin",
                         "slotGranularityMinutes",
                         5,
                         "openingStart",
@@ -193,16 +198,13 @@ public final class BookingConfigurationResourceOperations
   }
 
   private static Patch patch(ParsedDocument document) {
-    return new Patch(
-        value(document, "enabled", Boolean.class),
-        value(document, "timezone", String.class),
-        schedulingPatch(document));
+    return new Patch(value(document, "enabled", Boolean.class), null, schedulingPatch(document));
   }
 
   private Create create(ParsedDocument document) {
     return new Create(
         (boolean) document.values().getOrDefault("enabled", false),
-        value(document, "timezone", String.class),
+        institutionClock.getZone().getId(),
         target(document),
         schedulingPatch(document));
   }

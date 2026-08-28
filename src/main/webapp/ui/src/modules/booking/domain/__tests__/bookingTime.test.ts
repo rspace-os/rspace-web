@@ -3,6 +3,7 @@ import {
   addCalendarDays,
   broadUtcEnvelope,
   currentWallClock,
+  displayInterval,
   instantToWallClockMinute,
   isPlainDate,
   resolveWallClock,
@@ -31,6 +32,19 @@ describe("bookingTime", () => {
     expect(broadUtcEnvelope("2026-03-29", ["Europe/Berlin", "America/New_York"])).toEqual({
       start: "2026-03-28T23:00:00Z",
       end: "2026-03-30T04:00:00Z",
+    });
+  });
+
+  test.each([
+    ["2026-03-29", 1380, "2026-03-28T23:00:00Z", "2026-03-29T22:00:00Z"],
+    ["2026-10-25", 1500, "2026-10-24T22:00:00Z", "2026-10-25T23:00:00Z"],
+  ])("creates a DST-correct absolute full-day display interval for %s", (date, elapsedMinutes, start, end) => {
+    expect(displayInterval(date, "Europe/Berlin", "00:00", "24:00")).toEqual({
+      date,
+      timeZone: "Europe/Berlin",
+      start,
+      end,
+      elapsedMinutes,
     });
   });
 

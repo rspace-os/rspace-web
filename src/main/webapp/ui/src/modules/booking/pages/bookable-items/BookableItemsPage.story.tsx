@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
-import { createBookableItemRoute, createBookableItemsRoute, createEditBookableItemRoute } from "./routes";
+import { createBookableItemRoute, createBookableItemsRoute } from "./routes";
 
 export function BookableItemsStory() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -20,11 +20,7 @@ export function BookableItemsStory() {
     component: Outlet,
   });
   const routeTree = rootRoute.addChildren([
-    bookingRoute.addChildren([
-      createBookableItemsRoute(bookingRoute),
-      createBookableItemRoute(bookingRoute),
-      createEditBookableItemRoute(bookingRoute),
-    ]),
+    bookingRoute.addChildren([createBookableItemsRoute(bookingRoute), createBookableItemRoute(bookingRoute)]),
   ]);
   const router = createRouter({
     routeTree,

@@ -97,10 +97,18 @@ export const PrototypeItemDetails: Story = {
   args: { presentation: "item-details" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const term = await canvas.findByText("Title", { selector: "dt" });
+    const label = await canvas.findByText("Title", { selector: "label" });
     const control = await canvas.findByRole("textbox", { name: "Title" });
-    await expect(term.getBoundingClientRect().right).toBeLessThan(control.getBoundingClientRect().left);
-    await expect(await canvas.findAllByRole("term")).toHaveLength(6);
+    await expect(label.getBoundingClientRect().right).toBeLessThan(control.getBoundingClientRect().left);
+    // One shared label column and one shared control column, across field types.
+    const toggleLabel = await canvas.findByText("Enabled", { selector: "label" });
+    const toggle = await canvas.findByRole("checkbox", { name: "Enabled" });
+    await expect(Math.round(toggleLabel.getBoundingClientRect().left)).toBe(
+      Math.round(label.getBoundingClientRect().left),
+    );
+    await expect(Math.round(toggle.getBoundingClientRect().left)).toBe(
+      Math.round(control.getBoundingClientRect().left),
+    );
   },
 };
 

@@ -10,10 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2AuditLog;
+import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperations;
-import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
@@ -21,13 +21,12 @@ import com.researchspace.model.audittrail.AuditData;
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.HistoricData;
 import com.researchspace.model.collection.ApiV2UserResource;
-import com.researchspace.service.audit.search.AuditTrailHandler;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
-import java.time.Duration;
+import java.time.Clock;
 import java.time.Instant;
-import java.util.Collections;
+import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
@@ -35,7 +34,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class ApiV2AuditControllerTest {
 
-  private final AuditTrailHandler handler = mock(AuditTrailHandler.class);
+  private final ApiV2AuditStrictSearch strictSearch = mock(ApiV2AuditStrictSearch.class);
   private final ResourceOperations<User, Long> operations = operations();
   private final User actor = mock(User.class);
   private MockMvc mockMvc;
@@ -45,7 +44,7 @@ class ApiV2AuditControllerTest {
     User target = new User("target");
     target.setId(7L);
     when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
-    when(operations.findById(7L, actor)).thenReturn(Optional.of(target));
+    when(operations.find(any(), eq(actor))).thenReturn(new ResourcePage<>(List.of(target), 1));
     ApiV2ResourceSpec<User, Long> spec =
         new ApiV2ResourceSpec<>(
             ApiV2UserResource.DESCRIPTION,
@@ -55,7 +54,11 @@ class ApiV2AuditControllerTest {
             "update-error");
     ApiV2AuditController controller =
         new ApiV2AuditController(
-            new ApiV2ResourceCatalog(List.of(spec)), new ApiV2AuditLog(handler));
+            new ApiV2ResourceCatalog(List.of(spec)),
+            new ApiV2AuditLog(
+                strictSearch,
+                Clock.fixed(Instant.parse("2026-01-03T12:00:00Z"), ZoneOffset.UTC),
+                100));
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
   }
 
@@ -69,10 +72,8 @@ class ApiV2AuditControllerTest {
             AuditData.fromJson("{\"id\":\"US7\"}"),
             "auditor");
     AuditTrailSearchResult result =
-        new AuditTrailSearchResult(event, Instant.now().minus(Duration.ofDays(1)).toEpochMilli());
-    when(handler.searchAuditTrail(any(), any(), eq(actor)))
-        .thenReturn(new SearchResultsImpl<>(Collections.nCopies(4, result), 0, 4, 20))
-        .thenReturn(new SearchResultsImpl<>(List.of(result), 0, 4, 1));
+        new AuditTrailSearchResult(event, Instant.parse("2026-01-02T12:00:00Z").toEpochMilli());
+    when(strictSearch.search(any())).thenReturn(List.of(result, result, result, result));
 
     mockMvc
         .perform(

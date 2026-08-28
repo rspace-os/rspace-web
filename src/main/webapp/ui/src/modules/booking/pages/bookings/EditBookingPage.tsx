@@ -9,11 +9,11 @@ import {
   fetchBooking,
   updateBooking,
 } from "@/modules/booking/domain/booking";
+import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { currentWallClock, formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { Heading } from "@/modules/common/ui/typography";
-import { localToday } from "../all-bookable-items/calendarDate";
 import { BookingForm, type BookingFormSubmission, type EditableBooking } from "./BookingForm";
 import { DeleteBookingDialog } from "./DeleteBookingDialog";
 
@@ -55,6 +55,7 @@ export default function EditBookingPage() {
   const bookingId = Number(id);
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const queryClient = useQueryClient();
+  const preferences = useBookingDisplayPreferences();
   const booking = useQuery({
     queryKey: ["api-v2", "bookings", bookingId],
     enabled: Number.isSafeInteger(bookingId) && bookingId > 0 && Boolean(token),
@@ -94,7 +95,10 @@ export default function EditBookingPage() {
       }
     },
   });
-  const returnLink = (returnDate = search.date ?? localToday(), returnTarget = search.target) => (
+  const returnLink = (
+    returnDate = search.date ?? todayInTimeZone(preferences.timeZone),
+    returnTarget = search.target,
+  ) => (
     <Link
       className={buttonVariants({ variant: "outline" })}
       to="/booking/calendar"
@@ -121,7 +125,7 @@ export default function EditBookingPage() {
       <main className="space-y-4 p-8">
         <p role="alert">{t("bookings.errors.forbidden")}</p>
         {returnLink(
-          search.date ?? currentWallClock(booking.data.start, booking.data.timezone).date,
+          search.date ?? currentWallClock(booking.data.start, preferences.timeZone).date,
           booking.data.target.globalId,
         )}
       </main>
@@ -132,7 +136,7 @@ export default function EditBookingPage() {
       <main className="space-y-4 p-8">
         <p role="alert">{t("bookings.errors.noLongerEditable")}</p>
         {returnLink(
-          search.date ?? currentWallClock(booking.data.start, booking.data.timezone).date,
+          search.date ?? currentWallClock(booking.data.start, preferences.timeZone).date,
           booking.data.target.globalId,
         )}
       </main>
@@ -150,12 +154,12 @@ export default function EditBookingPage() {
       <main className="space-y-4 p-8">
         <p role="alert">{t("bookings.errors.targetUnavailable")}</p>
         {returnLink(
-          search.date ?? currentWallClock(booking.data.start, booking.data.timezone).date,
+          search.date ?? currentWallClock(booking.data.start, preferences.timeZone).date,
           booking.data.target.globalId,
         )}
       </main>
     );
-  const returnDate = search.date ?? currentWallClock(booking.data.start, booking.data.timezone).date;
+  const returnDate = search.date ?? currentWallClock(booking.data.start, preferences.timeZone).date;
   return (
     <main className="space-y-6 p-4 sm:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -165,7 +169,7 @@ export default function EditBookingPage() {
         <DeleteBookingDialog
           bookingId={booking.data.id}
           itemName={booking.data.target.value.name}
-          period={formatAgendaPeriod(booking.data.start, booking.data.end, booking.data.timezone)}
+          period={formatAgendaPeriod(booking.data.start, booking.data.end, preferences.timeZone)}
           token={token}
           disabled={mutation.isPending}
           onDeleted={() =>
@@ -178,6 +182,7 @@ export default function EditBookingPage() {
       </div>
       <BookingForm
         mode="edit"
+        displayTimezone={preferences.timeZone}
         booking={booking.data}
         configuration={configuration.data}
         token={token}

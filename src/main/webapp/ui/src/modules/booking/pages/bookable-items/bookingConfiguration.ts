@@ -33,9 +33,15 @@ export const BookingConfigurationSchema = v.pipe(
     // Fixed-projection consumers, such as Calendar, deliberately omit this field.
     updatedAt: v.optional(v.nullable(v.pipe(v.string(), v.isoTimestamp()))),
   }),
-  v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
-  v.check((configuration) =>
-    validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
+  v.forward(
+    v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
+    ["openingEnd"],
+  ),
+  v.forward(
+    v.check((configuration) =>
+      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
+    ),
+    ["maxBookingDurationMinutes"],
   ),
 );
 
@@ -48,12 +54,17 @@ export const BookingConfigurationInputSchema = v.pipe(
       value: v.number(),
     }),
     enabled: v.boolean(),
-    timezone: v.string(),
     ...schedulingSettingsEntries,
   }),
-  v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
-  v.check((configuration) =>
-    validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
+  v.forward(
+    v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
+    ["openingEnd"],
+  ),
+  v.forward(
+    v.check((configuration) =>
+      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
+    ),
+    ["maxBookingDurationMinutes"],
   ),
 );
 
@@ -62,12 +73,17 @@ export type BookingConfigurationInput = v.InferOutput<typeof BookingConfiguratio
 export const BookingConfigurationUpdateInputSchema = v.pipe(
   v.object({
     enabled: v.boolean(),
-    timezone: v.string(),
     ...schedulingSettingsEntries,
   }),
-  v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
-  v.check((configuration) =>
-    validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
+  v.forward(
+    v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
+    ["openingEnd"],
+  ),
+  v.forward(
+    v.check((configuration) =>
+      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
+    ),
+    ["maxBookingDurationMinutes"],
   ),
 );
 
@@ -133,8 +149,8 @@ export const bookingConfigurationConfig = {
     pluralKey: "booking:bookableItems.plural",
   },
   useAsTitle: "target",
-  defaultColumns: ["target", "enabled", "timezone", "updatedAt"],
-  listSearchableFields: ["target.name", "timezone"],
+  defaultColumns: ["target", "enabled", "updatedAt"],
+  listSearchableFields: ["target.name"],
   fields: [
     { name: "id", type: "number", labelKey: "booking:bookableItems.fields.id", list: false, form: false },
     {
@@ -163,6 +179,8 @@ export const bookingConfigurationConfig = {
       type: "select",
       options: Intl.supportedValuesOf("timeZone"),
       labelKey: "booking:bookableItems.fields.timezone",
+      list: false,
+      form: false,
     },
     {
       name: "updatedAt",

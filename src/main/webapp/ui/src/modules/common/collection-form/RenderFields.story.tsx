@@ -357,10 +357,9 @@ export function RenderFieldsStory({
       );
       break;
     // Mirrors the "Booking rules" card on the View Bookable Item page
-    // (BookableItemPage.tsx): a Card wrapping a two-column dl whose label
-    // column is max-content. `sm:contents` lets each dt/dd pair join the outer
-    // grid at sm and up, and stack as its own block below that. The only
-    // change is that each dd holds the field's control instead of its value.
+    // (BookableItemPage.tsx): the labels keep the read-out's max-content column
+    // and the controls take the value column, so switching a card from read-out
+    // to form moves nothing.
     case "item-details":
       fields = (
         <Card>
@@ -368,16 +367,7 @@ export function RenderFieldsStory({
             <CardTitle>{t("collectionForm.examples.recordDetails")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-[max-content_1fr]">
-              {presentationFormFields.map((field) => (
-                <div className="grid gap-1 sm:contents" key={field.name}>
-                  <dt className="font-medium">{t(field.labelKey as never)}</dt>
-                  <dd>
-                    <RenderFields {...fieldProps} className={controlOnlyClassName} fields={[field]} />
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            <RenderFields {...fieldProps} fields={presentationFormFields} layout="inline" />
           </CardContent>
         </Card>
       );

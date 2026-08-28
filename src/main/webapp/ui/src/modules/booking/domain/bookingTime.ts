@@ -6,6 +6,11 @@ export type ZonedDayBounds = {
   elapsedMinutes: number;
 };
 
+export type AbsoluteDisplayInterval = ZonedDayBounds & {
+  date: string;
+  timeZone: string;
+};
+
 export type WallClockResolution =
   | { kind: "unique"; instant: string }
   | { kind: "ambiguous"; earlier: string; later: string }
@@ -40,6 +45,31 @@ export function zonedDayBounds(date: string, timezone: string): ZonedDayBounds {
   const start = parsePlainDate(date).toZonedDateTime({ timeZone: timezone, plainTime: "00:00" });
   const end = start.add({ days: 1 });
   return {
+    start: start.toInstant().toString(),
+    end: end.toInstant().toString(),
+    elapsedMinutes: Number(end.toInstant().since(start.toInstant()).total("minutes")),
+  };
+}
+
+/** The exact instant range represented by a preferred wall-clock display window. */
+export function displayInterval(
+  date: string,
+  timeZone: string,
+  startTime: string,
+  endTime: string,
+): AbsoluteDisplayInterval {
+  const plainDate = parsePlainDate(date);
+  const start = plainDate.toZonedDateTime({ timeZone, plainTime: startTime });
+  const end =
+    endTime === "24:00"
+      ? plainDate.add({ days: 1 }).toZonedDateTime({ timeZone, plainTime: "00:00" })
+      : plainDate.toZonedDateTime({ timeZone, plainTime: endTime });
+  if (Temporal.ZonedDateTime.compare(end, start) <= 0) {
+    throw new RangeError("Availability window end must be after its start");
+  }
+  return {
+    date,
+    timeZone,
     start: start.toInstant().toString(),
     end: end.toInstant().toString(),
     elapsedMinutes: Number(end.toInstant().since(start.toInstant()).total("minutes")),

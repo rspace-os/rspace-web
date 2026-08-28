@@ -5,17 +5,17 @@ import {
   type CurrentDayAvailability,
   classifyCurrentDayAvailability,
 } from "@/modules/booking/domain/availability";
-import { currentWallClock, type ZonedDayBounds, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { useAlignedMinute } from "@/modules/booking/hooks/useAlignedMinute";
 import { viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
 import { type BookingConfiguration, BookingConfigurationSchema } from "../bookable-items/bookingConfiguration";
-import { loadDatedCalendarAvailability } from "../calendar/calendarAvailability";
+import { loadCalendarAvailability } from "../calendar/calendarAvailability";
 
 export type AvailabilityQuickFilter = "available-now" | "free-later-today";
 
 export type AvailabilityQuickIndexEntry = {
   date: string;
-  bounds: ZonedDayBounds;
+  bounds: AbsoluteDisplayInterval;
   intervals: readonly AvailabilityInterval[];
   category: CurrentDayAvailability;
 };
@@ -67,16 +67,26 @@ export async function fetchAvailabilityCandidates(
 export async function loadAvailabilityQuickIndex(
   candidates: readonly BookingConfiguration[],
   current: Date,
-  token: string,
-  signal: AbortSignal,
+  displayTimeZoneOrToken: string,
+  availabilityWindowStartOrSignal: string | AbortSignal,
+  availabilityWindowEnd?: string,
+  tokenValue?: string,
+  signalValue?: AbortSignal,
 ): Promise<ReadonlyMap<string, AvailabilityQuickIndexEntry>> {
-  const datedRows = candidates.flatMap((candidate) =>
+  const legacy = availabilityWindowStartOrSignal instanceof AbortSignal;
+  const displayTimeZone = legacy ? (candidates[0]?.timezone ?? "UTC") : displayTimeZoneOrToken;
+  const availabilityWindowStart = legacy ? "00:00" : availabilityWindowStartOrSignal;
+  const resolvedAvailabilityWindowEnd = legacy ? "24:00" : (availabilityWindowEnd ?? "24:00");
+  const token = legacy ? displayTimeZoneOrToken : (tokenValue ?? "");
+  const signal = legacy ? availabilityWindowStartOrSignal : (signalValue ?? new AbortController().signal);
+  const date = currentWallClock(current.toISOString(), displayTimeZone).date;
+  const bounds = displayInterval(date, displayTimeZone, availabilityWindowStart, resolvedAvailabilityWindowEnd);
+  const rows = candidates.flatMap((candidate) =>
     candidate.target
       ? [
           {
             globalId: candidate.target.globalId,
             timezone: candidate.timezone,
-            date: currentWallClock(current.toISOString(), candidate.timezone).date,
             openingStart: candidate.openingStart,
             openingEnd: candidate.openingEnd,
             bufferBeforeMinutes: candidate.bufferBeforeMinutes,
@@ -87,13 +97,12 @@ export async function loadAvailabilityQuickIndex(
         ]
       : [],
   );
-  const availability = await loadDatedCalendarAvailability(datedRows, token, signal);
+  const availability = await loadCalendarAvailability(rows, bounds, token, signal);
   const index = new Map<string, AvailabilityQuickIndexEntry>();
-  for (const row of datedRows) {
-    const bounds = zonedDayBounds(row.date, row.timezone);
+  for (const row of rows) {
     const intervals = availability.get(row.globalId) ?? [];
     index.set(row.globalId, {
-      date: row.date,
+      date,
       bounds,
       intervals,
       category: classifyCurrentDayAvailability(intervals, new Date(bounds.start), new Date(bounds.end), current),
@@ -105,10 +114,15 @@ export async function loadAvailabilityQuickIndex(
 export function useAvailabilityQuickFilterIndex(
   mode: AvailabilityQuickFilter | undefined,
   token: string,
+  displayTimeZoneOrClock: string | (() => Date) = "UTC",
+  availabilityWindowStart = "00:00",
+  availabilityWindowEnd = "24:00",
   clock: () => Date = now,
 ) {
+  const legacyClock = typeof displayTimeZoneOrClock === "function" ? displayTimeZoneOrClock : clock;
+  const displayTimeZone = typeof displayTimeZoneOrClock === "string" ? displayTimeZoneOrClock : "UTC";
   const enabled = mode !== undefined && token.length > 0;
-  const minute = useAlignedMinute(clock);
+  const minute = useAlignedMinute(legacyClock);
   const candidates = useQuery({
     queryKey: ["api-v2", "booking-configurations", "availability-candidates"],
     queryFn: ({ signal }) => fetchAvailabilityCandidates(token, signal),
@@ -134,8 +148,26 @@ export function useAvailabilityQuickFilterIndex(
     )
     .toSorted(([left], [right]) => left.localeCompare(right));
   const index = useQuery({
-    queryKey: ["api-v2", "bookings", "availability-quick-index", signature, minute],
-    queryFn: ({ signal }) => loadAvailabilityQuickIndex(candidates.data ?? [], new Date(minute), token, signal),
+    queryKey: [
+      "api-v2",
+      "bookings",
+      "availability-quick-index",
+      signature,
+      minute,
+      displayTimeZone,
+      availabilityWindowStart,
+      availabilityWindowEnd,
+    ],
+    queryFn: ({ signal }) =>
+      loadAvailabilityQuickIndex(
+        candidates.data ?? [],
+        new Date(minute),
+        displayTimeZone,
+        availabilityWindowStart,
+        availabilityWindowEnd,
+        token,
+        signal,
+      ),
     enabled: enabled && candidates.isSuccess,
     meta: viewTransitionQueryMeta,
   });

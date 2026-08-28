@@ -17,6 +17,7 @@ import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";
+import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { InventoryLocationLink } from "@/modules/common/ui/inventory-item";
@@ -25,10 +26,11 @@ import {
   bookableItemsHandlers,
   sampleBookingEvents,
 } from "../bookable-items/mocks/bookableItemsMocks";
+import { inheritedBrowserBookingPreferences } from "../preferences/bookingPreferencesFixtures";
 import AllBookableItemsPage from "./AllBookableItemsPage";
 import { createAllBookableItemsRoute } from "./routes";
 
-const fixedClock = () => new Date("2026-08-17T00:30:00Z");
+const fixedClock = () => new Date("2026-08-17T08:30:00Z");
 
 function collectionPage(docs: readonly unknown[]) {
   return { docs, totalDocs: docs.length, totalPages: docs.length === 0 ? 0 : 1, page: 1 };
@@ -36,12 +38,13 @@ function collectionPage(docs: readonly unknown[]) {
 
 async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
   const rootRoute = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
   const router = createRouter({
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([
-        createAllBookableItemsRoute(bookingRoute, () => <AllBookableItemsPage clock={fixedClock} />),
+        createAllBookableItemsRoute(bookingRoute, () => <AllBookableItemsPage clock={fixedClock} userTimeZone="UTC" />),
       ]),
     ]),
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
@@ -116,17 +119,14 @@ describe("AllBookableItemsPage", () => {
         within(screen.getByRole("table", { name: "All Bookable Items table" })).getByText("Confocal microscope"),
       ).toBeInTheDocument(),
     );
-    // The rows are compact, so the second line is dropped and no parent-container
-    // link is rendered, not even for the items that have one.
-    expect(screen.queryByRole("link", { name: "Imaging lab" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Workbench" })).toBeNull();
-    for (const itemName of ["Confocal microscope", "Mass spectrometer", "Microplate reader"]) {
-      const row = within(screen.getByRole("table", { name: "All Bookable Items table" })).getByRole("row", {
-        name: new RegExp(itemName),
-      });
-      // The global-ID link, plus the "View details" and "Book" actions.
-      expect(within(row).getAllByRole("link")).toHaveLength(3);
-    }
+    const table = screen.getByRole("table", { name: "All Bookable Items table" });
+    expect(within(table).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
+    expect(within(table).getByRole("link", { name: "Workbench" })).toHaveAttribute("href", "/globalId/BE457");
+    expect(within(table).getByRole("link", { name: "Mass spectrometry lab" })).toHaveAttribute(
+      "href",
+      "/globalId/IC458",
+    );
+    expect(within(table).getByRole("link", { name: "Screening lab" })).toHaveAttribute("href", "/globalId/IC459");
     await waitFor(() =>
       expect(
         within(screen.getByRole("table", { name: "All Bookable Items table" })).getByRole("img", {
@@ -134,9 +134,18 @@ describe("AllBookableItemsPage", () => {
         }),
       ).toHaveAccessibleDescription(/Booked:.*08:00.*09:00/),
     );
-    const table = screen.getByRole("table", { name: "All Bookable Items table" });
     const availability = within(table).getByRole("img", { name: "Confocal microscope availability" });
     expect(availability).toHaveAccessibleDescription(/Booked:.*08:00.*09:00/);
+    expect(availability).toHaveAccessibleDescription(/Current time/);
+    const confocalRow = within(table).getByRole("row", { name: /Confocal microscope/ });
+    expect(within(confocalRow).getByText("08:00")).toBeVisible();
+    expect(within(confocalRow).getByText("18:00")).toBeVisible();
+    const markers = within(table).getAllByTitle(/Current time/);
+    expect(markers.length).toBeGreaterThan(1);
+    for (const marker of markers.slice(1)) {
+      expect(marker.style.left).toBe(markers[0].style.left);
+    }
+    expect(within(table).queryByText(/^Time zone:/)).not.toBeInTheDocument();
     const where = new URL(collectionRequest?.url ?? "http://localhost").searchParams.get("where") ?? "";
     expect(where).toContain("enabled==true");
     expect(where).toContain("target.deleted==false");
@@ -172,9 +181,9 @@ describe("AllBookableItemsPage", () => {
     const table = await screen.findByRole("table", { name: "All Bookable Items table" });
     const confocal = await within(table).findByRole("img", { name: "Confocal microscope availability" });
     const flowCytometer = await within(table).findByRole("img", { name: "Flow cytometer availability" });
-    expect(confocal).toHaveAccessibleDescription(/Current time:/);
-    expect(flowCytometer).toHaveAccessibleDescription(/Current time:/);
-    const markers = within(table).getAllByTitle(/Current time:/);
+    expect(confocal).toHaveAccessibleDescription(/Current time/);
+    expect(flowCytometer).toHaveAccessibleDescription(/Current time/);
+    const markers = within(table).getAllByTitle(/Current time/);
     expect(markers.length).toBeGreaterThan(1);
     for (const marker of markers.slice(1)) {
       expect(marker.style.left).toBe(markers[0].style.left);

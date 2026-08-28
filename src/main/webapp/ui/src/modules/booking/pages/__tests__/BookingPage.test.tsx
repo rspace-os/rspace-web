@@ -16,8 +16,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { createBookingRoute } from "@/modules/booking/pages/BookingPage";
-import { createBookableItemRoute, createEditBookableItemRoute } from "@/modules/booking/pages/bookable-items/routes";
+import { createBookableItemRoute } from "@/modules/booking/pages/bookable-items/routes";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/pages/bookable-items/schedulingSettings";
+import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { getSidebarRenderer } from "@/modules/common/app/AppShell";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
@@ -75,14 +76,15 @@ function TestShell() {
 }
 
 function renderAt(initialPath: string, hasSysAdminRole = true) {
-  server.use(http.get("/api/v2/users/me", () => HttpResponse.json({ ...currentUser, hasSysAdminRole })));
+  server.use(
+    http.get("/api/v2/users/me", () => HttpResponse.json({ ...currentUser, hasSysAdminRole })),
+    http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
+  );
   const rootRoute = createRootRoute({ component: TestShell });
   const bookingRoute = createBookingRoute(rootRoute);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
-    routeTree: rootRoute.addChildren([
-      bookingRoute.addChildren([createBookableItemRoute(bookingRoute), createEditBookableItemRoute(bookingRoute)]),
-    ]),
+    routeTree: rootRoute.addChildren([bookingRoute.addChildren([createBookableItemRoute(bookingRoute)])]),
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
 
@@ -158,33 +160,7 @@ describe("booking sidebar", () => {
     expect(screen.queryByRole("link", { name: "booking:sidebar.bookableItems" })).not.toBeInTheDocument();
   });
 
-  it("stays mounted on the bookable item edit route", async () => {
-    server.use(
-      http.get("/api/v2/booking-configurations/42", () =>
-        HttpResponse.json({
-          id: 42,
-          target: {
-            relationTo: "instruments",
-            value: { id: 123, name: "Confocal microscope", deleted: false },
-            globalId: "IN123",
-          },
-          enabled: true,
-          timezone: "Europe/Berlin",
-          ...DEFAULT_SCHEDULING_SETTINGS,
-          updatedAt: null,
-        }),
-      ),
-      http.get("/api/v2/instruments/123", () =>
-        HttpResponse.json({ id: 123, name: "Confocal microscope", globalId: "IN123" }),
-      ),
-    );
-    renderAt("/booking/config/bookable-items/42/edit");
-
-    expect(await screen.findByRole("button", { name: "booking:sidebar.dashboard" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "booking:bookableItems.editTitle" })).toBeVisible();
-  });
-
-  it("stays mounted on the details route", async () => {
+  it("stays mounted on the merged bookable item route", async () => {
     server.use(
       http.get("/api/v2/booking-configurations", () =>
         HttpResponse.json({
@@ -228,11 +204,12 @@ describe("booking sidebar", () => {
         }),
       ),
     );
-    renderAt("/booking/bookable-items/IN123");
+    renderAt("/booking/bookable-items/IN123?tab=details&edit=true");
 
     expect(await screen.findByRole("button", { name: "booking:sidebar.dashboard" })).toBeInTheDocument();
     // The bookable item itself is the page heading; "Bookable item" is now the
     // eyebrow label above it.
     expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "booking:bookableItems.actions.save" })).toBeVisible();
   });
 });

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
 import { type BookingListDocument, BookingListDocumentTableValidation } from "@/modules/booking/domain/booking";
+import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useAlignedMinute } from "@/modules/booking/hooks/useAlignedMinute";
 import type { CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -52,6 +53,8 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const preferences = useBookingDisplayPreferences();
+  const listConfig = useMemo(() => bookingListConfig(preferences.timeZone), [preferences.timeZone]);
   const asOf = useAlignedMinute();
   const asOfDate = useMemo(() => new Date(asOf), [asOf]);
   const baseFilter = useMemo<FilterExpression<BookingListDocument>>(
@@ -81,7 +84,7 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
   );
   const table = useApiV2TableList({
     resourceName: "bookings",
-    config: bookingListConfig,
+    config: listConfig,
     documentSchema: BookingListDocumentTableValidation.documentSchema,
     request,
     query: { keepPreviousData: true },

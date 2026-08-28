@@ -3,7 +3,7 @@ import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldConditionContext, ResolvedFieldConfig } from "@/modules/common/collection/collectionConfig";
 import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from "@/modules/common/ui/field";
-import type { ControlProps, RelationshipOptions } from "./RenderFields.types";
+import type { ControlProps, FieldLayout, RelationshipOptions } from "./RenderFields.types";
 
 function messageOf(error: unknown): string {
   if (typeof error === "string") return error;
@@ -17,6 +17,7 @@ export function FormField<TDocument extends Record<string, unknown>>({
   disabled,
   fieldConfig,
   form,
+  layout = "stacked",
   orientation = "vertical",
   relationshipOptionAvailability,
   relationshipOptions,
@@ -25,6 +26,7 @@ export function FormField<TDocument extends Record<string, unknown>>({
   disabled: boolean;
   fieldConfig: ResolvedFieldConfig<TDocument>;
   form: FormStore;
+  layout?: FieldLayout;
   orientation?: "horizontal" | "vertical";
   relationshipOptionAvailability: ControlProps<TDocument>["relationshipOptionAvailability"];
   relationshipOptions: RelationshipOptions;
@@ -87,6 +89,25 @@ export function FormField<TDocument extends Record<string, unknown>>({
       <FieldError id={errorId} errors={errors} />
     </>
   );
+
+  // Inline wins over `orientation`: a two-column grid has one place for the
+  // label and one for the control, whichever order the field type prefers.
+  if (layout === "inline") {
+    return (
+      <Field className="grid gap-1 sm:contents" data-disabled={disabled || fieldConfig.readOnly} data-invalid={invalid}>
+        <FieldLabel htmlFor={id}>
+          {label}
+          {fieldConfig.required ? <span aria-hidden="true">{"*"}</span> : null}
+        </FieldLabel>
+        {/* min-h-9 matches an input's height, so a short control (a switch) keeps
+            the row the same height as the read-out row it replaces. */}
+        <FieldContent className="min-h-9 justify-center">
+          {control}
+          {details}
+        </FieldContent>
+      </Field>
+    );
+  }
 
   return orientation === "horizontal" ? (
     <Field orientation="horizontal" data-disabled={disabled || fieldConfig.readOnly} data-invalid={invalid}>

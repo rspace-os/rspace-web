@@ -143,6 +143,41 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
+  void documentsCalendarSubscriptionManagementWithTheCurrentUrl() {
+    Map<String, Object> document = document();
+    Map<String, Object> paths = objectMap(document.get("paths"));
+    Map<String, Object> management =
+        objectMap(
+            paths.get("/api/v2/booking-configurations/{configurationId}/calendar-subscription"));
+
+    assertEquals(Set.of("get", "post", "delete"), management.keySet());
+    assertEquals(
+        "getBookingCalendarSubscription", objectMap(management.get("get")).get("operationId"));
+    assertEquals(
+        "createOrReplaceBookingCalendarSubscription",
+        objectMap(management.get("post")).get("operationId"));
+    assertEquals(
+        "revokeBookingCalendarSubscription",
+        objectMap(management.get("delete")).get("operationId"));
+    assertEquals(
+        Set.of("200", "401", "403", "404", "406", "429", "500"),
+        objectMap(objectMap(management.get("get")).get("responses")).keySet());
+    assertEquals(
+        Set.of("204", "401", "403", "404", "406", "429", "500"),
+        objectMap(objectMap(management.get("delete")).get("responses")).keySet());
+
+    Map<String, Object> schemas = schemas(document);
+    Map<String, Object> statusProperties =
+        objectMap(objectMap(schemas.get("BookingCalendarSubscriptionStatus")).get("properties"));
+    Map<String, Object> createdProperties =
+        objectMap(objectMap(schemas.get("BookingCalendarSubscriptionCreated")).get("properties"));
+    assertEquals(Set.of("active", "updatedAt", "subscriptionUrl"), statusProperties.keySet());
+    assertEquals("uri", objectMap(statusProperties.get("subscriptionUrl")).get("format"));
+    assertTrue(createdProperties.containsKey("subscriptionUrl"));
+    assertEquals("uri", objectMap(createdProperties.get("subscriptionUrl")).get("format"));
+  }
+
+  @Test
   void marksTemporaryInstrumentLocationFieldsDeprecatedAndNullable() {
     Map<String, Object> instrumentProperties =
         objectMap(objectMap(schemas(document()).get("InstrumentsRead")).get("properties"));
@@ -357,10 +392,7 @@ class ApiV2OpenApiGeneratorTest {
 
     Map<String, Object> bookingUpdateProperties =
         objectMap(objectMap(schemas.get("BookingConfigurationsUpdate")).get("properties"));
-    List<?> updateTargetVariants =
-        (List<?>) objectMap(bookingUpdateProperties.get("target")).get("oneOf");
-    assertNotNull(updateTargetVariants);
-    assertNotNull(objectMap(updateTargetVariants.get(1)).get("allOf"));
+    assertFalse(bookingUpdateProperties.containsKey("target"));
 
     Map<String, Object> components = objectMap(document.get("components"));
     Map<String, Object> badRequest =
@@ -370,7 +402,12 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> example = objectMap(problemMedia.get("example"));
     assertEquals(List.of("title", "status", "code", "detail"), example.keySet().stream().toList());
     assertTrue(objectMap(components.get("headers")).containsKey("RateLimitRemaining"));
+  }
 
+  @Test
+  void documentsDailyAuditSnapshotContract() {
+    Map<String, Object> document = document();
+    Map<String, Object> paths = objectMap(document.get("paths"));
     Map<String, Object> audit =
         objectMap(objectMap(paths.get("/api/v2/maintenances/{id}/audit")).get("get"));
     assertEquals("listMaintenancesAuditEvents", audit.get("operationId"));
@@ -378,8 +415,45 @@ class ApiV2OpenApiGeneratorTest {
     assertTrue(objectMap(audit.get("responses")).containsKey("404"));
     List<Map<String, Object>> auditParameters = objectMapList(audit.get("parameters"));
     assertEquals(
-        List.of("id", "dateFrom", "dateTo", "actions", "page", "limit"),
+        List.of(
+            "id",
+            "dateFrom",
+            "dateTo",
+            "actions",
+            "snapshotDate",
+            "snapshotFingerprint",
+            "page",
+            "limit"),
         auditParameters.stream().map(parameter -> parameter.get("name")).toList());
+    Map<String, Object> auditResponses = objectMap(audit.get("responses"));
+    assertEquals(
+        List.of("200", "400", "401", "403", "404", "406", "409", "429", "500", "503"),
+        auditResponses.keySet().stream().toList());
+    Map<String, Object> auditPage =
+        objectMap(
+            objectMap(objectMap(auditResponses.get("200")).get("content")).get("application/json"));
+    Map<String, Object> auditPageSchema = objectMap(auditPage.get("schema"));
+    assertTrue(((List<?>) auditPageSchema.get("required")).contains("snapshotDate"));
+    assertTrue(((List<?>) auditPageSchema.get("required")).contains("snapshotFingerprint"));
+    Map<String, Object> auditPageProperties = objectMap(auditPageSchema.get("properties"));
+    assertEquals("date", objectMap(auditPageProperties.get("snapshotDate")).get("format"));
+    assertEquals(
+        "^[0-9a-f]{64}$", objectMap(auditPageProperties.get("snapshotFingerprint")).get("pattern"));
+
+    Map<String, Object> auditCount =
+        objectMap(objectMap(paths.get("/api/v2/maintenances/{id}/audit/count")).get("get"));
+    assertEquals(
+        List.of("id", "dateFrom", "dateTo", "actions"),
+        objectMapList(auditCount.get("parameters")).stream()
+            .map(parameter -> parameter.get("name"))
+            .toList());
+    assertEquals(
+        List.of("200", "400", "401", "403", "404", "406", "429", "500"),
+        objectMap(auditCount.get("responses")).keySet().stream().toList());
+    assertTrue(String.valueOf(audit.get("description")).contains("half-open interval"));
+    assertTrue(
+        String.valueOf(objectMap(auditResponses.get("400")).get("description"))
+            .contains("narrower date range"));
   }
 
   private static Map<String, Object> schemas(Map<String, Object> document) {

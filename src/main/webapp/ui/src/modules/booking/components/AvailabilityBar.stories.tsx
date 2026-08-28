@@ -40,6 +40,7 @@ const meta = {
     intervals: typicalIntervals,
     periodStart,
     timeZone: "UTC",
+    userTimeZone: "UTC",
   },
 } satisfies Meta<typeof AvailabilityBar>;
 
@@ -48,6 +49,14 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const TypicalDay: Story = {};
+
+export const WithPeriodLabels: Story = {
+  args: {
+    periodStart: new Date("2026-08-12T08:00:00.000Z"),
+    periodEnd: new Date("2026-08-12T18:00:00.000Z"),
+    showPeriodLabels: true,
+  },
+};
 
 export const FullyAvailable: Story = {
   args: { intervals: [] },

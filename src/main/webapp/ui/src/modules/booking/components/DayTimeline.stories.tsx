@@ -3,12 +3,15 @@ import * as React from "react";
 import { expect, fireEvent, userEvent, waitFor, within } from "storybook/test";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { DayTimeline, type DayTimelineEvent, type DayTimelineViewState } from "./DayTimeline";
+import { DayTimelineStory } from "./DayTimeline.story";
 
 const denseBookings: Array<DayTimelineEvent> = Array.from({ length: 12 }, (_, index) => ({
   id: `dense-${index}`,
   kind: "booking",
   privacy: "full",
+  title: `Confocal microscope · researcher.${String(index + 1).padStart(2, "0")}`,
   bookedBy: `researcher.${String(index + 1).padStart(2, "0")}`,
+  item: { name: "Confocal microscope", globalId: "IN123" },
   canEdit: false,
   notes: `Sample check ${index + 1}.`,
   startMinute: 9 * 60 + index * 5,
@@ -21,7 +24,9 @@ const quieterDays: Array<ReadonlyArray<DayTimelineEvent>> = [
       id: "morning-booking",
       kind: "booking",
       privacy: "full",
+      title: "Confocal microscope · ada.lovelace",
       bookedBy: "ada.lovelace",
+      item: { name: "Confocal microscope", globalId: "IN123" },
       canEdit: false,
       notes: "Morning imaging session.",
       startMinute: 9 * 60 + 30,
@@ -33,6 +38,7 @@ const quieterDays: Array<ReadonlyArray<DayTimelineEvent>> = [
       id: "maintenance",
       kind: "blockout",
       title: "Scheduled maintenance",
+      item: { name: "Confocal microscope", globalId: "IN123" },
       notes: "Laser alignment and inspection.",
       startMinute: 13 * 60,
       endMinute: 15 * 60,
@@ -125,12 +131,15 @@ export const Sub15MinuteEvents: Story = {
     const eventBars = Array.from(canvasElement.querySelectorAll<HTMLElement>("[data-event-id]"));
     for (const eventBar of eventBars) expect(eventBar.getBoundingClientRect().width).toBeCloseTo(44, 0);
     const heightBeforeOpening = timelineCanvas.getBoundingClientRect().height;
-    const firstDetails = canvas.getByRole("button", { name: /show details for researcher\.01, 09:00–09:05/i });
+    const firstDetails = canvas.getByRole("button", {
+      name: /show details for Confocal microscope · researcher\.01, 09:00–09:05/i,
+    });
     await userEvent.click(firstDetails);
     expect(firstDetails).toHaveAttribute("aria-expanded", "true");
     expect(timelineCanvas.getBoundingClientRect().height).toBeCloseTo(heightBeforeOpening, 0);
-    expect(canvas.getByText("09:00–09:05")).toBeInTheDocument();
-    expect(canvas.getByText("Sample check 1.")).toBeInTheDocument();
+    const popover = within(document.body);
+    expect(popover.getByText("09:00–09:05")).toBeInTheDocument();
+    expect(popover.getByText("Sample check 1.")).toBeInTheDocument();
   },
 };
 
@@ -187,4 +196,8 @@ export const SynchronizedRows: Story = {
       expect(new Set(canvases.map(({ style }) => style.width))).toHaveLength(1);
     });
   },
+};
+
+export const ExpandedEventKinds: Story = {
+  render: () => <DayTimelineStory />,
 };

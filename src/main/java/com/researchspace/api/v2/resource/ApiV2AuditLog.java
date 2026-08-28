@@ -1,16 +1,13 @@
 package com.researchspace.api.v2.resource;
 
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
+import com.researchspace.api.v2.controller.ApiV2AuditSnapshotConflictException;
+import com.researchspace.api.v2.controller.ApiV2AuditUnavailableException;
 import com.researchspace.api.v2.controller.ApiV2BadRequestException;
 import com.researchspace.api.v2.model.ApiV2AuditEvent;
+import com.researchspace.api.v2.model.ApiV2AuditPage;
 import com.researchspace.api.v2.model.ApiV2AuditQuery;
-import com.researchspace.api.v2.model.ApiV2ListResult;
-import com.researchspace.core.util.DateRangeRestrictor;
-import com.researchspace.core.util.ISearchResults;
-import com.researchspace.core.util.SortOrder;
-import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
-import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
@@ -18,27 +15,40 @@ import com.researchspace.model.audittrail.HistoricData;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
-import com.researchspace.service.audit.search.AuditTrailHandler;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
-import com.researchspace.service.audit.search.IAuditTrailSearchConfig;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.Getter;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /** Searches the existing audit trail for one readable REST API v2 resource. */
@@ -46,68 +56,162 @@ import org.springframework.stereotype.Component;
 public final class ApiV2AuditLog {
 
   private static final Logger LOG = LoggerFactory.getLogger(ApiV2AuditLog.class);
+  private static final DateTimeFormatter SNAPSHOT_DATE_FORMAT =
+      DateTimeFormatter.ISO_LOCAL_DATE.withResolverStyle(ResolverStyle.STRICT);
+  private static final Pattern FINGERPRINT = Pattern.compile("^[0-9a-f]{64}$");
   static final Duration MAX_SEARCH_RANGE = Duration.ofDays(183);
 
-  private final AuditTrailHandler auditTrail;
-  private final DateRangeRestrictor dateRangeRestrictor = new DateRangeRestrictor();
+  private final ApiV2AuditStrictSearch strictSearch;
+  private final Clock clock;
+  private final int resultCeiling;
   private final Map<Class<?>, Optional<AuditMetadata>> metadata = new ConcurrentHashMap<>();
 
-  public ApiV2AuditLog(AuditTrailHandler auditTrail) {
-    this.auditTrail = auditTrail;
+  public ApiV2AuditLog(
+      ApiV2AuditStrictSearch strictSearch,
+      Clock clock,
+      @Value("${api.v2.audit.resultCeiling:1000}") int resultCeiling) {
+    if (resultCeiling < 1) {
+      throw new IllegalArgumentException("REST API v2 audit result ceiling must be positive");
+    }
+    this.strictSearch = strictSearch;
+    this.clock = clock;
+    this.resultCeiling = resultCeiling;
   }
 
   /** Returns an audit page after resource and audit-actor access checks. */
-  public ApiV2ListResult<ApiV2AuditEvent> search(
+  public ApiV2AuditPage<ApiV2AuditEvent> search(
       ApiV2ResourceRegistration<?, ?> resource, String rawId, ApiV2AuditQuery query, User actor) {
     if (actor == null) {
       throw new ApiV2AuthenticationException();
     }
     ResolvedTarget target = resource.requireReadableForAudit(rawId, actor);
+    SearchWindow window = searchWindow(query);
     Optional<AuditTarget> auditTarget = auditTarget(resource, target);
-    if (auditTarget.isEmpty()) {
-      return ApiV2ListResult.of(List.of(), 0, query.getLimit(), query.getPage());
+    List<ApiV2AuditEvent> events =
+        auditTarget.map(value -> events(resource, value, query, actor, window)).orElseGet(List::of);
+    if (events.size() > resultCeiling) {
+      throw new ApiV2BadRequestException("errors.api.v2.audit.results.tooMany");
     }
 
-    requireSearchableRange(query);
-    // Still called, so an open-ended request gets the default window rather than scanning forever.
-    // A range the client did supply has already been rejected above if it was too wide.
-    dateRangeRestrictor.restrictDateRange(query, MAX_SEARCH_RANGE);
-    PaginationCriteria<AuditTrailSearchResult> pagination =
-        PaginationCriteria.createDefaultForClass(AuditTrailSearchResult.class);
-    pagination.setPageNumber((long) query.getPage() - 1);
-    pagination.setResultsPerPage(query.getLimit());
-    pagination.setOrderBy("date");
-    pagination.setSortOrder(SortOrder.DESC);
-
-    AuditTarget selected = auditTarget.orElseThrow();
-    ISearchResults<AuditTrailSearchResult> results =
-        auditTrail.searchAuditTrail(
-            new AuditSearchConfig(
-                query.getDateFrom(),
-                query.getDateTo(),
-                selected.domain(),
-                query.getActions(),
-                selected.identifier()),
-            pagination,
-            actor);
-    List<ApiV2AuditEvent> events =
-        results.getResults().stream()
-            .map(result -> event(result, selected.readableFields(), resource.description()))
+    List<ApiV2AuditEvent> ordered =
+        events.stream()
+            .sorted(
+                Comparator.comparing(ApiV2AuditEvent::timestamp)
+                    .reversed()
+                    .thenComparing(ApiV2AuditEvent::eventId))
             .toList();
-    return ApiV2ListResult.of(events, results.getTotalHits(), query.getLimit(), query.getPage());
+    String fingerprint = snapshotFingerprint(ordered);
+    if (query.getSnapshotFingerprint() != null
+        && !query.getSnapshotFingerprint().equals(fingerprint)) {
+      throw new ApiV2AuditSnapshotConflictException();
+    }
+
+    int first = Math.min(ordered.size(), Math.max(0, (query.getPage() - 1) * query.getLimit()));
+    int last = Math.min(ordered.size(), first + query.getLimit());
+    return ApiV2AuditPage.of(
+        ordered.subList(first, last),
+        ordered.size(),
+        query.getLimit(),
+        query.getPage(),
+        window.snapshotDate().toString(),
+        fingerprint);
   }
 
-  /**
-   * Refuses a window the server cannot honour instead of quietly narrowing it.
-   *
-   * <p>The previous behaviour answered 200 for a six-year request and returned 183 days, with
-   * nothing in the response saying so, so a client paginating to exhaustion believed it had the
-   * whole period. Silently returning a different answer to the question asked is worse than
-   * refusing: an explicit 400 naming the limit lets the client page the range itself.
-   */
+  private List<ApiV2AuditEvent> events(
+      ApiV2ResourceRegistration<?, ?> resource,
+      AuditTarget target,
+      ApiV2AuditQuery query,
+      User actor,
+      SearchWindow window) {
+    if (!window.fromInclusive().isBefore(window.toExclusive())) {
+      return List.of();
+    }
+    try {
+      return strictSearch
+          .search(
+              new ApiV2AuditStrictSearch.Request(
+                  window.fromInclusive(),
+                  window.toExclusive(),
+                  Set.of(target.domain()),
+                  query.getActions() == null ? Set.of() : query.getActions(),
+                  target.identifier(),
+                  Set.of(),
+                  actor,
+                  resultCeiling))
+          .stream()
+          .map(result -> event(result, target.readableFields(), resource.description()))
+          .toList();
+    } catch (ApiV2AuditStrictSearch.StrictReadException ex) {
+      throw new ApiV2AuditUnavailableException(ex);
+    }
+  }
+
+  private SearchWindow searchWindow(ApiV2AuditQuery query) {
+    validateSnapshotPair(query);
+    requireSearchableRange(query);
+    Instant now = clock.instant();
+    Instant suppliedFrom = instant(query.getDateFrom());
+    Instant suppliedTo = instant(query.getDateTo());
+    Instant effectiveTo = suppliedTo == null ? now : suppliedTo;
+    Instant effectiveFrom;
+    if (suppliedFrom == null) {
+      effectiveFrom = effectiveTo.minus(MAX_SEARCH_RANGE);
+    } else if (suppliedTo == null && suppliedFrom.isBefore(now.minus(MAX_SEARCH_RANGE))) {
+      effectiveFrom = now.minus(MAX_SEARCH_RANGE);
+    } else {
+      effectiveFrom = suppliedFrom;
+    }
+
+    LocalDate latestCompleted = LocalDate.ofInstant(now, ZoneOffset.UTC).minusDays(1);
+    LocalDate latestWithinRequest = latestCompletedDay(effectiveTo);
+    LocalDate serverSnapshot =
+        latestWithinRequest.isBefore(latestCompleted) ? latestWithinRequest : latestCompleted;
+    LocalDate snapshotDate =
+        query.getSnapshotDate() == null
+            ? serverSnapshot
+            : parseSnapshotDate(query.getSnapshotDate());
+    if (snapshotDate.isAfter(serverSnapshot)) {
+      throw new ApiV2BadRequestException("errors.api.v2.audit.snapshot.invalid");
+    }
+    Instant toExclusive = snapshotDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+    return new SearchWindow(effectiveFrom, toExclusive, snapshotDate);
+  }
+
+  private static void validateSnapshotPair(ApiV2AuditQuery query) {
+    boolean hasDate = query.getSnapshotDate() != null && !query.getSnapshotDate().isBlank();
+    boolean hasFingerprint =
+        query.getSnapshotFingerprint() != null && !query.getSnapshotFingerprint().isBlank();
+    if (hasDate != hasFingerprint
+        || (hasFingerprint && !FINGERPRINT.matcher(query.getSnapshotFingerprint()).matches())) {
+      throw new ApiV2BadRequestException("errors.api.v2.audit.snapshot.invalid");
+    }
+    if (!hasDate && (query.getSnapshotDate() != null || query.getSnapshotFingerprint() != null)) {
+      throw new ApiV2BadRequestException("errors.api.v2.audit.snapshot.invalid");
+    }
+  }
+
+  private static LocalDate parseSnapshotDate(String value) {
+    try {
+      return LocalDate.parse(value, SNAPSHOT_DATE_FORMAT);
+    } catch (DateTimeParseException ex) {
+      throw new ApiV2BadRequestException("errors.api.v2.audit.snapshot.invalid");
+    }
+  }
+
+  private static LocalDate latestCompletedDay(Instant inclusiveTo) {
+    LocalDate containingDay = LocalDate.ofInstant(inclusiveTo, ZoneOffset.UTC);
+    Instant finalMillisecond =
+        containingDay.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant().minusMillis(1);
+    return finalMillisecond.isAfter(inclusiveTo) ? containingDay.minusDays(1) : containingDay;
+  }
+
+  private static Instant instant(java.util.Date date) {
+    return date == null ? null : date.toInstant();
+  }
+
   private static void requireSearchableRange(ApiV2AuditQuery query) {
-    Date from = query.getDateFrom();
-    Date to = query.getDateTo();
+    java.util.Date from = query.getDateFrom();
+    java.util.Date to = query.getDateTo();
     if (from == null || to == null) {
       return;
     }
@@ -155,12 +259,12 @@ public final class ApiV2AuditLog {
       AuditTrailSearchResult result,
       FieldSelection readableFields,
       CollectionDescription<?> description) {
-    HistoricData event = result.getEvent();
+    HistoricData source = result.getEvent();
     Map<String, Object> payload = new LinkedHashMap<>();
     Set<String> publicNames = new LinkedHashSet<>();
     description.fields().forEach(field -> publicNames.add(field.name()));
     description.relationships().forEach(relationship -> publicNames.add(relationship.name()));
-    event
+    source
         .getData()
         .getData()
         .forEach(
@@ -171,14 +275,119 @@ public final class ApiV2AuditLog {
                 payload.put(name, value);
               }
             });
+    ApiV2AuditEvent withoutId =
+        new ApiV2AuditEvent(
+            null,
+            Instant.ofEpochMilli(result.getTimestamp()).toString(),
+            source.getSubject(),
+            source.getFullName(),
+            source.getDomain(),
+            source.getAction(),
+            source.getDescription(),
+            Collections.unmodifiableMap(payload));
     return new ApiV2AuditEvent(
-        Instant.ofEpochMilli(result.getTimestamp()).toString(),
-        event.getSubject(),
-        event.getFullName(),
-        event.getDomain(),
-        event.getAction(),
-        event.getDescription(),
-        Collections.unmodifiableMap(payload));
+        eventId(withoutId),
+        withoutId.timestamp(),
+        withoutId.username(),
+        withoutId.fullName(),
+        withoutId.domain(),
+        withoutId.action(),
+        withoutId.description(),
+        withoutId.payload());
+  }
+
+  static String eventId(ApiV2AuditEvent event) {
+    try {
+      ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+      try (DataOutputStream output = new DataOutputStream(bytes)) {
+        writeString(output, event.timestamp());
+        writeString(output, event.username());
+        writeString(output, event.fullName());
+        writeString(output, event.domain() == null ? null : event.domain().name());
+        writeString(output, event.action() == null ? null : event.action().name());
+        writeString(output, event.description());
+        writeValue(output, event.payload());
+      }
+      return hex(digest(bytes.toByteArray()));
+    } catch (IOException ex) {
+      throw new IllegalStateException("Cannot canonicalize an audit event", ex);
+    }
+  }
+
+  static String snapshotFingerprint(List<ApiV2AuditEvent> events) {
+    MessageDigest digest = sha256();
+    digest.update(ByteBuffer.allocate(Long.BYTES).putLong(events.size()).array());
+    for (ApiV2AuditEvent event : events) {
+      byte[] id = event.eventId().getBytes(StandardCharsets.UTF_8);
+      digest.update(ByteBuffer.allocate(Integer.BYTES).putInt(id.length).array());
+      digest.update(id);
+    }
+    return hex(digest.digest());
+  }
+
+  private static void writeValue(DataOutputStream output, Object value) throws IOException {
+    if (value == null) {
+      output.writeByte('N');
+    } else if (value instanceof Map<?, ?> map) {
+      output.writeByte('M');
+      TreeMap<String, Object> ordered = new TreeMap<>();
+      map.forEach((key, item) -> ordered.put(String.valueOf(key), item));
+      output.writeInt(ordered.size());
+      for (Map.Entry<String, Object> entry : ordered.entrySet()) {
+        writeString(output, entry.getKey());
+        writeValue(output, entry.getValue());
+      }
+    } else if (value instanceof Iterable<?> iterable) {
+      output.writeByte('L');
+      List<?> values =
+          iterable instanceof List<?> list
+              ? list
+              : java.util.stream.StreamSupport.stream(iterable.spliterator(), false).toList();
+      output.writeInt(values.size());
+      for (Object item : values) {
+        writeValue(output, item);
+      }
+    } else if (value instanceof Number number) {
+      output.writeByte('D');
+      writeString(output, new BigDecimal(number.toString()).stripTrailingZeros().toPlainString());
+    } else if (value instanceof Boolean bool) {
+      output.writeByte('B');
+      output.writeBoolean(bool);
+    } else {
+      output.writeByte('S');
+      writeString(output, value.toString());
+    }
+  }
+
+  private static void writeString(DataOutputStream output, String value) throws IOException {
+    if (value == null) {
+      output.writeInt(-1);
+      return;
+    }
+    byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+    output.writeInt(bytes.length);
+    output.write(bytes);
+  }
+
+  private static byte[] digest(byte[] value) {
+    return sha256().digest(value);
+  }
+
+  private static MessageDigest sha256() {
+    try {
+      return MessageDigest.getInstance("SHA-256");
+    } catch (NoSuchAlgorithmException ex) {
+      throw new IllegalStateException("SHA-256 is unavailable", ex);
+    }
+  }
+
+  private static String hex(byte[] bytes) {
+    StringBuilder result = new StringBuilder(bytes.length * 2);
+    for (byte value : bytes) {
+      result.append(Character.forDigit((value >>> 4) & 0x0f, 16));
+      result.append(Character.forDigit(value & 0x0f, 16));
+    }
+    return result.toString();
   }
 
   private record AuditMetadata(Method identifierMethod) {
@@ -200,50 +409,5 @@ public final class ApiV2AuditLog {
   private record AuditTarget(
       AuditDomain domain, String identifier, FieldSelection readableFields) {}
 
-  private static final class AuditSearchConfig implements IAuditTrailSearchConfig {
-
-    private Date dateFrom;
-    private Date dateTo;
-    @Getter private final Set<AuditDomain> domains;
-    @Getter private final Set<AuditAction> actions;
-    @Getter private final String oid;
-
-    private AuditSearchConfig(
-        Date dateFrom, Date dateTo, AuditDomain domain, Set<AuditAction> actions, String oid) {
-      this.dateFrom = copy(dateFrom);
-      this.dateTo = copy(dateTo);
-      this.domains = Set.of(domain);
-      this.actions = actions == null ? Set.of() : Set.copyOf(actions);
-      this.oid = Objects.requireNonNull(oid, "Audit identifier");
-    }
-
-    @Override
-    public Date getDateFrom() {
-      return copy(dateFrom);
-    }
-
-    @Override
-    public void setDateFrom(Date dateFrom) {
-      this.dateFrom = copy(dateFrom);
-    }
-
-    @Override
-    public Date getDateTo() {
-      return copy(dateTo);
-    }
-
-    @Override
-    public void setDateTo(Date dateTo) {
-      this.dateTo = copy(dateTo);
-    }
-
-    @Override
-    public Set<String> getUsernames() {
-      return Set.of();
-    }
-
-    private static Date copy(Date value) {
-      return value == null ? null : new Date(value.getTime());
-    }
-  }
+  private record SearchWindow(Instant fromInclusive, Instant toExclusive, LocalDate snapshotDate) {}
 }

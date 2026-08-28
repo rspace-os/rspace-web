@@ -781,7 +781,7 @@ export default interface Resources {
         "legend": "Quick filters",
         "loading": "Finding bookable items…",
         "retry": "Retry",
-        "scope": "Today in each bookable item's time zone."
+        "scope": "Availability uses the selected display date and timezone."
       },
       "singular": "Bookable item",
       "title": "All Bookable Items"
@@ -796,38 +796,96 @@ export default interface Resources {
       "fullAvailable": "Available for the full period.",
       "label": "{itemName} availability",
       "now": "Current time: {time}.",
+      "nowAfterWindow": "Current time {time} is after the displayed window.",
+      "nowBeforeWindow": "Current time {time} is before the displayed window.",
       "ranges": {
         "available": "Available: {ranges}.",
         "blockout": "Blocked out: {ranges}.",
         "booking": "Booked: {ranges}.",
         "overlap": "Booked and blocked out: {ranges}."
       },
-      "summary": "Availability period: {period}. {states}"
+      "summary": "Availability period: {period}. {states}",
+      "timezone": "Time zone: {timezone}"
     },
     "bookableItemDetails": {
       "audit": {
         "apply": "Load audit events",
+        "conflict": {
+          "description": "This snapshot can no longer be paged reliably. Restart from the first page to avoid missing or duplicate events.",
+          "title": "The audit results changed"
+        },
         "empty": "No recorded changes in this period.",
+        "emptyStable": "This period starts after the latest completed UTC day, so its stable daily snapshot is empty.",
+        "error": {
+          "description": "Try refreshing the audit log.",
+          "title": "Could not load audit events"
+        },
         "fields": {
           "action": "Action",
           "actor": "Changed by",
           "description": "Description",
           "domain": "Domain",
+          "eventId": "Event ID",
           "fullName": "Full name",
           "rowId": "Row",
           "timestamp": "Time",
           "values": "Recorded values"
         },
         "from": "From date",
+        "fromError": "From: {message}",
         "lastDays": "{count, plural, one {Last # day} other {Last # days}}",
         "next": "Next",
+        "nextPage": "Next, page {page, number}",
         "page": "Page {page, number} of {totalPages, number}",
         "pagination": "Audit event pages",
         "period": "Period",
         "plural": "Audit events",
         "previous": "Previous",
+        "previousPage": "Previous, page {page, number}",
+        "refresh": "Refresh",
+        "restart": "Restart from first page",
+        "resultsThrough": "Results through {date}",
         "singular": "Audit event",
-        "to": "To date"
+        "status": {
+          "loaded": "Page {page, number} of {totalPages, number}. {count, plural, one {# audit event} other {# audit events}}. Results through {date}.",
+          "loading": "Loading audit events.",
+          "refreshing": "Updating audit events."
+        },
+        "to": "To date",
+        "toError": "To: {message}",
+        "tooMany": {
+          "description": "Choose a narrower date range and load the audit events again.",
+          "title": "Too many audit events"
+        },
+        "unavailable": {
+          "description": "The complete result set could not be read. No partial results are shown.",
+          "title": "Audit log unavailable"
+        },
+        "validation": {
+          "invalid": "Enter a real date in YYYY-MM-DD format.",
+          "inverted": "From must be on or before To.",
+          "required": "Choose a date.",
+          "tooWide": "Choose a period of no more than 183 days."
+        }
+      },
+      "calendarSubscription": {
+        "appPrompt": "Add to your calendar app:",
+        "apple": "Apple",
+        "close": "Close",
+        "copied": "Copied",
+        "copy": "Copy link",
+        "copyError": "The link could not be copied. Select and copy it manually.",
+        "copyPrompt": "Or copy the calendar link below:",
+        "description": "Subscribe to this bookable item's read-only calendar.",
+        "generateError": "The calendar link could not be generated. Try again.",
+        "generating": "Generating calendar link.",
+        "google": "Google Calendar",
+        "loading": "Loading calendar status.",
+        "other": "Other",
+        "retry": "Retry",
+        "statusError": "Calendar subscription status could not be loaded.",
+        "title": "Add to your calendar",
+        "trigger": "Add to calendar"
       },
       "cancelEdit": "Cancel",
       "disabled": "Disabled",
@@ -840,7 +898,7 @@ export default interface Resources {
       "events": {
         "busy": "Busy",
         "count": "{count, plural, one {# event} other {# events}}",
-        "edit": "Edit booking",
+        "edit": "Edit",
         "empty": "No events",
         "error": {
           "description": "RSpace could not load these events.",
@@ -870,11 +928,16 @@ export default interface Resources {
       "rules": "Booking rules",
       "tabs": {
         "audit": "Audit log",
+        "bookings": "Bookings",
         "details": "Details"
       },
       "title": "Bookable item details",
       "unlimited": "Unlimited",
       "upcoming": "Upcoming events",
+      "update": {
+        "pending": "Saving booking configuration.",
+        "saved": "Booking configuration saved."
+      },
       "viewInventory": "View {name} in Inventory",
       "yes": "Yes"
     },
@@ -985,10 +1048,15 @@ export default interface Resources {
         "purposeCount": "{count, number}/1,000 characters",
         "returnToCalendar": "Return to Calendar",
         "save": "Save changes",
+        "schedulingTimezone": "Opening hours are enforced in {timezone}.",
         "start": "Start",
         "submit": "Book",
         "time": "Time",
-        "timezone": "Time zone: {timezone}"
+        "timezone": "Time zone: {timezone}",
+        "type": "Booking type",
+        "typeBlockout": "Maintenance blockout",
+        "typeBlockoutPending": "Maintenance blockouts are not stored yet. RSpace saves this as a standard booking.",
+        "typeBooking": "Booking"
       },
       "loading": "Loading booking.",
       "loadingConfiguration": "Loading bookable item settings."
@@ -1071,6 +1139,14 @@ export default interface Resources {
         "labelWithNotes": "{title}, {period}. {notes}",
         "showDetails": "Show details for {title}, {period}"
       },
+      "expanded": {
+        "bookedBy": "Booked by",
+        "duration": "{date} · {hours, plural, =0 {} one {# hour } other {# hours }}{minutes, plural, =0 {} one {# minute} other {# minutes}}",
+        "item": "Item",
+        "notes": "Notes",
+        "openItem": "Open inventory record {globalId}",
+        "purpose": "Purpose"
+      },
       "itemScrollLabel": "24-hour calendar for {itemName} on {date} in {timezone}",
       "now": {
         "afterWindow": "Now {time}, after visible window",
@@ -1115,6 +1191,34 @@ export default interface Resources {
       "singular": "Booking",
       "title": "My Bookings"
     },
+    "preferences": {
+      "actions": {
+        "reset": "Reset to global defaults",
+        "save": "Save"
+      },
+      "availabilityWindow": {
+        "description": "The times shown on each day's availability bars and timelines.",
+        "end": "End time",
+        "endOfDay": "End of day (24:00)",
+        "legend": "Default availability window",
+        "start": "Start time"
+      },
+      "description": "Choose how Booking dates, times, forms, and availability are displayed. These settings do not change an item's opening hours.",
+      "errors": {
+        "invalid": "Choose a valid same-day window and, for Custom, a valid IANA timezone.",
+        "save": "Booking preferences could not be saved."
+      },
+      "resetComplete": "Global Booking defaults restored.",
+      "saved": "Booking preferences saved.",
+      "timezone": {
+        "browser": "Use Browser Timezone ({timezone})",
+        "custom": "Use Custom Timezone",
+        "customLabel": "Custom timezone",
+        "institution": "Use Institution Timezone ({timezone})",
+        "legend": "Default timezone"
+      },
+      "title": "Booking preferences"
+    },
     "sample": {
       "check": "Sample check {number}.",
       "maintenance": {
@@ -1127,7 +1231,13 @@ export default interface Resources {
         "save": "Save settings"
       },
       "description": "These defaults are copied to new bookable items. Existing bookable items keep their own settings.",
+      "displayDefaults": {
+        "description": "These defaults apply to users who have not saved their own Booking preferences.",
+        "title": "Booking display defaults"
+      },
       "errors": {
+        "buffer": "Enter a whole number from 0 to 10,080.",
+        "granularity": "Choose 1, 5, or 15 minutes.",
         "maximumDuration": "Use 0 or a duration divisible by the selected time increment.",
         "openingHours": "Use an opening start before the end, or select Open all day.",
         "save": "RSpace could not save the booking settings. Try again.",
@@ -1159,6 +1269,7 @@ export default interface Resources {
       "dashboard": "Dashboard",
       "label": "Booking",
       "myBookings": "My Bookings",
+      "preferences": "Preferences",
       "settings": "Settings"
     }
   },
@@ -6028,6 +6139,35 @@ export default interface Resources {
       "noResults": "Your search returned no results"
     }
   },
+  "server.booking": {
+    "bookingFixtures": {
+      "containers": {
+        "cryoEmSuite": "Cryo-EM suite",
+        "deletedInstrumentRoom": "Deleted instrument room",
+        "imagingLab": "Imaging lab",
+        "longCellAnalysisFacility": "Cell analysis facility with a deliberately long location name",
+        "restrictedInstrumentRoom": "Restricted instrument room"
+      },
+      "description": "Docker development booking fixture",
+      "instruments": {
+        "confocal": "Confocal microscope",
+        "deletedLocationSequencer": "Deleted-location sequencer",
+        "electronMicroscope": "Electron microscope",
+        "flowCytometer": "Flow cytometer",
+        "massSpectrometer": "Mass spectrometer",
+        "noParentCentrifuge": "No-parent centrifuge",
+        "restrictedLocationPlateReader": "Restricted-location plate reader"
+      },
+      "purposes": {
+        "calibrationRun": "Calibration run",
+        "cellImaging": "Cell imaging",
+        "cellSorting": "Cell sorting",
+        "overnightAnalysis": "Overnight analysis",
+        "proteomicsRun": "Proteomics run",
+        "ultrastructureImaging": "Ultrastructure imaging"
+      }
+    }
+  },
   "server.core": {
     "api": {
       "errors": {
@@ -6088,7 +6228,15 @@ export default interface Resources {
             "range": {
               "inverted": "The audit search start date must not be after its end date.",
               "tooWide": "The audit search range must not exceed {0} days."
-            }
+            },
+            "results": {
+              "tooMany": "The audit search returned too many results. Choose a narrower date range."
+            },
+            "snapshot": {
+              "changed": "The audit results changed while you were paging through them. Start again to view a fresh snapshot.",
+              "invalid": "The audit snapshot date and fingerprint must be supplied together and in the required format."
+            },
+            "unavailable": "The audit trail is temporarily unavailable. Try again later."
           },
           "authenticationRequired": "Authentication is required.",
           "booking": {
@@ -6133,6 +6281,14 @@ export default interface Resources {
             "timeZone": {
               "invalid": "The time zone must be a valid IANA time zone.",
               "required": "A time zone is required."
+            }
+          },
+          "bookingDisplayPreferences": {
+            "availabilityWindow": {
+              "invalid": "Availability window times must use HH:mm with start before end; the end may be 24:00."
+            },
+            "timeZone": {
+              "invalid": "Choose Browser, Institution, or a valid custom IANA time zone."
             }
           },
           "bulk": {
@@ -7598,7 +7754,9 @@ export default interface Resources {
           "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
           "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
           "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
+          "dataCitePublishFailed": "Error when publishing the DOI in DataCite. If the problem persists, please contact your System Admin",
           "dataCiteRegisterNoDraft": "Could not register a new identifier with DataCite: the service accepted the request but returned no draft record.",
+          "dataCiteRetractFailed": "Error when retracting the DOI in DataCite. If the problem persists, please contact your System Admin",
           "deleteNotOwner": "You can only delete an identifier that you own.",
           "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",

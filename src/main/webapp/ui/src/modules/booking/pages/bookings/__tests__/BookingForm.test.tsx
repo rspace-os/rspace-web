@@ -118,6 +118,34 @@ describe("BookingForm", () => {
     );
   });
 
+  it("preserves stored instants when an edit opens in a different display timezone", async () => {
+    const user = userEvent.setup();
+    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+
+    renderForm(
+      <BookingForm
+        mode="edit"
+        displayTimezone="America/New_York"
+        booking={editableBooking}
+        configuration={target}
+        token="token"
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
+
+    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+    expect(within(start).getByLabelText("booking:bookings.form.date")).toHaveValue("2026-10-24");
+    expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("21:30");
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        window: { start: editableBooking.start, end: editableBooking.end },
+      }),
+    );
+  });
+
   it("prefills only the Calendar date and reports the missing window", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();

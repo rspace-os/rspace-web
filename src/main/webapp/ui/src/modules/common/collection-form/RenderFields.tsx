@@ -16,71 +16,118 @@ export function RenderFields<TDocument extends Record<string, unknown>>({
   relationshipOptionAvailability = {},
   relationshipOptions = {},
   disabled = false,
+  layout = "stacked",
+  density = "comfortable",
   className,
 }: RenderFieldsProps<TDocument>) {
-  return (
-    <FieldGroup className={cn(className)}>
-      {fields
-        .filter(
-          (fieldConfig) => fieldConfig.type === "section" || fieldConfig.type === "row" || fieldConfig.form !== false,
-        )
-        .map((fieldConfig, index) => {
-          if (fieldConfig.type === "section") {
-            return (
-              <SectionField
-                key={`${fieldConfig.labelKey}-${index}`}
-                labelKey={fieldConfig.labelKey}
-                variant={fieldConfig.variant}
-              >
-                <RenderFields
-                  fields={fieldConfig.fields}
-                  form={form}
-                  relationshipOptionAvailability={relationshipOptionAvailability}
-                  relationshipOptions={relationshipOptions}
-                  disabled={disabled}
-                />
-              </SectionField>
-            );
-          }
+  const renderedFields = fields
+    .filter(
+      (fieldConfig) =>
+        fieldConfig.type === "section" ||
+        fieldConfig.type === "row" ||
+        fieldConfig.type === "ui" ||
+        fieldConfig.form !== false,
+    )
+    .map((fieldConfig, index) => {
+      if (fieldConfig.type === "section") {
+        const key = `${fieldConfig.labelKey}-${index}`;
+        const section = (
+          <SectionField key={key} labelKey={fieldConfig.labelKey} variant={fieldConfig.variant}>
+            <RenderFields
+              fields={fieldConfig.fields}
+              form={form}
+              relationshipOptionAvailability={relationshipOptionAvailability}
+              relationshipOptions={relationshipOptions}
+              disabled={disabled}
+              layout={layout}
+              density={density}
+            />
+          </SectionField>
+        );
 
-          if (fieldConfig.type === "row") {
-            return (
-              <RowField key={`row-${index}`}>
-                {fieldConfig.fields
-                  .filter((field) => field.form !== false)
-                  .map((field) => (
-                    <RowFieldItem key={field.name} width={field.form ? field.form.width : undefined}>
-                      <RenderFields
-                        fields={[field]}
-                        form={form}
-                        relationshipOptionAvailability={relationshipOptionAvailability}
-                        relationshipOptions={relationshipOptions}
-                        disabled={disabled}
-                      />
-                    </RowFieldItem>
-                  ))}
-              </RowField>
-            );
-          }
+        // A section is a block, not a label/control pair, so inside an inline
+        // list it spans both columns instead of sitting in the label one.
+        return layout === "inline" ? (
+          <div key={key} className="sm:col-span-2">
+            {section}
+          </div>
+        ) : (
+          section
+        );
+      }
 
-          const props = { disabled, form, relationshipOptionAvailability, relationshipOptions };
-          switch (fieldConfig.type) {
-            case "text":
-              return <TextField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
-            case "number":
-              return <NumberField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
-            case "boolean":
-              return <BooleanField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
-            case "dateTime":
-              return <DateTimeField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
-            case "select":
-              return <SelectField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
-            case "relationship":
-              return <RelationshipField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
-          }
+      if (fieldConfig.type === "row") {
+        return (
+          // A row is its own horizontal grouping, so its fields stay stacked
+          // even inside an inline list.
+          <RowField key={`row-${index}`}>
+            {fieldConfig.fields
+              .filter((field) => field.form !== false)
+              .map((field) => (
+                <RowFieldItem key={field.name} width={field.form ? field.form.width : undefined}>
+                  <RenderFields
+                    fields={[field]}
+                    form={form}
+                    relationshipOptionAvailability={relationshipOptionAvailability}
+                    relationshipOptions={relationshipOptions}
+                    disabled={disabled}
+                    density={density}
+                  />
+                </RowFieldItem>
+              ))}
+          </RowField>
+        );
+      }
 
-          return null;
-        })}
+      if (fieldConfig.type === "ui") {
+        // Rendered as a component, not called as a function, so its own hooks are its own.
+        const Ui = fieldConfig.component;
+        const ui = <Ui key={fieldConfig.name} form={form} disabled={disabled} />;
+        // Like a section, a ui block is not a label/control pair, so it spans both columns.
+        return layout === "inline" ? (
+          <div key={fieldConfig.name} className="sm:col-span-2">
+            {ui}
+          </div>
+        ) : (
+          ui
+        );
+      }
+
+      const props = { disabled, form, layout, relationshipOptionAvailability, relationshipOptions };
+      switch (fieldConfig.type) {
+        case "text":
+          return <TextField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
+        case "number":
+          return <NumberField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
+        case "boolean":
+          return <BooleanField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
+        case "dateTime":
+          return <DateTimeField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
+        case "select":
+          return <SelectField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
+        case "relationship":
+          return <RelationshipField key={fieldConfig.name} {...props} fieldConfig={fieldConfig} />;
+      }
+
+      return null;
+    });
+
+  // The label column is sized to the longest label and every control shares the
+  // second column, which is what makes an inline form line up with the
+  // read-out it replaces. Each field joins this grid with `sm:contents`.
+  return layout === "inline" ? (
+    <div
+      className={cn(
+        "grid gap-x-8 sm:grid-cols-[max-content_1fr]",
+        density === "compact" ? "gap-y-2" : "gap-y-4",
+        className,
+      )}
+    >
+      {renderedFields}
+    </div>
+  ) : (
+    <FieldGroup density={density} className={cn(className)}>
+      {renderedFields}
     </FieldGroup>
   );
 }

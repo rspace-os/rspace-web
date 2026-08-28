@@ -28,10 +28,10 @@ function offset(instant: string, timezone: string): string {
 
 export function resolveBookingWindow(
   draft: BookingWindowDraft,
-  timezone: string,
+  displayTimezone: string,
 ): { window?: ResolvedBookingWindow; start?: WallClockResolution; end?: WallClockResolution; orderInvalid: boolean } {
-  const start = resolution(draft.startDate, draft.startTime, timezone);
-  const end = resolution(draft.endDate, draft.endTime, timezone);
+  const start = resolution(draft.startDate, draft.startTime, displayTimezone);
+  const end = resolution(draft.endDate, draft.endTime, displayTimezone);
   const startInstant = wallClockInstant(start, draft.startOccurrence);
   const endInstant = wallClockInstant(end, draft.endOccurrence);
   const orderInvalid = Boolean(startInstant && endInstant && Temporal.Instant.compare(endInstant, startInstant) <= 0);
@@ -44,6 +44,8 @@ export function resolveBookingWindow(
 }
 
 export function ZonedBookingWindowFields({
+  displayTimezone,
+  schedulingTimezone,
   timezone,
   slotGranularityMinutes,
   maxBookingDurationMinutes,
@@ -55,7 +57,10 @@ export function ZonedBookingWindowFields({
   allowPolicyMismatch = false,
   disabled = false,
 }: {
-  timezone: string;
+  displayTimezone?: string;
+  schedulingTimezone?: string;
+  /** @deprecated Pass displayTimezone and schedulingTimezone separately. */
+  timezone?: string;
   slotGranularityMinutes: number;
   maxBookingDurationMinutes: number;
   openingStart: string;
@@ -67,20 +72,26 @@ export function ZonedBookingWindowFields({
   disabled?: boolean;
 }) {
   const { t } = useTranslation("booking");
-  const result = useMemo(() => resolveBookingWindow(value, timezone), [value, timezone]);
-  const minute = (time: string) => {
-    const match = /^(\d{2}):(\d{2})$/.exec(time);
-    return match ? Number(match[1]) * 60 + Number(match[2]) : undefined;
-  };
-  const startMinute = minute(value.startTime);
-  const endMinute = minute(value.endTime);
+  const resolvedDisplayTimezone = displayTimezone ?? timezone ?? "UTC";
+  const resolvedSchedulingTimezone = schedulingTimezone ?? timezone ?? resolvedDisplayTimezone;
+  const result = useMemo(() => resolveBookingWindow(value, resolvedDisplayTimezone), [resolvedDisplayTimezone, value]);
+  const schedulingEndpoint = (instant: string | undefined) =>
+    instant ? Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone) : undefined;
+  const schedulingStart = schedulingEndpoint(result.window?.start);
+  const schedulingEnd = schedulingEndpoint(result.window?.end);
+  const startMinute = schedulingStart ? schedulingStart.hour * 60 + schedulingStart.minute : undefined;
+  const endMinute = schedulingEnd ? schedulingEnd.hour * 60 + schedulingEnd.minute : undefined;
   const granularityInvalid =
     (startMinute !== undefined && startMinute % slotGranularityMinutes !== 0) ||
     (endMinute !== undefined && endMinute % slotGranularityMinutes !== 0);
   const openingInvalid =
-    Boolean(result.window) &&
-    openingEnd !== "24:00" &&
-    (value.startDate !== value.endDate || value.startTime < openingStart || value.endTime > openingEnd);
+    Boolean(result.window && schedulingStart && schedulingEnd) &&
+    (schedulingStart?.toPlainDate().toString() !== schedulingEnd?.toPlainDate().toString() ||
+      `${String(schedulingStart?.hour).padStart(2, "0")}:${String(schedulingStart?.minute).padStart(2, "0")}` <
+        openingStart ||
+      (openingEnd !== "24:00" &&
+        `${String(schedulingEnd?.hour).padStart(2, "0")}:${String(schedulingEnd?.minute).padStart(2, "0")}` >
+          openingEnd));
   const maximumDurationInvalid =
     Boolean(result.window) &&
     maxBookingDurationMinutes > 0 &&
@@ -141,7 +152,9 @@ export function ZonedBookingWindowFields({
                   checked={occurrence === choice}
                   onChange={() => change({ [occurrenceKey]: choice })}
                 />
-                {t(`bookings.form.${choice}Occurrence`, { offset: offset(endpointResolution[choice], timezone) })}
+                {t(`bookings.form.${choice}Occurrence`, {
+                  offset: offset(endpointResolution[choice], resolvedDisplayTimezone),
+                })}
               </Label>
             ))}
             {!occurrence && <FieldError>{t("bookings.errors.occurrenceRequired")}</FieldError>}
@@ -153,7 +166,14 @@ export function ZonedBookingWindowFields({
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted-foreground">{t("bookings.form.timezone", { timezone })}</p>
+      <p className="text-sm text-muted-foreground">
+        {t("bookings.form.timezone", { timezone: resolvedDisplayTimezone })}
+      </p>
+      {resolvedDisplayTimezone === resolvedSchedulingTimezone ? null : (
+        <p className="text-sm text-muted-foreground">
+          {t("bookings.form.schedulingTimezone", { timezone: resolvedSchedulingTimezone })}
+        </p>
+      )}
       {endpoint("start", result.start, value.startOccurrence)}
       {endpoint("end", result.end, value.endOccurrence)}
       {result.orderInvalid && <FieldError>{t("bookings.errors.endAfterStart")}</FieldError>}

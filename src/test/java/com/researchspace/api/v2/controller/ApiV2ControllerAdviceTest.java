@@ -15,6 +15,7 @@ import com.researchspace.service.CollectionMutationException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
+import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import org.apache.shiro.authz.AuthorizationException;
@@ -71,7 +72,29 @@ class ApiV2ControllerAdviceTest {
     source.addMessage(
         "errors.api.v2.missingParameter", Locale.getDefault(), "Missing parameter detail");
     source.addMessage("errors.api.v2.requestRejected", Locale.getDefault(), "Rejected detail");
+    source.addMessage(
+        "errors.api.v2.audit.snapshot.changed", Locale.getDefault(), "Snapshot changed detail");
+    source.addMessage(
+        "errors.api.v2.audit.unavailable", Locale.getDefault(), "Audit unavailable detail");
     advice = new ApiV2ControllerAdvice(new MessageSourceUtils(source));
+  }
+
+  @Test
+  void mapsAuditSnapshotConflictAndUnavailableWithoutLeakingFileDetails() {
+    assertProblem(
+        advice.handleAuditSnapshotConflict(),
+        HttpStatus.CONFLICT,
+        "errors.api.v2.audit.snapshot.changed",
+        "Snapshot changed detail");
+    ResponseEntity<ApiV2Problem> unavailable =
+        advice.handleAuditUnavailable(
+            new ApiV2AuditUnavailableException(new IOException("RSLogs.txt: secret line")));
+    assertProblem(
+        unavailable,
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "errors.api.v2.audit.unavailable",
+        "Audit unavailable detail");
+    assertFalse(unavailable.getBody().detail().contains("RSLogs"));
   }
 
   @Test
@@ -145,6 +168,11 @@ class ApiV2ControllerAdviceTest {
   void mapsNotFoundAndCollectionQueryErrorsToProblemDetails() {
     assertProblem(
         advice.handleNotFound(),
+        HttpStatus.NOT_FOUND,
+        "errors.api.v2.notFound",
+        "Not found detail");
+    assertProblem(
+        advice.handleBookingCalendarNotFound(),
         HttpStatus.NOT_FOUND,
         "errors.api.v2.notFound",
         "Not found detail");

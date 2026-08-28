@@ -13,8 +13,9 @@ import {
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
-import { FieldError } from "@/modules/common/ui/field";
+import { FieldDescription, FieldError, FieldLegend, FieldSet } from "@/modules/common/ui/field";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { RadioGroup, RadioGroupItem } from "@/modules/common/ui/radio-group";
 import { type ResolvedBookingWindow, ZonedBookingWindowFields } from "./ZonedBookingWindowFields";
 
 type PurposeInput = { purpose: string };
@@ -41,10 +42,18 @@ export type EditableBooking = Extract<Booking, { privacy: "full" }> & {
   state: "CONFIRMED";
 };
 
+/**
+ * "blockout" reserves the item for maintenance rather than for the requester's own work. Only a
+ * system administrator may choose it.
+ */
+export const bookingTypes = ["booking", "blockout"] as const;
+export type BookingType = (typeof bookingTypes)[number];
+
 export type BookingFormSubmission = {
   target: BookableItemOption;
   window: ResolvedBookingWindow;
   purpose: string | null;
+  type: BookingType;
   returnDate: string;
 };
 
@@ -53,6 +62,9 @@ type BookingFormProps =
       mode: "add";
       initialTarget?: BookableItemOption;
       initialDate?: string;
+      displayTimezone?: string;
+      /** Sysadmins pick the booking type; everyone else always books for themselves. */
+      canChooseType?: boolean;
       token: string;
       pending: boolean;
       error?: string;
@@ -62,6 +74,7 @@ type BookingFormProps =
       mode: "edit";
       booking: EditableBooking;
       configuration: BookableItemOption;
+      displayTimezone?: string;
       token: string;
       pending: boolean;
       error?: string;
@@ -89,20 +102,21 @@ export function BookingForm(props: BookingFormProps) {
   const fixedTarget = props.mode === "edit" ? props.configuration : undefined;
   const initialTarget = props.mode === "add" ? props.initialTarget : undefined;
   const initialDate = props.mode === "add" ? props.initialDate : undefined;
+  const displayTimezone = props.displayTimezone ?? (editing ? fixedTarget?.timezone : initialTarget?.timezone) ?? "UTC";
   const originalDraft =
     props.mode === "edit"
-      ? wallClockDraftFromInstants(props.booking.start, props.booking.end, props.booking.timezone)
+      ? wallClockDraftFromInstants(props.booking.start, props.booking.end, displayTimezone)
       : undefined;
   const [target, setTarget] = useState<BookableItemOption | undefined>(editing ? fixedTarget : initialTarget);
   const [draft, setDraft] = useState<BookingWindowDraft>(() =>
     originalDraft
       ? originalDraft
       : emptyDraft(
-          initialDate ??
-            (initialTarget ? currentWallClock(new Date().toISOString(), initialTarget.timezone).date : undefined),
+          initialDate ?? (initialTarget ? currentWallClock(new Date().toISOString(), displayTimezone).date : undefined),
         ),
   );
   const [window, setWindow] = useState<ResolvedBookingWindow>();
+  const [type, setType] = useState<BookingType>("booking");
   const [attempted, setAttempted] = useState(false);
   const form = useForm({
     schema: v.object({ purpose: v.pipe(v.string(), v.maxLength(1000)) }),
@@ -117,11 +131,11 @@ export function BookingForm(props: BookingFormProps) {
       setTarget(initialTarget);
       setDraft((current) => {
         if (current.startDate || initialDate) return current;
-        const date = currentWallClock(new Date().toISOString(), initialTarget.timezone).date;
+        const date = currentWallClock(new Date().toISOString(), displayTimezone).date;
         return { ...current, startDate: date, endDate: date };
       });
     }
-  }, [editing, initialDate, initialTarget, target]);
+  }, [displayTimezone, editing, initialDate, initialTarget, target]);
   const resolved = useCallback((value: ResolvedBookingWindow | undefined) => setWindow(value), []);
   const selectTarget = (next: BookableItemOption | undefined) => {
     setTarget(next);
@@ -129,8 +143,8 @@ export function BookingForm(props: BookingFormProps) {
       ...current,
       ...(next && !current.startDate
         ? {
-            startDate: currentWallClock(new Date().toISOString(), next.timezone).date,
-            endDate: currentWallClock(new Date().toISOString(), next.timezone).date,
+            startDate: currentWallClock(new Date().toISOString(), displayTimezone).date,
+            endDate: currentWallClock(new Date().toISOString(), displayTimezone).date,
           }
         : {}),
       startOccurrence: undefined,
@@ -147,6 +161,7 @@ export function BookingForm(props: BookingFormProps) {
         target,
         window,
         purpose: input.purpose.trim() || null,
+        type,
         returnDate: draft.startDate,
       });
     } finally {
@@ -172,6 +187,28 @@ export function BookingForm(props: BookingFormProps) {
         <BookableItemPicker value={target} onChange={selectTarget} token={props.token} disabled={busy} />
       )}
       {attempted && !target && <FieldError>{t("bookings.errors.itemRequired")}</FieldError>}
+      {props.mode === "add" && props.canChooseType && (
+        <FieldSet>
+          <FieldLegend>{t("bookings.form.type")}</FieldLegend>
+          <RadioGroup
+            aria-label={t("bookings.form.type")}
+            className="gap-2"
+            disabled={busy}
+            value={type}
+            onValueChange={(value) => setType(value as BookingType)}
+          >
+            {bookingTypes.map((option) => (
+              <label key={option} htmlFor={`booking-type-${option}`} className="flex items-center gap-2 text-sm">
+                <RadioGroupItem id={`booking-type-${option}`} value={option} />
+                {t(option === "booking" ? "bookings.form.typeBooking" : "bookings.form.typeBlockout")}
+              </label>
+            ))}
+          </RadioGroup>
+          {/* ponytail: TimeSlotBooking has no type column, so the choice stays in the browser.
+              Unlock: add the column plus a `type` field on ApiV2TimeSlotBookingResource, then send it. */}
+          {type === "blockout" && <FieldDescription>{t("bookings.form.typeBlockoutPending")}</FieldDescription>}
+        </FieldSet>
+      )}
       {target && (
         <>
           <p className="text-sm text-muted-foreground">
@@ -185,7 +222,8 @@ export function BookingForm(props: BookingFormProps) {
             </p>
           ) : null}
           <ZonedBookingWindowFields
-            timezone={target.timezone}
+            displayTimezone={displayTimezone}
+            schedulingTimezone={target.timezone}
             slotGranularityMinutes={target.slotGranularityMinutes}
             maxBookingDurationMinutes={target.maxBookingDurationMinutes}
             openingStart={target.openingStart}

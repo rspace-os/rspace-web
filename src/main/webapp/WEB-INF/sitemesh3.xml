@@ -66,6 +66,7 @@
     <mapping path="/about/**" exclude="true"/>
     <mapping path="/booking" exclude="true"/>
     <mapping path="/booking/**" exclude="true"/>
+    <mapping path="*/public/booking/calendars/feed.ics" exclude="true"/>
 
     <!-- Public / external pages decorator -->
     <mapping path="*/signup*" decorator="externalPages.jsp"/>

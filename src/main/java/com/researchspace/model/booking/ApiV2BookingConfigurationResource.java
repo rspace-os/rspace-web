@@ -29,9 +29,11 @@ public record ApiV2BookingConfigurationResource(
         boolean enabled,
     @ApiV2ResourceField(
             property = "timeZone",
-            requiredOnCreate = true,
+            createAccess = NEVER,
+            updateAccess = NEVER,
             maxLength = 255,
-            description = "IANA time-zone identifier used for booking windows.",
+            description =
+                "Read-only scheduling timezone used for opening hours and booking policy.",
             example = "Europe/Berlin")
         String timezone,
     @ApiV2ResourceField(

@@ -8,7 +8,7 @@ import java.util.Optional;
 /** Manages item-scoped calendar credentials, feeds, and individual downloads. */
 public interface BookingCalendarManager {
 
-  record Status(boolean active, Date updatedAt) {
+  record Status(boolean active, Date updatedAt, String subscriptionUrl) {
 
     public Status {
       updatedAt = copy(updatedAt);
@@ -58,15 +58,21 @@ public interface BookingCalendarManager {
     }
   }
 
+  /** Returns the caller's active subscription for a readable configuration, including its URL. */
   Status status(Long configurationId, User subject, User actor);
 
+  /** Creates or replaces the caller's credential and returns its subscription URL. */
   Created createOrRotate(Long configurationId, User subject, User actor);
 
+  /** Revokes only the caller's credential for an existing configuration. */
   void revoke(Long configurationId, User subject, User actor);
 
+  /** Revokes every credential for a configuration as an authorized system administrator. */
   int resetForConfiguration(Long configurationId, User subject, User actor);
 
+  /** Generates a one-off calendar download for a readable confirmed booking. */
   Optional<Download> download(Long bookingId, User subject, Locale locale);
 
+  /** Resolves a bearer credential and generates the owner's current privacy-shaped feed. */
   FeedResult feed(String rawToken, Locale locale, Date refreshedAt);
 }

@@ -54,7 +54,7 @@ class BookingCalendarFeedGeneratorTest {
   void generatesValidDeterministicFullAndBusyEvents() throws Exception {
     CalendarSource source =
         new CalendarSource(
-            "Microscope, A;\\\nRoom",
+            "Microscope, A;\nRoom",
             "Europe/Berlin",
             List.of(
                 event(7L, BookingPrivacy.FULL, "Ada (ada)", "Plate, 4;\\test", true),
@@ -67,7 +67,7 @@ class BookingCalendarFeedGeneratorTest {
     Calendar parsed = new CalendarBuilder().build(new ByteArrayInputStream(first));
     assertFalse(parsed.getProperty(Property.METHOD).isPresent());
     assertEquals(
-        "Microscope, A;\\\nRoom", parsed.getProperty("X-WR-CALNAME").orElseThrow().getValue());
+        "Microscope, A;\nRoom", parsed.getProperty("X-WR-CALNAME").orElseThrow().getValue());
     assertEquals("Europe/Berlin", parsed.getProperty("X-WR-TIMEZONE").orElseThrow().getValue());
     List<VEvent> events = parsed.getComponents(Component.VEVENT);
     assertEquals(2, events.size());

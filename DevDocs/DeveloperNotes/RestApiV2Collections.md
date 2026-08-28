@@ -27,6 +27,9 @@ The current implementation supplies these routes outside the collection controll
 | `POST /api/v2/oauth/tokens` | Browser session | A non-cached, session-bound UI OAuth token that retains actor and subject during run-as. |
 | `GET /api/v2/users/me` | Authenticated | Identity, roles, capabilities, external identifiers, and API session state. |
 | `GET /api/v2/users/me/profile-image` | Authenticated | The current profile image as a non-cached PNG file. |
+| `GET /api/v2/users/me/booking-preferences` | Authenticated; Booking enabled | The subject's explicit Booking display preference, or the current global defaults. |
+| `PUT /api/v2/users/me/booking-preferences` | Authenticated; Booking enabled | Replaces the subject's complete Booking display preference. |
+| `DELETE /api/v2/users/me/booking-preferences` | Authenticated; Booking enabled | Removes the subject's override so global Booking defaults apply. |
 
 Do not add a resource spec for one of these routes. Use a concrete controller for a similar
 non-CRUD operation.
@@ -442,13 +445,27 @@ Each registered resource also has these routes:
 The caller must authenticate with an API key or an OAuth bearer token. The caller must also have
 read access to the resource. The audit handler applies its normal subject visibility rules.
 
-The list route accepts `page`, `limit`, `dateFrom`, `dateTo`, and repeated `actions` parameters. The
-count route accepts the date and action filters.
+The list route accepts `page`, `limit`, `dateFrom`, `dateTo`, repeated `actions`, and an optional
+`snapshotDate`/`snapshotFingerprint` pair. Pagination is one-based. The first page omits the pair;
+the response selects the latest completed UTC day permitted by `dateTo` and returns both values.
+Every later page sends both values unchanged. The count route accepts only the date and action
+filters.
 
 A search covers at most 183 days. A request for a wider window is refused with `400` and
 `errors.api.v2.audit.range.tooWide` rather than being narrowed, so a client never receives a
 truncated result that looks complete. Page a longer period yourself, one window at a time. When the
 client supplies no dates the server uses the last 183 days. `dateFrom` after `dateTo` is `400`.
+
+The list is a daily bounded-consistency snapshot over the exact half-open interval from `dateFrom`
+through midnight after `snapshotDate` in UTC. The server filters unreadable payload fields, assigns
+each event a deterministic `eventId`, sorts the complete result, fingerprints it, and only then
+slices the requested page. Exact duplicate events remain separate rows. Neither hash is a signature
+or evidence that the source log has not been changed.
+
+If the bounded result changes between pages, the server returns `409` and the client must restart
+from page one. A malformed, unreadable, or unstable eligible audit file returns `503`; the server
+does not return a partial page. A result above `api.v2.audit.resultCeiling` returns `400` and the
+client must choose a narrower date range. See `RestApiV2AuditSnapshots.md` for the measured default.
 
 The framework reads `@AuditTrailData` and the single `@AuditTrailIdentifier` method from the entity.
 A resource without this metadata returns an empty audit result. Use a stable identifier that is

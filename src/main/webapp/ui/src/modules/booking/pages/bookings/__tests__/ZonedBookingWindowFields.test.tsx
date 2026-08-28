@@ -4,6 +4,58 @@ import { describe, expect, it, vi } from "vitest";
 import { ZonedBookingWindowFields } from "../ZonedBookingWindowFields";
 
 describe("ZonedBookingWindowFields", () => {
+  it.each([
+    ["Europe/Berlin", "America/New_York", "15:00", "16:00", "2026-08-17T13:00:00Z", "2026-08-17T14:00:00Z"],
+    ["America/New_York", "Europe/Berlin", "03:00", "04:00", "2026-08-17T07:00:00Z", "2026-08-17T08:00:00Z"],
+  ])(
+    "resolves %s display input to instants and validates policy in %s",
+    (displayTimezone, schedulingTimezone, startTime, endTime, start, end) => {
+      const onResolved = vi.fn();
+      render(
+        <ZonedBookingWindowFields
+          displayTimezone={displayTimezone}
+          schedulingTimezone={schedulingTimezone}
+          slotGranularityMinutes={5}
+          maxBookingDurationMinutes={0}
+          openingStart="09:00"
+          openingEnd="17:00"
+          value={{ startDate: "2026-08-17", startTime, endDate: "2026-08-17", endTime }}
+          onChange={vi.fn()}
+          onResolved={onResolved}
+        />,
+      );
+
+      expect(onResolved).toHaveBeenLastCalledWith({ start, end });
+      expect(screen.getByText("booking:bookings.form.schedulingTimezone")).toBeVisible();
+      expect(screen.queryByText("booking:bookings.errors.openingHours")).not.toBeInTheDocument();
+    },
+  );
+
+  it("rejects an interval that crosses the scheduling timezone's local date boundary", () => {
+    const onResolved = vi.fn();
+    render(
+      <ZonedBookingWindowFields
+        displayTimezone="Europe/Berlin"
+        schedulingTimezone="America/New_York"
+        slotGranularityMinutes={5}
+        maxBookingDurationMinutes={0}
+        openingStart="00:00"
+        openingEnd="24:00"
+        value={{
+          startDate: "2026-08-18",
+          startTime: "05:00",
+          endDate: "2026-08-18",
+          endTime: "07:00",
+        }}
+        onChange={vi.fn()}
+        onResolved={onResolved}
+      />,
+    );
+
+    expect(screen.getByText("booking:bookings.errors.openingHours")).toBeVisible();
+    expect(onResolved).toHaveBeenLastCalledWith(undefined);
+  });
+
   it("blocks a nonexistent spring-forward time", () => {
     render(
       <ZonedBookingWindowFields

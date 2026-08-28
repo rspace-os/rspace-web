@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import { loadCalendarAvailability, loadDatedCalendarAvailability } from "../calendarAvailability";
 
 function envelope(docs: unknown[], page = 1, totalPages = 1, totalDocs = docs.length) {
@@ -134,6 +135,35 @@ describe("calendar availability", () => {
     ]);
     expect(result.get("IN2")).toEqual([
       { kind: "booking", startsAt: new Date("2026-08-18T03:00:00Z"), endsAt: new Date("2026-08-18T06:00:00Z") },
+    ]);
+  });
+
+  it("generates and clips closures for every scheduling date overlapped by the display interval", async () => {
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
+    const interval = displayInterval("2026-08-18", "Pacific/Auckland", "00:00", "24:00");
+
+    const result = await loadCalendarAvailability(
+      [
+        {
+          globalId: "IN1",
+          timezone: "America/Los_Angeles",
+          openingStart: "08:00",
+          openingEnd: "18:00",
+          bufferBeforeMinutes: 0,
+          bufferAfterMinutes: 0,
+          allowDoubleBooking: false,
+        },
+      ],
+      interval,
+      "token",
+      new AbortController().signal,
+    );
+
+    expect(interval).toMatchObject({ start: "2026-08-17T12:00:00Z", end: "2026-08-18T12:00:00Z" });
+    expect(result.get("IN1")).toEqual([
+      { kind: "blockout", startsAt: new Date("2026-08-17T12:00:00Z"), endsAt: new Date("2026-08-17T15:00:00Z") },
+      { kind: "blockout", startsAt: new Date("2026-08-18T01:00:00Z"), endsAt: new Date("2026-08-18T07:00:00Z") },
+      { kind: "blockout", startsAt: new Date("2026-08-18T07:00:00Z"), endsAt: new Date("2026-08-18T12:00:00Z") },
     ]);
   });
 

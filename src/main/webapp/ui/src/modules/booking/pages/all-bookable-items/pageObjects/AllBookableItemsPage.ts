@@ -6,8 +6,10 @@ function css(selector: string): Locator {
 }
 
 export class AllBookableItemsPage {
-  readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Bookable item details" });
-  readonly bookableItemDetailsTarget: Locator = page.getByText("Confocal microscope", { exact: true });
+  readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Confocal microscope" });
+  readonly bookableItemDetailsTarget: Locator = page.getByRole("link", {
+    name: "View Confocal microscope in Inventory",
+  });
 
   get table(): Locator {
     return page.getByRole("table");
@@ -65,6 +67,22 @@ export class AllBookableItemsPage {
     return page.getByRole("img", { name: "Flow cytometer availability" });
   }
 
+  parentContainer(name: string): Locator {
+    return this.table.getByRole("link", { name, exact: true });
+  }
+
+  cardParentContainer(itemName: string, parentName: string): Locator {
+    return this.card(itemName).getByRole("link", { name: parentName, exact: true });
+  }
+
+  nowMarker(itemName: string): Locator {
+    return page.getByRole("img", { name: `${itemName} availability` }).getByTitle(/Current time:/);
+  }
+
+  get effectiveTimeZone(): Locator {
+    return page.getByText("UTC", { exact: true });
+  }
+
   get date(): Locator {
     return page.getByLabelText("Date");
   }
@@ -78,7 +96,7 @@ export class AllBookableItemsPage {
   }
 
   get quickFilterScope(): Locator {
-    return page.getByText("Today in each bookable item's time zone.");
+    return page.getByText("Availability uses the selected display date and timezone.");
   }
 
   get bookButton(): Locator {

@@ -12,10 +12,12 @@ import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { createAddBookingRoute, createEditBookingRoute } from "../../bookings/routes";
+import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createCalendarRoute } from "../routes";
 
 export const currentUser: CurrentUser = {
@@ -134,6 +136,7 @@ export function collectionResponse(
 
 export async function renderCalendar(initialEntry = "/booking/calendar?date=2026-08-17") {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
   const root = createRootRoute({ component: Outlet });
   const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
   const router = createRouter({

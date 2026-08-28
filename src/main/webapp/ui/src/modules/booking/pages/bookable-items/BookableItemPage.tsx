@@ -1,19 +1,21 @@
 import { Tabs } from "@base-ui/react/tabs";
-import { Form, useForm } from "@formisch/react";
+import { Form, reset, useForm } from "@formisch/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { CalendarClockIcon, ExternalLinkIcon, PencilIcon } from "lucide-react";
+import { PencilIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
+import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
+import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Heading } from "@/modules/common/ui/typography";
 import { BookableItemAuditLog } from "./BookableItemAuditLog";
 import { BookingEventList } from "./BookingEventList";
@@ -25,7 +27,10 @@ import {
   bookingConfigurationFields,
   fetchBookingConfigurationByTarget,
 } from "./bookingConfiguration";
+import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
 import { SchedulingSettingsFields } from "./schedulingSettings";
+
+type BookableItemTab = "bookings" | "details" | "audit";
 
 async function updateBookingConfiguration(
   id: number,
@@ -44,6 +49,19 @@ async function updateBookingConfiguration(
   if (!response.ok) throw new Error(`Booking configuration update failed with status ${response.status}`);
 }
 
+function configurationInput(configuration: BookingConfiguration): BookingConfigurationUpdateInput {
+  return {
+    enabled: configuration.enabled,
+    slotGranularityMinutes: configuration.slotGranularityMinutes,
+    openingStart: configuration.openingStart,
+    openingEnd: configuration.openingEnd,
+    bufferBeforeMinutes: configuration.bufferBeforeMinutes,
+    bufferAfterMinutes: configuration.bufferAfterMinutes,
+    maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
+    allowDoubleBooking: configuration.allowDoubleBooking,
+  };
+}
+
 function SpotlightHeader({
   configuration,
   target,
@@ -51,62 +69,59 @@ function SpotlightHeader({
 }: {
   configuration: BookingConfiguration;
   target: NonNullable<BookingConfiguration["target"]>;
-  action: ReactNode;
+  action?: ReactNode;
 }) {
   const { t } = useTranslation("booking");
+  const hasLocation = target.value.parentContainerName != null && target.value.parentContainerGlobalId != null;
+
   return (
-    <section className="rounded-sm border bg-background shadow-md">
-      <div className="flex flex-wrap items-center gap-4 p-5">
-        <span className="flex size-12 shrink-0 items-center justify-center rounded-sm bg-primary text-primary-foreground">
-          <CalendarClockIcon aria-hidden="true" className="size-6" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            {t("bookableItemDetails.title")}
-          </p>
-          <Heading level={4} as="h1" className="mt-0.5 truncate">
-            {target.value.name}
-          </Heading>
-          <p className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <Badge
-              variant="outline"
-              className="font-mono"
-              render={
-                <a
-                  href={`/globalId/${target.globalId}`}
-                  aria-label={t("bookableItemDetails.viewInventory", { name: target.value.name })}
-                >
-                  <ExternalLinkIcon aria-hidden="true" />
-                  {target.globalId}
-                </a>
-              }
-            />
-            {configuration.timezone}
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-3">
-          <Badge variant={configuration.enabled ? "default" : "secondary"}>
-            {configuration.enabled ? t("bookableItemDetails.enabled") : t("bookableItemDetails.disabled")}
-          </Badge>
-          {action}
-        </div>
+    <section className="flex flex-wrap items-center gap-4">
+      <InventoryItem
+        name={target.value.name}
+        nameAs="h1"
+        globalId={target.globalId}
+        href={`/globalId/${target.globalId}`}
+        idLinkLabel={t("bookableItemDetails.viewInventory", { name: target.value.name })}
+        idPlacement="title"
+        className="min-w-full flex-1 p-0 sm:min-w-0"
+      >
+        <span>{configuration.timezone}</span>
+        {hasLocation ? (
+          <InventoryLocationLink
+            name={target.value.parentContainerName}
+            globalId={target.value.parentContainerGlobalId}
+          />
+        ) : null}
+      </InventoryItem>
+      <div className="flex shrink-0 flex-wrap items-center gap-3">
+        <Badge variant={configuration.enabled ? "default" : "secondary"}>
+          {configuration.enabled ? t("bookableItemDetails.enabled") : t("bookableItemDetails.disabled")}
+        </Badge>
+        {action}
       </div>
     </section>
   );
 }
 
-function PageTab({ value, children }: { value: string; children: ReactNode }) {
+function PageTab({ value, disabled, children }: { value: BookableItemTab; disabled: boolean; children: ReactNode }) {
   return (
     <Tabs.Tab
       value={value}
-      className="-mb-px cursor-default border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors outline-none select-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 aria-selected:border-primary aria-selected:text-foreground"
+      disabled={disabled}
+      className="-mb-px cursor-default border-b-2 border-transparent px-4 py-3 text-sm font-medium text-muted-foreground transition-colors outline-none select-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 aria-selected:border-primary aria-selected:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
     >
       {children}
     </Tabs.Tab>
   );
 }
 
-function RulesReadOut({ configuration }: { configuration: BookingConfiguration }) {
+function RulesReadOut({
+  configuration,
+  displayTimeZone,
+}: {
+  configuration: BookingConfiguration;
+  displayTimeZone: string;
+}) {
   const { t, i18n } = useTranslation("booking");
   const updatedAt =
     configuration.updatedAt === null || configuration.updatedAt === undefined ? (
@@ -116,7 +131,7 @@ function RulesReadOut({ configuration }: { configuration: BookingConfiguration }
         {new Intl.DateTimeFormat(i18n.language, {
           dateStyle: "medium",
           timeStyle: "short",
-          timeZone: configuration.timezone,
+          timeZone: displayTimeZone,
         }).format(new Date(configuration.updatedAt))}
       </time>
     );
@@ -160,58 +175,212 @@ function RulesReadOut({ configuration }: { configuration: BookingConfiguration }
   );
 }
 
-/**
- * Mounted only while editing, so `useForm` re-seeds from the saved
- * configuration on every entry and Cancel needs no explicit reset.
- */
-function RulesForm({ configuration, onDone }: { configuration: BookingConfiguration; onDone: () => void }) {
+function LoadedBookableItemPage({
+  configuration,
+  globalId,
+  token,
+}: {
+  configuration: BookingConfiguration;
+  globalId: string;
+  token: string;
+}) {
   const { t } = useTranslation("booking");
-  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const preferences = useBookingDisplayPreferences();
+  const { data: currentUser } = useCurrentUserQuery();
+  const { tab = "bookings", edit = false } = useSearch({ from: "/booking/bookable-items/$globalId" });
+  const navigate = useNavigate({ from: "/booking/bookable-items/$globalId" });
   const queryClient = useQueryClient();
+  const [cutoff] = useState(() => new Date().toISOString());
+  const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | null>(null);
+  const formId = `bookable-item-details-${useId()}`;
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
+  const wasEditing = useRef(false);
+  const target = configuration.target;
+  const canEdit = currentUser.hasSysAdminRole;
+  const editing = canEdit && edit;
   const form = useForm({
     schema: BookingConfigurationUpdateInputSchema,
-    initialInput: {
-      enabled: configuration.enabled,
-      timezone: configuration.timezone,
-      slotGranularityMinutes: configuration.slotGranularityMinutes,
-      openingStart: configuration.openingStart,
-      openingEnd: configuration.openingEnd,
-      bufferBeforeMinutes: configuration.bufferBeforeMinutes,
-      bufferAfterMinutes: configuration.bufferAfterMinutes,
-      maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
-      allowDoubleBooking: configuration.allowDoubleBooking,
-    },
+    initialInput: configurationInput(configuration),
   });
+
+  const setSearch = (next: { tab?: BookableItemTab; edit?: boolean }) =>
+    void navigate({
+      search: (current) => {
+        const merged = { ...current, ...next };
+        return {
+          ...(merged.tab === "details" || merged.tab === "audit" ? { tab: merged.tab } : {}),
+          ...(merged.edit === true ? { edit: true } : {}),
+        };
+      },
+      replace: true,
+    });
+
   const updateMutation = useMutation({
     mutationFn: (input: BookingConfigurationUpdateInput) => updateBookingConfiguration(configuration.id, input, token),
+    onMutate: () => setSaveAnnouncement(null),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
-      onDone();
+      setSaveAnnouncement("saved");
+      setSearch({ edit: false });
     },
   });
 
+  useEffect(() => {
+    if (!editing) reset(form, { initialInput: configurationInput(configuration) });
+  }, [configuration, editing, form]);
+
+  useEffect(() => {
+    if (wasEditing.current && !editing) editButtonRef.current?.focus();
+    wasEditing.current = editing;
+  }, [editing]);
+
+  useEffect(() => {
+    if (updateMutation.isError && !updateMutation.isPending) saveButtonRef.current?.focus();
+  }, [updateMutation.isError, updateMutation.isPending]);
+
+  if (target === null) return null;
+
+  const cancelEdit = () => {
+    reset(form, { initialInput: configurationInput(configuration) });
+    setSaveAnnouncement(null);
+    setSearch({ edit: false });
+  };
+
   return (
-    <Form of={form} className="max-w-2xl space-y-8" onSubmit={(input) => updateMutation.mutateAsync(input)}>
-      <RenderFields
-        fields={bookingConfigurationFields.filter((field) => field.name !== "target")}
-        form={form}
-        disabled={updateMutation.isPending}
-      />
-      <SchedulingSettingsFields form={form} disabled={updateMutation.isPending} />
-      {updateMutation.isError ? (
-        <p role="alert" className="text-sm text-destructive">
-          {t("bookableItems.editError")}
-        </p>
-      ) : null}
-      <div className="flex flex-wrap gap-3">
-        <Button type="submit" disabled={updateMutation.isPending} aria-busy={updateMutation.isPending}>
-          {t("bookableItems.actions.save")}
-        </Button>
-        <Button type="button" variant="ghost" disabled={updateMutation.isPending} onClick={onDone}>
-          {t("bookableItemDetails.cancelEdit")}
-        </Button>
-      </div>
-    </Form>
+    <main className="mx-auto max-w-5xl space-y-6 p-4 sm:p-8">
+      <Tabs.Root
+        value={tab}
+        onValueChange={(value) => {
+          if (updateMutation.isPending) return;
+          const nextTab = value === "details" || value === "audit" ? value : "bookings";
+          setSearch({ tab: nextTab });
+        }}
+        className="space-y-6"
+      >
+        <SpotlightHeader
+          configuration={configuration}
+          target={target}
+          action={<CalendarSubscriptionPopover configurationId={configuration.id} token={token} />}
+        />
+
+        <Tabs.List className="flex flex-wrap border-b">
+          <PageTab value="bookings" disabled={updateMutation.isPending}>
+            {t("bookableItemDetails.tabs.bookings")}
+          </PageTab>
+          <PageTab value="details" disabled={updateMutation.isPending}>
+            {t("bookableItemDetails.tabs.details")}
+          </PageTab>
+          <PageTab value="audit" disabled={updateMutation.isPending}>
+            {t("bookableItemDetails.tabs.audit")}
+          </PageTab>
+        </Tabs.List>
+
+        <Tabs.Panel value="bookings" className="space-y-8 outline-none">
+          <section className="space-y-4" aria-labelledby="upcoming-events-heading">
+            <Heading level={3} as="h2" id="upcoming-events-heading">
+              {t("bookableItemDetails.upcoming")}
+            </Heading>
+            <BookingEventList globalId={globalId} timezone={preferences.timeZone} period="upcoming" cutoff={cutoff} />
+          </section>
+
+          <section className="space-y-4" aria-labelledby="past-events-heading">
+            <Heading level={3} as="h2" id="past-events-heading">
+              {t("bookableItemDetails.past")}
+            </Heading>
+            <BookingEventList globalId={globalId} timezone={preferences.timeZone} period="past" cutoff={cutoff} />
+          </section>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="details" keepMounted className="outline-none">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("bookableItemDetails.rules")}</CardTitle>
+              {canEdit ? (
+                <CardAction className="flex gap-3">
+                  {editing ? (
+                    <>
+                      <Button
+                        key="save"
+                        ref={saveButtonRef}
+                        type="submit"
+                        size="sm"
+                        form={formId}
+                        disabled={updateMutation.isPending}
+                        aria-busy={updateMutation.isPending}
+                      >
+                        {t("bookableItems.actions.save")}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={updateMutation.isPending}
+                        onClick={cancelEdit}
+                      >
+                        {t("bookableItemDetails.cancelEdit")}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      key="edit"
+                      ref={editButtonRef}
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSearch({ edit: true })}
+                    >
+                      <PencilIcon aria-hidden="true" />
+                      {t("bookableItemDetails.edit")}
+                    </Button>
+                  )}
+                </CardAction>
+              ) : null}
+            </CardHeader>
+            <CardContent>
+              {editing ? (
+                <Form
+                  id={formId}
+                  of={form}
+                  className="grid gap-x-8 gap-y-4 sm:grid-cols-[max-content_1fr]"
+                  onSubmit={(input) => updateMutation.mutateAsync(input)}
+                >
+                  <RenderFields
+                    fields={bookingConfigurationFields.filter(
+                      (field) => field.name !== "target" && field.name !== "enabled",
+                    )}
+                    form={form}
+                    disabled={updateMutation.isPending}
+                    layout="inline"
+                    className="sm:contents"
+                  />
+                  <SchedulingSettingsFields form={form} disabled={updateMutation.isPending} layout="inline" />
+                  {updateMutation.isError ? (
+                    <p role="alert" className="text-sm text-destructive sm:col-span-2">
+                      {t("bookableItems.editError")}
+                    </p>
+                  ) : null}
+                </Form>
+              ) : (
+                <RulesReadOut configuration={configuration} displayTimeZone={preferences.timeZone} />
+              )}
+            </CardContent>
+          </Card>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="audit" className="outline-none">
+          <BookableItemAuditLog configurationId={configuration.id} />
+        </Tabs.Panel>
+      </Tabs.Root>
+
+      <p role="status" aria-live="polite" className="sr-only">
+        {updateMutation.isPending
+          ? t("bookableItemDetails.update.pending")
+          : saveAnnouncement === "saved"
+            ? t("bookableItemDetails.update.saved")
+            : null}
+      </p>
+    </main>
   );
 }
 
@@ -219,10 +388,6 @@ function Details({ globalId }: { globalId: string }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const { data: currentUser } = useCurrentUserQuery();
-  const { tab = "details", edit = false } = useSearch({ from: "/booking/bookable-items/$globalId" });
-  const navigate = useNavigate({ from: "/booking/bookable-items/$globalId" });
-  const [cutoff] = useState(() => new Date().toISOString());
   const configuration = useQuery({
     queryKey: ["api-v2", "booking-configurations", "target", globalId],
     queryFn: ({ signal }) => fetchBookingConfigurationByTarget(globalId, token, signal),
@@ -253,85 +418,7 @@ function Details({ globalId }: { globalId: string }) {
     );
   }
 
-  const { data } = configuration;
-  // The mode is gated on the role, not just the button: a non-administrator who
-  // arrives on ?edit=1 still gets the read-only page.
-  const canEdit = currentUser.hasSysAdminRole;
-  const editing = canEdit && edit;
-  // Default values are dropped rather than written, so the tidy state is a bare
-  // URL and only a non-default tab or an open editor shows up in the address bar.
-  const setSearch = (next: { tab?: "details" | "audit"; edit?: boolean }) =>
-    void navigate({
-      search: (current) => {
-        const merged = { ...current, ...next };
-        return {
-          ...(merged.tab === "audit" ? { tab: "audit" as const } : {}),
-          ...(merged.edit === true ? { edit: true } : {}),
-        };
-      },
-      replace: true,
-    });
-
-  return (
-    <main className="space-y-6 p-4 sm:p-8">
-      <Tabs.Root
-        value={tab}
-        onValueChange={(value) => setSearch({ tab: value === "audit" ? "audit" : "details", edit: false })}
-        className="space-y-6"
-      >
-        <SpotlightHeader
-          configuration={data}
-          target={target}
-          action={
-            canEdit && !editing && tab === "details" ? (
-              <Button type="button" variant="outline" onClick={() => setSearch({ edit: true })}>
-                <PencilIcon aria-hidden="true" />
-                {t("bookableItemDetails.edit")}
-              </Button>
-            ) : null
-          }
-        />
-
-        <Tabs.List className="flex flex-wrap border-b">
-          <PageTab value="details">{t("bookableItemDetails.tabs.details")}</PageTab>
-          <PageTab value="audit">{t("bookableItemDetails.tabs.audit")}</PageTab>
-        </Tabs.List>
-
-        <Tabs.Panel value="details" className="space-y-8 outline-none">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("bookableItemDetails.rules")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {editing ? (
-                <RulesForm configuration={data} onDone={() => setSearch({ edit: false })} />
-              ) : (
-                <RulesReadOut configuration={data} />
-              )}
-            </CardContent>
-          </Card>
-
-          <section className="space-y-4" aria-labelledby="upcoming-events-heading">
-            <Heading level={3} as="h2" id="upcoming-events-heading">
-              {t("bookableItemDetails.upcoming")}
-            </Heading>
-            <BookingEventList globalId={globalId} timezone={data.timezone} period="upcoming" cutoff={cutoff} />
-          </section>
-
-          <section className="space-y-4" aria-labelledby="past-events-heading">
-            <Heading level={3} as="h2" id="past-events-heading">
-              {t("bookableItemDetails.past")}
-            </Heading>
-            <BookingEventList globalId={globalId} timezone={data.timezone} period="past" cutoff={cutoff} />
-          </section>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="audit" className="outline-none">
-          <BookableItemAuditLog configurationId={data.id} />
-        </Tabs.Panel>
-      </Tabs.Root>
-    </main>
-  );
+  return <LoadedBookableItemPage configuration={configuration.data} globalId={globalId} token={token} />;
 }
 
 export default function BookableItemPage() {

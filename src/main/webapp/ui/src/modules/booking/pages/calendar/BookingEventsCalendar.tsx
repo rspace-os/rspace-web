@@ -9,6 +9,7 @@ import {
   type DayTimelineViewState,
 } from "@/modules/booking/components/DayTimeline";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { sliceAcrossWallClockDay, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { TableList } from "@/modules/common/table-list/TableList";
@@ -19,7 +20,7 @@ import { Input } from "@/modules/common/ui/input";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Label } from "@/modules/common/ui/label";
 import { cn } from "@/modules/common/utils/cn";
-import { addCalendarDays, localToday } from "../all-bookable-items/calendarDate";
+import { addCalendarDays } from "../all-bookable-items/calendarDate";
 
 export const calendarLayouts = ["time-grid", "resources", "agenda"] as const;
 export type CalendarLayout = (typeof calendarLayouts)[number];
@@ -130,29 +131,42 @@ function scrollCalendarWithArrowKeys(event: React.KeyboardEvent<HTMLElement>) {
   event.currentTarget.scrollBy({ left: event.key === "ArrowLeft" ? -240 : 240, behavior: "smooth" });
 }
 
-function useScrollToToday(date: string, view: CalendarView) {
+function useScrollToToday(date: string, view: CalendarView, today: string) {
   const scrollRegionRef = React.useRef<HTMLElement>(null);
   React.useLayoutEffect(() => {
     if (view === "day") return;
     const scrollRegion = scrollRegionRef.current;
-    const today = scrollRegion?.querySelector<HTMLElement>(`[data-calendar-date="${localToday()}"]`);
-    if (!scrollRegion || !today) return;
+    const todayElement = scrollRegion?.querySelector<HTMLElement>(`[data-calendar-date="${today}"]`);
+    if (!scrollRegion || !todayElement) return;
     scrollRegion.scrollTo({
-      left: today.offsetLeft - (scrollRegion.clientWidth - today.clientWidth) / 2,
-      top: today.offsetTop - (scrollRegion.clientHeight - today.clientHeight) / 2,
+      left: todayElement.offsetLeft - (scrollRegion.clientWidth - todayElement.clientWidth) / 2,
+      top: todayElement.offsetTop - (scrollRegion.clientHeight - todayElement.clientHeight) / 2,
     });
-  }, [date, view]);
+  }, [date, today, view]);
   return scrollRegionRef;
 }
 
 function toTimelineEvent(event: BookingListDocument, date: string, timezone: string): DayTimelineEvent {
   const slice = sliceAcrossWallClockDay(event.start, event.end, date, timezone);
   if (event.privacy === "busy") return { id: String(event.id), kind: "booking", privacy: "busy", ...slice };
+  const location =
+    event.target.value.parentContainerName != null && event.target.value.parentContainerGlobalId != null
+      ? {
+          name: event.target.value.parentContainerName,
+          globalId: event.target.value.parentContainerGlobalId,
+        }
+      : undefined;
   return {
     id: String(event.id),
     kind: "booking",
     privacy: "full",
-    bookedBy: `${event.target.value.name} · ${event.bookedBy ?? ""}`,
+    title: event.bookedBy ? `${event.target.value.name} · ${event.bookedBy}` : event.target.value.name,
+    bookedBy: event.bookedBy ?? "",
+    item: {
+      name: event.target.value.name,
+      globalId: event.target.globalId,
+      location,
+    },
     notes: event.purpose ?? undefined,
     canEdit: event.canEdit,
     ...slice,
@@ -165,21 +179,19 @@ function EventCard({
   timezone,
   compact = false,
   overlay = false,
-  alignExpandedEnd = false,
 }: {
   event: BookingListDocument;
   date: string;
   timezone: string;
   compact?: boolean;
   overlay?: boolean;
-  alignExpandedEnd?: boolean;
 }) {
   const card = (
     <DayTimelineEventCard
       event={toTimelineEvent(event, date, timezone)}
+      date={date}
       compactCards={compact}
       variant={overlay ? "timeline" : "flow"}
-      alignExpandedEnd={alignExpandedEnd}
       renderEventActions={() => <BookingActions event={event} date={date} />}
     />
   );
@@ -189,9 +201,14 @@ function EventCard({
 function BookingActions({ event, date }: { event: BookingListDocument; date: string }) {
   const { t } = useTranslation("booking");
   return (
-    <div className="flex flex-wrap gap-1">
+    <div
+      className={cn(
+        "grid border-border border-t text-xs",
+        event.canEdit ? "grid-cols-2 divide-x divide-border" : "grid-cols-1",
+      )}
+    >
       <Link
-        className={buttonVariants({ variant: "link", size: "xs" })}
+        className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
         to="/booking/bookable-items/$globalId"
         params={{ globalId: event.target.globalId }}
       >
@@ -199,7 +216,7 @@ function BookingActions({ event, date }: { event: BookingListDocument; date: str
       </Link>
       {event.canEdit ? (
         <Link
-          className={buttonVariants({ variant: "link", size: "xs" })}
+          className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
           to="/booking/calendar/bookings/$id"
           params={{ id: String(event.id) }}
           search={{ date, target: event.target.globalId }}
@@ -223,6 +240,7 @@ function CalendarControls({
   view,
   layout,
   timezone,
+  today,
   onDateChange,
   onViewChange,
   onLayoutChange,
@@ -231,6 +249,7 @@ function CalendarControls({
   view: CalendarView;
   layout: CalendarLayout;
   timezone: string;
+  today: string;
   onDateChange: (date: string) => void;
   onViewChange: (view: CalendarView) => void;
   onLayoutChange: (layout: CalendarLayout) => void;
@@ -259,7 +278,7 @@ function CalendarControls({
         >
           <ChevronLeftIcon />
         </Button>
-        <Button type="button" variant="outline" onClick={() => onDateChange(localToday())}>
+        <Button type="button" variant="outline" onClick={() => onDateChange(today)}>
           {t("calendar.today")}
         </Button>
         <Button
@@ -320,16 +339,22 @@ function TimeGrid({
   view,
   events,
   timezone,
+  today,
+  availabilityStartMinute,
+  availabilityEndMinute,
 }: {
   date: string;
   view: CalendarView;
   events: readonly BookingListDocument[];
   timezone: string;
+  today: string;
+  availabilityStartMinute: number;
+  availabilityEndMinute: number;
 }) {
   const { t } = useTranslation("booking");
   const dates = calendarDates(date, view);
   const month = firstOfMonth(date).slice(0, 7);
-  const calendarRef = useScrollToToday(date, view);
+  const calendarRef = useScrollToToday(date, view, today);
   return (
     <section aria-label={t("calendar.layout.time-grid")} className="p-3">
       {view === "day" ? (
@@ -337,8 +362,8 @@ function TimeGrid({
           date={date}
           timezone={timezone}
           events={eventsOn(events, date, timezone).map((event) => toTimelineEvent(event, date, timezone))}
-          startWindow={7 * 60}
-          endWindow={19 * 60}
+          startWindow={availabilityStartMinute}
+          endWindow={availabilityEndMinute}
           showZoomControls={false}
           renderEventActions={actionsFor(events, date)}
         />
@@ -352,7 +377,7 @@ function TimeGrid({
           onKeyDown={scrollCalendarWithArrowKeys}
         >
           <div className="grid min-w-225 grid-cols-7">
-            {dates.map((day, dayIndex) => (
+            {dates.map((day) => (
               <section
                 key={day}
                 data-calendar-date={day}
@@ -374,7 +399,6 @@ function TimeGrid({
                       timezone={timezone}
                       compact={view === "month"}
                       overlay
-                      alignExpandedEnd={dayIndex % 7 >= 4}
                     />
                   ))}
                 </div>
@@ -392,11 +416,17 @@ function ResourceSchedule({
   view,
   events,
   timezone,
+  today,
+  availabilityStartMinute,
+  availabilityEndMinute,
 }: {
   date: string;
   view: CalendarView;
   events: readonly BookingListDocument[];
   timezone: string;
+  today: string;
+  availabilityStartMinute: number;
+  availabilityEndMinute: number;
 }) {
   const { t } = useTranslation("booking");
   const [timelineViewState, setTimelineViewState] = React.useState<DayTimelineViewState>({
@@ -405,7 +435,7 @@ function ResourceSchedule({
   });
   const dates = periodDates(date, view);
   const eventsByDate = new Map(dates.map((day) => [day, eventsOn(events, day, timezone)]));
-  const calendarRef = useScrollToToday(date, view);
+  const calendarRef = useScrollToToday(date, view, today);
   const resources = [...new Map(events.map((event) => [event.target.globalId, event.target])).values()].toSorted(
     (left, right) => left.value.name.localeCompare(right.value.name),
   );
@@ -437,8 +467,8 @@ function ResourceSchedule({
                     date={date}
                     timezone={timezone}
                     events={resourceEvents.map((event) => toTimelineEvent(event, date, timezone))}
-                    startWindow={7 * 60}
-                    endWindow={19 * 60}
+                    startWindow={availabilityStartMinute}
+                    endWindow={availabilityEndMinute}
                     showZoomControls={false}
                     variant="table-row"
                     itemName={resource.value.name}
@@ -480,20 +510,12 @@ function ResourceSchedule({
                     />
                   </InventoryItem>
                 </div>
-                {dates.map((day, dayIndex) => (
+                {dates.map((day) => (
                   <div key={day} className="min-h-20 space-y-1 border-r border-b p-1">
                     {(eventsByDate.get(day) ?? [])
                       .filter((event) => event.target.globalId === resource.globalId)
                       .map((event) => (
-                        <EventCard
-                          key={event.id}
-                          event={event}
-                          date={day}
-                          timezone={timezone}
-                          compact
-                          overlay
-                          alignExpandedEnd={dayIndex >= dates.length / 2}
-                        />
+                        <EventCard key={event.id} event={event} date={day} timezone={timezone} compact overlay />
                       ))}
                   </div>
                 ))}
@@ -511,15 +533,17 @@ function Agenda({
   view,
   events,
   timezone,
+  today,
 }: {
   date: string;
   view: CalendarView;
   events: readonly BookingListDocument[];
   timezone: string;
+  today: string;
 }) {
   const { t } = useTranslation("booking");
   const dates = periodDates(date, view);
-  const dateRailRef = useScrollToToday(date, view);
+  const dateRailRef = useScrollToToday(date, view, today);
   return (
     <section aria-label={t("calendar.layout.agenda")} className="p-3">
       <div className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
@@ -581,6 +605,8 @@ export function BookingEventsCalendar({
   view,
   layout,
   timezone,
+  availabilityStartMinute = 7 * 60,
+  availabilityEndMinute = 19 * 60,
   events,
   currentUserId,
   isLoading,
@@ -594,6 +620,8 @@ export function BookingEventsCalendar({
   view: CalendarView;
   layout: CalendarLayout;
   timezone: string;
+  availabilityStartMinute?: number;
+  availabilityEndMinute?: number;
   events: readonly BookingListDocument[];
   currentUserId: number;
   isLoading: boolean;
@@ -604,6 +632,7 @@ export function BookingEventsCalendar({
   onLayoutChange: (layout: CalendarLayout) => void;
 }) {
   const { t } = useTranslation("booking");
+  const todayValue = todayInTimeZone(timezone);
   const [mineOnly, setMineOnly] = React.useState(false);
   const mine = events.filter((event) => event.requesterId === currentUserId);
   const table = useTableList({
@@ -629,6 +658,7 @@ export function BookingEventsCalendar({
           view={view}
           layout={layout}
           timezone={timezone}
+          today={todayValue}
           onDateChange={onDateChange}
           onViewChange={onViewChange}
           onLayoutChange={onLayoutChange}
@@ -654,12 +684,30 @@ export function BookingEventsCalendar({
           renderRows={(filteredEvents) => (
             <>
               {layout === "time-grid" && (
-                <TimeGrid date={date} view={view} events={filteredEvents} timezone={timezone} />
+                <TimeGrid
+                  date={date}
+                  view={view}
+                  events={filteredEvents}
+                  timezone={timezone}
+                  today={todayValue}
+                  availabilityStartMinute={availabilityStartMinute}
+                  availabilityEndMinute={availabilityEndMinute}
+                />
               )}
               {layout === "resources" && (
-                <ResourceSchedule date={date} view={view} events={filteredEvents} timezone={timezone} />
+                <ResourceSchedule
+                  date={date}
+                  view={view}
+                  events={filteredEvents}
+                  timezone={timezone}
+                  today={todayValue}
+                  availabilityStartMinute={availabilityStartMinute}
+                  availabilityEndMinute={availabilityEndMinute}
+                />
               )}
-              {layout === "agenda" && <Agenda date={date} view={view} events={filteredEvents} timezone={timezone} />}
+              {layout === "agenda" && (
+                <Agenda date={date} view={view} events={filteredEvents} timezone={timezone} today={todayValue} />
+              )}
             </>
           )}
         />

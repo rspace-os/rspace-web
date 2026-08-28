@@ -3,7 +3,9 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useBookableItem } from "@/modules/booking/components/BookableItemPicker";
 import { ApiV2ProblemError, createBooking } from "@/modules/booking/domain/booking";
+import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Heading } from "@/modules/common/ui/typography";
 import { BookingForm, type BookingFormSubmission } from "./BookingForm";
 
@@ -36,9 +38,13 @@ export default function AddBookingPage() {
   const search = useSearch({ from: "/booking/calendar/bookings/add" });
   const navigate = useNavigate({ from: "/booking/calendar/bookings/add" });
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const { data: currentUser } = useCurrentUserQuery();
+  const preferences = useBookingDisplayPreferences();
   const initialTarget = useBookableItem(search.target, token);
   const queryClient = useQueryClient();
   const mutation = useMutation({
+    // ponytail: submission.type is deliberately dropped. The API v2 bookings collection rejects
+    // unknown fields, and TimeSlotBooking has no type column yet.
     mutationFn: (submission: BookingFormSubmission) =>
       createBooking(
         {
@@ -73,8 +79,10 @@ export default function AddBookingPage() {
       )}
       <BookingForm
         mode="add"
+        displayTimezone={preferences.timeZone}
+        canChooseType={currentUser.hasSysAdminRole}
         initialTarget={initialTarget.data}
-        initialDate={search.date}
+        initialDate={search.date ?? todayInTimeZone(preferences.timeZone)}
         token={token}
         pending={mutation.isPending}
         error={mutation.error ? t(problemKey(mutation.error)) : undefined}

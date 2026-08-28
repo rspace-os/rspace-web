@@ -5,6 +5,7 @@ import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
+import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -14,8 +15,10 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service("bookingConfigurationDefaultsManager")
+@Transactional
 public class BookingConfigurationDefaultsManagerImpl
     implements BookingConfigurationDefaultsManager {
 
@@ -40,13 +43,21 @@ public class BookingConfigurationDefaultsManagerImpl
 
   @Override
   public BookingConfigurationDefaults updateDefaults(
-      BookingSchedulingSettings.Patch patch, long expectedVersion, User subject, User actor) {
+      BookingSchedulingSettings.Patch schedulingPatch,
+      BookingDisplaySettings.Patch displayPatch,
+      long expectedVersion,
+      User subject,
+      User actor) {
     requireSysadmin(subject);
     BookingConfigurationDefaults defaults = lockedDefaults();
     if (defaults.getConfigurationVersion() != expectedVersion) {
       throw new StaleBookingSettingsException();
     }
-    patch.merge(BookingSchedulingSettings.from(defaults)).applyTo(defaults);
+    schedulingPatch.merge(BookingSchedulingSettings.from(defaults)).applyTo(defaults);
+    BookingDisplaySettings displaySettings =
+        displayPatch.merge(BookingDisplaySettings.from(defaults));
+    requireValid(displaySettings);
+    displaySettings.applyTo(defaults);
     validateSettings(defaults);
     validate(defaults);
     BookingConfigurationDefaults saved = defaultsDao.saveAndFlush(defaults);
@@ -79,6 +90,18 @@ public class BookingConfigurationDefaultsManagerImpl
 
   static void validateSettings(BookingConfigurationDefaults defaults) {
     BookingSettingsValidation.requireValid(BookingSchedulingSettings.from(defaults));
+    requireValid(BookingDisplaySettings.from(defaults));
+  }
+
+  static void requireValid(BookingDisplaySettings settings) {
+    if (!settings.hasValidAvailabilityWindow()) {
+      throw new InvalidBookingDisplaySettingsException(
+          InvalidBookingDisplaySettingsException.Reason.AVAILABILITY_WINDOW);
+    }
+    if (!settings.hasValidTimezoneChoice()) {
+      throw new InvalidBookingDisplaySettingsException(
+          InvalidBookingDisplaySettingsException.Reason.TIMEZONE);
+    }
   }
 
   private static void requireAuthenticated(User actor) {
