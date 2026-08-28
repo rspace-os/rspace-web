@@ -1,12 +1,13 @@
 /**
- * Loads and validates the declarative operation definitions. Operations are data, not code: adding
- * one is a new entry in operations_config.json, with no change here or in the backend (see DevDocs/adr/0007).
- * The valibot schema is the single source of truth for the config shape; the InventoryOperation type
- * is inferred from it, and the JSON is validated at module load so an authoring mistake fails fast.
+ * Validates the declarative operation definitions. Operations are data, not code: adding one is a
+ * new entry in the backend's operations_config.json, with no frontend change (see DevDocs/adr/0007).
+ * The backend owns the only copy and serves it via GET /operations/config; the wizard fetches it
+ * (operationsApi.fetchOperationsConfig) and parses it here. The valibot schema is the frontend's
+ * source of truth for the config shape; the InventoryOperation type is inferred from it, and
+ * parseOperationsConfig throws on an authoring mistake so a bad config fails at fetch, not submit.
  */
 import * as v from "valibot";
 import { type OperationFunctionName, operationFunctions } from "./operationFunctions";
-import rawConfig from "./operations_config.json";
 import type { AmountMode } from "./types";
 
 const InputSchema = v.object({
@@ -145,12 +146,22 @@ export type ComputedArgSource = v.InferOutput<typeof ArgSourceSchema>;
 export type ConfirmSummaryField = v.InferOutput<typeof ConfirmSummaryFieldSchema>;
 export type InventoryOperation = v.InferOutput<typeof OperationSchema>;
 
-export const operations: Array<InventoryOperation> = v.parse(v.array(OperationSchema), rawConfig);
+/**
+ * Parse and fully validate a fetched operations config (the body of GET /operations/config): the
+ * valibot schema first, then the two referential checks below. Throws on any authoring mistake, so
+ * a bad config fails when it loads rather than mid-wizard. See DevDocs/adr/0007.
+ */
+export function parseOperationsConfig(raw: unknown): Array<InventoryOperation> {
+  const operations = v.parse(v.array(OperationSchema), raw);
+  assertComputedValuesValid(operations);
+  assertEffectReferencesValid(operations);
+  return operations;
+}
 
 /**
  * Fail fast, like the valibot parse above: every computed value must name an Operation function that
  * exists in the registry and bind exactly that function's declared parameters. An authoring mistake
- * throws at module load rather than at submit. See DevDocs/adr/0007.
+ * throws when the config loads rather than at submit. See DevDocs/adr/0007.
  */
 function assertComputedValuesValid(ops: Array<InventoryOperation>): void {
   for (const op of ops) {
@@ -179,8 +190,6 @@ function assertComputedValuesValid(ops: Array<InventoryOperation>): void {
     }
   }
 }
-
-assertComputedValuesValid(operations);
 
 /**
  * Fail fast (like the parse and the computed-values check above): every effect source key -
@@ -218,8 +227,6 @@ export function assertEffectReferencesValid(ops: Array<InventoryOperation>): voi
     }
   }
 }
-
-assertEffectReferencesValid(operations);
 
 /**
  * Whether the amounts step should offer the per-origin "amount to take" modes for this operation

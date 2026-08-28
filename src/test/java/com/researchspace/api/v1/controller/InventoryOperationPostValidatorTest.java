@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
+import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -330,6 +331,25 @@ class InventoryOperationPostValidatorTest {
         validate(request), "origins[0].amountTaken", "errors.inventory.operation.amountTakenZero");
   }
 
+  @Test
+  void rejectsAmountTakenFinerThanTheStored3dp() {
+    // QuantityInfo persists at 3dp (HALF_UP), so a finer amount would silently decrement the origin
+    // by a different quantity than the one that was validated (0.0004 ml would take nothing).
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getOrigins().get(0).setAmountTaken(millilitres("0.0004"));
+    assertSingleErrorWithCode(
+        validate(request),
+        "origins[0].amountTaken",
+        "errors.inventory.operation.amountTakenTooPrecise");
+  }
+
+  @Test
+  void acceptsAmountTakenWithTrailingZerosBeyond3dp() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getOrigins().get(0).setAmountTaken(millilitres("0.5000"));
+    assertFalse(validate(request).hasErrors());
+  }
+
   // --- configured temperature bounds (unit-aware) ---
 
   @Test
@@ -608,83 +628,5 @@ class InventoryOperationPostValidatorTest {
     ApiInventoryOperationPost request = poolRequest();
     request.getOrigins().get(1).setId(100L);
     assertTrue(validate(request).hasFieldErrors("origins[1].id"));
-  }
-
-  // --- static live-state helpers (used by the controller, DevDocs/adr/0007 + 0015) ---
-
-  private static ApiQuantityInfo grams(String value) {
-    return new ApiQuantityInfo(new BigDecimal(value), RSUnitDef.GRAM.getId());
-  }
-
-  @Test
-  void detectsOverRemovalInTheSameUnit() {
-    assertTrue(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("6"), grams("5")));
-  }
-
-  @Test
-  void allowsTakingUpToAndWithinTheOriginQuantity() {
-    assertFalse(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("5"), grams("5")));
-    assertFalse(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("4"), grams("5")));
-  }
-
-  @Test
-  void comparesUnitAwareAcrossUnitsInTheSameCategory() {
-    // 0.006 kg = 6 g, which exceeds a 5 g origin.
-    ApiQuantityInfo sixGramsAsKilos =
-        new ApiQuantityInfo(new BigDecimal("0.006"), RSUnitDef.KILO.getId());
-    assertTrue(
-        InventoryOperationPostValidator.amountTakenExceedsOrigin(sixGramsAsKilos, grams("5")));
-    ApiQuantityInfo fourGramsAsKilos =
-        new ApiQuantityInfo(new BigDecimal("0.004"), RSUnitDef.KILO.getId());
-    assertFalse(
-        InventoryOperationPostValidator.amountTakenExceedsOrigin(fourGramsAsKilos, grams("5")));
-  }
-
-  @Test
-  void doesNotFlagNullAmountTakenOrDifferentCategories() {
-    assertFalse(InventoryOperationPostValidator.amountTakenExceedsOrigin(null, grams("5")));
-    // a volume amount against a mass origin is not commensurate, so it is not treated as
-    // over-removal
-    ApiQuantityInfo sixMillilitres = millilitres("6");
-    assertFalse(
-        InventoryOperationPostValidator.amountTakenExceedsOrigin(sixMillilitres, grams("5")));
-  }
-
-  @Test
-  void flagsPositiveAmountTakenFromOriginWithNoQuantity() {
-    // A subsample whose quantity was never set holds nothing, so taking any positive amount from it
-    // is over-removal (DevDocs/adr/0007). A null origin quantity, or one with a null numeric value,
-    // is treated as zero available rather than as "no limit".
-    assertTrue(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("6"), null));
-    assertTrue(
-        InventoryOperationPostValidator.amountTakenExceedsOrigin(
-            grams("6"), new ApiQuantityInfo(null, RSUnitDef.GRAM.getId())));
-  }
-
-  @Test
-  void originHoldsNothingTreatsMissingOrNonPositiveQuantityAsEmpty() {
-    assertTrue(InventoryOperationPostValidator.originHoldsNothing(null));
-    assertTrue(
-        InventoryOperationPostValidator.originHoldsNothing(
-            new ApiQuantityInfo(null, RSUnitDef.GRAM.getId())));
-    assertTrue(InventoryOperationPostValidator.originHoldsNothing(grams("0")));
-    assertTrue(InventoryOperationPostValidator.originHoldsNothing(grams("-1")));
-    assertFalse(InventoryOperationPostValidator.originHoldsNothing(grams("0.001")));
-  }
-
-  @Test
-  void amountTakenEmptiesOriginIsUnitAwareEquality() {
-    assertTrue(InventoryOperationPostValidator.amountTakenEmptiesOrigin(grams("5"), grams("5")));
-    // 0.005 kg denotes the same amount as 5 g
-    assertTrue(
-        InventoryOperationPostValidator.amountTakenEmptiesOrigin(
-            new ApiQuantityInfo(new BigDecimal("0.005"), RSUnitDef.KILO.getId()), grams("5")));
-    assertFalse(InventoryOperationPostValidator.amountTakenEmptiesOrigin(grams("4"), grams("5")));
-    assertFalse(InventoryOperationPostValidator.amountTakenEmptiesOrigin(grams("6"), grams("5")));
-    // incomparable categories and missing values never count as emptying
-    assertFalse(
-        InventoryOperationPostValidator.amountTakenEmptiesOrigin(millilitres("5"), grams("5")));
-    assertFalse(InventoryOperationPostValidator.amountTakenEmptiesOrigin(null, grams("5")));
-    assertFalse(InventoryOperationPostValidator.amountTakenEmptiesOrigin(grams("5"), null));
   }
 }

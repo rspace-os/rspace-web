@@ -1,4 +1,4 @@
-package com.researchspace.api.v1.controller;
+package com.researchspace.service.inventory;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
@@ -6,11 +6,11 @@ import java.util.List;
 
 /**
  * One operation definition from {@code operations_config.json}, reduced to the fields the backend
- * validation interprets (DevDocs/adr/0007). The file is shared verbatim with the frontend (which
- * reads the full shape: labels, icons, wizard steps); everything the backend does not enforce is
- * ignored on binding, so purely presentational config changes cannot break the API. Stage 2
- * (DevDocs/adr/0007) swaps the source of these definitions to user-editable data without changing
- * this shape.
+ * validation interprets (DevDocs/adr/0007). The wizard fetches the same file verbatim from GET
+ * /operations/config and reads the full shape (labels, icons, wizard steps); everything the backend
+ * does not enforce is ignored on binding, so purely presentational config changes cannot break the
+ * API. Stage 2 (DevDocs/adr/0007) swaps the source of these definitions to user-editable data
+ * without changing this shape.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record InventoryOperationConfig(
