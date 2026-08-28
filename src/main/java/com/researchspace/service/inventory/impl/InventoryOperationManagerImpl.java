@@ -93,6 +93,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
             .orElse(false);
     BeanPropertyBindingResult errors =
         new BeanPropertyBindingResult(request, "apiInventoryOperationPost");
+    QuantityUtils quantityUtils = new QuantityUtils();
+    QuantityInfo firstOriginQuantity = null;
     int index = 0;
     for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
       SubSample dbSubSample = subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
@@ -104,6 +106,15 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
               "id",
               "errors.inventory.operation.originEmpty",
               "An origin subsample that currently holds nothing cannot be operated on.");
+        } else if (firstOriginQuantity != null
+            && !quantityUtils.isComparableQuantities(firstOriginQuantity, currentQuantity)) {
+          // A multi-origin operation (Pool) combines its origins into one quantity, which is
+          // meaningless across measurement categories (5 ml + 5 g); the wizard blocks it, so the
+          // endpoint must too (security review, finding 4).
+          errors.rejectValue(
+              "id",
+              "errors.inventory.operation.originCategoryMismatch",
+              "All origin subsamples must use the same measurement category.");
         } else if (amountTakenExceedsOrigin(origin.getAmountTaken(), currentQuantity)) {
           errors.rejectValue(
               "amountTaken",
@@ -115,6 +126,8 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
               "amountTaken",
               "errors.inventory.operation.mustEmptyOrigin",
               "This operation must take the origin's entire remaining quantity.");
+        } else {
+          firstOriginQuantity = firstOriginQuantity == null ? currentQuantity : firstOriginQuantity;
         }
       } finally {
         errors.popNestedPath();

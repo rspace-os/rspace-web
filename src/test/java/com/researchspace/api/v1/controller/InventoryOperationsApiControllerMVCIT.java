@@ -279,6 +279,196 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         "origin quantity must be restored when the operation fails mid-transaction");
   }
 
+  // --- security-review hardening (2026-08-28 reviews): one end-to-end probe per fix ---
+
+  /** POST /samples with one subsample holding exactly the given quantity; returns the sample. */
+  private ApiSampleWithFullSubSamples createSampleHolding(String name, String value, int unitId)
+      throws Exception {
+    String sampleJson =
+        "{\"name\":\""
+            + name
+            + "\",\"subSamples\":[{\"quantity\":{\"numericValue\":"
+            + value
+            + ",\"unitId\":"
+            + unitId
+            + "}}]}";
+    MvcResult result =
+        mockMvc
+            .perform(createBuilderForPostWithJSONBody(apiKey, "/samples", anyUser, sampleJson))
+            .andExpect(status().isCreated())
+            .andReturn();
+    return getFromJsonResponseBody(result, ApiSampleWithFullSubSamples.class);
+  }
+
+  private String hasPartLinkJson(String targetGlobalId) {
+    return "{\"name\":\"Has Part "
+        + targetGlobalId
+        + "\",\"type\":\"link\",\"newFieldRequest\":true,"
+        + "\"link\":{\"relationType\":\"HasPart\",\"targetGlobalId\":\""
+        + targetGlobalId
+        + "\",\"versionPin\":null}}";
+  }
+
+  @Test
+  public void rejectsPoolingAVolumeOriginWithAMassOrigin() throws Exception {
+    // security review finding 4: the wizard blocks mixed-category pooling; the endpoint must too
+    ApiSubSample volumeOrigin =
+        createSampleHolding("F4a volume", "5", RSUnitDef.MILLI_LITRE.getId())
+            .getSubSamples()
+            .get(0);
+    ApiSubSample massOrigin =
+        createSampleHolding("F4a mass", "5", RSUnitDef.GRAM.getId()).getSubSamples().get(0);
+
+    String operationJson =
+        "{\"operationType\":\"pool\",\"origins\":["
+            + "{\"id\":"
+            + volumeOrigin.getId()
+            + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
+            + RSUnitDef.MILLI_LITRE.getId()
+            + "}},{\"id\":"
+            + massOrigin.getId()
+            + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
+            + RSUnitDef.GRAM.getId()
+            + "}}],\"newSample\":{\"name\":\"Mixed pool\",\"extraFields\":["
+            + hasPartLinkJson(volumeOrigin.getGlobalId())
+            + ","
+            + hasPartLinkJson(massOrigin.getGlobalId())
+            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":2,\"unitId\":"
+            + RSUnitDef.MILLI_LITRE.getId()
+            + "},\"extraFields\":[]}]}}";
+
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+        .andExpect(status().isBadRequest());
+
+    for (ApiSubSample origin : List.of(volumeOrigin, massOrigin)) {
+      ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+      assertTrue(
+          origin.getQuantity().getNumericValue().compareTo(reloaded.getQuantity().getNumericValue())
+              == 0,
+          "origins must be unchanged when the category mismatch is rejected");
+    }
+  }
+
+  @Test
+  public void provenanceLinkInsideATextTypedFieldIsRejectedNotSilentlyDropped() throws Exception {
+    // security review finding 7: persistence only creates a link for a link-typed field, so a link
+    // payload in a text-typed field must fail validation (400) rather than 201 with the link gone
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    Integer unitId = origin.getQuantity().getUnitId();
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+
+    String textCarriedLink =
+        "{\"name\":\"Is Derived From\",\"type\":\"text\",\"newFieldRequest\":true,"
+            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
+            + origin.getGlobalId()
+            + "\",\"versionPin\":null}}";
+    String operationJson =
+        "{\"operationType\":\"derive\",\"origins\":[{\"id\":"
+            + origin.getId()
+            + ",\"amountTaken\":{\"numericValue\":0.6,\"unitId\":"
+            + unitId
+            + "}}],\"newSample\":{\"name\":\"Derived material\",\"extraFields\":["
+            + textCarriedLink
+            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
+            + unitId
+            + "},\"extraFields\":[]}]}}";
+
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+        .andExpect(status().isBadRequest());
+
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertTrue(
+        originalAmount.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
+        "origin must be unchanged when the provenance link is not an effective link field");
+  }
+
+  @Test
+  public void rejectsUnequalChildQuantitiesForAnEachAmountOperation() throws Exception {
+    // valid-payload review finding 2: the API documents N equal subsamples (one each-amount input
+    // copied to all children); 0.25 + 0.75 must be rejected, not silently persisted
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    Integer unitId = origin.getQuantity().getUnitId();
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+
+    String linkJson =
+        "{\"name\":\"Is Part Of\",\"type\":\"link\",\"newFieldRequest\":true,"
+            + "\"link\":{\"relationType\":\"IsPartOf\",\"targetGlobalId\":\""
+            + origin.getGlobalId()
+            + "\",\"versionPin\":null}}";
+    String operationJson =
+        "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
+            + origin.getId()
+            + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
+            + unitId
+            + "}}],\"newSample\":{\"name\":\"Uneven aliquots\",\"extraFields\":["
+            + linkJson
+            + "],\"subSamples\":["
+            + "{\"quantity\":{\"numericValue\":0.25,\"unitId\":"
+            + unitId
+            + "},\"extraFields\":[]},"
+            + "{\"quantity\":{\"numericValue\":0.75,\"unitId\":"
+            + unitId
+            + "},\"extraFields\":[]}]}}";
+
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+        .andExpect(status().isBadRequest());
+
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertTrue(
+        originalAmount.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
+        "origin must be unchanged when unequal children are rejected");
+  }
+
+  @Test
+  public void originExtraFieldLinkingTheOriginToItselfIsRejected() throws Exception {
+    // valid-payload review finding 1: the create-field path must enforce the self-link rule against
+    // the authoritative parent (the payload's parentGlobalId is client-supplied and was forgeable)
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+    Integer unitId = origin.getQuantity().getUnitId();
+
+    String selfLinkField =
+        "{\"name\":\"Self reference\",\"type\":\"link\",\"newFieldRequest\":true,"
+            + "\"link\":{\"relationType\":\"References\",\"targetGlobalId\":\""
+            + origin.getGlobalId()
+            + "\",\"versionPin\":null}}";
+    String operationJson =
+        "{\"operationType\":\"destroy\",\"origins\":[{\"id\":"
+            + origin.getId()
+            + ",\"amountTaken\":{\"numericValue\":"
+            + originalAmount.toPlainString()
+            + ",\"unitId\":"
+            + unitId
+            + "},\"extraFields\":["
+            + selfLinkField
+            + "]}]}";
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+            .andReturn();
+    assertTrue(
+        result.getResponse().getStatus() >= 400,
+        "a self-link origin field must not report success, was: "
+            + result.getResponse().getStatus());
+
+    // the rejection rolled the whole operation back: quantity untouched, no self-link persisted
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertTrue(
+        originalAmount.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
+        "origin quantity must be unchanged when the self-link is rejected");
+    assertTrue(
+        reloaded.getExtraFields().stream().allMatch(ef -> ef.getLink() == null),
+        "no self-link field may be persisted on the origin");
+  }
+
   private ApiExtraField findLinkField(List<ApiExtraField> extraFields) {
     return extraFields.stream().filter(ef -> ef.getLink() != null).findFirst().orElse(null);
   }
