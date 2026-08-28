@@ -1800,7 +1800,25 @@ paths:
             amount that does not equal the origin's current quantity, a storage temperature
             missing or outside the operation's configured bounds (Cryopreserve at most -18°C,
             Revive 4°C to 120°C, compared unit-aware), or a new sample missing the operation's
-            provenance link back to an origin. The origins are left unchanged.
+            provenance link back to an origin.
+
+
+            The request must also contain exactly the fields and properties the definition
+            declares, so it is rejected for: any sample or subsample property the definition does
+            not declare (sharing, placement, tags, barcodes, identifiers, images, description,
+            sample source, expiry date, template field values, subsample notes or extra fields),
+            naming the property; an extra field with a missing or unrecognised operationFieldKey; a
+            declared field that is missing, duplicated, or not of the declared type (one link per
+            origin per link spec, one field per declared text or origin field); an origin extra
+            field on an operation that declares none; content that the computed function feeding
+            the field could not have produced (increment must be a positive whole number, today a
+            valid ISO yyyy-MM-dd date); a blank value in a field fed by a required input; storage
+            temperatures that are not equal to each other, or sent to an operation that declares no
+            temperature input; fewer subsamples than the count input's minimum; and a documentation
+            link that is not an IsDocumentedBy link, or more than one of them.
+
+
+            The origins are left unchanged.
           content:
             application/json:
               schema:
