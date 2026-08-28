@@ -75,6 +75,16 @@ public class ApiExtraField extends IdentifiableNameableApiObject {
   @JsonProperty(value = "deleteFieldRequest", access = Access.WRITE_ONLY)
   private boolean deleteFieldRequest;
 
+  /**
+   * Identifies which entry of an operation definition produced this field, so the operations
+   * endpoint can whitelist a request against the definition it names (DevDocs/adr/0007). Resolved
+   * field names interpolate user input ({@code {processName}}, {@code {originName}}) and are
+   * localized, so the definition key travels on the wire instead. Request-only: never persisted,
+   * never serialized back, and ignored by every other endpoint.
+   */
+  @JsonProperty(value = "operationFieldKey", access = Access.WRITE_ONLY)
+  private String operationFieldKey;
+
   /** The data type of this field */
   public enum ExtraFieldTypeEnum {
     @JsonProperty("text")

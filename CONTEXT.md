@@ -251,6 +251,11 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Derived Sample** — the single new Sample an Operation creates, and the parent
   of every subsample that Operation creates. Distinct from the Origin's own parent
   Sample.
+- **Operation field key** — the definition identity a wizard-generated extra field
+  carries on the wire (the config's nameKey/fieldNameKey), letting the backend match
+  payload fields to the Operation's definition regardless of the user's locale.
+  Display names stay free text. _Avoid_: field name matching, label key (that is the
+  wizard-input term).
 - **Process name** — a label for the kind of process an Operation run represents
   (e.g. "dna extraction"). Every Operation has one: free-text and user-selectable for
   Operations that expose it (Derive), or a fixed value for those that do not

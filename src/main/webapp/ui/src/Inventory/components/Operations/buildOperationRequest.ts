@@ -27,6 +27,13 @@ import type {
 } from "./types";
 import { UNSET_UNIT } from "./types";
 
+/**
+ * The documentation link is a wizard-level feature rather than a per-operation declaration, so it
+ * carries this fixed key; the backend accepts one on every output-producing operation
+ * (InventoryOperationPostValidator.DOCUMENTATION_LINK_KEY).
+ */
+const DOCUMENTATION_LINK_KEY = "operations.documentationLink";
+
 function quantityValue(values: OperationInputs, key: string): OperationQuantity {
   return values[key] as OperationQuantity;
 }
@@ -96,6 +103,7 @@ export function buildOperationRequest(params: {
     name: resolveLabel(spec.nameKey),
     type: spec.type ?? "text",
     newFieldRequest: true,
+    operationFieldKey: spec.nameKey,
     content: String(values[spec.contentFrom] ?? ""),
   }));
 
@@ -123,6 +131,7 @@ export function buildOperationRequest(params: {
         name: resolveLabel(spec.fieldNameKey, { ...values, originName: origin.name }),
         type: "link" as const,
         newFieldRequest: true as const,
+        operationFieldKey: spec.fieldNameKey,
         link: {
           relationType: spec.relationType,
           targetGlobalId: origin.globalId,
@@ -136,6 +145,7 @@ export function buildOperationRequest(params: {
         name: documentationLink.fieldName,
         type: "link",
         newFieldRequest: true,
+        operationFieldKey: DOCUMENTATION_LINK_KEY,
         link: {
           relationType: "IsDocumentedBy",
           targetGlobalId: documentationLink.targetGlobalId,
@@ -148,6 +158,7 @@ export function buildOperationRequest(params: {
       name: resolveLabel(spec.nameKey),
       type: "text",
       newFieldRequest: true,
+      operationFieldKey: spec.nameKey,
       content: String(values[spec.contentFrom] ?? ""),
     }));
 

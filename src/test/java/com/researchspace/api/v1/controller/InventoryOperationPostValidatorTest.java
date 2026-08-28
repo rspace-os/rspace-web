@@ -4,21 +4,31 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.api.v1.model.ApiBarcode;
+import com.researchspace.api.v1.model.ApiContainerLocation;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiGroupInfoWithSharedFlag;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.api.v1.model.ApiSubSampleNote;
+import com.researchspace.api.v1.model.ApiTagInfo;
+import com.researchspace.api.v1.model.ApiTargetLocation;
+import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.record.RecordFactory;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
@@ -74,13 +84,39 @@ class InventoryOperationPostValidatorTest {
     return origin;
   }
 
-  private static ApiExtraField linkTo(String relationType, long originId) {
+  /**
+   * A provenance link as the wizard builds it: the resolved (localized, interpolated) display name
+   * plus the definition key that identifies which link spec produced it.
+   */
+  private static ApiExtraField linkTo(String fieldKey, String relationType, long originId) {
     ApiExtraField field = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.LINK);
     field.setName(relationType + " SS" + originId);
     field.setNewFieldRequest(true);
+    field.setOperationFieldKey(fieldKey);
     ApiInventoryLink link = new ApiInventoryLink();
     link.setRelationType(relationType);
     link.setTargetGlobalId("SS" + originId);
+    field.setLink(link);
+    return field;
+  }
+
+  private static ApiExtraField textField(String fieldKey, String content) {
+    ApiExtraField field = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.TEXT);
+    field.setName(fieldKey);
+    field.setNewFieldRequest(true);
+    field.setOperationFieldKey(fieldKey);
+    field.setContent(content);
+    return field;
+  }
+
+  private static ApiExtraField documentationLink() {
+    ApiExtraField field = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.LINK);
+    field.setName("Standard operating procedure");
+    field.setNewFieldRequest(true);
+    field.setOperationFieldKey("operations.documentationLink");
+    ApiInventoryLink link = new ApiInventoryLink();
+    link.setRelationType("IsDocumentedBy");
+    link.setTargetGlobalId("SD1");
     field.setLink(link);
     return field;
   }
@@ -106,43 +142,63 @@ class InventoryOperationPostValidatorTest {
   }
 
   static ApiInventoryOperationPost aliquotRequest() {
-    return request("aliquot", newSample("Aliquots", linkTo("IsPartOf", 100)), origin(100, "0.6"));
+    return request(
+        "aliquot",
+        newSample("Aliquots", linkTo("operations.aliquot.linkFieldName", "IsPartOf", 100)),
+        origin(100, "0.6"));
   }
 
   private static ApiInventoryOperationPost passageRequest() {
     return request(
-        "passage", newSample("Passaged", linkTo("IsDerivedFrom", 100)), origin(100, "0"));
+        "passage",
+        newSample(
+            "Passaged",
+            linkTo("operations.passage.linkFieldName", "IsDerivedFrom", 100),
+            textField("operations.passage.numberField", "4")),
+        origin(100, "0"));
   }
 
   private static ApiInventoryOperationPost poolRequest() {
     return request(
         "pool",
-        newSample("Pooled", linkTo("HasPart", 100), linkTo("HasPart", 101)),
+        newSample(
+            "Pooled",
+            linkTo("operations.pool.linkFieldName", "HasPart", 100),
+            linkTo("operations.pool.linkFieldName", "HasPart", 101)),
         origin(100, "0.6"),
         origin(101, "0.7"));
   }
 
   private static ApiInventoryOperationPost deriveRequest() {
     return request(
-        "derive", newSample("Derived", linkTo("IsDerivedFrom", 100)), origin(100, "0.6"));
+        "derive",
+        newSample("Derived", linkTo("operations.derive.linkFieldName", "IsDerivedFrom", 100)),
+        origin(100, "0.6"));
   }
 
   private static ApiInventoryOperationPost cryopreserveRequest() {
-    ApiSampleWithFullSubSamples sample = newSample("Frozen", linkTo("IsDerivedFrom", 100));
+    ApiSampleWithFullSubSamples sample =
+        newSample(
+            "Frozen",
+            linkTo("operations.cryopreserve.linkFieldName", "IsDerivedFrom", 100),
+            textField("operations.cryopreserve.cryomediumField", "DMSO 10%"));
     sample.setStorageTempMin(celsius("-20"));
     sample.setStorageTempMax(celsius("-20"));
     return request("cryopreserve", sample, origin(100, "0.6"));
   }
 
   private static ApiInventoryOperationPost reviveRequest() {
-    ApiSampleWithFullSubSamples sample = newSample("Revived", linkTo("IsDerivedFrom", 100));
+    ApiSampleWithFullSubSamples sample =
+        newSample("Revived", linkTo("operations.revive.linkFieldName", "IsDerivedFrom", 100));
     sample.setStorageTempMin(celsius("4"));
     sample.setStorageTempMax(celsius("4"));
     return request("revive", sample, origin(100, "0.6"));
   }
 
   static ApiInventoryOperationPost destroyRequest() {
-    return request("destroy", null, origin(100, "5"));
+    ApiInventoryOperationPost request = request("destroy", null, origin(100, "5"));
+    request.getOrigins().get(0).setExtraFields(new ArrayList<>(List.of(disposedField())));
+    return request;
   }
 
   @Test
@@ -201,7 +257,10 @@ class InventoryOperationPostValidatorTest {
   void rejectsSecondOriginForSingleOriginOperation() {
     ApiInventoryOperationPost request = aliquotRequest();
     request.getOrigins().add(origin(101, "0.6"));
-    request.getNewSample().getExtraFields().add(linkTo("IsPartOf", 101));
+    request
+        .getNewSample()
+        .getExtraFields()
+        .add(linkTo("operations.aliquot.linkFieldName", "IsPartOf", 101));
     assertSingleErrorWithCode(
         validate(request), "origins", "errors.inventory.operation.originCountExact");
   }
@@ -209,7 +268,10 @@ class InventoryOperationPostValidatorTest {
   @Test
   void rejectsSingleOriginForMultiOriginOperation() {
     ApiInventoryOperationPost request =
-        request("pool", newSample("Pooled", linkTo("HasPart", 100)), origin(100, "0.6"));
+        request(
+            "pool",
+            newSample("Pooled", linkTo("operations.pool.linkFieldName", "HasPart", 100)),
+            origin(100, "0.6"));
     assertSingleErrorWithCode(
         validate(request), "origins", "errors.inventory.operation.originCountMinimum");
   }
@@ -259,7 +321,7 @@ class InventoryOperationPostValidatorTest {
   @Test
   void rejectsLinkFieldWithUnknownRelationTypeViaSamplesEndpointRules() {
     ApiInventoryOperationPost request = aliquotRequest();
-    ApiExtraField badLink = linkTo("MadeFriendsWith", 100);
+    ApiExtraField badLink = linkTo("operations.aliquot.linkFieldName", "MadeFriendsWith", 100);
     request.getNewSample().getExtraFields().add(badLink);
     assertTrue(validate(request).hasFieldErrors("newSample.extraFields[1].link.relationType"));
   }
@@ -475,7 +537,10 @@ class InventoryOperationPostValidatorTest {
   void rejectsLinkWithADifferentRelationTypeThanConfigured() {
     // aliquot must link IsPartOf; a valid but different relation type does not satisfy it
     ApiInventoryOperationPost request =
-        request("aliquot", newSample("Aliquots", linkTo("IsDerivedFrom", 100)), origin(100, "0.6"));
+        request(
+            "aliquot",
+            newSample("Aliquots", linkTo("operations.aliquot.linkFieldName", "IsDerivedFrom", 100)),
+            origin(100, "0.6"));
     assertSingleErrorWithCode(
         validate(request),
         "newSample.extraFields",
@@ -487,7 +552,7 @@ class InventoryOperationPostValidatorTest {
     ApiInventoryOperationPost request =
         request(
             "pool",
-            newSample("Pooled", linkTo("HasPart", 100)),
+            newSample("Pooled", linkTo("operations.pool.linkFieldName", "HasPart", 100)),
             origin(100, "0.6"),
             origin(101, "0.7"));
     assertSingleErrorWithCode(
@@ -516,21 +581,199 @@ class InventoryOperationPostValidatorTest {
   }
 
   @Test
-  void allowsExtraFieldsBeyondTheRequiredLinks() {
-    // The wizard adds an optional IsDocumentedBy link and text fields (e.g. Cryomedium); the
-    // backend must accept fields it does not require (DevDocs/adr/0007).
+  void allowsTheOptionalDocumentationLink() {
+    // The documentation step is a wizard-level feature available to every output-producing
+    // operation, so its IsDocumentedBy link is accepted without the definition declaring it
+    // (DevDocs/adr/0007).
     ApiInventoryOperationPost request = aliquotRequest();
-    ApiExtraField documentation = linkTo("IsDocumentedBy", 0);
-    documentation.getLink().setTargetGlobalId("SD1");
-    documentation.setName("Standard operating procedure");
-    request.getNewSample().getExtraFields().add(documentation);
-    ApiExtraField cryomedium = new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.TEXT);
-    cryomedium.setName("Cryomedium");
-    cryomedium.setNewFieldRequest(true);
-    cryomedium.setContent("DMSO 10%");
-    request.getNewSample().getExtraFields().add(cryomedium);
+    request.getNewSample().getExtraFields().add(documentationLink());
     Errors errors = validate(request);
-    assertFalse(errors.hasErrors(), () -> "extras must be allowed: " + errors.getAllErrors());
+    assertFalse(errors.hasErrors(), () -> "documentation link: " + errors.getAllErrors());
+  }
+
+  // --- the new sample's extra fields are matched to the definition by key ---
+
+  @Test
+  void rejectsNewSampleExtraFieldWhoseKeyTheDefinitionDoesNotDeclare() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().getExtraFields().add(textField("operations.smuggled.field", "x"));
+    assertSingleErrorWithCode(
+        validate(request),
+        "newSample.extraFields[1].operationFieldKey",
+        "errors.inventory.operation.fieldKeyUnknown");
+  }
+
+  @Test
+  void rejectsNewSampleExtraFieldCarryingNoKeyAtAll() {
+    // Resolved field names interpolate user input and are localized, so a field with no key cannot
+    // be matched to the definition at all.
+    ApiInventoryOperationPost request = aliquotRequest();
+    ApiExtraField unkeyed = textField("operations.passage.numberField", "3");
+    unkeyed.setOperationFieldKey(null);
+    request.getNewSample().getExtraFields().add(unkeyed);
+    assertSingleErrorWithCode(
+        validate(request),
+        "newSample.extraFields[1].operationFieldKey",
+        "errors.inventory.operation.fieldKeyUnknown");
+  }
+
+  @Test
+  void rejectsDuplicateOfADeclaredLinkField() {
+    // Aliquot declares one link and has one origin, so a second field with the same key is one
+    // more than the definition describes.
+    ApiInventoryOperationPost request = aliquotRequest();
+    request
+        .getNewSample()
+        .getExtraFields()
+        .add(linkTo("operations.aliquot.linkFieldName", "IsPartOf", 100));
+    assertTrue(
+        validate(request).getFieldErrors("newSample.extraFields").stream()
+            .anyMatch(
+                error ->
+                    "errors.inventory.operation.declaredFieldMissing".equals(error.getCode())));
+  }
+
+  @Test
+  void rejectsMissingDeclaredTextField() {
+    // Passage declares a passage-number text field; omitting it drops part of the operation's
+    // record (review repro F5c).
+    ApiInventoryOperationPost request = passageRequest();
+    request.getNewSample().getExtraFields().removeIf(field -> field.getLink() == null);
+    assertSingleErrorWithCode(
+        validate(request),
+        "newSample.extraFields",
+        "errors.inventory.operation.declaredFieldMissing");
+  }
+
+  @Test
+  void rejectsDeclaredTextFieldSentAsALink() {
+    ApiInventoryOperationPost request = cryopreserveRequest();
+    request.getNewSample().getExtraFields().stream()
+        .filter(
+            field -> "operations.cryopreserve.cryomediumField".equals(field.getOperationFieldKey()))
+        .forEach(field -> field.setType(ApiExtraField.ExtraFieldTypeEnum.LINK));
+    assertTrue(
+        validate(request).getFieldErrors("newSample.extraFields[1]").stream()
+            .anyMatch(
+                error ->
+                    "errors.inventory.operation.declaredFieldMissing".equals(error.getCode())));
+  }
+
+  @Test
+  void rejectsDocumentationLinkWithTheWrongRelationType() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    ApiExtraField documentation = documentationLink();
+    documentation.getLink().setRelationType("IsDerivedFrom");
+    request.getNewSample().getExtraFields().add(documentation);
+    assertSingleErrorWithCode(
+        validate(request),
+        "newSample.extraFields[1].link",
+        "errors.inventory.operation.documentationLinkInvalid");
+  }
+
+  @Test
+  void rejectsASecondDocumentationLink() {
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().getExtraFields().add(documentationLink());
+    request.getNewSample().getExtraFields().add(documentationLink());
+    assertTrue(
+        validate(request).getFieldErrors("newSample.extraFields").stream()
+            .anyMatch(
+                error ->
+                    "errors.inventory.operation.declaredFieldMissing".equals(error.getCode())));
+  }
+
+  // --- the new sample is a whitelist: only what the definition declares may be sent ---
+
+  @Test
+  void rejectsNewSamplePropertiesNoOperationDefinitionDeclares() {
+    // An operation request is not a general sample POST: the wizard sends exactly the properties
+    // the definition declares, so anything else is smuggled state (sharing, placement, tags,
+    // images) and is rejected naming the property (DevDocs/adr/0007).
+    record Undeclared(String property, Consumer<ApiSampleWithFullSubSamples> smuggle) {}
+    List<Undeclared> undeclared =
+        List.of(
+            new Undeclared("description", sample -> sample.setDescription("smuggled")),
+            new Undeclared(
+                "tags", sample -> sample.setTags(new ArrayList<>(List.of(new ApiTagInfo())))),
+            new Undeclared(
+                "barcodes",
+                sample -> sample.setBarcodes(new ArrayList<>(List.of(new ApiBarcode())))),
+            new Undeclared(
+                "sharingMode", sample -> sample.setSharingMode(ApiInventorySharingMode.WHITELIST)),
+            new Undeclared(
+                "sharedWith",
+                sample ->
+                    sample.setSharedWith(
+                        new ArrayList<>(List.of(new ApiGroupInfoWithSharedFlag())))),
+            new Undeclared("newBase64Image", sample -> sample.setNewBase64Image("data:image/png")),
+            new Undeclared("sampleSource", sample -> sample.setSampleSource(SampleSource.OTHER)),
+            new Undeclared("expiryDate", sample -> sample.setExpiryDate(LocalDate.of(2030, 1, 1))),
+            new Undeclared(
+                "newSampleSubSamplesCount", sample -> sample.setNewSampleSubSamplesCount(3)),
+            new Undeclared(
+                "newSampleSubSampleTargetLocations",
+                sample ->
+                    sample.setNewSampleSubSampleTargetLocations(
+                        new ArrayList<>(List.of(new ApiTargetLocation())))));
+    for (Undeclared smuggled : undeclared) {
+      ApiInventoryOperationPost request = aliquotRequest();
+      smuggled.smuggle().accept(request.getNewSample());
+      assertSingleErrorWithCode(
+          validate(request),
+          "newSample." + smuggled.property(),
+          "errors.inventory.operation.undeclaredProperty");
+    }
+  }
+
+  @Test
+  void rejectsStorageTemperatureOnAnOperationThatDeclaresNone() {
+    // Only an operation with a temperature input (Cryopreserve, Revive) may set the new sample's
+    // storage temperature; Aliquot declares none, so sending one is undeclared content.
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().setStorageTempMin(celsius("-80"));
+    request.getNewSample().setStorageTempMax(celsius("-80"));
+    Errors errors = validate(request);
+    assertTrue(
+        errors.getFieldErrors("newSample.storageTempMin").stream()
+            .anyMatch(
+                error -> "errors.inventory.operation.undeclaredProperty".equals(error.getCode())));
+    assertTrue(
+        errors.getFieldErrors("newSample.storageTempMax").stream()
+            .anyMatch(
+                error -> "errors.inventory.operation.undeclaredProperty".equals(error.getCode())));
+  }
+
+  @Test
+  void rejectsSubSamplePropertiesNoOperationDefinitionDeclares() {
+    // The created subsamples carry a quantity and nothing else: the operation's own fields go on
+    // the sample, so notes, fields and placement on a subsample are undeclared content.
+    record Undeclared(String property, Consumer<ApiSubSample> smuggle) {}
+    List<Undeclared> undeclared =
+        List.of(
+            new Undeclared(
+                "notes",
+                subSample -> subSample.setNotes(new ArrayList<>(List.of(new ApiSubSampleNote())))),
+            new Undeclared(
+                "extraFields",
+                subSample ->
+                    subSample.setExtraFields(
+                        new ArrayList<>(
+                            List.of(new ApiExtraField(ApiExtraField.ExtraFieldTypeEnum.TEXT))))),
+            new Undeclared("description", subSample -> subSample.setDescription("smuggled")),
+            new Undeclared(
+                "parentLocation",
+                subSample -> subSample.setParentLocation(new ApiContainerLocation())));
+    for (Undeclared smuggled : undeclared) {
+      ApiInventoryOperationPost request = aliquotRequest();
+      smuggled.smuggle().accept(request.getNewSample().getSubSamples().get(0));
+      String field = "newSample.subSamples[0]." + smuggled.property();
+      assertTrue(
+          validate(request).getFieldErrors(field).stream()
+              .anyMatch(
+                  error -> "errors.inventory.operation.undeclaredProperty".equals(error.getCode())),
+          () -> field + " must be rejected as undeclared");
+    }
   }
 
   // --- origin extra fields: strictly new-field requests, contents fully validated ---
@@ -540,7 +783,90 @@ class InventoryOperationPostValidatorTest {
     field.setName("Disposed");
     field.setContent("2026-08-20");
     field.setNewFieldRequest(true);
+    field.setOperationFieldKey("operations.destroy.disposedField");
     return field;
+  }
+
+  private static ApiExtraField newSampleFieldWithKey(
+      ApiInventoryOperationPost request, String key) {
+    return request.getNewSample().getExtraFields().stream()
+        .filter(field -> key.equals(field.getOperationFieldKey()))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  @Test
+  void rejectsOriginExtraFieldOnAnOperationThatDeclaresNone() {
+    // Only Destroy declares an origin field; adding one to an Aliquot origin writes to a record the
+    // operation is only supposed to decrement (review repro F5a).
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getOrigins().get(0).setExtraFields(new ArrayList<>(List.of(disposedField())));
+    assertSingleErrorWithCode(
+        validate(request),
+        "origins[0].extraFields[0].operationFieldKey",
+        "errors.inventory.operation.fieldKeyUnknown");
+  }
+
+  @Test
+  void rejectsMissingDeclaredOriginField() {
+    // Destroy declares a disposed-date field on each origin; omitting it loses the disposal record
+    // (review repro F5b).
+    ApiInventoryOperationPost request = destroyRequest();
+    request.getOrigins().get(0).setExtraFields(new ArrayList<>());
+    assertSingleErrorWithCode(
+        validate(request),
+        "origins[0].extraFields",
+        "errors.inventory.operation.declaredFieldMissing");
+  }
+
+  @Test
+  void rejectsOriginFieldContentTheComputedFunctionCouldNotHaveProduced() {
+    // Destroy's disposed date is computed by "today", so its content must be an ISO date; the
+    // backend checks the shape rather than recomputing it (DevDocs/adr/0007).
+    for (String content : List.of("last Tuesday", "20/08/2026", "")) {
+      ApiInventoryOperationPost request = destroyRequest();
+      request.getOrigins().get(0).getExtraFields().get(0).setContent(content);
+      assertSingleErrorWithCode(
+          validate(request),
+          "origins[0].extraFields[0].content",
+          "errors.inventory.operation.computedContentInvalid");
+    }
+  }
+
+  @Test
+  void rejectsPassageNumberThatIsNotAPositiveWholeNumber() {
+    // Passage's number is computed by "increment", so it can only ever be a positive integer.
+    for (String content : List.of("0", "-1", "2.5", "two", "")) {
+      ApiInventoryOperationPost request = passageRequest();
+      newSampleFieldWithKey(request, "operations.passage.numberField").setContent(content);
+      assertSingleErrorWithCode(
+          validate(request),
+          "newSample.extraFields[1].content",
+          "errors.inventory.operation.computedContentInvalid");
+    }
+  }
+
+  @Test
+  void allowsBlankContentInADeclaredFieldFedByAnOptionalInput() {
+    // Cryopreserve's cryomedium input is optional, so its field may legitimately be empty; only a
+    // field fed by a required input must carry content.
+    ApiInventoryOperationPost request = cryopreserveRequest();
+    newSampleFieldWithKey(request, "operations.cryopreserve.cryomediumField").setContent("");
+    Errors errors = validate(request);
+    assertFalse(errors.hasErrors(), () -> "optional content: " + errors.getAllErrors());
+  }
+
+  @Test
+  void rejectsDifferentStorageTemperatureMinimumAndMaximum() {
+    // One temperature input feeds both storage temperatures, so a request that spreads them into a
+    // range describes something the operation cannot produce (review repro F5d).
+    ApiInventoryOperationPost request = cryopreserveRequest();
+    request.getNewSample().setStorageTempMin(celsius("-80"));
+    request.getNewSample().setStorageTempMax(celsius("-20"));
+    assertSingleErrorWithCode(
+        validate(request),
+        "newSample.storageTempMax",
+        "errors.inventory.operation.storageTempSingleValue");
   }
 
   @Test
@@ -628,7 +954,7 @@ class InventoryOperationPostValidatorTest {
     List<ApiInventoryOperationOriginUpdate> origins = new ArrayList<>();
     for (long id = 1; id <= 101; id++) {
       origins.add(origin(id, "0.6"));
-      sample.getExtraFields().add(linkTo("HasPart", id));
+      sample.getExtraFields().add(linkTo("operations.pool.linkFieldName", "HasPart", id));
     }
     request.setOrigins(origins);
     assertTrue(

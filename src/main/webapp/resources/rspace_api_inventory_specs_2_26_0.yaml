@@ -1549,11 +1549,36 @@ paths:
         created, what each origin's amountTaken must be, any configured storage-temperature
         bounds, and a provenance link from the new sample back to every origin with the
         operation's relation type. The payload is still client-built - the caller constructs the
-        new sample, computes any derived field content (e.g. a passage number or an ISO disposal
-        date), and may add extra fields and links beyond the required ones - but a request that
-        does not conform to its named operation is rejected with 400. There is still no
+        new sample and computes any derived field content (e.g. a passage number or an ISO
+        disposal date) - but the request must contain exactly the fields the selected definition
+        declares, no more and no fewer, and is otherwise rejected with 400. There is still no
         per-operation server code; the rules are interpreted generically from the shared
         operation definitions.
+
+
+        ## Field identity: operationFieldKey
+
+
+        Every extra field in an operation request carries `operationFieldKey`, the key of the
+        definition entry that produced it (a link spec's `fieldNameKey`, a text/origin field's
+        `nameKey`, or the fixed `operations.documentationLink` for the optional documentation
+        link). Field names are display text - they are localized and interpolate user input
+        (`{processName}`, `{originName}`) - so the server matches fields to the definition by this
+        key, never by name. A field with a missing or unrecognised key is rejected with 400, as is
+        a definition-declared field that is missing, duplicated, or of the wrong type. The key is
+        request-only: it is never persisted and never appears in a response.
+
+
+        ## What the new sample may carry
+
+
+        Only what the definition declares: name, templateId, quantity, subSamples, the declared
+        extra fields, and - for an operation with a temperature input - storageTempMin and
+        storageTempMax (which must be equal, since one input feeds both). Everything else
+        (description, tags, barcodes, identifiers, sharing, images, sample source, expiry date,
+        template field values, subsample placement) is rejected with 400 naming the property. The
+        created subsamples carry a quantity and nothing else: the operation's links and text
+        fields live on the sample, not on its subsamples.
 
 
         ## Origin amount
@@ -1624,14 +1649,10 @@ paths:
                       - name: "Is Derived From using process: PCR"
                         type: link
                         newFieldRequest: true
+                        operationFieldKey: operations.derive.linkFieldName
                         link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
                     subSamples:
                       - quantity: { numericValue: 0.5, unitId: 3 }
-                        extraFields:
-                          - name: "Is Derived From using process: PCR"
-                            type: link
-                            newFieldRequest: true
-                            link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
               aliquot:
                 summary: Aliquot - split 6 ml from one origin into two 3 ml subsamples
                 value:
@@ -1646,20 +1667,11 @@ paths:
                       - name: Derived from
                         type: link
                         newFieldRequest: true
+                        operationFieldKey: operations.aliquot.linkFieldName
                         link: { relationType: IsPartOf, targetGlobalId: SS1234, versionPin: null }
                     subSamples:
                       - quantity: { numericValue: 3, unitId: 3 }
-                        extraFields:
-                          - name: Derived from
-                            type: link
-                            newFieldRequest: true
-                            link: { relationType: IsPartOf, targetGlobalId: SS1234, versionPin: null }
                       - quantity: { numericValue: 3, unitId: 3 }
-                        extraFields:
-                          - name: Derived from
-                            type: link
-                            newFieldRequest: true
-                            link: { relationType: IsPartOf, targetGlobalId: SS1234, versionPin: null }
               passage:
                 summary: Passage - link a new passage without consuming the origin (amountTaken 0)
                 value:
@@ -1674,18 +1686,15 @@ paths:
                       - name: Passaged from
                         type: link
                         newFieldRequest: true
+                        operationFieldKey: operations.passage.linkFieldName
                         link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
                       - name: Passage number
                         type: text
                         newFieldRequest: true
+                        operationFieldKey: operations.passage.numberField
                         content: "3"
                     subSamples:
                       - quantity: { numericValue: 5, unitId: 3 }
-                        extraFields:
-                          - name: Passaged from
-                            type: link
-                            newFieldRequest: true
-                            link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
               pool:
                 summary: Pool - combine two origins (emptying each) into one pooled subsample
                 value:
@@ -1702,22 +1711,15 @@ paths:
                       - name: "Pooled from: Vial A"
                         type: link
                         newFieldRequest: true
+                        operationFieldKey: operations.pool.linkFieldName
                         link: { relationType: HasPart, targetGlobalId: SS1234, versionPin: null }
                       - name: "Pooled from: Vial B"
                         type: link
                         newFieldRequest: true
+                        operationFieldKey: operations.pool.linkFieldName
                         link: { relationType: HasPart, targetGlobalId: SS5678, versionPin: null }
                     subSamples:
                       - quantity: { numericValue: 13, unitId: 3 }
-                        extraFields:
-                          - name: "Pooled from: Vial A"
-                            type: link
-                            newFieldRequest: true
-                            link: { relationType: HasPart, targetGlobalId: SS1234, versionPin: null }
-                          - name: "Pooled from: Vial B"
-                            type: link
-                            newFieldRequest: true
-                            link: { relationType: HasPart, targetGlobalId: SS5678, versionPin: null }
               cryopreserve:
                 summary: Cryopreserve - freeze at -80 C with a cryomedium field
                 value:
@@ -1734,18 +1736,15 @@ paths:
                       - name: Frozen from
                         type: link
                         newFieldRequest: true
+                        operationFieldKey: operations.cryopreserve.linkFieldName
                         link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
                       - name: Cryomedium
                         type: text
                         newFieldRequest: true
+                        operationFieldKey: operations.cryopreserve.cryomediumField
                         content: "10% DMSO in FBS"
                     subSamples:
                       - quantity: { numericValue: 1, unitId: 3 }
-                        extraFields:
-                          - name: Frozen from
-                            type: link
-                            newFieldRequest: true
-                            link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
               revive:
                 summary: Revive - thaw and store at 37 C
                 value:
@@ -1762,14 +1761,10 @@ paths:
                       - name: Revived from
                         type: link
                         newFieldRequest: true
+                        operationFieldKey: operations.revive.linkFieldName
                         link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
                     subSamples:
                       - quantity: { numericValue: 1, unitId: 3 }
-                        extraFields:
-                          - name: Revived from
-                            type: link
-                            newFieldRequest: true
-                            link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
               destroy:
                 summary: Destroy - empty the origin and stamp a disposal date (no new sample)
                 value:
@@ -1781,6 +1776,7 @@ paths:
                         - name: Disposed
                           type: text
                           newFieldRequest: true
+                          operationFieldKey: operations.destroy.disposedField
                           content: "2026-07-22"
       responses:
         "201":
@@ -4819,9 +4815,10 @@ components:
             $ref: "#/components/schemas/InventoryOperationExtraField"
     InventoryOperationNewSample:
       description: >
-        The new sample to create, assembled entirely by the client (mirrors the POST /samples
-        payload). Its relation link(s) and text fields are placed on the sample; each created
-        subsample carries its own copy of the provenance link in its own extraFields.
+        The new sample to create, assembled entirely by the client. Unlike the POST /samples
+        payload this is a whitelist: only the properties listed here are accepted, and any other
+        sample property is rejected with 400. The operation's relation link(s) and text fields are
+        placed on the sample itself, never on the subsamples it creates.
       type: object
       required:
         - name
@@ -4839,54 +4836,66 @@ components:
           allOf:
             - $ref: "#/components/schemas/Quantity"
           description: >
-            Minimum storage temperature (unit in Celsius), e.g. for Cryopreserve or Revive.
-            Optional.
+            Storage temperature (unit in Celsius), accepted only by an operation that declares a
+            temperature input (Cryopreserve, Revive), where it is required. One input feeds both
+            bounds, so it must equal storageTempMax.
         storageTempMax:
           allOf:
             - $ref: "#/components/schemas/Quantity"
-          description: Maximum storage temperature (unit in Celsius). Optional.
+          description: >
+            Storage temperature (unit in Celsius); see storageTempMin. Must equal storageTempMin.
         extraFields:
           type: array
           description: >
-            The sample's custom fields: the provenance link field(s) and any text fields
-            (e.g. Cryomedium for Cryopreserve, Passage number for Passage).
+            Exactly the fields the definition declares, each carrying its operationFieldKey: one
+            link per origin for each declared link spec, one field per declared text field
+            (e.g. Cryomedium for Cryopreserve, Passage number for Passage), plus at most one
+            optional documentation link. Anything else is rejected with 400.
           items:
             $ref: "#/components/schemas/InventoryOperationExtraField"
         subSamples:
           type: array
           description: >
-            The subsamples to create, each with its own quantity (the created amount) and its
-            own copy of the provenance link.
+            The subsamples to create, each carrying its quantity (the created amount) and nothing
+            else. At least as many as the definition's count input allows.
           items:
             $ref: "#/components/schemas/InventoryOperationNewSubSample"
     InventoryOperationNewSubSample:
-      description: One subsample the operation creates.
+      description: >
+        One subsample the operation creates. It carries a quantity only: the operation's links and
+        text fields belong to the sample, so extra fields, notes, tags and placement on a subsample
+        are rejected with 400.
       type: object
       properties:
         quantity:
           allOf:
             - $ref: "#/components/schemas/Quantity"
           description: The created subsample's quantity.
-        extraFields:
-          type: array
-          description: The subsample's custom fields, typically its own copy of the provenance link.
-          items:
-            $ref: "#/components/schemas/InventoryOperationExtraField"
     InventoryOperationExtraField:
       description: >
-        A custom field added to the new sample, a created subsample, or an origin. Set
-        newFieldRequest true to add a new field. A provenance LINK field sets type "link" and a
-        link object; a plain field sets type "text" (or "number") and content.
+        A custom field added to the new sample or to an origin, matched to the operation
+        definition by its operationFieldKey. Set newFieldRequest true to add a new field. A
+        provenance LINK field sets type "link" and a link object; a plain field sets type "text"
+        (or "number") and content.
       type: object
       required:
         - name
         - newFieldRequest
+        - operationFieldKey
       properties:
         name:
           type: string
           description: >
-            The field name. For a link this is the provenance label shown on the record
-            (e.g. "Passaged from", "Pooled from: Vial A").
+            The field name, used as the label shown on the record (e.g. "Passaged from",
+            "Pooled from: Vial A"). Display text only - the server matches the field to the
+            definition by operationFieldKey, not by name.
+        operationFieldKey:
+          type: string
+          description: >
+            The key of the definition entry that produced this field: a link spec's fieldNameKey,
+            a text or origin field's nameKey, or the fixed "operations.documentationLink" for the
+            optional documentation link. Request-only; never persisted or returned.
+          example: operations.derive.linkFieldName
         type:
           type: string
           description: '"link" for a relation link, or "text"/"number" for a plain field.'

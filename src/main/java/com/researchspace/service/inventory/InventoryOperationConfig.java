@@ -9,8 +9,9 @@ import java.util.List;
  * validation interprets (DevDocs/adr/0007). The wizard fetches the same file verbatim from GET
  * /operations/config and reads the full shape (labels, icons, wizard steps); everything the backend
  * does not enforce is ignored on binding, so purely presentational config changes cannot break the
- * API. Stage 2 (DevDocs/adr/0007) swaps the source of these definitions to user-editable data
- * without changing this shape.
+ * API. Unknown properties are ignored on the CONFIG only: strictness applies to the request, which
+ * is whitelisted against this definition. Stage 2 (DevDocs/adr/0007) swaps the source of these
+ * definitions to user-editable data without changing this shape.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record InventoryOperationConfig(
@@ -18,28 +19,63 @@ public record InventoryOperationConfig(
 
   public InventoryOperationConfig {
     inputs = inputs == null ? List.of() : List.copyOf(inputs);
-    effect = effect == null ? new Effect(null, null, null, false, null) : effect;
+    effect = effect == null ? Effect.EMPTY : effect;
   }
 
   /** A wizard input; only the constraints the backend can check server-side are bound. */
   @JsonIgnoreProperties(ignoreUnknown = true)
   public record Input(
-      String key, String type, boolean required, BigDecimal minCelsius, BigDecimal maxCelsius) {}
+      String key,
+      String type,
+      boolean required,
+      BigDecimal min,
+      BigDecimal minCelsius,
+      BigDecimal maxCelsius) {}
 
   /** The parts of the operation's effect the backend enforces on the wire format. */
   @JsonIgnoreProperties(ignoreUnknown = true)
   public record Effect(
+      String nameFrom,
+      String countFrom,
       String amountTakenFrom,
       String eachAmountFrom,
       String storageTempFrom,
+      String processNameFrom,
       boolean emptiesOrigin,
-      List<Link> links) {
+      List<Computed> computed,
+      List<Link> links,
+      List<TextField> textFields,
+      List<OriginField> originFields) {
+
+    static final Effect EMPTY =
+        new Effect(null, null, null, null, null, null, false, null, null, null, null);
+
     public Effect {
+      computed = computed == null ? List.of() : List.copyOf(computed);
       links = links == null ? List.of() : List.copyOf(links);
+      textFields = textFields == null ? List.of() : List.copyOf(textFields);
+      originFields = originFields == null ? List.of() : List.copyOf(originFields);
     }
   }
 
+  /**
+   * A value the wizard derives client-side and writes into the named input ({@code into}), which
+   * the declared text/origin fields then consume. The backend does not recompute it (the inputs are
+   * not on the wire and {@code today} would fight client/server timezones, DevDocs/adr/0007); it
+   * checks the shape the function promises.
+   */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public record Computed(String fn, String into) {}
+
   /** A provenance link the new sample must carry back to each origin. */
   @JsonIgnoreProperties(ignoreUnknown = true)
-  public record Link(String relationType) {}
+  public record Link(String relationType, String fieldNameKey) {}
+
+  /** A text field the operation adds to the sample it creates (e.g. Cryopreserve's cryomedium). */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public record TextField(String nameKey, String contentFrom) {}
+
+  /** A field the operation adds to each origin subsample (Destroy's disposed date). */
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public record OriginField(String nameKey, String contentFrom, String type) {}
 }
