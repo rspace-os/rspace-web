@@ -32,19 +32,21 @@ was rejected as defeating the config goal. The backend does resolve
 **User-configurable operations are the decided end state, deliberately not built
 yet.** The whole framework exists so that operations eventually become
 server-owned, user-editable data (storage, editing surface, and authorization are
-undecided stage-2 questions). Stage-1 code was written to survive that migration,
-which explains its most surprising artifact:
+undecided stage-2 questions). Stage-1 code was written to survive that migration.
 
-**`operations_config.json` is deliberately duplicated.** The frontend owns the
-authoritative copy; the backend holds a verbatim copy at
-`src/main/resources/inventory/operations_config.json`, parsed at startup, and a
-unit test asserts byte equality of the two files. Editing an operation means
-editing the frontend file and copying it across. Do not "fix" this by deleting a
-copy or deriving one from the other: the duplication is the cheapest bridge until
-stage 2, when the backend serves definitions from a user-editable store and both
-checked-in copies plus the drift test are deleted. A hard-coded Java rule
-registry was rejected because stage 2 would throw it away and nothing would
-mechanically catch drift in the meantime.
+**`operations_config.json` is backend-owned; the frontend has no copy.** The
+single authoritative file lives at
+`src/main/resources/inventory/operations_config.json`. The backend parses it at
+startup (failing fast on a bad build) to validate requests, and serves it
+verbatim from `GET /api/inventory/v1/operations/config`; the wizard fetches that
+endpoint and validates the payload against its own schema (valibot) before
+rendering, so a config/schema mismatch fails when the picker loads, not at
+submit. Stage 1 initially duplicated the file into the frontend behind a
+byte-equality drift test; review (2026-08-27) rejected frontend ownership — the
+backend must validate strictly against a schema it owns — so the frontend copy
+and the drift test were deleted. Stage 2 swaps the classpath file for a
+user-editable store without changing the endpoint or its consumers. A hard-coded
+Java rule registry was rejected because stage 2 would throw it away.
 
 ## Why the backend validates against that config copy
 
@@ -62,7 +64,9 @@ The API carries `amountTaken`, a non-negative decrement, never an absolute
 after-value or signed delta: an operation must be structurally unable to
 increase an origin's quantity. Over-removal is rejected with an error, not
 clamped to zero: silent clamping destroys material state the user did not intend
-to consume. Created amounts are independent of the amount taken (fresh medium
+to consume. An amount finer than the 3 decimal places quantities persist at
+(`QuantityInfo`) is rejected the same way, not rounded: the stored decrement
+would differ from the validated one (0.0004 ml would take nothing). Created amounts are independent of the amount taken (fresh medium
 can be added during Derive). A zero decrement is a complete no-op, for
 operations that link to an origin without consuming it (Passage).
 
@@ -91,3 +95,19 @@ backend operation-agnostic: the server never interprets a field as "today".
   config capabilities**, added so new operations of those shapes need a config
   entry, not wizard or backend code. Their mechanics are in the config schema,
   wizard, validator, and tests.
+- **Live-state rules are enforced inside the operation's transaction** (review,
+  2026-08-27): the empty-origin, over-removal and must-empty checks run in
+  `InventoryOperationManagerImpl` against the same state the mutation sees,
+  before anything is written. This supersedes the earlier advisory pre-check in
+  the controller's separate read transaction, whose race let a concurrent
+  decrement produce a 201 with a silently clamped origin instead of the
+  documented 400.
+- **The operations endpoint is JSON-only** (`consumes = application/json`): the
+  app registers a global YAML message converter, whose laxer parsing (duplicate
+  keys, alternate numeric forms) would bypass the JSON contract the validator
+  assumes. YAML bodies get HTTP 415.
+- **Bean Validation cascades through the request DTO graph** (`@Valid` on
+  `newSample`, `origins`, `subSamples`, `notes`), so the image-size and
+  note-length constraints ordinary sample creation enforces also hold for
+  operation payloads, and an explicit `subSamples` list is capped at 100 like
+  `newSampleSubSamplesCount`.

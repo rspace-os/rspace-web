@@ -2,9 +2,15 @@ package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
+import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
+import com.researchspace.model.inventory.SubSample;
+import com.researchspace.model.units.Quantifiable;
+import com.researchspace.model.units.QuantityInfo;
+import com.researchspace.model.units.QuantityUtils;
+import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
@@ -13,22 +19,24 @@ import java.util.List;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindException;
 
 @Service("inventoryOperationManager")
 public class InventoryOperationManagerImpl implements InventoryOperationManager {
 
   @Autowired private SampleApiManager sampleApiMgr;
   @Autowired private SubSampleApiManager subSampleApiMgr;
+  @Autowired private InventoryOperationConfigRegistry operationConfigs;
 
   @Override
-  public ApiSampleWithFullSubSamples performOperation(
-      ApiInventoryOperationPost request, User user) {
-    // Validate-before-mutate: assert edit permission on every origin first, so a permission
-    // failure aborts before anything is written (a throw inside this shared transaction marks it
-    // rollback-only). See DevDocs/adr/0007.
-    for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
-      subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
-    }
+  public ApiSampleWithFullSubSamples performOperation(ApiInventoryOperationPost request, User user)
+      throws BindException {
+    // Validate-before-mutate, inside this method's own transaction so the rules hold against the
+    // same state the mutation sees (not an advisory read in a separate transaction): assert edit
+    // permission on every origin and check each origin's live quantity against its amountTaken.
+    // Any violation throws before anything is written. See DevDocs/adr/0007.
+    checkOriginLiveState(request, user);
 
     // Reduce each origin by the amount taken from it BEFORE creating the new sample, so the new
     // subsample is the most-recently-modified record and therefore sorts first in a
@@ -36,11 +44,9 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     // modification date now; the new subsample is stamped later, when created below).
     // registerApiSubSampleUsage subtracts (unit-aware) and clamps at zero, so an operation can only
     // ever decrease the origin, never increase it. Any custom fields the operation adds to the
-    // origin
-    // itself (Destroy's disposed date) are applied through the ordinary subsample-edit path, each
-    // marked newFieldRequest by the frontend. Coordinated inside this manager so it joins the one
-    // transaction with the sample creation. See DevDocs/adr/0007,
-    // DevDocs/adr/0007.
+    // origin itself (Destroy's disposed date) are applied through the ordinary subsample-edit path,
+    // each marked newFieldRequest by the frontend. Coordinated inside this manager so it joins the
+    // one transaction with the sample creation. See DevDocs/adr/0007.
     // Mutate origins in ascending id order (not request order) so two concurrent multi-origin
     // operations over overlapping origins acquire their row locks in one consistent order and
     // cannot deadlock. The validator guarantees unique, non-null ids by this point.
@@ -64,10 +70,112 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
     }
 
     // A terminal operation (noOutput, e.g. Destroy) sends no new sample: it only acts on its
-    // origins,
-    // so there is nothing to create and nothing to return. See DevDocs/adr/0007.
+    // origins, so there is nothing to create and nothing to return. See DevDocs/adr/0007.
     return request.getNewSample() == null
         ? null
         : sampleApiMgr.createNewApiSample(request.getNewSample(), user);
+  }
+
+  /**
+   * The live-state rules (DevDocs/adr/0007): every origin must currently hold something, the amount
+   * taken may not exceed what an origin holds, and an origin-emptying operation (e.g. Destroy) must
+   * take exactly what the origin holds. Permission is asserted BEFORE reading state, so an
+   * under-permissioned caller gets an authorization failure, not a misleading "origin empty" 400.
+   * Violations surface as the same field-scoped 400 (BindException) the structural validator
+   * produces, under {@code origins[i]} in request order.
+   */
+  private void checkOriginLiveState(ApiInventoryOperationPost request, User user)
+      throws BindException {
+    boolean emptiesOrigin =
+        operationConfigs
+            .get(request.getOperationType())
+            .map(config -> config.effect().emptiesOrigin())
+            .orElse(false);
+    BeanPropertyBindingResult errors =
+        new BeanPropertyBindingResult(request, "apiInventoryOperationPost");
+    int index = 0;
+    for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
+      SubSample dbSubSample = subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
+      errors.pushNestedPath(String.format("origins[%d]", index++));
+      try {
+        QuantityInfo currentQuantity = dbSubSample.getQuantity();
+        if (originHoldsNothing(currentQuantity)) {
+          errors.rejectValue(
+              "id",
+              "errors.inventory.operation.originEmpty",
+              "An origin subsample that currently holds nothing cannot be operated on.");
+        } else if (amountTakenExceedsOrigin(origin.getAmountTaken(), currentQuantity)) {
+          errors.rejectValue(
+              "amountTaken",
+              "errors.inventory.operation.amountTakenExceedsOrigin",
+              "Cannot take more from an origin than it currently holds.");
+        } else if (emptiesOrigin
+            && !amountTakenEmptiesOrigin(origin.getAmountTaken(), currentQuantity)) {
+          errors.rejectValue(
+              "amountTaken",
+              "errors.inventory.operation.mustEmptyOrigin",
+              "This operation must take the origin's entire remaining quantity.");
+        }
+      } finally {
+        errors.popNestedPath();
+      }
+    }
+    if (errors.hasErrors()) {
+      throw new BindException(errors);
+    }
+  }
+
+  /**
+   * Whether an origin currently holds nothing: a null quantity (never set), a quantity without a
+   * numeric value, or a non-positive amount. No operation may act on such an origin: there is
+   * nothing to take, pool, preserve or destroy.
+   */
+  static boolean originHoldsNothing(Quantifiable originQuantity) {
+    return originQuantity == null
+        || originQuantity.getNumericValue() == null
+        || originQuantity.getNumericValue().signum() <= 0;
+  }
+
+  /**
+   * Whether the amount taken exceeds the origin's current quantity, unit-aware within a measurement
+   * category (e.g. 0.006 kg against a 5 g origin). A null amount, or a pair in different categories
+   * (which the UI never produces), is not treated as over-removal. A null/absent origin quantity
+   * means the origin holds nothing, so any positive amount taken from it is over-removal.
+   */
+  static boolean amountTakenExceedsOrigin(
+      ApiQuantityInfo amountTaken, Quantifiable originQuantity) {
+    if (amountTaken == null || amountTaken.getNumericValue() == null) {
+      return false;
+    }
+    if (originQuantity == null || originQuantity.getNumericValue() == null) {
+      // Origin holds nothing: any positive amount taken is over-removal.
+      return amountTaken.getNumericValue().signum() > 0;
+    }
+    QuantityUtils quantityUtils = new QuantityUtils();
+    if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)) {
+      return false;
+    }
+    return quantityUtils.getComparatorFor(originQuantity).compare(amountTaken, originQuantity) > 0;
+  }
+
+  /**
+   * Whether the amount taken equals the origin's current quantity, unit-aware within a measurement
+   * category (0.005 kg empties a 5 g origin). An origin-emptying operation (emptiesOrigin, e.g.
+   * Destroy) must take exactly what the origin holds, no less (over-removal is rejected
+   * separately). Missing values or incomparable categories never count as emptying.
+   */
+  static boolean amountTakenEmptiesOrigin(
+      ApiQuantityInfo amountTaken, Quantifiable originQuantity) {
+    if (amountTaken == null
+        || amountTaken.getNumericValue() == null
+        || originQuantity == null
+        || originQuantity.getNumericValue() == null) {
+      return false;
+    }
+    QuantityUtils quantityUtils = new QuantityUtils();
+    if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)) {
+      return false;
+    }
+    return quantityUtils.getComparatorFor(originQuantity).compare(amountTaken, originQuantity) == 0;
   }
 }

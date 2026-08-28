@@ -11,6 +11,8 @@ import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
+import com.researchspace.service.inventory.InventoryOperationConfig;
+import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Objects;
@@ -30,8 +32,8 @@ import org.springframework.validation.Validator;
  * decrementing operation, exactly zero for one that only links, e.g. Passage), configured
  * storage-temperature bounds (unit-aware), and a provenance link from the new sample back to every
  * origin. The new sample is also run through the same {@link SampleApiPostValidator} the public
- * samples endpoint uses. Checks needing an origin's live quantity are static helpers here, called
- * by the controller (DevDocs/adr/0007).
+ * samples endpoint uses. Checks needing an origin's live quantity are enforced by the manager
+ * inside the operation's transaction, not here (DevDocs/adr/0007).
  */
 @Component
 public class InventoryOperationPostValidator implements Validator {
@@ -145,6 +147,14 @@ public class InventoryOperationPostValidator implements Validator {
             "amountTaken",
             "errors.inventory.operation.amountTakenInvalid",
             "Each origin must specify a non-negative amount, with a unit, to take from it.");
+      } else if (!QuantityInfo.canStoreWithoutRounding(origin.getAmountTaken().getNumericValue())) {
+        // Quantities persist at 3dp (QuantityInfo rounds HALF_UP), so a finer amount would pass the
+        // live-state checks as given yet decrement the origin by the rounded surrogate (0.0004 ml
+        // would take nothing at all). Rejected rather than rounded, like over-removal.
+        errors.rejectValue(
+            "amountTaken",
+            "errors.inventory.operation.amountTakenTooPrecise",
+            "The amount taken supports at most 3 decimal places.");
       } else if (!config.effect().emptiesOrigin()) {
         // What the amount taken must be follows the operation's effect (DevDocs/adr/0007): an
         // operation that decrements its origins (amountTakenFrom configured) must take a positive
@@ -397,66 +407,5 @@ public class InventoryOperationPostValidator implements Validator {
         && quantity.getNumericValue().compareTo(BigDecimal.ZERO) >= 0
         && quantity.getUnitId() != null
         && quantity.getUnitId() > 0;
-  }
-
-  /**
-   * Whether the amount taken from an origin exceeds that origin's current quantity
-   * (DevDocs/adr/0007). The comparison is unit-aware within a measurement category (e.g. 0.006 kg
-   * against a 5 g origin), so a cross-unit entry in the same category is compared correctly. This
-   * needs the origin's live quantity, which the stateless {@link Validator} contract cannot load,
-   * so the controller loads each origin and calls this. A null amount, or a pair in different
-   * categories (which the UI never produces), is not treated as over-removal. A null/absent origin
-   * quantity means the origin holds nothing (a subsample whose quantity was never set), so any
-   * positive amount taken from it is over-removal.
-   */
-  public static boolean amountTakenExceedsOrigin(
-      ApiQuantityInfo amountTaken, ApiQuantityInfo originQuantity) {
-    if (amountTaken == null || amountTaken.getNumericValue() == null) {
-      return false;
-    }
-    if (originQuantity == null || originQuantity.getNumericValue() == null) {
-      // Origin holds nothing: any positive amount taken is over-removal.
-      return amountTaken.getNumericValue().compareTo(BigDecimal.ZERO) > 0;
-    }
-    QuantityUtils quantityUtils = new QuantityUtils();
-    if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)) {
-      return false;
-    }
-    return quantityUtils.getComparatorFor(originQuantity).compare(amountTaken, originQuantity) > 0;
-  }
-
-  /**
-   * Whether an origin currently holds nothing: a null quantity (never set), a quantity without a
-   * numeric value, or a non-positive amount. No operation may act on such an origin
-   * (DevDocs/adr/0007): there is nothing to take, pool, preserve or destroy. Like {@link
-   * #amountTakenExceedsOrigin} this needs the origin's live quantity, so the controller loads each
-   * origin and calls this.
-   */
-  public static boolean originHoldsNothing(ApiQuantityInfo originQuantity) {
-    return originQuantity == null
-        || originQuantity.getNumericValue() == null
-        || originQuantity.getNumericValue().signum() <= 0;
-  }
-
-  /**
-   * Whether the amount taken equals the origin's current quantity, unit-aware within a measurement
-   * category (0.005 kg empties a 5 g origin). An origin-emptying operation (emptiesOrigin, e.g.
-   * Destroy) must take exactly what the origin holds, no less (over-removal is rejected
-   * separately). Missing values or incomparable categories never count as emptying. Live-state
-   * check: the controller loads each origin and calls this (DevDocs/adr/0007).
-   */
-  public static boolean amountTakenEmptiesOrigin(
-      ApiQuantityInfo amountTaken, ApiQuantityInfo originQuantity) {
-    if (amountTaken == null
-        || amountTaken.getNumericValue() == null
-        || originQuantity == null
-        || originQuantity.getNumericValue() == null) {
-      return false;
-    }
-    QuantityUtils quantityUtils = new QuantityUtils();
-    if (!quantityUtils.isComparableQuantities(amountTaken, originQuantity)) {
-      return false;
-    }
-    return quantityUtils.getComparatorFor(originQuantity).compare(amountTaken, originQuantity) == 0;
   }
 }
