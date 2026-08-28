@@ -6993,6 +6993,7 @@ export default interface Resources {
           "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
           "newSampleForbidden": "This operation does not create a sample, so newSample must be omitted.",
           "newSampleRequired": "This operation creates a sample, so newSample is required.",
+          "originCategoryMismatch": "All origin subsamples must use the same measurement category (e.g. all volume or all mass).",
           "originCountExact": "This operation requires exactly one origin subsample.",
           "originCountMaximum": "This operation accepts at most {0} origin subsamples.",
           "originCountMinimum": "This operation requires at least two origin subsamples.",
@@ -7003,6 +7004,7 @@ export default interface Resources {
           "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
           "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
           "storageTempRequired": "This operation requires a storage temperature on the new sample.",
+          "subSampleQuantitiesUnequal": "This operation creates equal subsamples, so every new subsample must have the same quantity.",
           "subSampleQuantityInvalid": "Each new subsample must hold a quantity greater than zero, with a unit.",
           "subSamplesRequired": "The new sample must include at least one subsample.",
           "unknownType": "Unknown operation type [{0}]."

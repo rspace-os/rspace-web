@@ -323,6 +323,17 @@ public class ApiExtraFieldsHelper implements Validator {
     linkField.setModifiedBy(user.getUsername());
     ApiInventoryLink apiLink = apiField.getLink();
     if (apiLink != null) {
+      // The self-link rule must hold against the authoritative parent: the controller-layer
+      // validator compares against the payload's parentGlobalId, which is client-supplied and can
+      // be forged (or absent when "type" is omitted). The update path enforces this in
+      // applyExistingLinkFieldChanges; without this the create path persisted a field linking to
+      // its own parent (valid-payload review, finding 1).
+      GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
+      if (target != null
+          && InventoryLinkValidator.isSelfLink(target, parentInvRec.getGlobalIdentifier())) {
+        throw new ApiRuntimeException(
+            "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
+      }
       InventoryLink persisted = inventoryLinkManager.createLink(apiLink, user);
       linkField.setLink(persisted);
     }

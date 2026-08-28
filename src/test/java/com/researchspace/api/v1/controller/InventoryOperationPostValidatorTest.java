@@ -350,6 +350,55 @@ class InventoryOperationPostValidatorTest {
     assertFalse(validate(request).hasErrors());
   }
 
+  // --- equal child quantities: one each-amount input is copied to every new subsample ---
+
+  private static ApiSubSample subSampleOf(ApiQuantityInfo quantity) {
+    ApiSubSample subSample = new ApiSubSample();
+    subSample.setQuantity(quantity);
+    return subSample;
+  }
+
+  @Test
+  void rejectsUnequalSubSampleQuantitiesWhenTheOperationConfiguresOneEachAmount() {
+    // The wizard's single each-amount input is copied to every child, and the OpenAPI description
+    // promises N equal subsamples; 0.25 + 0.75 would silently break that contract (valid-payload
+    // review, finding 2).
+    ApiInventoryOperationPost request = aliquotRequest();
+    request.getNewSample().getSubSamples().get(0).setQuantity(millilitres("0.25"));
+    request.getNewSample().getSubSamples().add(subSampleOf(millilitres("0.75")));
+    assertSingleErrorWithCode(
+        validate(request),
+        "newSample.subSamples",
+        "errors.inventory.operation.subSampleQuantitiesUnequal");
+  }
+
+  @Test
+  void acceptsEqualSubSampleQuantitiesIncludingAcrossUnitsOfTheSameCategory() {
+    // 0.5 ml and 500 µl denote the same amount; equality is unit-aware, not textual
+    ApiInventoryOperationPost request = aliquotRequest();
+    request
+        .getNewSample()
+        .getSubSamples()
+        .add(
+            subSampleOf(new ApiQuantityInfo(new BigDecimal("500"), RSUnitDef.MICRO_LITRE.getId())));
+    Errors errors = validate(request);
+    assertFalse(errors.hasErrors(), () -> "cross-unit equal children: " + errors.getAllErrors());
+  }
+
+  @Test
+  void rejectsSubSampleQuantitiesFromDifferentCategoriesAsUnequal() {
+    // 0.5 ml vs 0.5 g cannot be equal amounts of the same material
+    ApiInventoryOperationPost request = aliquotRequest();
+    request
+        .getNewSample()
+        .getSubSamples()
+        .add(subSampleOf(new ApiQuantityInfo(new BigDecimal("0.5"), RSUnitDef.GRAM.getId())));
+    assertSingleErrorWithCode(
+        validate(request),
+        "newSample.subSamples",
+        "errors.inventory.operation.subSampleQuantitiesUnequal");
+  }
+
   // --- configured temperature bounds (unit-aware) ---
 
   @Test
@@ -445,6 +494,25 @@ class InventoryOperationPostValidatorTest {
         validate(request),
         "newSample.extraFields",
         "errors.inventory.operation.linkToOriginRequired");
+  }
+
+  @Test
+  void provenanceLinkOnANonLinkFieldDoesNotSatisfyTheRequirement() {
+    // Persistence only creates a link when the field's effective type is LINK
+    // (ApiExtraFieldsHelper.addRecordExtraFieldForIncomingApiField); a link payload carried by a
+    // text-typed or type-omitted field would validate here yet silently vanish on save (security
+    // review, finding 7), so it must not count as the required provenance link.
+    for (ApiExtraField.ExtraFieldTypeEnum type :
+        Arrays.asList(ApiExtraField.ExtraFieldTypeEnum.TEXT, null)) {
+      ApiInventoryOperationPost request = aliquotRequest();
+      request.getNewSample().getExtraFields().get(0).setType(type);
+      assertTrue(
+          validate(request).getFieldErrors("newSample.extraFields").stream()
+              .anyMatch(
+                  error ->
+                      "errors.inventory.operation.linkToOriginRequired".equals(error.getCode())),
+          "a " + type + "-typed field carrying a link payload must not satisfy the link rule");
+    }
   }
 
   @Test
