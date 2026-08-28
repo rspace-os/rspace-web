@@ -7,6 +7,7 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.core.GlobalIdPrefix;
+import com.researchspace.model.field.FieldType;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.model.units.RSUnitDef;
@@ -265,6 +266,7 @@ public class InventoryOperationPostValidator implements Validator {
       return;
     }
     int index = 0;
+    boolean allQuantitiesValid = true;
     for (ApiSubSample subSample : newSample.getSubSamples()) {
       ApiQuantityInfo quantity = subSample.getQuantity();
       boolean positiveWithUnit =
@@ -278,8 +280,33 @@ public class InventoryOperationPostValidator implements Validator {
             String.format("newSample.subSamples[%d].quantity", index),
             "errors.inventory.operation.subSampleQuantityInvalid",
             "Each new subsample must hold a quantity greater than zero, with a unit.");
+        allQuantitiesValid = false;
       }
       index++;
+    }
+
+    // An operation with a single each-amount input (eachAmountFrom) copies it to every child, and
+    // the API documents N equal subsamples; unequal children would silently break that contract
+    // (valid-payload review, finding 2). Equality is unit-aware within a measurement category
+    // (0.5 ml equals 500 ul); a different category can never be equal. Only checked once every
+    // quantity passed the shape rules above, so it never double-reports an invalid quantity.
+    if (config.effect().eachAmountFrom() != null && allQuantitiesValid) {
+      QuantityUtils quantityUtils = new QuantityUtils();
+      ApiQuantityInfo first = newSample.getSubSamples().get(0).getQuantity();
+      boolean allEqual =
+          newSample.getSubSamples().stream()
+              .map(ApiSubSample::getQuantity)
+              .allMatch(
+                  quantity ->
+                      quantityUtils.isComparableQuantities(first, quantity)
+                          && quantityUtils.getComparatorFor(first).compare(first, quantity) == 0);
+      if (!allEqual) {
+        errors.rejectValue(
+            "newSample.subSamples",
+            "errors.inventory.operation.subSampleQuantitiesUnequal",
+            "This operation creates equal subsamples, so every new subsample must have the same"
+                + " quantity.");
+      }
     }
 
     validateConfiguredTemperatures(newSample, config, errors);
@@ -373,9 +400,16 @@ public class InventoryOperationPostValidator implements Validator {
           continue; // already rejected as originIdRequired
         }
         String target = GlobalIdPrefix.SS.name() + origin.getId();
+        // Only a field whose effective type is LINK counts: persistence
+        // (ApiExtraFieldsHelper.addRecordExtraFieldForIncomingApiField) creates a link under
+        // exactly that predicate, so a link payload on a text-typed or type-omitted field would
+        // otherwise validate here yet silently vanish on save (security review, finding 7).
+        // ponytail: no post-commit invariant check in the manager; this filter matches the
+        // persistence predicate, and the MVCIT catches any future drift between the two.
         boolean linked =
             newSample.getExtraFields() != null
                 && newSample.getExtraFields().stream()
+                    .filter(field -> field != null && field.getTypeAsFieldType() == FieldType.LINK)
                     .map(ApiExtraField::getLink)
                     .filter(Objects::nonNull)
                     .anyMatch(
