@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { type InventoryOperation, operations } from "../operationsConfig";
+import type { InventoryOperation } from "../operationsConfig";
 import { addProcessName, filterProcessNames, processNameDefaultAfterPerform, rememberKey } from "../processNames";
+import { operations } from "./testOperations";
 
 // Operation keys never contain spaces, so a single space separates operation key from process name.
 const DERIVE_DNA = ["derive", "dna extraction"].join(" ");

@@ -1,6 +1,7 @@
 package com.researchspace.model.units;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
@@ -47,5 +48,23 @@ public class QuantityInfoTest {
     QuantityInfo quantity1L = QuantityInfo.of(BigDecimal.valueOf(1), RSUnitDef.LITRE);
     QuantityInfo quantity1dot0L = QuantityInfo.of(BigDecimal.valueOf(1.0), RSUnitDef.LITRE);
     assertTrue(quantity1L.equals(quantity1dot0L));
+  }
+
+  @Test
+  void canStoreWithoutRoundingMatchesTheStored3dpScale() {
+    assertTrue(QuantityInfo.canStoreWithoutRounding(new BigDecimal("0.001")));
+    assertTrue(QuantityInfo.canStoreWithoutRounding(new BigDecimal("5")));
+    assertTrue(
+        QuantityInfo.canStoreWithoutRounding(new BigDecimal("0.5000")),
+        "trailing zeros beyond 3dp do not lose information");
+    assertTrue(QuantityInfo.canStoreWithoutRounding(new BigDecimal("0.000")));
+
+    assertFalse(
+        QuantityInfo.canStoreWithoutRounding(new BigDecimal("0.0005")),
+        "would round up to 0.001, storing more than was given");
+    assertFalse(
+        QuantityInfo.canStoreWithoutRounding(new BigDecimal("0.0004")),
+        "would round down to zero, silently discarding the amount");
+    assertFalse(QuantityInfo.canStoreWithoutRounding(null));
   }
 }

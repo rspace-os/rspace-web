@@ -14,7 +14,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
-import { type InventoryOperation, operationAvailability, operations } from "./operationsConfig";
+import { type InventoryOperation, operationAvailability } from "./operationsConfig";
 import { resolveLabelFrom } from "./types";
 
 // Resolves an operation's config `iconKey` to a statically-imported FontAwesome icon. Icons cannot
@@ -31,16 +31,20 @@ const operationIcons: Record<string, IconDefinition> = {
 };
 
 /**
- * Step 1: choose an operation. Every operation from operations_config.json is shown; each is enabled
- * or greyed-out for the current selection (DevDocs/adr/0007): single-origin operations need exactly one
+ * Step 1: choose an operation. Every fetched operation definition is shown; each is enabled or
+ * greyed-out for the current selection (DevDocs/adr/0007): single-origin operations need exactly one
  * subsample, Pool needs two or more of the same measurement category. A disabled operation shows the
- * reason as its secondary line instead of its description.
+ * reason as its secondary line instead of its description. The definitions come from the wizard's
+ * fetch of the backend's operations_config.json (fetchOperationsConfig).
  */
 export default function OperationPicker({
+  operations,
   onSelect,
   selectionCount,
   allSameCategory,
 }: {
+  /** The operation definitions, fetched and validated by the wizard. */
+  operations: ReadonlyArray<InventoryOperation>;
   onSelect: (operation: InventoryOperation) => void;
   /** How many subsamples are selected (drives which operations are enabled). */
   selectionCount: number;

@@ -4024,6 +4024,8 @@ export default interface Resources {
         "numberField": "Passage number"
       },
       "picker": {
+        "loadFailed": "The available operations could not be loaded. Close this dialog and try again.",
+        "loading": "Loading operations",
         "needsMultiple": "Select two or more subsamples to pool.",
         "sameCategory": "Select subsamples of the same measurement type to pool.",
         "singleOnly": "Select a single subsample for this operation."
@@ -6998,6 +7000,7 @@ export default interface Resources {
           "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
           "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
           "amountTakenPositive": "This operation takes from each origin, so the amount taken must be greater than zero.",
+          "amountTakenTooPrecise": "The amount taken supports at most 3 decimal places.",
           "amountTakenZero": "This operation does not take from its origins, so the amount taken must be zero.",
           "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
           "linkToOriginRequired": "The new sample must include a {0} link back to origin subsample {1}.",
@@ -7036,6 +7039,7 @@ export default interface Resources {
           "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
           "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
           "templateNotFound": "No sample template with id: {0}",
+          "tooManySubSamples": "A sample can be created with at most 100 subsamples",
           "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
         },
         "search": {
