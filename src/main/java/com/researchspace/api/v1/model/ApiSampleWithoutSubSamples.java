@@ -7,6 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -66,8 +67,10 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
   @JsonProperty("fields")
   protected List<ApiInventoryEntityField> fields = new ArrayList<>();
 
+  // Null list elements ("extraFields": [null]) would 500 in the apply loops; element-level
+  // @NotNull turns each into a clean 400 at binding (security review, finding 6).
   @JsonProperty("extraFields")
-  protected List<ApiExtraField> extraFields = new ArrayList<>();
+  protected List<@NotNull ApiExtraField> extraFields = new ArrayList<>();
 
   @JsonProperty(value = "sharedWith")
   private List<ApiGroupInfoWithSharedFlag> sharedWith;
