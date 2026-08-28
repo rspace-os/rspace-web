@@ -48,7 +48,7 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void sendExternalMessageToSlack() {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(testUser, "any");
     StructuredDocument doc2 = createBasicDocumentInRootFolderWithText(testUser, "any2");
@@ -66,7 +66,7 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void sendExternalMessageToMSTeams() {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(testUser, "any");
     StructuredDocument doc2 = createBasicDocumentInRootFolderWithText(testUser, "any2");

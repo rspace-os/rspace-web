@@ -19,7 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.web.client.RestTemplate;
 
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class ArgosApiRealConnectionTest {
 
   private RestTemplate restTemplate;

@@ -35,7 +35,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class PermissionsPerformanceTest {
   private static final int NUM_RECORDS_TO_CREATE = 500;
   PermissionFactory permFac;

@@ -43,7 +43,7 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   // RSPAC-1882
   public void testStandardUploadWithImages() throws Exception {
     User anyUser = createInitAndLoginAnyUser();

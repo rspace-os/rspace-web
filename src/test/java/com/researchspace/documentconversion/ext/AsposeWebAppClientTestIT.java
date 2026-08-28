@@ -30,7 +30,7 @@ import org.springframework.test.context.TestPropertySource;
 @ContextConfiguration(classes = AsposeWebAppClientTestIT.class)
 @TestPropertySource(properties = "aspose.web.url=http://howler.researchspace.com:8083")
 @Configuration
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 @WithSpringContext
 public class AsposeWebAppClientTestIT {
 

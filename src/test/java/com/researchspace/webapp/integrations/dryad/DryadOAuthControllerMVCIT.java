@@ -16,7 +16,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class DryadOAuthControllerMVCIT extends MVCTestBase {
 
   @Value("${dryad.client.id}")

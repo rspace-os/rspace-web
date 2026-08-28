@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 /** Runs production-profile signup and content initialisation procedure. */
 @ProdProfileTestConfiguration
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class ProdProfileSignupControllerMVCIT extends MVCTestBase {
 
   private @Autowired JdbcTemplate jdbcTemplate;

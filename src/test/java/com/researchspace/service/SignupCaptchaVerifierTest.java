@@ -69,7 +69,7 @@ public class SignupCaptchaVerifierTest extends SpringTransactionalTest {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testCaptchaVerificationErrorFromGoogleApi() throws Exception {
 
     /* deployment properties incorrect */

@@ -58,7 +58,7 @@ public class WopiDiscoveryServiceHandlerTest extends SpringTransactionalTest {
    * If this test suddenly fails, it means that Microsoft have updated their discovery XML with some
    * sort of changes that break our WOPI integration :(
    */
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   @Test
   public void checkActualDiscoveryXmlProcessing() throws InterruptedException {
     discoveryProcessor.updateData();

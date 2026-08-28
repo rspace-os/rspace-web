@@ -92,7 +92,7 @@ public class ProdConfigWiringTest {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testIsLicenseActive() {
     service.isLicenseActive();
   }

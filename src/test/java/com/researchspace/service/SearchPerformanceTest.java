@@ -129,7 +129,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testPerformance()
       throws IllegalAddChildOperation, InterruptedException, IOException, ParseException {
     final int numUsers = 50;
@@ -208,7 +208,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testIndexingSingleThread() throws IOException {
     RandomTextFileGenerator tfgg = new RandomTextFileGenerator();
     List<FileSearchTerms> created = tfgg.generate(randomFilefolder, 100, 100);
@@ -226,7 +226,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
 
   // this indexes, then searches
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testIndexingMultiThread()
       throws IOException,
           ParseException,
@@ -285,7 +285,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
 
   // this indexes, and searches at the same time
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testIndexingAndSearchingAtSameTime()
       throws IOException, InterruptedException, ExecutionException, TimeoutException {
     RandomTextFileGenerator tfgg = new RandomTextFileGenerator();

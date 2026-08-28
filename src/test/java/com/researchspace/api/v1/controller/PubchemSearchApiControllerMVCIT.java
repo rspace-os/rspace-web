@@ -18,7 +18,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 /** Sanity tests to verify connection to PubChem and response format. */
 @WebAppConfiguration
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class PubchemSearchApiControllerMVCIT extends API_MVC_TestBase {
 
   private User user;

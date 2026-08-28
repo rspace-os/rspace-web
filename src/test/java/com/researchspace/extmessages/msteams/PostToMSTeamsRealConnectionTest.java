@@ -17,7 +17,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class PostToMSTeamsRealConnectionTest extends SpringTransactionalTest {
 
   @Value("${msteams.realConnectionTest.webhookUrl}")

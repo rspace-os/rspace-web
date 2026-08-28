@@ -25,7 +25,7 @@ import org.springframework.test.util.ReflectionTestUtils;
  * user who runs the test (e.g. through access key, and secret, added to '~/.aws/config' file).
  */
 @Slf4j
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class S3ExportUtilitiesRealConnectionTest extends SpringTransactionalTest {
 
   @Value("${s3.export.realConnectionTest.region}")

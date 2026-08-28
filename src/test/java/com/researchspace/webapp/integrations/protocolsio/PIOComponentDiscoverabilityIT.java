@@ -24,7 +24,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
-@EnabledIfSystemProperty(named = "weekly", matches = ".*")
+@EnabledIfSystemProperty(named = "weekly", matches = "(|true)")
 public class PIOComponentDiscoverabilityIT {
 
   private static final String PIO_API_KEY =

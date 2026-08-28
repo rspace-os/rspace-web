@@ -39,7 +39,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class DMPToolOAuthControllerMVCIT extends MVCTestBase {
 
   // this is created in dev@r.c. test-DMP account but could be any public DMP ID

@@ -37,7 +37,7 @@ import org.springframework.test.context.TestPropertySource;
  * assertion this class is checking segmentIO log for errors.
  */
 @TestPropertySource(properties = {"analytics.enabled=true"})
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class AnalyticsManagerRealConnectionTest extends SpringTransactionalTest {
   private @Autowired AnalyticsManager analyticsManager;
 

@@ -94,7 +94,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testSearchForValidRor() throws Exception {
     // There are 3 versions of a valid ROR ID
     mockMvc
@@ -136,7 +136,7 @@ public class RoRSysAdminControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testUpdateRorAsSysadmin() throws Exception {
     logoutAndLoginAsSysAdmin();
     mockMvc

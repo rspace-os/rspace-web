@@ -32,7 +32,7 @@ import org.springframework.beans.factory.annotation.Value;
  * <p>Test buckets need to contain expected files/folders structure for tests to pass.
  */
 @Slf4j
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
 
   @Autowired private S3UtilitiesFactory s3UtilitiesFactory;

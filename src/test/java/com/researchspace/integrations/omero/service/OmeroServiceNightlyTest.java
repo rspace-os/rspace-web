@@ -25,7 +25,7 @@ import org.springframework.test.util.ReflectionTestUtils;
  * Uses the real public Omero repository hosted by Dundee University. Compares actual json responses
  * to the canned responses collected on 1st June 2023
  */
-@EnabledIfSystemProperty(named = "nightly", matches = "true")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class OmeroServiceNightlyTest {
   private OmeroClientImpl omeroClient = new OmeroClientImpl();
   private OmeroServiceImpl service = new OmeroServiceImpl(omeroClient);

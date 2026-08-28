@@ -285,7 +285,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testChemImageCreationDuplication() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
@@ -303,7 +303,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void cachingPerformanceOfChemImages() throws Exception {
     final int NUM_CHEMS = 30;
     // set up
@@ -347,7 +347,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
 
   @Test
   // RSPAC-1928
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void fileUploadSuccess() throws Exception {
 
     MockMultipartFile mf1 =

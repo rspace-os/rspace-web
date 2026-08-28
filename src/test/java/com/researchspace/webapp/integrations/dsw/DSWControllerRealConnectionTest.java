@@ -129,7 +129,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testCurrentUserDetails() {
     try {
       ResponseEntity usersResponse = dswController.currentUsers(DSW_SERVER_ALIAS);
@@ -142,7 +142,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testPlans() {
     try {
       AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS);
@@ -159,7 +159,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testImportPlan() {
     try {
       AjaxReturnObject plansResponse = dswController.listDSWPlans(DSW_SERVER_ALIAS);
@@ -192,7 +192,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testImportPlanIncorrectUuid() {
     try {
       String invalidUuid = "Not-a-valid-uuid";
@@ -209,7 +209,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testImportPlanNullFileWhenSaving() {
     try {
       when(mediaManager.saveNewDMPWithDescription(anyString(), any(), any(), any(), anyString()))

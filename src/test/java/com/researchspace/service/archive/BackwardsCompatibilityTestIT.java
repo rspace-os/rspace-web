@@ -28,7 +28,7 @@ import org.springframework.mock.web.MockMultipartFile;
  * Therefore it's really important to ensure that all entries made to the DB during these tests are
  * removed afterwards.
  */
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class BackwardsCompatibilityTestIT extends RealTransactionSpringTestBase {
 
   @TempDir public File tempImportFolder;

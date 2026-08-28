@@ -12,7 +12,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class EgnyteAuthConnectorRealConnectionTest extends SpringTransactionalTest {
 
   @Autowired private EgnyteAuthConnector connector;

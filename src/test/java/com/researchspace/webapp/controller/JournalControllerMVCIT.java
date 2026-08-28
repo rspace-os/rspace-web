@@ -183,7 +183,7 @@ public class JournalControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testNavigating150EntriesNotebook() throws Exception {
     User u = createAndSaveUser(getRandomAlphabeticString("u"));
     initUsers(u);

@@ -85,7 +85,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void realConnectionRegisterUpdateDeleteDataciteIdentifier() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
@@ -111,7 +111,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void realConnection_BulkCreate_Find_Assign_Delete_Identifier() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);
@@ -167,7 +167,7 @@ public class InventoryIdentifiersApiControllerMVCIT extends API_MVC_InventoryTes
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*")
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void realConnectionRegisterPublishRetractDataciteIdentifier() throws Exception {
     User anyUser = createInitAndLoginAnyUser();
     String apiKey = createNewApiKeyForUser(anyUser);

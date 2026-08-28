@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * kudu.researchspace.com (as configured in deployment.properties and set by BaseConfig)
  */
 @DefaultTestContext
-@EnabledIfSystemProperty(named = "nightly", matches = ".*")
+@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 @WithSpringContext
 public class UserLdapRepoRealConnectionTest {
 

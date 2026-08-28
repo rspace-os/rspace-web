@@ -190,7 +190,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = ".*") // is slow to execute
+  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)") // is slow to execute
   public void testRemoveInitialisedUser() throws Exception {
     // this user will create standard forms etc
     final User sysadmin = createAndSaveUser(getRandomAlphabeticString("toDelete"), "ROLE_SYSADMIN");
