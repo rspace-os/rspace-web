@@ -534,7 +534,7 @@ function DBRepoRowPicker({
         <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
         <Button
           disabled={!metadata || columns.length === 0 || selectedRows.size === 0}
-          color="callToAction"
+          color="primary"
           variant="contained"
           onClick={insertRows}
         >
