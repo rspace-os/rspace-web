@@ -313,7 +313,7 @@ public class DBRepoClient {
     List<JsonNode> nodes = new ArrayList<>();
     columns.forEach(nodes::add);
     nodes.sort(
-        Comparator.comparingInt( // TODO wtf?
+        Comparator.comparingInt(
             column -> column.has("ord") ? column.get("ord").asInt() : Integer.MAX_VALUE));
     return nodes.stream()
         .map(

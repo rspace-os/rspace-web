@@ -475,21 +475,29 @@ function DBRepoRowPicker({
   const count = totalCount ?? -1;
 
   return (
-    <Dialog open={true} onClose={onClose} fullWidth maxWidth="lg">
-      <DialogTitle>{t("tinymce.dbrepo.rows.dialogTitle", { name: target.name })}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={1.5}>
+    <Dialog
+      open={true}
+      onClose={onClose}
+      fullWidth
+      maxWidth="xl"
+      slotProps={{
+        paper: {
+          sx: {
+            height: "calc(100vh - 32px)",
+            maxHeight: "max-content",
+          },
+        },
+      }}
+    >
+      <DialogTitle sx={{ pb: 1 }}>{t("tinymce.dbrepo.rows.dialogTitle", { name: target.name })}</DialogTitle>
+      <DialogContent sx={{ display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden", pt: 1 }}>
+        <Stack spacing={1} sx={{ flex: 1, minHeight: 0 }}>
           <Typography variant="body2" color="text.secondary">
             {t("tinymce.dbrepo.rows.resourceContext", {
               name: <b>{target.name}</b>,
               database: <b>{target.databaseName}</b>,
             })}
           </Typography>
-          {target.query && (
-            <Typography variant="caption" sx={{ fontFamily: "monospace", overflowWrap: "anywhere" }}>
-              {target.query}
-            </Typography>
-          )}
           {error && <Alert severity="error">{error}</Alert>}
           {(loadingMetadata || loadingRows) && (
             <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
@@ -568,8 +576,8 @@ function DBRepoRowsTable({
 }): React.ReactNode {
   const { t } = useTranslation(["workspace", "common"]);
   return (
-    <>
-      <TableContainer sx={{ mb: "40px", maxHeight: 420 }}>
+    <Box sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
+      <TableContainer sx={{ flex: 1, minHeight: 0 }}>
         <Table stickyHeader aria-label={t("tinymce.dbrepo.rows.tableLabel")}>
           <TableHead>
             <TableRow sx={{ background: "#F6F6F6" }}>
@@ -657,7 +665,7 @@ function DBRepoRowsTable({
           onRowsPerPageChange={(event) => onRowsPerPageChange(Number(event.target.value))}
         />
       </Box>
-    </>
+    </Box>
   );
 }
 

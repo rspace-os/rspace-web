@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -45,6 +45,7 @@ describe("DBRepo dialog body", () => {
     render(<DBRepo />);
 
     expect(await screen.findByText("Research data")).toBeVisible();
+    await waitFor(() => expect(editorListeners.has("dbrepo-insert")).toBe(true));
     editorListeners.get("dbrepo-insert")?.();
 
     expect(insertTemplateIntoTinyMCE).toHaveBeenCalledWith(
