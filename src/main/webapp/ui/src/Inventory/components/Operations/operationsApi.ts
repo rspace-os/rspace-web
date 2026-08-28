@@ -1,8 +1,19 @@
 import ApiService from "@/common/InvApiService";
+import { type InventoryOperation, parseOperationsConfig } from "./operationsConfig";
 import type { OperationRequest } from "./types";
 
 /** Minimal view of the created sample returned by the operations endpoint. */
 export type OperationResult = { id: number; globalId: string; name: string };
+
+/**
+ * Fetch the operation definitions from the backend's single authoritative operations_config.json
+ * (GET /operations/config; DevDocs/adr/0007) and validate them against the wizard's schema. Throws
+ * on a fetch failure or an invalid config, so the picker can show one load-failed state for both.
+ */
+export async function fetchOperationsConfig(): Promise<Array<InventoryOperation>> {
+  const { data } = await ApiService.get<unknown>("operations", "config");
+  return parseOperationsConfig(data);
+}
 
 /**
  * POST a configured operation to the thin backend endpoint. The /api/inventory/v1/ prefix is
