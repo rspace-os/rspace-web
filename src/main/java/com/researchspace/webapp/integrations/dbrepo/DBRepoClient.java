@@ -300,7 +300,7 @@ public class DBRepoClient {
 
   private String labelFor(String type, JsonNode node, String id) {
     if (SUBSET_TYPE.equals(type)) {
-      return StringUtils.defaultIfBlank(text(node, "query"), id);
+      return StringUtils.defaultIfBlank(text(node, "query_normalized"), id);
     }
     return StringUtils.defaultIfBlank(text(node, "name"), id);
   }

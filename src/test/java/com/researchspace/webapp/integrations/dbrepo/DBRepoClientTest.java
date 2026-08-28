@@ -109,8 +109,8 @@ public class DBRepoClientTest {
         .andExpect(header(HttpHeaders.AUTHORIZATION, "Basic dXNlcjpwYXNz"))
         .andRespond(
             withSuccess(
-                "[{\"id\":\"subset-1\",\"query\":\"SELECT * FROM experiments WHERE status ="
-                    + " 'open'\"}]",
+                "[{\"id\":\"subset-1\",\"query_normalized\":\"SELECT * FROM experiments WHERE"
+                    + " status = 'open'\"}]",
                 MediaType.APPLICATION_JSON));
 
     DBRepoDatabaseResourcesDTO resources =
@@ -150,7 +150,8 @@ public class DBRepoClientTest {
         .expect(requestTo("https://dbrepo.example/api/v1/database/db-1/subset"))
         .andRespond(
             withSuccess(
-                "[{\"id\":\"subset-1\",\"query\":\"SELECT 1\"}]", MediaType.APPLICATION_JSON));
+                "[{\"id\":\"subset-1\",\"query_normalized\":\"SELECT 1\"}]",
+                MediaType.APPLICATION_JSON));
 
     DBRepoDatabaseResourcesDTO resources =
         client.listDatabaseResources(
