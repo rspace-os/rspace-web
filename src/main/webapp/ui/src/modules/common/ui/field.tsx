@@ -32,17 +32,32 @@ function FieldLegend({
   );
 }
 
-function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="field-group"
-      className={cn(
-        "group/field-group @container/field-group flex w-full flex-col gap-7 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4",
-        className,
-      )}
-      {...props}
-    />
-  );
+const fieldGroupVariants = cva(
+  "group/field-group @container/field-group flex w-full flex-col data-[slot=checkbox-group]:gap-3",
+  {
+    variants: {
+      /**
+       * `compact` only tightens the gaps between fields, and between a field's label, control, and
+       * description. Controls keep their own size, so a compact form stays as usable as a page one
+       * on a surface that cannot spare 28px between rows.
+       */
+      density: {
+        comfortable: "gap-7 *:data-[slot=field-group]:gap-4",
+        compact: "gap-3 *:data-[slot=field-group]:gap-2 [&_[data-slot=field]]:gap-1.5",
+      },
+    },
+    defaultVariants: {
+      density: "comfortable",
+    },
+  },
+);
+
+function FieldGroup({
+  className,
+  density,
+  ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof fieldGroupVariants>) {
+  return <div data-slot="field-group" className={cn(fieldGroupVariants({ density }), className)} {...props} />;
 }
 
 const fieldVariants = cva("group/field flex w-full gap-3 data-[invalid=true]:text-destructive", {

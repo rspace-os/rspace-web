@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
+import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
@@ -37,6 +38,7 @@ class BookingSettingsControllerMVCIT {
   private User sysadmin;
   private boolean originalBookingEnabled;
   private BookingSchedulingSettings originalSettings;
+  private BookingDisplaySettings originalDisplaySettings;
 
   @BeforeEach
   void setUp() {
@@ -44,6 +46,7 @@ class BookingSettingsControllerMVCIT {
     mockMvc = fixture.mockMvc();
     sysadmin = userManager.getUserByUsername(AbstractAppInitializor.SYSADMIN_UNAME);
     originalSettings = BookingSchedulingSettings.from(settingsManager.getDefaults(sysadmin));
+    originalDisplaySettings = BookingDisplaySettings.from(settingsManager.getDefaults(sysadmin));
     originalBookingEnabled =
         featureFlags.getFeatureFlag(BOOKING_ENABLED, sysadmin).orElseThrow().isBaselineValue();
     setBookingEnabled(true);
@@ -61,6 +64,11 @@ class BookingSettingsControllerMVCIT {
             originalSettings.bufferAfterMinutes(),
             originalSettings.maxBookingDurationMinutes(),
             originalSettings.allowDoubleBooking()),
+        new BookingDisplaySettings.Patch(
+            originalDisplaySettings.availabilityWindowStart(),
+            originalDisplaySettings.availabilityWindowEnd(),
+            originalDisplaySettings.timezoneMode(),
+            originalDisplaySettings.customTimezone()),
         current.getConfigurationVersion(),
         sysadmin,
         sysadmin);
@@ -183,6 +191,44 @@ class BookingSettingsControllerMVCIT {
         .andExpect(jsonPath("$.maxBookingDurationMinutes").value(60));
 
     assertEquals(60, settingsManager.getDefaults(sysadmin).getMaxBookingDurationMinutes());
+  }
+
+  @Test
+  void returnsAndPersistsDisplayDefaultsWithTheInstitutionTimezone() throws Exception {
+    BookingConfigurationDefaults before = settingsManager.getDefaults(sysadmin);
+
+    mockMvc
+        .perform(get("/api/v2/booking-settings").header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.availabilityWindowStart").isString())
+        .andExpect(jsonPath("$.availabilityWindowEnd").isString())
+        .andExpect(jsonPath("$.timezoneMode").isString())
+        .andExpect(jsonPath("$.institutionTimezone").isString());
+
+    mockMvc
+        .perform(
+            patch("/api/v2/booking-settings")
+                .header("apiKey", fixture.sysadminKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"availabilityWindowStart":"09:00","availabilityWindowEnd":"17:00",
+                     "timezoneMode":"CUSTOM","customTimezone":"America/New_York",
+                     "configurationVersion":%d}
+                    """
+                        .formatted(before.getConfigurationVersion())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.availabilityWindowStart").value("09:00"))
+        .andExpect(jsonPath("$.availabilityWindowEnd").value("17:00"))
+        .andExpect(jsonPath("$.timezoneMode").value("CUSTOM"))
+        .andExpect(jsonPath("$.customTimezone").value("America/New_York"))
+        .andExpect(jsonPath("$.institutionTimezone").isString());
+
+    BookingDisplaySettings persisted =
+        BookingDisplaySettings.from(settingsManager.getDefaults(sysadmin));
+    assertEquals("09:00", persisted.availabilityWindowStart());
+    assertEquals("17:00", persisted.availabilityWindowEnd());
+    assertEquals("America/New_York", persisted.customTimezone());
   }
 
   @Test

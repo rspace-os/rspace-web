@@ -3,7 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import * as v from "valibot";
 import type { AvailabilityInterval } from "@/modules/booking/domain/availability";
 import { type BookingSummary, BookingSummarySchema } from "@/modules/booking/domain/booking";
-import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import {
+  type AbsoluteDisplayInterval,
+  addCalendarDays,
+  displayInterval,
+  zonedDayBounds,
+} from "@/modules/booking/domain/bookingTime";
 import { viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
 
 export type CalendarAvailabilityRow = {
@@ -87,11 +92,104 @@ async function fetchPage(
   return v.parse(PageSchema, await response.json());
 }
 
-function availabilityEnvelope(rows: readonly DatedCalendarAvailabilityRow[]) {
-  const bounds = rows.map((row) => zonedDayBounds(row.date, row.timezone));
+function availabilityEnvelope(rows: readonly CalendarAvailabilityRow[], interval: AbsoluteDisplayInterval) {
   const before = Math.max(...rows.map((row) => row.bufferBeforeMinutes));
   const after = Math.max(...rows.map((row) => row.bufferAfterMinutes));
   return {
+    start: Temporal.Instant.from(interval.start).subtract({ minutes: after }).toString(),
+    end: Temporal.Instant.from(interval.end).add({ minutes: before }).toString(),
+  };
+}
+
+function schedulingDates(row: CalendarAvailabilityRow, interval: AbsoluteDisplayInterval): string[] {
+  const first = Temporal.Instant.from(interval.start).toZonedDateTimeISO(row.timezone).toPlainDate().toString();
+  const last = Temporal.Instant.from(interval.end)
+    .subtract({ nanoseconds: 1 })
+    .toZonedDateTimeISO(row.timezone)
+    .toPlainDate()
+    .toString();
+  const dates = [first];
+  while (dates.at(-1) !== last) dates.push(addCalendarDays(dates.at(-1) ?? first, 1));
+  return dates;
+}
+
+function clipInterval(
+  startsAt: string | number,
+  endsAt: string | number,
+  interval: AbsoluteDisplayInterval,
+  kind: AvailabilityInterval["kind"],
+): AvailabilityInterval | undefined {
+  const start = Math.max(typeof startsAt === "number" ? startsAt : Date.parse(startsAt), Date.parse(interval.start));
+  const end = Math.min(typeof endsAt === "number" ? endsAt : Date.parse(endsAt), Date.parse(interval.end));
+  return end > start ? { kind, startsAt: new Date(start), endsAt: new Date(end) } : undefined;
+}
+
+function closedIntervals(row: CalendarAvailabilityRow, interval: AbsoluteDisplayInterval): AvailabilityInterval[] {
+  if (row.openingStart === "00:00" && row.openingEnd === "24:00") return [];
+  return schedulingDates(row, interval).flatMap((dateValue) => {
+    const date = Temporal.PlainDate.from(dateValue);
+    const day = zonedDayBounds(dateValue, row.timezone);
+    const openingStart = date
+      .toZonedDateTime({ timeZone: row.timezone, plainTime: row.openingStart })
+      .toInstant()
+      .toString();
+    const openingEnd =
+      row.openingEnd === "24:00"
+        ? day.end
+        : date.toZonedDateTime({ timeZone: row.timezone, plainTime: row.openingEnd }).toInstant().toString();
+    return [
+      clipInterval(day.start, openingStart, interval, "blockout"),
+      clipInterval(openingEnd, day.end, interval, "blockout"),
+    ].filter((value): value is AvailabilityInterval => value !== undefined);
+  });
+}
+
+export async function loadCalendarAvailability(
+  rows: readonly CalendarAvailabilityRow[],
+  intervalOrDate: AbsoluteDisplayInterval | string,
+  token: string,
+  signal: AbortSignal,
+): Promise<ReadonlyMap<string, readonly AvailabilityInterval[]>> {
+  if (rows.length === 0) return new Map();
+  const interval =
+    typeof intervalOrDate === "string"
+      ? displayInterval(intervalOrDate, rows[0].timezone, "00:00", "24:00")
+      : intervalOrDate;
+  const envelope = availabilityEnvelope(rows, interval);
+  const first = await fetchPage(rows, envelope, 1, token, signal);
+  if (first.totalDocs > 1000) throw new Error("Calendar availability exceeds 1,000 bookings");
+  const bookings: BookingSummary[] = [...first.docs];
+  for (let page = 2; page <= first.totalPages; page += 1) {
+    bookings.push(...(await fetchPage(rows, envelope, page, token, signal)).docs);
+  }
+  const result = new Map<string, AvailabilityInterval[]>();
+  for (const row of rows) result.set(row.globalId, closedIntervals(row, interval));
+  const rowById = new Map(rows.map((row) => [row.globalId, row]));
+  for (const booking of bookings) {
+    if (booking.state !== "CONFIRMED") continue;
+    const row = rowById.get(booking.target.globalId);
+    if (!row || row.allowDoubleBooking) continue;
+    const clipped = clipInterval(
+      Date.parse(booking.start) - row.bufferBeforeMinutes * 60_000,
+      Date.parse(booking.end) + row.bufferAfterMinutes * 60_000,
+      interval,
+      "booking",
+    );
+    if (clipped) result.get(row.globalId)?.push(clipped);
+  }
+  return result;
+}
+
+export async function loadDatedCalendarAvailability(
+  rows: readonly DatedCalendarAvailabilityRow[],
+  token: string,
+  signal: AbortSignal,
+): Promise<ReadonlyMap<string, readonly AvailabilityInterval[]>> {
+  if (rows.length === 0) return new Map();
+  const bounds = rows.map((row) => zonedDayBounds(row.date, row.timezone));
+  const before = Math.max(...rows.map((row) => row.bufferBeforeMinutes));
+  const after = Math.max(...rows.map((row) => row.bufferAfterMinutes));
+  const envelope = {
     start: Temporal.Instant.from(
       bounds.reduce((value, bound) => (bound.start < value ? bound.start : value), bounds[0].start),
     )
@@ -101,30 +199,6 @@ function availabilityEnvelope(rows: readonly DatedCalendarAvailabilityRow[]) {
       .add({ minutes: before })
       .toString(),
   };
-}
-
-function closedIntervals(row: DatedCalendarAvailabilityRow): AvailabilityInterval[] {
-  if (row.openingStart === "00:00" && row.openingEnd === "24:00") return [];
-  const date = Temporal.PlainDate.from(row.date);
-  const day = zonedDayBounds(row.date, row.timezone);
-  const openingStart = date
-    .toZonedDateTime({ timeZone: row.timezone, plainTime: row.openingStart })
-    .toInstant()
-    .toString();
-  const openingEnd = date.toZonedDateTime({ timeZone: row.timezone, plainTime: row.openingEnd }).toInstant().toString();
-  return [
-    { kind: "blockout" as const, startsAt: new Date(day.start), endsAt: new Date(openingStart) },
-    { kind: "blockout" as const, startsAt: new Date(openingEnd), endsAt: new Date(day.end) },
-  ].filter((interval) => interval.endsAt > interval.startsAt);
-}
-
-export async function loadDatedCalendarAvailability(
-  rows: readonly DatedCalendarAvailabilityRow[],
-  token: string,
-  signal: AbortSignal,
-): Promise<ReadonlyMap<string, readonly AvailabilityInterval[]>> {
-  if (rows.length === 0) return new Map();
-  const envelope = availabilityEnvelope(rows);
   const first = await fetchPage(rows, envelope, 1, token, signal);
   if (first.totalDocs > 1000) throw new Error("Calendar availability exceeds 1,000 bookings");
   const bookings: BookingSummary[] = [...first.docs];
@@ -132,41 +206,39 @@ export async function loadDatedCalendarAvailability(
     bookings.push(...(await fetchPage(rows, envelope, page, token, signal)).docs);
   }
   const result = new Map<string, AvailabilityInterval[]>();
-  for (const row of rows) result.set(row.globalId, closedIntervals(row));
+  for (const row of rows) {
+    const interval = displayInterval(row.date, row.timezone, "00:00", "24:00");
+    result.set(row.globalId, closedIntervals(row, interval));
+  }
   const rowById = new Map(rows.map((row) => [row.globalId, row]));
   for (const booking of bookings) {
     if (booking.state !== "CONFIRMED") continue;
     const row = rowById.get(booking.target.globalId);
-    if (!row) continue;
-    if (row.allowDoubleBooking) continue;
-    const bounds = zonedDayBounds(row.date, row.timezone);
-    const start = Math.max(Date.parse(booking.start) - row.bufferBeforeMinutes * 60_000, Date.parse(bounds.start));
-    const end = Math.min(Date.parse(booking.end) + row.bufferAfterMinutes * 60_000, Date.parse(bounds.end));
-    if (end <= start) continue;
-    result.get(row.globalId)?.push({ kind: "booking", startsAt: new Date(start), endsAt: new Date(end) });
+    if (!row || row.allowDoubleBooking) continue;
+    const interval = displayInterval(row.date, row.timezone, "00:00", "24:00");
+    const clipped = clipInterval(
+      Date.parse(booking.start) - row.bufferBeforeMinutes * 60_000,
+      Date.parse(booking.end) + row.bufferAfterMinutes * 60_000,
+      interval,
+      "booking",
+    );
+    if (clipped) result.get(row.globalId)?.push(clipped);
   }
   return result;
 }
 
-export function loadCalendarAvailability(
+export function useCalendarAvailability(
   rows: readonly CalendarAvailabilityRow[],
-  date: string,
+  intervalOrDate: AbsoluteDisplayInterval | string,
   token: string,
-  signal: AbortSignal,
 ) {
-  return loadDatedCalendarAvailability(
-    rows.map((row) => ({ ...row, date })),
-    token,
-    signal,
-  );
-}
-
-export function useCalendarAvailability(rows: readonly CalendarAvailabilityRow[], date: string, token: string) {
-  const datedRows = rows.map((row) => ({ ...row, date }));
-  const sortedRows = datedRows
+  const interval =
+    typeof intervalOrDate === "string"
+      ? displayInterval(intervalOrDate, rows[0]?.timezone ?? "UTC", "00:00", "24:00")
+      : intervalOrDate;
+  const sortedRows = rows
     .map((row) => [
       row.globalId,
-      row.date,
       row.timezone,
       row.openingStart,
       row.openingEnd,
@@ -175,10 +247,9 @@ export function useCalendarAvailability(rows: readonly CalendarAvailabilityRow[]
       row.allowDoubleBooking,
     ])
     .toSorted();
-  const envelope = datedRows.length === 0 ? null : availabilityEnvelope(datedRows);
   return useQuery({
-    queryKey: ["api-v2", "bookings", "calendar-availability", sortedRows, envelope?.start, envelope?.end],
-    queryFn: ({ signal }) => loadDatedCalendarAvailability(datedRows, token, signal),
+    queryKey: ["api-v2", "bookings", "calendar-availability", sortedRows, interval.start, interval.end],
+    queryFn: ({ signal }) => loadCalendarAvailability(rows, interval, token, signal),
     enabled: rows.length > 0 && token.length > 0,
     meta: viewTransitionQueryMeta,
   });

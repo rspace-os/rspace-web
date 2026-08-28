@@ -29,6 +29,41 @@ Logs for authentication/authorisation errors are in `SecurityEvents.txt`.
 These are logged using the interceptor `LoggingInterceptor.java` and
 logged to `RSLogs.txt`.
 
+#### Calendar subscription bearer URLs
+
+`/public/booking/calendars/feed.ics` accepts a calendar-subscription bearer in
+the `token` query parameter. Treat the complete subscription URL like a
+password. The application skips generic request logging for this route and its
+slow-request logger records only the fixed request path, but container,
+reverse-proxy, and observability access logs must also omit the query string or
+redact `token` for this route before the feature is released.
+
+For Tomcat's `AccessLogValve`, use path-only fields such as `%m %U %H` and do
+not use `%r` or `%q`: `%U` is the requested URL path, while `%q` is the query
+string and `%r` is the request line. For example:
+
+```xml
+pattern='%h %l %u %t "%m %U %H" %s %b'
+```
+
+For nginx, build the access-log request field from `$request_method $uri
+$server_protocol`. Do not use `$request` or `$request_uri` for this route,
+because they include the original request arguments. An installation that
+needs query strings for other traffic must select a route-specific log format
+for `/public/booking/calendars/feed.ics` or apply verified field-level
+redaction before records leave the proxy.
+
+The Docker development stack does not configure a Jetty request log. If one is
+enabled locally or in another supported deployment, configure it to record the
+path only (or verified route-scoped query redaction), never the complete
+request target. Apply the same rule to APM agents, WAFs, load balancers, CDN
+logs, traces, analytics, and support tooling. If a supported deployment cannot
+meet this requirement, calendar subscriptions must remain disabled there.
+
+References: the
+[Tomcat AccessLogValve pattern fields](https://tomcat.apache.org/tomcat-10.0-doc/config/valve.html#Access_Log_Valve)
+and [nginx request variables](https://nginx.org/en/docs/http/ngx_http_core_module.html#variables).
+
 ## Basic custom logging
 
 Add `log.info`, `log.warn`, `log.error` statements in code as appropriate.

@@ -97,25 +97,28 @@ function BookableItemActionTriggers({
   return (
     <div className="flex justify-start gap-1">
       {configuration.target === null ? null : (
-        <Link
-          to="/booking/bookable-items/$globalId"
-          params={{ globalId: configuration.target.globalId }}
-          aria-label={t("bookableItems.actions.viewDetails", { item: itemName })}
-          className={cn(buttonVariants({ variant: "ghost", size: "icon-xs" }), "rounded-sm")}
-          data-slot="button"
-        >
-          <EyeIcon aria-hidden="true" />
-        </Link>
+        <>
+          <Link
+            to="/booking/bookable-items/$globalId"
+            params={{ globalId: configuration.target.globalId }}
+            aria-label={t("bookableItems.actions.viewDetails", { item: itemName })}
+            className={cn(buttonVariants({ variant: "ghost", size: "icon-xs" }), "rounded-sm")}
+            data-slot="button"
+          >
+            <EyeIcon aria-hidden="true" />
+          </Link>
+          <Link
+            to="/booking/bookable-items/$globalId"
+            params={{ globalId: configuration.target.globalId }}
+            search={{ tab: "details", edit: true }}
+            aria-label={t("bookableItems.actions.edit", { item: itemName })}
+            className={cn(buttonVariants({ variant: "ghost", size: "icon-xs" }), "rounded-sm")}
+            data-slot="button"
+          >
+            <PencilIcon aria-hidden="true" />
+          </Link>
+        </>
       )}
-      <Link
-        to="/booking/config/bookable-items/$id/edit"
-        params={{ id: String(configuration.id) }}
-        aria-label={t("bookableItems.actions.edit", { item: itemName })}
-        className={cn(buttonVariants({ variant: "ghost", size: "icon-xs" }), "rounded-sm")}
-        data-slot="button"
-      >
-        <PencilIcon aria-hidden="true" />
-      </Link>
       <Button
         type="button"
         variant="ghost"

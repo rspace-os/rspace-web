@@ -52,6 +52,11 @@ public class BookableItemCalendarSubscription implements Serializable {
   @JsonIgnore
   private String tokenHash;
 
+  @Column(length = 255)
+  @Size(max = 255)
+  @JsonIgnore
+  private String rawToken;
+
   @Column(nullable = false)
   @NotNull
   private Date updatedAt;
@@ -60,9 +65,19 @@ public class BookableItemCalendarSubscription implements Serializable {
 
   public BookableItemCalendarSubscription(
       BookingConfiguration bookingConfiguration, User user, String tokenHash, Date updatedAt) {
+    this(bookingConfiguration, user, tokenHash, null, updatedAt);
+  }
+
+  public BookableItemCalendarSubscription(
+      BookingConfiguration bookingConfiguration,
+      User user,
+      String tokenHash,
+      String rawToken,
+      Date updatedAt) {
     this.bookingConfiguration = bookingConfiguration;
     this.user = user;
     this.tokenHash = tokenHash;
+    this.rawToken = rawToken;
     setUpdatedAt(updatedAt);
   }
 
@@ -85,6 +100,15 @@ public class BookableItemCalendarSubscription implements Serializable {
 
   public void setTokenHash(String tokenHash) {
     this.tokenHash = tokenHash;
+  }
+
+  @JsonIgnore
+  public String getRawToken() {
+    return rawToken;
+  }
+
+  public void setRawToken(String rawToken) {
+    this.rawToken = rawToken;
   }
 
   public Date getUpdatedAt() {

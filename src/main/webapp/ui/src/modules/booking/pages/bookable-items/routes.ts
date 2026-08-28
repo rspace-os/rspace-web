@@ -4,7 +4,6 @@ import AddBookableItemPage from "./AddBookableItemPage";
 import BookableItemPage from "./BookableItemPage";
 import BookableItemsPage from "./BookableItemsPage";
 import BookingSettingsPage from "./BookingSettingsPage";
-import EditBookableItemPage from "./EditBookableItemPage";
 
 export function createBookableItemsRoute<TParentRoute extends AnyRoute>(bookingRoute: TParentRoute) {
   return createRoute({
@@ -32,8 +31,8 @@ export function createAddBookableItemRoute<TParentRoute extends AnyRoute>(bookin
 
 // Tab and edit mode live in the URL so both are linkable, back-button-able and
 // survive a reload. `history: "replace"` keeps the two from filling the stack.
-export const bookableItemTabParser = parseAsStringLiteral(["details", "audit"] as const)
-  .withDefault("details")
+export const bookableItemTabParser = parseAsStringLiteral(["bookings", "details", "audit"] as const)
+  .withDefault("bookings")
   .withOptions({ history: "replace", clearOnDefault: true });
 export const bookableItemEditParser = parseAsBoolean
   .withDefault(false)
@@ -45,7 +44,7 @@ const loadBookableItemSearch = createLoader({ tab: bookableItemTabParser, edit: 
 // existing `<Link to="/booking/bookable-items/$globalId">` to pass `search`,
 // and `clearOnDefault` already means the defaults never appear in the URL.
 export function bookableItemSearch(search: Record<string, unknown>): {
-  tab?: "details" | "audit";
+  tab?: "bookings" | "details" | "audit";
   edit?: boolean;
 } {
   const loaded = loadBookableItemSearch({
@@ -53,7 +52,7 @@ export function bookableItemSearch(search: Record<string, unknown>): {
     edit: typeof search.edit === "string" || typeof search.edit === "boolean" ? String(search.edit) : undefined,
   });
   return {
-    ...(loaded.tab === "details" ? {} : { tab: loaded.tab }),
+    ...(loaded.tab === "bookings" ? {} : { tab: loaded.tab }),
     ...(loaded.edit ? { edit: true } : {}),
   };
 }
@@ -64,13 +63,5 @@ export function createBookableItemRoute<TParentRoute extends AnyRoute>(bookingRo
     path: "/bookable-items/$globalId",
     validateSearch: bookableItemSearch,
     component: BookableItemPage,
-  });
-}
-
-export function createEditBookableItemRoute<TParentRoute extends AnyRoute>(bookingRoute: TParentRoute) {
-  return createRoute({
-    getParentRoute: () => bookingRoute,
-    path: "/config/bookable-items/$id/edit",
-    component: EditBookableItemPage,
   });
 }

@@ -12,6 +12,7 @@ import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
+import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.service.JsonMessageSource;
 import java.util.Optional;
@@ -55,6 +56,7 @@ class BookingConfigurationDefaultsManagerTest {
     BookingConfigurationDefaults updated =
         manager.updateDefaults(
             new BookingSchedulingSettings.Patch(15L, "08:00", "18:00", 10L, 20L, 120L, true),
+            new BookingDisplaySettings.Patch("09:00", "17:00", null, null),
             0,
             sysadmin,
             sysadmin);
@@ -66,6 +68,8 @@ class BookingConfigurationDefaultsManagerTest {
     assertEquals(20, updated.getBufferAfterMinutes());
     assertEquals(120, updated.getMaxBookingDurationMinutes());
     assertEquals(true, updated.isAllowDoubleBooking());
+    assertEquals("09:00", updated.getAvailabilityWindowStart());
+    assertEquals("17:00", updated.getAvailabilityWindowEnd());
     verify(dao).saveAndFlush(defaults);
     verify(events).publishEvent(any(BookingConfigurationDefaultsAuditEvent.class));
   }
@@ -75,7 +79,13 @@ class BookingConfigurationDefaultsManagerTest {
     User member = mock(User.class);
     assertThrows(
         AuthorizationException.class,
-        () -> manager.updateDefaults(BookingSchedulingSettings.Patch.empty(), 0, member, member));
+        () ->
+            manager.updateDefaults(
+                BookingSchedulingSettings.Patch.empty(),
+                BookingDisplaySettings.Patch.empty(),
+                0,
+                member,
+                member));
 
     User sysadmin = mock(User.class);
     when(sysadmin.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
@@ -94,6 +104,7 @@ class BookingConfigurationDefaultsManagerTest {
                     manager.updateDefaults(
                         new BookingSchedulingSettings.Patch(
                             null, "18:00", "08:00", null, null, null, null),
+                        BookingDisplaySettings.Patch.empty(),
                         0,
                         sysadmin,
                         sysadmin))
@@ -106,6 +117,7 @@ class BookingConfigurationDefaultsManagerTest {
                 () ->
                     manager.updateDefaults(
                         new BookingSchedulingSettings.Patch(null, null, null, null, null, 7L, null),
+                        BookingDisplaySettings.Patch.empty(),
                         0,
                         sysadmin,
                         sysadmin))
@@ -125,6 +137,7 @@ class BookingConfigurationDefaultsManagerTest {
 
     manager.updateDefaults(
         new BookingSchedulingSettings.Patch(null, null, null, null, null, null, true),
+        BookingDisplaySettings.Patch.empty(),
         1,
         firstAdmin,
         firstAdmin);
@@ -135,6 +148,7 @@ class BookingConfigurationDefaultsManagerTest {
         () ->
             manager.updateDefaults(
                 new BookingSchedulingSettings.Patch(null, null, null, null, null, null, false),
+                BookingDisplaySettings.Patch.empty(),
                 1,
                 secondAdmin,
                 secondAdmin));
@@ -148,6 +162,7 @@ class BookingConfigurationDefaultsManagerTest {
     defaults.setSlotGranularityMinutes(5);
     defaults.setOpeningStart("00:00");
     defaults.setOpeningEnd("24:00");
+    BookingDisplaySettings.defaults().applyTo(defaults);
     return defaults;
   }
 }

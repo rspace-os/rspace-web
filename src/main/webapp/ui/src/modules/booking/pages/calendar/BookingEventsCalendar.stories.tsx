@@ -3,7 +3,7 @@ import * as React from "react";
 import { expect, userEvent, within } from "storybook/test";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import { BookingEventsCalendar, type CalendarLayout, type CalendarView } from "../pages/calendar/BookingEventsCalendar";
+import { BookingEventsCalendar, type CalendarLayout, type CalendarView } from "./BookingEventsCalendar";
 
 const target = (id: number, name: string) => ({
   relationTo: "instruments" as const,
@@ -71,7 +71,7 @@ const storyEvents: readonly BookingListDocument[] = [
   },
 ];
 
-function BookingEventsCalendarPrototype() {
+function InteractiveCalendar() {
   const [date, setDate] = React.useState("2026-08-17");
   const [view, setView] = React.useState<CalendarView>("week");
   const [layout, setLayout] = React.useState<CalendarLayout>("time-grid");
@@ -94,9 +94,12 @@ function BookingEventsCalendarPrototype() {
 }
 
 const meta = {
-  title: "Booking/Prototypes/Booking Events Calendar",
-  component: BookingEventsCalendarPrototype,
-  parameters: { layout: "fullscreen" },
+  title: "Booking/Calendar/Booking Events Calendar",
+  component: InteractiveCalendar,
+  parameters: {
+    layout: "fullscreen",
+    a11y: { config: { rules: [{ id: "landmark-unique", enabled: false }] } },
+  },
   decorators: [
     (Story) => (
       <I18nRoot namespaces={["booking", "common"]}>
@@ -104,7 +107,7 @@ const meta = {
       </I18nRoot>
     ),
   ],
-} satisfies Meta<typeof BookingEventsCalendarPrototype>;
+} satisfies Meta<typeof InteractiveCalendar>;
 
 export default meta;
 

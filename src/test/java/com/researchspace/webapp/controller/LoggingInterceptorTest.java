@@ -1,39 +1,41 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.booking.service.BookingCalendarManager;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.model.dtos.RunAsUserCommand;
-import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.servlet.http.HttpSession;
 import java.lang.reflect.Method;
 import java.security.Principal;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.Model;
+import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod;
 
-public class LoggingInterceptorTest extends SpringTransactionalTest {
+class LoggingInterceptorTest {
 
-  @Autowired private LoggingInterceptor logInterceptor;
+  private LoggingInterceptor logInterceptor;
 
   private MockHttpServletRequest httpRequest;
   private MockHttpServletResponse httpResponse;
   private StringAppenderForTestLogging strglogger;
 
-  @Before
-  public void setUp() {
-    strglogger = configureTestLogger(LoggingInterceptor.getLog());
+  @BeforeEach
+  void setUp() {
+    logInterceptor = new LoggingInterceptor();
+    strglogger = CoreTestUtils.configureStringLogger(LoggingInterceptor.getLog());
     httpRequest = new MockHttpServletRequest();
     httpResponse = new MockHttpServletResponse();
   }
@@ -68,6 +70,21 @@ public class LoggingInterceptorTest extends SpringTransactionalTest {
     ServletInvocableHandlerMethod handler = new ServletInvocableHandlerMethod(dc, method);
     setUpRequestCoreData();
     assertTrue(logInterceptor.preHandle(httpRequest, httpResponse, handler));
+    assertTrue(strglogger.logContents.isEmpty());
+  }
+
+  @Test
+  public void calendarFeedBearerIsExcludedFromRequestLogging() throws Exception {
+    String token = "A".repeat(43);
+    BookingCalendarFeedController controller =
+        new BookingCalendarFeedController(org.mockito.Mockito.mock(BookingCalendarManager.class));
+    Method method = controller.getClass().getMethod("feed", MultiValueMap.class, Locale.class);
+    ServletInvocableHandlerMethod handler = new ServletInvocableHandlerMethod(controller, method);
+    httpRequest.setRequestURI(BookingCalendarFeedController.PATH);
+    httpRequest.setParameter("token", token);
+
+    assertTrue(logInterceptor.preHandle(httpRequest, httpResponse, handler));
+
     assertTrue(strglogger.logContents.isEmpty());
   }
 

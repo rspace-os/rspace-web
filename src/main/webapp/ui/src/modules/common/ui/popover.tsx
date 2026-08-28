@@ -13,20 +13,31 @@ function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
 
 function PopoverContent({
   className,
+  children,
   align = "center",
   alignOffset = 0,
   side = "bottom",
   sideOffset = 4,
+  collisionBoundary,
+  collisionPadding,
+  sticky,
+  showArrow = false,
   ...props
 }: PopoverPrimitive.Popup.Props &
-  Pick<PopoverPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset">) {
+  Pick<
+    PopoverPrimitive.Positioner.Props,
+    "align" | "alignOffset" | "collisionBoundary" | "collisionPadding" | "side" | "sideOffset" | "sticky"
+  > & { showArrow?: boolean }) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
+        collisionBoundary={collisionBoundary}
+        collisionPadding={collisionPadding}
         side={side}
         sideOffset={sideOffset}
+        sticky={sticky}
         className="isolate z-50"
       >
         <PopoverPrimitive.Popup
@@ -36,10 +47,17 @@ function PopoverContent({
             className,
           )}
           {...props}
-        />
+        >
+          {showArrow ? <PopoverPrimitive.Arrow className="size-2.5 rotate-45 border border-border bg-popover" /> : null}
+          {children}
+        </PopoverPrimitive.Popup>
       </PopoverPrimitive.Positioner>
     </PopoverPrimitive.Portal>
   );
+}
+
+function PopoverClose({ ...props }: PopoverPrimitive.Close.Props) {
+  return <PopoverPrimitive.Close data-slot="popover-close" {...props} />;
 }
 
 function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
@@ -62,4 +80,4 @@ function PopoverDescription({ className, ...props }: PopoverPrimitive.Descriptio
   );
 }
 
-export { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger };
+export { Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger };

@@ -27,6 +27,11 @@ const settings = {
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
+  availabilityWindowStart: "08:00",
+  availabilityWindowEnd: "18:00",
+  timezoneMode: "BROWSER",
+  customTimezone: null,
+  institutionTimezone: "UTC",
   configurationVersion: 0,
 };
 
@@ -120,10 +125,6 @@ async function completeForm(user: ReturnType<typeof userEvent.setup>) {
   const option = await screen.findByRole("option", { name: /Confocal microscope/ });
   expect(option).not.toHaveAttribute("aria-disabled", "true");
   await user.click(option);
-
-  const timezone = await screen.findByRole("combobox", { name: "booking:bookableItems.fields.timezone" });
-  await user.type(timezone, "Europe/Berlin");
-  await user.click(await screen.findByRole("option", { name: "Europe/Berlin" }));
 }
 
 describe("AddBookableItemPage", () => {
@@ -173,7 +174,6 @@ describe("AddBookableItemPage", () => {
     expect(requestBody).toEqual({
       target: { relationTo: "instruments", value: 123 },
       enabled: true,
-      timezone: "Europe/Berlin",
       slotGranularityMinutes: 5,
       openingStart: "00:00",
       openingEnd: "24:00",

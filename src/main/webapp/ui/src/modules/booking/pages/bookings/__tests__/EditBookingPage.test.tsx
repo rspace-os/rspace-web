@@ -14,6 +14,8 @@ import { Suspense } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createEditBookingRoute } from "../routes";
 
 const booking = {
@@ -66,6 +68,7 @@ function renderPage(initialEntry = "/booking/calendar/bookings/41?target=IN123&d
     ),
   );
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
   const root = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
   const calendar = createRoute({

@@ -43,6 +43,14 @@
       },
       "v2": {
         "authenticationRequired": "Authentication is required.",
+        "bookingDisplayPreferences": {
+          "availabilityWindow": {
+            "invalid": "Availability window times must use HH:mm with start before end; the end may be 24:00."
+          },
+          "timeZone": {
+            "invalid": "Choose Browser, Institution, or a valid custom IANA time zone."
+          }
+        },
         "bookingConfiguration": {
           "create": "The booking configuration is invalid.",
           "buffer": {
@@ -72,7 +80,15 @@
           "range": {
             "inverted": "The audit search start date must not be after its end date.",
             "tooWide": "The audit search range must not exceed {0} days."
-          }
+          },
+          "results": {
+            "tooMany": "The audit search returned too many results. Choose a narrower date range."
+          },
+          "snapshot": {
+            "changed": "The audit results changed while you were paging through them. Start again to view a fresh snapshot.",
+            "invalid": "The audit snapshot date and fingerprint must be supplied together and in the required format."
+          },
+          "unavailable": "The audit trail is temporarily unavailable. Try again later."
         },
         "booking": {
           "create": "The booking is invalid.",

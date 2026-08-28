@@ -32,6 +32,8 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -46,9 +48,11 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Transactional policy module for booking calendar subscriptions and downloads. */
 @Service("bookingCalendarManager")
+@Transactional
 public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
@@ -120,8 +124,15 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     requireReadableConfiguration(configurationId, subject);
     return subscriptionDao
         .findByUserIdAndConfigurationId(subject.getId(), configurationId)
-        .map(subscription -> new Status(true, subscription.getUpdatedAt()))
-        .orElseGet(() -> new Status(false, null));
+        .map(
+            subscription ->
+                new Status(
+                    true,
+                    subscription.getUpdatedAt(),
+                    subscription.getRawToken() == null
+                        ? null
+                        : subscriptionUrl(subscription.getRawToken())))
+        .orElseGet(() -> new Status(false, null, null));
   }
 
   @Override
@@ -142,12 +153,13 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     if (existing.isPresent()) {
       subscription = existing.get();
       subscription.setTokenHash(CryptoUtils.hashToken(rawToken));
+      subscription.setRawToken(rawToken);
       subscription.setUpdatedAt(updatedAt);
       action = "replaced";
     } else {
       subscription =
           new BookableItemCalendarSubscription(
-              configuration, subject, CryptoUtils.hashToken(rawToken), updatedAt);
+              configuration, subject, CryptoUtils.hashToken(rawToken), rawToken, updatedAt);
       action = "created";
     }
     BookableItemCalendarSubscription saved = subscriptionDao.saveAndFlush(subscription);
@@ -159,12 +171,17 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         subject.getUsername(),
         configurationId,
         saved.getId());
-    Status status = new Status(true, saved.getUpdatedAt());
-    String url =
-        BookingCalendarFeedGenerator.appendPath(
-                serverBaseUrl, "/public/booking/calendars/" + rawToken + ".ics")
-            .toString();
+    String url = subscriptionUrl(rawToken);
+    Status status = new Status(true, saved.getUpdatedAt(), url);
     return new Created(status, url);
+  }
+
+  private String subscriptionUrl(String rawToken) {
+    return BookingCalendarFeedGenerator.appendPath(
+                serverBaseUrl, "/public/booking/calendars/feed.ics")
+            .toString()
+        + "?token="
+        + URLEncoder.encode(rawToken, StandardCharsets.UTF_8);
   }
 
   @Override
@@ -271,7 +288,9 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     } catch (CalendarSourceTooLargeException ex) {
       return new Oversized();
     } catch (RuntimeException ex) {
-      return new NotFound();
+      SECURITY_LOG.warn(
+          "Booking calendar feed unavailable due to [{}]", ex.getClass().getSimpleName());
+      return new Oversized();
     } finally {
       generationSlots.release();
     }
@@ -310,11 +329,25 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   }
 
   private BookingConfiguration requireReadableConfiguration(Long configurationId, User subject) {
-    return configurationDao
-        .getResources(idRequest(configurationId), 1, targetAccess(subject))
-        .stream()
-        .findFirst()
-        .orElseThrow(BookingCalendarNotFoundException::new);
+    RelationshipReadAccess access = targetAccess(subject);
+    BookingConfiguration configuration =
+        configurationDao.getResources(idRequest(configurationId), 1, access).stream()
+            .findFirst()
+            .orElseThrow(BookingCalendarNotFoundException::new);
+    BookableTargetReference target = configuration.getTarget();
+    if (target == null || target.type() != BookableTargetType.INSTRUMENT) {
+      throw new BookingCalendarNotFoundException();
+    }
+    boolean readable =
+        instrumentDao
+            .getReadableResources(idRequest(target.id()), access.result("instruments"))
+            .resources()
+            .stream()
+            .anyMatch(instrument -> !instrument.isDeleted() && !instrument.isTemplate());
+    if (!readable) {
+      throw new BookingCalendarNotFoundException();
+    }
+    return configuration;
   }
 
   private RelationshipReadAccess targetAccess(User subject) {

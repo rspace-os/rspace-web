@@ -14,7 +14,38 @@ import { Suspense } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
+import type { CurrentUser } from "@/modules/common/queries/currentUser";
+import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createAddBookingRoute } from "../routes";
+
+const currentUser: CurrentUser = {
+  id: 1,
+  username: "ada",
+  email: "ada@example.com",
+  firstName: "Ada",
+  lastName: "Lovelace",
+  homeFolderId: 2,
+  workbenchId: 3,
+  hasPiRole: false,
+  hasSysAdminRole: false,
+  profileImageUrl: null,
+  profileImageApiUrl: null,
+  orcid: { available: false, id: null },
+  capabilities: { canUseInventory: false, canPublish: false, canViewSystem: false },
+  livechat: { enabled: false, serverKey: null },
+  session: {
+    operatedAs: false,
+    lastSession: null,
+    canUseDevtools: false,
+    canOverrideFeatureFlags: false,
+    canChangeFeatureFlagBaselines: false,
+  },
+};
+
+function currentUserHandler(hasSysAdminRole: boolean) {
+  return http.get("/api/v2/users/me", () => HttpResponse.json({ ...currentUser, hasSysAdminRole }));
+}
 
 const optionDocument = {
   id: 7,
@@ -63,8 +94,10 @@ function page(docs: readonly unknown[]) {
   };
 }
 
-function renderPage() {
+function renderPage(hasSysAdminRole = false) {
+  server.use(currentUserHandler(hasSysAdminRole));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
   const root = createRootRoute({ component: Outlet });
   const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
   const calendar = createRoute({
@@ -160,6 +193,48 @@ describe("AddBookingPage", () => {
     expect(screen.queryByText("private server detail")).not.toBeInTheDocument();
     const start = screen.getByRole("group", { name: "booking:bookings.form.start" });
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveValue("09:00");
+  });
+
+  it("offers the booking type to a sysadmin and keeps it out of the create payload", async () => {
+    const user = userEvent.setup();
+    let body: unknown;
+    server.use(
+      oauthTokenHandler(),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(page([optionDocument]))),
+      http.post("/api/v2/bookings", async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json(createdBooking, { status: 201 });
+      }),
+    );
+    renderPage(true);
+
+    const blockout = await screen.findByRole("radio", { name: "booking:bookings.form.typeBlockout" });
+    expect(screen.getByRole("radio", { name: "booking:bookings.form.typeBooking" })).toBeChecked();
+    await user.click(blockout);
+    expect(await screen.findByText("booking:bookings.form.typeBlockoutPending")).toBeVisible();
+
+    await fillWindow(user);
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+
+    expect(await screen.findByRole("heading", { name: "Calendar destination" })).toBeVisible();
+    expect(body).toEqual({
+      target: { relationTo: "instruments", value: 123 },
+      start: "2026-08-17T07:00:00Z",
+      end: "2026-08-17T08:00:00Z",
+      purpose: null,
+    });
+  });
+
+  it("hides the booking type from users who are not sysadmins", async () => {
+    server.use(
+      oauthTokenHandler(),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(page([optionDocument]))),
+    );
+    renderPage();
+
+    expect(await screen.findByText("booking:bookings.form.timezone")).toBeVisible();
+    expect(screen.queryByRole("group", { name: "booking:bookings.form.type" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "booking:bookings.form.typeBlockout" })).not.toBeInTheDocument();
   });
 
   it("maps a server-side maximum-duration rejection to localized text", async () => {

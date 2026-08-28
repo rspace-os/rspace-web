@@ -15,8 +15,10 @@ import { Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
+import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createBookableItemRoute } from "../routes";
 
 vi.mock("@/modules/common/hooks/auth", () => ({ useOauthTokenQuery: vi.fn() }));
@@ -26,7 +28,13 @@ const configuration = {
   id: 7,
   target: {
     relationTo: "instruments",
-    value: { id: 123, name: "Confocal microscope", deleted: false },
+    value: {
+      id: 123,
+      name: "Confocal microscope",
+      deleted: false,
+      parentContainerName: "Imaging lab",
+      parentContainerGlobalId: "IC456",
+    },
     globalId: "IN123",
   },
   enabled: true,
@@ -82,15 +90,11 @@ beforeEach(() => {
 
 function renderPage(initialEntry = "/booking/bookable-items/IN123") {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
   const root = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
-  const editRoute = createRoute({
-    getParentRoute: () => bookingRoute,
-    path: "/config/bookable-items/$id/edit",
-    component: Outlet,
-  });
   const router = createRouter({
-    routeTree: root.addChildren([bookingRoute.addChildren([createBookableItemRoute(bookingRoute), editRoute])]),
+    routeTree: root.addChildren([bookingRoute.addChildren([createBookableItemRoute(bookingRoute)])]),
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
   });
   const result = render(
@@ -100,11 +104,12 @@ function renderPage(initialEntry = "/booking/bookable-items/IN123") {
       </Suspense>
     </QueryClientProvider>,
   );
-  return { ...result, queryClient };
+  return { ...result, queryClient, router };
 }
 
 describe("BookableItemPage", () => {
   it("renders identity, rules, role-sensitive actions, and event requests with one cutoff", async () => {
+    const user = userEvent.setup();
     const eventFilters: string[] = [];
     server.use(
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
@@ -115,11 +120,23 @@ describe("BookableItemPage", () => {
     );
     const { container } = renderPage();
 
-    // The item itself is the page heading now; the old "Bookable item" title is
-    // the eyebrow above it.
     expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toBeVisible();
     expect(screen.getByText("IN123")).toBeVisible();
+    expect(screen.getByRole("link", { name: "booking:bookableItemDetails.viewInventory" })).toHaveTextContent("IN123");
+    expect(screen.getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
+    expect(
+      screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }),
+    ).toBeVisible();
     expect(screen.getAllByText("UTC").length).toBeGreaterThan(0);
+    expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.bookings" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByText("booking:bookableItemDetails.upcoming")).toBeVisible();
+    expect(screen.getByText("booking:bookableItemDetails.past")).toBeVisible();
+    await waitFor(() => expect(eventFilters).toHaveLength(2));
+
+    await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     expect(screen.getByText("08:00–17:30")).toBeVisible();
     expect(screen.getByText("booking:bookableItemDetails.unlimited")).toBeVisible();
     expect(screen.getByText("booking:bookableItemDetails.notAvailable")).toBeVisible();
@@ -128,9 +145,7 @@ describe("BookableItemPage", () => {
       "true",
     );
     expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.audit" })).toBeVisible();
-    // Editing is in-page now, so the action is a button rather than a link away.
     expect(screen.getByRole("button", { name: "booking:bookableItemDetails.edit" })).toBeVisible();
-    await waitFor(() => expect(eventFilters).toHaveLength(2));
     const boundaries = eventFilters.map((where) => where.match(/end=(?:gt|le)=([^;]+)/)?.[1]);
     expect(boundaries[0]).toBeTruthy();
     expect(boundaries[0]).toBe(boundaries[1]);
@@ -150,17 +165,18 @@ describe("BookableItemPage", () => {
     );
     renderPage();
 
+    await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
-    // Edit mode replaces the read-out with the form, in the same card.
-    const maximumDuration = await screen.findByLabelText("booking:settings.fields.maximumDuration");
+    const maximumDuration = await screen.findByLabelText("booking:bookableItemDetails.fields.maximumDuration");
     await user.clear(maximumDuration);
     await user.type(maximumDuration, "60");
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
 
     await waitFor(() => expect(patches).toHaveLength(1));
-    expect(patches[0]).toMatchObject({ maxBookingDurationMinutes: 60, timezone: "UTC" });
-    // Back to view mode, with the Edit affordance restored.
-    expect(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" })).toBeVisible();
+    expect(patches[0]).toMatchObject({ maxBookingDurationMinutes: 60 });
+    expect(patches[0]).not.toHaveProperty("timezone");
+    const editButton = await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" });
+    expect(editButton).toHaveFocus();
   });
 
   it("cancels an edit without sending a request", async () => {
@@ -176,14 +192,119 @@ describe("BookableItemPage", () => {
     );
     renderPage();
 
+    await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
     await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.cancelEdit" }));
 
-    expect(await screen.findByText("booking:bookableItemDetails.unlimited")).toBeVisible();
+    expect(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" })).toHaveFocus();
+    expect(screen.getByText("booking:bookableItemDetails.unlimited")).toBeVisible();
     expect(patched).toBe(false);
   });
 
-  it("keeps a non-administrator in view mode even on ?edit=1", async () => {
+  it("keeps an unsaved draft mounted while switching tabs", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+    );
+    const { router } = renderPage();
+
+    await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.edit" }));
+    const maximumDuration = screen.getByLabelText("booking:bookableItemDetails.fields.maximumDuration");
+    await user.clear(maximumDuration);
+    await user.type(maximumDuration, "60");
+
+    await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.bookings" }));
+    expect(maximumDuration).not.toBeVisible();
+    expect(router.state.location.search).toEqual({ edit: true });
+
+    await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
+    expect(maximumDuration).toBeVisible();
+    expect(maximumDuration).toHaveValue(60);
+    expect(router.state.location.search).toEqual({ tab: "details", edit: true });
+  });
+
+  it("keeps calendar status lazy and exposes the trigger to an ordinary readable user", async () => {
+    let statusRequests = 0;
+    let createRequests = 0;
+    vi.mocked(useCurrentUserQuery).mockReturnValue({
+      data: { hasSysAdminRole: false },
+    } as ReturnType<typeof useCurrentUserQuery>);
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations/7/calendar-subscription", () => {
+        statusRequests += 1;
+        return HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null });
+      }),
+      http.post("/api/v2/booking-configurations/7/calendar-subscription", () => {
+        createRequests += 1;
+        return HttpResponse.json({
+          active: true,
+          updatedAt: "2026-08-27T12:00:00.000Z",
+          subscriptionUrl: `https://rspace.example/public/booking/calendars/feed.ics?token=${"c".repeat(43)}`,
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+    const trigger = await screen.findByRole("button", {
+      name: "booking:bookableItemDetails.calendarSubscription.trigger",
+    });
+    expect(statusRequests).toBe(0);
+    await user.click(trigger);
+    await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" });
+    expect(statusRequests).toBe(1);
+    expect(createRequests).toBe(1);
+  });
+
+  it("associates correction guidance with an invalid field and focuses it", async () => {
+    const user = userEvent.setup();
+    let patched = false;
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.patch("/api/v2/booking-configurations/7", () => {
+        patched = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderPage("/booking/bookable-items/IN123?tab=details&edit=true");
+
+    const maximumDuration = await screen.findByLabelText("booking:bookableItemDetails.fields.maximumDuration");
+    await user.clear(maximumDuration);
+    await user.type(maximumDuration, "7");
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
+
+    expect(maximumDuration).toHaveAttribute("aria-invalid", "true");
+    expect(maximumDuration).toHaveAccessibleDescription(/booking:settings.fields.maximumDurationDescription/);
+    expect(screen.getByText("booking:settings.errors.maximumDuration")).toBeVisible();
+    expect(maximumDuration).toHaveFocus();
+    expect(patched).toBe(false);
+  });
+
+  it("keeps the editor and draft open when PATCH fails", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.patch("/api/v2/booking-configurations/7", () => HttpResponse.json({}, { status: 500 })),
+    );
+    renderPage("/booking/bookable-items/IN123?tab=details&edit=true");
+
+    const maximumDuration = await screen.findByLabelText("booking:bookableItemDetails.fields.maximumDuration");
+    await user.clear(maximumDuration);
+    await user.type(maximumDuration, "60");
+    const saveButton = screen.getByRole("button", { name: "booking:bookableItems.actions.save" });
+    await user.click(saveButton);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.editError");
+    expect(maximumDuration).toHaveValue(60);
+    expect(saveButton).toHaveFocus();
+  });
+
+  it("keeps a non-administrator in view mode on the direct edit URL", async () => {
     mockedUseCurrentUserQuery.mockReturnValue({ data: { hasSysAdminRole: false } } as ReturnType<
       typeof useCurrentUserQuery
     >);
@@ -191,7 +312,7 @@ describe("BookableItemPage", () => {
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
       http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
     );
-    renderPage("/booking/bookable-items/IN123?edit=true");
+    renderPage("/booking/bookable-items/IN123?tab=details&edit=true");
 
     expect(await screen.findByText("booking:bookableItemDetails.unlimited")).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.save" })).not.toBeInTheDocument();
@@ -206,10 +327,11 @@ describe("BookableItemPage", () => {
       http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
       http.get("/api/v2/booking-configurations/7/audit", () => {
         auditRequests += 1;
-        return HttpResponse.json(
-          envelope(
+        return HttpResponse.json({
+          ...envelope(
             [
               {
+                eventId: "a".repeat(64),
                 timestamp: "2026-08-25T10:42:18Z",
                 username: "morgan.ellis",
                 fullName: "Morgan Ellis",
@@ -221,7 +343,9 @@ describe("BookableItemPage", () => {
             ],
             20,
           ),
-        );
+          snapshotDate: "2026-08-25",
+          snapshotFingerprint: "b".repeat(64),
+        });
       }),
     );
     renderPage();
@@ -276,7 +400,7 @@ describe("BookableItemPage", () => {
       ),
       http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
     );
-    renderPage();
+    renderPage("/booking/bookable-items/IN123?tab=details");
 
     const updatedTime = (await screen.findAllByRole("time")).find(
       (element) => element.getAttribute("datetime") === updatedAt,

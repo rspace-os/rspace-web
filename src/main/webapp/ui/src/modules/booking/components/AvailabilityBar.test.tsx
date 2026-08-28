@@ -18,6 +18,9 @@ const resources = {
       },
       label: "{itemName} availability",
       now: "Current time: {time}.",
+      nowAfterWindow: "Current time {time} is after the displayed window.",
+      nowBeforeWindow: "Current time {time} is before the displayed window.",
+      timezone: "Time zone: {timezone}",
       summary: "Availability period: {period}. {states}",
       fullAvailable: "Available for the full period.",
       ranges: {
@@ -39,6 +42,7 @@ async function renderAvailabilityBar(props: Partial<React.ComponentProps<typeof 
       intervals={[]}
       periodStart={periodStart}
       timeZone="UTC"
+      userTimeZone="UTC"
       {...props}
     />,
     { resources, defaultNS: "booking" },
@@ -53,6 +57,7 @@ describe("AvailabilityBar", () => {
     expect(graphic).toHaveAccessibleDescription(
       /Availability period: Aug 12, 2026, 00:00 UTC–Aug 13, 2026, 00:00 UTC\. Available for the full period\./,
     );
+    expect(screen.queryByText("Time zone: UTC")).not.toBeInTheDocument();
     await expectAccessible(graphic);
   });
 
@@ -134,14 +139,45 @@ describe("AvailabilityBar", () => {
     );
   });
 
-  it("positions an optional current-time marker within the period", async () => {
-    await renderAvailabilityBar({ now: new Date("2026-08-12T12:00:00.000Z") });
+  it("optionally shows the period start and end times", async () => {
+    const { rerender } = await renderAvailabilityBar({
+      periodStart: new Date("2026-08-12T08:00:00.000Z"),
+      periodEnd: new Date("2026-08-12T18:00:00.000Z"),
+    });
 
-    const marker = screen.getByTitle("Current time: Aug 12, 2026, 12:00 UTC.");
+    expect(screen.queryByText("08:00")).not.toBeInTheDocument();
+    expect(screen.queryByText("18:00")).not.toBeInTheDocument();
+
+    rerender(
+      <AvailabilityBar
+        itemName="Confocal microscope"
+        intervals={[]}
+        periodStart={new Date("2026-08-12T08:00:00.000Z")}
+        periodEnd={new Date("2026-08-12T18:00:00.000Z")}
+        showPeriodLabels
+        timeZone="UTC"
+      />,
+    );
+
+    expect(screen.getByText("08:00")).toBeVisible();
+    expect(screen.getByText("18:00")).toBeVisible();
+  });
+
+  it("positions and labels the current-time marker in the display timezone", async () => {
+    await renderAvailabilityBar({
+      now: new Date("2026-08-12T10:00:00.000Z"),
+      periodStart: new Date("2026-08-11T22:00:00.000Z"),
+      periodEnd: new Date("2026-08-12T22:00:00.000Z"),
+      timeZone: "Europe/Berlin",
+      userTimeZone: "America/New_York",
+    });
+
+    const marker = screen.getByTitle("Current time: Aug 12, 2026, 12:00 GMT+2.");
     expect(marker).toHaveStyle({ left: "50%" });
     expect(screen.getByRole("img", { name: "Confocal microscope availability" })).toHaveAccessibleDescription(
-      /Current time: Aug 12, 2026, 12:00 UTC\./,
+      /Current time: Aug 12, 2026, 12:00 GMT\+2\./,
     );
+    expect(screen.queryByText("Time zone: Europe/Berlin")).not.toBeInTheDocument();
     expect(screen.queryByText(/^Available/)).not.toBeInTheDocument();
   });
 
@@ -195,13 +231,27 @@ describe("AvailabilityBar", () => {
     expect(screen.getByText(expected)).toBeInTheDocument();
   });
 
-  it("omits the current-time marker when it is outside the period", async () => {
-    await renderAvailabilityBar({ now: new Date("2026-08-13T00:00:00.000Z") });
+  it("clamps the current time to the edge when it is after the display period", async () => {
+    await renderAvailabilityBar({
+      now: new Date("2026-08-13T06:00:00.000Z"),
+      periodStart: new Date("2026-08-11T16:00:00.000Z"),
+      periodEnd: new Date("2026-08-12T16:00:00.000Z"),
+      timeZone: "Asia/Singapore",
+      userTimeZone: "America/Los_Angeles",
+    });
 
-    expect(screen.queryByTitle(/Current time:/)).not.toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Confocal microscope availability" })).not.toHaveAccessibleDescription(
-      /Current time:/,
-    );
+    expect(screen.getByTitle(/after the displayed window/)).toHaveStyle({ left: "100%" });
+  });
+
+  it("clamps the current time to the edge when it is before the display period", async () => {
+    await renderAvailabilityBar({
+      now: new Date("2026-08-11T06:00:00.000Z"),
+      periodStart: new Date("2026-08-11T16:00:00.000Z"),
+      periodEnd: new Date("2026-08-12T16:00:00.000Z"),
+      timeZone: "Asia/Singapore",
+    });
+
+    expect(screen.getByTitle(/before the displayed window/)).toHaveStyle({ left: "0%" });
   });
 
   it("rejects invalid periods and intervals", async () => {

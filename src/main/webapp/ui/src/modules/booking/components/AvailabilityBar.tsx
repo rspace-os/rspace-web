@@ -16,9 +16,11 @@ export type AvailabilityBarProps = {
   periodStart: Date;
   periodEnd?: Date;
   now?: Date;
-  nowPosition?: number;
   showCurrentAvailability?: boolean;
+  showPeriodLabels?: boolean;
   timeZone: string;
+  /** @deprecated The bar domain is now always the resolved display timezone. */
+  userTimeZone?: string;
   itemName: string;
   className?: string;
 };
@@ -50,8 +52,8 @@ export function AvailabilityBar({
   periodStart,
   periodEnd,
   now,
-  nowPosition,
   showCurrentAvailability = false,
+  showPeriodLabels = false,
   timeZone,
   itemName,
   className,
@@ -62,11 +64,12 @@ export function AvailabilityBar({
   const end = periodEnd === undefined ? start + DEFAULT_PERIOD_MILLISECONDS : timestamp(periodEnd, "periodEnd");
   if (end <= start) throw new RangeError("periodEnd must be after periodStart");
   const nowTimestamp = now === undefined ? null : timestamp(now, "now");
-  const visibleNow = nowTimestamp !== null && nowTimestamp >= start && nowTimestamp < end ? nowTimestamp : null;
+  const visibleNow = nowTimestamp;
+  const nowPosition = visibleNow === null ? null : Math.max(0, Math.min(1, (visibleNow - start) / (end - start)));
 
   const segments = buildAvailabilitySegments(intervals, new Date(start), new Date(end));
   const locale = supportedLocale(i18n.language);
-  const dateTimeFormatter = new Intl.DateTimeFormat(locale, {
+  const itemDateTimeFormatter = new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -90,10 +93,16 @@ export function AvailabilityBar({
   });
   const listFormatter = new Intl.ListFormat(locale, { style: "long", type: "conjunction" });
   const formatRange = ({ startsAt, endsAt }: TimestampInterval) =>
-    `${dateTimeFormatter.format(startsAt)}–${dateTimeFormatter.format(endsAt)}`;
+    `${itemDateTimeFormatter.format(startsAt)}–${itemDateTimeFormatter.format(endsAt)}`;
   const period = formatRange({ startsAt: start, endsAt: end });
   const nowLabel =
-    visibleNow === null ? null : t("availabilityBar.now", { time: dateTimeFormatter.format(visibleNow) });
+    visibleNow === null
+      ? null
+      : visibleNow < start
+        ? t("availabilityBar.nowBeforeWindow", { time: itemDateTimeFormatter.format(visibleNow) })
+        : visibleNow >= end
+          ? t("availabilityBar.nowAfterWindow", { time: itemDateTimeFormatter.format(visibleNow) })
+          : t("availabilityBar.now", { time: itemDateTimeFormatter.format(visibleNow) });
   const stateOrder: ReadonlyArray<AvailabilityState> = ["available", "booking", "blockout", "overlap"];
   const states =
     segments.length === 1 && segments[0].state === "available"
@@ -150,6 +159,12 @@ export function AvailabilityBar({
           {currentAvailabilityLabel}
         </p>
       )}
+      {showPeriodLabels && (
+        <div aria-hidden="true" className="mb-1 flex justify-between text-[10px] tabular-nums text-muted-foreground">
+          <time dateTime={new Date(start).toISOString()}>{timeFormatter.format(start)}</time>
+          <time dateTime={new Date(end).toISOString()}>{timeFormatter.format(end)}</time>
+        </div>
+      )}
       <div
         role="img"
         aria-label={t("availabilityBar.label", { itemName })}
@@ -174,14 +189,13 @@ export function AvailabilityBar({
             />
           ))}
         </div>
-        {visibleNow !== null && nowLabel !== null && (
+        {visibleNow !== null && nowLabel !== null && nowPosition !== null && (
           <time
             dateTime={new Date(visibleNow).toISOString()}
             title={nowLabel}
-            aria-hidden="true"
             data-slot="availability-bar-now"
             className="pointer-events-none absolute -top-1 -bottom-1 z-10 w-0.5 bg-red-600"
-            style={{ left: `${(nowPosition ?? (visibleNow - start) / (end - start)) * 100}%` }}
+            style={{ left: `${nowPosition * 100}%` }}
           />
         )}
       </div>

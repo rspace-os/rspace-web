@@ -154,7 +154,7 @@ type BaseFieldConfig<
 };
 
 export type FieldConfig<TDocument> =
-  | (BaseFieldConfig<TDocument, "text" | "textarea"> & {
+  | (BaseFieldConfig<TDocument, "text" | "textarea" | "time"> & {
       type: "text";
       maximumLength?: number;
     })

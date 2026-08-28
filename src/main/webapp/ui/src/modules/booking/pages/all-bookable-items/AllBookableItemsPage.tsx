@@ -1,9 +1,17 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { CalendarClockIcon, ChevronLeftIcon, ChevronRightIcon, Clock3Icon } from "lucide-react";
+import {
+  CalendarClockIcon,
+  CalendarPlusIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  Clock3Icon,
+  EyeIcon,
+} from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
-import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import i18n from "@/modules/common/i18n";
@@ -14,10 +22,12 @@ import {
   type TableListRowActions,
 } from "@/modules/common/table-list/TableList";
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
+import { Badge } from "@/modules/common/ui/badge";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Input } from "@/modules/common/ui/input";
-import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Label } from "@/modules/common/ui/label";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import {
   type BookingConfiguration,
@@ -28,7 +38,7 @@ import {
 import { schedulingSettingsFieldNames } from "../bookable-items/schedulingSettings";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
 import { type AvailabilityQuickFilter, useAvailabilityQuickFilterIndex } from "./availabilityQuickFilters";
-import { addCalendarDays, localToday } from "./calendarDate";
+import { addCalendarDays } from "./calendarDate";
 
 const requestProjection = { fixed: ["id", "target", "enabled", "timezone", ...schedulingSettingsFieldNames] } as const;
 const baseFilter = {
@@ -62,9 +72,13 @@ const allBookableItemsConfig: CollectionConfig<BookingConfiguration> = {
                   globalId={row.target.globalId}
                   href={`/globalId/${row.target.globalId}`}
                   idLinkLabel={i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })}
-                  compact
                   size="xs"
-                />
+                >
+                  <InventoryLocationLink
+                    name={row.target.value.parentContainerName}
+                    globalId={row.target.value.parentContainerGlobalId}
+                  />
+                </InventoryItem>
               ) : (
                 <UnknownItem size="xs" />
               ),
@@ -76,13 +90,39 @@ const allBookableItemsConfig: CollectionConfig<BookingConfiguration> = {
 
 const currentDate = () => new Date();
 
-export default function AllBookableItemsPage({ clock = currentDate }: { clock?: () => Date } = {}) {
+export default function AllBookableItemsPage({
+  clock = currentDate,
+  userTimeZone: _legacyUserTimeZone,
+}: {
+  clock?: () => Date;
+  /** @deprecated Display timezone comes from Booking preferences. */
+  userTimeZone?: string;
+} = {}) {
   const { t } = useTranslation("booking");
   const { date, availability: quickMode } = useSearch({ from: "/booking/all-items" });
   const navigate = useNavigate({ from: "/booking/all-items" });
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const quickIndex = useAvailabilityQuickFilterIndex(quickMode, token, clock);
-  const synchronizedNowPosition = (quickIndex.now.getHours() * 60 + quickIndex.now.getMinutes()) / (24 * 60);
+  const preferences = useBookingDisplayPreferences();
+  const userToday = todayInTimeZone(preferences.timeZone, clock());
+  const selectedDate = date ?? userToday;
+  const bounds = useMemo(
+    () =>
+      displayInterval(
+        selectedDate,
+        preferences.timeZone,
+        preferences.availabilityWindow.start,
+        preferences.availabilityWindow.end,
+      ),
+    [preferences.availabilityWindow.end, preferences.availabilityWindow.start, preferences.timeZone, selectedDate],
+  );
+  const quickIndex = useAvailabilityQuickFilterIndex(
+    quickMode,
+    token,
+    preferences.timeZone,
+    preferences.availabilityWindow.start,
+    preferences.availabilityWindow.end,
+    clock,
+  );
   const matchingIds = useMemo(
     () =>
       quickIndex.data
@@ -125,7 +165,7 @@ export default function AllBookableItemsPage({ clock = currentDate }: { clock?: 
     const availabilityRow = calendarAvailabilityRow({ globalId: row.target.globalId, ...row });
     return availabilityRow ? [availabilityRow] : [];
   });
-  const availability = useCalendarAvailability(quickMode ? [] : availabilityRows, date, token);
+  const availability = useCalendarAvailability(quickMode ? [] : availabilityRows, bounds, token);
 
   const setDate = (nextDate: string) =>
     void navigate({ search: (current) => ({ ...current, date: nextDate }), replace: true });
@@ -136,33 +176,57 @@ export default function AllBookableItemsPage({ clock = currentDate }: { clock?: 
     () => ({
       id: "actions",
       label: t("allBookableItems.fields.actions"),
-      width: 100,
-      minWidth: 88,
+      width: 72,
+      minWidth: 68,
       renderCell: ({ row }) => {
         if (!row.target) return null;
-        const rowDate = quickIndex.data?.get(row.target.globalId)?.date ?? date;
+        const rowDate = quickIndex.data?.get(row.target.globalId)?.date ?? selectedDate;
+        const detailsLabel = t("allBookableItems.actions.viewDetails");
+        const bookLabel = t("allBookableItems.actions.book");
         return (
-          <div className="flex flex-wrap gap-2">
-            <Link
-              className={buttonVariants({ size: "sm" })}
-              to="/booking/bookable-items/$globalId"
-              params={{ globalId: row.target.globalId }}
-            >
-              {t("allBookableItems.actions.viewDetails")}
-            </Link>
-            <Link
-              className={buttonVariants({ size: "sm" })}
-              to="/booking/calendar/bookings/add"
-              search={{ date: rowDate, target: row.target.globalId }}
-            >
-              {t("allBookableItems.actions.book")}
-            </Link>
+          <div className="flex gap-1">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Link
+                    aria-label={detailsLabel}
+                    className={buttonVariants({ variant: "outline", size: "icon-sm" })}
+                    data-slot="button"
+                    to="/booking/bookable-items/$globalId"
+                    params={{ globalId: row.target.globalId }}
+                  />
+                }
+              >
+                <EyeIcon aria-hidden="true" />
+              </TooltipTrigger>
+              <TooltipContent role="tooltip" className="rounded-sm">
+                {detailsLabel}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Link
+                    aria-label={bookLabel}
+                    className={buttonVariants({ variant: "outline", size: "icon-sm" })}
+                    data-slot="button"
+                    to="/booking/calendar/bookings/add"
+                    search={{ date: rowDate, target: row.target.globalId }}
+                  />
+                }
+              >
+                <CalendarPlusIcon aria-hidden="true" />
+              </TooltipTrigger>
+              <TooltipContent role="tooltip" className="rounded-sm">
+                {bookLabel}
+              </TooltipContent>
+            </Tooltip>
           </div>
         );
       },
       renderInteraction: () => null,
     }),
-    [date, quickIndex.data, t],
+    [quickIndex.data, selectedDate, t],
   );
 
   const quickFilterButtons: TableListFilterButtons = {
@@ -193,7 +257,7 @@ export default function AllBookableItemsPage({ clock = currentDate }: { clock?: 
               id="all-bookable-items-date"
               className="w-auto"
               type="date"
-              value={date}
+              value={selectedDate}
               onChange={(event) => setDate(event.currentTarget.value)}
             />
           </div>
@@ -202,11 +266,11 @@ export default function AllBookableItemsPage({ clock = currentDate }: { clock?: 
             size="icon"
             variant="outline"
             aria-label={t("allBookableItems.actions.previousDay")}
-            onClick={() => setDate(addCalendarDays(date, -1))}
+            onClick={() => setDate(addCalendarDays(selectedDate, -1))}
           >
             <ChevronLeftIcon />
           </Button>
-          <Button type="button" variant="outline" onClick={() => setDate(localToday())}>
+          <Button type="button" variant="outline" onClick={() => setDate(userToday)}>
             {t("allBookableItems.actions.today")}
           </Button>
           <Button
@@ -214,7 +278,7 @@ export default function AllBookableItemsPage({ clock = currentDate }: { clock?: 
             size="icon"
             variant="outline"
             aria-label={t("allBookableItems.actions.nextDay")}
-            onClick={() => setDate(addCalendarDays(date, 1))}
+            onClick={() => setDate(addCalendarDays(selectedDate, 1))}
           >
             <ChevronRightIcon />
           </Button>
@@ -225,6 +289,9 @@ export default function AllBookableItemsPage({ clock = currentDate }: { clock?: 
           {t("allBookableItems.quickFilters.scope")}
         </p>
       )}
+      <Badge variant="outline" className="w-fit">
+        {preferences.timeZone}
+      </Badge>
       {quickIndex.isPending ? <p role="status">{t("allBookableItems.quickFilters.loading")}</p> : null}
       {quickIndex.isError ? (
         <div role="alert" className="flex items-center gap-3">
@@ -258,9 +325,9 @@ export default function AllBookableItemsPage({ clock = currentDate }: { clock?: 
                     periodStart={new Date(quickEntry.bounds.start)}
                     periodEnd={new Date(quickEntry.bounds.end)}
                     now={quickIndex.now}
-                    nowPosition={synchronizedNowPosition}
                     showCurrentAvailability
-                    timeZone={row.timezone}
+                    showPeriodLabels
+                    timeZone={preferences.timeZone}
                     itemName={target.value.name}
                   />
                 );
@@ -269,13 +336,14 @@ export default function AllBookableItemsPage({ clock = currentDate }: { clock?: 
               if (availability.isError || !availability.data) {
                 return <span role="status">{t("calendar.availabilityUnavailable")}</span>;
               }
-              const bounds = zonedDayBounds(date, row.timezone);
               return (
                 <AvailabilityBar
                   intervals={availability.data.get(target.globalId) ?? []}
                   periodStart={new Date(bounds.start)}
                   periodEnd={new Date(bounds.end)}
-                  timeZone={row.timezone}
+                  now={selectedDate === userToday ? quickIndex.now : undefined}
+                  showPeriodLabels
+                  timeZone={preferences.timeZone}
                   itemName={target.value.name}
                 />
               );

@@ -1,37 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
-import { CalendarRangeIcon, SearchIcon } from "lucide-react";
-import { useState } from "react";
+import { AlertTriangleIcon, CalendarRangeIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { TableList } from "@/modules/common/table-list/TableList";
 import { useTableList } from "@/modules/common/table-list/useTableList";
+import { Alert, AlertDescription, AlertTitle } from "@/modules/common/ui/alert";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupText } from "@/modules/common/ui/input-group";
-import { type AuditRow, fetchBookingConfigurationAudit, recordedValues } from "./bookableItemAudit";
+import {
+  type AuditDateError,
+  type AuditDateField,
+  type AuditDateRange,
+  type AuditRow,
+  type AuditSnapshot,
+  auditPresetRange,
+  auditRangeToQuery,
+  fetchBookingConfigurationAudit,
+  recordedValues,
+  validateAuditDateRange,
+} from "./bookableItemAudit";
 
 const PRESET_DAYS = [7, 30, 90] as const;
-
-// Decorative only: both inputs carry their own aria-label, so this glyph is
-// hidden from assistive technology and never needs translating.
 const RANGE_SEPARATOR = "\u2013";
 
-function plainDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-function daysAgo(days: number, today: Date): string {
-  const from = new Date(today);
-  from.setUTCDate(from.getUTCDate() - days);
-  return plainDate(from);
-}
-
 function RecordedValues({ row }: { row: AuditRow }) {
-  const values = recordedValues(row.payload);
   return (
     <dl className="grid min-w-52 grid-cols-[max-content_1fr] gap-x-3 gap-y-1 font-mono text-xs">
-      {values.map(([label, value]) => (
+      {recordedValues(row.payload).map(([label, value]) => (
         <div className="contents" key={label}>
           <dt className="text-muted-foreground">{label}</dt>
           <dd className="break-all">{value}</dd>
@@ -53,6 +52,7 @@ const auditEventConfig = resolveCollectionConfig<AuditRow>({
   listSearchableFields: ["username", "fullName", "action", "description"],
   fields: [
     { name: "rowId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.rowId", list: false },
+    { name: "eventId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.eventId", list: false },
     {
       name: "timestamp",
       type: "text",
@@ -119,47 +119,150 @@ function AuditTimestamp({ value }: { value: string }) {
   );
 }
 
-export function BookableItemAuditLog({ configurationId }: { configurationId: number }) {
-  const { t } = useTranslation("booking");
-  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  // One clock reading per mount, so the presets and the query agree even if the
-  // tab stays open across midnight.
-  const [today] = useState(() => new Date());
-  const [range, setRange] = useState(() => ({ from: daysAgo(30, today), to: plainDate(today) }));
-  const [applied, setApplied] = useState(range);
-  const [page, setPage] = useState(0);
+type RequestError = "conflict" | "unavailable" | "tooMany" | "generic";
 
-  const activePreset = PRESET_DAYS.find((days) => range.from === daysAgo(days, today) && range.to === plainDate(today));
+function requestError(error: unknown): RequestError | null {
+  if (!(error instanceof ApiV2ProblemError)) return error === null ? null : "generic";
+  if (error.status === 409 || error.code === "errors.api.v2.audit.snapshot.changed") return "conflict";
+  if (error.status === 503 || error.code === "errors.api.v2.audit.unavailable") return "unavailable";
+  if (error.code === "errors.api.v2.audit.results.tooMany") return "tooMany";
+  return "generic";
+}
+
+export function BookableItemAuditLog({ configurationId }: { configurationId: number }) {
+  const { t, i18n } = useTranslation("booking");
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const [today] = useState(() => new Date());
+  const [draft, setDraft] = useState<AuditDateRange>(() => auditPresetRange(30, today));
+  const [applied, setApplied] = useState<AuditDateRange>(draft);
+  const [errors, setErrors] = useState<Partial<Record<AuditDateField, AuditDateError>>>({});
+  const [page, setPage] = useState(0);
+  const [snapshot, setSnapshot] = useState<AuditSnapshot>();
+  const [generation, setGeneration] = useState(0);
+  const fromRef = useRef<HTMLInputElement>(null);
+  const toRef = useRef<HTMLInputElement>(null);
+  const conflictRef = useRef<HTMLDivElement>(null);
+  const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const focusResultsAfterRestart = useRef(false);
+  const bounds = auditRangeToQuery(applied);
 
   const audit = useQuery({
-    queryKey: ["api-v2", "booking-configurations", configurationId, "audit", applied.from, applied.to, page],
+    queryKey: [
+      "api-v2",
+      "booking-configurations",
+      configurationId,
+      "audit",
+      applied.from,
+      applied.to,
+      page,
+      snapshot?.snapshotDate ?? null,
+      snapshot?.snapshotFingerprint ?? null,
+      generation,
+    ],
     queryFn: ({ signal }) =>
       fetchBookingConfigurationAudit({
         configurationId,
-        // UTC day boundaries. The audit trail is a system-wide record and is not
-        // scoped to the bookable item's own timezone, so the picked dates are
-        // read as UTC days rather than local ones.
-        dateFrom: `${applied.from}T00:00:00Z`,
-        dateTo: `${applied.to}T23:59:59Z`,
+        ...bounds,
         page,
+        snapshot,
         token,
         signal,
       }),
   });
+  const errorKind = audit.isError ? requestError(audit.error) : null;
+
+  useEffect(() => {
+    if (errorKind === "conflict") conflictRef.current?.focus();
+  }, [errorKind]);
+
+  useEffect(() => {
+    if (focusResultsAfterRestart.current && audit.isSuccess) {
+      focusResultsAfterRestart.current = false;
+      resultsHeadingRef.current?.focus();
+    }
+  }, [audit.isSuccess]);
 
   const table = useTableList({
     config: auditEventConfig,
-    dataSource: { type: "client", rows: audit.data?.rows ?? [] },
+    dataSource: { type: "client", rows: audit.isError ? [] : (audit.data?.rows ?? []) },
     features: { sorting: false, pagination: false, columns: false },
     queryString: false,
     reserveEmptyRows: false,
   });
 
-  const applyRange = (next: { from: string; to: string }) => {
-    setRange(next);
-    setApplied(next);
+  const resetResultSet = () => {
+    setSnapshot(undefined);
     setPage(0);
+    setGeneration((value) => value + 1);
   };
+
+  const apply = (range: AuditDateRange) => {
+    const validation = validateAuditDateRange(range);
+    setDraft(range);
+    if (!validation.valid) {
+      setErrors(validation.fields);
+      (validation.fields.from ? fromRef : toRef).current?.focus();
+      return;
+    }
+    setErrors({});
+    setApplied(range);
+    resetResultSet();
+  };
+
+  const navigate = (nextPage: number) => {
+    if (!audit.data) return;
+    setSnapshot(
+      snapshot ?? {
+        snapshotDate: audit.data.snapshotDate,
+        snapshotFingerprint: audit.data.snapshotFingerprint,
+      },
+    );
+    setPage(nextPage);
+  };
+
+  const restart = () => {
+    focusResultsAfterRestart.current = true;
+    resetResultSet();
+  };
+
+  const activePreset = PRESET_DAYS.find((days) => {
+    const range = auditPresetRange(days, today);
+    return draft.from === range.from && draft.to === range.to;
+  });
+  const resultDate = audit.data?.snapshotDate;
+  const stableEmpty = resultDate !== undefined && applied.from > resultDate;
+  const formattedResultDate =
+    resultDate === undefined
+      ? null
+      : new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeZone: "UTC" }).format(
+          new Date(`${resultDate}T00:00:00Z`),
+        );
+  const statusText = audit.isPending
+    ? t("bookableItemDetails.audit.status.loading")
+    : audit.isFetching
+      ? t("bookableItemDetails.audit.status.refreshing")
+      : audit.isSuccess
+        ? t("bookableItemDetails.audit.status.loaded", {
+            page: page + 1,
+            totalPages: Math.max(audit.data.totalPages, 1),
+            count: audit.data.totalDocs,
+            date: formattedResultDate,
+          })
+        : "";
+
+  const dateError = (field: AuditDateField) => {
+    const error = errors[field];
+    if (error === undefined) return null;
+    const key = {
+      required: "bookableItemDetails.audit.validation.required",
+      invalid: "bookableItemDetails.audit.validation.invalid",
+      inverted: "bookableItemDetails.audit.validation.inverted",
+      tooWide: "bookableItemDetails.audit.validation.tooWide",
+    } as const;
+    return t(key[error]);
+  };
+  const fromError = dateError("from");
+  const toError = dateError("to");
 
   return (
     <div className="space-y-5">
@@ -171,66 +274,152 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
             type="button"
             size="sm"
             variant={activePreset === days ? "default" : "outline"}
+            className={activePreset === days ? "hover:bg-primary" : undefined}
             aria-pressed={activePreset === days}
-            onClick={() => applyRange({ from: daysAgo(days, today), to: plainDate(today) })}
+            onClick={() => apply(auditPresetRange(days, today))}
           >
             {t("bookableItemDetails.audit.lastDays", { count: days })}
           </Button>
         ))}
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <InputGroup className="w-auto">
-            <InputGroupAddon>
-              <CalendarRangeIcon aria-hidden="true" />
-            </InputGroupAddon>
-            <input
-              aria-label={t("bookableItemDetails.audit.from")}
-              className="h-9 bg-transparent text-sm outline-none"
-              type="date"
-              max={range.to}
-              value={range.from}
-              onChange={(event) => setRange({ ...range, from: event.currentTarget.value })}
-            />
-            <InputGroupText aria-hidden="true" className="px-2">
-              {RANGE_SEPARATOR}
-            </InputGroupText>
-            <input
-              aria-label={t("bookableItemDetails.audit.to")}
-              className="h-9 bg-transparent pr-3 text-sm outline-none"
-              type="date"
-              min={range.from}
-              value={range.to}
-              onChange={(event) => setRange({ ...range, to: event.currentTarget.value })}
-            />
-          </InputGroup>
-          <Button type="button" onClick={() => applyRange(range)}>
+        <div className="ml-auto flex min-w-0 flex-wrap items-start gap-2">
+          <div>
+            <InputGroup className="w-auto max-w-full flex-wrap sm:flex-nowrap">
+              <InputGroupAddon>
+                <CalendarRangeIcon aria-hidden="true" />
+              </InputGroupAddon>
+              <input
+                ref={fromRef}
+                aria-label={t("bookableItemDetails.audit.from")}
+                aria-invalid={errors.from !== undefined}
+                aria-describedby={fromError ? "audit-from-error" : undefined}
+                className="h-9 min-w-32 bg-transparent text-sm outline-none"
+                type="date"
+                value={draft.from}
+                onChange={(event) => setDraft({ ...draft, from: event.currentTarget.value })}
+              />
+              <InputGroupText aria-hidden="true" className="px-2">
+                {RANGE_SEPARATOR}
+              </InputGroupText>
+              <input
+                ref={toRef}
+                aria-label={t("bookableItemDetails.audit.to")}
+                aria-invalid={errors.to !== undefined}
+                aria-describedby={toError ? "audit-to-error" : undefined}
+                className="h-9 min-w-32 bg-transparent pr-3 text-sm outline-none"
+                type="date"
+                value={draft.to}
+                onChange={(event) => setDraft({ ...draft, to: event.currentTarget.value })}
+              />
+            </InputGroup>
+            {fromError ? (
+              <p id="audit-from-error" className="mt-1 text-sm text-destructive">
+                {t("bookableItemDetails.audit.fromError", { message: fromError })}
+              </p>
+            ) : null}
+            {toError ? (
+              <p id="audit-to-error" className="mt-1 text-sm text-destructive">
+                {t("bookableItemDetails.audit.toError", { message: toError })}
+              </p>
+            ) : null}
+          </div>
+          <Button type="button" className="hover:bg-primary" onClick={() => apply(draft)}>
             <SearchIcon aria-hidden="true" />
             {t("bookableItemDetails.audit.apply")}
           </Button>
         </div>
       </div>
 
-      <TableList
-        {...table.tableProps}
-        status={audit.isPending ? "loading" : audit.isError ? "error" : "idle"}
-        error={audit.error}
-        presentations={{ table: "wide", cards: "narrow" }}
-        emptyDescription={t("bookableItemDetails.audit.empty")}
-        variant="transparent"
-      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 ref={resultsHeadingRef} tabIndex={-1} className="text-lg font-semibold outline-none">
+            {t("bookableItemDetails.audit.plural")}
+          </h2>
+          {formattedResultDate ? (
+            <p className="text-sm text-muted-foreground">
+              {t("bookableItemDetails.audit.resultsThrough", {
+                date: formattedResultDate,
+              })}
+            </p>
+          ) : null}
+        </div>
+        <Button type="button" variant="outline" onClick={resetResultSet}>
+          <RefreshCwIcon aria-hidden="true" />
+          {t("bookableItemDetails.audit.refresh")}
+        </Button>
+      </div>
 
-      {(audit.data?.totalPages ?? 0) > 1 ? (
-        <nav aria-label={t("bookableItemDetails.audit.pagination")} className="flex items-center justify-between">
-          <Button type="button" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>
+      <p role="status" aria-live="polite" className="sr-only">
+        {statusText}
+      </p>
+
+      {errorKind === "conflict" ? (
+        <Alert ref={conflictRef} tabIndex={-1}>
+          <AlertTriangleIcon aria-hidden="true" />
+          <AlertTitle>{t("bookableItemDetails.audit.conflict.title")}</AlertTitle>
+          <AlertDescription>
+            {t("bookableItemDetails.audit.conflict.description")}
+            <div className="mt-4">
+              <Button type="button" size="sm" className="hover:bg-primary" onClick={restart}>
+                {t("bookableItemDetails.audit.restart")}
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      ) : errorKind === "unavailable" ? (
+        <Alert variant="destructive">
+          <AlertTriangleIcon aria-hidden="true" />
+          <AlertTitle>{t("bookableItemDetails.audit.unavailable.title")}</AlertTitle>
+          <AlertDescription>{t("bookableItemDetails.audit.unavailable.description")}</AlertDescription>
+        </Alert>
+      ) : errorKind === "tooMany" ? (
+        <Alert variant="destructive">
+          <AlertTriangleIcon aria-hidden="true" />
+          <AlertTitle>{t("bookableItemDetails.audit.tooMany.title")}</AlertTitle>
+          <AlertDescription>{t("bookableItemDetails.audit.tooMany.description")}</AlertDescription>
+        </Alert>
+      ) : errorKind === "generic" ? (
+        <Alert variant="destructive">
+          <AlertTriangleIcon aria-hidden="true" />
+          <AlertTitle>{t("bookableItemDetails.audit.error.title")}</AlertTitle>
+          <AlertDescription>{t("bookableItemDetails.audit.error.description")}</AlertDescription>
+        </Alert>
+      ) : (
+        <TableList
+          {...table.tableProps}
+          status={audit.isPending ? "loading" : audit.isFetching ? "refreshing" : "idle"}
+          presentations={{ table: "wide", cards: "narrow" }}
+          emptyDescription={
+            stableEmpty ? t("bookableItemDetails.audit.emptyStable") : t("bookableItemDetails.audit.empty")
+          }
+          variant="transparent"
+          hideHeader
+        />
+      )}
+
+      {audit.isSuccess && audit.data.totalPages > 1 ? (
+        <nav aria-label={t("bookableItemDetails.audit.pagination")} className="flex flex-wrap items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!audit.data.hasPrevPage}
+            aria-label={t("bookableItemDetails.audit.previousPage", {
+              page,
+            })}
+            onClick={() => navigate(page - 1)}
+          >
             {t("bookableItemDetails.audit.previous")}
           </Button>
-          <span className="text-sm">
-            {t("bookableItemDetails.audit.page", { page: page + 1, totalPages: audit.data?.totalPages ?? 1 })}
+          <span className="min-w-32 flex-1 text-center text-sm">
+            {t("bookableItemDetails.audit.page", { page: page + 1, totalPages: audit.data.totalPages })}
           </span>
           <Button
             type="button"
             variant="outline"
-            disabled={page + 1 >= (audit.data?.totalPages ?? 1)}
-            onClick={() => setPage(page + 1)}
+            disabled={!audit.data.hasNextPage}
+            aria-label={t("bookableItemDetails.audit.nextPage", {
+              page: page + 2,
+            })}
+            onClick={() => navigate(page + 1)}
           >
             {t("bookableItemDetails.audit.next")}
           </Button>

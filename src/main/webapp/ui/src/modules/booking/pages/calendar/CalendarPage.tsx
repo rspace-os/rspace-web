@@ -1,13 +1,10 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import * as React from "react";
+import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { BookingEventsCalendar, type CalendarLayout, type CalendarView, calendarDates } from "./BookingEventsCalendar";
 import { useCalendarEvents } from "./calendarEvents";
-
-function browserTimezone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-}
 
 export default function CalendarPage() {
   const { date } = useSearch({ from: "/booking/calendar" });
@@ -16,16 +13,19 @@ export default function CalendarPage() {
   const { data: currentUser } = useCurrentUserQuery();
   const [view, setView] = React.useState<CalendarView>("week");
   const [layout, setLayout] = React.useState<CalendarLayout>("time-grid");
-  const timezone = browserTimezone();
-  const dates = calendarDates(date, view);
-  const events = useCalendarEvents(dates[0], dates.at(-1) ?? dates[0], timezone, token);
+  const preferences = useBookingDisplayPreferences();
+  const selectedDate = date ?? todayInTimeZone(preferences.timeZone);
+  const dates = calendarDates(selectedDate, view);
+  const events = useCalendarEvents(dates[0], dates.at(-1) ?? dates[0], preferences.timeZone, token);
 
   return (
     <BookingEventsCalendar
-      date={date}
+      date={selectedDate}
       view={view}
       layout={layout}
-      timezone={timezone}
+      timezone={preferences.timeZone}
+      availabilityStartMinute={preferences.availabilityWindow.startMinute}
+      availabilityEndMinute={preferences.availabilityWindow.endMinute}
       events={events.data ?? []}
       currentUserId={currentUser.id}
       isLoading={events.isPending}

@@ -17,6 +17,11 @@ const settings = {
   bufferAfterMinutes: 7,
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
+  availabilityWindowStart: "08:00",
+  availabilityWindowEnd: "18:00",
+  timezoneMode: "BROWSER" as const,
+  customTimezone: null,
+  institutionTimezone: "UTC",
   configurationVersion: 0,
 };
 
@@ -99,6 +104,10 @@ describe("BookingSettingsPage", () => {
       bufferAfterMinutes: 7,
       maxBookingDurationMinutes: 0,
       allowDoubleBooking: true,
+      availabilityWindowStart: "08:00",
+      availabilityWindowEnd: "18:00",
+      timezoneMode: "BROWSER",
+      customTimezone: null,
       configurationVersion: 0,
     });
   });

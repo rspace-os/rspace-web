@@ -15,8 +15,10 @@ import { Suspense } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import i18n from "@/modules/common/i18n";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
+import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { MyBookingsRoutePage } from "../MyBookingsPage";
 import { bookingHandlers, bookingsOpenApi, upcomingBooking } from "../mocks/bookingMocks";
 
@@ -37,6 +39,7 @@ function renderPage(
   server.use(...bookingHandlers(onListRequest, onCountRequest, docs));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
+  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
   queryClient.setQueryData(
     ["api-v2", "openapi", "bookings"],
     apiV2CollectionMetadataFromOpenApi(bookingsOpenApi, "bookings"),
@@ -152,12 +155,12 @@ describe("My Bookings page", () => {
     ).toContain(`end=gt=${asOf}`);
   });
 
-  it("formats booking times in the booking timezone", async () => {
+  it("formats booking times in the resolved display timezone", async () => {
     renderPage();
     const expectedStart = new Intl.DateTimeFormat(i18n.language, {
       dateStyle: "medium",
       timeStyle: "short",
-      timeZone: upcomingBooking.timezone,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }).format(new Date(upcomingBooking.start));
 
     expect(await screen.findByText(expectedStart)).toBeVisible();

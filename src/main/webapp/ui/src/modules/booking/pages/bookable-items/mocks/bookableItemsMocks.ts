@@ -169,7 +169,13 @@ export const bookableItemFixtures = [
     id: 9,
     target: {
       relationTo: "instruments",
-      value: { id: 125, name: "Mass spectrometer", deleted: false },
+      value: {
+        id: 125,
+        name: "Mass spectrometer",
+        deleted: false,
+        parentContainerName: "Mass spectrometry lab",
+        parentContainerGlobalId: "IC458",
+      },
       globalId: "IN125",
     },
     enabled: true,
@@ -205,8 +211,8 @@ export const bookableItemFixtures = [
         id: 127,
         name: "Microplate reader",
         deleted: false,
-        parentContainerName: null,
-        parentContainerGlobalId: null,
+        parentContainerName: "Screening lab",
+        parentContainerGlobalId: "IC459",
       },
       globalId: "IN127",
     },
@@ -244,8 +250,8 @@ export const sampleBookingEvents = [
     id: 43,
     target: bookableItemFixtures[1].target,
     timezone: bookableItemFixtures[1].timezone,
-    start: "2026-08-17T00:00:00Z",
-    end: "2026-08-17T01:00:00Z",
+    start: "2026-08-17T08:00:00Z",
+    end: "2026-08-17T10:00:00Z",
     state: "CONFIRMED",
     privacy: "full",
     purpose: "Cryo-grid screening",
@@ -392,5 +398,33 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
       const docs = detailBookingEvents.filter((booking) => booking.target.globalId === targetId);
       return HttpResponse.json(collectionPage(docs));
     }),
+    http.get("/api/v2/booking-configurations/7/audit", () =>
+      HttpResponse.json({
+        ...collectionPage([
+          {
+            eventId: "a".repeat(64),
+            timestamp: "2026-08-25T10:42:18Z",
+            username: "ada",
+            fullName: "Ada Lovelace",
+            domain: "RECORD",
+            action: "WRITE",
+            description: "Updated booking configuration IN123",
+            payload: { maxBookingDurationMinutes: 60 },
+          },
+        ]),
+        snapshotDate: "2026-08-25",
+        snapshotFingerprint: "b".repeat(64),
+      }),
+    ),
+    http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
+      HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null }),
+    ),
+    http.post("/api/v2/booking-configurations/7/calendar-subscription", () =>
+      HttpResponse.json({
+        active: true,
+        updatedAt: "2026-08-27T12:00:00.000Z",
+        subscriptionUrl: `https://rspace.example/public/booking/calendars/feed.ics?token=${"c".repeat(43)}`,
+      }),
+    ),
   ];
 }

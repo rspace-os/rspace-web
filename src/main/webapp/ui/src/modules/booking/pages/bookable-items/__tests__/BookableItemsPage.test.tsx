@@ -248,7 +248,7 @@ describe("BookableItemsPage", () => {
     expect(screen.getByRole("columnheader", { name: "booking:bookableItems.fields.actions" })).toBeVisible();
     expect(screen.getByRole("link", { name: "booking:bookableItems.actions.edit" })).toHaveAttribute(
       "href",
-      "/booking/config/bookable-items/7/edit",
+      "/booking/bookable-items/IN123?tab=details&edit=true",
     );
     expect(screen.getByRole("link", { name: "booking:bookableItems.actions.viewDetails" })).toHaveAttribute(
       "href",
@@ -271,7 +271,7 @@ describe("BookableItemsPage", () => {
 
     expect(await screen.findByText("common:values.unknownItem")).toBeVisible();
     expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.viewDetails" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "booking:bookableItems.actions.edit" })).toBeVisible();
+    expect(screen.queryByRole("link", { name: "booking:bookableItems.actions.edit" })).not.toBeInTheDocument();
   });
 
   it("deletes a booking configuration after confirmation", async () => {
@@ -310,7 +310,7 @@ describe("BookableItemsPage", () => {
     expect(deleteRequest?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
-  it("debounces search and searches the target name or timezone", async () => {
+  it("debounces search and searches the target name", async () => {
     const user = userEvent.setup();
     const searchRequests: string[] = [];
     server.use(
@@ -327,7 +327,7 @@ describe("BookableItemsPage", () => {
     await user.type(await screen.findByRole("textbox", { name: "common:tableList.search.label" }), "confocal");
 
     await waitFor(() => expect(new URLSearchParams(window.location.search).get("bookable-items.q")).toBe("confocal"));
-    await waitFor(() => expect(searchRequests).toEqual(["target.name=contains=confocal,timezone=contains=confocal"]));
+    await waitFor(() => expect(searchRequests).toEqual(["target.name=contains=confocal"]));
   });
 
   it("hides a column locally when the table uses a fixed projection", async () => {

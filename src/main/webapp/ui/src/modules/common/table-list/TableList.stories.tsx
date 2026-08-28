@@ -220,6 +220,29 @@ export const EmptyAndError: Story = {
 
 export const FieldTypes: Story = { render: () => <ControlledLocalDemo /> };
 
+export const CardsWithFullWidthField: Story = {
+  render: () => (
+    <div className="mx-auto max-w-xl p-8">
+      <TableList
+        config={storyConfig}
+        rows={storyRecords.slice(0, 2)}
+        getRowId={(row) => row.id}
+        clientSide
+        features={{ filtering: false, sorting: false, pagination: false, columns: false }}
+        presentations={{ table: false, cards: "all" }}
+        uiColumns={[
+          {
+            id: "summary",
+            label: "Summary",
+            card: { fullWidth: true },
+            renderCell: (row) => `${row.owner} last modified this record on ${row.modifiedAt}.`,
+          },
+        ]}
+      />
+    </div>
+  ),
+};
+
 export const CustomBackendCallbacks: Story = {
   render: () => {
     function Demo() {

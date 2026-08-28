@@ -5,6 +5,8 @@ import com.researchspace.model.audittrail.AuditTrailIdentifier;
 import com.researchspace.model.audittrail.AuditTrailProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
@@ -15,7 +17,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 
-/** Singleton creation-time defaults copied into each new booking configuration. */
+/** Singleton global Booking defaults for scheduling creation and display preferences. */
 @Entity
 @Audited
 @AuditTrailData
@@ -68,6 +70,35 @@ public class BookingConfigurationDefaults implements Serializable {
   @Setter
   private boolean allowDoubleBooking;
 
+  @Getter(
+      onMethod_ = {
+        @Column(nullable = false, length = 5),
+        @AuditTrailProperty(name = "availabilityWindowStart")
+      })
+  @Setter
+  private String availabilityWindowStart;
+
+  @Getter(
+      onMethod_ = {
+        @Column(nullable = false, length = 5),
+        @AuditTrailProperty(name = "availabilityWindowEnd")
+      })
+  @Setter
+  private String availabilityWindowEnd;
+
+  @Getter(
+      onMethod_ = {
+        @Enumerated(EnumType.STRING),
+        @Column(nullable = false, length = 32),
+        @AuditTrailProperty(name = "timezoneMode")
+      })
+  @Setter
+  private BookingTimezoneMode timezoneMode;
+
+  @Getter(onMethod_ = {@Column(length = 255), @AuditTrailProperty(name = "customTimezone")})
+  @Setter
+  private String customTimezone;
+
   @Getter(onMethod_ = {@Version, @Column(nullable = false)})
   @Setter
   private long configurationVersion;
@@ -105,5 +136,17 @@ public class BookingConfigurationDefaults implements Serializable {
   public boolean isMaximumDurationValid() {
     return BookingSchedulingSettings.isMaximumDurationValid(
         maxBookingDurationMinutes, slotGranularityMinutes);
+  }
+
+  @Transient
+  @AssertTrue(message = "{errors.api.v2.bookingDisplayPreferences.availabilityWindow.invalid}")
+  public boolean isAvailabilityWindowValid() {
+    return BookingDisplaySettings.from(this).hasValidAvailabilityWindow();
+  }
+
+  @Transient
+  @AssertTrue(message = "{errors.api.v2.bookingDisplayPreferences.timeZone.invalid}")
+  public boolean isDisplayTimezoneValid() {
+    return BookingDisplaySettings.from(this).hasValidTimezoneChoice();
   }
 }

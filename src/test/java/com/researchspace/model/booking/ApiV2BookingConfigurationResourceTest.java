@@ -72,7 +72,6 @@ class ApiV2BookingConfigurationResourceTest {
     assertEquals(
         List.of(
             "enabled",
-            "timezone",
             "slotGranularityMinutes",
             "openingStart",
             "openingEnd",
@@ -162,7 +161,6 @@ class ApiV2BookingConfigurationResourceTest {
                 """
                 {
                   "enabled": true,
-                  "timezone": "Europe/Berlin",
                   "slotGranularityMinutes": 15,
                   "openingStart": "08:00",
                   "openingEnd": "18:00",
@@ -178,14 +176,13 @@ class ApiV2BookingConfigurationResourceTest {
             "errors.api.v2.bookingConfiguration.create",
             new AccessContext(null, Operation.CREATE, "booking-configurations"));
     BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setTimeZone("Europe/Berlin");
 
     ApiV2BookingConfigurationResource.DESCRIPTION.apply(
         configuration,
         Map.of(
             "enabled",
             true,
-            "timezone",
-            "Europe/Berlin",
             "slotGranularityMinutes",
             15L,
             "openingStart",
@@ -303,17 +300,27 @@ class ApiV2BookingConfigurationResourceTest {
   }
 
   @Test
-  void requiresATimeZoneAndRecognizesInvalidZoneIds() throws Exception {
+  void rejectsPublicTimeZoneWritesAndKeepsInternalValidation() throws Exception {
     assertThrows(
         DocumentValidationException.class,
         () ->
             ApiV2DocumentParser.parse(
                 mapper.readTree(
-                    "{\"enabled\":true,\"target\":{\"relationTo\":\"instruments\",\"value\":12}}"),
+                    "{\"enabled\":true,\"timezone\":\"Europe/Berlin\",\"target\":{\"relationTo\":\"instruments\",\"value\":12}}"),
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 WriteOperation.CREATE,
                 "errors.api.v2.bookingConfiguration.create",
                 new AccessContext(null, Operation.CREATE, "booking-configurations")));
+
+    assertThrows(
+        DocumentValidationException.class,
+        () ->
+            ApiV2DocumentParser.parse(
+                mapper.readTree("{\"timezone\":\"Europe/Berlin\"}"),
+                ApiV2BookingConfigurationResource.DESCRIPTION,
+                WriteOperation.UPDATE,
+                "errors.api.v2.bookingConfiguration.patch",
+                new AccessContext(null, Operation.UPDATE, "booking-configurations", 42L)));
 
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setTimeZone("Not/A_Zone");
