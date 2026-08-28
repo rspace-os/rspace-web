@@ -12,10 +12,13 @@ export class SystemUsersPage extends BasePage {
     await this.dataRows().first().waitFor({ state: "visible" });
   }
 
-  private async waitForJsonList(query: string): Promise<void> {
+  private async waitForJsonList(query?: string): Promise<void> {
     await this.page.waitForResponse((res) => {
       const url = new URL(res.url());
-      return url.pathname === "/system/ajax/jsonList" && url.searchParams.get("allFields") === (query || null);
+      return (
+        url.pathname === "/system/ajax/jsonList" &&
+        (query === undefined || url.searchParams.get("allFields") === (query || null))
+      );
     });
   }
 
@@ -39,7 +42,7 @@ export class SystemUsersPage extends BasePage {
   }
 
   async lastLoginFor(username: string): Promise<string> {
-    return this.userRow(username).getByRole("gridcell").nth(5).innerText();
+    return this.userRow(username).locator('[role="gridcell"][data-field="lastLogin"]').innerText();
   }
 
   async availableSeats(): Promise<number> {
@@ -82,7 +85,7 @@ export class SystemUsersPage extends BasePage {
   async searchExpectingNoResults(query: string): Promise<void> {
     const box = this.page.getByRole("searchbox", { name: "Search users" });
     await box.fill(query);
-    await box.press("Enter");
+    await Promise.all([this.waitForJsonList(query), box.press("Enter")]);
     await expect(this.userRow(query)).toHaveCount(0);
   }
 
@@ -164,14 +167,14 @@ export class SystemUsersPage extends BasePage {
   }
 
   private async sortColumn(columnHeader: string, menuItemName: "Sort by ASC" | "Sort by DESC"): Promise<void> {
-    const firstRow = this.dataRows().first();
-    const before = await firstRow.innerText();
     await this.page.getByRole("button", { name: `${columnHeader} column menu`, exact: true }).click();
-    await this.page
-      .getByRole("menu", { name: `${columnHeader} column menu` })
-      .getByRole("menuitem", { name: menuItemName, exact: true })
-      .click();
-    await expect(firstRow).not.toHaveText(before);
+    await Promise.all([
+      this.waitForJsonList(),
+      this.page
+        .getByRole("menu", { name: `${columnHeader} column menu` })
+        .getByRole("menuitem", { name: menuItemName, exact: true })
+        .click(),
+    ]);
   }
 
   async sortColumnAscending(columnHeader: string): Promise<void> {

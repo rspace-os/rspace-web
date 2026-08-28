@@ -45,16 +45,20 @@ export class CreateAccountPage extends BasePage {
     return this.page.getByRole("textbox", { name: "New LabGroup name", exact: true });
   }
 
+  private get communityRadios(): Locator {
+    return this.page.locator("#communitiesList:visible").getByRole("radio");
+  }
+
   get piCommunityRadio(): Locator {
-    return this.page.getByRole("radio");
+    return this.communityRadios.first();
   }
 
   get noneCommunityRadio(): Locator {
-    return this.page.getByRole("radio").nth(0);
+    return this.communityRadios.nth(0);
   }
 
   get allGroupsCommunityRadio(): Locator {
-    return this.page.getByRole("radio").nth(1);
+    return this.communityRadios.nth(1);
   }
 
   get communitySelectionCell(): Locator {

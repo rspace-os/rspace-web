@@ -118,8 +118,9 @@ export class WorkspacePage extends BasePage {
 
   async openDocument(id: number): Promise<DocumentPage> {
     await this.page.goto(`/workspace/editor/structuredDocument/${id}`);
-    await this.page.waitForURL("**/workspace/editor/structuredDocument/**");
-    return new DocumentPage(this.page);
+    const document = new DocumentPage(this.page);
+    await document.isLoaded();
+    return document;
   }
 
   async createNotebook(name: string): Promise<NotebookPage> {
@@ -142,8 +143,9 @@ export class WorkspacePage extends BasePage {
   async openMessageLinkedDocument(recordName: string): Promise<DocumentPage> {
     const messages = await this.openReceivedMessages();
     await messages.openLinkedRecord(recordName);
-    await this.page.waitForURL("**/workspace/editor/structuredDocument/**");
-    return new DocumentPage(this.page);
+    const document = new DocumentPage(this.page);
+    await document.isLoaded();
+    return document;
   }
 
   async createFolder(path: string, { navigate = false }: { navigate?: boolean } = {}): Promise<void> {

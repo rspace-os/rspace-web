@@ -95,6 +95,7 @@ test.describe("User deletion and template transfer", { tag: tags.SYSTEM }, () =>
     const piDocName = uniqueName("e2eXferPiDoc");
     const piDoc = await piSession.workspace.createDocumentFromSharedTemplate(templateName, piDocName);
     const piDocId = piDoc.getId();
+    await piDoc.saveAndView();
 
     const { users, auditTrail, workspace: sysWorkspace } = flowSysadminGroupAdmin;
     await users.open();

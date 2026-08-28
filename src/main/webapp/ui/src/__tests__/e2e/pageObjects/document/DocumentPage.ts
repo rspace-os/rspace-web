@@ -31,11 +31,7 @@ export class DocumentPage extends BasePage {
 
   async isLoaded(): Promise<void> {
     await this.page.waitForURL("**/workspace/editor/structuredDocument/**");
-    await this.page
-      .locator(
-        "#viewGreenStatus:visible, #viewAmberStatus:visible, #viewAmberStatusReadPermission:visible, #viewRedStatus:visible",
-      )
-      .waitFor({ state: "visible" });
+    await this.page.locator("#status .state:not(#editingStatus):visible").waitFor({ state: "visible" });
   }
 
   async getFieldViewContent(fieldName: string, index = 0): Promise<Locator> {
