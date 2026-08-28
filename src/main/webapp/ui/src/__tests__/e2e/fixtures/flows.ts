@@ -1,27 +1,28 @@
 import type { Browser, BrowserContext, BrowserContextOptions, Page } from "@playwright/test";
-import type { SysadminClient } from "../api/clients/SysadminClient";
-import { storageStatePath } from "../authState";
-import { ToastsComponent } from "../components/shared/ToastsComponent";
-import { createDynamicUser } from "../createDynamicUser";
-import { env } from "../env";
-import { LoginPage } from "../pageObjects/auth/LoginPage";
-import { GalleryPage } from "../pageObjects/gallery/GalleryPage";
-import { InventoryPage } from "../pageObjects/inventory/InventoryPage";
-import { AuditTrailPage } from "../pageObjects/myrspace/AuditTrailPage";
-import { MyRSpacePage } from "../pageObjects/myrspace/MyRSpacePage";
-import { UserProfilePage } from "../pageObjects/myrspace/UserProfilePage";
-import { CreateAccountPage } from "../pageObjects/system/accounts/CreateAccountPage";
-import { CommunitiesPage } from "../pageObjects/system/communities/CommunitiesPage";
-import { DirectoryPage } from "../pageObjects/system/groups/DirectoryPage";
-import { GroupAdminPage } from "../pageObjects/system/groups/GroupAdminPage";
-import { GroupDetailsPage } from "../pageObjects/system/groups/GroupDetailsPage";
-import { ProjectGroupPage } from "../pageObjects/system/groups/ProjectGroupPage";
-import { SelfServiceLabGroupPage } from "../pageObjects/system/groups/SelfServiceLabGroupPage";
-import { SystemConfigPage } from "../pageObjects/system/SystemConfigPage";
-import { SystemUsersPage } from "../pageObjects/system/users/SystemUsersPage";
-import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
-import { alphaNumericUnique, DYNAMIC_USER_PASSWORD } from "../testData";
-import { SYSADMIN } from "../users";
+import type { SysadminClient } from "@/__tests__/e2e/api/clients/SysadminClient";
+import { storageStatePath } from "@/__tests__/e2e/authState";
+import { ToastsComponent } from "@/__tests__/e2e/components/shared/ToastsComponent";
+import { GroupInvitationBanner } from "@/__tests__/e2e/components/system/groups/GroupInvitationBanner";
+import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
+import { env } from "@/__tests__/e2e/env";
+import { LoginPage } from "@/__tests__/e2e/pageObjects/auth/LoginPage";
+import { GalleryPage } from "@/__tests__/e2e/pageObjects/gallery/GalleryPage";
+import { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
+import { AuditTrailPage } from "@/__tests__/e2e/pageObjects/myrspace/AuditTrailPage";
+import { MyRSpacePage } from "@/__tests__/e2e/pageObjects/myrspace/MyRSpacePage";
+import { UserProfilePage } from "@/__tests__/e2e/pageObjects/myrspace/UserProfilePage";
+import { CreateAccountPage } from "@/__tests__/e2e/pageObjects/system/accounts/CreateAccountPage";
+import { CommunitiesPage } from "@/__tests__/e2e/pageObjects/system/communities/CommunitiesPage";
+import { DirectoryPage } from "@/__tests__/e2e/pageObjects/system/groups/DirectoryPage";
+import { GroupAdminPage } from "@/__tests__/e2e/pageObjects/system/groups/GroupAdminPage";
+import { GroupDetailsPage } from "@/__tests__/e2e/pageObjects/system/groups/GroupDetailsPage";
+import { ProjectGroupPage } from "@/__tests__/e2e/pageObjects/system/groups/ProjectGroupPage";
+import { SelfServiceLabGroupPage } from "@/__tests__/e2e/pageObjects/system/groups/SelfServiceLabGroupPage";
+import { SystemConfigPage } from "@/__tests__/e2e/pageObjects/system/SystemConfigPage";
+import { SystemUsersPage } from "@/__tests__/e2e/pageObjects/system/users/SystemUsersPage";
+import { WorkspacePage } from "@/__tests__/e2e/pageObjects/workspace/WorkspacePage";
+import { alphaNumericUnique, DYNAMIC_USER_PASSWORD } from "@/__tests__/e2e/testData";
+import { SYSADMIN } from "@/__tests__/e2e/users";
 import { apiTest } from "./api";
 
 export type SelfServicePiActor = {
@@ -36,10 +37,12 @@ export type SelfServicePiActor = {
 
 export type UserSession = {
   groupDetails: GroupDetailsPage;
+  groupInvitation: GroupInvitationBanner;
   workspace: WorkspacePage;
   users: SystemUsersPage;
   createAccount: CreateAccountPage;
   myRSpace: MyRSpacePage;
+  directory: DirectoryPage;
 };
 
 type FlowFixtures = {
@@ -249,10 +252,12 @@ export const test = apiTest.extend<FlowFixtures>({
         await page.waitForURL((url) => url.pathname === "/workspace");
         return {
           groupDetails: new GroupDetailsPage(page),
+          groupInvitation: new GroupInvitationBanner(page),
           workspace: new WorkspacePage(page),
           users: new SystemUsersPage(page),
           createAccount: new CreateAccountPage(page),
           myRSpace: new MyRSpacePage(page),
+          directory: new DirectoryPage(page),
         };
       });
     } finally {

@@ -2,6 +2,7 @@ import type { Locator } from "@playwright/test";
 import { AppriseAlertComponent } from "@/__tests__/e2e/components/system/AppriseAlertComponent";
 import { ChangePiDialogComponent } from "@/__tests__/e2e/components/system/groups/ChangePiDialogComponent";
 import { ChangeRoleDialogComponent } from "@/__tests__/e2e/components/system/groups/ChangeRoleDialogComponent";
+import { GroupHeaderComponent } from "@/__tests__/e2e/components/system/groups/GroupHeaderComponent";
 import { InviteMembersDialogComponent } from "@/__tests__/e2e/components/system/groups/InviteMembersDialogComponent";
 import { RenameGroupDialogComponent } from "@/__tests__/e2e/components/system/groups/RenameGroupDialogComponent";
 import { SendMessageDialogComponent } from "@/__tests__/e2e/components/system/groups/SendMessageDialogComponent";
@@ -21,6 +22,10 @@ export class GroupDetailsPage extends BasePage {
 
   get sharedFolderLink(): Locator {
     return this.page.getByRole("link").filter({ has: this.page.getByRole("img", { name: "Folder", exact: true }) });
+  }
+
+  get communityLink(): Locator {
+    return this.page.getByRole("heading", { level: 3 }).filter({ hasText: "Community:" }).getByRole("link");
   }
 
   memberRow(username: string): Locator {
@@ -89,6 +94,12 @@ export class GroupDetailsPage extends BasePage {
     await dialog.invite(username);
   }
 
+  async changeGroup(groupName: string): Promise<void> {
+    const header = new GroupHeaderComponent(this.page);
+    await header.changeGroup(groupName);
+    await this.heading.waitFor({ state: "visible" });
+  }
+
   async leaveCollaboration(): Promise<void> {
     await this.page.getByRole("button", { name: "Leave Collaboration", exact: true }).click();
     await this.page.waitForURL((url) => url.pathname === "/userform");
@@ -100,6 +111,15 @@ export class GroupDetailsPage extends BasePage {
 
   memberRemoveButton(username: string): Locator {
     return this.memberRow(username).getByRole("button", { name: "Remove", exact: true });
+  }
+
+  homeFolderLink(username: string): Locator {
+    return this.memberRow(username).getByRole("link", { name: "Go to User's Home Folder", exact: true });
+  }
+
+  async removeMember(username: string): Promise<void> {
+    await this.memberRemoveButton(username).click();
+    await this.memberRow(username).waitFor({ state: "hidden" });
   }
 
   async makeMemberLabAdmin(username: string, canViewAllDocuments: boolean): Promise<void> {

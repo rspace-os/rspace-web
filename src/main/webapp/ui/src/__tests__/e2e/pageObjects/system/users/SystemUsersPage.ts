@@ -12,19 +12,26 @@ export class SystemUsersPage extends BasePage {
     await this.dataRows().first().waitFor({ state: "visible" });
   }
 
+  private async waitForJsonList(query: string): Promise<void> {
+    await this.page.waitForResponse((res) => {
+      const url = new URL(res.url());
+      return url.pathname === "/system/ajax/jsonList" && url.searchParams.get("allFields") === (query || null);
+    });
+  }
+
   async search(query: string): Promise<void> {
     const box = this.page.getByRole("searchbox", { name: "Search users" });
     await box.fill(query);
-    await box.press("Enter");
-    await this.userRow(query).waitFor({ state: "visible" });
+    await Promise.all([this.waitForJsonList(query), box.press("Enter")]);
+    if (query) {
+      await this.userRow(query).waitFor({ state: "visible" });
+    }
   }
 
   async searchByTag(tag: string): Promise<void> {
     const box = this.page.getByRole("searchbox", { name: "Search users" });
-    const before = await this.paginationSummary.innerText();
     await box.fill(tag);
-    await box.press("Enter");
-    await expect(this.paginationSummary).not.toHaveText(before);
+    await Promise.all([this.waitForJsonList(tag), box.press("Enter")]);
   }
 
   userRow(text: string): Locator {
