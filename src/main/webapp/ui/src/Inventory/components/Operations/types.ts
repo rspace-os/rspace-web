@@ -30,14 +30,22 @@ export const UNSET_UNIT = 0;
 export type OperationInputValue = string | number | OperationQuantity;
 export type OperationInputs = Record<string, OperationInputValue>;
 
-export type OperationLinkField = {
+/**
+ * The definition key that produced a field. Resolved field names interpolate user input
+ * ({processName}, {originName}) and are localized, so the backend matches an operation request's
+ * fields to the definition by this key rather than by name (see DevDocs/adr/0007). Request-only:
+ * the backend never persists or echoes it back.
+ */
+export type OperationFieldKey = { operationFieldKey: string };
+
+export type OperationLinkField = OperationFieldKey & {
   name: string;
   type: "link";
   newFieldRequest: true;
   link: { relationType: string; targetGlobalId: string; versionPin: number | null };
 };
 
-export type OperationTextFieldValue = {
+export type OperationTextFieldValue = OperationFieldKey & {
   name: string;
   // "number" is available for origin custom fields (effect.originFields); the created sample's own
   // textFields only ever produce "text". Inventory subsample fields have no native date type, so a
