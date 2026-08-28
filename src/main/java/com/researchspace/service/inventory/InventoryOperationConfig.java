@@ -18,7 +18,7 @@ public record InventoryOperationConfig(
 
   public InventoryOperationConfig {
     inputs = inputs == null ? List.of() : List.copyOf(inputs);
-    effect = effect == null ? new Effect(null, null, false, null) : effect;
+    effect = effect == null ? new Effect(null, null, null, false, null) : effect;
   }
 
   /** A wizard input; only the constraints the backend can check server-side are bound. */
@@ -29,7 +29,11 @@ public record InventoryOperationConfig(
   /** The parts of the operation's effect the backend enforces on the wire format. */
   @JsonIgnoreProperties(ignoreUnknown = true)
   public record Effect(
-      String amountTakenFrom, String storageTempFrom, boolean emptiesOrigin, List<Link> links) {
+      String amountTakenFrom,
+      String eachAmountFrom,
+      String storageTempFrom,
+      boolean emptiesOrigin,
+      List<Link> links) {
     public Effect {
       links = links == null ? List.of() : List.copyOf(links);
     }
