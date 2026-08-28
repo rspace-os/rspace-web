@@ -45,6 +45,7 @@ import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.time.Year;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.naming.InvalidNameException;
@@ -320,6 +321,24 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
     return updateInventoryRecordWithDoiUpdate(
         user, invRec, createUpdateWithRetractedDoi(invRec, user));
+  }
+
+  @Override
+  public ApiInventoryRecordInfo refreshIdentifier(GlobalIdentifier invRecOid, User user) {
+    InventoryRecord invRec = invRecRetriever.getInvRecordByGlobalId(invRecOid);
+    if (invRec.getActiveIdentifiers().isEmpty()) {
+      // Localized error code rather than developer text: refresh is reachable straight from the
+      // public API, so the whole path resolves errors.inventory.identifier.* keys consistently.
+      throw new ApiRuntimeException("errors.inventory.identifier.refreshNoIdentifier");
+    }
+    DigitalObjectIdentifier doi = invRec.getActiveIdentifiers().get(0);
+    if (!isB2inst(doi.getType())) {
+      // DataCite state changes only through RSpace's own publish/retract calls, so the stored
+      // state is already current and there is no provider read to make.
+      return ApiInventoryRecordInfo.fromInventoryRecordToFullApiRecord(invRec);
+    }
+    return updateInventoryRecordWithDoiUpdate(
+        user, invRec, createUpdateWithRefreshedB2instDoi(doi));
   }
 
   private ApiSample getApiSampleUpdateWithIdentifier(
@@ -602,15 +621,13 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     ApiInventoryDOI actualdoi = new ApiInventoryDOI(doi);
     actualdoi.setCreatorAffiliation(rorAffiliationName);
     actualdoi.setCreatorAffiliationIdentifier(rorAffiliationID);
-    DataCiteDoi doiToPublish = actualdoi.convertToDataCiteDoi();
+    DataCiteDoi doiToPublish = rspaceToExternalProviderAdapter.buildDataCiteDoi(actualdoi, invRec);
     DataCiteDoi publishResult;
     try {
       publishResult = dataCiteConnector.publishDoi(doiToPublish, settingTypeFor(doi.getType()));
     } catch (DataCiteConnectionException dcException) {
       throw new DataCiteConnectionException(
-          "Error when publishing the DOI in DataCite. "
-              + "If the problem persists, please contact your System Admin",
-          dcException);
+          messages.getMessage("errors.inventory.identifier.dataCitePublishFailed"), dcException);
     }
     if (publishResult == null || !"findable".equals(publishResult.getAttributes().getState())) {
       throw new IllegalStateException("DataCite publish failed");
@@ -637,16 +654,14 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     ApiInventoryDOI actualdoi = new ApiInventoryDOI(doi);
     actualdoi.setCreatorAffiliation(rorAffiliationName);
     actualdoi.setCreatorAffiliationIdentifier(rorAffiliationID);
-    DataCiteDoi doiToRetract = actualdoi.convertToDataCiteDoi();
+    DataCiteDoi doiToRetract = rspaceToExternalProviderAdapter.buildDataCiteDoi(actualdoi, invRec);
 
     DataCiteDoi retractResult;
     try {
       retractResult = dataCiteConnector.retractDoi(doiToRetract, settingTypeFor(doi.getType()));
     } catch (DataCiteConnectionException dcException) {
       throw new DataCiteConnectionException(
-          "Error when retracting the DOI in DataCite. "
-              + "If the problem persists, please contact your System Admin",
-          dcException);
+          messages.getMessage("errors.inventory.identifier.dataCiteRetractFailed"), dcException);
     }
     if (retractResult == null || !"registered".equals(retractResult.getAttributes().getState())) {
       throw new IllegalStateException("datacite retract failed");
@@ -682,6 +697,105 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       publishDoi.setState(result.getStatus());
     }
     return publishDoi;
+  }
+
+  /**
+   * Pulls the identifier's current status from B2INST and builds the sparse update that persists it
+   * (RSDEV-1260). The community review's status is stored verbatim when the review is readable. A
+   * review that answers 404 is disambiguated by the record itself: accepting a submission publishes
+   * the record and removes the draft, taking the review URL with it, so a published record means
+   * {@code accepted} (and carries the minted Handle PID and the now-public record page); a
+   * surviving draft means there is no review left to wait on, so the identifier drops back to
+   * {@code draft} and can be published or deleted again; nothing at all means the record was
+   * removed on the provider side, which is reported rather than silently keeping stale state.
+   */
+  private ApiInventoryDOI createUpdateWithRefreshedB2instDoi(DigitalObjectIdentifier doi) {
+    String rid = doi.getIdentifier();
+    ApiInventoryDOI refreshUpdate = new ApiInventoryDOI();
+    refreshUpdate.setId(doi.getId());
+    try {
+      String reviewStatus =
+          b2instConnector
+              .getReviewOf(rid)
+              .map(B2instRequestResponse::getStatus)
+              .filter(status -> isNotBlank(status))
+              .orElse(null);
+      if (reviewStatus != null && !"accepted".equals(reviewStatus)) {
+        refreshUpdate.setState(reviewStatus);
+        return refreshUpdate;
+      }
+      Optional<B2instDraftRecord> published = b2instConnector.getPublishedRecord(rid);
+      if (published.isPresent()) {
+        refreshUpdate.setState("accepted");
+        refreshUpdate.setPublicUrl(epicPidOf(published.get()));
+        if (published.get().getLinks() != null) {
+          refreshUpdate.setProviderUrl(published.get().getLinks().getSelfHtml());
+        }
+        setLandingPageUrl(refreshUpdate, doi, landingPageOf(published.get()));
+        return refreshUpdate;
+      }
+      if ("accepted".equals(reviewStatus)) {
+        /*
+         * The review says accepted but the record it published is not readable, so the minted
+         * Handle cannot be named. Storing "accepted" would open the unauthenticated public page
+         * (isPublishedState treats it as published) for a PID the user cannot resolve, with
+         * publicUrl and providerUrl left empty. Refusing keeps the stored state and lets the user
+         * retry, which is the right answer for what is normally a transient provider state:
+         * acceptance publishes the record, so it should become readable.
+         */
+        throw new ApiRuntimeException(
+            "errors.inventory.identifier.b2instAcceptedRecordUnavailable");
+      }
+      if (b2instConnector.getDraftRecord(rid).isPresent()) {
+        refreshUpdate.setState("draft");
+        return refreshUpdate;
+      }
+    } catch (B2instConnectionException b2instException) {
+      throw B2instConnectionException.wrapping(
+          messages.getMessage(
+              "errors.inventory.identifier.b2instRefreshFailed",
+              new Object[] {b2instException.getReason()}),
+          b2instException);
+    }
+    throw new ApiRuntimeException("errors.inventory.identifier.b2instRecordGone");
+  }
+
+  /**
+   * An accepted B2INST PID is the PIDINST equivalent of DataCite's {@code findable}, so acceptance
+   * fills the same {@code url} field. The value is the LandingPage B2INST holds for the record,
+   * read back rather than rebuilt: registration prefers a user-typed institutional address over
+   * RSpace's own public page (see {@code RspaceToExternalProviderAdapterImpl}), a curator bakes
+   * that address into the citable Handle, and the deployment's server URL may have changed since.
+   * Rebuilding it would report an address the minted PID does not resolve to (RSDEV-1260).
+   *
+   * <p>Falls back to the identifier's public page when the record carries no LandingPage, which is
+   * all that is available when acceptance is known from the review alone.
+   */
+  private void setLandingPageUrl(
+      ApiInventoryDOI refreshUpdate, DigitalObjectIdentifier doi, String registeredLandingPage) {
+    if (isNotBlank(registeredLandingPage)) {
+      refreshUpdate.setUrl(registeredLandingPage);
+      return;
+    }
+    InventoryUrls.publicLandingPageUrl(properties.getServerUrl(), doi.getPublicLink())
+        .ifPresent(refreshUpdate::setUrl);
+  }
+
+  /** The LandingPage B2INST holds for the record, or null when the response carries none. */
+  private String landingPageOf(B2instDraftRecord record) {
+    return record.getMetadata() == null ? null : record.getMetadata().getLandingPage();
+  }
+
+  /**
+   * The record's minted ePIC Handle PID (for example {@code
+   * http://hdl.handle.net/21.T11975/<rid>}), or null when the response carries none. The {@code
+   * pids} block is kept loosely typed on the model, so it is dug out here.
+   */
+  private String epicPidOf(B2instDraftRecord record) {
+    if (record.getPids() == null || !(record.getPids().get("epic") instanceof Map<?, ?> epic)) {
+      return null;
+    }
+    return epic.get("identifier") instanceof String identifier ? identifier : null;
   }
 
   private ApiInventoryDOI createUpdateWithRetractedB2instDoi(DigitalObjectIdentifier doi) {

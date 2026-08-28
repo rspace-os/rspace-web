@@ -38,7 +38,18 @@ import type {
   IdentifierSubject,
   PublishingState,
 } from "../definitions/Identifier";
+import { identifierStateLabelKey } from "../definitions/Identifier";
 import GeoLocationModel from "./GeoLocationModel";
+
+/*
+ * The alert reports the state in the same words the identifiers table shows, so the two cannot
+ * disagree. The model has no component `t`, so it resolves the key on the shared i18n instance.
+ * An unrecognised provider status has no key and degrades to the raw value.
+ */
+const stateLabelOf = (state: PublishingState): string => {
+  const key = identifierStateLabelKey(state);
+  return key === null ? String(state) : i18n.t(key);
+};
 
 type GeoLocationBox = {
   eastBoundLongitude: string;
@@ -220,6 +231,7 @@ export default class IdentifierModel implements Identifier {
       updateState: action,
       publish: action,
       retract: action,
+      refresh: action,
     });
 
     this.parentGlobalId = parentGlobalId;
@@ -642,6 +654,47 @@ export default class IdentifierModel implements Identifier {
           cause: error,
         });
       }
+    }
+  }
+
+  /**
+   * Re-reads the identifier's status from the provider via the refresh endpoint and applies the
+   * returned state and URLs (RSDEV-1260). Unlike publish/retract this does not rethrow: nothing
+   * awaits the outcome beyond the button spinner, and the alert already reports the failure.
+   */
+  async refresh({ addAlert }: { addAlert: (alert: Alert) => void }): Promise<void> {
+    if (!this.ApiServiceBase) throw new Error("This operation requires the user be authenticated");
+    if (this.id === null || typeof this.id === "undefined") throw new Error("DOI Id must be known.");
+    try {
+      const response = await this.ApiServiceBase.post<{
+        state: PublishingState;
+        url: string | null;
+        publicUrl: string | null;
+        providerUrl: string | null;
+      }>(`/identifiers/${this.id}/refresh`, {});
+      const { state, url, publicUrl, providerUrl } = response.data;
+      runInAction(() => {
+        this.state = state;
+        this.url = url;
+        this.publicUrl = publicUrl;
+        this.providerUrl = providerUrl;
+      });
+      addAlert(
+        mkAlert({
+          message: i18n.t("inventory:identifierModel.alerts.refreshed", {
+            state: stateLabelOf(state),
+          }),
+          variant: "success",
+        }),
+      );
+    } catch (error) {
+      addAlert(
+        mkAlert({
+          title: i18n.t("inventory:identifierModel.alerts.refreshFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
+          variant: "error",
+        }),
+      );
     }
   }
 

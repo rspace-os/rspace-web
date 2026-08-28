@@ -4,6 +4,7 @@ import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRecordLinks;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import java.util.Optional;
 import lombok.Getter;
 
 /**
@@ -44,6 +45,38 @@ public class B2instConnectorDummy implements B2instConnector {
   @Override
   public B2instRequestResponse retractDoi(String rid) {
     throw new UnsupportedOperationException("B2INST has no retract operation");
+  }
+
+  @Override
+  public Optional<B2instRequestResponse> getReviewOf(String rid) {
+    return Optional.empty();
+  }
+
+  /**
+   * Nothing published: {@link #publishDoi(String)} here does not move the record on, so a record
+   * this double created is still only a draft.
+   */
+  @Override
+  public Optional<B2instDraftRecord> getPublishedRecord(String rid) {
+    return Optional.empty();
+  }
+
+  /**
+   * The draft {@link #registerDoi(B2instDoi)} created, so the double agrees with its own state: a
+   * test that registers and then refreshes gets the truthful "still a draft" answer instead of
+   * landing on the record-gone error path. Any other id is unknown to this double.
+   */
+  @Override
+  public Optional<B2instDraftRecord> getDraftRecord(String rid) {
+    if (!DUMMY_RID.equals(rid)) {
+      return Optional.empty();
+    }
+    B2instDraftRecord draft = new B2instDraftRecord();
+    draft.setId(DUMMY_RID);
+    B2instRecordLinks links = new B2instRecordLinks();
+    links.setSelfHtml(DUMMY_SELF_HTML);
+    draft.setLinks(links);
+    return Optional.of(draft);
   }
 
   @Override

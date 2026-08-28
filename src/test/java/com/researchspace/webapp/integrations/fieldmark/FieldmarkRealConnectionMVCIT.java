@@ -2,6 +2,8 @@ package com.researchspace.webapp.integrations.fieldmark;
 
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PROVIDER_USER_ID;
+import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -11,27 +13,32 @@ import com.researchspace.api.v1.controller.API_VERSION;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
+import com.researchspace.fieldmark.model.FieldmarkNotebook;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.service.impl.ConditionalTestRunner;
+import com.researchspace.service.impl.RunIfSystemPropertyDefined;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MvcResult;
 
-@Ignore(
-    "We leave the test Ignored so we can potentially run it manually "
-        + "by pasting the bearer token")
+/**
+ * Runs only on nightly builds (-Dnightly) against the real Fieldmark service; requires the
+ * FIELDMARK_TOKEN environment variable to hold a valid bearer token.
+ */
+@RunWith(ConditionalTestRunner.class)
 public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
 
   private static final FieldmarkApiImportRequest IMPORT_REQUEST =
       new FieldmarkApiImportRequest("1726126204618-rspace-igsn-demo");
-  private static final String LONG_LIVED_TOKEN = "________PASTE_TOKEN_HERE________";
+  private static final String LONG_LIVED_TOKEN = System.getenv("FIELDMARK_TOKEN");
 
   private User user;
   private String apiKey;
@@ -40,6 +47,9 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
 
   @Before
   public void setUp() throws Exception {
+    assumeTrue(
+        "Skipping: set the FIELDMARK_TOKEN environment variable to run this",
+        LONG_LIVED_TOKEN != null);
     super.setUp();
     user = createInitAndLoginAnyUser();
     apiKey = createNewApiKeyForUser(user);
@@ -56,6 +66,7 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
   }
 
   @Test
+  @RunIfSystemPropertyDefined("nightly")
   public void testGetNotebookList() throws Exception {
     MvcResult result =
         mockMvc
@@ -64,9 +75,25 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
             .andExpect(status().is(HttpStatus.OK.value()))
             .andReturn();
     assertNotNull(result.getResponse());
+
+    FieldmarkNotebook[] notebooks =
+        new ObjectMapper()
+            .readValue(result.getResponse().getContentAsString(), FieldmarkNotebook[].class);
+    assertFalse(notebooks.length == 0, "notebook list is empty");
+    for (FieldmarkNotebook notebook : notebooks) {
+      String name = notebook.getName();
+      assertNotNull(name, "name is null");
+      assertNotNull(notebook.getStatus(), "status is null for notebook " + name);
+      assertNotNull(notebook.getId(), "id is null for notebook " + name);
+      assertNotNull(notebook.getProjectId(), "projectId is null for notebook " + name);
+      assertNotNull(notebook.getMetadata(), "metadata is null for notebook " + name);
+      // listingId and ui-specification are not asserted: the current Fieldmark API has no
+      // listing_id, and its notebook-list response omits the notebook design entirely
+    }
   }
 
   @Test
+  @RunIfSystemPropertyDefined("nightly")
   public void testImportNotebook() throws Exception {
     MvcResult result =
         mockMvc
@@ -94,6 +121,7 @@ public class FieldmarkRealConnectionMVCIT extends API_MVC_TestBase {
   }
 
   @Test
+  @RunIfSystemPropertyDefined("nightly")
   public void testGetIgsnCandidateFields() throws Exception {
     MvcResult result =
         mockMvc

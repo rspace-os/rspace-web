@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import static com.researchspace.testutils.TestFactory.createUserConnection;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
@@ -84,5 +86,20 @@ public class UserConnectionManagerTest {
 
     assertEquals(result, userConnMgr.deleteByUserAndProvider(USERNAME, PROVIDER_NAME));
     verify(connectionDao).deleteByUserAndProvider(USERNAME, PROVIDER_NAME);
+  }
+
+  @Test
+  public void replaceConnectionDeletesAnyExistingConnectionBeforeSaving() {
+    UserConnection replacement = createUserConnection(USERNAME);
+    when(connectionDao.save(replacement)).thenReturn(replacement);
+
+    assertEquals(replacement, userConnMgr.replaceConnection(replacement));
+
+    InOrder order = inOrder(connectionDao);
+    order
+        .verify(connectionDao)
+        .deleteByUserAndProvider(
+            replacement.getId().getUserId(), replacement.getId().getProviderId());
+    order.verify(connectionDao).save(replacement);
   }
 }

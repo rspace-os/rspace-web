@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
 
 export class DocumentHeader {
   readonly name: Locator;
@@ -9,7 +10,7 @@ export class DocumentHeader {
   readonly recordInfoLink: Locator;
   readonly showLastModifiedCheckbox: Locator;
 
-  constructor(page: Page) {
+  constructor(private readonly page: Page) {
     this.name = page.locator("#recordNameInHeader");
     this.editNameButton = page.locator("#renameRecordEdit");
     this.tags = page.locator("#notebookTags");
@@ -29,5 +30,12 @@ export class DocumentHeader {
 
   async getTags(): Promise<string[]> {
     return this.tags.locator("li").allInnerTexts();
+  }
+
+  async openRecordInfo(): Promise<RecordInfoDialog> {
+    await this.recordInfoLink.click();
+    const dialog = new RecordInfoDialog(this.page);
+    await dialog.waitUntilVisible();
+    return dialog;
   }
 }

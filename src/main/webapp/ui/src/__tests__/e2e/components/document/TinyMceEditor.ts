@@ -1,4 +1,5 @@
 import type { FrameLocator, Locator, Page } from "@playwright/test";
+import { ImageQuickToolbar } from "@/__tests__/e2e/components/document/ImageQuickToolbar";
 
 export class TinyMceEditor {
   private readonly frame: FrameLocator;
@@ -7,7 +8,7 @@ export class TinyMceEditor {
   private readonly menubar: Locator;
 
   constructor(
-    page: Page,
+    private readonly page: Page,
     readonly editorId: string,
   ) {
     this.frame = page.frameLocator(`iframe#${editorId}_ifr`);
@@ -32,6 +33,10 @@ export class TinyMceEditor {
     return this.body.innerText();
   }
 
+  async getEmbeddedIframeSrc(): Promise<string | null> {
+    return this.frame.locator("iframe").first().getAttribute("src");
+  }
+
   async clickToolbarButton(name: string): Promise<void> {
     await this.container.getByRole("button", { name }).click();
   }
@@ -44,7 +49,26 @@ export class TinyMceEditor {
     await this.body.press("Control+a");
   }
 
+  async insertFileAttachment(file: string | { name: string; mimeType: string; buffer: Buffer }): Promise<void> {
+    const uploadButton = this.container
+      .getByRole("button", { name: "Insert file from computer" })
+      .or(this.container.getByRole("button", { name: "Upload a file from your mobile device" }));
+    const [chooser] = await Promise.all([this.page.waitForEvent("filechooser"), uploadButton.click()]);
+    await chooser.setFiles(file);
+  }
+
   get chemElement(): Locator {
     return this.frame.locator('img[src*="sourceType=CHEM"]');
+  }
+
+  get imageElement(): Locator {
+    return this.frame.locator('img[src*="sourceType=IMAGE"]');
+  }
+
+  async selectImage(): Promise<ImageQuickToolbar> {
+    await this.imageElement.click();
+    const toolbar = new ImageQuickToolbar(this.page);
+    await toolbar.waitForOpen();
+    return toolbar;
   }
 }

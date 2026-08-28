@@ -1,6 +1,7 @@
 import { env } from "@/__tests__/e2e/env";
 import type {
   ApiIgsnSettingsUpdate,
+  ApiPidinstSettingsUpdate,
   ApiSysadminGroup,
   ApiSysadminGroupCreateRequest,
   ApiSysadminUser,
@@ -26,6 +27,7 @@ export class SysadminClient extends BaseApiClient {
   }
 
   async createGroup(group: ApiSysadminGroupCreateRequest): Promise<ApiSysadminGroup> {
+    env.assertGlobalMutationsAllowed("createGroup");
     return this.requestJson("post", "/api/v1/sysadmin/groups", { data: group, action: "createSysadminGroup" });
   }
 
@@ -40,6 +42,20 @@ export class SysadminClient extends BaseApiClient {
   async testIgsnConnection(): Promise<boolean> {
     return this.requestJson("get", "/api/inventory/v1/identifiers/testIgsnConnection", {
       action: "testIgsnConnection",
+    });
+  }
+
+  async configurePidinst(settings: ApiPidinstSettingsUpdate): Promise<void> {
+    env.assertGlobalMutationsAllowed("configurePidinst");
+    await this.requestVoid("put", "/api/inventory/v1/system/settings", {
+      data: settings,
+      action: "configurePidinst",
+    });
+  }
+
+  async testPidinstConnection(): Promise<boolean> {
+    return this.requestJson("get", "/api/inventory/v1/identifiers/testPidinstConnection", {
+      action: "testPidinstConnection",
     });
   }
 }

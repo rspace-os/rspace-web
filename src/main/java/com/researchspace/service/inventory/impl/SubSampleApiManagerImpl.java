@@ -179,7 +179,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
 
       if (contentChanged) {
         // only content edits bump the user-facing version; moves and notes don't
-        dbSubSample.increaseVersion();
+        increaseVersionOncePerTransaction(dbSubSample);
         registerSubSampleModification(user, dbSubSample);
       }
       if (moveSuccessful) {
@@ -289,7 +289,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
               || !orgQuantity.getUnitId().equals(newQuantity.getUnitId());
       if (quantityChanged) {
         dbSubSample.setQuantity(newQuantity);
-        dbSubSample.increaseVersion();
+        increaseVersionOncePerTransaction(dbSubSample);
         registerSubSampleModification(user, dbSubSample);
         dbSubSample = subSampleDao.save(dbSubSample);
       }

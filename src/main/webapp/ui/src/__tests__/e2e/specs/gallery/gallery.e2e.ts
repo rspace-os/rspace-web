@@ -1,36 +1,14 @@
 import { expect, type Frame } from "@playwright/test";
 import { test } from "@/__tests__/e2e/fixtures/flows";
-import { uniqueName } from "@/__tests__/e2e/testData";
-import { MOBILE_DEVICE } from "@/__tests__/e2e/viewports";
+import { tags } from "@/__tests__/e2e/tags";
+import { TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 
-const TINY_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-  "base64",
-);
-
-test.describe("Gallery", () => {
+test.describe("Gallery", { tag: tags.MOBILE }, () => {
   test("As a user, I can navigate to the Images section and browse the Examples folder", async ({ pageGallery }) => {
-    await pageGallery.open();
-    await pageGallery.isLoaded();
-
-    await pageGallery.openSection("Images");
+    await pageGallery.openInSection("Images");
     await pageGallery.openFolder("Examples");
 
     await pageGallery.waitForFile("anaphase.jpg");
-  });
-
-  test.describe("mobile", () => {
-    test.use(MOBILE_DEVICE);
-
-    test("As a user, I can navigate to the Images section on a mobile viewport", async ({ pageGallery }) => {
-      await pageGallery.open();
-      await pageGallery.isLoaded();
-
-      await pageGallery.openSection("Images");
-      await pageGallery.openFolder("Examples");
-
-      await pageGallery.waitForFile("anaphase.jpg");
-    });
   });
 
   test("As a user, I can see a selected file's Global ID in the info panel", async ({ clientFiles, pageGallery }) => {
@@ -81,9 +59,7 @@ test.describe("Gallery", () => {
   });
 
   test("As a user, I can sort files by Name", async ({ pageGallery }) => {
-    await pageGallery.open();
-    await pageGallery.isLoaded();
-    await pageGallery.openSection("Images");
+    await pageGallery.openInSection("Images");
     await pageGallery.openFolder("Examples");
     await pageGallery.waitForFile("anaphase.jpg");
 

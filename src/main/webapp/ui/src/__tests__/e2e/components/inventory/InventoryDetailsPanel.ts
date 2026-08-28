@@ -15,6 +15,13 @@ import { TransferDialogComponent } from "./TransferDialogComponent";
 
 export type InventoryDetailAction = "Edit" | "Create" | "Duplicate" | "Move" | "Transfer";
 
+export type InventoryIdentifierType = "IGSN" | "PIDINST";
+
+const IDENTIFIER_CREATE_BUTTON_LABEL: Record<InventoryIdentifierType, string> = {
+  IGSN: "Create new IGSN ID",
+  PIDINST: "Create new PIDINST",
+};
+
 export type InventoryMoreAction =
   | "Duplicate"
   | "Move"
@@ -136,12 +143,13 @@ export class InventoryDetailsPanel {
     return new NotesEditor(this.section("Notes"));
   }
 
-  async createIdentifier(): Promise<IdentifierCreateDialog> {
+  identifierCreateButton(identifierType: InventoryIdentifierType): Locator {
+    return this.section("Identifiers").getByRole("button", { name: IDENTIFIER_CREATE_BUTTON_LABEL[identifierType] });
+  }
+
+  async createIdentifier(identifierType: InventoryIdentifierType = "IGSN"): Promise<IdentifierCreateDialog> {
     await this.expandSection("Identifiers");
-    return openDialog(
-      () => this.section("Identifiers").getByRole("button", { name: "Create new IGSN ID" }).click(),
-      new IdentifierCreateDialog(this.page),
-    );
+    return openDialog(() => this.identifierCreateButton(identifierType).click(), new IdentifierCreateDialog(this.page));
   }
 
   async saveEdit(): Promise<void> {

@@ -160,7 +160,9 @@ export type IntegrationStates = {
   NEXTCLOUD: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
   }>;
-  OMERO: IntegrationState<emptyObject>;
+  OMERO: IntegrationState<{
+    ACCESS_TOKEN: Optional<string>;
+  }>;
   ONEDRIVE: IntegrationState<emptyObject>;
   OWNCLOUD: IntegrationState<{
     ACCESS_TOKEN: Optional<string>;
@@ -605,7 +607,12 @@ function decodeNextCloud(data: FetchedState): IntegrationStates["NEXTCLOUD"] {
 }
 
 function decodeOmero(data: FetchedState): IntegrationStates["OMERO"] {
-  return { mode: parseState(data), credentials: {} };
+  return {
+    mode: parseState(data),
+    credentials: {
+      ACCESS_TOKEN: parseCredentialString(data.options, "ACCESS_TOKEN"),
+    },
+  };
 }
 
 function decodeOneDrive(data: FetchedState): IntegrationStates["ONEDRIVE"] {

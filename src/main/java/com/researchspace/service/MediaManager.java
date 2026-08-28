@@ -336,6 +336,17 @@ public interface MediaManager {
   EcatImage getImage(Long imageId, User user, boolean includeImageBytes);
 
   /**
+   * Gets an {@link EcatImage} by ID with its {@code originalImage} association eagerly loaded, so
+   * that {@link EcatImage#toRecordInfo()} can be called safely after the Hibernate session closes.
+   *
+   * @param imageId
+   * @param user
+   * @return An {@link EcatImage} with {@code originalImage} initialised
+   * @throws AuthenticationException if user not permitted to access the image.
+   */
+  EcatImage getImageWithOriginalImage(Long imageId, User user);
+
+  /**
    * Creates or updates an {@link RSMath} element
    *
    * @param svg The SVG of the Math object

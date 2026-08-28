@@ -36,10 +36,13 @@ import org.springframework.validation.BindingResult;
  * PIDINST-mapped field content to B2INST. A {@link B2instConnectorDummy} captures the payload, so
  * no B2INST instance is contacted.
  *
- * <p>Link-field narratives ("Measurement technique", "Calibration") are covered by {@code
- * RspaceToExternalProviderAdapterImplTest}; building an {@code InventoryLink} target through the
- * API would need a second record and relation setup, which adds nothing to the plumbing this test
- * exercises.
+ * <p>The two link fields ("Measurement technique", "Calibration") are deliberately absent here.
+ * They stopped being documentation-only in RSDEV-1253 and now map to RelatedIdentifier entries, but
+ * their value comes from a linked record rather than the field's own content, so exercising them
+ * needs a second record and relation setup that this template-copy flow does not otherwise use.
+ * They are covered against real persistence by {@code
+ * InventoryIdentifierApiManagerRelatedIdentifierTest}, which resolves the link through Hibernate
+ * for both providers, and by {@code RspaceToExternalProviderAdapterImplTest} for the mapping rules.
  */
 @WebAppConfiguration
 public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_InventoryTestBase {
@@ -87,7 +90,7 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
 
   /*
    * Mirrors the private helper in InventoryIdentifiersApiControllerMVCIT, but returns the raw result
-   * rather than a deserialized DTO. providerUrl and publicUrl are @JsonProperty READ_ONLY on
+   * rather than a deserialized DTO. state, providerUrl and publicUrl are @JsonProperty READ_ONLY on
    * ApiInventoryDOI, so Jackson emits them but ignores them on the way in; getFromJsonResponseBody is
    * a plain readValue, so reading them off a deserialized DTO would silently yield null and the
    * assertion would pass vacuously. The response JSON is the only place they can be observed.
@@ -176,13 +179,16 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
 
     assertNotNull(registeredDoi);
     assertEquals(B2instConnectorDummy.DUMMY_RID, registeredDoi.getDoi());
-    assertEquals("draft", registeredDoi.getState());
     /*
-     * The B2INST record page is captured from the create-draft response and persisted, so the UI can
-     * link a PIDINST identifier from registration onwards, not only once it is published. Asserted on
-     * the response JSON, not the DTO: see registerNewIdentifier for why the DTO cannot show these two.
+     * state and the two URLs are asserted on the response JSON, not the DTO: state is READ_ONLY
+     * since the parallel review (a record update carrying "state" could otherwise open the public
+     * page), so it too would deserialize to null. See registerNewIdentifier.
+     *
+     * The B2INST record page is captured from the create-draft response and persisted, so the UI
+     * can link a PIDINST identifier from registration onwards, not only once it is published.
      */
     JsonNode doiJson = new ObjectMapper().readTree(doiResult.getResponse().getContentAsString());
+    assertEquals("draft", doiJson.path("state").asText());
     assertEquals(B2instConnectorDummy.DUMMY_SELF_HTML, doiJson.path("providerUrl").asText());
     assertTrue(
         doiJson.path("publicUrl").isNull() || doiJson.path("publicUrl").isMissingNode(),

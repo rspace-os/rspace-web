@@ -201,6 +201,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       case DRYAD_APP_NAME:
         setSingleOAuthConnectionStatus(info, user, DRYAD_APP_NAME);
         return;
+      case OMERO_APP_NAME:
+        setSingleOAuthConnectionStatus(info, user, OMERO_APP_NAME);
+        return;
       case PYRAT_APP_NAME:
         setMultipleUserTokens(
             info, user, PYRAT_APP_NAME, PYRAT_CONFIGURED_SERVERS, PYRAT_ALIAS, PYRAT_APIKEY);
