@@ -33,7 +33,7 @@ import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../../stores/contexts/Analytics";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
 import type { Identifier, IdentifierField, PublishingState } from "../../../../stores/definitions/Identifier";
-import { identifierStateLabel, isPublishedState } from "../../../../stores/definitions/Identifier";
+import { identifierStateLabelKey, isPublishedState } from "../../../../stores/definitions/Identifier";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import RsSet from "../../../../util/set";
@@ -255,7 +255,7 @@ const IdentifierWrapper = observer(
  * Keyed on the provider and "not a draft", NOT on a list of known states. The server stores whatever
  * status the provider reported, and only sets it when the response carries one
  * (InventoryIdentifierApiManagerImpl), so a state this frontend has never heard of is expected here —
- * the catch-alls in identifierStateLabel and StateInfo exist for exactly that. A state-keyed gate
+ * the catch-alls in stateLabel and StateInfo exist for exactly that. A state-keyed gate
  * would leave every such value on the old path with an enabled "Retract" that always errors.
  * Closed reviews are carved back out by isDeletableClosedReview, an explicit allowlist.
  */
@@ -280,6 +280,15 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
   const { uiStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
   const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
+
+  /*
+   * Translated with this component's own `t` so the cell follows a language change. An
+   * unrecognised provider status has no key and degrades to the raw value.
+   */
+  const stateLabel = (state: PublishingState): string => {
+    const key = identifierStateLabelKey(state);
+    return key === null ? String(state) : t(key);
+  };
 
   const StateInfo = ({
     identifierState,
@@ -449,7 +458,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                   data-testid="identifier-state"
                   size={2}
                 >
-                  {identifierStateLabel(id.state)}
+                  {stateLabel(id.state)}
                 </Grid>
                 <Grid size={2}>
                   <CustomTooltip

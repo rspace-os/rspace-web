@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import type InvApiService from "../../../../../common/InvApiService";
-import type { Identifier } from "../../../../../stores/definitions/Identifier";
+import type { Identifier, PublishingState } from "../../../../../stores/definitions/Identifier";
 import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
 import IdentifierModel from "../../../../../stores/models/IdentifierModel";
@@ -11,6 +12,10 @@ import { mockIGSNAttrs, mockIGSNIdentifier } from "./mocking";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import materialTheme from "../../../../../theme";
+
+const REFRESH = "inventory:fields.identifiers.list.refresh";
+const PUBLISH = "common:actions.publish";
+const stateLabel = (state: PublishingState) => `inventory:fields.identifiers.list.stateLabels.${state}`;
 
 const submittedPidinst = (overrides?: Partial<Identifier>): Identifier => ({
   ...mockIGSNIdentifier("instrument"),
@@ -22,6 +27,7 @@ const submittedPidinst = (overrides?: Partial<Identifier>): Identifier => ({
 
 describe("RefreshButton", () => {
   test("renders for a submitted identifier and calls refresh on click", async () => {
+    const user = userEvent.setup();
     const identifier = submittedPidinst();
     render(
       <ThemeProvider theme={materialTheme}>
@@ -29,24 +35,19 @@ describe("RefreshButton", () => {
       </ThemeProvider>,
     );
 
-    const button = screen.getByRole("button", { name: "inventory:fields.identifiers.list.refresh" });
-    fireEvent.click(button);
+    await user.click(screen.getByRole("button", { name: REFRESH }));
 
-    await waitFor(() => {
-      const refresh = identifier.refresh;
-      expect(vi.mocked(refresh)).toHaveBeenCalled();
-    });
+    const refresh = identifier.refresh;
+    expect(vi.mocked(refresh)).toHaveBeenCalled();
   });
 
-  test("renders nothing unless the state is submitted", () => {
-    for (const state of ["draft", "created", "declined", "findable"] as const) {
-      const { container } = render(
-        <ThemeProvider theme={materialTheme}>
-          <RefreshButton identifier={submittedPidinst({ state })} />
-        </ThemeProvider>,
-      );
-      expect(container).toBeEmptyDOMElement();
-    }
+  test.each(["draft", "created", "declined", "findable"] as const)("renders nothing when the state is %s", (state) => {
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <RefreshButton identifier={submittedPidinst({ state })} />
+      </ThemeProvider>,
+    );
+    expect(screen.queryByRole("button", { name: REFRESH })).not.toBeInTheDocument();
   });
 
   /*
@@ -60,11 +61,11 @@ describe("RefreshButton", () => {
         <RefreshButton identifier={submittedPidinst({ state: "accepted", publicUrl: null })} />
       </ThemeProvider>,
     );
-    expect(screen.getByRole("button", { name: "inventory:fields.identifiers.list.refresh" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: REFRESH })).toBeVisible();
   });
 
   test("retires once an accepted identifier has its Handle", () => {
-    const { container } = render(
+    render(
       <ThemeProvider theme={materialTheme}>
         <RefreshButton
           identifier={submittedPidinst({
@@ -74,7 +75,7 @@ describe("RefreshButton", () => {
         />
       </ThemeProvider>,
     );
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByRole("button", { name: REFRESH })).not.toBeInTheDocument();
   });
 
   test("is disabled when the record is being edited", () => {
@@ -83,7 +84,7 @@ describe("RefreshButton", () => {
         <RefreshButton identifier={submittedPidinst()} disabled />
       </ThemeProvider>,
     );
-    expect(screen.getByRole("button", { name: "inventory:fields.identifiers.list.refresh" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: REFRESH })).toBeDisabled();
   });
 });
 
@@ -105,6 +106,7 @@ describe("a refreshed status reaching the UI", () => {
   };
 
   test("an accepted review replaces the state, retires Refresh and closes Publish", async () => {
+    const user = userEvent.setup();
     const post = vi.fn().mockResolvedValue({
       data: {
         state: "accepted",
@@ -113,46 +115,40 @@ describe("a refreshed status reaching the UI", () => {
         providerUrl: "https://b2inst-test.gwdg.de/records/k2j9p-7yh21",
       },
     });
-    const record = submittedB2instRecord(post);
     render(
       <ThemeProvider theme={materialTheme}>
-        <IdentifiersList activeResult={record} />
+        <IdentifiersList activeResult={submittedB2instRecord(post)} />
       </ThemeProvider>,
     );
 
     // while the review is open: Submitted, Refresh offered, Publish held back
-    expect(screen.getByText("inventory:fields.identifiers.list.stateLabels.submitted")).toBeInTheDocument();
-    const refresh = screen.getByRole("button", { name: "inventory:fields.identifiers.list.refresh" });
-    expect(screen.getByRole("button", { name: /republish|publish/i })).toBeDisabled();
+    expect(screen.getByText(stateLabel("submitted"))).toBeVisible();
+    expect(screen.getByRole("button", { name: PUBLISH })).toBeDisabled();
 
-    fireEvent.click(refresh);
+    await user.click(screen.getByRole("button", { name: REFRESH }));
 
     // after the curator accepted: the new state is rendered, and Refresh has nothing left to do
-    await waitFor(() => {
-      expect(screen.getByText("inventory:fields.identifiers.list.stateLabels.accepted")).toBeInTheDocument();
-    });
+    expect(await screen.findByText(stateLabel("accepted"))).toBeVisible();
     expect(post).toHaveBeenCalledWith("/identifiers/1/refresh", {});
-    expect(screen.queryByRole("button", { name: "inventory:fields.identifiers.list.refresh" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: REFRESH })).not.toBeInTheDocument();
     // an accepted B2INST PID cannot be published again, and B2INST has no retract
-    expect(screen.getByRole("button", { name: /republish|publish/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: PUBLISH })).toBeDisabled();
   });
 
   test("a declined review is rendered and also retires Refresh", async () => {
+    const user = userEvent.setup();
     const post = vi.fn().mockResolvedValue({
       data: { state: "declined", url: null, publicUrl: null, providerUrl: null },
     });
-    const record = submittedB2instRecord(post);
     render(
       <ThemeProvider theme={materialTheme}>
-        <IdentifiersList activeResult={record} />
+        <IdentifiersList activeResult={submittedB2instRecord(post)} />
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "inventory:fields.identifiers.list.refresh" }));
+    await user.click(screen.getByRole("button", { name: REFRESH }));
 
-    await waitFor(() => {
-      expect(screen.getByText("inventory:fields.identifiers.list.stateLabels.declined")).toBeInTheDocument();
-    });
-    expect(screen.queryByRole("button", { name: "inventory:fields.identifiers.list.refresh" })).not.toBeInTheDocument();
+    expect(await screen.findByText(stateLabel("declined"))).toBeVisible();
+    expect(screen.queryByRole("button", { name: REFRESH })).not.toBeInTheDocument();
   });
 });

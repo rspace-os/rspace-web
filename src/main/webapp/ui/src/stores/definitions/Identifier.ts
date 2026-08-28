@@ -1,5 +1,4 @@
 import type React from "react";
-import i18n from "@/modules/common/i18n";
 import type { RadioOption } from "../../components/Inputs/RadioField";
 import type { _LINK, URL } from "../../util/types";
 import type { Alert } from "../contexts/Alert";
@@ -91,40 +90,41 @@ export type PublishingState = IGSNPublishingState | PidinstPublishingState;
 export const isPublishedState = (state: PublishingState): boolean => state === "findable" || state === "accepted";
 
 /**
- * The translated label for a publication state: the same words the identifiers table shows in its
- * State cell.
+ * Catalog key for a publication state's label: the same words the identifiers table shows in its
+ * State cell. Null for a state RSpace does not recognise, since the server passes an unrecognised
+ * provider status through verbatim and the caller has to show that raw value rather than throwing
+ * out of a render.
  *
- * <p>Shared so the table and the alerts cannot disagree. The state cell and the refresh alert used
- * to be produced separately, which showed the provider's raw English token inside an otherwise
- * translated sentence.
+ * Shared so the table and the alerts cannot disagree. They used to be produced separately, which
+ * put the provider's raw English token inside an otherwise translated sentence.
  *
- * Arms are spelled out rather than built from the state, so the typed catalog and the i18n
- * extractor both still see every key. The final fallback is deliberate: the server passes an
- * unrecognised provider status through verbatim, and that must degrade to the raw value rather
- * than throwing out of a render.
+ * Returns the key rather than the translated text, so each caller translates with its own `t`.
+ * That keeps this module clear of the i18n singleton and lets a component's label follow a
+ * language change. Arms are spelled out rather than built from the state, so the typed catalog and
+ * the i18n extractor both still see every key.
  */
-export const identifierStateLabel = (state: PublishingState): string => {
+export const identifierStateLabelKey = (state: PublishingState) => {
   switch (state) {
     case "draft":
-      return i18n.t("inventory:igsnTable.filters.stateOptions.draft.title");
+      return "inventory:igsnTable.filters.stateOptions.draft.title";
     case "findable":
-      return i18n.t("inventory:igsnTable.filters.stateOptions.findable.title");
+      return "inventory:igsnTable.filters.stateOptions.findable.title";
     case "registered":
-      return i18n.t("inventory:igsnTable.filters.stateOptions.registered.title");
+      return "inventory:igsnTable.filters.stateOptions.registered.title";
     case "created":
-      return i18n.t("inventory:fields.identifiers.list.stateLabels.created");
+      return "inventory:fields.identifiers.list.stateLabels.created";
     case "submitted":
-      return i18n.t("inventory:fields.identifiers.list.stateLabels.submitted");
+      return "inventory:fields.identifiers.list.stateLabels.submitted";
     case "accepted":
-      return i18n.t("inventory:fields.identifiers.list.stateLabels.accepted");
+      return "inventory:fields.identifiers.list.stateLabels.accepted";
     case "declined":
-      return i18n.t("inventory:fields.identifiers.list.stateLabels.declined");
+      return "inventory:fields.identifiers.list.stateLabels.declined";
     case "cancelled":
-      return i18n.t("inventory:fields.identifiers.list.stateLabels.cancelled");
+      return "inventory:fields.identifiers.list.stateLabels.cancelled";
     case "expired":
-      return i18n.t("inventory:fields.identifiers.list.stateLabels.expired");
+      return "inventory:fields.identifiers.list.stateLabels.expired";
     default:
-      return String(state);
+      return null;
   }
 };
 

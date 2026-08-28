@@ -38,8 +38,18 @@ import type {
   IdentifierSubject,
   PublishingState,
 } from "../definitions/Identifier";
-import { identifierStateLabel } from "../definitions/Identifier";
+import { identifierStateLabelKey } from "../definitions/Identifier";
 import GeoLocationModel from "./GeoLocationModel";
+
+/*
+ * The alert reports the state in the same words the identifiers table shows, so the two cannot
+ * disagree. The model has no component `t`, so it resolves the key on the shared i18n instance.
+ * An unrecognised provider status has no key and degrades to the raw value.
+ */
+const stateLabelOf = (state: PublishingState): string => {
+  const key = identifierStateLabelKey(state);
+  return key === null ? String(state) : i18n.t(key);
+};
 
 type GeoLocationBox = {
   eastBoundLongitude: string;
@@ -672,7 +682,7 @@ export default class IdentifierModel implements Identifier {
       addAlert(
         mkAlert({
           message: i18n.t("inventory:identifierModel.alerts.refreshed", {
-            state: identifierStateLabel(state),
+            state: stateLabelOf(state),
           }),
           variant: "success",
         }),
