@@ -52,11 +52,34 @@ Java rule registry was rejected because stage 2 would throw it away.
 
 The endpoint is public API, so every rule the wizard enforces is a trust-boundary
 rule and must hold server-side; the validator interprets the config entry
-generically, preserving the no-per-operation-Java foundation. Consciously
-unenforceable server-side: the process name (never on the wire) and
-frontend-computed values (passage number, disposal date). Field names are never
-validated because they are locale-resolved; a name check would reject
-non-English payloads.
+generically, preserving the no-per-operation-Java foundation.
+
+**The request must match the complete definition (decided 2026-08-28,
+superseding the earlier "consciously unenforceable server-side" stance).** The
+2026-08-27/28 review overruled partial validation: `operationType` names an
+authoritative definition, so the backend rejects, with field-scoped 400s,
+anything the definition does not declare (undeclared extra fields on the new
+sample or origins, sharing, placement, tags, and other properties the wizard
+never sends). No silent stripping: a rejected request tells the caller what to
+remove.
+
+Locale-proofing is by identity, not by name. Resolved field names interpolate
+user input ({processName}, {originName}), so they can never be matched
+server-side; instead every wizard-generated extra field carries its config
+identity in a write-only `operationFieldKey` (the definition's
+nameKey/fieldNameKey; the optional documentation link uses the fixed key
+`operations.documentationLink`). The backend matches keys against the parsed
+definition; display names remain unvalidated free text. Server-side resolution
+of i18n catalogs was rejected (catalogs are frontend build assets, and
+interpolation defeats it anyway).
+
+Computed values (passage number, disposal date) are shape-checked, not
+recomputed: each computed `fn` maps to a content rule (`increment` = positive
+integer, `today` = valid ISO date). Recompute was rejected because persisted
+parent fields are findable only by their localized names, and a server-side
+"today" fights client/server timezone boundaries. The one thing that remains
+unvalidatable is the process name itself: it is never on the wire, only its
+interpolation into free-text display names.
 
 ## Origin quantity model
 
@@ -78,7 +101,9 @@ fed by config. An expression language in config was rejected as a security
 surface (executable logic in data) and unnecessary, since only developers author
 operations today; one-off declarative primitives per computation were rejected
 as unbounded schema sprawl. Computing on the frontend (not the server) keeps the
-backend operation-agnostic: the server never interprets a field as "today".
+backend operation-agnostic: the server never interprets a field as "today". It
+does shape-check computed content per function (see the validation section
+above) without computing it.
 
 ## Smaller decisions worth keeping
 

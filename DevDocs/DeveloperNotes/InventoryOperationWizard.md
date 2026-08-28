@@ -185,15 +185,38 @@ sample).
 ## What the backend does
 
 `POST /api/inventory/v1/operations` is a thin, generic coordinator. It validates the
-request against the operation definition its `operationType` names (DevDocs/adr/0007),
-interpreting its `operations_config.json` — origin count,
+**complete** request against the operation definition its `operationType` names
+(DevDocs/adr/0007), interpreting its `operations_config.json` — origin count,
 new-sample presence, per-origin amount semantics, configured storage-temperature
-bounds (unit-aware), equal child quantities when the operation declares one
-`effect.eachAmountFrom` input (unit-aware: 0.5 ml equals 500 µl), and a provenance
-link back to every origin, which must be carried by an effective **link**-typed field
-(a link payload inside a text-typed or type-omitted field is never persisted as a
-link, so it does not count) — and runs the new sample through the same
-`SampleApiPostValidator` as the public samples endpoint. The
+bounds (unit-aware, and equal to each other since one input feeds both), equal child
+quantities when the operation declares one `effect.eachAmountFrom` input (unit-aware:
+0.5 ml equals 500 µl), at least as many subsamples as the count input's `min`, and a
+provenance link back to every origin, which must be carried by an effective
+**link**-typed field (a link payload inside a text-typed or type-omitted field is never
+persisted as a link, so it does not count) — and runs the new sample through the same
+`SampleApiPostValidator` as the public samples endpoint.
+
+The request is a **whitelist**, not a superset of the samples POST. Anything the
+definition does not declare is rejected with a field-scoped 400 naming the property,
+never silently stripped: sharing, placement, tags, barcodes, identifiers, images,
+description, sample source, expiry date, template field values, and any per-subsample
+notes, fields or placement. The created subsamples carry a quantity and nothing else.
+
+Extra fields are matched to the definition **by key, not by name**: display names are
+localized and interpolate user input, so `buildOperationRequest` stamps every field it
+builds with `operationFieldKey` — a link spec's `fieldNameKey`, a text/origin field's
+`nameKey`, or the fixed `operations.documentationLink` for the optional documentation
+link. `ApiExtraField.operationFieldKey` is write-only: never persisted, never returned,
+ignored by every other endpoint. Each declared link spec must produce exactly one link
+per origin; each declared text field and each declared origin field must appear exactly
+once, of the declared type; an operation declaring no `originFields` accepts none (which
+also closes the self-link route). Computed content is **shape-checked, not recomputed**:
+`increment` must be a positive whole number, `today` a valid ISO `yyyy-MM-dd`. A
+declared field fed by a plain input carries free text, required only when that input is
+(Cryopreserve's cryomedium may be blank). The process name is never on the wire, so it
+stays unvalidated.
+
+The
 live-state rules run in `InventoryOperationManagerImpl`, inside the operation's own
 transaction so they hold against the state the mutation sees: every origin must
 currently hold something, all origins must share one measurement category (a Pool of

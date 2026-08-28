@@ -23,8 +23,10 @@ import org.springframework.test.web.servlet.MvcResult;
 /**
  * End-to-end coverage for the RSDEV-1231 operation wizard endpoint (POST /operations), exercised
  * via a "Derive" request: a single POST must atomically create one new Sample parenting N
- * subsamples, put an IsDerivedFrom link back to the origin on the new Sample AND on every created
- * subsample, and reduce the origin subsample by the amount taken from it (never increasing it). See
+ * subsamples, put an IsDerivedFrom link back to the origin on the new Sample, and reduce the origin
+ * subsample by the amount taken from it (never increasing it). Every extra field carries the
+ * definition key that produced it ({@code operationFieldKey}); the request is whitelisted against
+ * that definition, so the created subsamples carry a quantity and nothing else. See
  * DevDocs/adr/0007.
  *
  * <p>Authored with the feature; not run automatically (extends a real-transaction MVC base).
@@ -55,19 +57,16 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
 
     // The frontend assembles this from operations_config.json + the user's input: a fully-built new
-    // sample (2 subsamples, each carrying the link) plus the amount to take from the origin.
+    // sample (2 subsamples, each holding a quantity and nothing else) plus the amount to take from
+    // the origin. Every extra field carries the definition key that produced it.
     String linkJson =
         "{\"name\":\"Is Derived From using process: PCR\","
             + "\"type\":\"link\",\"newFieldRequest\":true,"
+            + "\"operationFieldKey\":\"operations.derive.linkFieldName\","
             + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
             + originGlobalId
             + "\",\"versionPin\":null}}";
-    String subSampleJson =
-        "{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
-            + unitId
-            + "},\"extraFields\":["
-            + linkJson
-            + "]}";
+    String subSampleJson = "{\"quantity\":{\"numericValue\":0.5,\"unitId\":" + unitId + "}}";
     String operationJson =
         "{\"operationType\":\"derive\","
             + "\"origins\":[{\"id\":"
@@ -98,12 +97,12 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     assertEquals("IsDerivedFrom", sampleLink.getLink().getRelationType());
     assertEquals(originGlobalId, sampleLink.getLink().getTargetGlobalId());
 
-    // ... and so does every created subsample
+    // ... while the created subsamples carry only their quantity: the operation's links and text
+    // fields live on the sample, and a subsample extra field would now be rejected as undeclared.
     assertEquals(2, created.getSubSamples().size());
     for (ApiSubSample ss : created.getSubSamples()) {
-      ApiExtraField ssLink = findLinkField(ss.getExtraFields());
-      assertNotNull(ssLink, "every created subsample must carry the provenance link");
-      assertEquals(originGlobalId, ssLink.getLink().getTargetGlobalId());
+      assertTrue(
+          ss.getExtraFields().isEmpty(), "the operation puts no extra fields on its subsamples");
     }
 
     // the origin has been REDUCED by the amount taken (0.6), in one transaction with the creation.
@@ -136,11 +135,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             .andReturn();
     ApiSampleTemplate template = getFromJsonResponseBody(templateResult, ApiSampleTemplate.class);
 
-    String linkJson =
-        "{\"name\":\"Is Derived From\",\"type\":\"link\",\"newFieldRequest\":true,"
-            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
-            + originGlobalId
-            + "\",\"versionPin\":null}}";
+    String linkJson = deriveLinkJson(originGlobalId);
     String operationJson =
         "{\"operationType\":\"derive\","
             + "\"origins\":[{\"id\":"
@@ -154,9 +149,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             + linkJson
             + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
             + unitId
-            + "},\"extraFields\":["
-            + linkJson
-            + "]}]}}";
+            + "}}]}}";
 
     MvcResult result =
         mockMvc
@@ -187,12 +180,6 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
     java.math.BigDecimal tooMuch = originalAmount.add(java.math.BigDecimal.ONE);
 
-    String linkJson =
-        "{\"name\":\"Is Derived From using process:"
-            + " PCR\",\"type\":\"link\",\"newFieldRequest\":true,"
-            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
-            + originGlobalId
-            + "\",\"versionPin\":null}}";
     String operationJson =
         "{\"operationType\":\"derive\","
             + "\"origins\":[{\"id\":"
@@ -203,12 +190,10 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             + unitId
             + "}}],"
             + "\"newSample\":{\"name\":\"Derived material\",\"extraFields\":["
-            + linkJson
+            + deriveLinkJson(originGlobalId)
             + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
             + unitId
-            + "},\"extraFields\":["
-            + linkJson
-            + "]}]}}";
+            + "}}]}}";
 
     mockMvc
         .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
@@ -237,14 +222,10 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     Integer unitId = origin.getQuantity().getUnitId();
     java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
 
-    String provenanceLink =
-        "{\"name\":\"Is Derived From using process:"
-            + " PCR\",\"type\":\"link\",\"newFieldRequest\":true,"
-            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
-            + originGlobalId
-            + "\",\"versionPin\":null}}";
+    String provenanceLink = deriveLinkJson(originGlobalId);
     String brokenDocumentationLink =
         "{\"name\":\"SOP\",\"type\":\"link\",\"newFieldRequest\":true,"
+            + "\"operationFieldKey\":\"operations.documentationLink\","
             + "\"link\":{\"relationType\":\"IsDocumentedBy\",\"targetGlobalId\":\"SD999999999\","
             + "\"versionPin\":null}}";
     String operationJson =
@@ -260,7 +241,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             + brokenDocumentationLink
             + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
             + unitId
-            + "},\"extraFields\":[]}]}}";
+            + "}}]}}";
 
     MvcResult result =
         mockMvc
@@ -304,7 +285,27 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     return "{\"name\":\"Has Part "
         + targetGlobalId
         + "\",\"type\":\"link\",\"newFieldRequest\":true,"
+        + "\"operationFieldKey\":\"operations.pool.linkFieldName\","
         + "\"link\":{\"relationType\":\"HasPart\",\"targetGlobalId\":\""
+        + targetGlobalId
+        + "\",\"versionPin\":null}}";
+  }
+
+  /** Derive's declared provenance link back to one origin, as the wizard builds it. */
+  private String deriveLinkJson(String targetGlobalId) {
+    return "{\"name\":\"Is Derived From using process: PCR\","
+        + "\"type\":\"link\",\"newFieldRequest\":true,"
+        + "\"operationFieldKey\":\"operations.derive.linkFieldName\","
+        + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
+        + targetGlobalId
+        + "\",\"versionPin\":null}}";
+  }
+
+  /** Aliquot's declared provenance link back to its origin. */
+  private String isPartOfLinkJson(String targetGlobalId) {
+    return "{\"name\":\"Derived from\",\"type\":\"link\",\"newFieldRequest\":true,"
+        + "\"operationFieldKey\":\"operations.aliquot.linkFieldName\","
+        + "\"link\":{\"relationType\":\"IsPartOf\",\"targetGlobalId\":\""
         + targetGlobalId
         + "\",\"versionPin\":null}}";
   }
@@ -335,7 +336,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             + hasPartLinkJson(massOrigin.getGlobalId())
             + "],\"subSamples\":[{\"quantity\":{\"numericValue\":2,\"unitId\":"
             + RSUnitDef.MILLI_LITRE.getId()
-            + "},\"extraFields\":[]}]}}";
+            + "}}]}}";
 
     mockMvc
         .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
@@ -361,6 +362,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
 
     String textCarriedLink =
         "{\"name\":\"Is Derived From\",\"type\":\"text\",\"newFieldRequest\":true,"
+            + "\"operationFieldKey\":\"operations.derive.linkFieldName\","
             + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
             + origin.getGlobalId()
             + "\",\"versionPin\":null}}";
@@ -373,7 +375,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             + textCarriedLink
             + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
             + unitId
-            + "},\"extraFields\":[]}]}}";
+            + "}}]}}";
 
     mockMvc
         .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
@@ -394,11 +396,7 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     Integer unitId = origin.getQuantity().getUnitId();
     java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
 
-    String linkJson =
-        "{\"name\":\"Is Part Of\",\"type\":\"link\",\"newFieldRequest\":true,"
-            + "\"link\":{\"relationType\":\"IsPartOf\",\"targetGlobalId\":\""
-            + origin.getGlobalId()
-            + "\",\"versionPin\":null}}";
+    String linkJson = isPartOfLinkJson(origin.getGlobalId());
     String operationJson =
         "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
             + origin.getId()
@@ -409,10 +407,10 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
             + "],\"subSamples\":["
             + "{\"quantity\":{\"numericValue\":0.25,\"unitId\":"
             + unitId
-            + "},\"extraFields\":[]},"
+            + "}},"
             + "{\"quantity\":{\"numericValue\":0.75,\"unitId\":"
             + unitId
-            + "},\"extraFields\":[]}]}}";
+            + "}}]}}";
 
     mockMvc
         .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
@@ -427,7 +425,9 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
   @Test
   public void originExtraFieldLinkingTheOriginToItselfIsRejected() throws Exception {
     // valid-payload review finding 1: the create-field path must enforce the self-link rule against
-    // the authoritative parent (the payload's parentGlobalId is client-supplied and was forgeable)
+    // the authoritative parent (the payload's parentGlobalId is client-supplied and was forgeable).
+    // The strict whitelist closes this a second way: Destroy declares only its disposed-date origin
+    // field, so a "Self reference" link field is undeclared content (DevDocs/adr/0007).
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
     ApiSubSample origin = source.getSubSamples().get(0);
     java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
@@ -467,6 +467,175 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
     assertTrue(
         reloaded.getExtraFields().stream().allMatch(ef -> ef.getLink() == null),
         "no self-link field may be persisted on the origin");
+  }
+
+  // --- strict full-definition validation (DevDocs/adr/0007): one probe per review repro ---
+
+  /** Posts the body, expects a 400, and asserts the origin was left untouched. */
+  private void assertRejectedLeavingOriginUnchanged(ApiSubSample origin, String operationJson)
+      throws Exception {
+    java.math.BigDecimal before = origin.getQuantity().getNumericValue();
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+        .andExpect(status().isBadRequest());
+    ApiSubSample reloaded = subSampleApiManager.getApiSubSampleById(origin.getId(), anyUser);
+    assertTrue(
+        before.compareTo(reloaded.getQuantity().getNumericValue()) == 0,
+        "origin must be unchanged when the request does not match its operation definition");
+  }
+
+  /** An Aliquot request body with the given extra fields on its new sample. */
+  private String aliquotJson(ApiSubSample origin, String sampleExtraFieldsJson) {
+    return "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
+        + origin.getId()
+        + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
+        + origin.getQuantity().getUnitId()
+        + "}}],\"newSample\":{\"name\":\"Aliquots\",\"extraFields\":["
+        + sampleExtraFieldsJson
+        + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
+        + origin.getQuantity().getUnitId()
+        + "}}]}}";
+  }
+
+  @Test
+  public void rejectsOriginFieldOnAnOperationThatDeclaresNone() throws Exception {
+    // review repro F5a: only Destroy declares an origin field, so writing one to an Aliquot origin
+    // is content no definition describes
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    String undeclaredOriginField =
+        "{\"name\":\"Disposed\",\"type\":\"text\",\"newFieldRequest\":true,"
+            + "\"operationFieldKey\":\"operations.destroy.disposedField\","
+            + "\"content\":\"2026-08-28\"}";
+    String operationJson =
+        "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
+            + origin.getId()
+            + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
+            + origin.getQuantity().getUnitId()
+            + "},\"extraFields\":["
+            + undeclaredOriginField
+            + "]}],\"newSample\":{\"name\":\"Aliquots\",\"extraFields\":["
+            + isPartOfLinkJson(origin.getGlobalId())
+            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
+            + origin.getQuantity().getUnitId()
+            + "}}]}}";
+    assertRejectedLeavingOriginUnchanged(origin, operationJson);
+  }
+
+  @Test
+  public void rejectsDestroyWithoutItsDeclaredDisposedField() throws Exception {
+    // review repro F5b: Destroy declares a disposed-date field on each origin; omitting it would
+    // empty the subsample with no record of the disposal
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    String operationJson =
+        "{\"operationType\":\"destroy\",\"origins\":[{\"id\":"
+            + origin.getId()
+            + ",\"amountTaken\":{\"numericValue\":"
+            + origin.getQuantity().getNumericValue().toPlainString()
+            + ",\"unitId\":"
+            + origin.getQuantity().getUnitId()
+            + "}}]}";
+    assertRejectedLeavingOriginUnchanged(origin, operationJson);
+  }
+
+  @Test
+  public void rejectsPassageWithoutItsDeclaredPassageNumberField() throws Exception {
+    // review repro F5c: Passage declares a passage-number text field on the new sample
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    String linkJson =
+        "{\"name\":\"Passaged from\",\"type\":\"link\",\"newFieldRequest\":true,"
+            + "\"operationFieldKey\":\"operations.passage.linkFieldName\","
+            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
+            + origin.getGlobalId()
+            + "\",\"versionPin\":null}}";
+    String operationJson =
+        "{\"operationType\":\"passage\",\"origins\":[{\"id\":"
+            + origin.getId()
+            + ",\"amountTaken\":{\"numericValue\":0,\"unitId\":"
+            + origin.getQuantity().getUnitId()
+            + "}}],\"newSample\":{\"name\":\"HeLa p3\",\"extraFields\":["
+            + linkJson
+            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
+            + origin.getQuantity().getUnitId()
+            + "}}]}}";
+    assertRejectedLeavingOriginUnchanged(origin, operationJson);
+  }
+
+  @Test
+  public void rejectsCryopreserveWithAStorageTemperatureRangeRatherThanOneValue() throws Exception {
+    // review repro F5d: one temperature input feeds both bounds, so a range describes a sample the
+    // operation cannot produce
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    String linkJson =
+        "{\"name\":\"Frozen from\",\"type\":\"link\",\"newFieldRequest\":true,"
+            + "\"operationFieldKey\":\"operations.cryopreserve.linkFieldName\","
+            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
+            + origin.getGlobalId()
+            + "\",\"versionPin\":null}}";
+    String cryomediumJson =
+        "{\"name\":\"Cryomedium\",\"type\":\"text\",\"newFieldRequest\":true,"
+            + "\"operationFieldKey\":\"operations.cryopreserve.cryomediumField\","
+            + "\"content\":\"10% DMSO\"}";
+    String operationJson =
+        "{\"operationType\":\"cryopreserve\",\"origins\":[{\"id\":"
+            + origin.getId()
+            + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
+            + origin.getQuantity().getUnitId()
+            + "}}],\"newSample\":{\"name\":\"Frozen cells\","
+            + "\"storageTempMin\":{\"numericValue\":-80,\"unitId\":"
+            + RSUnitDef.CELSIUS.getId()
+            + "},\"storageTempMax\":{\"numericValue\":-20,\"unitId\":"
+            + RSUnitDef.CELSIUS.getId()
+            + "},\"extraFields\":["
+            + linkJson
+            + ","
+            + cryomediumJson
+            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":1,\"unitId\":"
+            + origin.getQuantity().getUnitId()
+            + "}}]}}";
+    assertRejectedLeavingOriginUnchanged(origin, operationJson);
+  }
+
+  @Test
+  public void rejectsSharingSmuggledOntoTheNewSample() throws Exception {
+    // review repro F5e: no operation definition declares sharing, so the endpoint must not be a
+    // back door into it
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    String operationJson =
+        aliquotJson(origin, isPartOfLinkJson(origin.getGlobalId()))
+            .replace(
+                "\"newSample\":{\"name\":\"Aliquots\"",
+                "\"newSample\":{\"sharingMode\":\"WHITELIST\",\"name\":\"Aliquots\"");
+    assertRejectedLeavingOriginUnchanged(origin, operationJson);
+  }
+
+  @Test
+  public void rejectsSubSamplePlacementSmuggledOntoTheNewSample() throws Exception {
+    // review repro F5f: the created subsamples go to the workbench; placement is not part of any
+    // operation definition
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    String operationJson =
+        "{\"operationType\":\"aliquot\",\"origins\":[{\"id\":"
+            + origin.getId()
+            + ",\"amountTaken\":{\"numericValue\":1,\"unitId\":"
+            + origin.getQuantity().getUnitId()
+            + "}}],\"newSample\":{\"name\":\"Aliquots\",\"extraFields\":["
+            + isPartOfLinkJson(origin.getGlobalId())
+            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
+            + origin.getQuantity().getUnitId()
+            + "},\"parentLocation\":{\"id\":1}}]}}";
+    assertRejectedLeavingOriginUnchanged(origin, operationJson);
+  }
+
+  @Test
+  public void rejectsAnExtraFieldWithNoDefinitionKey() throws Exception {
+    // Fields are matched by key, not by name: a field the wizard never built carries no key the
+    // definition declares, so it cannot be smuggled in under a plausible display name.
+    ApiSubSample origin = createBasicSampleForUser(anyUser).getSubSamples().get(0);
+    String unkeyedField =
+        "{\"name\":\"Derived from\",\"type\":\"text\",\"newFieldRequest\":true,"
+            + "\"content\":\"anything\"}";
+    assertRejectedLeavingOriginUnchanged(
+        origin, aliquotJson(origin, isPartOfLinkJson(origin.getGlobalId()) + "," + unkeyedField));
   }
 
   private ApiExtraField findLinkField(List<ApiExtraField> extraFields) {
