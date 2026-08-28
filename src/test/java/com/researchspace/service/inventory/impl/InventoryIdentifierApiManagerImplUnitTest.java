@@ -2,6 +2,7 @@ package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -16,16 +17,20 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
+import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
+import com.researchspace.b2inst.model.response.B2instRecordLinks;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.Instrument;
@@ -34,12 +39,14 @@ import com.researchspace.model.inventory.field.InventoryUriField;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.inventory.InventoryRecordRetriever;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectionException;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -432,5 +439,187 @@ class InventoryIdentifierApiManagerImplUnitTest {
         instrumentUpdateFor(mgr, instrumentWithLandingPage(null), newPidinstRegistration());
 
     assertTrue(landingPageUpdate(update).isEmpty());
+  }
+
+  private Method refreshMethod() throws Exception {
+    Method m =
+        InventoryIdentifierApiManagerImpl.class.getDeclaredMethod(
+            "createUpdateWithRefreshedB2instDoi", DigitalObjectIdentifier.class);
+    m.setAccessible(true);
+    return m;
+  }
+
+  private DigitalObjectIdentifier b2instDoi() {
+    DigitalObjectIdentifier doi = new DigitalObjectIdentifier("k2j9p-7yh21", "instr");
+    doi.setType(IdentifierType.PIDINST_B2INST);
+    ReflectionTestUtils.setField(doi, "id", 12L);
+    return doi;
+  }
+
+  @Test
+  void refreshPersistsOpenReviewStatusVerbatim() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    B2instRequestResponse review = new B2instRequestResponse();
+    review.setStatus("declined");
+    when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.of(review));
+
+    ApiInventoryDOI result = (ApiInventoryDOI) refreshMethod().invoke(mgr, b2instDoi());
+
+    assertEquals(12L, result.getId());
+    assertEquals("declined", result.getState());
+    verify(b2instConnector, never()).getPublishedRecord(any());
+  }
+
+  @Test
+  void refreshMapsMissingReviewWithPublishedRecordToAccepted() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    ReflectionTestUtils.setField(mgr, "properties", properties);
+    when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.empty());
+    B2instDraftRecord published = new B2instDraftRecord();
+    published.setPids(
+        Map.of("epic", Map.of("identifier", "http://hdl.handle.net/21.T11975/k2j9p-7yh21")));
+    B2instRecordLinks links = new B2instRecordLinks();
+    links.setSelfHtml("https://b2inst-test.gwdg.de/records/k2j9p-7yh21");
+    published.setLinks(links);
+    when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.of(published));
+
+    DigitalObjectIdentifier doi = b2instDoi();
+    ApiInventoryDOI result = (ApiInventoryDOI) refreshMethod().invoke(mgr, doi);
+
+    assertEquals("accepted", result.getState());
+    assertEquals("http://hdl.handle.net/21.T11975/k2j9p-7yh21", result.getPublicUrl());
+    assertEquals("https://b2inst-test.gwdg.de/records/k2j9p-7yh21", result.getProviderUrl());
+    // accepted is the B2INST equivalent of findable, whose url is the RSpace landing page
+    assertEquals(
+        "https://rspace.example.com/public/inventory/" + doi.getPublicLink(), result.getUrl());
+  }
+
+  @Test
+  void refreshFallsBackToDraftWhenOnlyTheDraftSurvives() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.empty());
+    when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.empty());
+    when(b2instConnector.getDraftRecord("k2j9p-7yh21"))
+        .thenReturn(Optional.of(new B2instDraftRecord()));
+
+    ApiInventoryDOI result = (ApiInventoryDOI) refreshMethod().invoke(mgr, b2instDoi());
+
+    assertEquals("draft", result.getState());
+  }
+
+  @Test
+  void refreshReportsRecordGoneWhenNothingRemainsAtProvider() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.empty());
+    when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.empty());
+    when(b2instConnector.getDraftRecord("k2j9p-7yh21")).thenReturn(Optional.empty());
+
+    InvocationTargetException thrown =
+        assertThrows(
+            InvocationTargetException.class, () -> refreshMethod().invoke(mgr, b2instDoi()));
+
+    assertInstanceOf(ApiRuntimeException.class, thrown.getCause());
+  }
+
+  @Test
+  void refreshWrapsConnectorFailureWithLocalizedReason() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    MessageSourceUtils messages = mock(MessageSourceUtils.class);
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    ReflectionTestUtils.setField(mgr, "messages", messages);
+    when(messages.getMessage(eq("errors.inventory.identifier.b2instRefreshFailed"), any()))
+        .thenReturn("Could not refresh. reason");
+    when(b2instConnector.getReviewOf("k2j9p-7yh21"))
+        .thenThrow(new B2instConnectionException("dev message", "reason", null));
+
+    InvocationTargetException thrown =
+        assertThrows(
+            InvocationTargetException.class, () -> refreshMethod().invoke(mgr, b2instDoi()));
+
+    assertInstanceOf(B2instConnectionException.class, thrown.getCause());
+    assertEquals("Could not refresh. reason", thrown.getCause().getMessage());
+  }
+
+  /**
+   * The refresh entry point rejected a record with no identifier using hard-coded developer text,
+   * which the API returns verbatim to clients. Every other refresh failure resolves an {@code
+   * errors.inventory.identifier.*} key, so this one does too (Copilot review, PR 1066).
+   */
+  @Test
+  void refreshWithoutIdentifierRaisesLocalizedErrorCode() {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    InventoryRecordRetriever retriever = mock(InventoryRecordRetriever.class);
+    ReflectionTestUtils.setField(mgr, "invRecRetriever", retriever);
+    GlobalIdentifier oid = new GlobalIdentifier("IT1");
+    Instrument withoutIdentifier = new Instrument();
+    when(retriever.getInvRecordByGlobalId(oid)).thenReturn(withoutIdentifier);
+
+    ApiRuntimeException thrown =
+        assertThrows(ApiRuntimeException.class, () -> mgr.refreshIdentifier(oid, new User("u")));
+
+    assertEquals("errors.inventory.identifier.refreshNoIdentifier", thrown.getErrorCode());
+  }
+
+  /**
+   * The url reported after acceptance must be the address the minted Handle actually resolves to,
+   * which is the LandingPage B2INST holds for the record. Registration prefers a user-typed
+   * institutional address over RSpace's own public page, so rebuilding the RSpace page here would
+   * report an address the PID does not resolve to (Copilot review, PR 1066).
+   */
+  @Test
+  void refreshTakesUrlFromTheRegisteredLandingPageWhenTheRecordCarriesOne() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    IPropertyHolder properties = mock(IPropertyHolder.class);
+    when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    ReflectionTestUtils.setField(mgr, "properties", properties);
+    when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.empty());
+    B2instDraftRecord published = new B2instDraftRecord();
+    B2instInstrumentMetadata metadata = new B2instInstrumentMetadata();
+    metadata.setLandingPage("https://institution.example.org/instruments/nmr-400");
+    published.setMetadata(metadata);
+    when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.of(published));
+
+    ApiInventoryDOI result = (ApiInventoryDOI) refreshMethod().invoke(mgr, b2instDoi());
+
+    assertEquals("accepted", result.getState());
+    assertEquals("https://institution.example.org/instruments/nmr-400", result.getUrl());
+  }
+
+  /**
+   * A review reporting {@code accepted} while {@code /records/{rid}} is not there yet leaves no way
+   * to name the minted Handle. Storing {@code accepted} anyway would open the unauthenticated
+   * public page for a PID the user cannot resolve, and would leave publicUrl and providerUrl empty,
+   * so the refresh refuses and keeps the stored state instead (parallel review, PR 1066).
+   */
+  @Test
+  void refreshRefusesToPublishAnAcceptedReviewWhoseRecordIsNotAvailable() throws Exception {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    B2instConnector b2instConnector = mock(B2instConnector.class);
+    ReflectionTestUtils.setField(mgr, "b2instConnector", b2instConnector);
+    B2instRequestResponse review = new B2instRequestResponse();
+    review.setStatus("accepted");
+    when(b2instConnector.getReviewOf("k2j9p-7yh21")).thenReturn(Optional.of(review));
+    when(b2instConnector.getPublishedRecord("k2j9p-7yh21")).thenReturn(Optional.empty());
+
+    InvocationTargetException thrown =
+        assertThrows(
+            InvocationTargetException.class, () -> refreshMethod().invoke(mgr, b2instDoi()));
+
+    ApiRuntimeException cause = assertInstanceOf(ApiRuntimeException.class, thrown.getCause());
+    assertEquals(
+        "errors.inventory.identifier.b2instAcceptedRecordUnavailable", cause.getErrorCode());
   }
 }

@@ -83,6 +83,51 @@ export type PidinstPublishingState = "created" | "submitted" | "accepted" | "dec
  */
 export type PublishingState = IGSNPublishingState | PidinstPublishingState;
 
+/**
+ * True when the identifier's metadata is published: DataCite's "findable", or B2INST's
+ * "accepted" (the community review outcome that publishes the record).
+ */
+export const isPublishedState = (state: PublishingState): boolean => state === "findable" || state === "accepted";
+
+/**
+ * Catalog key for a publication state's label: the same words the identifiers table shows in its
+ * State cell. Null for a state RSpace does not recognise, since the server passes an unrecognised
+ * provider status through verbatim and the caller has to show that raw value rather than throwing
+ * out of a render.
+ *
+ * Shared so the table and the alerts cannot disagree. They used to be produced separately, which
+ * put the provider's raw English token inside an otherwise translated sentence.
+ *
+ * Returns the key rather than the translated text, so each caller translates with its own `t`.
+ * That keeps this module clear of the i18n singleton and lets a component's label follow a
+ * language change. Arms are spelled out rather than built from the state, so the typed catalog and
+ * the i18n extractor both still see every key.
+ */
+export const identifierStateLabelKey = (state: PublishingState) => {
+  switch (state) {
+    case "draft":
+      return "inventory:igsnTable.filters.stateOptions.draft.title";
+    case "findable":
+      return "inventory:igsnTable.filters.stateOptions.findable.title";
+    case "registered":
+      return "inventory:igsnTable.filters.stateOptions.registered.title";
+    case "created":
+      return "inventory:fields.identifiers.list.stateLabels.created";
+    case "submitted":
+      return "inventory:fields.identifiers.list.stateLabels.submitted";
+    case "accepted":
+      return "inventory:fields.identifiers.list.stateLabels.accepted";
+    case "declined":
+      return "inventory:fields.identifiers.list.stateLabels.declined";
+    case "cancelled":
+      return "inventory:fields.identifiers.list.stateLabels.cancelled";
+    case "expired":
+      return "inventory:fields.identifiers.list.stateLabels.expired";
+    default:
+      return null;
+  }
+};
+
 export type IdentifierDate = { value: Date; type: IGSNDateType };
 
 /*
@@ -186,6 +231,7 @@ export interface Identifier {
     addAlert: (alert: Alert) => void;
   }): Promise<void>;
   republish({ addAlert }: { addAlert: (alert: Alert) => void }): Promise<void>;
+  refresh({ addAlert }: { addAlert: (alert: Alert) => void }): Promise<void>;
 
   toJson(): object;
 }

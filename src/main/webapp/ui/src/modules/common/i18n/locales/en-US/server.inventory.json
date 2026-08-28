@@ -73,8 +73,11 @@
       },
       "identifier": {
         "assignTypeMismatch": "Identifier of type {0} cannot be assigned to inventory item [{1}]",
+        "b2instAcceptedRecordUnavailable": "B2INST accepted this submission but its record is not available yet, so the instrument PID cannot be shown. Please try again shortly.",
         "b2instDeleteFailed": "Could not delete the instrument PID from B2INST. {0}",
         "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
+        "b2instRecordGone": "B2INST no longer holds this record, so there is no status to refresh. The record was removed on the provider side.",
+        "b2instRefreshFailed": "Could not refresh the instrument PID status from B2INST. {0}",
         "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
         "b2instRegisterNoDraft": "Could not register a new instrument PID with B2INST: the service accepted the request but returned no draft record.",
         "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
@@ -84,8 +87,10 @@
         "dataCitePublishFailed": "Error when publishing the DOI in DataCite. If the problem persists, please contact your System Admin",
         "dataCiteRetractFailed": "Error when retracting the DOI in DataCite. If the problem persists, please contact your System Admin",
         "deleteNotOwner": "You can only delete an identifier that you own.",
+        "deleteWrongState": "You can only delete identifiers in \"draft\" state, or B2INST instrument PIDs whose community review was declined, cancelled or expired.",
         "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
         "mintingUnsupportedType": "unsupported type for minting: {0}",
+        "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
         "typeUnsupported": "identifiers of type {0} are not supported yet"
       },
       "import": {
