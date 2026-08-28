@@ -1,4 +1,7 @@
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -6,6 +9,7 @@ import Step from "@mui/material/Step";
 import StepContent from "@mui/material/StepContent";
 import StepLabel from "@mui/material/StepLabel";
 import Stepper from "@mui/material/Stepper";
+import { useQuery } from "@tanstack/react-query";
 import { omit } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
@@ -28,7 +32,7 @@ import DocumentationStep from "./DocumentationStep";
 import OperationConfirmation from "./OperationConfirmation";
 import OperationDetailsStep from "./OperationDetailsStep";
 import OperationPicker from "./OperationPicker";
-import { performOperation, sampleNameAvailable } from "./operationsApi";
+import { fetchOperationsConfig, performOperation, sampleNameAvailable } from "./operationsApi";
 import {
   type InventoryOperation,
   resolveDefaultAmountMode,
@@ -163,6 +167,22 @@ function OperationWizard({
   // On small viewports (phones/tablets) the horizontal label row gets cramped, so fall back to the
   // classic vertical stepper (labels stacked, active step's content inline beneath its label).
   const { isViewportSmall } = useViewportDimensions();
+  // The operation definitions come from the backend's single authoritative operations_config.json
+  // (DevDocs/adr/0007). The config only changes on deployment, so cache it for the session.
+  const {
+    data: availableOperations,
+    isError: operationsLoadFailed,
+    error: operationsLoadError,
+  } = useQuery({
+    queryKey: ["inventory", "operationsConfig"],
+    queryFn: fetchOperationsConfig,
+    staleTime: Infinity,
+  });
+  React.useEffect(() => {
+    if (operationsLoadError) {
+      console.error("Could not load the operation definitions", operationsLoadError);
+    }
+  }, [operationsLoadError]);
   const [operation, setOperation] = React.useState<InventoryOperation | null>(null);
   const [values, setValues] = React.useState<OperationInputs>({});
   const [documentation, setDocumentation] = React.useState<DocumentationSelection>(null);
@@ -657,12 +677,19 @@ function OperationWizard({
               {isViewportSmall ? null : stepContent(stepKeys[activeStep])}
             </>
           )
-        ) : (
+        ) : operationsLoadFailed ? (
+          <Alert severity="error">{t("operations.picker.loadFailed")}</Alert>
+        ) : availableOperations ? (
           <OperationPicker
+            operations={availableOperations}
             onSelect={selectOperation}
             selectionCount={origins.length}
             allSameCategory={allSameCategory}
           />
+        ) : (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <CircularProgress aria-label={t("operations.picker.loading")} />
+          </Box>
         )}
       </DialogContent>
       <DialogActions>

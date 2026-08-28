@@ -2,12 +2,11 @@ package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.InventoryOperationsApi;
 import com.researchspace.api.v1.controller.SamplesApiController.ApiSampleFullPost;
-import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
-import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleTemplate;
+import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import com.researchspace.service.inventory.InventoryOperationManager;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
@@ -18,9 +17,10 @@ import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 
 /**
- * Thin coordinator endpoint for configured Inventory operations. Validates the request, then
- * delegates to the transactional {@link InventoryOperationManager}, which performs the whole effect
- * atomically. No per-operation logic lives here (see DevDocs/adr/0007).
+ * Thin coordinator endpoint for configured Inventory operations. Validates the request's structure,
+ * then delegates to the transactional {@link InventoryOperationManager}, which enforces the
+ * live-state rules inside its own transaction and performs the whole effect atomically. No
+ * per-operation logic lives here (see DevDocs/adr/0007).
  */
 @ApiController
 public class InventoryOperationsApiController extends BaseApiInventoryController
@@ -30,6 +30,11 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
   @Autowired InventoryOperationPostValidator operationPostValidator;
   @Autowired InventoryOperationConfigRegistry operationConfigs;
   @Autowired SampleApiPostFullValidator sampleApiPostFullValidator;
+
+  @Override
+  public String getOperationsConfig() {
+    return operationConfigs.rawConfigJson();
+  }
 
   @Override
   public ApiSampleWithFullSubSamples performOperation(
@@ -64,63 +69,11 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
             new ApiSampleFullPost(newSample, user, template), sampleApiPostFullValidator, errors);
       }
     }
-    // Live-state checks (DevDocs/adr/0007): every origin must currently hold
-    // something, the amount taken may not exceed what an origin holds, and an origin-emptying
-    // operation (e.g. Destroy) must take exactly what the origin holds. These need each origin's
-    // live quantity, which the stateless structural validator cannot load, so they run here where
-    // the user (hence read permission) is available. Only when the structural checks passed, so
-    // every origin has a valid id to load and the operation type is known. Same 400/BindException
-    // contract as the other rules.
-    // The read runs in its own transaction, separate from the later performOperation mutation, so
-    // under concurrency these checks are advisory: they can act on a slightly stale quantity. That
-    // is safe because registerApiSubSampleUsage subtracts and clamps at zero (an origin can only
-    // ever decrease, never go negative), so the worst case is an origin ending at zero rather than
-    // a 400.
-    if (!errors.hasErrors()) {
-      boolean emptiesOrigin =
-          operationConfigs
-              .get(request.getOperationType())
-              .map(config -> config.effect().emptiesOrigin())
-              .orElse(false);
-      int index = 0;
-      for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
-        errors.pushNestedPath(String.format("origins[%d]", index++));
-        // try/finally so the nested-path stack is always restored, even if getApiSubSampleById
-        // throws
-        // (missing origin / permission edge cases); otherwise a thrown read would leave the
-        // BindingResult's path stack unbalanced.
-        try {
-          // Assert edit permission BEFORE reading state: getApiSubSampleById never throws for an
-          // under-permissioned caller, it returns a field-stripped copy whose quantity is null,
-          // which would misreport a full origin as "empty" (a 400) instead of an authorization
-          // failure. The manager re-asserts inside the transaction (defence in depth).
-          subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
-          ApiSubSample current = subSampleApiMgr.getApiSubSampleById(origin.getId(), user);
-          if (InventoryOperationPostValidator.originHoldsNothing(current.getQuantity())) {
-            errors.rejectValue(
-                "id",
-                "errors.inventory.operation.originEmpty",
-                "An origin subsample that currently holds nothing cannot be operated on.");
-          } else if (InventoryOperationPostValidator.amountTakenExceedsOrigin(
-              origin.getAmountTaken(), current.getQuantity())) {
-            errors.rejectValue(
-                "amountTaken",
-                "errors.inventory.operation.amountTakenExceedsOrigin",
-                "Cannot take more from an origin than it currently holds.");
-          } else if (emptiesOrigin
-              && !InventoryOperationPostValidator.amountTakenEmptiesOrigin(
-                  origin.getAmountTaken(), current.getQuantity())) {
-            errors.rejectValue(
-                "amountTaken",
-                "errors.inventory.operation.mustEmptyOrigin",
-                "This operation must take the origin's entire remaining quantity.");
-          }
-        } finally {
-          errors.popNestedPath();
-        }
-      }
-    }
     throwBindExceptionIfErrors(errors);
+    // The live-state rules (origin currently holds something, amountTaken within it, emptying
+    // operations take exactly what it holds) are enforced by the manager INSIDE the operation's
+    // transaction, so they hold against the state the mutation sees; a violation propagates as the
+    // same field-scoped 400 BindException the structural checks above produce.
     return inventoryOperationManager.performOperation(request, user);
   }
 }

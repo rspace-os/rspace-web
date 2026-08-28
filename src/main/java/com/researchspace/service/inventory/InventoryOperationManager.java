@@ -3,6 +3,7 @@ package com.researchspace.service.inventory;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
+import org.springframework.validation.BindException;
 
 /**
  * Coordinates a configured Inventory operation as a single atomic unit: creates the new sample
@@ -26,9 +27,17 @@ public interface InventoryOperationManager {
    * these without guards, so a future non-controller caller that skips validation would fail
    * mid-transaction instead of cleanly.
    *
+   * <p>The live-state rules (an origin must currently hold something, the amount taken may not
+   * exceed what it holds, and an origin-emptying operation must take exactly what it holds) are
+   * enforced HERE, inside the operation's own transaction, so they hold against the same state the
+   * mutation sees. A violation is reported as a {@link BindException} carrying field errors under
+   * {@code origins[i]}, before anything is written.
+   *
    * @return the newly created sample (with its subsamples), as returned by the sample-creation
    *     manager, or {@code null} for a terminal operation that creates nothing (noOutput, e.g.
    *     Destroy, which only acts on its origins). See DevDocs/adr/0007.
+   * @throws BindException when a live-state rule is violated; nothing has been mutated.
    */
-  ApiSampleWithFullSubSamples performOperation(ApiInventoryOperationPost request, User user);
+  ApiSampleWithFullSubSamples performOperation(ApiInventoryOperationPost request, User user)
+      throws BindException;
 }
