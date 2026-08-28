@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -45,6 +45,7 @@ describe("DBRepo dialog body", () => {
     render(<DBRepo />);
 
     expect(await screen.findByText("Research data")).toBeVisible();
+    await waitFor(() => expect(editorListeners.has("dbrepo-insert")).toBe(true));
     editorListeners.get("dbrepo-insert")?.();
 
     expect(insertTemplateIntoTinyMCE).toHaveBeenCalledWith(
@@ -151,6 +152,125 @@ describe("DBRepo dialog body", () => {
       activeEditor,
     );
     expect(close).toHaveBeenCalled();
+  });
+
+  it("opens a row picker for a selected table and inserts selected rows", async () => {
+    const user = userEvent.setup();
+    const editorListeners = new Map<string, () => void>();
+    const insertTemplateIntoTinyMCE = vi.fn();
+    const execCommand = vi.fn();
+    const close = vi.fn();
+    const activeEditor = {
+      getBody: () => document.body,
+      execCommand,
+      on: vi.fn((eventName: string, callback: () => void) => editorListeners.set(eventName, callback)),
+      off: vi.fn((eventName: string) => editorListeners.delete(eventName)),
+      windowManager: { close },
+    };
+    (window as unknown as { tinymce?: unknown }).tinymce = {
+      activeEditor,
+    };
+    (window as unknown as { RS?: unknown }).RS = {
+      insertTemplateIntoTinyMCE,
+    };
+    mockAxios.onGet("/apps/dbrepo/databases").reply(200, [
+      {
+        id: "db-1",
+        name: "Research data",
+        url: "https://dbrepo.example/database/db-1",
+      },
+    ]);
+    mockAxios.onGet("/apps/dbrepo/databases/db-1/resources").reply(200, {
+      databaseId: "db-1",
+      tables: [
+        {
+          id: "table-1",
+          type: "table",
+          label: "Experiments",
+          secondaryText: "",
+          url: "https://dbrepo.example/database/db-1/table/table-1",
+        },
+      ],
+      views: [],
+      subsets: [],
+      failedTypes: [],
+    });
+    mockAxios.onGet("/apps/dbrepo/databases/db-1/table/table-1/metadata").reply(200, {
+      id: "table-1",
+      type: "table",
+      name: "Experiments",
+      query: "",
+      columns: [
+        { id: "col-1", name: "Experiment ID", internalName: "experiment_id", type: "int" },
+        { id: "col-2", name: "Title", internalName: "title", type: "varchar", size: 255 },
+      ],
+    });
+    mockAxios.onGet("/apps/dbrepo/databases/db-1/table/table-1/rows").reply((config) => {
+      expect(config.params).toEqual({ page: 0, size: 10 });
+      return [
+        200,
+        {
+          rows: [
+            { "Experiment ID": 1, Title: "Alpha" },
+            { "Experiment ID": 2, Title: "Beta" },
+          ],
+          page: 0,
+          size: 10,
+          totalCount: 2,
+        },
+      ];
+    });
+
+    render(<DBRepo />);
+
+    expect(await screen.findByText("Research data")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "workspace:tinymce.dbrepo.expandDatabase" }));
+    await user.click(await screen.findByRole("radio", { name: "Experiments" }));
+    act(() => {
+      editorListeners.get("dbrepo-insert-rows")?.();
+    });
+
+    expect(await screen.findByText("Experiment ID")).toBeVisible();
+    expect(screen.getByText("varchar(255)")).toBeVisible();
+    await user.click(screen.getByText("Alpha"));
+    await user.click(screen.getByRole("button", { name: "workspace:tinymce.dbrepo.rows.insert" }));
+
+    expect(execCommand).toHaveBeenCalledWith(
+      "mceInsertContent",
+      false,
+      expect.stringContaining('data-tablesource="dbrepo"'),
+    );
+    expect(execCommand.mock.calls[0][2]).toContain("<th>Experiment ID</th>");
+    expect(execCommand.mock.calls[0][2]).toContain("<td>Alpha</td>");
+    expect(close).toHaveBeenCalled();
+  });
+
+  it("does not open the row picker for databases", async () => {
+    const editorListeners = new Map<string, () => void>();
+    const activeEditor = {
+      getBody: () => document.body,
+      execCommand: vi.fn(),
+      on: vi.fn((eventName: string, callback: () => void) => editorListeners.set(eventName, callback)),
+      off: vi.fn((eventName: string) => editorListeners.delete(eventName)),
+      windowManager: { close: vi.fn() },
+    };
+    (window as unknown as { tinymce?: unknown }).tinymce = {
+      activeEditor,
+    };
+    mockAxios.onGet("/apps/dbrepo/databases").reply(200, [
+      {
+        id: "db-1",
+        name: "Research data",
+        url: "https://dbrepo.example/database/db-1",
+      },
+    ]);
+
+    render(<DBRepo />);
+
+    expect(await screen.findByText("Research data")).toBeVisible();
+    editorListeners.get("dbrepo-insert-rows")?.();
+
+    expect(screen.queryByText("workspace:tinymce.dbrepo.rows.tableLabel")).not.toBeInTheDocument();
   });
 
   it("selects a database when it is expanded", async () => {

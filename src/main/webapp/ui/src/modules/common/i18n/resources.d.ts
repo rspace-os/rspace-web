@@ -5100,9 +5100,9 @@ export default interface Resources {
         },
         "info": {
           "dialog": {
+            "databaseLabel": "Database:",
             "downloadButton": "Download CSV",
             "downloadButtonTitle": "Download CSV through RSpace",
-            "databaseLabel": "Database:",
             "header": "DBRepo link details",
             "nameLabel": "Name:",
             "openButton": "Open in DBRepo",
@@ -7049,6 +7049,9 @@ export default interface Resources {
           "remove": "Remove",
           "rename": "Rename"
         },
+        "dbrepo": {
+          "dialogTitle": "DBRepo link details"
+        },
         "document": {
           "creating": "Creating a document..."
         },
@@ -7071,9 +7074,6 @@ export default interface Resources {
         "media": {
           "loadingPlayer": "Loading the player ...",
           "playerNotAvailable": "Player not available"
-        },
-        "dbrepo": {
-          "dialogTitle": "DBRepo link details"
         },
         "nfs": {
           "actionFailed": "{0} action failed ({1}), if that does not work contact your System Admin",
@@ -10486,7 +10486,7 @@ export default interface Resources {
           "views": "Views"
         },
         "categoryCount": "({count})",
-        "collapseDatabase": "Hide DBRepo resources for {{name}}",
+        "collapseDatabase": "Hide DBRepo resources for {name}",
         "databaseList": "DBRepo databases",
         "empty": "No DBRepo databases were returned.",
         "emptyCategory": "No resources returned.",
@@ -10497,10 +10497,28 @@ export default interface Resources {
           "table": "Could not load tables.",
           "view": "Could not load views."
         },
-        "expandDatabase": "Show DBRepo resources for {{name}}",
+        "expandDatabase": "Show DBRepo resources for {name}",
         "insert": "Insert DBRepo link",
         "loading": "Loading DBRepo databases...",
-        "loadingResources": "Loading DBRepo resources..."
+        "loadingResources": "Loading DBRepo resources...",
+        "resourceTypes": {
+          "database": "database",
+          "subset": "subset",
+          "table": "table",
+          "view": "view"
+        },
+        "rows": {
+          "dialogTitle": "Insert DBRepo rows from {name}",
+          "insert": "Insert rows",
+          "loading": "Loading DBRepo rows...",
+          "metadataError": "Could not load DBRepo resource metadata.",
+          "noColumns": "No DBRepo columns were returned for this resource.",
+          "resourceContext": "{name} in {database}",
+          "rowsError": "Could not load DBRepo rows.",
+          "selectCurrentPage": "Select DBRepo rows on this page",
+          "selectedCount": "Selected: {count}",
+          "tableLabel": "DBRepo rows"
+        }
       },
       "galaxy": {
         "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",

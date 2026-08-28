@@ -130,6 +130,54 @@ public class DBRepoController {
             details.get().baseUrl(), databaseId, details.get().credentials()));
   }
 
+  @GetMapping("/databases/{databaseId}/{resourceType}/{resourceId}/metadata")
+  public @ResponseBody ResponseEntity<DBRepoResourceMetadataDTO> resourceMetadata(
+      @PathVariable String databaseId,
+      @PathVariable String resourceType,
+      @PathVariable String resourceId,
+      Principal principal) {
+    if (!supportsRowInsertion(resourceType)) {
+      return ResponseEntity.badRequest().build();
+    }
+    Optional<DBRepoConnectionDetails> details = findConnectionDetails(principal);
+    if (details.isEmpty()) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    return ResponseEntity.ok(
+        dbRepoClient.getResourceMetadata(
+            details.get().baseUrl(),
+            databaseId,
+            resourceType,
+            resourceId,
+            details.get().credentials()));
+  }
+
+  @GetMapping("/databases/{databaseId}/{resourceType}/{resourceId}/rows")
+  public @ResponseBody ResponseEntity<DBRepoRowPageDTO> resourceRows(
+      @PathVariable String databaseId,
+      @PathVariable String resourceType,
+      @PathVariable String resourceId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size,
+      Principal principal) {
+    if (!supportsRowInsertion(resourceType) || page < 0 || size <= 0 || size > 100) {
+      return ResponseEntity.badRequest().build();
+    }
+    Optional<DBRepoConnectionDetails> details = findConnectionDetails(principal);
+    if (details.isEmpty()) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    return ResponseEntity.ok(
+        dbRepoClient.getResourceRows(
+            details.get().baseUrl(),
+            databaseId,
+            resourceType,
+            resourceId,
+            page,
+            size,
+            details.get().credentials()));
+  }
+
   @GetMapping("/download/{resourceType}/{databaseId}/{resourceId}")
   public @ResponseBody void downloadResourceCsv(
       @PathVariable String resourceType,
@@ -196,6 +244,11 @@ public class DBRepoController {
   private String csvFilename(String resourceType, String resourceId) {
     return ("dbrepo-" + resourceType + "-" + resourceId + ".csv")
         .replaceAll("[^A-Za-z0-9._-]", "_");
+  }
+
+  private boolean supportsRowInsertion(String resourceType) {
+    return DBRepoClient.TABLE_TYPE.equals(resourceType)
+        || DBRepoClient.VIEW_TYPE.equals(resourceType);
   }
 
   private String propertyName(AppConfigElement element) {

@@ -1,12 +1,18 @@
 package com.researchspace.webapp.integrations.dbrepo;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpEntity;
@@ -27,19 +33,25 @@ public class DBRepoClient {
 
   static final String CURRENT_DATABASES_PATH = "/api/v1/database";
   static final String LEGACY_DATABASES_PATH = "/api/database";
-  private static final String TABLE_TYPE = "table";
-  private static final String VIEW_TYPE = "view";
+  static final String TABLE_TYPE = "table";
+  static final String VIEW_TYPE = "view";
   private static final String SUBSET_TYPE = "subset";
   private static final MediaType TEXT_CSV = MediaType.parseMediaType("text/csv");
 
   private final RestTemplate restTemplate;
+  private final ObjectMapper objectMapper;
 
   public DBRepoClient() {
-    this(new RestTemplate());
+    this(new RestTemplate(), new ObjectMapper());
   }
 
   DBRepoClient(RestTemplate restTemplate) {
+    this(restTemplate, new ObjectMapper());
+  }
+
+  DBRepoClient(RestTemplate restTemplate, ObjectMapper objectMapper) {
     this.restTemplate = restTemplate;
+    this.objectMapper = objectMapper;
   }
 
   public String normalizeBaseUrl(String url) {
@@ -142,6 +154,55 @@ public class DBRepoClient {
     return response.getBody() == null ? new byte[0] : response.getBody();
   }
 
+  public DBRepoResourceMetadataDTO getResourceMetadata(
+      String baseUrl,
+      String databaseId,
+      String resourceType,
+      String resourceId,
+      DBRepoCredentials credentials) {
+    validateRowsResourceType(resourceType);
+    String normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+    ResponseEntity<JsonNode> response =
+        restTemplate.exchange(
+            resourceUrl(normalizedBaseUrl, databaseId, resourceType, resourceId),
+            HttpMethod.GET,
+            new HttpEntity<>(headers(credentials)),
+            JsonNode.class);
+    JsonNode body = response.getBody();
+    if (body == null || !body.isObject()) {
+      return new DBRepoResourceMetadataDTO(resourceId, resourceType, resourceId, "", List.of());
+    }
+    return new DBRepoResourceMetadataDTO(
+        StringUtils.defaultIfBlank(text(body, "id"), resourceId),
+        resourceType,
+        StringUtils.defaultIfBlank(text(body, "name"), resourceId),
+        text(body, "query"),
+        columns(body));
+  }
+
+  public DBRepoRowPageDTO getResourceRows(
+      String baseUrl,
+      String databaseId,
+      String resourceType,
+      String resourceId,
+      int page,
+      int size,
+      DBRepoCredentials credentials) {
+    validateRowsResourceType(resourceType);
+    String normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+    String dataUrl =
+        resourceUrl(normalizedBaseUrl, databaseId, resourceType, resourceId)
+            + "/data?page="
+            + page
+            + "&size="
+            + size;
+    ResponseEntity<JsonNode> response =
+        restTemplate.exchange(
+            dataUrl, HttpMethod.GET, new HttpEntity<>(headers(credentials)), JsonNode.class);
+    return new DBRepoRowPageDTO(
+        rows(response.getBody()), page, size, countRows(dataUrl, credentials).orElse(null));
+  }
+
   private List<DBRepoLinkedResourceDTO> listResourcesAllowingFailure(
       String normalizedBaseUrl,
       String encodedDatabaseId,
@@ -160,6 +221,18 @@ public class DBRepoClient {
       log.warn("Could not load DBRepo {} resources for database {}", type, databaseId, e);
       failedTypes.add(type);
       return Collections.emptyList();
+    }
+  }
+
+  private Optional<Long> countRows(String dataUrl, DBRepoCredentials credentials) {
+    try {
+      ResponseEntity<Void> response =
+          restTemplate.exchange(
+              dataUrl, HttpMethod.HEAD, new HttpEntity<>(headers(credentials)), Void.class);
+      return Optional.ofNullable(response.getHeaders().getFirst("X-Count")).map(Long::valueOf);
+    } catch (RuntimeException e) {
+      log.warn("Could not count DBRepo rows at {}", dataUrl, e);
+      return Optional.empty();
     }
   }
 
@@ -230,6 +303,73 @@ public class DBRepoClient {
       return StringUtils.defaultIfBlank(text(node, "query"), id);
     }
     return StringUtils.defaultIfBlank(text(node, "name"), id);
+  }
+
+  private List<DBRepoColumnDTO> columns(JsonNode resource) {
+    JsonNode columns = firstArray(resource.get("columns"), resource.at("/schema/columns"));
+    if (columns == null) {
+      return List.of();
+    }
+    List<JsonNode> nodes = new ArrayList<>();
+    columns.forEach(nodes::add);
+    nodes.sort(
+        Comparator.comparingInt(
+            column -> column.has("ord") ? column.get("ord").asInt() : Integer.MAX_VALUE));
+    return nodes.stream()
+        .map(
+            column ->
+                new DBRepoColumnDTO(
+                    text(column, "id"),
+                    StringUtils.defaultIfBlank(text(column, "name"), text(column, "internal_name")),
+                    text(column, "internal_name"),
+                    text(column, "type"),
+                    column.has("size") && !column.get("size").isNull()
+                        ? column.get("size").asInt()
+                        : null))
+        .toList();
+  }
+
+  private JsonNode firstArray(JsonNode... candidates) {
+    for (JsonNode candidate : candidates) {
+      if (candidate != null && candidate.isArray()) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  private List<Map<String, Object>> rows(JsonNode body) {
+    JsonNode rowNodes =
+        body != null && body.isObject() && body.get("data") != null ? body.get("data") : body;
+    if (rowNodes == null || !rowNodes.isArray()) {
+      return List.of();
+    }
+    List<Map<String, Object>> rows = new ArrayList<>();
+    for (JsonNode row : rowNodes) {
+      if (row.isObject()) {
+        rows.add(
+            objectMapper.convertValue(row, new TypeReference<LinkedHashMap<String, Object>>() {}));
+      }
+    }
+    return rows;
+  }
+
+  private String resourceUrl(
+      String normalizedBaseUrl, String databaseId, String resourceType, String resourceId) {
+    return normalizedBaseUrl
+        + "/api/v1/database/"
+        + encodePathSegment(databaseId)
+        + "/"
+        + resourceType
+        + "/"
+        + encodePathSegment(resourceId);
+  }
+
+  private void validateRowsResourceType(String resourceType) {
+    if (!TABLE_TYPE.equals(resourceType) && !VIEW_TYPE.equals(resourceType)) {
+      throw new IllegalArgumentException(
+          "DBRepo row insertion is only supported for tables and views.");
+    }
   }
 
   private HttpHeaders headers(DBRepoCredentials credentials) {
