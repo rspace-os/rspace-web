@@ -137,6 +137,138 @@ describe("ElnFolderBrowser", () => {
   });
 });
 
+describe("ElnFolderBrowser pagination", () => {
+  const LOAD_MORE = "inventory:fields.link.elnFolderBrowser.loadMore";
+
+  beforeEach(() => {
+    mockGetFolderTree.mockReset();
+  });
+  afterEach(cleanup);
+
+  it("offers Load more at the workspace root and appends the next page", async () => {
+    const rootPages: ReadonlyArray<ReadonlyArray<Node>> = [
+      [
+        { id: 1, globalId: "SD1", name: "Doc one", type: "DOCUMENT" },
+        { id: 2, globalId: "SD2", name: "Doc two", type: "DOCUMENT" },
+      ],
+      [{ id: 3, globalId: "SD3", name: "Doc three", type: "DOCUMENT" }],
+    ];
+    mockGetFolderTree.mockImplementation(({ id, pageNumber = 0 }: { id?: number; pageNumber?: number }) => {
+      if (id !== undefined) return Promise.resolve({ totalHits: 0, pageNumber: 0, records: [] });
+      return Promise.resolve({
+        totalHits: 3,
+        pageNumber,
+        records: rootPages[pageNumber] ?? [],
+      });
+    });
+    renderBrowser(vi.fn());
+    const user = userEvent.setup();
+
+    // only the first page is shown, with a way to fetch the rest
+    await screen.findByRole("treeitem", { name: "Doc two" });
+    expect(screen.queryByRole("treeitem", { name: "Doc three" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: LOAD_MORE }));
+
+    // the next page is appended after the first, and no more pages remain
+    expect(await screen.findByRole("treeitem", { name: "Doc three" })).toBeInTheDocument();
+    expect(screen.getByRole("treeitem", { name: "Doc one" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: LOAD_MORE })).not.toBeInTheDocument();
+  });
+
+  it("drops records re-served by a later page when the listing shifted meanwhile", async () => {
+    // simulates the workspace changing between page fetches: page 1 re-serves
+    // "Doc two", which the tree must not render twice (duplicate ids crash it)
+    const rootPages: ReadonlyArray<ReadonlyArray<Node>> = [
+      [
+        { id: 1, globalId: "SD1", name: "Doc one", type: "DOCUMENT" },
+        { id: 2, globalId: "SD2", name: "Doc two", type: "DOCUMENT" },
+      ],
+      [
+        { id: 2, globalId: "SD2", name: "Doc two", type: "DOCUMENT" },
+        { id: 3, globalId: "SD3", name: "Doc three", type: "DOCUMENT" },
+      ],
+    ];
+    mockGetFolderTree.mockImplementation(({ id, pageNumber = 0 }: { id?: number; pageNumber?: number }) => {
+      if (id !== undefined) return Promise.resolve({ totalHits: 0, pageNumber: 0, records: [] });
+      return Promise.resolve({
+        totalHits: 4,
+        pageNumber,
+        records: rootPages[pageNumber] ?? [],
+      });
+    });
+    renderBrowser(vi.fn());
+    const user = userEvent.setup();
+
+    await screen.findByRole("treeitem", { name: "Doc two" });
+    await user.click(screen.getByRole("button", { name: LOAD_MORE }));
+
+    expect(await screen.findByRole("treeitem", { name: "Doc three" })).toBeInTheDocument();
+    expect(screen.getAllByRole("treeitem", { name: "Doc two" })).toHaveLength(1);
+    // termination is judged on rows fetched (4), not rows retained (3), so a
+    // dropped duplicate must not leave the button behind
+    expect(screen.queryByRole("button", { name: LOAD_MORE })).not.toBeInTheDocument();
+  });
+
+  it("stops offering Load more when an appended page comes back empty", async () => {
+    // simulates deletions during pagination: unseen records shifted up into the
+    // already-fetched page, so the tail page is empty while totalHits still
+    // reports more rows than were fetched
+    mockGetFolderTree.mockImplementation(({ id, pageNumber = 0 }: { id?: number; pageNumber?: number }) => {
+      if (id !== undefined) return Promise.resolve({ totalHits: 0, pageNumber: 0, records: [] });
+      return Promise.resolve({
+        totalHits: 4,
+        pageNumber,
+        records:
+          pageNumber === 0
+            ? [
+                { id: 1, globalId: "SD1", name: "Doc one", type: "DOCUMENT" },
+                { id: 2, globalId: "SD2", name: "Doc two", type: "DOCUMENT" },
+              ]
+            : [],
+      });
+    });
+    renderBrowser(vi.fn());
+    const user = userEvent.setup();
+
+    await screen.findByRole("treeitem", { name: "Doc two" });
+    await user.click(screen.getByRole("button", { name: LOAD_MORE }));
+
+    await waitFor(() => expect(screen.queryByRole("button", { name: LOAD_MORE })).not.toBeInTheDocument());
+  });
+
+  it("offers Load more inside an expanded folder and appends the next page", async () => {
+    const childPages: ReadonlyArray<ReadonlyArray<Node>> = [
+      [{ id: 101, globalId: "SD101", name: "Child one", type: "DOCUMENT" }],
+      [{ id: 102, globalId: "SD102", name: "Child two", type: "DOCUMENT" }],
+    ];
+    mockGetFolderTree.mockImplementation(({ id, pageNumber = 0 }: { id?: number; pageNumber?: number }) => {
+      if (id === undefined)
+        return Promise.resolve({
+          totalHits: 1,
+          pageNumber: 0,
+          records: [{ id: 100, globalId: "FL100", name: "Projects", type: "FOLDER" }],
+        });
+      return Promise.resolve({
+        totalHits: 2,
+        pageNumber,
+        records: childPages[pageNumber] ?? [],
+      });
+    });
+    renderBrowser(vi.fn());
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByText("Projects"));
+    await screen.findByRole("treeitem", { name: "Child one" });
+    expect(screen.queryByRole("treeitem", { name: "Child two" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: LOAD_MORE }));
+
+    expect(await screen.findByRole("treeitem", { name: "Child two" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: LOAD_MORE })).not.toBeInTheDocument();
+  });
+});
+
 describe("ElnFolderBrowser selection highlight", () => {
   beforeEach(() => {
     mockGetFolderTree.mockReset();
