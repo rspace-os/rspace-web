@@ -78,6 +78,75 @@ class InventoryOperationConfigRegistryTest {
   }
 
   @Test
+  void bindsTheWholeDefinitionTheStrictValidatorInterprets() {
+    // The validator whitelists the request against the definition, so every part of the definition
+    // it consults must bind (DevDocs/adr/0007): field-name keys (the wire identity), computed
+    // values, the declared text/origin fields and the count's lower bound.
+    InventoryOperationConfig aliquot = registry.get("aliquot").orElseThrow();
+    assertEquals("sampleName", aliquot.effect().nameFrom());
+    assertEquals("count", aliquot.effect().countFrom());
+    assertNull(aliquot.effect().processNameFrom());
+    assertEquals(
+        List.of("operations.aliquot.linkFieldName"),
+        aliquot.effect().links().stream()
+            .map(InventoryOperationConfig.Link::fieldNameKey)
+            .toList());
+    assertEquals(
+        new BigDecimal("1"),
+        aliquot.inputs().stream()
+            .filter(input -> "count".equals(input.key()))
+            .findFirst()
+            .orElseThrow()
+            .min());
+
+    InventoryOperationConfig passage = registry.get("passage").orElseThrow();
+    assertEquals(
+        List.of(new InventoryOperationConfig.Computed("increment", "passageNumber")),
+        passage.effect().computed());
+    assertEquals(
+        List.of(
+            new InventoryOperationConfig.TextField(
+                "operations.passage.numberField", "passageNumber")),
+        passage.effect().textFields());
+
+    InventoryOperationConfig derive = registry.get("derive").orElseThrow();
+    assertEquals("processName", derive.effect().processNameFrom());
+
+    InventoryOperationConfig cryopreserve = registry.get("cryopreserve").orElseThrow();
+    assertEquals(
+        List.of(
+            new InventoryOperationConfig.TextField(
+                "operations.cryopreserve.cryomediumField", "cryomedium")),
+        cryopreserve.effect().textFields());
+    assertFalse(
+        cryopreserve.inputs().stream()
+            .filter(input -> "cryomedium".equals(input.key()))
+            .findFirst()
+            .orElseThrow()
+            .required(),
+        "cryomedium is optional, so its content is free text");
+
+    InventoryOperationConfig destroy = registry.get("destroy").orElseThrow();
+    assertEquals(
+        List.of(new InventoryOperationConfig.Computed("today", "disposedDate")),
+        destroy.effect().computed());
+    assertEquals(
+        List.of(
+            new InventoryOperationConfig.OriginField(
+                "operations.destroy.disposedField", "disposedDate", "text")),
+        destroy.effect().originFields());
+    assertNull(destroy.effect().nameFrom(), "a terminal operation creates no sample to name");
+  }
+
+  @Test
+  void operationsWithoutTheOptionalEffectListsBindThemAsEmpty() {
+    InventoryOperationConfig aliquot = registry.get("aliquot").orElseThrow();
+    assertTrue(aliquot.effect().computed().isEmpty());
+    assertTrue(aliquot.effect().textFields().isEmpty());
+    assertTrue(aliquot.effect().originFields().isEmpty());
+  }
+
+  @Test
   void exposesTheRawConfigJsonVerbatim() throws IOException {
     // The GET /operations/config endpoint serves this string as the wizard's single source of
     // operation definitions (DevDocs/adr/0007), so it must be the file byte-for-byte, not a
