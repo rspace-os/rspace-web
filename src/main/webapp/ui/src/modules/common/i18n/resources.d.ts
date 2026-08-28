@@ -10481,6 +10481,7 @@ export default interface Resources {
       },
       "dbrepo": {
         "categories": {
+          "databases": "Databases",
           "subsets": "Subsets",
           "tables": "Tables",
           "views": "Views"

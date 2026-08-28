@@ -1,5 +1,6 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import StorageIcon from "@mui/icons-material/Storage";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import Alert from "@mui/material/Alert";
@@ -135,7 +136,7 @@ const RESOURCE_GROUPS: Array<{
   accent: string;
   Icon: typeof TableChartIcon;
 }> = [
-  { type: "table", key: "tables", accent: "#1565c0", Icon: TableChartIcon },
+  { type: "table", key: "tables", accent: "#455a64", Icon: TableChartIcon },
   { type: "view", key: "views", accent: "#6a1b9a", Icon: VisibilityIcon },
   { type: "subset", key: "subsets", accent: "#2e7d32", Icon: FilterListIcon },
 ];
@@ -295,6 +296,11 @@ function DBRepo(): React.ReactNode {
 
   return (
     <Stack spacing={2} sx={{ p: 2 }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center", color: "#1565c0" }}>
+        <StorageIcon fontSize="small" />
+        <Typography variant="subtitle2">{t(`tinymce.dbrepo.categories.databases`)}</Typography>
+        <Typography variant="caption">{t("tinymce.dbrepo.categoryCount", { count: databases.length })}</Typography>
+      </Stack>
       <RadioGroup
         aria-label={t("tinymce.dbrepo.databaseList")}
         value={selectedId}
