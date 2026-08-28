@@ -3,11 +3,11 @@ import {
   assertEffectReferencesValid,
   type InventoryOperation,
   operationAvailability,
-  operations,
   resolveDefaultAmountMode,
   resolveProcessName,
   usesAmountModes,
 } from "../operationsConfig";
+import { operations } from "./testOperations";
 
 function op(key: string): InventoryOperation {
   const found = operations.find((o) => o.key === key);

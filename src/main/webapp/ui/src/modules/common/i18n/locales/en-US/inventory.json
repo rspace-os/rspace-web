@@ -1763,6 +1763,8 @@
       "numberField": "Passage number"
     },
     "picker": {
+      "loadFailed": "The available operations could not be loaded. Close this dialog and try again.",
+      "loading": "Loading operations",
       "needsMultiple": "Select two or more subsamples to pool.",
       "sameCategory": "Select subsamples of the same measurement type to pool.",
       "singleOnly": "Select a single subsample for this operation."

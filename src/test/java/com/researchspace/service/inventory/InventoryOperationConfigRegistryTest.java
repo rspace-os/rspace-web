@@ -1,4 +1,4 @@
-package com.researchspace.api.v1.controller;
+package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -6,7 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -72,6 +75,16 @@ class InventoryOperationConfigRegistryTest {
     InventoryOperationConfig passage = registry.get("passage").orElseThrow();
     assertNull(passage.effect().amountTakenFrom(), "passage never decrements its origin");
     assertFalse(passage.effect().emptiesOrigin());
+  }
+
+  @Test
+  void exposesTheRawConfigJsonVerbatim() throws IOException {
+    // The GET /operations/config endpoint serves this string as the wizard's single source of
+    // operation definitions (DevDocs/adr/0007), so it must be the file byte-for-byte, not a
+    // re-serialisation of the parsed subset the backend validates with.
+    String expected =
+        Files.readString(Path.of("src/main/resources/inventory/operations_config.json"));
+    assertEquals(expected, registry.rawConfigJson());
   }
 
   @Test

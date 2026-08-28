@@ -33,7 +33,11 @@ reasoning is in `.claude/remaining-operations-plan.md` ("The limits of config-on
 ## How it fits together
 
 ```
-operations_config.json ──► operationsConfig.ts (valibot-validated) ──► OperationWizard (UI)
+operations_config.json (backend) ──► GET /operations/config ──► operationsConfig.ts
+                                                                (valibot-validated)
+                                                                          │
+                                                                          ▼
+                                                                OperationWizard (UI)
                                                                           │  collects inputs
                                                                           ▼
                                               buildOperationRequest.ts ──► OperationRequest
@@ -48,10 +52,13 @@ operations_config.json ──► operationsConfig.ts (valibot-validated) ──�
 
 Files:
 
-- Config + logic: `src/main/webapp/ui/src/Inventory/components/Operations/`
-  - `operations_config.json` — the operation definitions (the file you edit).
-  - `operationsConfig.ts` — valibot schema (single source of truth for the shape)
-    + `operations` / `operationsForSelectionSize`.
+- Config: `src/main/resources/inventory/operations_config.json` — the single
+  authoritative operation definitions (the file you edit; DevDocs/adr/0007). The
+  backend validates against it and serves it verbatim from
+  `GET /api/inventory/v1/operations/config`.
+- Frontend logic: `src/main/webapp/ui/src/Inventory/components/Operations/`
+  - `operationsConfig.ts` — valibot schema (the frontend's source of truth for
+    the shape) + `parseOperationsConfig`, applied to the fetched config.
   - `buildOperationRequest.ts` — pure: (operation + collected values + origin) →
     request body. Puts provenance and documentation links, and text fields (e.g.
     Cryomedium), on the new sample only, **never on the created subsamples**.
@@ -102,18 +109,10 @@ Files:
    user's locale on the frontend and stored as data; use ICU interpolation
    (single braces), never string concatenation. See `FrontendI18nKeys.md`.
 
-3. **Sync the backend copy.** The backend validates API requests against its own
-   verbatim copy of the config (DevDocs/adr/0007):
-
-   ```bash
-   cp src/main/webapp/ui/src/Inventory/components/Operations/operations_config.json \
-      src/main/resources/inventory/operations_config.json
-   ```
-
-   `InventoryOperationsConfigDriftTest` fails the build if the two copies differ
-   byte-for-byte, and the OpenAPI spec's `operationType` enum
+3. **Update the OpenAPI spec.** The spec's `operationType` enum
    (`rspace_api_inventory_specs_2_25_0.yaml`) lists the configured keys, so add
-   the new key there too.
+   the new key there too. (There is only one config file — the backend's — and
+   both sides read it, so there is nothing to sync.)
 
 4. That's it. The picker, wizard, request builder, and backend pick the new
    operation up automatically. Add a case to
@@ -187,13 +186,15 @@ sample).
 
 `POST /api/inventory/v1/operations` is a thin, generic coordinator. It validates the
 request against the operation definition its `operationType` names (DevDocs/adr/0007),
-interpreting the backend's verbatim copy of `operations_config.json` — origin count,
+interpreting its `operations_config.json` — origin count,
 new-sample presence, per-origin amount semantics, configured storage-temperature
 bounds (unit-aware), and a provenance link back to every origin — and runs the new
-sample through the same `SampleApiPostValidator` as the public samples endpoint. Live
-checks follow in the controller: every origin must currently hold something, the
-amount taken must not exceed it (DevDocs/adr/0007), and an origin-emptying operation
-(Destroy) must take exactly what the origin holds. Then, in one transaction, it
+sample through the same `SampleApiPostValidator` as the public samples endpoint. The
+live-state rules run in `InventoryOperationManagerImpl`, inside the operation's own
+transaction so they hold against the state the mutation sees: every origin must
+currently hold something, the amount taken must not exceed it (DevDocs/adr/0007), and
+an origin-emptying operation (Destroy) must take exactly what the origin holds. In
+that same transaction it then
 **reduces each origin by its amount-taken first**, applies any custom fields the
 request adds to an origin (Destroy's disposed date, via `updateApiSubSample`), and
 creates the new sample + subsamples (reusing `SampleApiManager`). The new sample is
@@ -209,11 +210,12 @@ per-operation Java: the rules are read generically from the shared definitions.
 Because the request is client-built, permissions and invariants are enforced
 server-side; it coordinates, it does not blindly trust.
 
-The over-removal check lives in the controller, not the stateless
-`InventoryOperationPostValidator`, because it needs each origin's live quantity (loaded
-via `SubSampleApiManager` with the request user). It uses the pure, unit-aware helper
-`InventoryOperationPostValidator.amountTakenExceedsOrigin(...)` and reports through the
-same `rejectValue` → `BindException` → HTTP 400 path as the structural rules.
+The over-removal check lives in the manager, not the stateless
+`InventoryOperationPostValidator`, because it needs each origin's live quantity, read
+in the mutation's own transaction (from the entity `assertUserCanEditSubSample`
+returns). It uses the pure, unit-aware helpers in `InventoryOperationManagerImpl` and
+reports through the same `rejectValue` → `BindException` → HTTP 400 path as the
+structural rules.
 
 ## Wizard steps
 

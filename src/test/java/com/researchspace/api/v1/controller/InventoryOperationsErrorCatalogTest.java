@@ -1,6 +1,5 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -16,32 +15,11 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 /**
- * Guards the stage-1 contract of DevDocs/adr/0007: the backend's copy of the operation definitions
- * is a VERBATIM copy of the frontend's. The frontend renders and gates the wizard from its copy;
- * the backend validates API requests against this one. If they drift, the two sides disagree about
- * what a valid operation is, so drift is a red build, not a warning.
+ * Guards the operation endpoint's error catalog (DevDocs/adr/0007): every error code the backend
+ * raises must have an entry in the frontend catalog, or the API would show users a raw fallback
+ * string.
  */
-class InventoryOperationsConfigDriftTest {
-
-  private static final Path FRONTEND_CONFIG =
-      Path.of("src/main/webapp/ui/src/Inventory/components/Operations/operations_config.json");
-  private static final Path BACKEND_CONFIG =
-      Path.of("src/main/resources/inventory/operations_config.json");
-
-  @Test
-  void backendConfigIsAByteIdenticalCopyOfTheFrontendConfig() throws IOException {
-    assertTrue(Files.exists(FRONTEND_CONFIG), "frontend config missing: " + FRONTEND_CONFIG);
-    assertTrue(Files.exists(BACKEND_CONFIG), "backend config missing: " + BACKEND_CONFIG);
-    assertArrayEquals(
-        Files.readAllBytes(FRONTEND_CONFIG),
-        Files.readAllBytes(BACKEND_CONFIG),
-        "The two operations_config.json copies have drifted. They must stay byte-identical"
-            + " (DevDocs/adr/0007): after editing one, sync the other with\n  cp "
-            + FRONTEND_CONFIG
-            + " "
-            + BACKEND_CONFIG
-            + "\n(or the reverse direction if the backend copy was edited).");
-  }
+class InventoryOperationsErrorCatalogTest {
 
   private static final Path MESSAGE_CATALOG =
       Path.of("src/main/webapp/ui/src/modules/common/i18n/locales/en-US/server.inventory.json");
@@ -49,7 +27,7 @@ class InventoryOperationsConfigDriftTest {
     Path.of(
         "src/main/java/com/researchspace/api/v1/controller/InventoryOperationPostValidator.java"),
     Path.of(
-        "src/main/java/com/researchspace/api/v1/controller/InventoryOperationsApiController.java"),
+        "src/main/java/com/researchspace/service/inventory/impl/InventoryOperationManagerImpl.java"),
   };
 
   /**

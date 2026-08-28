@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -61,6 +63,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 })
 public class ApiSampleWithFullSubSamples extends ApiSampleWithoutSubSamples {
 
+  // Cascade (@Valid) so each explicit subsample's own constraints (image size, note length) hold
+  // wherever this DTO is bound as a request body. Capped at 100 like newSampleSubSamplesCount
+  // (SampleApiPostFullValidator): each subsample costs a full create cycle.
+  @Valid
+  @Size(max = 100, message = "{errors.inventory.sample.tooManySubSamples}")
   @JsonProperty("subSamples")
   private List<ApiSubSample> subSamples = new ArrayList<>();
 

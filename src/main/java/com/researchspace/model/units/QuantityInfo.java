@@ -52,6 +52,16 @@ public class QuantityInfo implements Quantifiable, Serializable {
 
   private static final long serialVersionUID = -7919940280639374006L;
 
+  /**
+   * Whether {@link #setNumericValue(BigDecimal)} would store this value exactly: quantities persist
+   * at 3 decimal places (HALF_UP), so a finer value is silently rounded to a quantity the caller
+   * never gave. Validation of user-supplied quantities should reject such values rather than store
+   * the rounded surrogate. Trailing zeros lose nothing, so 0.5000 is storable; null is not.
+   */
+  public static boolean canStoreWithoutRounding(BigDecimal value) {
+    return value != null && value.stripTrailingZeros().scale() <= 3;
+  }
+
   private BigDecimal numericValue;
 
   private Integer unitId;
