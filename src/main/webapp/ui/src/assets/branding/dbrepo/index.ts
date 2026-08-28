@@ -3,7 +3,7 @@
  * service's real brand colour.
  */
 export const LOGO_COLOR = {
-  hue: 196,
-  saturation: 50,
-  lightness: 40,
+  hue: 202.1,
+  saturation: 95,
+  lightness: 31.4,
 };
