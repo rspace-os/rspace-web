@@ -15,11 +15,20 @@ import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.InventoryOperationConfig;
 import com.researchspace.service.inventory.InventoryOperationConfigRegistry;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -44,6 +53,40 @@ public class InventoryOperationPostValidator implements Validator {
    * batch is capped like the samples endpoint caps newSampleSubSamplesCount (both 100).
    */
   static final int MAX_ORIGINS = 100;
+
+  /**
+   * The documentation link is a wizard-level feature (an SOP chosen in the documentation step), not
+   * a per-operation declaration, so its key is fixed and every operation that creates a sample
+   * accepts one (DevDocs/adr/0007).
+   */
+  static final String DOCUMENTATION_LINK_KEY = "operations.documentationLink";
+
+  private static final String DOCUMENTATION_RELATION_TYPE = "IsDocumentedBy";
+
+  private static final Pattern POSITIVE_INTEGER = Pattern.compile("0*[1-9]\\d*");
+
+  /**
+   * What each computed function promises about the content of the field it feeds. The backend
+   * checks the shape rather than recomputing the value (DevDocs/adr/0007): the parent field an
+   * {@code increment} counts from is findable only by its localized name, and a {@code today}
+   * recomputed server-side would fight the client's timezone. A function with no rule here is left
+   * unchecked; the registry test pins the shipped set.
+   */
+  private static final Map<String, Predicate<String>> COMPUTED_CONTENT_SHAPES =
+      Map.of(
+          "increment",
+          content -> POSITIVE_INTEGER.matcher(content).matches(),
+          "today",
+          InventoryOperationPostValidator::isIsoDate);
+
+  private static boolean isIsoDate(String content) {
+    try {
+      LocalDate.parse(content, DateTimeFormatter.ISO_LOCAL_DATE);
+      return true;
+    } catch (DateTimeParseException e) {
+      return false;
+    }
+  }
 
   private final InventoryOperationConfigRegistry operationConfigs;
   private final SampleApiPostValidator sampleApiPostValidator;
@@ -176,24 +219,28 @@ public class InventoryOperationPostValidator implements Validator {
               "This operation does not take from its origins, so the amount taken must be zero.");
         }
       }
-      validateOriginExtraFields(origin, errors);
+      validateOriginExtraFields(origin, config, errors);
       errors.popNestedPath();
     }
   }
 
   /**
-   * Origin extra fields may only ADD new fields (Destroy's disposed date): a delete request or an
-   * id-bearing edit of an existing field is a mutation no operation definition describes, so it is
-   * rejected even though the caller holds edit permission (DevDocs/adr/0007). Each allowed field's
-   * content is then validated by the same shared field validator the subsample PUT endpoint uses
-   * (name required, per-type content, link payloads).
+   * An origin's extra fields must be exactly the {@code originFields} the operation declares
+   * (Destroy's disposed date), matched by key; an operation declaring none accepts none, which also
+   * closes the route by which an origin could be made to link to itself (DevDocs/adr/0007). Fields
+   * may only ADD: a delete request or an id-bearing edit of an existing field is a mutation no
+   * definition describes, so it is rejected even though the caller holds edit permission. Each
+   * allowed field is then validated by the same shared field validator the subsample PUT endpoint
+   * uses (name required, per-type content, link payloads).
    */
-  private void validateOriginExtraFields(ApiInventoryOperationOriginUpdate origin, Errors errors) {
-    if (CollectionUtils.isEmpty(origin.getExtraFields())) {
-      return;
-    }
+  private void validateOriginExtraFields(
+      ApiInventoryOperationOriginUpdate origin, InventoryOperationConfig config, Errors errors) {
+    List<ApiExtraField> fields =
+        origin.getExtraFields() == null ? List.of() : origin.getExtraFields();
+    List<InventoryOperationConfig.OriginField> declared = config.effect().originFields();
+
     int fieldIndex = 0;
-    for (ApiExtraField field : origin.getExtraFields()) {
+    for (ApiExtraField field : fields) {
       errors.pushNestedPath(String.format("extraFields[%d]", fieldIndex++));
       try {
         if (field == null
@@ -204,13 +251,42 @@ public class InventoryOperationPostValidator implements Validator {
               "newFieldRequest",
               "errors.inventory.operation.originFieldNewOnly",
               "Origin extra fields may only add new fields.");
-        } else {
-          ValidationUtils.invokeValidator(extraFieldsHelper, field, errors);
+          continue;
         }
+        if (declared.stream()
+            .noneMatch(spec -> spec.nameKey().equals(field.getOperationFieldKey()))) {
+          errors.rejectValue(
+              "operationFieldKey",
+              "errors.inventory.operation.fieldKeyUnknown",
+              new Object[] {field.getOperationFieldKey()},
+              "This field is not one the operation declares.");
+        }
+        ValidationUtils.invokeValidator(extraFieldsHelper, field, errors);
       } finally {
         errors.popNestedPath();
       }
     }
+
+    for (InventoryOperationConfig.OriginField spec : declared) {
+      List<ApiExtraField> keyed = fieldsWithKey(fields, spec.nameKey());
+      if (keyed.size() != 1) {
+        rejectDeclaredField(errors, "extraFields", spec.nameKey());
+        continue;
+      }
+      ApiExtraField field = keyed.get(0);
+      String path = String.format("extraFields[%d]", fields.indexOf(field));
+      if (field.getTypeAsFieldType() != declaredFieldType(spec.type())) {
+        rejectDeclaredField(errors, path, spec.nameKey());
+        continue;
+      }
+      validateDeclaredContent(
+          field.getContent(), spec.nameKey(), spec.contentFrom(), config, path, errors);
+    }
+  }
+
+  /** The field type a definition declares, defaulting to text like {@link ApiExtraField} does. */
+  private static FieldType declaredFieldType(String declaredType) {
+    return declaredType == null ? FieldType.TEXT : FieldType.valueOf(declaredType.toUpperCase());
   }
 
   private void validateNewSample(
@@ -258,11 +334,16 @@ public class InventoryOperationPostValidator implements Validator {
     // Stricter than the samples endpoint (which allows quantity-less subsamples): an operation's
     // created subsamples represent material taken from the origins, so each must hold a positive
     // amount with a real unit, and there must be at least one of them.
-    if (CollectionUtils.isEmpty(newSample.getSubSamples())) {
+    // The count input's lower bound is the definition's own floor on how many subsamples the
+    // operation may create; the count itself never travels on the wire, so the number of subsamples
+    // is what it is checked against (DevDocs/adr/0007).
+    int minimumSubSamples = minimumSubSampleCount(config);
+    if (newSample.getSubSamples() == null || newSample.getSubSamples().size() < minimumSubSamples) {
       errors.rejectValue(
           "newSample.subSamples",
           "errors.inventory.operation.subSamplesRequired",
-          "The new sample must include at least one subsample.");
+          new Object[] {minimumSubSamples},
+          "The new sample does not include enough subsamples.");
       return;
     }
     int index = 0;
@@ -309,8 +390,81 @@ public class InventoryOperationPostValidator implements Validator {
       }
     }
 
+    rejectUndeclaredNewSampleContent(newSample, config, errors);
     validateConfiguredTemperatures(newSample, config, errors);
-    validateProvenanceLinks(request, newSample, config, errors);
+    validateNewSampleExtraFields(request, newSample, config, errors);
+  }
+
+  /**
+   * The new sample is a whitelist, not a general sample POST: an operation request may only carry
+   * the properties its definition declares (DevDocs/adr/0007, superseding the earlier partial
+   * rules). Everything else - sharing, placement, tags, barcodes, images, template field values,
+   * per-subsample notes and fields - is content no operation definition describes, so it is
+   * rejected naming the property rather than silently stripped. Name, templateId, quantity,
+   * subSamples and extraFields are validated by their own rules; storage temperatures are allowed
+   * only for an operation that declares a temperature input.
+   */
+  private void rejectUndeclaredNewSampleContent(
+      ApiSampleWithFullSubSamples newSample, InventoryOperationConfig config, Errors errors) {
+    rejectIfPresent(errors, "newSample.description", newSample.getDescription());
+    rejectIfPresent(errors, "newSample.tags", newSample.getTags());
+    rejectIfPresent(errors, "newSample.barcodes", newSample.getBarcodes());
+    rejectIfPresent(errors, "newSample.identifiers", newSample.getIdentifiers());
+    rejectIfPresent(errors, "newSample.sharingMode", newSample.getSharingMode());
+    rejectIfPresent(errors, "newSample.sharedWith", newSample.getSharedWith());
+    rejectIfPresent(errors, "newSample.newBase64Image", newSample.getNewBase64Image());
+    rejectIfPresent(errors, "newSample.fields", newSample.getFields());
+    rejectIfPresent(errors, "newSample.sampleSource", newSample.getSampleSource());
+    rejectIfPresent(errors, "newSample.expiryDate", newSample.getExpiryDate());
+    rejectIfPresent(
+        errors, "newSample.newSampleSubSamplesCount", newSample.getNewSampleSubSamplesCount());
+    rejectIfPresent(
+        errors,
+        "newSample.newSampleSubSampleTargetLocations",
+        newSample.getNewSampleSubSampleTargetLocations());
+    if (config.effect().storageTempFrom() == null) {
+      rejectIfPresent(errors, "newSample.storageTempMin", newSample.getStorageTempMin());
+      rejectIfPresent(errors, "newSample.storageTempMax", newSample.getStorageTempMax());
+    }
+
+    // The operation's own fields go on the created sample; its subsamples carry a quantity and
+    // nothing else, so anything the wizard never sends on one is undeclared content too.
+    int index = 0;
+    for (ApiSubSample subSample : newSample.getSubSamples()) {
+      String path = String.format("newSample.subSamples[%d].", index++);
+      rejectIfPresent(errors, path + "notes", subSample.getNotes());
+      rejectIfPresent(errors, path + "extraFields", subSample.getExtraFields());
+      rejectIfPresent(errors, path + "description", subSample.getDescription());
+      rejectIfPresent(errors, path + "tags", subSample.getTags());
+      rejectIfPresent(errors, path + "barcodes", subSample.getBarcodes());
+      rejectIfPresent(errors, path + "sharingMode", subSample.getSharingMode());
+      rejectIfPresent(errors, path + "sharedWith", subSample.getSharedWith());
+      rejectIfPresent(errors, path + "newBase64Image", subSample.getNewBase64Image());
+      rejectIfPresent(errors, path + "parentContainers", subSample.getParentContainers());
+      rejectIfPresent(errors, path + "parentLocation", subSample.getParentLocation());
+    }
+  }
+
+  /**
+   * Rejects a property the operation definition does not declare. Absent means null, an empty
+   * collection or a blank string, so a client that spells out the DTO's own defaults ({@code
+   * "tags": []}) is not punished for sending nothing.
+   */
+  private void rejectIfPresent(Errors errors, String field, Object value) {
+    boolean present = value != null;
+    if (value instanceof Collection<?> collection) {
+      present = !collection.isEmpty();
+    } else if (value instanceof String string) {
+      present = !string.isBlank();
+    }
+    if (present) {
+      String property = field.substring(field.lastIndexOf('.') + 1);
+      errors.rejectValue(
+          field,
+          "errors.inventory.operation.undeclaredProperty",
+          new Object[] {property},
+          "This operation does not accept this property on the sample it creates.");
+    }
   }
 
   /**
@@ -335,7 +489,47 @@ public class InventoryOperationPostValidator implements Validator {
                   newSample.getStorageTempMin(), "newSample.storageTempMin", input, errors);
               checkConfiguredTemperature(
                   newSample.getStorageTempMax(), "newSample.storageTempMax", input, errors);
+              checkSingleTemperature(newSample, errors);
             });
+  }
+
+  /**
+   * The wizard collects one temperature and writes it to both storage-temperature fields, so a
+   * request spreading them into a range describes a sample the operation cannot produce (review
+   * repro F5d). Compared unit-aware, so 253.15 K equals -20 degC.
+   */
+  private void checkSingleTemperature(ApiSampleWithFullSubSamples newSample, Errors errors) {
+    ApiQuantityInfo minimum = newSample.getStorageTempMin();
+    ApiQuantityInfo maximum = newSample.getStorageTempMax();
+    if (minimum == null
+        || maximum == null
+        || minimum.getNumericValue() == null
+        || maximum.getNumericValue() == null) {
+      return; // already rejected as storageTempRequired
+    }
+    QuantityUtils quantityUtils = new QuantityUtils();
+    if (!quantityUtils.isComparableQuantities(minimum, maximum)
+        || quantityUtils.getComparatorFor(minimum).compare(minimum, maximum) != 0) {
+      errors.rejectValue(
+          "newSample.storageTempMax",
+          "errors.inventory.operation.storageTempSingleValue",
+          "This operation stores one temperature, so the minimum and maximum must be equal.");
+    }
+  }
+
+  /**
+   * The lower bound on how many subsamples the operation creates, taken from the input its {@code
+   * countFrom} names. Defaults to one: an operation that creates a sample must put something in it.
+   */
+  private static int minimumSubSampleCount(InventoryOperationConfig config) {
+    return config.inputs().stream()
+        .filter(input -> input.key() != null && input.key().equals(config.effect().countFrom()))
+        .map(InventoryOperationConfig.Input::min)
+        .filter(Objects::nonNull)
+        .findFirst()
+        .map(BigDecimal::intValue)
+        .filter(minimum -> minimum > 1)
+        .orElse(1);
   }
 
   private void checkConfiguredTemperature(
@@ -382,49 +576,196 @@ public class InventoryOperationPostValidator implements Validator {
   }
 
   /**
-   * The new sample must link back to every origin with the operation's configured relation type
-   * (e.g. Aliquot's IsPartOf, Pool's one HasPart per pooled subsample): the links are the
-   * provenance record the operation exists to create (DevDocs/adr/0007). Extra fields beyond the
-   * required links (the optional IsDocumentedBy link, text fields) are the wizard's own output and
-   * are allowed; the link payloads themselves are validated by the delegated samples-endpoint
-   * rules.
+   * The new sample's extra fields must be exactly the ones the operation definition declares, no
+   * more and no fewer (DevDocs/adr/0007, superseding the earlier "extras are allowed" rule). Fields
+   * are matched by {@code operationFieldKey}, not by name: resolved names interpolate user input
+   * and are localized, so a name is not a stable identity. Each declared link spec fans out to one
+   * link per origin (Pool's one HasPart per pooled subsample); each declared text field appears
+   * once; and the wizard-level documentation link is allowed on any operation that creates a
+   * sample.
    */
-  private void validateProvenanceLinks(
+  private void validateNewSampleExtraFields(
       ApiInventoryOperationPost request,
       ApiSampleWithFullSubSamples newSample,
       InventoryOperationConfig config,
       Errors errors) {
+    List<ApiExtraField> fields =
+        newSample.getExtraFields() == null ? List.of() : newSample.getExtraFields();
+
+    Set<String> declaredKeys = new HashSet<>();
+    config.effect().links().forEach(link -> declaredKeys.add(link.fieldNameKey()));
+    config.effect().textFields().forEach(textField -> declaredKeys.add(textField.nameKey()));
+    declaredKeys.add(DOCUMENTATION_LINK_KEY);
+    for (int index = 0; index < fields.size(); index++) {
+      ApiExtraField field = fields.get(index);
+      if (field != null && !declaredKeys.contains(field.getOperationFieldKey())) {
+        errors.rejectValue(
+            String.format("newSample.extraFields[%d].operationFieldKey", index),
+            "errors.inventory.operation.fieldKeyUnknown",
+            new Object[] {field.getOperationFieldKey()},
+            "This field is not one the operation declares.");
+      }
+    }
+
+    validateDeclaredLinks(request, config, fields, errors);
+    for (InventoryOperationConfig.TextField textFieldSpec : config.effect().textFields()) {
+      validateDeclaredTextField(textFieldSpec, config, fields, errors);
+    }
+    validateDocumentationLink(fields, errors);
+  }
+
+  /**
+   * Each declared link spec must produce exactly one link per origin: the declared relation type,
+   * targeting that origin, on a field whose effective type is LINK. Only a LINK-typed field counts
+   * because persistence ({@code ApiExtraFieldsHelper.addRecordExtraFieldForIncomingApiField})
+   * creates a link under exactly that predicate, so a link payload on a text-typed or type-omitted
+   * field would otherwise validate here yet silently vanish on save (security review, finding 7).
+   */
+  private void validateDeclaredLinks(
+      ApiInventoryOperationPost request,
+      InventoryOperationConfig config,
+      List<ApiExtraField> fields,
+      Errors errors) {
     for (InventoryOperationConfig.Link linkSpec : config.effect().links()) {
+      List<ApiExtraField> keyed = fieldsWithKey(fields, linkSpec.fieldNameKey());
       for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
         if (origin.getId() == null) {
           continue; // already rejected as originIdRequired
         }
         String target = GlobalIdPrefix.SS.name() + origin.getId();
-        // Only a field whose effective type is LINK counts: persistence
-        // (ApiExtraFieldsHelper.addRecordExtraFieldForIncomingApiField) creates a link under
-        // exactly that predicate, so a link payload on a text-typed or type-omitted field would
-        // otherwise validate here yet silently vanish on save (security review, finding 7).
-        // ponytail: no post-commit invariant check in the manager; this filter matches the
-        // persistence predicate, and the MVCIT catches any future drift between the two.
-        boolean linked =
-            newSample.getExtraFields() != null
-                && newSample.getExtraFields().stream()
-                    .filter(field -> field != null && field.getTypeAsFieldType() == FieldType.LINK)
-                    .map(ApiExtraField::getLink)
-                    .filter(Objects::nonNull)
-                    .anyMatch(
-                        link ->
-                            linkSpec.relationType().equals(link.getRelationType())
-                                && target.equalsIgnoreCase(link.getTargetGlobalId()));
-        if (!linked) {
+        long linksToOrigin =
+            keyed.stream()
+                .filter(field -> field.getTypeAsFieldType() == FieldType.LINK)
+                .map(ApiExtraField::getLink)
+                .filter(Objects::nonNull)
+                .filter(
+                    link ->
+                        linkSpec.relationType().equals(link.getRelationType())
+                            && target.equalsIgnoreCase(link.getTargetGlobalId()))
+                .count();
+        if (linksToOrigin != 1) {
           errors.rejectValue(
               "newSample.extraFields",
               "errors.inventory.operation.linkToOriginRequired",
               new Object[] {linkSpec.relationType(), target},
-              "The new sample must link back to every origin subsample.");
+              "The new sample must link back to every origin subsample exactly once.");
         }
       }
+      // One link per origin and no more: a surplus field carrying the same key (a second link, or
+      // one to a record that is not an origin) is content the definition does not describe. Only a
+      // surplus is reported here; a shortfall is already named per origin above.
+      if (keyed.size() > request.getOrigins().size()) {
+        rejectDeclaredField(errors, "newSample.extraFields", linkSpec.fieldNameKey());
+      }
     }
+  }
+
+  /**
+   * A declared text field (Passage's passage number, Cryopreserve's cryomedium) must appear exactly
+   * once, as a text field. Its content is checked against the computed function that feeds it, or
+   * required when the feeding input is.
+   */
+  private void validateDeclaredTextField(
+      InventoryOperationConfig.TextField textFieldSpec,
+      InventoryOperationConfig config,
+      List<ApiExtraField> fields,
+      Errors errors) {
+    List<ApiExtraField> keyed = fieldsWithKey(fields, textFieldSpec.nameKey());
+    if (keyed.size() != 1) {
+      rejectDeclaredField(errors, "newSample.extraFields", textFieldSpec.nameKey());
+      return;
+    }
+    ApiExtraField field = keyed.get(0);
+    String path = String.format("newSample.extraFields[%d]", fields.indexOf(field));
+    if (field.getTypeAsFieldType() != FieldType.TEXT) {
+      rejectDeclaredField(errors, path, textFieldSpec.nameKey());
+      return;
+    }
+    validateDeclaredContent(
+        field.getContent(),
+        textFieldSpec.nameKey(),
+        textFieldSpec.contentFrom(),
+        config,
+        path,
+        errors);
+  }
+
+  /**
+   * The documentation link is a wizard-level feature rather than a per-operation declaration, so
+   * every output-producing operation accepts at most one, and it must actually be an IsDocumentedBy
+   * link. Its target is any record the caller can read, checked by the delegated samples-endpoint
+   * rules.
+   */
+  private void validateDocumentationLink(List<ApiExtraField> fields, Errors errors) {
+    List<ApiExtraField> keyed = fieldsWithKey(fields, DOCUMENTATION_LINK_KEY);
+    if (keyed.size() > 1) {
+      rejectDeclaredField(errors, "newSample.extraFields", DOCUMENTATION_LINK_KEY);
+      return;
+    }
+    for (ApiExtraField field : keyed) {
+      boolean documentationLink =
+          field.getTypeAsFieldType() == FieldType.LINK
+              && field.getLink() != null
+              && DOCUMENTATION_RELATION_TYPE.equals(field.getLink().getRelationType());
+      if (!documentationLink) {
+        errors.rejectValue(
+            String.format("newSample.extraFields[%d].link", fields.indexOf(field)),
+            "errors.inventory.operation.documentationLinkInvalid",
+            new Object[] {DOCUMENTATION_RELATION_TYPE},
+            "A documentation link must be a link field with the documentation relation type.");
+      }
+    }
+  }
+
+  private static List<ApiExtraField> fieldsWithKey(List<ApiExtraField> fields, String key) {
+    return fields.stream()
+        .filter(field -> field != null && key.equals(field.getOperationFieldKey()))
+        .toList();
+  }
+
+  /**
+   * The content of a declared field. A field fed by a computed value is checked against the shape
+   * that function promises; a field fed by a plain input carries free text, required exactly when
+   * that input is (Cryopreserve's optional cryomedium may be blank).
+   */
+  private void validateDeclaredContent(
+      String content,
+      String key,
+      String contentFrom,
+      InventoryOperationConfig config,
+      String path,
+      Errors errors) {
+    Optional<InventoryOperationConfig.Computed> computed =
+        config.effect().computed().stream()
+            .filter(entry -> entry.into() != null && entry.into().equals(contentFrom))
+            .findFirst();
+    if (computed.isPresent()) {
+      Predicate<String> shape = COMPUTED_CONTENT_SHAPES.get(computed.get().fn());
+      if (shape != null && (content == null || !shape.test(content.trim()))) {
+        errors.rejectValue(
+            path + ".content",
+            "errors.inventory.operation.computedContentInvalid",
+            new Object[] {key, computed.get().fn()},
+            "This field's content does not match what the operation computes for it.");
+      }
+      return;
+    }
+    boolean fedByRequiredInput =
+        config.inputs().stream()
+            .anyMatch(
+                input ->
+                    input.key() != null && input.key().equals(contentFrom) && input.required());
+    if (fedByRequiredInput && StringUtils.isBlank(content)) {
+      rejectDeclaredField(errors, path + ".content", key);
+    }
+  }
+
+  private void rejectDeclaredField(Errors errors, String field, String key) {
+    errors.rejectValue(
+        field,
+        "errors.inventory.operation.declaredFieldMissing",
+        new Object[] {key},
+        "The request must contain exactly the fields this operation declares.");
   }
 
   /**
