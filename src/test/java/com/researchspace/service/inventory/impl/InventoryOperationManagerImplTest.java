@@ -313,6 +313,48 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
+  void rejectsPoolingOriginsFromDifferentMeasurementCategories() {
+    // The wizard blocks pooling a volume origin with a mass origin; the endpoint must too, or the
+    // pooled sample's quantity would be meaningless (security review, finding 4).
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("pool");
+    request.setOrigins(
+        List.of(
+            origin(100L, new ApiQuantityInfo(new BigDecimal("1"), RSUnitDef.MILLI_LITRE.getId())),
+            origin(200L, new ApiQuantityInfo(new BigDecimal("1"), RSUnitDef.GRAM.getId()))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Pooled material"));
+    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId()));
+    originHolds(200L, subSampleHolding("5", RSUnitDef.GRAM.getId()));
+
+    BindException rejection = performExpectingRejection(request);
+    assertEquals(
+        "errors.inventory.operation.originCategoryMismatch",
+        rejection.getFieldErrors("origins[1].id").get(0).getCode());
+  }
+
+  @Test
+  void allowsPoolingOriginsAcrossUnitsOfTheSameCategory() throws Exception {
+    // millilitres and litres share the volume category: unit variety is fine, category mixing not
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOperationType("pool");
+    request.setOrigins(
+        List.of(
+            origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), RSUnitDef.MILLI_LITRE.getId())),
+            origin(200L, new ApiQuantityInfo(new BigDecimal("0.001"), RSUnitDef.LITRE.getId()))));
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Pooled material");
+    request.setNewSample(newSample);
+    originHolds(100L, subSampleHolding("5", RSUnitDef.MILLI_LITRE.getId()));
+    originHolds(200L, subSampleHolding("2", RSUnitDef.LITRE.getId()));
+    when(sampleApiMgr.createNewApiSample(newSample, user))
+        .thenReturn(new ApiSampleWithFullSubSamples("Pooled material"));
+
+    manager.performOperation(request, user);
+
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(200L), any(), eq(user));
+  }
+
+  @Test
   void rejectionOnALaterOriginMutatesNothing() {
     // The live checks run over EVERY origin before ANY origin is mutated, in the same transaction:
     // a violation on the second origin must leave the first untouched.

@@ -188,11 +188,17 @@ sample).
 request against the operation definition its `operationType` names (DevDocs/adr/0007),
 interpreting its `operations_config.json` — origin count,
 new-sample presence, per-origin amount semantics, configured storage-temperature
-bounds (unit-aware), and a provenance link back to every origin — and runs the new
-sample through the same `SampleApiPostValidator` as the public samples endpoint. The
+bounds (unit-aware), equal child quantities when the operation declares one
+`effect.eachAmountFrom` input (unit-aware: 0.5 ml equals 500 µl), and a provenance
+link back to every origin, which must be carried by an effective **link**-typed field
+(a link payload inside a text-typed or type-omitted field is never persisted as a
+link, so it does not count) — and runs the new sample through the same
+`SampleApiPostValidator` as the public samples endpoint. The
 live-state rules run in `InventoryOperationManagerImpl`, inside the operation's own
 transaction so they hold against the state the mutation sees: every origin must
-currently hold something, the amount taken must not exceed it (DevDocs/adr/0007), and
+currently hold something, all origins must share one measurement category (a Pool of
+5 ml + 5 g is meaningless), the amount taken must not exceed what the origin holds
+(DevDocs/adr/0007), and
 an origin-emptying operation (Destroy) must take exactly what the origin holds. In
 that same transaction it then
 **reduces each origin by its amount-taken first**, applies any custom fields the

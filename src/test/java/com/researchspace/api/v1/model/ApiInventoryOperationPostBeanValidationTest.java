@@ -72,6 +72,33 @@ class ApiInventoryOperationPostBeanValidationTest {
   }
 
   @Test
+  void nullElementsInTheNewSamplesCollectionsAreViolationsNotServerErrors() {
+    // The review's fuzzer turned "extraFields": [null] and friends into 500s: downstream code
+    // iterates these lists assuming non-null elements. Element-level @NotNull turns each shape
+    // into a clean 400 at binding (security review, finding 6 residue).
+    ApiInventoryOperationPost post = minimalPost();
+    post.getNewSample().getExtraFields().add(null);
+    post.getNewSample().getTags().add(null);
+    post.getNewSample().getBarcodes().add(null);
+    ApiSubSample subSample = post.getNewSample().getSubSamples().get(0);
+    subSample.getExtraFields().add(null);
+    subSample.getNotes().add(null);
+
+    Set<String> violated = violatedPaths(post);
+    for (String path :
+        Set.of(
+            "newSample.extraFields[0]",
+            "newSample.tags[0]",
+            "newSample.barcodes[0]",
+            "newSample.subSamples[0].extraFields[0]",
+            "newSample.subSamples[0].notes[0]")) {
+      assertTrue(
+          violated.stream().anyMatch(violation -> violation.startsWith(path)),
+          () -> "expected a violation under " + path + ", got: " + violated);
+    }
+  }
+
+  @Test
   void explicitSubSamplesListIsCappedAt100() {
     // newSampleSubSamplesCount is capped at 100 by SampleApiPostFullValidator, but that cap never
     // applied to an explicitly supplied subSamples list; each subsample costs a full create cycle,
