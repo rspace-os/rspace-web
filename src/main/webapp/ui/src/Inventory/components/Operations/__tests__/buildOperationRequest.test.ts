@@ -96,6 +96,13 @@ describe("buildOperationRequest (Derive)", () => {
     }
   });
 
+  it("stamps each field with the definition key that produced it", () => {
+    // Resolved names interpolate user input and are localized, so the backend matches an operation
+    // request's fields to the definition by key, not by name (see DevDocs/adr/0007).
+    const sampleLink = newSampleOf(request).extraFields[0] as OperationLinkField;
+    expect(sampleLink.operationFieldKey).toBe("operations.derive.linkFieldName");
+  });
+
   it("sets the sample total quantity to N x each-amount", () => {
     expect(newSampleOf(request).quantity).toEqual({ numericValue: 1, unitId: 3 });
   });
@@ -116,6 +123,12 @@ describe("buildOperationRequest (Derive)", () => {
     const docOn = (fields: Array<{ type: string }>) =>
       fields.some((f) => (f as OperationLinkField).link?.relationType === "IsDocumentedBy");
     expect(docOn(newSampleOf(withDoc).extraFields)).toBe(true);
+    // The documentation link is a wizard-level feature, so it carries the fixed key every
+    // output-producing operation accepts.
+    const documentation = newSampleOf(withDoc).extraFields.find(
+      (f) => (f as OperationLinkField).link?.relationType === "IsDocumentedBy",
+    );
+    expect(documentation?.operationFieldKey).toBe("operations.documentationLink");
     // The documentation link, like the provenance link, stays on the sample and off the subsamples.
     for (const subSample of newSampleOf(withDoc).subSamples) {
       expect(subSample.extraFields).toEqual([]);
@@ -160,7 +173,10 @@ describe("buildOperationRequest (operation-specific fields)", () => {
     expect(newSampleOf(request).storageTempMin).toEqual({ numericValue: -196, unitId: 8 });
     expect(newSampleOf(request).storageTempMax).toEqual({ numericValue: -196, unitId: 8 });
     const textField = newSampleOf(request).extraFields.find((f) => f.type === "text");
-    expect(textField).toMatchObject({ content: "DMSO 10%" });
+    expect(textField).toMatchObject({
+      content: "DMSO 10%",
+      operationFieldKey: "operations.cryopreserve.cryomediumField",
+    });
     // text fields live on the sample only, not on the subsamples
     expect(newSampleOf(request).subSamples[0].extraFields.every((f) => f.type === "link")).toBe(true);
   });
@@ -242,6 +258,9 @@ describe("buildOperationRequest (Pool - multi-origin)", () => {
     const links = newSampleOf(request).extraFields.filter((f): f is OperationLinkField => f.type === "link");
     expect(links.map((l) => l.link.targetGlobalId)).toEqual(["SS1", "SS2", "SS3"]);
     expect(links.every((l) => l.link.relationType === "HasPart")).toBe(true);
+    // All three carry the one link spec's key: the backend matches by key and distinguishes the
+    // links by their targets, not by their (interpolated) names.
+    expect(links.every((l) => l.operationFieldKey === "operations.pool.linkFieldName")).toBe(true);
   });
 
   it("gives each pooled link a distinct name including the origin subsample name", () => {
@@ -292,6 +311,7 @@ describe("buildOperationRequest (Destroy - terminal, no output)", () => {
             name: "operations.destroy.disposedField",
             type: "text",
             newFieldRequest: true,
+            operationFieldKey: "operations.destroy.disposedField",
             content: "2026-07-20",
           },
         ],
