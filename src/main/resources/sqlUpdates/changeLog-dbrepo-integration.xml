@@ -47,7 +47,7 @@
         </insert>
     </changeSet>
 
-    <changeSet id="2026-08-25d" context="run" author="agent">
+    <changeSet id="2026-08-25d" context="run" author="akos326">
         <comment>AppConfigElementDescriptor for the DBRepo endpoint URL</comment>
         <sql>insert into AppConfigElementDescriptor (id, descriptor_id, app_id)
             select null, pd.id, app.id
