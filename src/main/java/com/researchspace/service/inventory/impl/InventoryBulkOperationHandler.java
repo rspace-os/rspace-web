@@ -172,13 +172,17 @@ public class InventoryBulkOperationHandler {
 
   public ApiError convertExceptionToApiError(Exception e) {
     Throwable cause = e.getCause() == null ? e : e.getCause();
-    if (cause instanceof BindException) {
-      return apiControllerAdvice.getApiErrorFromBindException((BindException) cause);
+    if (cause instanceof BindException bindException) {
+      return apiControllerAdvice.getApiErrorFromBindException(bindException);
     }
+    Throwable exceptionToResolve =
+        e instanceof LocalizedIllegalArgumentException || e instanceof MessageSourceResolvable
+            ? e
+            : cause;
     String errorMessage =
-        cause instanceof LocalizedIllegalArgumentException localized
+        exceptionToResolve instanceof LocalizedIllegalArgumentException localized
             ? messages.getMessage(localized)
-            : cause instanceof MessageSourceResolvable resolvable
+            : exceptionToResolve instanceof MessageSourceResolvable resolvable
                 ? messages.getMessage(resolvable)
                 : e.getMessage();
     return new ApiError(
