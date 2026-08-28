@@ -8,6 +8,7 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.SubSampleNote;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.units.RSUnitDef;
+import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -59,6 +60,9 @@ public class ApiSubSample extends ApiSubSampleInfoWithSampleInfo {
   @JsonProperty("extraFields")
   private List<ApiExtraField> extraFields = new ArrayList<>();
 
+  // Cascade so each note's own constraints (@NotBlank, @Size content) hold wherever a subsample is
+  // bound as part of a @Valid request body.
+  @Valid
   @JsonProperty("notes")
   private List<ApiSubSampleNote> notes = new ArrayList<>();
 
