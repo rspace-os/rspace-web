@@ -11,6 +11,17 @@ import { ThemeProvider } from "@mui/material/styles";
 
 import materialTheme from "../../../../../theme";
 
+/*
+ * Exact accessible names, not loose regexes: i18next runs in cimode, so a button's name is its
+ * catalog key. "deleteOrRetract.retract" contains the word "delete", and "actions.republish"
+ * contains "publish", so /delete|retract/i and /publish/i each match both labels and would pass
+ * for the wrong button.
+ */
+const PUBLISH = "common:actions.publish";
+const REPUBLISH = "common:actions.republish";
+const RETRACT = "inventory:fields.identifiers.list.deleteOrRetract.retract";
+const DELETE = "inventory:fields.identifiers.list.deleteOrRetract.delete";
+
 const sample1: InventoryRecord = makeMockSample();
 sample1.identifiers = [mockIGSNIdentifier("sample")];
 const container1: InventoryRecord = makeMockContainer();
@@ -51,8 +62,8 @@ describe("Identifiers section", () => {
         </ThemeProvider>,
       );
       expect(screen.getByRole("button", { name: "inventory:fields.identifiers.list.preview" })).toBeDisabled();
-      expect(screen.getByRole("button", { name: /republish|publish/i })).toBeDisabled();
-      expect(screen.getByRole("button", { name: /delete|retract/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: REPUBLISH })).toBeDisabled();
+      expect(screen.getByRole("button", { name: RETRACT })).toBeDisabled();
     });
   });
 
@@ -129,7 +140,7 @@ describe("Identifiers section", () => {
         </ThemeProvider>,
       );
 
-      expect(screen.getByRole("button", { name: /republish|publish/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: PUBLISH })).toBeDisabled();
     });
 
     /*
@@ -355,7 +366,7 @@ describe("Identifiers section", () => {
         </ThemeProvider>,
       );
 
-      expect(screen.getByRole("button", { name: /republish|publish/i })).toBeEnabled();
+      expect(screen.getByRole("button", { name: PUBLISH })).toBeEnabled();
     });
   });
 
@@ -368,7 +379,7 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={instrument} />
         </ThemeProvider>,
       );
-      expect(screen.getByRole("button", { name: /publish/i })).toBeEnabled();
+      expect(screen.getByRole("button", { name: PUBLISH })).toBeEnabled();
     });
 
     test("a submitted review disables Publish", () => {
@@ -379,7 +390,7 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={instrument} />
         </ThemeProvider>,
       );
-      expect(screen.getByRole("button", { name: /publish/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: PUBLISH })).toBeDisabled();
     });
 
     test("an accepted B2INST identifier disables Publish and does not offer Republish", () => {
@@ -390,9 +401,8 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={instrument} />
         </ThemeProvider>,
       );
-      const button = screen.getByRole("button", { name: /publish/i });
-      expect(button).toBeDisabled();
-      expect(button).not.toHaveTextContent(/republish/i);
+      expect(screen.getByRole("button", { name: PUBLISH })).toBeDisabled();
+      expect(screen.queryByRole("button", { name: REPUBLISH })).not.toBeInTheDocument();
     });
   });
 
@@ -405,9 +415,7 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={instrument} />
         </ThemeProvider>,
       );
-      const button = screen.getByRole("button", { name: /delete|retract/i });
-      expect(button).toBeEnabled();
-      expect(button).toHaveTextContent("fields.identifiers.list.deleteOrRetract.delete");
+      expect(screen.getByRole("button", { name: DELETE })).toBeEnabled();
     });
 
     test.each(["submitted", "accepted", "created"] as const)("state '%s' keeps Delete/Retract disabled", (state) => {
@@ -418,7 +426,7 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={instrument} />
         </ThemeProvider>,
       );
-      expect(screen.getByRole("button", { name: /delete|retract/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: RETRACT })).toBeDisabled();
     });
 
     test("a created identifier explains itself", () => {
