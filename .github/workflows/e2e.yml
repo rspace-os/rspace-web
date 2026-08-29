@@ -226,6 +226,7 @@ jobs:
           else
             INTEGRATION_ARGS=(
               "-Dpyrat.server.config={\"default-server\":{\"url\":\"https://demo.pyrat.cloud/rspace511/api/v3/\",\"token\":\"$PYRAT_SERVER_TOKEN\"}}"
+              "-Domero.api.url=https://demo.openmicroscopy.org/"
               "-Dclustermarket.api.url=https://api.clustermarket.dev/v1/"
               "-Dclustermarket.web.url=https://app.clustermarket.dev/"
               "-Dclustermarket.client.id=$CALIRA_CLIENT_ID"
