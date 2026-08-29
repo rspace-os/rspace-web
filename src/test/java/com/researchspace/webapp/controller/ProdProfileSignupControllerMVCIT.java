@@ -9,26 +9,42 @@ import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.researchspace.model.User;
+import com.researchspace.service.impl.ProdContentInitializerManager;
 import com.researchspace.testutils.ProdProfileTestConfiguration;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 /** Runs production-profile signup and content initialisation procedure. */
 @ProdProfileTestConfiguration
-@EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
 public class ProdProfileSignupControllerMVCIT extends MVCTestBase {
 
   private @Autowired JdbcTemplate jdbcTemplate;
+  private Object originalBuiltins;
+  private Object originalSampleBuiltins;
+
+  @BeforeEach
+  public void clearProductionContentFixtures() {
+    originalBuiltins =
+        ReflectionTestUtils.getField(ProdContentInitializerManager.class, "builtins");
+    originalSampleBuiltins =
+        ReflectionTestUtils.getField(ProdContentInitializerManager.class, "sampleBuiltins");
+    ReflectionTestUtils.setField(ProdContentInitializerManager.class, "builtins", null);
+    ReflectionTestUtils.setField(ProdContentInitializerManager.class, "sampleBuiltins", null);
+  }
+
+  @AfterEach
+  public void restoreProductionContentFixtures() {
+    ReflectionTestUtils.setField(ProdContentInitializerManager.class, "builtins", originalBuiltins);
+    ReflectionTestUtils.setField(
+        ProdContentInitializerManager.class, "sampleBuiltins", originalSampleBuiltins);
+  }
 
   @Test
-  @Disabled
-  // TODO This test fails as it use ProdContentInitializerManager, but does not initialise content
-  // as the forms created were those from DevContentInitMgr. The problem is mixing different user
-  // initialization mechanisms within the same test run.
   public void groupCreatedIfPiGroupCreationEnabled() throws Exception {
     String username = randomAlphabetic(8);
     propertyHolder.setPicreateGroupOnSignupEnabled(true);

@@ -14,7 +14,6 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.RoleDao;
 import com.researchspace.dao.UserDao;
@@ -118,8 +117,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     when(userDao.saveUser(user)).thenThrow(ex);
 
     // run test
-    CoreTestUtils.assertExceptionThrown(
-        () -> userManager.saveNewUser(user), UserExistsException.class);
+    assertThrows(UserExistsException.class, () -> userManager.saveNewUser(user));
 
     verify(analyticsManager, never()).userCreated(Mockito.any(User.class));
   }

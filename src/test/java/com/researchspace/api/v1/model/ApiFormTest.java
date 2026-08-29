@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.model;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +16,7 @@ public class ApiFormTest {
     assertEquals(12345L, form.retrieveFormIdFromApiForm().longValue());
     // id mismatch
     form.setId(111L);
-    assertIllegalArgumentException(() -> form.retrieveFormIdFromApiForm());
+    assertThrows(IllegalArgumentException.class, () -> form.retrieveFormIdFromApiForm());
     // forms ok
     form.setGlobalId("FM789");
     form.setId(789L);
@@ -25,6 +25,6 @@ public class ApiFormTest {
     // invalid type
     form.setId(222L);
     form.setGlobalId("SD222");
-    assertIllegalArgumentException(() -> form.retrieveFormIdFromApiForm());
+    assertThrows(IllegalArgumentException.class, () -> form.retrieveFormIdFromApiForm());
   }
 }

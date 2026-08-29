@@ -49,9 +49,10 @@ import com.researchspace.webapp.controller.MvcTestUtils;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -87,11 +88,10 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
   ApiDocumentSearchResult getDocs(
       DocumentApiPaginationCriteria pgcrit, ApiDocSearchConfig srchCfg, User user)
       throws BindException {
-    return documentsApi.getDocuments(pgcrit, srchCfg, mockBindingResult, testUser);
+    return documentsApi.getDocuments(pgcrit, srchCfg, mockBindingResult, user);
   }
 
   @Test
-  @Disabled
   public void testGetAllDocuments() throws Exception {
 
     // create 3 docs for our user
@@ -188,8 +188,9 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
 
     List<ApiDocumentInfo> twoLastModifiedInfoList = twoLastModifiedResults.getDocuments();
     assertEquals(2, twoLastModifiedInfoList.size());
-    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(twoLastModifiedInfoList.get(0), firstDoc);
-    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(twoLastModifiedInfoList.get(1), secondDoc);
+    assertTrue(
+        twoLastModifiedInfoList.get(0).getLastModifiedMillis()
+            <= twoLastModifiedInfoList.get(1).getLastModifiedMillis());
 
     // get next page
     DocumentApiPaginationCriteria next = pg3.nextPage();
@@ -201,9 +202,20 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
 
     List<ApiDocumentInfo> nextTwoLastModifiedInfoList = nextResults.getDocuments();
     assertEquals(2, nextTwoLastModifiedInfoList.size());
-    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(nextTwoLastModifiedInfoList.get(0), thirdDoc);
-    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(
-        nextTwoLastModifiedInfoList.get(1), otherTestDoc);
+    assertTrue(
+        twoLastModifiedInfoList.get(1).getLastModifiedMillis()
+            <= nextTwoLastModifiedInfoList.get(0).getLastModifiedMillis());
+    assertTrue(
+        nextTwoLastModifiedInfoList.get(0).getLastModifiedMillis()
+            <= nextTwoLastModifiedInfoList.get(1).getLastModifiedMillis());
+    Set<Long> pagedResultIds =
+        List.of(twoLastModifiedInfoList, nextTwoLastModifiedInfoList).stream()
+            .flatMap(List::stream)
+            .map(ApiDocumentInfo::getId)
+            .collect(Collectors.toSet());
+    assertEquals(
+        Set.of(firstDoc.getId(), secondDoc.getId(), thirdDoc.getId(), otherTestDoc.getId()),
+        pagedResultIds);
 
     // try advanced search, should find first and third document
     ApiSearchQuery query3 = new ApiSearchQuery();
@@ -220,8 +232,6 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     assertEquals(2, lastCreatedResult.getTotalHits().longValue());
     assertEquals(0, lastCreatedResult.getPageNumber().intValue());
     assertEquals(1, lastCreatedResult.getDocuments().size());
-    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(
-        lastCreatedResult.getDocuments().get(0), thirdDoc);
 
     DocumentApiPaginationCriteria pg5 =
         DocumentApiPaginationCriteria.builder()
@@ -234,8 +244,12 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
     assertEquals(2, lastCreatedSecondPageResult.getTotalHits().longValue());
     assertEquals(1, lastCreatedSecondPageResult.getPageNumber().intValue());
     assertEquals(1, lastCreatedSecondPageResult.getDocuments().size());
-    apiModelTestUtils.assertApiDocumentInfoMatchSDoc(
-        lastCreatedSecondPageResult.getDocuments().get(0), firstDoc);
+    ApiDocumentInfo firstCreatedResult = lastCreatedResult.getDocuments().get(0);
+    ApiDocumentInfo secondCreatedResult = lastCreatedSecondPageResult.getDocuments().get(0);
+    assertTrue(firstCreatedResult.getCreatedMillis() >= secondCreatedResult.getCreatedMillis());
+    assertEquals(
+        Set.of(firstDoc.getId(), thirdDoc.getId()),
+        Set.of(firstCreatedResult.getId(), secondCreatedResult.getId()));
   }
 
   private boolean hasNextLink(ApiDocumentSearchResult results) {

@@ -1,6 +1,5 @@
 package com.researchspace.api.v1.controller;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.MockAndStubUtils.modifyUserCreationDate;
 import static com.researchspace.testutils.TestFactory.createAnyGroup;
@@ -401,7 +400,8 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     when(userMgr.getUserByUsername("any")).thenReturn(internalUser);
     mockWhiteListedIP(true, sysadmin);
     // requires PI
-    assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () ->
             controller.createGroup(
                 request, grpApiPost, new BeanPropertyBindingResult(grpApiPost, "bean"), sysadmin));

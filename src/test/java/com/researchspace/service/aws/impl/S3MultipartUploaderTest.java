@@ -1,6 +1,6 @@
 package com.researchspace.service.aws.impl;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,7 +38,8 @@ public class S3MultipartUploaderTest {
 
   @Test
   public void rejectChunkedUploadIfFileTooSmall() throws Exception {
-    assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> uploader.apply(RSpaceTestUtils.getResource("adrenaline.smiles")));
   }
 

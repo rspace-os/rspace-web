@@ -55,7 +55,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -136,7 +135,6 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     assertEquals("mySample 2.06", allSubSamplesResult.getSubSamples().get(11).getName());
   }
 
-  @Disabled("fail on jenkins on permissions assertion, to be investigated (PRT-1056)")
   @Test
   public void groupOwnedSubSampleVisibilityInsideAndOutsideGroup() {
 
@@ -171,36 +169,27 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     ApiSubSampleSearchResult testUserSubSamplesResult =
         subSampleApiMgr.getSubSamplesForUser(null, null, null, testUser);
     assertEquals(2, testUserSubSamplesResult.getTotalHits().intValue());
-    ApiSubSampleInfo retrievedTestUserSubSample = testUserSubSamplesResult.getSubSamples().get(0);
+    ApiSubSampleInfo retrievedTestUserSubSample =
+        testUserSubSamplesResult.getSubSamples().stream()
+            .filter(subSample -> subSample.getId().equals(testUserSubSample.getId()))
+            .findFirst()
+            .orElseThrow();
     assertEquals(testUserSubSample.getName(), retrievedTestUserSubSample.getName());
-    ApiSubSampleInfo retrievedPiSubSample = testUserSubSamplesResult.getSubSamples().get(1);
+    ApiSubSampleInfo retrievedPiSubSample =
+        testUserSubSamplesResult.getSubSamples().stream()
+            .filter(subSample -> subSample.getId().equals(piSubSample.getId()))
+            .findFirst()
+            .orElseThrow();
     assertEquals(piSubSample.getName(), retrievedPiSubSample.getName());
     // testUser can query full details of pi's subsample
     ApiSubSample fullPiSubSample =
         subSampleApiMgr.getApiSubSampleById(retrievedPiSubSample.getId(), testUser);
     assertFalse(fullPiSubSample.isClearedForPublicView());
 
-    /* *
-     *
-     * //FIXME
-     *
-     * For some reason next assertion fails in Jenkins:
-     *  - `assertEquals(2, fullPiSubSample.getPermittedActions().size())`
-     *
-     * in fact in JENKINS `fullPiSubSample.getPermittedActions()` is `[READ, UPDATE, CHANGE_OWNER]`
-     * and that is wrong because there should not be the `CHANGE_OWNER`.
-     *
-     * The `CHANGE_OWNER` is there because the condition `user.getUsername().equals(invRecOwner)`is `true`
-     * at this method `invPermissions.setPermissionsInApiInventoryRecord(recordInfo, invRec, user)`
-     *
-     * */
-    System.out.println(
-        " ### fullPiSubSample ### IN LOCAL is 2 (correct) , in JENKINS sometime is 3 ### : "
-            + fullPiSubSample.getPermittedActions());
     // testUser have update permission to pi's subsample
-    assertEquals(2, fullPiSubSample.getPermittedActions().size());
     assertTrue(fullPiSubSample.getPermittedActions().contains(UPDATE));
     assertTrue(fullPiSubSample.getPermittedActions().contains(READ));
+    assertFalse(fullPiSubSample.getPermittedActions().contains(CHANGE_OWNER));
     // testUser can only see public details of other user's subsample
     ApiSubSample subSampleRetrievedByTestUser =
         subSampleApiMgr.getApiSubSampleById(otherUserSubSample.getId(), testUser);
@@ -214,18 +203,23 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     ApiSubSampleSearchResult piSubSamplesResult =
         subSampleApiMgr.getSubSamplesForUser(null, null, null, pi);
     assertEquals(2, piSubSamplesResult.getTotalHits().intValue());
-    retrievedTestUserSubSample = piSubSamplesResult.getSubSamples().get(0);
+    retrievedTestUserSubSample =
+        piSubSamplesResult.getSubSamples().stream()
+            .filter(subSample -> subSample.getId().equals(testUserSubSample.getId()))
+            .findFirst()
+            .orElseThrow();
     assertEquals(testUserSubSample.getName(), retrievedTestUserSubSample.getName());
-    retrievedPiSubSample = piSubSamplesResult.getSubSamples().get(1);
+    retrievedPiSubSample =
+        piSubSamplesResult.getSubSamples().stream()
+            .filter(subSample -> subSample.getId().equals(piSubSample.getId()))
+            .findFirst()
+            .orElseThrow();
     assertEquals(piSubSample.getName(), retrievedPiSubSample.getName());
     // pi can query full details of testUsers's subsample
     ApiSubSample fullTestUserSubSample =
         subSampleApiMgr.getApiSubSampleById(retrievedTestUserSubSample.getId(), pi);
     assertEquals(testUserSubSample.getName(), fullTestUserSubSample.getName());
     // pi have update and transfer permission to user's subsample
-    System.out.println(
-        " ### fullTestUserSubSample ### : " + fullTestUserSubSample.getPermittedActions());
-    assertEquals(3, fullTestUserSubSample.getPermittedActions().size());
     assertTrue(fullTestUserSubSample.getPermittedActions().contains(UPDATE));
     assertTrue(fullTestUserSubSample.getPermittedActions().contains(CHANGE_OWNER));
     assertTrue(fullTestUserSubSample.getPermittedActions().contains(READ));

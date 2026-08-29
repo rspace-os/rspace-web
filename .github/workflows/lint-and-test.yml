@@ -749,6 +749,90 @@ jobs:
           comment_mode: off
           files: target/surefire-reports/*.xml
 
+  chemistry-tests:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    if: |
+      (github.event_name == 'push' && github.ref_name == 'main') ||
+      (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
+      inputs.full_java_tests
+    services:
+      db:
+        image: mariadb:12.3
+        env:
+          MARIADB_ROOT_PASSWORD: rspacedbpwd
+          MARIADB_DATABASE: rspace
+          MARIADB_USER: rspacedbuser
+          MARIADB_PASSWORD: rspacedbpwd
+        ports:
+          - 3306:3306
+        options: >-
+          --tmpfs /var/lib/mysql:rw,noexec,nosuid,size=2g
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=40
+          --health-start-period=30s
+      chemistry:
+        image: rspaceops/oss-chemistry:latest
+        ports:
+          - 8090:8090
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.4.0
+        with:
+          distribution: ${{ inputs.java_vendor || 'temurin' }}
+          java-version: 17
+          cache: maven
+
+      - name: Configure MariaDB
+        run: |
+          mysql -h127.0.0.1 -uroot -prspacedbpwd <<'SQL'
+          SET GLOBAL character_set_server = 'utf8mb4';
+          SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
+          SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
+          FLUSH PRIVILEGES;
+          SQL
+
+      - name: Setup test environment
+        run: |
+          rm -rf $RS_FILE_BASE
+          mkdir -p $RS_FILE_BASE
+          cp -f src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
+
+      - name: Run chemistry integration tests
+        env:
+          CHEMISTRY_URL: http://localhost:8090
+          JDBC_DB: rspace
+          JDBC_URL: jdbc:mysql://localhost:3306/rspace
+          MAVEN_TOOLCHAIN_JAVA_VERSION: '17'
+          MAVEN_TOOLCHAIN_JAVA_VENDOR: ${{ inputs.java_vendor || 'temurin' }}
+        run: scripts/run-chemistry-tests.sh
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        if: |
+          always() &&
+          (
+            github.event_name != 'pull_request' ||
+            github.event.pull_request.head.repo.full_name == github.repository
+          )
+        with:
+          check_name: Chemistry integration tests
+          comment_mode: off
+          files: target/surefire-reports/*.xml
+
   # WAR build with the production frontend bundle, tests skipped. Replaces the
   # Jenkins "Build feature branch" stage. Needs both the JDK and Node/pnpm
   # because -DgenerateReactDist runs the Vite production build into the WAR.

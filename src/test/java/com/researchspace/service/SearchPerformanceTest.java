@@ -14,11 +14,9 @@ import com.researchspace.core.testutil.RandomTextFileGenerator.FileSearchTerms;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.hibernate.FullTextSearcherImpl;
 import com.researchspace.model.User;
-import com.researchspace.model.dtos.SearchOperator;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.IllegalAddChildOperation;
-import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
@@ -42,7 +40,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
@@ -50,6 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+@EnabledIfSystemProperty(named = "performanceTests", matches = "true")
 public class SearchPerformanceTest extends SearchSpringTestBase {
 
   Logger log = LoggerFactory.getLogger(SearchPerformanceTest.class);
@@ -73,63 +71,7 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
     fileIndexSearcher.getFileSearchStrategy().setDefaultReturnDocs(2000);
   }
 
-  class Searcher implements Runnable {
-
-    Searcher(User user, String term) {
-      super();
-      this.user = user;
-      this.term = term;
-    }
-
-    User user;
-    String term;
-
-    @Override
-    public void run() {
-      WorkspaceListingConfig cfg =
-          createAdvSearchCfg(
-              new String[] {SearchConstants.FULL_TEXT_SEARCH_OPTION},
-              new String[] {term},
-              SearchOperator.AND);
-
-      try {
-        assertNHits(cfg, 1, user);
-      } catch (IOException | ParseException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-
   @Test
-  @Disabled
-  public void testConcurrentSearch() throws InterruptedException {
-    int numUsers = 2;
-    User[] users = new User[numUsers];
-    StructuredDocument[] docs = new StructuredDocument[numUsers];
-    String[] texts = new String[numUsers];
-    Searcher[] searchers = new Searcher[numUsers];
-    for (int i = 0; i < numUsers; i++) {
-      texts[i] = getRandomAlphabeticString("");
-    }
-    for (int i = 0; i < numUsers; i++) {
-      users[i] = createAndSaveRandomUser();
-      initialiseContentWithEmptyContent(users[i]);
-      docs[i] = createBasicDocumentInRootFolderWithText(users[i], texts[i]);
-      searchers[i] = new Searcher(users[i], texts[i]);
-    }
-    flushToSearchIndices();
-
-    // flushDatabaseState();
-    for (Searcher searcher : searchers) {
-      Thread t = new Thread(searcher);
-      t.start();
-      t.join(); // wait for thread to finish before exiting
-      //	searcher.run();
-    }
-  }
-
-  @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testPerformance()
       throws IllegalAddChildOperation, InterruptedException, IOException, ParseException {
     final int numUsers = 50;
@@ -208,7 +150,6 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testIndexingSingleThread() throws IOException {
     RandomTextFileGenerator tfgg = new RandomTextFileGenerator();
     List<FileSearchTerms> created = tfgg.generate(randomFilefolder, 100, 100);
@@ -226,7 +167,6 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
 
   // this indexes, then searches
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testIndexingMultiThread()
       throws IOException,
           ParseException,
@@ -285,7 +225,6 @@ public class SearchPerformanceTest extends SearchSpringTestBase {
 
   // this indexes, and searches at the same time
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testIndexingAndSearchingAtSameTime()
       throws IOException, InterruptedException, ExecutionException, TimeoutException {
     RandomTextFileGenerator tfgg = new RandomTextFileGenerator();

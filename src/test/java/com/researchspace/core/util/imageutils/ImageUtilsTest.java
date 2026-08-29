@@ -1,6 +1,5 @@
 package com.researchspace.core.util.imageutils;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static com.researchspace.core.util.imageutils.ImageUtils.canScaleBySampling;
 import static com.researchspace.core.util.imageutils.ImageUtils.convertTiffToPng;
 import static com.researchspace.core.util.imageutils.ImageUtils.createThumbnail;
@@ -100,7 +99,8 @@ public class ImageUtilsTest {
     final InputStream is = getInputStreamToResource("Picture1.png");
     BufferedImage original = getBufferedImageFromInputImageStream(is).get();
     is.close();
-    assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> createThumbnail(original, 0, 0, new ByteArrayOutputStream(), "png"));
   }
 
@@ -125,11 +125,13 @@ public class ImageUtilsTest {
   public void convertTiffToPngArgValidation() throws Exception {
     final File outFolder = getTempDirectory();
     // is not a tiff!
-    assertIllegalArgumentException(() -> convertTiffToPng(new File(pngfile), outFolder, null));
+    assertThrows(
+        IllegalArgumentException.class, () -> convertTiffToPng(new File(pngfile), outFolder, null));
     // outfolder is not a folder
-    assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> convertTiffToPng(new File(tiffFile), createTempFile("any", "any"), null));
-    assertIllegalArgumentException(() -> convertTiffToPng(null, outFolder, null));
+    assertThrows(IllegalArgumentException.class, () -> convertTiffToPng(null, outFolder, null));
   }
 
   @Test

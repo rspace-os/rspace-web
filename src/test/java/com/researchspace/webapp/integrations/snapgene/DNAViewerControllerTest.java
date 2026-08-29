@@ -1,6 +1,5 @@
 package com.researchspace.webapp.integrations.snapgene;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static com.researchspace.model.preference.HierarchicalPermission.ALLOWED;
 import static com.researchspace.model.preference.HierarchicalPermission.DENIED;
 import static com.researchspace.model.preference.HierarchicalPermission.DENIED_BY_DEFAULT;
@@ -14,7 +13,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.apiutils.ApiError;
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.files.service.FileStore;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.FileProperty;
@@ -164,7 +162,8 @@ public class DNAViewerControllerTest {
   public void rejectTooBigFileBeforeWsCall() throws Exception {
     setupPngMocks(false);
     edf.setSize(DNAViewerController.MAX_SNAPGENE_FILE_SIZE + 1);
-    CoreTestUtils.assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> dnaController.getPngView(1L, GeneratePngMapConfig.builder().build()));
     verifyNoInteractions(wsClient);
   }
@@ -173,7 +172,8 @@ public class DNAViewerControllerTest {
   public void rejectUnsupportedFileTypeBeforeWsCall() throws Exception {
     setupPngMocks(false);
     edf.setExtension("xyzz");
-    assertIllegalArgumentException(
+    assertThrows(
+        IllegalArgumentException.class,
         () -> dnaController.getPngView(1L, GeneratePngMapConfig.builder().build()));
     verifyNoInteractions(wsClient);
   }

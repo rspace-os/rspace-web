@@ -1,10 +1,10 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.dao.FieldDao;
 import com.researchspace.dao.InternalLinkDao;
 import com.researchspace.model.User;
@@ -46,9 +46,9 @@ public class InternalLinkManagerTest {
     Snippet inValidTarget = TestFactory.createAnySnippet(user);
     inValidTarget.setId(3L);
     when(baseRcdMgr.get(inValidTarget.getId(), user)).thenReturn(inValidTarget);
-    CoreTestUtils.assertExceptionThrown(
-        () -> internalLinkMgr.createInternalLink(field.getId(), inValidTarget.getId(), user),
-        IllegalArgumentException.class);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> internalLinkMgr.createInternalLink(field.getId(), inValidTarget.getId(), user));
 
     // verify 3 types of linkable doc are accepted
     Folder folder = TestFactory.createAFolder("any", user);
