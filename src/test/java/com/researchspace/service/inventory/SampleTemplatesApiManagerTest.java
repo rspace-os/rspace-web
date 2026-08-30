@@ -26,6 +26,7 @@ import com.researchspace.api.v1.model.ApiSampleTemplateSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSampleAlias;
 import com.researchspace.core.util.SortOrder;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -33,15 +34,20 @@ import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
 
+  private @Autowired InventoryEditLockTracker invLockTracker;
+  private @Autowired InventoryPermissionUtils invPermissionUtils;
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   private User testUser;
 
   @BeforeEach

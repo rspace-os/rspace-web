@@ -17,6 +17,7 @@ import com.researchspace.license.InactiveLicenseTestService;
 import com.researchspace.model.Role;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.User;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.service.impl.license.NoCheckLicenseService;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -42,6 +43,7 @@ public class SignupControllerMVCIT extends MVCTestBase {
   private @Autowired SignupController signupController;
   private @Autowired RemoteUserRetrievalPolicy remoteUserPolicy;
   private @Autowired UserEnablementUtils userEnablementUtils;
+  private @Autowired IMutablePropertyHolder propertyHolder;
 
   @AfterEach
   public void tearDown() throws Exception {

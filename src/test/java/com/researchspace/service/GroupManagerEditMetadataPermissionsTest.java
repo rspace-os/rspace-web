@@ -9,6 +9,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.MsgOrReqstCreationCfg;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.testutils.TestGroup;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +31,7 @@ public class GroupManagerEditMetadataPermissionsTest extends GroupPermissionsTes
   }
 
   private @Autowired MessageOrRequestCreatorManager requestCreateMgr;
+  private @Autowired IPermissionUtils permissionUtils;
 
   @Test
   public void groupMetaDataEditPermissionsByRole() throws Exception {

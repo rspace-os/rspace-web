@@ -13,7 +13,6 @@ import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
-import com.researchspace.model.record.IRecordFactory;
 import java.io.IOException;
 import java.util.List;
 import liquibase.exception.CustomChangeException;
@@ -24,8 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpers {
-
-  private @Autowired IRecordFactory recordFactory;
 
   private @Autowired ContainerDao containerDao;
 

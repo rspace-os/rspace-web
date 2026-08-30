@@ -23,7 +23,6 @@ import com.box.sdk.BoxFileVersion;
 import com.box.sdk.BoxFolder;
 import com.box.sdk.BoxSharedLink;
 import com.researchspace.model.field.ErrorList;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.webapp.controller.MVCTestBase;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.io.OutputStream;
@@ -44,7 +43,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 public class BoxControllerMVCIT extends MVCTestBase {
 
   private @Autowired BoxController boxController;
-  private @Autowired MessageSourceUtils messages;
 
   private BoxConnector mockBoxConnector;
   private BoxAPIConnection mockConnection;

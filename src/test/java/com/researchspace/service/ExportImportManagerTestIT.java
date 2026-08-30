@@ -54,6 +54,7 @@ import com.researchspace.dao.EcatImageDao;
 import com.researchspace.integrations.galaxy.service.ExternalWorkFlowTestMother;
 import com.researchspace.linkedelements.FieldContents;
 import com.researchspace.linkedelements.FieldElementLinkPairs;
+import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.ArchivalCheckSum;
 import com.researchspace.model.ChemElementsFormat;
 import com.researchspace.model.EcatAudio;
@@ -183,6 +184,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   @TempDir public File spareFolder;
 
   private @Autowired ExportImport exportImportMgr;
+  private @Autowired DocumentTagManager documentTagManager;
+  private @Autowired FieldParser fieldParser;
   private @Autowired Collection<ArchiveExportServiceManager> archiverServiceManagers;
   private @Autowired EcatCommentManager commMgr;
   private @Autowired IArchiveParser archiveParser;
@@ -202,6 +205,8 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
   private PostArchiveCompletion standardPostExport;
 
   @Autowired private ExternalWorkFlowDataManager externalWorkFlowDataManager;
+  @Autowired private StoichiometryManager stoichiometryMgr;
+  @Autowired private StoichiometryService stoichiometryService;
   @Autowired private StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager;
 
   @BeforeEach

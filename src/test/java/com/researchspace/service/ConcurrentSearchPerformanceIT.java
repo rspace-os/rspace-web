@@ -4,7 +4,6 @@ import static com.researchspace.testutils.SearchTestUtils.createAdvSearchCfg;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.axiope.search.SearchConstants;
-import com.axiope.search.SearchManager;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.User;
@@ -22,12 +21,9 @@ import java.util.concurrent.TimeUnit;
 import org.hibernate.search.mapper.orm.Search;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @EnabledIfSystemProperty(named = "performanceTests", matches = "true")
 public class ConcurrentSearchPerformanceIT extends RealTransactionSpringTestBase {
-
-  private @Autowired SearchManager searchManager;
 
   @Test
   public void concurrentSearchesSeeCommittedFixtures() throws Exception {
@@ -61,7 +57,7 @@ public class ConcurrentSearchPerformanceIT extends RealTransactionSpringTestBase
                           new String[] {SearchConstants.FULL_TEXT_SEARCH_OPTION},
                           new String[] {term});
                   ISearchResults<BaseRecord> results =
-                      searchManager.searchWorkspaceRecords(config, user);
+                      searchMgr.searchWorkspaceRecords(config, user);
                   assertEquals(1, results.getHits().intValue());
                   return null;
                 }));

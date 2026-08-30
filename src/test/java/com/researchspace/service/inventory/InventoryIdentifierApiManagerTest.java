@@ -41,6 +41,7 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
   private User user;
 
   @Autowired private DigitalObjectIdentifierDao doiDao;
+  @Autowired private InventoryIdentifierApiManager inventoryIdentifierApiMgr;
 
   private DataCiteConnectorDummy dataCiteConnectorDummy;
 

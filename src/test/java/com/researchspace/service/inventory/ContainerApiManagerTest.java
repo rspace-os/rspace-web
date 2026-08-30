@@ -49,6 +49,7 @@ import com.researchspace.model.inventory.Container.GridLayoutAxisLabelEnum;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
+import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.ws.rs.NotFoundException;
@@ -61,10 +62,12 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 
 public class ContainerApiManagerTest extends SpringTransactionalTest {
 
+  private @Autowired InventoryEditLockTracker invLockTracker;
   private ApplicationEventPublisher mockPublisher;
   User testUser;
 

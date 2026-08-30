@@ -31,6 +31,7 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.cloud.impl.CommunityPostSignupVerification;
 import com.researchspace.testutils.CommunityTestContext;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -56,6 +57,7 @@ import org.springframework.test.web.servlet.MvcResult;
 public class CommunityControllerMVCIT extends MVCTestBase {
 
   private @Autowired RSCommunityController rsCommunityController;
+  private @Autowired IPropertyHolder propertyHolder;
   private HttpServletRequest mockRequest;
 
   @Mock CommunityPostSignupVerification postSignupVerification;

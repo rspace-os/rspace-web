@@ -18,6 +18,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.field.Field;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -48,6 +49,8 @@ public class WopiControllerTest extends SpringTransactionalTest {
   @Autowired private WopiDiscoveryServiceHandler discoveryServiceHandler;
 
   @Autowired private WopiDiscoveryProcessor discoveryProcessor;
+
+  @Autowired private IPropertyHolder propertyHolder;
 
   private MediaFileLockHandler testLockHandler;
 

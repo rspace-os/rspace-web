@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.linkedelements.FieldContents;
+import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.EcatAudio;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatDocumentFile;
@@ -27,6 +28,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 public class EvernoteEnexImporterTest extends SpringTransactionalTest {
   private static final String EVERNOTE_DUMP_ENEX = "EvernoteDump.enex";
   private static final int EVERNOTE_DUMP_ENEX_NOTE_COUNT = 5;
+
+  private @Autowired FieldParser fieldParser;
 
   @Qualifier("evernoteFileImporter")
   @Autowired

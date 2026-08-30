@@ -25,11 +25,8 @@ import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 public class FormManagerIT extends RealTransactionSpringTestBase {
-
-  private @Autowired FormManager formMgr;
 
   @BeforeEach
   public void setUp() throws Exception {

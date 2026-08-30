@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class DefaultInstrumentTemplatePermissionsTest extends SpringTransactionalTest {
 
   @Autowired private InstrumentTemplateDao instrumentTemplateDao;
+  @Autowired private InventoryPermissionUtils invPermissionUtils;
 
   @BeforeEach
   public void setUp() {

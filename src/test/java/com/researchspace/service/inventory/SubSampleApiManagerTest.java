@@ -33,6 +33,7 @@ import com.researchspace.api.v1.model.ApiSubSampleInfoWithSampleInfo;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.api.v1.model.ApiSubSampleSearchResult;
 import com.researchspace.core.util.SortOrder;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.SubSampleDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
@@ -47,6 +48,7 @@ import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.service.inventory.impl.SubSampleDuplicateConfig;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.math.BigDecimal;
@@ -62,6 +64,8 @@ import org.springframework.context.ApplicationEventPublisher;
 
 public class SubSampleApiManagerTest extends SpringTransactionalTest {
 
+  private @Autowired InventoryEditLockTracker invLockTracker;
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   private ApplicationEventPublisher mockPublisher;
 
   private User testUser;

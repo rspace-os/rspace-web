@@ -31,6 +31,7 @@ import com.researchspace.api.v1.model.ApiSearchQuery.OperatorEnum;
 import com.researchspace.api.v1.model.ApiSearchTerm;
 import com.researchspace.api.v1.model.ApiSearchTerm.QueryTypeEnum;
 import com.researchspace.api.v1.model.MoveRequest;
+import com.researchspace.dao.FormDao;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.Group;
@@ -41,6 +42,7 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.RecordFavoritesManager;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.session.UserSessionTracker;
@@ -65,7 +67,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class DocumentsApiControllerTest extends SpringTransactionalTest {
 
   private @Autowired DocumentsApiController documentsApi;
+  private @Autowired DocumentTagManager documentTagManager;
   private @Autowired RecordFavoritesManager favoritesMgr;
+  private @Autowired FormDao formDao;
   private @Autowired RecordSigningManager signingMgr;
   protected @Autowired MvcTestUtils mvcUtils;
 

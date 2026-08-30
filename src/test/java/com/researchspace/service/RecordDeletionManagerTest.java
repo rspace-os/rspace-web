@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.dao.FormDao;
 import com.researchspace.model.EcatMediaFile;
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
@@ -34,7 +35,9 @@ import org.springframework.mock.web.MockMultipartFile;
 public class RecordDeletionManagerTest extends SpringTransactionalTest {
 
   private User user;
+  private @Autowired BaseRecordManager baseRecordMgr;
   private @Autowired DMPManager dmpMgr;
+  private @Autowired FormDao formDao;
   private @Autowired GalleryController galleryController;
 
   @BeforeEach

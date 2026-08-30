@@ -26,6 +26,7 @@ import com.researchspace.core.testutil.FileTestUtils;
 import com.researchspace.core.util.FieldParserConstants;
 import com.researchspace.core.util.ZipUtils;
 import com.researchspace.linkedelements.FieldContents;
+import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatChemistryFile;
 import com.researchspace.model.EcatComment;
@@ -44,6 +45,8 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.EcatChemistryFileManager;
+import com.researchspace.service.RSMathManager;
 import com.researchspace.service.archive.ArchiveExportServiceManager;
 import com.researchspace.service.archive.ArchiveImporterManager;
 import com.researchspace.service.archive.IArchiveParser;
@@ -86,6 +89,9 @@ public class ArchiveManagerServiceIT extends RealTransactionSpringTestBase {
   private static final String LINKED_FROM_CONTENT = "toLinkFrom";
 
   @Autowired private AuditManager auditMgr;
+  @Autowired private EcatChemistryFileManager chemistryFileManager;
+  @Autowired private FieldParser fieldParser;
+  @Autowired private RSMathManager mathMgr;
   @Autowired private UserImporter userImporter;
   @Autowired private ArchiveImporterManager importer;
   private @Autowired @Qualifier("importUsersAndRecords") ImportStrategy importStrategy;

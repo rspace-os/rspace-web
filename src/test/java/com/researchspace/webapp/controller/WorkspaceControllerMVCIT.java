@@ -71,6 +71,7 @@ import com.researchspace.model.record.Record;
 import com.researchspace.model.record.RecordToFolder;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
+import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.PostLoginHandler;
 import com.researchspace.service.RecordFavoritesManager;
@@ -137,6 +138,7 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
   private IApplicationInitialisor customFormAppInitialiser;
 
   private @Autowired RecordFavoritesManager favMgr;
+  private @Autowired DocumentTagManager documentTagManager;
   private @Autowired WorkspaceController workspaceController;
   private @Autowired RecordManager recordManager;
   private @Autowired AuditManager auditMgr;

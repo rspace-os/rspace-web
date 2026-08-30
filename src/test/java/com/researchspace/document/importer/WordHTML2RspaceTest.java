@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.linkedelements.FieldContents;
+import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
@@ -26,6 +28,8 @@ public class WordHTML2RspaceTest extends SpringTransactionalTest {
 
   File wordHtml;
   File word2rspaceFolder;
+  @Autowired FieldParser fieldParser;
+  @Autowired IPermissionUtils permissionUtils;
   @Autowired RichTextUpdater updater;
   @Autowired RSpaceDocumentCreator creator;
   final int NUM_IMAGES_IN_HTML = 3;

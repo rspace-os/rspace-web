@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.dao.EcatImageAnnotationDao;
+import com.researchspace.dao.FormDao;
 import com.researchspace.dao.RSChemElementDao;
 import com.researchspace.dao.RSMathDao;
 import com.researchspace.linkedelements.RichTextUpdater;
@@ -46,7 +47,10 @@ public class DocumentCopyManagerTestIT extends SpringTransactionalTest {
   @Autowired private EcatImageAnnotationDao imageAnnotationDao;
   @Autowired private RSChemElementDao chemDao;
   @Autowired private RSMathDao mathDao;
+  @Autowired private FormDao formDao;
   @Autowired private DocumentCopyManager documentCopyManager;
+  @Autowired private StoichiometryManager stoichiometryMgr;
+  @Autowired private StoichiometryService stoichiometryService;
 
   @BeforeEach
   public void setUp() throws IllegalAddChildOperation {

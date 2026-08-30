@@ -35,7 +35,6 @@ public class PdfExportManagerTestIT extends RealTransactionSpringTestBase {
   private @Autowired ExportImport exportImportMgr;
   private @Autowired InternalFileStore fStore;
   private @Autowired RecordDeletionManager delMgr;
-  private @Autowired RecordManager recordMgr;
 
   @BeforeEach
   public void setUp() throws Exception {

@@ -37,6 +37,7 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiSubSampleInfo;
 import com.researchspace.api.v1.model.ApiSubSampleNote;
 import com.researchspace.api.v1.model.ApiTargetLocation;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleTemplate;
@@ -44,7 +45,6 @@ import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
-import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.ws.rs.NotFoundException;
@@ -64,8 +64,8 @@ import org.springframework.validation.BindingResult;
 public class SamplesApiControllerTest extends SpringTransactionalTest {
 
   private @Autowired SamplesApiController samplesApi;
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   @Mock private DocumentTagManagerImpl documentTagManagerMock;
-  @Autowired private SampleApiManager sampleApiMgr;
   private BindingResult mockBindingResult = mock(BindingResult.class);
   private User testUser;
 

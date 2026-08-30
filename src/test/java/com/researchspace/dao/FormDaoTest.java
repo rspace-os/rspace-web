@@ -42,7 +42,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @TestMethodOrder(MethodName.class)
 public class FormDaoTest extends BaseDaoTestCase {
 
-  private @Autowired FormDao dao;
+  private @Autowired FormDao formDao;
   private @Autowired FormCreateMenuDao menuDao;
   private @Autowired GroupDao groupdao;
   private RecordFactory recordFactory;
@@ -72,7 +72,7 @@ public class FormDaoTest extends BaseDaoTestCase {
   public void testFindOldestFormByName() throws InterruptedException {
     // create 5 with same name
     setUpDBWithNForms(user, 5, new String[] {"aa", "aa", "aa", "aa", "aa"});
-    RSForm oldestForm = dao.findOldestFormByName("aa");
+    RSForm oldestForm = formDao.findOldestFormByName("aa");
     Long oldestCreationDate = oldestForm.getCreationDate();
     assertNotNull(oldestCreationDate);
 
@@ -100,16 +100,16 @@ public class FormDaoTest extends BaseDaoTestCase {
   public void testGetMostRecentVersionForStableId() throws InterruptedException {
     Thread.sleep(5);
     RSForm toCopy = forms[0];
-    final int B4_count = dao.getAll().size();
+    final int B4_count = formDao.getAll().size();
     RSForm copy = toCopy.copy(new TemporaryCopyLinkedToOriginalCopyPolicy());
     copy.makeCurrentVersion(toCopy);
 
-    dao.save(copy);
+    formDao.save(copy);
 
-    List<RSForm> ts2 = dao.getAll();
+    List<RSForm> ts2 = formDao.getAll();
     assertEquals(B4_count + 1, ts2.size());
     assertEquals(
-        new Version(1L), dao.getMostRecentVersionForForm(toCopy.getStableID()).getVersion());
+        new Version(1L), formDao.getMostRecentVersionForForm(toCopy.getStableID()).getVersion());
   }
 
   PaginationCriteria<RSForm> getAllPgCrit() {
@@ -125,7 +125,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     searchCrit.setPublishedOnly(true);
     searchCrit.setIncludeSystemForm(true);
 
-    dao.getAllFormsByPermission(user, searchCrit, getAllPgCrit());
+    formDao.getAllFormsByPermission(user, searchCrit, getAllPgCrit());
 
     // only default forms are in create menu yet.
     searchCrit.setInUserMenu(true);
@@ -149,7 +149,7 @@ public class FormDaoTest extends BaseDaoTestCase {
 
   private int countReadableForms(
       User user2, FormSearchCriteria searchCrit, PaginationCriteria<RSForm> allPgCrit) {
-    return dao.getAllFormsByPermission(user2, searchCrit, allPgCrit).getTotalHits().intValue();
+    return formDao.getAllFormsByPermission(user2, searchCrit, allPgCrit).getTotalHits().intValue();
   }
 
   @Test
@@ -244,7 +244,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     // now set templates[0] as group readable, will get 1 result
     forms[0].setAccessControl(
         new AccessControl(PermissionType.WRITE, PermissionType.READ, PermissionType.NONE));
-    dao.save(forms[0]);
+    formDao.save(forms[0]);
     flushDatabaseState();
     ISearchResults<RSForm> results3 = getPublishedForms(user, PermissionType.READ, true);
     assertEquals(1, results3.getTotalHits().longValue());
@@ -256,7 +256,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     // set 2 templates world Readable
     for (int i = 0; i < 2; i++) {
       forms[i].getAccessControl().setWorldPermissionType(PermissionType.READ);
-      dao.save(forms[i]);
+      formDao.save(forms[i]);
     }
     flushDatabaseState();
     // and test this
@@ -307,7 +307,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     // set 1 form to other user, should only access 3 now
     User notInGrp = createAndSaveUserIfNotExists("notingroup");
     forms[0].setOwner(notInGrp);
-    dao.save(forms[0]);
+    formDao.save(forms[0]);
     flushDatabaseState();
 
     // now add permission to view by other id as well as by group -check are OR'd
@@ -325,14 +325,14 @@ public class FormDaoTest extends BaseDaoTestCase {
     // make form no longer current
     forms[0].setCurrent(false);
 
-    dao.save(forms[0]);
+    formDao.save(forms[0]);
     flushDatabaseState();
     assertEquals(6, getPublishedForms(other, PermissionType.READ, true).getTotalHits().longValue());
 
     // lets unpublish a template
     forms[1].unpublish();
 
-    dao.save(forms[1]);
+    formDao.save(forms[1]);
     flushDatabaseState();
     assertEquals(5, getPublishedForms(other, PermissionType.READ, true).getTotalHits().longValue());
     assertEquals(
@@ -418,13 +418,14 @@ public class FormDaoTest extends BaseDaoTestCase {
     user.addPermission(ALL);
     assertEquals(
         1,
-        dao.getAllFormsByPermission(user, sc, createDefaultForClass(RSForm.class))
+        formDao
+            .getAllFormsByPermission(user, sc, createDefaultForClass(RSForm.class))
             .getTotalHits()
             .longValue());
 
     sc.setSearchTerm("t"); // will match all except 'BasicDocument'
     ISearchResults<RSForm> allFormsByPermission =
-        dao.getAllFormsByPermission(user, sc, createDefaultForClass(RSForm.class));
+        formDao.getAllFormsByPermission(user, sc, createDefaultForClass(RSForm.class));
     assertEquals(5, allFormsByPermission.getTotalHits().longValue());
 
     // now paginate with only 2 records per page
@@ -433,7 +434,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     pc.setResultsPerPage(2);
     pc.setSortOrder(SortOrder.DESC);
     pc.setOrderBy("name");
-    assertEquals(2, dao.getAllFormsByPermission(user, sc, pc).getHits().longValue());
+    assertEquals(2, formDao.getAllFormsByPermission(user, sc, pc).getHits().longValue());
   }
 
   @Test
@@ -450,7 +451,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     assertEquals(4, originalUserForms.size());
     assertEquals(0, newOwnerForms.size());
 
-    dao.transferOwnershipOfForms(originalOwner, newOwner, originalUserForms);
+    formDao.transferOwnershipOfForms(originalOwner, newOwner, originalUserForms);
     flush();
 
     List<Long> originalOwnerFormsPostTransfer = getFormIdsOwnedByUser(originalOwner);
@@ -533,7 +534,7 @@ public class FormDaoTest extends BaseDaoTestCase {
       form.setPublishingState(FormState.PUBLISHED);
       form.setOwner(owner);
       form.setCreatedBy(owner.getUsername());
-      dao.save(form);
+      formDao.save(form);
       forms[indx++] = form;
     }
   }
@@ -544,6 +545,6 @@ public class FormDaoTest extends BaseDaoTestCase {
     FormSearchCriteria fsc = new FormSearchCriteria(type);
     fsc.setPublishedOnly(published);
     fsc.setIncludeSystemForm(true);
-    return dao.getAllFormsByPermission(user, fsc, pg);
+    return formDao.getAllFormsByPermission(user, fsc, pg);
   }
 }

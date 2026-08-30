@@ -20,7 +20,6 @@ import com.researchspace.model.stoichiometry.MoleculeRole;
 import com.researchspace.model.stoichiometry.Stoichiometry;
 import com.researchspace.model.stoichiometry.StoichiometryInventoryLink;
 import com.researchspace.model.stoichiometry.StoichiometryMolecule;
-import com.researchspace.service.inventory.SubSampleApiManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -30,8 +29,6 @@ public class StoichiometryInventoryLinkManagerTest extends SpringTransactionalTe
 
   @Autowired private StoichiometryInventoryLinkManager linkManager;
   @Autowired private StoichiometryManager stoichiometryManager;
-  @Autowired private RSChemElementManager rsChemElementManager;
-  @Autowired private SubSampleApiManager subSampleApiMgr;
 
   @Test
   public void createLinkTest() throws Exception {

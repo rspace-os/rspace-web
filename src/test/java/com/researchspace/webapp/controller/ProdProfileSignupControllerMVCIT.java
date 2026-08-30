@@ -9,6 +9,7 @@ import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.researchspace.model.User;
+import com.researchspace.properties.IMutablePropertyHolder;
 import com.researchspace.service.impl.ProdContentInitializerManager;
 import com.researchspace.testutils.ProdProfileTestConfiguration;
 import org.junit.jupiter.api.AfterEach;
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 public class ProdProfileSignupControllerMVCIT extends MVCTestBase {
 
   private @Autowired JdbcTemplate jdbcTemplate;
+  private @Autowired IMutablePropertyHolder propertyHolder;
   private Object originalBuiltins;
   private Object originalSampleBuiltins;
 

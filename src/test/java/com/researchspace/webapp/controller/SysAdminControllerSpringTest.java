@@ -12,6 +12,7 @@ import com.researchspace.licensews.LicenseExceededException;
 import com.researchspace.model.User;
 import com.researchspace.model.events.AccountEventType;
 import com.researchspace.properties.PropertyHolder;
+import com.researchspace.service.LicenseService;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.hamcrest.Matcher;
@@ -26,6 +27,7 @@ public class SysAdminControllerSpringTest extends SpringTransactionalTest {
 
   @Autowired private SysAdminController sysCtrller;
 
+  @Autowired protected LicenseService licenseService;
   @Autowired protected PropertyHolder props;
 
   @Autowired protected UserEnablementUtils userEnablementUtils;

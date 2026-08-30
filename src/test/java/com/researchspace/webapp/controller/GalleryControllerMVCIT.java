@@ -33,7 +33,8 @@ import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.search.impl.FileIndexSearcher;
 import com.researchspace.search.impl.FileIndexer;
 import com.researchspace.search.impl.LuceneSearchStrategy;
-import com.researchspace.service.RSChemElementManager;
+import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.EcatChemistryFileManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.awt.image.BufferedImage;
@@ -62,8 +63,9 @@ import org.springframework.ui.ModelMap;
 public class GalleryControllerMVCIT extends MVCTestBase {
 
   private @Autowired GalleryController galleryController;
+  private @Autowired BaseRecordManager baseRecordMgr;
+  private @Autowired EcatChemistryFileManager chemistryFileManager;
   private @Autowired RecordManager recordManager;
-  private @Autowired RSChemElementManager rsChemElementManager;
   @TempDir public File tempIndexFolder;
   @Autowired FileIndexSearcher searcher;
 
