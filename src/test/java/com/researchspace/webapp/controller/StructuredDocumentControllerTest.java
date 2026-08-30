@@ -544,9 +544,9 @@ public class StructuredDocumentControllerTest {
     MultipartFile multipart =
         new MockMultipartFile(
             "wordFile",
-            "genFilesi.txt",
-            "text/text",
-            RSpaceTestUtils.getResourceAsByteArray("genFilesi.txt"));
+            "PowerPasteTesting_RSpace.docx",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            RSpaceTestUtils.getResourceAsByteArray("PowerPasteTesting_RSpace.docx"));
     files = toList(multipart);
     StructuredDocument created = TestFactory.createAnySD();
     created.setId(2L);
@@ -586,9 +586,9 @@ public class StructuredDocumentControllerTest {
     MultipartFile multipart =
         new MockMultipartFile(
             "wordFile",
-            "genFilesi.txt",
-            "text/text",
-            RSpaceTestUtils.getResourceAsByteArray("genFilesi.txt"));
+            "PowerPasteTesting_RSpace.docx",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            RSpaceTestUtils.getResourceAsByteArray("PowerPasteTesting_RSpace.docx"));
     List<MultipartFile> files = toList(multipart);
     StructuredDocument created = TestFactory.createAnySD();
     created.setId(2L);

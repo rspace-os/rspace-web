@@ -50,8 +50,8 @@ import type RsSet from "../../../util/set";
 import type { URL } from "../../../util/types";
 import type { GallerySection } from "../common";
 import {
-  useAsposePreviewOfGalleryFile,
   useCollaboraEdit,
+  useDocumentPreviewOfGalleryFile,
   useImagePreviewOfGalleryFile,
   useOfficeOnlineEdit,
   usePdfPreviewOfGalleryFile,
@@ -69,7 +69,7 @@ import {
   RemoteFile,
 } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
-import { useAsposePreview } from "./CallableAsposePreview";
+import { useDocumentPreview } from "./CallableDocumentPreview";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
@@ -312,12 +312,12 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
   const canEditWithCollabora = useCollaboraEdit();
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
-  const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
+  const canPreviewDocument = useDocumentPreviewOfGalleryFile();
   const canPreviewWithSnapGene = useSnapGenePreviewOfGalleryFile();
   const canPreviewSnippet = useShowSnippet();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
-  const { openAsposePreview } = useAsposePreview();
+  const { openDocumentPreview } = useDocumentPreview();
   const { openSnapGenePreview } = useSnapGenePreview();
   const { openFolder } = useFolderOpen();
   const { openSnippetPreview } = useSnippetPreview();
@@ -465,8 +465,8 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
             })),
           )
           .orElseTry(() =>
-            canPreviewWithAspose(file).map(() => ({
-              key: "aspose" as const,
+            canPreviewDocument(file).map(() => ({
+              key: "documentPreview" as const,
               file,
             })),
           ),
@@ -728,7 +728,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
                     void viewAction.downloadHref().then((downloadHref) => {
                       openPdfPreview(downloadHref);
                     });
-                  if (viewAction.key === "aspose") void openAsposePreview(viewAction.file);
+                  if (viewAction.key === "documentPreview") void openDocumentPreview(viewAction.file);
                   if (viewAction.key === "snapgene") void openSnapGenePreview(viewAction.file);
                   if (viewAction.key === "snippet") openSnippetPreview(viewAction.file);
                 });

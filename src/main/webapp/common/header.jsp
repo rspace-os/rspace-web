@@ -180,7 +180,7 @@
     </rst:hasDeploymentProperty>
 
     <script>
-      RS.asposeEnabled = ${applicationScope['RS_DEPLOY_PROPS']['asposeEnabled']};
+      RS.conversionEnabled = ${applicationScope['RS_DEPLOY_PROPS']['conversionEnabled']};
     </script>
 
     <script>

@@ -171,6 +171,8 @@ public class DeploymentPropertiesController extends BaseController {
         return googleDriveAppId;
       case "aspose.enabled":
         return String.valueOf(isAsposeEnabled());
+      case "conversion.enabled":
+        return String.valueOf(isConversionEnabled());
       case "sysadmin.delete.user":
         return sysadminDeleteUser;
       case "collabora.wopi.enabled":
@@ -259,6 +261,7 @@ public class DeploymentPropertiesController extends BaseController {
 
     properties.put("server.urls.prefix", baseURL);
     properties.put("aspose.enabled", String.valueOf(isAsposeEnabled()));
+    properties.put("conversion.enabled", String.valueOf(isConversionEnabled()));
     properties.put("chemistry.provider", chemistryProvider);
     properties.put("deployment.description", deploymentDescription);
     properties.put("deployment.helpEmail", deploymentHelpEmail);

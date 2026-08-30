@@ -228,3 +228,33 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Effective locale** — the locale actually served: the user's stored choice
   if it is in the allowed set, otherwise the instance default. A stored choice
   outside the allowed set is kept (not erased) and springs back if re-allowed.
+
+## Document conversion
+
+- **Conversion capability** — one of the four user-facing features that changes
+  a file's format: Office Preview, Document Thumbnail, Word Import, or Word
+  Export.
+  _Avoid_: Aspose (the former vendor, not a capability)
+- **Office Preview** — a PDF rendition of an uploaded office file, shown in the
+  browser so the user does not have to download it. CSV, Markdown, and
+  plain-text files also use the PDF preview path.
+  _Avoid_: Aspose preview, document view
+- **Document Thumbnail** — an image of a document's first page, shown in
+  listings and export summaries.
+- **Word Import** — conversion of an uploaded Word or OpenDocument file into an
+  editable RSpace document. Embedded images become Gallery items.
+- **Word Export** — conversion of an RSpace document into a `.docx` file for use
+  outside RSpace.
+  _Avoid_: doc export
+- **Conversion backend** — an external HTTP service that performs document
+  conversion. The PDF backend serves previews and thumbnails; the Word backend
+  serves import and export.
+  _Avoid_: converter app, conversion microservice
+- **Conversion sidecar** — the sole stateless HTTP module used by RSpace for
+  document conversion. It is supported only as a container paired with one
+  Gotenberg container on the same machine and private container network. One
+  sidecar performs Word conversion and exposes the fixed Gotenberg LibreOffice
+  route as a capacity-limited proxy for PDF conversion. It accepts valid
+  requests without an Authorization header, so RSpace reaches it only through
+  a private container network or secure tunnel.
+  _Avoid_: general-purpose proxy

@@ -21,7 +21,7 @@ import usePrimaryAction from "../primaryActionHooks";
 import { folderDestination, useGalleryActions } from "../useGalleryActions";
 import { type GalleryFile, useGalleryListing } from "../useGalleryListing";
 import { GallerySelection, useGallerySelection } from "../useGallerySelection";
-import { useAsposePreview } from "./CallableAsposePreview";
+import { useDocumentPreview } from "./CallableDocumentPreview";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
@@ -180,7 +180,7 @@ const CustomTreeItem = observer(
     const { trackEvent } = React.useContext(AnalyticsContext);
     const { openImagePreview } = useImagePreview();
     const { openPdfPreview } = usePdfPreview();
-    const { openAsposePreview } = useAsposePreview();
+    const { openDocumentPreview } = useDocumentPreview();
     const { openSnapGenePreview } = useSnapGenePreview();
     const { openSnippetPreview } = useSnippetPreview();
     const primaryAction = usePrimaryAction();
@@ -207,8 +207,8 @@ const CustomTreeItem = observer(
               openPdfPreview(url);
             });
             break;
-          case "aspose":
-            void openAsposePreview(file);
+          case "documentPreview":
+            void openDocumentPreview(file);
             break;
           case "snapgene":
             void openSnapGenePreview(file);
@@ -218,7 +218,7 @@ const CustomTreeItem = observer(
             break;
         }
       });
-    }, [file, primaryAction, openFolder, openImagePreview, openPdfPreview, openAsposePreview, openSnapGenePreview]);
+    }, [file, primaryAction, openFolder, openImagePreview, openPdfPreview, openDocumentPreview, openSnapGenePreview]);
 
     /*
      * Here we setup the drag-and-drop handlers for files that are being

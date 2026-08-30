@@ -66,7 +66,7 @@
   id="toolbar2"
   data-pio-enabled="${pioEnabled}"
   data-evernote-enabled="${evernoteEnabled}"
-  data-aspose-enabled="${asposeEnabled}"
+  data-conversion-enabled="${conversionEnabled}"
   data-labgroups-folder-id="${labgroupsFolderId}">
 </div>
 

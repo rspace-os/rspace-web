@@ -22,7 +22,7 @@ import { DisableDragAndDropByDefault } from "../../../hooks/ui/useFileImportDrag
 import Result from "../../../util/result";
 import type RsSet from "../../../util/set";
 import type { GallerySection } from "../common";
-import { CallableAsposePreview } from "../components/CallableAsposePreview";
+import { CallableDocumentPreview } from "../components/CallableDocumentPreview";
 import { CallableImagePreview } from "../components/CallableImagePreview";
 import { CallablePdfPreview } from "../components/CallablePdfPreview";
 import { CallableSnapGenePreview } from "../components/CallableSnapGenePreview";
@@ -112,7 +112,7 @@ const Picker = observer(
     return (
       <CallableImagePreview>
         <CallablePdfPreview>
-          <CallableAsposePreview>
+          <CallableDocumentPreview>
             <CallableSnippetPreview>
               <OpenFolderProvider setPath={setPath}>
                 <Dialog
@@ -240,7 +240,7 @@ const Picker = observer(
                 </Dialog>
               </OpenFolderProvider>
             </CallableSnippetPreview>
-          </CallableAsposePreview>
+          </CallableDocumentPreview>
         </CallablePdfPreview>
       </CallableImagePreview>
     );

@@ -292,15 +292,10 @@ public class HTMLStringGeneratorTest {
     anydoc.setId(1L);
     ExportToFileConfig cfg = makeConfig();
     ExportProcessorInput documentData = htmlGenerator.extractHtmlStr(anydoc, cfg);
-    assertTrue(
-        "unexpected content: " + documentData.getDocumentAsHtml(),
-        documentData
-            .getDocumentAsHtml()
-            .contains(
-                "iframe: \n"
-                    + "  <p><i>&lt;embedded code from <a"
-                    + " href=\"https://dummy.source/a?b=c&amp;d=e\">"
-                    + "https://dummy.source/a?b=c&amp;d=e</a>&gt;</i></p>"));
+    Document output = Jsoup.parse(documentData.getDocumentAsHtml());
+    assertTrue(output.body().text().contains("iframe: <embedded code from"));
+    assertEquals("https://dummy.source/a?b=c&d=e", output.selectFirst("p i a").attr("href"));
+    assertEquals("https://dummy.source/a?b=c&d=e", output.selectFirst("p i a").text());
   }
 
   /** Tests that XSS doesn't work in the document's name & field names on export / preview */
