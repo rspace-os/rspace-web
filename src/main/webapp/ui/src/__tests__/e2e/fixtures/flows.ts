@@ -1,9 +1,10 @@
-import type { Browser, BrowserContextOptions, Page } from "@playwright/test";
+import type { Browser, BrowserContext, BrowserContextOptions, Page } from "@playwright/test";
 import type { SysadminClient } from "../api/clients/SysadminClient";
 import { storageStatePath } from "../authState";
 import { env } from "../env";
 import { InventoryPage } from "../pageObjects/inventory/InventoryPage";
-import { SystemConfigPage } from "../pageObjects/system/SystemConfigPage";
+import { PublicDocumentPage } from "../pageObjects/myrspace/PublicDocumentPage";
+import { SystemConfigPage, type SystemPropertyValue } from "../pageObjects/system/SystemConfigPage";
 import { SYSADMIN } from "../users";
 import { apiTest } from "./api";
 
@@ -13,6 +14,8 @@ type FlowFixtures = {
   flowPidinstB2instConfig: undefined;
   flowSysadminConfig: SystemConfigPage;
   flowSysadminInventory: InventoryPage;
+  flowPublicSharing: undefined;
+  flowOpenAnonymousDocument: (href: string) => Promise<PublicDocumentPage>;
 };
 
 async function withSysadminPage<T>(
@@ -125,4 +128,39 @@ export const test = apiTest.extend<FlowFixtures>({
       },
       use,
     ),
+
+  flowPublicSharing: async ({ flowSysadminConfig }, use) => {
+    env.assertGlobalMutationsAllowed("flowPublicSharing");
+    const settingNames = ["public_sharing", "publicdocs_allow_seo"] as const;
+    const originalValues = new Map<string, SystemPropertyValue>();
+    for (const name of settingNames) {
+      originalValues.set(name, (await flowSysadminConfig.getSetting(name)).trim() as SystemPropertyValue);
+    }
+    try {
+      await flowSysadminConfig.ensureSettings({
+        public_sharing: "ALLOWED",
+        publicdocs_allow_seo: "ALLOWED",
+      });
+      await use(undefined);
+    } finally {
+      for (const [name, value] of originalValues) {
+        await flowSysadminConfig.ensureSetting(name, value);
+      }
+    }
+  },
+
+  flowOpenAnonymousDocument: async ({ browser, browserContextOptions }, use) => {
+    const contexts: BrowserContext[] = [];
+    try {
+      await use(async (href) => {
+        const context = await browser.newContext({ ...browserContextOptions, storageState: undefined });
+        contexts.push(context);
+        const publicPage = new PublicDocumentPage(await context.newPage());
+        await publicPage.openAt(href);
+        return publicPage;
+      });
+    } finally {
+      await Promise.all(contexts.map((context) => context.close()));
+    }
+  },
 });

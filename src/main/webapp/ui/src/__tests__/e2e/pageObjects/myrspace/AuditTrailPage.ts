@@ -2,6 +2,8 @@ import type { Locator, Page } from "@playwright/test";
 import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
 import { BasePage } from "../BasePage";
 
+export type AuditDomain = "ELN" | "Inventory" | "Other";
+
 export type AuditAction =
   | "CREATE"
   | "DELETE"
@@ -66,11 +68,86 @@ export class AuditTrailPage extends BasePage {
     ]);
   }
 
+  async setDomains(domains: AuditDomain[]): Promise<void> {
+    const first = this.page.getByRole("checkbox", { name: "ELN", exact: true });
+    if (!(await first.isVisible())) {
+      await this.page.getByRole("link", { name: "Activity areas" }).click();
+      await first.waitFor({ state: "visible" });
+    }
+    for (const domain of ["ELN", "Inventory", "Other"] as const) {
+      const checkbox = this.page.getByRole("checkbox", { name: domain, exact: true });
+      if (domains.includes(domain)) {
+        await checkbox.check();
+      } else {
+        await checkbox.uncheck();
+      }
+    }
+  }
+
+  async filterByDateRange(from?: string, to?: string): Promise<void> {
+    const fromInput = this.page.getByRole("textbox", { name: "from", exact: true });
+    if (!(await fromInput.isVisible())) {
+      await this.page.getByRole("link", { name: "Date range" }).click();
+      await fromInput.waitFor({ state: "visible" });
+    }
+    if (from !== undefined) await fromInput.fill(from);
+    if (to !== undefined) await this.page.getByRole("textbox", { name: "to", exact: true }).fill(to);
+  }
+
+  async filterByUser(username: string): Promise<void> {
+    const userInput = this.page.getByRole("textbox", { name: "Enter a user or users to audit" });
+    if (!(await userInput.isVisible())) {
+      await this.page.getByRole("link", { name: "Users", exact: true }).click();
+      await userInput.waitFor({ state: "visible" });
+    }
+    await userInput.fill(username);
+    await this.page.getByRole("listitem").filter({ hasText: username }).first().click();
+  }
+
+  async downloadReport(): Promise<string> {
+    const context = this.page.context();
+    const downloadPromise = this.page.waitForEvent("download").then(async (download) => {
+      const stream = await download.createReadStream();
+      if (!stream) throw new Error("downloadReport: download had no read stream.");
+      const chunks: Buffer[] = [];
+      for await (const chunk of stream) chunks.push(chunk as Buffer);
+      return Buffer.concat(chunks).toString("utf-8");
+    });
+    const popupPromise = context.waitForEvent("page").then(async (popup) => {
+      await popup.waitForLoadState();
+      const text = await popup.evaluate(() => document.body.innerText);
+      await popup.close();
+      return text;
+    });
+
+    downloadPromise.catch(() => {});
+    popupPromise.catch(() => {});
+
+    const [text] = await Promise.all([
+      Promise.race([downloadPromise, popupPromise]),
+      this.page.getByRole("button", { name: "Download Audit Report" }).click(),
+    ]);
+    return text;
+  }
+
+  async hitCount(): Promise<number> {
+    const text = await this.page.getByText("You found", { exact: false }).innerText();
+    const count = Number(text.trim().split(" ")[2]);
+    if (!Number.isInteger(count)) {
+      throw new Error(`hitCount: could not parse hits text "${text}"`);
+    }
+    return count;
+  }
+
   get resultRows(): Locator {
     return this.page.locator("#renderedTable tbody tr").filter({ has: this.page.locator("td") });
   }
 
   rowsWithName(name: string): Locator {
     return this.resultRows.filter({ hasText: name });
+  }
+
+  resourceLink(name: string): Locator {
+    return this.rowsWithName(name).first().getByRole("link");
   }
 }

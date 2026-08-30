@@ -1,5 +1,6 @@
 import type { ElementHandle, Locator, Page } from "@playwright/test";
 import { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
+import { MiniProfilePopover } from "./MiniProfilePopover";
 import { WorkspaceSelectionBar } from "./WorkspaceSelectionBar";
 
 export async function waitForTableSwap(page: Page, staleTable: ElementHandle | null): Promise<void> {
@@ -36,7 +37,7 @@ export class WorkspaceTable {
   }
 
   globalIdLink(name: string): Locator {
-    return this.row(name).getByRole("link", { name: /^(SD|NB|FL)\d+$/ });
+    return this.row(name).getByRole("cell").nth(5).getByRole("link");
   }
 
   get selectAllCheckbox(): Locator {
@@ -60,6 +61,17 @@ export class WorkspaceTable {
 
   async openRecord(name: string): Promise<void> {
     await this.row(name).getByRole("link", { name, exact: true }).click();
+  }
+
+  ownerButton(name: string): Locator {
+    return this.row(name).getByRole("cell").last().getByRole("button");
+  }
+
+  async openOwnerMiniProfile(name: string): Promise<MiniProfilePopover> {
+    await this.ownerButton(name).click();
+    const popover = new MiniProfilePopover(this.page);
+    await popover.waitUntilVisible();
+    return popover;
   }
 
   async openInfoFor(name: string): Promise<RecordInfoDialog> {
