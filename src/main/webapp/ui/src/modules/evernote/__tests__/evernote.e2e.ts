@@ -1,11 +1,9 @@
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect } from "@playwright/test";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
+import { fixturePath } from "@/__tests__/e2e/testData";
 
-const currentDir = dirname(fileURLToPath(import.meta.url));
-const EVERNOTE_DUMP_ENEX = resolve(currentDir, "fixtures/EvernoteDump.enex");
+const EVERNOTE_DUMP_ENEX = fixturePath(import.meta.url, "fixtures/EvernoteDump.enex");
 
 const NOTE_TITLES = ["note1", "Untitled", "Eisenhower Matrix", "Meeting Notes", "Menu Planner"];
 

@@ -1,15 +1,13 @@
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import type { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
 import { tags } from "@/__tests__/e2e/tags";
+import { fixturePath } from "@/__tests__/e2e/testData";
 
-const currentDir = dirname(fileURLToPath(import.meta.url));
-const CONTAINERS_CSV = resolve(currentDir, "fixtures/containers_import_all_columns.csv");
-const SAMPLES_CSV = resolve(currentDir, "fixtures/samples_import_with_id.csv");
-const SUBSAMPLES_CSV = resolve(currentDir, "fixtures/subsamples_import_all_columns.csv");
+const CONTAINERS_CSV = fixturePath(import.meta.url, "fixtures/containers_import_all_columns.csv");
+const SAMPLES_CSV = fixturePath(import.meta.url, "fixtures/samples_import_with_id.csv");
+const SUBSAMPLES_CSV = fixturePath(import.meta.url, "fixtures/subsamples_import_all_columns.csv");
 
 async function expectContainerImportedToBench(page: Page, pageInventory: InventoryPage): Promise<void> {
   await page.goto("/inventory/search?resultType=CONTAINER");

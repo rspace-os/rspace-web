@@ -1,14 +1,11 @@
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect } from "@playwright/test";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
-import { TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
+import { fixturePath, TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 
-const currentDir = dirname(fileURLToPath(import.meta.url));
 // Must share the original's .png extension - the app rejects an uploaded new version whose
 // extension doesn't match (live-verified: "Cannot update .png file with .jpg").
-const REPLACEMENT_IMAGE_PATH = resolve(currentDir, "../inventory/fixtures/container_preview.png");
+const REPLACEMENT_IMAGE_PATH = fixturePath(import.meta.url, "../inventory/fixtures/container_preview.png");
 
 test.describe("Gallery image versioning", () => {
   test("As a user, I can upload a new version of an image and see both versions in its history", {
