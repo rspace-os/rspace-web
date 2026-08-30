@@ -4,6 +4,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { onPageLoadWithOtel } from "@/common/otel";
 import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
 import ErrorBoundary from "../../components/ErrorBoundary";
@@ -15,7 +16,7 @@ import App from "./App";
 
 const queryClient = new QueryClient();
 
-window.addEventListener("load", () => {
+onPageLoadWithOtel({ page: "apps" }, () => {
   const domContainer = document.getElementById("app");
   if (domContainer) {
     window.scrollTo(0, 1);
