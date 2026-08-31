@@ -27,6 +27,10 @@ import com.researchspace.model.collection.RuntimeCollectionFields;
 import com.researchspace.model.collection.RuntimeFieldCatalogPage;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.RuntimeFieldContext;
+import com.researchspace.service.resourceaccess.RemoveSelfResourceAccess;
+import com.researchspace.service.resourceaccess.ReplaceResourceAccess;
+import com.researchspace.service.resourceaccess.ResourceAccessDocument;
+import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -123,6 +127,43 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
 
   public List<RuntimeCollectionFields<T>> runtimeFields() {
     return spec.runtimeFields();
+  }
+
+  public Optional<ResourceAccessSpec<T, ID>> resourceAccess() {
+    return spec.resourceAccess();
+  }
+
+  public ID parseResourceId(String rawId) {
+    return parseId(rawId);
+  }
+
+  public ResourceAccessDocument getAccess(
+      String rawId, User subject, ResourceAccessManager manager) {
+    ResourceAccessSpec<T, ID> access = spec.resourceAccess().orElseThrow(NotFoundException::new);
+    return manager.get(access.protectedResource(), parseId(rawId), subject);
+  }
+
+  public ResourceAccessDocument replaceAccess(
+      String rawId,
+      long expectedVersion,
+      List<com.researchspace.service.resourceaccess.ResourceAccessGrant> assignments,
+      ApiV2Caller caller,
+      ResourceAccessManager manager) {
+    ResourceAccessSpec<T, ID> access = spec.resourceAccess().orElseThrow(NotFoundException::new);
+    return manager.replace(
+        access.protectedResource(),
+        new ReplaceResourceAccess<>(parseId(rawId), expectedVersion, assignments),
+        caller.subject(),
+        caller.actor());
+  }
+
+  public void removeSelfAccess(String rawId, ApiV2Caller caller, ResourceAccessManager manager) {
+    ResourceAccessSpec<T, ID> access = spec.resourceAccess().orElseThrow(NotFoundException::new);
+    manager.removeSelf(
+        access.protectedResource(),
+        new RemoveSelfResourceAccess<>(parseId(rawId)),
+        caller.subject(),
+        caller.actor());
   }
 
   public Optional<RuntimeCollectionFields<T>> runtimeFields(String namespace) {
@@ -349,8 +390,21 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   }
 
   /** Finds one readable entity for the default audit endpoints. */
-  ResolvedTarget requireReadableForAudit(String rawId, User actor) {
-    return resolveReadable(parseId(rawId), actor).orElseThrow(NotFoundException::new);
+  ResolvedTarget requireReadableForAudit(
+      String rawId, User actor, ResourceAccessManager accessManager) {
+    ResolvedTarget target =
+        resolveReadable(parseId(rawId), actor).orElseThrow(NotFoundException::new);
+    spec.resourceAccess()
+        .ifPresent(
+            access -> {
+              T entity = description.entityType().cast(target.entity());
+              var resolved =
+                  accessManager.resolve(access.protectedResource().access(entity), actor);
+              if (!resolved.hasCapability(access.protectedResource().viewAuditCapability())) {
+                throw new NotFoundException();
+              }
+            });
+    return target;
   }
 
   /** Finds entities for relationship projection without disclosing why any one is unavailable. */

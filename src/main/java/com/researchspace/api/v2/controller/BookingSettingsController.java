@@ -6,6 +6,8 @@ import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
+import com.researchspace.model.booking.BookingDefaultAccessGrantee;
+import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingTimezoneMode;
@@ -22,6 +24,7 @@ import jakarta.validation.constraints.Size;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.ZoneId;
+import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,6 +39,31 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v2/booking-settings")
 public final class BookingSettingsController {
 
+  public record SelectedAccessGrantee(
+      String kind, long id, String key, String name, String detail, boolean available) {
+
+    static SelectedAccessGrantee from(BookingDefaultAccessGrantee grantee) {
+      boolean available =
+          switch (grantee.getGranteeKind()) {
+            case USER -> grantee.getUser() != null && grantee.getUser().isEnabled();
+            case GROUP ->
+                grantee.getGroup() != null && grantee.getGroup().getEnabledMemberSize() > 0;
+            case AUDIENCE -> false;
+          };
+      return new SelectedAccessGrantee(
+          grantee.getGranteeKind().name(),
+          numericId(grantee.getGranteeKey()),
+          grantee.getGranteeKey(),
+          grantee.getNameSnapshot(),
+          grantee.getDetailSnapshot(),
+          available);
+    }
+
+    private static long numericId(String key) {
+      return Long.parseLong(key.substring(key.indexOf(':') + 1));
+    }
+  }
+
   public record SettingsDocument(
       long slotGranularityMinutes,
       String openingStart,
@@ -49,6 +77,8 @@ public final class BookingSettingsController {
       BookingTimezoneMode timezoneMode,
       String customTimezone,
       String institutionTimezone,
+      BookingDefaultSharedWith defaultSharedWith,
+      List<SelectedAccessGrantee> selectedAccessGrantees,
       long configurationVersion) {
 
     static SettingsDocument from(BookingConfigurationDefaults defaults, Clock institutionClock) {
@@ -65,6 +95,8 @@ public final class BookingSettingsController {
           defaults.getTimezoneMode(),
           defaults.getCustomTimezone(),
           institutionClock.getZone().getId(),
+          defaults.getDefaultSharedWith(),
+          defaults.getSelectedAccessGrantees().stream().map(SelectedAccessGrantee::from).toList(),
           defaults.getConfigurationVersion());
     }
   }
@@ -104,6 +136,8 @@ public final class BookingSettingsController {
       BookingTimezoneMode timezoneMode,
       @Size(max = 255, message = "{errors.api.v2.bookingDisplayPreferences.timeZone.invalid}")
           String customTimezone,
+      BookingDefaultSharedWith defaultSharedWith,
+      List<String> selectedGranteeKeys,
       @NotNull @Min(value = 0, message = "{errors.api.v2.invalidRequest}")
           Long configurationVersion) {
 
@@ -193,6 +227,8 @@ public final class BookingSettingsController {
         manager.updateDefaults(
             patch.schedulingPatch(),
             patch.displayPatch(),
+            patch.defaultSharedWith(),
+            patch.selectedGranteeKeys(),
             patch.configurationVersion(),
             caller.subject(),
             caller.actor()),

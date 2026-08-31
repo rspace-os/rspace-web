@@ -15,6 +15,9 @@ import com.researchspace.model.booking.BookingPrivacy;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.collection.AccessContext;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
@@ -24,12 +27,15 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.model.inventory.InstrumentReadSummary;
+import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
+import com.researchspace.service.resourceaccess.ResourceAccessManager;
+import com.researchspace.service.resourceaccess.ResourceRoleScheme;
 import jakarta.persistence.OptimisticLockException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,37 +54,50 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
 
   private final TimeSlotBookingDao bookingDao;
   private final BookingConfigurationDao configurationDao;
-  private final InventoryPermissionUtils inventoryPermissions;
   private final BookingSchedulingPolicy schedulingPolicy;
   private final BookingMaintenancePolicy maintenancePolicy;
   private final InstrumentDao instrumentDao;
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
   private final ApplicationEventPublisher events;
+  private final ResourceAccessManager accessManager;
+  private final CollectionDescription<TimeSlotBooking> bookingDescription;
+  private final CollectionDescription<BookingConfiguration> configurationDescription;
 
   public TimeSlotBookingManagerImpl(
       @Qualifier("timeSlotBookingDao") TimeSlotBookingDao bookingDao,
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
-      InventoryPermissionUtils inventoryPermissions,
       BookingSchedulingPolicy schedulingPolicy,
       BookingMaintenancePolicy maintenancePolicy,
       InstrumentDao instrumentDao,
       ObjectProvider<ResourceRegistry> resourceRegistry,
-      ApplicationEventPublisher events) {
+      ApplicationEventPublisher events,
+      ResourceAccessManager accessManager,
+      @Qualifier(
+              com.researchspace.booking.config.BookingResourceAccessConfiguration
+                  .TIME_SLOT_BOOKING_DESCRIPTION)
+          CollectionDescription<TimeSlotBooking> bookingDescription,
+      @Qualifier(
+              com.researchspace.booking.config.BookingResourceAccessConfiguration
+                  .BOOKING_CONFIGURATION_DESCRIPTION)
+          CollectionDescription<BookingConfiguration> configurationDescription) {
     this.bookingDao = bookingDao;
     this.configurationDao = configurationDao;
-    this.inventoryPermissions = inventoryPermissions;
     this.schedulingPolicy = schedulingPolicy;
     this.maintenancePolicy = maintenancePolicy;
     this.instrumentDao = instrumentDao;
     this.resourceRegistry = resourceRegistry;
     this.events = events;
+    this.accessManager = accessManager;
+    this.bookingDescription = bookingDescription;
+    this.configurationDescription = configurationDescription;
   }
 
   @Override
   public ResourcePage<TimeSlotBooking> getBookings(ResourceRequest request, User actor) {
     requireAuthenticated(actor);
     ResourcePage<TimeSlotBooking> page =
-        bookingDao.getReadableResources(request, targetAccess(actor));
+        bookingDao.getReadableResources(
+            authorizeRead(bookingDescription, request, actor), targetAccess(actor));
     prepare(page.resources(), actor);
     return page;
   }
@@ -86,13 +105,20 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   @Override
   public long countBookings(ResourceRequest request, User actor) {
     requireAuthenticated(actor);
-    return bookingDao.countReadableResources(request, targetAccess(actor));
+    return bookingDao.countReadableResources(
+        authorizeRead(bookingDescription, request, actor), targetAccess(actor));
   }
 
   @Override
   public Optional<TimeSlotBooking> getBooking(Long id, User actor) {
     requireAuthenticated(actor);
-    Optional<TimeSlotBooking> booking = bookingDao.findReadableById(id, targetAccess(actor));
+    Optional<TimeSlotBooking> booking =
+        bookingDao
+            .getReadableResources(
+                authorizeRead(bookingDescription, idRequest(id), actor), targetAccess(actor))
+            .resources()
+            .stream()
+            .findFirst();
     booking.ifPresent(value -> prepare(List.of(value), actor));
     return booking;
   }
@@ -106,9 +132,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       throw new IllegalArgumentException("Calendar event limit must be positive");
     }
 
-    RelationshipReadAccess access = targetAccess(actor);
     Optional<BookingConfiguration> configuration =
-        configurationDao.getResources(idRequest(configurationId), 1, access).stream().findFirst();
+        findReadableConfiguration(configurationId, actor);
     if (configuration.isEmpty()) {
       return Optional.empty();
     }
@@ -116,13 +141,9 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     if (target == null || target.type() != BookableTargetType.INSTRUMENT) {
       return Optional.empty();
     }
-    Optional<Instrument> instrument =
-        instrumentDao
-            .getReadableResources(idRequest(target.id()), access.result("instruments"))
-            .resources()
-            .stream()
-            .findFirst();
-    if (instrument.isEmpty() || instrument.get().isDeleted() || instrument.get().isTemplate()) {
+    InstrumentReadSummary instrument =
+        instrumentDao.getBookingSummaries(Set.of(target.id())).get(target.id());
+    if (instrument == null || instrument.deleted()) {
       return Optional.empty();
     }
 
@@ -151,8 +172,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                         booking.isCanEdit()))
             .toList();
     return Optional.of(
-        new CalendarSource(
-            instrument.get().getName(), configuration.get().getTimeZone(), calendarEvents));
+        new CalendarSource(instrument.name(), configuration.get().getTimeZone(), calendarEvents));
   }
 
   @Override
@@ -209,14 +229,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   public TimeSlotBooking createBooking(Create create, User subject, User actor) {
     requireAuthenticated(subject);
     Objects.requireNonNull(create, "Create booking command");
-    Instrument instrument = requireInstrument(create.target());
-    if (!inventoryPermissions.canUserReadInventoryRecord(instrument, subject)) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
-    }
-    if (create.kind() == BookingEventKind.MAINTENANCE
-        && !maintenancePolicy.canManageMaintenance(create.target().reference(), subject, actor)) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
-    }
+    requireInstrument(create.target());
     validateWindow(create.start(), create.end());
     validatePurpose(create.purpose());
     BookingConfiguration configuration =
@@ -224,6 +237,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
             .lockByTarget(create.target().reference())
             .filter(BookingConfiguration::isEnabled)
             .orElseThrow(BookingTargetUnavailableException::new);
+    requireCapability(configuration, subject, BookingResourceRoleScheme.CREATE_BOOKING);
     BookingSchedulingPolicy.ConflictInterval conflict =
         validateScheduling(configuration, create.kind(), create.start(), create.end());
     requireNoOverlap(
@@ -261,7 +275,16 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
         .findReadableById(id, targetAccess(subject))
         .map(
             booking -> {
-              requireCanEdit(booking, subject, actor);
+              BookingConfiguration configuration =
+                  configurationDao
+                      .lockById(booking.getBookingConfiguration().getId())
+                      .orElseThrow(BookingTargetUnavailableException::new);
+              ResolvedResourceAccess access =
+                  accessManager.resolve(configuration.getResourceAccess(), subject);
+              if (!access.hasCapability(ResourceRoleScheme.READ_RESOURCE_CAPABILITY)) {
+                return null;
+              }
+              requireCanEdit(booking, access, subject);
               if (booking.getState() != BookingState.CONFIRMED) {
                 throw new BookingStateTransitionException();
               }
@@ -272,10 +295,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               if (intervalChanged) {
                 validateWindow(start, end);
               }
-              BookingConfiguration configuration =
-                  configurationDao
-                      .lockById(booking.getBookingConfiguration().getId())
-                      .orElseThrow(BookingTargetUnavailableException::new);
               if (intervalChanged) {
                 if (!configuration.isEnabled()) {
                   throw new BookingTargetUnavailableException();
@@ -313,7 +332,8 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
               events.publishEvent(new TimeSlotBookingAuditEvent(actor, subject, saved, action));
               prepare(List.of(saved), subject);
               return saved;
-            });
+            })
+        .flatMap(Optional::ofNullable);
   }
 
   private static Instrument requireInstrument(ResolvedBookableTarget target) {
@@ -328,30 +348,27 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     return instrument;
   }
 
-  private void requireCanEdit(TimeSlotBooking booking, User subject, User actor) {
-    BookableTargetReference target = booking.getBookingConfiguration().getTarget();
-    if (booking.getKind() == BookingEventKind.MAINTENANCE) {
-      if (!maintenancePolicy.canManageMaintenance(target, subject, actor)) {
-        throw new AuthorizationException("errors.api.v2.forbidden");
-      }
-      return;
-    }
-    boolean requester = subject.equals(booking.getRequester());
-    boolean owner =
-        bookingDao
-            .findOwnedInstrumentIds(Set.of(target.id()), subject.getId())
-            .contains(target.id());
-    if (!requester && !owner && !subject.hasSysadminRole()) {
+  private static void requireCanEdit(
+      TimeSlotBooking booking, ResolvedResourceAccess access, User subject) {
+    boolean ownBooking = subject.equals(booking.getRequester());
+    boolean mayEdit =
+        access.hasCapability(BookingResourceRoleScheme.MANAGE_ALL_EVENTS)
+            || (ownBooking && access.hasCapability(BookingResourceRoleScheme.MANAGE_OWN_BOOKINGS));
+    if (!mayEdit) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
   }
 
   private void prepare(List<TimeSlotBooking> bookings, User actor) {
-    Set<Long> targetIds = new HashSet<>();
-    for (TimeSlotBooking booking : bookings) {
-      targetIds.add(booking.getBookingConfiguration().getTarget().id());
-    }
-    Set<Long> owned = bookingDao.findOwnedInstrumentIds(targetIds, actor.getId());
+    Map<Long, com.researchspace.model.resourceaccess.ResourceAccess> accesses =
+        new LinkedHashMap<>();
+    bookings.forEach(
+        booking -> {
+          com.researchspace.model.resourceaccess.ResourceAccess access =
+              booking.getBookingConfiguration().getResourceAccess();
+          accesses.put(access.getId(), access);
+        });
+    Map<Long, ResolvedResourceAccess> resolved = accessManager.resolveAll(accesses.values(), actor);
     for (TimeSlotBooking booking : bookings) {
       booking.getRequester().getUsername();
       booking.getRequester().getFullName();
@@ -359,19 +376,18 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
         booking.getCreatedBy().getUsername();
         booking.getCreatedBy().getFullName();
       }
-      Long targetId = booking.getBookingConfiguration().getTarget().id();
-      boolean canEdit;
-      if (booking.getKind() == BookingEventKind.MAINTENANCE) {
-        canEdit =
-            maintenancePolicy.canManageMaintenance(
-                booking.getBookingConfiguration().getTarget(), actor, actor);
-      } else {
-        canEdit =
-            actor.hasSysadminRole()
-                || actor.equals(booking.getRequester())
-                || owned.contains(targetId);
-      }
-      booking.prepareView(BookingPrivacy.FULL, canEdit);
+      ResolvedResourceAccess access =
+          resolved.get(booking.getBookingConfiguration().getResourceAccess().getId());
+      boolean currentRole = access.hasCapability(ResourceRoleScheme.READ_RESOURCE_CAPABILITY);
+      boolean ownBooking = actor.equals(booking.getRequester());
+      boolean canEdit =
+          access.hasCapability(BookingResourceRoleScheme.MANAGE_ALL_EVENTS)
+              || (ownBooking
+                  && access.hasCapability(BookingResourceRoleScheme.MANAGE_OWN_BOOKINGS));
+      booking.prepareView(
+          currentRole || ownBooking ? BookingPrivacy.FULL : BookingPrivacy.BUSY,
+          canEdit,
+          currentRole);
     }
   }
 
@@ -428,6 +444,40 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
 
   private RelationshipReadAccess targetAccess(User actor) {
     return RelationshipReadAccess.forActor(resourceRegistry.getObject(), actor);
+  }
+
+  private Optional<BookingConfiguration> findReadableConfiguration(Long id, User subject) {
+    return configurationDao
+        .getResources(
+            authorizeRead(configurationDescription, idRequest(id), subject),
+            1,
+            targetAccess(subject))
+        .stream()
+        .findFirst();
+  }
+
+  private static <T> ResourceRequest authorizeRead(
+      CollectionDescription<T> description, ResourceRequest request, User subject) {
+    AccessResult access =
+        description
+            .accessPolicy()
+            .readAccess()
+            .check(
+                new AccessContext(
+                    subject, AccessContext.Operation.READ, description.resourceName()));
+    if (access.isDenied()) {
+      throw new AuthorizationException("errors.api.v2.authenticationRequired");
+    }
+    return access.constraintOrEmpty().map(request::restrict).orElse(request);
+  }
+
+  private void requireCapability(
+      BookingConfiguration configuration, User subject, String capability) {
+    if (!accessManager
+        .resolve(configuration.getResourceAccess(), subject)
+        .hasCapability(capability)) {
+      throw new AuthorizationException("errors.api.v2.forbidden");
+    }
   }
 
   private static ResourceRequest idRequest(Long id) {

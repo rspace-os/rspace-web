@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.web.context.WebApplicationContext;
 
 @ApiV2WebIntegrationTest
@@ -218,6 +219,7 @@ class BookingSettingsControllerMVCIT {
                     {"maxBookingDurationMinutes":60,"configurationVersion":%d}
                     """
                         .formatted(before.getConfigurationVersion())))
+        .andDo(BookingSettingsControllerMVCIT::failOnUnexpectedServerError)
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.maxBookingDurationMinutes").value(60));
 
@@ -248,6 +250,7 @@ class BookingSettingsControllerMVCIT {
                      "configurationVersion":%d}
                     """
                         .formatted(before.getConfigurationVersion())))
+        .andDo(BookingSettingsControllerMVCIT::failOnUnexpectedServerError)
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.availabilityWindowStart").value("09:00"))
         .andExpect(jsonPath("$.availabilityWindowEnd").value("17:00"))
@@ -297,5 +300,13 @@ class BookingSettingsControllerMVCIT {
     {"allowDoubleBooking":%s,"configurationVersion":%d}
     """
         .formatted(allowDoubleBooking, version);
+  }
+
+  private static void failOnUnexpectedServerError(MvcResult result) throws Exception {
+    if (result.getResponse().getStatus() >= 500) {
+      throw new AssertionError(
+          "Unexpected server error: " + result.getResponse().getContentAsString(),
+          result.getResolvedException());
+    }
   }
 }

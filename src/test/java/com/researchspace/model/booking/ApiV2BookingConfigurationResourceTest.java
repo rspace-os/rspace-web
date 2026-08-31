@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.resource.ApiV2DocumentParser;
-import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
@@ -66,7 +65,11 @@ class ApiV2BookingConfigurationResourceTest {
             "allowDoubleBooking",
             "configurationVersion",
             "createdAt",
-            "updatedAt"),
+            "updatedAt",
+            "effectiveRole",
+            "roleSources",
+            "capabilities",
+            "ownerHealth"),
         ApiV2BookingConfigurationResource.DESCRIPTION.fields().stream()
             .map(field -> field.name())
             .toList());
@@ -136,12 +139,12 @@ class ApiV2BookingConfigurationResourceTest {
   }
 
   @Test
-  void declaresAuthenticatedReadsAndSysadminWrites() {
+  void declaresAuthenticatedTransportAccessAndLeavesRoleAuthorityToTheManager() {
     User member = mock(User.class);
     User sysadmin = mock(User.class);
     when(sysadmin.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
 
-    assertTrue(
+    assertFalse(
         ApiV2BookingConfigurationResource.DESCRIPTION
             .accessPolicy()
             .updateAccess()
@@ -182,7 +185,7 @@ class ApiV2BookingConfigurationResourceTest {
                   "bufferAfterMinutes": 20,
                   "maxBookingDurationMinutes": 120,
                   "allowDoubleBooking": true,
-                  "target": {"relationTo": "instruments", "value": 12}
+                  "target": {"relationTo": "booking-instruments", "value": 12}
                 }
                 """),
             ApiV2BookingConfigurationResource.DESCRIPTION,
@@ -232,7 +235,11 @@ class ApiV2BookingConfigurationResourceTest {
             "allowDoubleBooking",
             "configurationVersion",
             "createdAt",
-            "updatedAt"),
+            "updatedAt",
+            "effectiveRole",
+            "roleSources",
+            "capabilities",
+            "ownerHealth"),
         List.copyOf(rendered.keySet()));
     assertNull(rendered.get("id"));
     assertEquals(true, rendered.get("enabled"));
@@ -268,7 +275,7 @@ class ApiV2BookingConfigurationResourceTest {
             List.of(
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
-                ApiV2InstrumentResource.DESCRIPTION));
+                ApiV2BookingInstrumentResource.DESCRIPTION));
 
     Map<String, Object> rendered =
         new ResourceRenderer(registry)
@@ -297,7 +304,7 @@ class ApiV2BookingConfigurationResourceTest {
             List.of(
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
-                ApiV2InstrumentResource.DESCRIPTION));
+                ApiV2BookingInstrumentResource.DESCRIPTION));
 
     Map<String, Object> rendered =
         new ResourceRenderer(registry)
@@ -320,7 +327,7 @@ class ApiV2BookingConfigurationResourceTest {
         () ->
             ApiV2DocumentParser.parse(
                 mapper.readTree(
-                    "{\"enabled\":true,\"timezone\":\"Europe/Berlin\",\"target\":{\"relationTo\":\"instruments\",\"value\":12}}"),
+                    "{\"enabled\":true,\"timezone\":\"Europe/Berlin\",\"target\":{\"relationTo\":\"booking-instruments\",\"value\":12}}"),
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 WriteOperation.CREATE,
                 "errors.api.v2.bookingConfiguration.create",

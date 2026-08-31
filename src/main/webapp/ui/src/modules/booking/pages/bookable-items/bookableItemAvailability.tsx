@@ -11,7 +11,7 @@ const ALREADY_CONFIGURED = "alreadyConfigured";
 const ConfigurationSchema = v.object({
   id: v.number(),
   target: v.object({
-    relationTo: v.literal("instruments"),
+    relationTo: v.literal("booking-instruments"),
     value: v.number(),
     globalId: v.string(),
   }),

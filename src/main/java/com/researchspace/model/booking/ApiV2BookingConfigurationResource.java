@@ -2,10 +2,12 @@ package com.researchspace.model.booking;
 
 import static com.researchspace.model.collection.ApiV2ResourceField.AccessPreset.NEVER;
 
+import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ApiV2ResourceDefinition;
 import com.researchspace.model.collection.ApiV2ResourceField;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionDescription.Field;
 import com.researchspace.model.collection.CollectionDescription.InternalFilter;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.CollectionDescription.WriteOperation;
@@ -15,7 +17,7 @@ import com.researchspace.model.collection.OpenApiSchemaDocumentation;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.SplitReferenceBinding;
-import com.researchspace.model.inventory.Instrument;
+import java.util.ArrayList;
 import java.util.List;
 
 @ApiV2ResourceDefinition(
@@ -69,15 +71,16 @@ public record ApiV2BookingConfigurationResource(
   public static final CollectionMutationLimits MUTATION_LIMITS =
       new CollectionMutationLimits(50, 1000);
 
-  private static final AccessPolicy ACCESS = AccessPolicy.authenticatedReadsSysadminWrites();
-
   private static final CollectionDescription.Relationship<BookingConfiguration> TARGET =
       CollectionDescription.Relationship.polymorphicToOne(
               "target",
               CollectionFieldTypes.longNumber(),
               List.of(
                   new RelationshipTarget<>(
-                      "instruments", BookableTargetType.INSTRUMENT, "IN", Instrument.class)),
+                      ApiV2BookingInstrumentResource.RESOURCE_NAME,
+                      BookableTargetType.INSTRUMENT,
+                      "IN",
+                      com.researchspace.model.inventory.Instrument.class)),
               new SplitReferenceBinding<>(
                   (BookingConfiguration configuration) ->
                       configuration.getTarget() == null
@@ -99,12 +102,65 @@ public record ApiV2BookingConfigurationResource(
                   List.of(),
                   false));
 
+  /** Stable shape used by isolated metadata tests; production injects {@link #description}. */
   public static final CollectionDescription<BookingConfiguration> DESCRIPTION =
-      CollectionDescription.fromApiV2Resource(
-          ApiV2BookingConfigurationResource.class,
-          BookingConfiguration.class,
-          List.of(TARGET),
-          List.of(new Sort("id", true)),
-          ACCESS,
-          List.of(new InternalFilter("deleted", "deleted", CollectionFieldTypes.bool())));
+      description(AccessFunction.authenticated());
+
+  /** Builds the collection with its registered resource-role read policy. */
+  public static CollectionDescription<BookingConfiguration> description(AccessFunction readAccess) {
+    AccessPolicy access =
+        new AccessPolicy(
+            readAccess,
+            AccessFunction.authenticated(),
+            AccessFunction.authenticated(),
+            AccessFunction.authenticated(),
+            AccessFunction.authenticated());
+    CollectionDescription<BookingConfiguration> base =
+        CollectionDescription.fromApiV2Resource(
+            ApiV2BookingConfigurationResource.class,
+            BookingConfiguration.class,
+            List.of(TARGET),
+            List.of(new Sort("id", true)),
+            access);
+    List<Field<BookingConfiguration, ?>> fields = new ArrayList<>(base.fields());
+    fields.add(
+        Field.readOnly(
+                "effectiveRole",
+                "effectiveRole",
+                CollectionFieldTypes.text(64),
+                BookingConfiguration::getEffectiveRole)
+            .allowNull()
+            .withQueryCapabilities(false, false));
+    fields.add(
+        Field.readOnly(
+                "roleSources",
+                "roleSources",
+                CollectionFieldTypes.array(),
+                BookingConfiguration::getRoleSources)
+            .withQueryCapabilities(false, false));
+    fields.add(
+        Field.readOnly(
+                "capabilities",
+                "capabilities",
+                CollectionFieldTypes.object(),
+                BookingConfiguration::getCapabilities)
+            .withQueryCapabilities(false, false));
+    fields.add(
+        Field.readOnly(
+                "ownerHealth",
+                "ownerHealth",
+                CollectionFieldTypes.object(),
+                BookingConfiguration::getOwnerHealth)
+            .readableBy(AccessFunction.sysadmin())
+            .withQueryCapabilities(false, false));
+    return new CollectionDescription<>(
+        base.resourceName(),
+        BookingConfiguration.class,
+        fields,
+        base.relationships(),
+        base.idField(),
+        base.defaultSort(),
+        access,
+        List.of(new InternalFilter("deleted", "deleted", CollectionFieldTypes.bool())));
+  }
 }

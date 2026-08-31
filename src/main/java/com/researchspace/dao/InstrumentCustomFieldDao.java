@@ -1,6 +1,6 @@
 package com.researchspace.dao;
 
-import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.List;
@@ -51,7 +51,7 @@ public interface InstrumentCustomFieldDao {
    *     the caller can be shown.
    */
   DefinitionPage readableDefinitions(
-      FilterExpression constraint,
+      QueryConstraint constraint,
       String search,
       Set<Long> ids,
       Set<FieldType> types,
@@ -79,5 +79,5 @@ public interface InstrumentCustomFieldDao {
    * configuration says nothing about being able to read that instrument, so the rule is applied
    * here rather than assumed.
    */
-  Set<Long> readableInstruments(FilterExpression constraint, Set<Long> instrumentIds);
+  Set<Long> readableInstruments(QueryConstraint constraint, Set<Long> instrumentIds);
 }

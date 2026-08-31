@@ -19,9 +19,12 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import com.researchspace.search.customfield.RuntimeFieldTextSearch;
+import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -48,6 +51,18 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   public InstrumentDaoHibernateImpl() {
     super(Instrument.class);
+  }
+
+  @Override
+  public Optional<Instrument> lockById(Long id) {
+    return getSession()
+        .createQuery(
+            "from Instrument instrument where instrument.id = :id and type(instrument) ="
+                + " Instrument",
+            Instrument.class)
+        .setParameter("id", id)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResultOptional();
   }
 
   @Override
@@ -148,6 +163,69 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         .setParameter("instrumentIds", instrumentIds)
         .getResultStream()
         .collect(Collectors.toMap(row -> (Long) row[0], row -> (String) row[1]));
+  }
+
+  @Override
+  public Map<Long, InstrumentReadSummary> getBookingSummaries(Set<Long> instrumentIds) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    return getSession()
+        .createQuery(
+            "select instrument.id, instrument.editInfo.name, instrument.deleted "
+                + "from Instrument instrument where type(instrument) = Instrument "
+                + "and instrument.id in (:instrumentIds)",
+            Object[].class)
+        .setParameter("instrumentIds", instrumentIds)
+        .getResultStream()
+        .map(
+            row ->
+                new InstrumentReadSummary(
+                    (Long) row[0], (String) row[1], (Boolean) row[2], null, null, null))
+        .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
+  }
+
+  @Override
+  public Map<Long, Instrument> getBookingRelationshipTargets(Set<Long> instrumentIds) {
+    if (instrumentIds.isEmpty()) {
+      return Map.of();
+    }
+    return getSession()
+        .createQuery(
+            "from Instrument instrument where type(instrument) = Instrument "
+                + "and instrument.id in (:instrumentIds)",
+            Instrument.class)
+        .setParameter("instrumentIds", instrumentIds)
+        .getResultStream()
+        .collect(Collectors.toMap(Instrument::getId, instrument -> instrument));
+  }
+
+  @Override
+  public List<Instrument> searchEligibleBookingTargets(String query, int limit, User subject) {
+    String ownerScope = subject.hasSysadminRole() ? "" : " and instrument.owner.id = :subjectId";
+    Query<Instrument> targetQuery =
+        getSession()
+            .createQuery(
+                "from Instrument instrument where type(instrument) = Instrument and"
+                    + " instrument.deleted = false and lower(instrument.editInfo.name) like :query"
+                    + " escape '\\' and not exists (select configuration.id from"
+                    + " BookingConfiguration configuration where configuration.target.type ="
+                    + " :targetType and configuration.target.id = instrument.id)"
+                    + ownerScope
+                    + " order by lower(instrument.editInfo.name), instrument.id",
+                Instrument.class)
+            .setParameter("query", "%" + escapeLike(query.toLowerCase(Locale.ROOT)) + "%")
+            .setParameter(
+                "targetType", com.researchspace.model.booking.BookableTargetType.INSTRUMENT)
+            .setMaxResults(limit);
+    if (!subject.hasSysadminRole()) {
+      targetQuery.setParameter("subjectId", subject.getId());
+    }
+    return targetQuery.getResultList();
+  }
+
+  private static String escapeLike(String value) {
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
   }
 
   private ResourceRequest narrowed(ResourceRequest request) {

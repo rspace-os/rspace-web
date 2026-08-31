@@ -8,6 +8,7 @@ import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Sort;
 import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
@@ -53,7 +54,7 @@ public final class CollectionQueryExecutor<T> {
    * reach. Expressing an access rule as a {@link FilterExpression} rather than as query text is
    * what lets the same rule be recompiled at another alias, such as inside a subquery.
    */
-  public Predicate compileConstraint(FilterExpression constraint) {
+  public Predicate compileConstraint(QueryConstraint constraint) {
     return constraintQuery.translateTrusted(constraint);
   }
 

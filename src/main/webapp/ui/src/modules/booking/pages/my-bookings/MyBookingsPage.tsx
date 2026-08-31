@@ -21,7 +21,9 @@ import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./routes";
 
 const UpcomingCountSchema = v.object({ totalDocs: v.number() });
-const projection = { fixed: ["id", "target", "timezone", "start", "end", "purpose"] } as const;
+const projection = {
+  fixed: ["id", "target", "canViewConfiguration", "timezone", "start", "end", "purpose"],
+} as const;
 const emptyDescriptionKeys = {
   upcoming: "myBookings.empty.upcoming",
   past: "myBookings.empty.past",
@@ -99,20 +101,25 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
     queryKey: ["api-v2", "bookings", "count", "upcoming", requesterId, asOfDate.toISOString()],
     queryFn: ({ signal }) => fetchUpcomingBookingCount(requesterId, asOfDate, token, signal),
   });
-  const rowActions = useMemo<TableListRowActions<CollectionRow<BookingListDocument, "id" | "target">>>(
+  const rowActions = useMemo<
+    TableListRowActions<CollectionRow<BookingListDocument, "id" | "target" | "canViewConfiguration">>
+  >(
     () => ({
       id: "actions",
       label: t("myBookings.actions.label"),
       width: 120,
-      renderCell: ({ row }) => (
-        <Link
-          className={buttonVariants({ size: "sm", variant: "outline" })}
-          to="/booking/bookable-items/$globalId"
-          params={{ globalId: row.target.globalId }}
-        >
-          {t("myBookings.actions.viewDetails")}
-        </Link>
-      ),
+      renderCell: ({ row }) =>
+        row.canViewConfiguration ? (
+          <Link
+            className={buttonVariants({ size: "sm", variant: "outline" })}
+            to="/booking/bookable-items/$globalId"
+            params={{ globalId: row.target.globalId }}
+          >
+            {t("myBookings.actions.viewDetails")}
+          </Link>
+        ) : (
+          <span className="text-sm text-muted-foreground">{t("myBookings.roleLoss.readOnly")}</span>
+        ),
       renderInteraction: () => null,
     }),
     [t],

@@ -20,6 +20,7 @@ import { server } from "@/__tests__/mswServer";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { mutateBookableItems } from "../BookableItemsPage";
+import { ownerBookingAccess } from "../mocks/bookableItemsMocks";
 import { createBookableItemRoute, createBookableItemsRoute } from "../routes";
 
 afterEach(() => {
@@ -29,7 +30,7 @@ afterEach(() => {
 const bookingConfiguration = {
   id: 7,
   target: {
-    relationTo: "instruments",
+    relationTo: "booking-instruments",
     value: { id: 123, name: "Confocal microscope", deleted: false },
     globalId: "IN123",
   },
@@ -43,6 +44,7 @@ const bookingConfiguration = {
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
   updatedAt: "2026-08-10T10:00:00Z",
+  ...ownerBookingAccess,
 };
 
 const secondBookingConfiguration = {
@@ -225,14 +227,16 @@ function realI18nWrapper() {
 }
 
 describe("BookableItemsPage", () => {
-  it("lists expanded booking configurations and links to the Add page", async () => {
+  it("lists safe booking targets, owner health, and the Add action", async () => {
     let collectionRequest: Request | undefined;
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", ({ request }) => {
         collectionRequest = request;
-        return HttpResponse.json(collectionResponse([bookingConfiguration]));
+        return HttpResponse.json(
+          collectionResponse([{ ...bookingConfiguration, ownerHealth: { hasEffectiveOwner: false } }]),
+        );
       }),
     );
     const { container } = renderBookableItemsPage();
@@ -241,16 +245,17 @@ describe("BookableItemsPage", () => {
     const targetCell = targetName.closest("td");
     expect(targetCell).not.toBeNull();
     expect(
-      within(targetCell as HTMLTableCellElement).getByRole("link", { name: "common:tableList.filters.openRecord" }),
-    ).toHaveAttribute("href", "/globalId/IN123");
+      within(targetCell as HTMLTableCellElement).queryByRole("link", { name: "common:tableList.filters.openRecord" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(screen.getByText("booking:bookableItems.ownerHealth.needsOwner")).toBeVisible();
     expect(collectionRequest?.headers.get("Authorization")).toBe("Bearer new-token");
     const requestParameters = new URL(collectionRequest?.url ?? "http://localhost").searchParams;
     expect(requestParameters.get("depth")).toBe("1");
     expect(requestParameters.get("where")).toBe("createdBy.value==me");
     expect(screen.getByRole("link", { name: "booking:bookableItems.actions.add" })).toHaveAttribute(
       "href",
-      "/booking/config/bookable-items/add",
+      "/booking/bookable-items/add",
     );
     expect(screen.getByRole("columnheader", { name: "booking:bookableItems.fields.actions" })).toBeVisible();
     expect(screen.getByRole("link", { name: "booking:bookableItems.actions.edit" })).toHaveAttribute(
@@ -396,7 +401,7 @@ describe("BookableItemsPage", () => {
     await waitFor(() => {
       const params = new URL(collectionRequest?.url ?? "http://localhost").searchParams;
       expect(params.get("fields[booking-configurations]")).toBe(
-        "id,target,enabled,timezone,updatedAt,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes",
+        "id,target,enabled,timezone,updatedAt,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,effectiveRole,roleSources,capabilities,ownerHealth",
       );
       expect(params.get("depth")).toBe("1");
     });

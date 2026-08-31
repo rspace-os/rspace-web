@@ -22,6 +22,8 @@ const settings = {
   timezoneMode: "BROWSER" as const,
   customTimezone: null,
   institutionTimezone: "UTC",
+  defaultSharedWith: "ALL_USERS" as const,
+  selectedAccessGrantees: [],
   configurationVersion: 0,
 };
 
@@ -125,6 +127,8 @@ describe("BookingSettingsPage", () => {
       availabilityWindowEnd: "18:00",
       timezoneMode: "BROWSER",
       customTimezone: null,
+      defaultSharedWith: "ALL_USERS",
+      selectedGranteeKeys: [],
       configurationVersion: 0,
     });
   });

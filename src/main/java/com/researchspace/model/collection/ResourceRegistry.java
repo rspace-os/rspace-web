@@ -34,13 +34,13 @@ public final class ResourceRegistry {
   }
 
   private final Map<String, CollectionDescription<?>> byName;
-  private final Map<Class<?>, CollectionDescription<?>> byEntityType;
+  private final Map<Class<?>, List<CollectionDescription<?>>> byEntityType;
   private final Map<String, Map<String, RelationshipQueryPath>> relationshipQueryPaths;
 
   public ResourceRegistry(Collection<? extends CollectionDescription<?>> descriptions) {
     Objects.requireNonNull(descriptions, "Resource descriptions");
     Map<String, CollectionDescription<?>> names = new LinkedHashMap<>();
-    Map<Class<?>, CollectionDescription<?>> entityTypes = new LinkedHashMap<>();
+    Map<Class<?>, List<CollectionDescription<?>>> entityTypes = new LinkedHashMap<>();
     descriptions.forEach(
         description -> {
           Objects.requireNonNull(description, "Resource description");
@@ -48,10 +48,9 @@ public final class ResourceRegistry {
             throw new IllegalArgumentException(
                 "Duplicate resource name " + description.resourceName());
           }
-          if (entityTypes.putIfAbsent(description.entityType(), description) != null) {
-            throw new IllegalArgumentException(
-                "Duplicate resource entity type " + description.entityType().getName());
-          }
+          entityTypes
+              .computeIfAbsent(description.entityType(), ignored -> new ArrayList<>())
+              .add(description);
         });
     names
         .values()
@@ -94,6 +93,7 @@ public final class ResourceRegistry {
                                       }
                                     })));
     byName = Collections.unmodifiableMap(names);
+    entityTypes.replaceAll((ignored, matchingDescriptions) -> List.copyOf(matchingDescriptions));
     byEntityType = Collections.unmodifiableMap(entityTypes);
     relationshipQueryPaths = buildRelationshipQueryPaths(names);
   }
@@ -112,11 +112,18 @@ public final class ResourceRegistry {
   }
 
   public CollectionDescription<?> requireEntityType(Class<?> type) {
-    CollectionDescription<?> description = byEntityType.get(type);
-    if (description == null) {
+    List<CollectionDescription<?>> descriptions = byEntityType.get(type);
+    if (descriptions == null) {
       throw new IllegalArgumentException("Unknown resource entity type " + type.getName());
     }
-    return description;
+    if (descriptions.size() != 1) {
+      throw new IllegalArgumentException(
+          "Ambiguous resource entity type "
+              + type.getName()
+              + "; use a resource name instead: "
+              + descriptions.stream().map(CollectionDescription::resourceName).toList());
+    }
+    return descriptions.get(0);
   }
 
   /**

@@ -1,9 +1,33 @@
 {
+  "access": {
+    "allUsers": "All users",
+    "leave": "Leave configuration",
+    "roles": {
+      "booker": {
+        "description": "Can view the schedule, subscribe, create bookings, and manage their own bookings.",
+        "label": "Booker"
+      },
+      "manager": {
+        "description": "Can manage configuration, events, and non-owner access.",
+        "label": "Manager"
+      },
+      "owner": {
+        "description": "Full control, including Owners and archiving.",
+        "label": "Owner"
+      },
+      "viewer": {
+        "description": "Can view the schedule and subscribe to the calendar.",
+        "label": "Viewer"
+      }
+    }
+  },
   "allBookableItems": {
     "actions": {
+      "access": "Access",
       "book": "Book",
       "nextDay": "Next day",
       "previousDay": "Previous day",
+      "settings": "Settings",
       "today": "Today",
       "viewDetails": "View details"
     },
@@ -184,6 +208,7 @@
     "past": "Past events",
     "rules": "Booking rules",
     "tabs": {
+      "access": "Access",
       "audit": "Audit log",
       "bookings": "Bookings",
       "details": "Details"
@@ -250,8 +275,17 @@
       "timezone": "Time zone",
       "updatedAt": "Last updated"
     },
+    "ownerHealth": {
+      "needsOwner": "Owner needed"
+    },
     "plural": "Bookable Items",
-    "singular": "Bookable item"
+    "singular": "Bookable item",
+    "targetSearch": {
+      "error": "Eligible instruments could not be searched.",
+      "label": "Instrument",
+      "results": "Eligible instruments",
+      "search": "Search"
+    }
   },
   "bookings": {
     "actions": {
@@ -486,6 +520,9 @@
       "upcoming": "Upcoming"
     },
     "plural": "Bookings",
+    "roleLoss": {
+      "readOnly": "Read-only: you no longer have access to this item."
+    },
     "singular": "Booking",
     "title": "My Bookings"
   },
@@ -545,6 +582,32 @@
   "settings": {
     "actions": {
       "save": "Save settings"
+    },
+    "defaultSharing": {
+      "addNamed": "Add {name}",
+      "addUserOrGroup": "Add user or group",
+      "description": "New bookable items grant the Booker role using this choice. Existing items are unchanged.",
+      "options": {
+        "ALL_USERS": {
+          "description": "Everyone, including future users, can create bookings.",
+          "label": "All users"
+        },
+        "ONLY_ME": {
+          "description": "Only the creator receives access as Owner.",
+          "label": "Only me"
+        },
+        "SELECTED": {
+          "description": "Exactly the users and groups selected below receive Booker access.",
+          "label": "Selected users and groups"
+        }
+      },
+      "removeNamed": "Remove {name}",
+      "required": "Add at least one user or group.",
+      "search": "Search",
+      "searchResults": "User and group search results",
+      "selected": "Selected users and groups",
+      "title": "Default shared with",
+      "unavailable": "Unavailable"
     },
     "description": "These defaults are copied to new bookable items. Existing bookable items keep their own settings.",
     "displayDefaults": {

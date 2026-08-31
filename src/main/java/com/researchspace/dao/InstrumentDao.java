@@ -13,6 +13,7 @@ import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /** For DAO operations specific to Inventory {@link Instrument} (not templates). */
@@ -49,6 +50,21 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
 
   /** Returns names for the requested instruments without applying current read permissions. */
   Map<Long, String> getNamesByIds(Set<Long> instrumentIds);
+
+  /** Returns only the safe scalar fields Booking may reveal, independent of Inventory sharing. */
+  Map<Long, InstrumentReadSummary> getBookingSummaries(Set<Long> instrumentIds);
+
+  /**
+   * Returns concrete Instruments for Booking's safe relationship renderer, independent of Inventory
+   * sharing. Callers must render them through Booking's allowlisted description.
+   */
+  Map<Long, Instrument> getBookingRelationshipTargets(Set<Long> instrumentIds);
+
+  /** Searches active concrete Instruments eligible for a new Booking configuration. */
+  List<Instrument> searchEligibleBookingTargets(String query, int limit, User subject);
+
+  /** Locks and returns one concrete Instrument for a coordinated ownership mutation. */
+  Optional<Instrument> lockById(Long id);
 
   /** Returns all instruments whose image or thumbnail is the given file property. */
   List<Instrument> getAllUsingImage(FileProperty fileProperty);

@@ -348,6 +348,8 @@ public final class ApiV2DocumentParser {
       case STRING -> node.isTextual();
       case NUMBER -> node.isNumber();
       case BOOLEAN -> node.isBoolean();
+      case OBJECT -> node.isObject();
+      case ARRAY -> node.isArray();
     };
   }
 }

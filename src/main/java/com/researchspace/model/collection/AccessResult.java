@@ -32,7 +32,7 @@ public sealed interface AccessResult {
   }
 
   /** Permission limited to the rows matching {@code constraint}. */
-  record AllowedWhere(FilterExpression constraint) implements AccessResult {
+  record AllowedWhere(QueryConstraint constraint) implements AccessResult {
     public AllowedWhere {
       Objects.requireNonNull(constraint, "Access constraint");
     }
@@ -46,7 +46,7 @@ public sealed interface AccessResult {
     return new Denied(reasonCode);
   }
 
-  static AccessResult allowedWhere(FilterExpression constraint) {
+  static AccessResult allowedWhere(QueryConstraint constraint) {
     return new AllowedWhere(constraint);
   }
 
@@ -55,7 +55,7 @@ public sealed interface AccessResult {
   }
 
   /** The constraint to AND into the caller's filter, if this result carries one. */
-  default Optional<FilterExpression> constraintOrEmpty() {
+  default Optional<QueryConstraint> constraintOrEmpty() {
     return this instanceof AllowedWhere allowedWhere
         ? Optional.of(allowedWhere.constraint())
         : Optional.empty();

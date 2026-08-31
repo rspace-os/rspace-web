@@ -33,7 +33,7 @@ const target = {
 const editableBooking = {
   id: 41,
   target: {
-    relationTo: "instruments",
+    relationTo: "booking-instruments",
     globalId: "IN123",
     value: { id: 123, name: "Confocal microscope", deleted: false },
   },
@@ -301,7 +301,7 @@ describe("BookingForm", () => {
             {
               id: target.configurationId,
               target: {
-                relationTo: "instruments",
+                relationTo: "booking-instruments",
                 globalId: target.globalId,
                 value: { id: target.targetId, name: target.name, deleted: false },
               },
@@ -317,7 +317,7 @@ describe("BookingForm", () => {
             {
               id: paris.configurationId,
               target: {
-                relationTo: "instruments",
+                relationTo: "booking-instruments",
                 globalId: paris.globalId,
                 value: { id: paris.targetId, name: paris.name, deleted: false },
               },

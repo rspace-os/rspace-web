@@ -21,7 +21,7 @@ import { createEditBookingRoute } from "../routes";
 const booking = {
   id: 41,
   target: {
-    relationTo: "instruments",
+    relationTo: "booking-instruments",
     globalId: "IN123",
     value: { id: 123, name: "Confocal microscope", deleted: false },
   },

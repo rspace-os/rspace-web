@@ -39,6 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockFilterConfig;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -257,13 +258,18 @@ public final class ApiV2Fixture {
 
   /** Creates one booking configuration targeting {@code instrumentId} and returns its ID. */
   public long bookingConfiguration(long instrumentId, String timezone) {
+    return bookingConfiguration(instrumentId, timezone, sysadminKey());
+  }
+
+  /** Creates one booking configuration as the caller identified by {@code apiKey}. */
+  public long bookingConfiguration(long instrumentId, String timezone, String apiKey) {
     enableBookings();
     String body =
         """
-        {"enabled":true,"timezone":"%s","target":{"relationTo":"instruments","value":%d}}\
+        {"enabled":true,"target":{"relationTo":"booking-instruments","value":%d}}\
         """
-            .formatted(timezone, instrumentId);
-    long id = idOf(postAsSysadmin("/api/v2/booking-configurations", body));
+            .formatted(instrumentId);
+    long id = idOf(postJson("/api/v2/booking-configurations", body, apiKey));
     teardown.add(() -> deleteAsSysadmin("/api/v2/booking-configurations/" + id));
     return id;
   }
@@ -273,7 +279,7 @@ public final class ApiV2Fixture {
     enableBookings();
     String body =
         """
-        {"target":{"relationTo":"instruments","value":%d},"start":"%s","end":"%s"}\
+        {"target":{"relationTo":"booking-instruments","value":%d},"start":"%s","end":"%s"}\
         """
             .formatted(instrumentId, start, end);
     long id = idOf(postJson("/api/v2/bookings", body, userKey()));
@@ -349,15 +355,20 @@ public final class ApiV2Fixture {
 
   private String postJson(String path, String body, String apiKey) {
     try {
-      return mockMvc
-          .perform(
-              post(path)
-                  .header("apiKey", apiKey)
-                  .contentType(MediaType.APPLICATION_JSON)
-                  .content(body))
-          .andReturn()
-          .getResponse()
-          .getContentAsString();
+      MvcResult result =
+          mockMvc
+              .perform(
+                  post(path)
+                      .header("apiKey", apiKey)
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(body))
+              .andReturn();
+      if (result.getResponse().getStatus() >= 500 && result.getResolvedException() != null) {
+        throw new IllegalStateException(
+            "fixture POST " + path + " reached an unexpected server error",
+            result.getResolvedException());
+      }
+      return result.getResponse().getContentAsString();
     } catch (Exception e) {
       throw new IllegalStateException("fixture POST " + path + " failed", e);
     }

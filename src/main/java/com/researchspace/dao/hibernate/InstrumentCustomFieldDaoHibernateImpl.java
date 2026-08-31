@@ -5,7 +5,7 @@ import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.InstrumentCustomFieldDao;
 import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
-import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Instrument;
@@ -43,7 +43,7 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
 
   @Override
   public DefinitionPage readableDefinitions(
-      FilterExpression constraint,
+      QueryConstraint constraint,
       String search,
       Set<Long> ids,
       Set<FieldType> types,
@@ -141,7 +141,7 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
   }
 
   @Override
-  public Set<Long> readableInstruments(FilterExpression constraint, Set<Long> instrumentIds) {
+  public Set<Long> readableInstruments(QueryConstraint constraint, Set<Long> instrumentIds) {
     if (instrumentIds.isEmpty()) {
       return Set.of();
     }

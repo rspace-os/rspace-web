@@ -4,8 +4,10 @@ import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
 import com.researchspace.model.audittrail.AuditTrailProperty;
+import com.researchspace.model.resourceaccess.ResourceAccess;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -15,6 +17,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.AssertTrue;
@@ -24,6 +27,8 @@ import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
@@ -98,6 +103,15 @@ public class BookingConfiguration implements Serializable {
   private long configurationVersion;
 
   @Getter(
+      onMethod_ = {
+        @OneToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.ALL),
+        @JoinColumn(name = "resourceAccess_id", nullable = false, unique = true),
+        @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+      })
+  @Setter
+  private ResourceAccess resourceAccess;
+
+  @Getter(
       onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "slotGranularityMinutes")})
   @Setter
   private long slotGranularityMinutes = BookingSchedulingSettings.DEFAULT_SLOT_GRANULARITY_MINUTES;
@@ -137,7 +151,61 @@ public class BookingConfiguration implements Serializable {
   @Setter
   private boolean allowDoubleBooking = BookingSchedulingSettings.DEFAULT_ALLOW_DOUBLE_BOOKING;
 
+  @Transient private String effectiveRole;
+  @Transient private List<com.researchspace.service.resourceaccess.ResourceRoleSource> roleSources;
+  @Transient private BookingConfigurationCapabilities capabilities;
+  @Transient private BookingOwnerHealth ownerHealth;
+
   public BookingConfiguration() {}
+
+  @Transient
+  public String getEffectiveRole() {
+    return effectiveRole;
+  }
+
+  @Transient
+  public List<com.researchspace.service.resourceaccess.ResourceRoleSource> getRoleSources() {
+    return roleSources == null ? List.of() : roleSources;
+  }
+
+  @Transient
+  public Map<String, Object> getCapabilities() {
+    if (capabilities == null) {
+      return Map.of();
+    }
+    return Map.ofEntries(
+        Map.entry("canEditConfiguration", capabilities.canEditConfiguration()),
+        Map.entry("canArchiveConfiguration", capabilities.canArchiveConfiguration()),
+        Map.entry("canViewAudit", capabilities.canViewAudit()),
+        Map.entry("canViewAccess", capabilities.canViewAccess()),
+        Map.entry("canManageAssignments", capabilities.canManageAssignments()),
+        Map.entry("canManageOwners", capabilities.canManageOwners()),
+        Map.entry("canCreateBooking", capabilities.canCreateBooking()),
+        Map.entry("canManageOwnBookings", capabilities.canManageOwnBookings()),
+        Map.entry("canManageAllEvents", capabilities.canManageAllEvents()),
+        Map.entry("canCreateBlockout", capabilities.canCreateBlockout()),
+        Map.entry("canSubscribeCalendar", capabilities.canSubscribeCalendar()),
+        Map.entry("canLeaveConfiguration", capabilities.canLeaveConfiguration()));
+  }
+
+  @Transient
+  public Map<String, Object> getOwnerHealth() {
+    return ownerHealth == null
+        ? Map.of()
+        : Map.of("hasEffectiveOwner", ownerHealth.hasEffectiveOwner());
+  }
+
+  /** Sets caller-specific response fields after role resolution inside the read transaction. */
+  public void prepareAccessProjection(
+      String effectiveRole,
+      List<com.researchspace.service.resourceaccess.ResourceRoleSource> roleSources,
+      BookingConfigurationCapabilities capabilities,
+      BookingOwnerHealth ownerHealth) {
+    this.effectiveRole = effectiveRole;
+    this.roleSources = List.copyOf(roleSources);
+    this.capabilities = capabilities;
+    this.ownerHealth = ownerHealth;
+  }
 
   /** Returns the resource-specific identifier stored in the searchable audit log. */
   @Transient

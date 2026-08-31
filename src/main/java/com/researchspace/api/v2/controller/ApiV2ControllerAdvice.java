@@ -6,6 +6,7 @@ import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.booking.service.BookingCalendarManagerImpl.BookingCalendarNotFoundException;
 import com.researchspace.booking.service.BookingPolicyException;
+import com.researchspace.booking.service.InvalidBookingDefaultSharingException;
 import com.researchspace.booking.service.InvalidBookingDisplaySettingsException;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.booking.service.StaleBookingSettingsException;
@@ -16,6 +17,7 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.CollectionMutationException;
 import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.resourceaccess.ResourceAccessException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.NotFoundException;
@@ -163,6 +165,12 @@ public class ApiV2ControllerAdvice {
     return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
   }
 
+  @ExceptionHandler(InvalidBookingDefaultSharingException.class)
+  public ResponseEntity<ApiV2Problem> handleInvalidBookingDefaultSharing() {
+    return problem(
+        HttpStatus.BAD_REQUEST, "errors.api.v2.bookingConfiguration.defaultSharing.invalid");
+  }
+
   @ExceptionHandler(BookingPolicyException.class)
   public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
     return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
@@ -177,6 +185,25 @@ public class ApiV2ControllerAdvice {
   public ResponseEntity<ApiV2Problem> handleResourceException(ApiV2ResourceException ex) {
     String detail = messages.getMessage(ex.errorCode(), ex.arguments());
     return ApiV2Problem.response(ex.status(), detail, ex.errorCode(), detail);
+  }
+
+  @ExceptionHandler(ResourceAccessException.class)
+  public ResponseEntity<ApiV2Problem> handleResourceAccess(ResourceAccessException ex) {
+    return switch (ex.reason()) {
+      case NOT_FOUND -> problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
+      case FORBIDDEN -> problem(HttpStatus.FORBIDDEN, "errors.api.v2.resourceAccess.forbidden");
+      case OWNER_REQUIRED ->
+          problem(HttpStatus.CONFLICT, "errors.api.v2.resourceAccess.ownerRequired");
+      case STALE -> problem(HttpStatus.PRECONDITION_FAILED, "errors.api.v2.resourceAccess.stale");
+      case INVALID_GRANTEE ->
+          problem(HttpStatus.BAD_REQUEST, "errors.api.v2.resourceAccess.invalidGrantee");
+      case INVALID_ROLE ->
+          problem(HttpStatus.BAD_REQUEST, "errors.api.v2.resourceAccess.invalidRole");
+      case DUPLICATE_GRANTEE ->
+          problem(HttpStatus.BAD_REQUEST, "errors.api.v2.resourceAccess.duplicateGrantee");
+      case SELF_REMOVAL_REQUIRES_LEAVE ->
+          problem(HttpStatus.CONFLICT, "errors.api.v2.resourceAccess.selfRemovalRequiresLeave");
+    };
   }
 
   @ExceptionHandler(DocumentValidationException.class)

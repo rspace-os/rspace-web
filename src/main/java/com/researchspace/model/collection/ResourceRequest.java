@@ -7,7 +7,7 @@ import java.util.Objects;
 /** Complete, typed request for reading or selecting resources from one collection. */
 public record ResourceRequest(
     FilterExpression filter,
-    FilterExpression serverConstraint,
+    QueryConstraint serverConstraint,
     List<Sort> sort,
     Page page,
     ResourceFieldSelections fieldSelections,
@@ -39,7 +39,7 @@ public record ResourceRequest(
    */
   public ResourceRequest(
       FilterExpression filter,
-      FilterExpression serverConstraint,
+      QueryConstraint serverConstraint,
       List<Sort> sort,
       Page page,
       ResourceFieldSelections fieldSelections,
@@ -103,14 +103,14 @@ public record ResourceRequest(
   }
 
   /** Adds a trusted server-owned restriction without changing or reclassifying caller input. */
-  public ResourceRequest restrict(FilterExpression constraint) {
+  public ResourceRequest restrict(QueryConstraint constraint) {
     if (constraint == null) {
       return this;
     }
-    FilterExpression combined =
+    QueryConstraint combined =
         serverConstraint == null
             ? constraint
-            : new FilterExpression.And(List.of(serverConstraint, constraint));
+            : new QueryConstraint.And(List.of(serverConstraint, constraint));
     return new ResourceRequest(filter, combined, sort, page, fieldSelections, includes, runtime);
   }
 }

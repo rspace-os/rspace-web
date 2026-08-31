@@ -1,16 +1,19 @@
 import { Form, useField, useForm } from "@formisch/react";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { loadBookingSettings, SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
 import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { Button } from "@/modules/common/ui/button";
+import { FieldError } from "@/modules/common/ui/field";
+import { Input } from "@/modules/common/ui/input";
 import { Separator } from "@/modules/common/ui/separator";
 import { Heading } from "@/modules/common/ui/typography";
-import { useSelectedBookableItemAvailability } from "./bookableItemAvailability";
 import {
   type BookingConfigurationInput,
   BookingConfigurationInputSchema,
@@ -18,7 +21,6 @@ import {
 } from "./bookingConfiguration";
 
 const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
-const targetFields = bookingConfigurationFields.filter((field) => field.name === "target");
 const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
 const ApiV2ProblemSchema = v.looseObject({
   status: v.number(),
@@ -53,6 +55,23 @@ async function createBookingConfiguration(input: BookingConfigurationInput, toke
 
 type TargetSelection = { type: "empty" } | { type: "instrument"; id: number } | { type: "unsupported" };
 
+const BookingTargetSchema = v.object({
+  id: v.number(),
+  globalId: v.string(),
+  name: v.string(),
+  deleted: v.literal(false),
+});
+
+async function searchBookingTargets(query: string, token: string, signal?: AbortSignal) {
+  const parameters = new URLSearchParams({ query, limit: "20" });
+  const response = await fetch(`/api/v2/booking-configuration-targets?${parameters}`, {
+    headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
+    signal,
+  });
+  if (!response.ok) throw new Error(`Booking target search failed with status ${response.status}`);
+  return parseOrThrow(v.array(BookingTargetSchema), (await response.json()) as unknown);
+}
+
 function targetSelection(input: unknown): TargetSelection {
   if (
     input === undefined ||
@@ -70,7 +89,7 @@ function targetSelection(input: unknown): TargetSelection {
     return { type: "empty" };
   }
   if (typeof input !== "object" || !("relationTo" in input) || !("value" in input)) return { type: "unsupported" };
-  return input.relationTo === "instruments" && typeof input.value === "number"
+  return input.relationTo === "booking-instruments" && typeof input.value === "number"
     ? { type: "instrument", id: input.value }
     : { type: "unsupported" };
 }
@@ -83,7 +102,7 @@ export default function AddBookableItemPage() {
     queryFn: ({ signal }) => loadBookingSettings(token, signal),
   }).data;
   const queryClient = useQueryClient();
-  const navigate = useNavigate({ from: "/booking/config/bookable-items/add" });
+  const navigate = useNavigate({ from: "/booking/bookable-items/add" });
   const form = useForm({
     schema: BookingConfigurationInputSchema,
     initialInput: {
@@ -97,12 +116,16 @@ export default function AddBookableItemPage() {
       allowDoubleBooking: defaults.allowDoubleBooking,
     },
   });
-  const target = targetSelection(useField(form, { path: ["target"] }).input);
+  const targetField = useField(form, { path: ["target"] });
+  const target = targetSelection(targetField.input);
+  const [targetSearch, setTargetSearch] = useState("");
+  const [submittedTargetSearch, setSubmittedTargetSearch] = useState("");
+  const targetResults = useQuery({
+    queryKey: ["api-v2", "booking-configuration-targets", submittedTargetSearch],
+    queryFn: ({ signal }) => searchBookingTargets(submittedTargetSearch, token, signal),
+    enabled: submittedTargetSearch.length >= 2,
+  });
   const selectedTargetId = target.type === "instrument" ? target.id : undefined;
-  const selectedTargetAvailability = useSelectedBookableItemAvailability(
-    selectedTargetId === undefined ? undefined : `IN${selectedTargetId}`,
-    token,
-  );
   const createMutation = useMutation({
     mutationFn: (input: BookingConfigurationInput) => createBookingConfiguration(input, token),
     onSuccess: async () => {
@@ -121,8 +144,8 @@ export default function AddBookableItemPage() {
     createMutation.error.targetId === selectedTargetId
       ? createMutation.error
       : null;
-  const alreadyConfigured = selectedTargetAvailability.data != null || conflict !== null;
-  const canComplete = target.type === "instrument" && selectedTargetAvailability.isSuccess && !alreadyConfigured;
+  const alreadyConfigured = conflict !== null;
+  const canComplete = target.type === "instrument" && !alreadyConfigured;
   const createFailed =
     createMutation.error instanceof BookingConfigurationCreateError &&
     createMutation.error.targetId === selectedTargetId &&
@@ -135,7 +158,46 @@ export default function AddBookableItemPage() {
       </Heading>
       <Separator className="mb-8 h-px bg-gray-300" />
       <Form of={form} className="max-w-2xl space-y-8" onSubmit={(input) => createMutation.mutateAsync(input)}>
-        <RenderFields fields={targetFields} form={form} disabled={createMutation.isPending} />
+        <div className="space-y-3">
+          <label htmlFor="booking-configuration-target-search" className="font-medium">
+            {t("bookableItems.targetSearch.label")}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Input
+              id="booking-configuration-target-search"
+              value={targetSearch}
+              minLength={2}
+              disabled={createMutation.isPending}
+              onChange={(event) => setTargetSearch(event.currentTarget.value)}
+              className="min-w-48 flex-1"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              disabled={targetSearch.trim().length < 2 || targetResults.isFetching}
+              onClick={() => setSubmittedTargetSearch(targetSearch.trim())}
+            >
+              {t("bookableItems.targetSearch.search")}
+            </Button>
+          </div>
+          {targetResults.isError ? <FieldError>{t("bookableItems.targetSearch.error")}</FieldError> : null}
+          {targetResults.data ? (
+            <ul aria-label={t("bookableItems.targetSearch.results")} className="grid gap-2">
+              {targetResults.data.map((option) => (
+                <li key={option.id}>
+                  <Button
+                    type="button"
+                    variant={selectedTargetId === option.id ? "default" : "outline"}
+                    className="w-full justify-start"
+                    onClick={() => targetField.onChange({ relationTo: "booking-instruments", value: option.id })}
+                  >
+                    {`${option.name} (${option.globalId})`}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
         {target.type === "unsupported" ? (
           <p role="alert" className="text-sm text-destructive">
             {t("bookableItems.availability.instrumentRequired")}
@@ -146,14 +208,6 @@ export default function AddBookableItemPage() {
             <Link to="/booking/bookable-items/$globalId" params={{ globalId: `IN${target.id}` }} className="underline">
               {t("bookableItems.availability.viewExisting")}
             </Link>
-          </p>
-        ) : target.type === "instrument" && selectedTargetAvailability.isError ? (
-          <p role="alert" className="text-sm text-destructive">
-            {t("bookableItems.availability.checkFailed")}
-          </p>
-        ) : target.type === "instrument" && selectedTargetAvailability.isPending ? (
-          <p role="status" className="text-sm text-muted-foreground">
-            {t("bookableItems.availability.checking")}
           </p>
         ) : null}
         {canComplete ? (

@@ -15,7 +15,7 @@ import {
 const candidate = (id: number, globalId: string, timezone: string): BookingConfiguration => ({
   id,
   target: {
-    relationTo: "instruments",
+    relationTo: "booking-instruments",
     value: { id, name: globalId, deleted: false },
     globalId,
   },
@@ -28,6 +28,22 @@ const candidate = (id: number, globalId: string, timezone: string): BookingConfi
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
+  effectiveRole: "Viewer",
+  roleSources: [],
+  capabilities: {
+    canEditConfiguration: false,
+    canArchiveConfiguration: false,
+    canViewAudit: false,
+    canViewAccess: false,
+    canManageAssignments: false,
+    canManageOwners: false,
+    canCreateBooking: false,
+    canManageOwnBookings: false,
+    canManageAllEvents: false,
+    canCreateBlockout: false,
+    canSubscribeCalendar: false,
+    canLeaveConfiguration: false,
+  },
 });
 
 const page = (docs: readonly BookingConfiguration[], pageNumber = 1, totalPages = 1, totalDocs = docs.length) => ({

@@ -10,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import org.springframework.core.ExceptionDepthComparator;
@@ -25,7 +26,8 @@ public record ApiV2ResourceSpec<T, ID>(
     Map<ResourceOperation, OpenApiOperationDocumentation> operationDocumentation,
     Map<ResourceOperation, List<ApiV2ErrorMapping>> errorMappings,
     CollectionMutationLimits mutationLimits,
-    List<RuntimeCollectionFields<T>> runtimeFields) {
+    List<RuntimeCollectionFields<T>> runtimeFields,
+    Optional<ResourceAccessSpec<T, ID>> resourceAccess) {
 
   private static final Set<ResourceOperation> STANDARD_OPERATIONS =
       Set.copyOf(EnumSet.allOf(ResourceOperation.class));
@@ -42,6 +44,7 @@ public record ApiV2ResourceSpec<T, ID>(
     errorMappings = copyErrorMappings(errorMappings);
     Objects.requireNonNull(mutationLimits, "Collection mutation limits");
     runtimeFields = List.copyOf(Objects.requireNonNull(runtimeFields, "Runtime collection fields"));
+    resourceAccess = Objects.requireNonNull(resourceAccess, "Resource access spec");
     Set<String> namespaces = new LinkedHashSet<>();
     for (RuntimeCollectionFields<T> provider : runtimeFields) {
       if (provider.namespace().isEmpty() || !namespaces.add(provider.namespace())) {
@@ -68,6 +71,31 @@ public record ApiV2ResourceSpec<T, ID>(
       Set<ResourceOperation> exposedOperations,
       Map<ResourceOperation, OpenApiOperationDocumentation> operationDocumentation,
       Map<ResourceOperation, List<ApiV2ErrorMapping>> errorMappings,
+      CollectionMutationLimits mutationLimits,
+      List<RuntimeCollectionFields<T>> runtimeFields) {
+    this(
+        description,
+        operations,
+        idParser,
+        createErrorKey,
+        updateErrorKey,
+        exposedOperations,
+        operationDocumentation,
+        errorMappings,
+        mutationLimits,
+        runtimeFields,
+        Optional.empty());
+  }
+
+  public ApiV2ResourceSpec(
+      CollectionDescription<T> description,
+      ResourceOperations<T, ID> operations,
+      Function<String, ID> idParser,
+      String createErrorKey,
+      String updateErrorKey,
+      Set<ResourceOperation> exposedOperations,
+      Map<ResourceOperation, OpenApiOperationDocumentation> operationDocumentation,
+      Map<ResourceOperation, List<ApiV2ErrorMapping>> errorMappings,
       CollectionMutationLimits mutationLimits) {
     this(
         description,
@@ -79,7 +107,8 @@ public record ApiV2ResourceSpec<T, ID>(
         operationDocumentation,
         errorMappings,
         mutationLimits,
-        List.of());
+        List.of(),
+        Optional.empty());
   }
 
   public ApiV2ResourceSpec(

@@ -6,7 +6,9 @@ import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
+import com.researchspace.api.v2.resource.ResourceAccessSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
+import com.researchspace.booking.service.BookingConfigurationTarget;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.collection.AccessDocumentation;
 import com.researchspace.model.collection.AccessDocumentation.AuthenticationRequirement;
@@ -28,6 +30,10 @@ import com.researchspace.model.collection.RelationshipInputForm;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.RuntimeCollectionFields;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
+import com.researchspace.service.resourceaccess.ResourceAccessDocument;
+import com.researchspace.service.resourceaccess.ResourceAccessGrant;
+import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
+import com.researchspace.service.resourceaccess.ResourceRoleSource;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -98,6 +104,8 @@ public final class ApiV2OpenApiGenerator {
 
     addStandardSchemas(schemas);
     addCalendarSubscriptionSchemas(schemas);
+    addResourceAccessSchemas(schemas);
+    ApiV2OpenApiSchemas.schemaFor(BookingConfigurationTarget.class, schemas);
 
     catalog
         .allSchemas()
@@ -110,8 +118,15 @@ public final class ApiV2OpenApiGenerator {
                     routableNames.contains(description.resourceName())));
     catalog
         .routableResources()
+        .forEach(
+            resource ->
+                applyRegisteredAccessFieldSchemas(
+                    schemas, resource, componentNames.get(resource.resourceName())));
+    catalog
+        .routableResources()
         .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas));
     addCalendarSubscriptionPath(paths);
+    addBookingDirectoryPaths(paths);
 
     Map<String, Object> components = new LinkedHashMap<>();
     components.put("schemas", schemas);
@@ -133,6 +148,10 @@ public final class ApiV2OpenApiGenerator {
         new Tag()
             .name("booking-calendar-subscriptions")
             .description("Manage one caller's bookable-item calendar subscription."));
+    tags.add(
+        new Tag()
+            .name("booking-directories")
+            .description("Search bounded Booking access principals and creation targets."));
     return new OpenAPI()
         .openapi("3.1.0")
         .info(
@@ -199,6 +218,78 @@ public final class ApiV2OpenApiGenerator {
             List.of("active", "updatedAt", "subscriptionUrl"),
             "properties",
             createdProperties));
+  }
+
+  private static void addBookingDirectoryPaths(Map<String, Object> paths) {
+    paths.put(
+        "/api/v2/booking-settings/access-grantees",
+        ordered("get", bookingDirectoryOperation(true)));
+    paths.put(
+        "/api/v2/booking-configuration-targets", ordered("get", bookingDirectoryOperation(false)));
+  }
+
+  private static Map<String, Object> bookingDirectoryOperation(boolean grantees) {
+    Map<String, Object> operation = new LinkedHashMap<>();
+    operation.put(
+        "operationId",
+        grantees ? "searchBookingSettingsAccessGrantees" : "searchBookingConfigurationTargets");
+    operation.put(
+        "summary",
+        grantees
+            ? "Search eligible default-access grantees"
+            : "Search eligible Booking configuration targets");
+    operation.put("tags", List.of("booking-directories"));
+    operation.put(
+        "security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    operation.put(
+        "x-rspace-access",
+        ordered(
+            "description",
+            grantees
+                ? "Authenticated sysadmins editing Booking creation defaults."
+                : "Authenticated callers; ordinary users see owned eligible Instruments and "
+                    + "sysadmins see every eligible Instrument.",
+            "denialReasonCodes",
+            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
+    operation.put(
+        "parameters",
+        List.of(
+            parameter(
+                "query",
+                "query",
+                true,
+                ordered("type", "string", "minLength", 2),
+                "Case-insensitive search text."),
+            parameter(
+                "limit",
+                "query",
+                false,
+                ordered("type", "integer", "minimum", 1, "maximum", 50, "default", 20),
+                "Maximum results to return.")));
+    Map<String, Object> resultSchema =
+        ordered(
+            "type",
+            "array",
+            "items",
+            ref(grantees ? "ResourceGranteeDirectoryEntry" : "BookingConfigurationTarget"));
+    Map<String, Object> responses = new LinkedHashMap<>();
+    responses.put(
+        "200",
+        ordered(
+            "description",
+            grantees ? "Eligible users and groups." : "Eligible Instrument summaries.",
+            "content",
+            Map.of(JSON, ordered("schema", resultSchema))));
+    responses.put("400", responseRef("BadRequest"));
+    responses.put("401", responseRef("Unauthenticated"));
+    responses.put("403", responseRef("Forbidden"));
+    responses.put("429", responseRef("TooManyRequests"));
+    responses.put("500", responseRef("UnexpectedError"));
+    operation.put("responses", responses);
+    operation.put(
+        "x-rspace-operation",
+        grantees ? "BOOKING_SETTINGS_GRANTEE_SEARCH" : "BOOKING_TARGET_SEARCH");
+    return operation;
   }
 
   private static void addCalendarSubscriptionPath(Map<String, Object> paths) {
@@ -337,6 +428,221 @@ public final class ApiV2OpenApiGenerator {
       pathItem.put(method, operation(resource, operation, component, resourceSchemas));
     }
     addAuditPaths(paths, resource, component);
+    addResourceAccessPaths(paths, resource, component);
+  }
+
+  private static void addResourceAccessSchemas(Map<String, Object> schemas) {
+    ApiV2OpenApiSchemas.schemaFor(ResourceAccessDocument.class, schemas);
+    ApiV2OpenApiSchemas.schemaFor(ResourceAccessGrant.class, schemas);
+    ApiV2OpenApiSchemas.schemaFor(ResourceGranteeDirectoryEntry.class, schemas);
+    ApiV2OpenApiSchemas.schemaFor(ResourceRoleSource.class, schemas);
+    schemas.put(
+        "ResourceAccessReplacement",
+        ordered(
+            "type",
+            "object",
+            "additionalProperties",
+            false,
+            "required",
+            List.of("assignments"),
+            "properties",
+            ordered("assignments", ordered("type", "array", "items", ref("ResourceAccessGrant")))));
+  }
+
+  private static void applyRegisteredAccessFieldSchemas(
+      Map<String, Object> schemas, ApiV2ResourceRegistration<?, ?> resource, String component) {
+    ResourceAccessSpec<?, ?> access = resource.resourceAccess().orElse(null);
+    if (access == null || component == null) {
+      return;
+    }
+    Map<String, Object> read = mutableObjectMap(schemas.get(component + "Read"));
+    Map<String, Object> properties = mutableObjectMap(read.get("properties"));
+    replaceFieldShape(
+        properties, "roleSources", ordered("type", "array", "items", ref("ResourceRoleSource")));
+    access
+        .capabilitiesType()
+        .ifPresent(
+            type ->
+                replaceFieldShape(
+                    properties, "capabilities", ApiV2OpenApiSchemas.schemaFor(type, schemas)));
+    access
+        .ownerHealthType()
+        .ifPresent(
+            type ->
+                replaceFieldShape(
+                    properties, "ownerHealth", ApiV2OpenApiSchemas.schemaFor(type, schemas)));
+  }
+
+  private static void replaceFieldShape(
+      Map<String, Object> properties, String field, Map<String, Object> shape) {
+    Object current = properties.get(field);
+    if (!(current instanceof Map<?, ?> currentMap)) {
+      return;
+    }
+    Map<String, Object> replacement = new LinkedHashMap<>(shape);
+    currentMap.forEach(
+        (key, value) -> {
+          if (key instanceof String name
+              && !Set.of("type", "format", "items", "properties", "additionalProperties")
+                  .contains(name)) {
+            replacement.put(name, value);
+          }
+        });
+    properties.put(field, replacement);
+  }
+
+  private void addResourceAccessPaths(
+      Map<String, Object> paths, ApiV2ResourceRegistration<?, ?> resource, String component) {
+    if (resource.resourceAccess().isEmpty()) {
+      return;
+    }
+    String root = "/api/v2/" + resource.resourceName() + "/{id}/access";
+    paths.put(
+        root,
+        ordered(
+            "get",
+            resourceAccessOperation(resource, component, "get"),
+            "put",
+            resourceAccessOperation(resource, component, "put")));
+    paths.put(
+        root + "/me", ordered("delete", resourceAccessOperation(resource, component, "delete")));
+    paths.put(
+        root + "/grantees", ordered("get", resourceAccessOperation(resource, component, "search")));
+  }
+
+  private Map<String, Object> resourceAccessOperation(
+      ApiV2ResourceRegistration<?, ?> resource, String component, String operationKind) {
+    boolean replace = "put".equals(operationKind);
+    boolean leave = "delete".equals(operationKind);
+    boolean search = "search".equals(operationKind);
+    Map<String, Object> operation = new LinkedHashMap<>();
+    operation.put(
+        "operationId",
+        search
+            ? "search" + component + "AccessGrantees"
+            : leave
+                ? "leave" + component
+                : replace ? "replace" + component + "Access" : "get" + component + "Access");
+    operation.put(
+        "summary",
+        search
+            ? "Search eligible access grantees"
+            : leave
+                ? "Remove the caller's direct assignment"
+                : replace ? "Replace direct access assignments" : "Get direct access assignments");
+    operation.put("tags", List.of(resource.resourceName()));
+    operation.put(
+        "security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    operation.put(
+        "x-rspace-access",
+        ordered(
+            "description",
+            search || replace
+                ? "Authenticated callers with the registered assignment-management capability."
+                : "Authenticated callers authorized by the registered protected resource.",
+            "denialReasonCodes",
+            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
+    List<Map<String, Object>> parameters = new ArrayList<>();
+    FieldSchema id =
+        field(resource.description().schema(), resource.description().schema().idField());
+    parameters.add(
+        parameter("id", "path", true, scalarSchema(id.type(), false), "Resource identifier."));
+    if (replace) {
+      parameters.add(
+          parameter(
+              "If-Match",
+              "header",
+              true,
+              ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$"),
+              "Strong ETag from the latest access document."));
+      operation.put(
+          "requestBody",
+          ordered(
+              "required",
+              true,
+              "content",
+              Map.of(JSON, ordered("schema", ref("ResourceAccessReplacement")))));
+    }
+    if (search) {
+      parameters.add(
+          parameter(
+              "query",
+              "query",
+              true,
+              ordered("type", "string", "minLength", 2),
+              "Case-insensitive user or group search text."));
+      parameters.add(
+          parameter(
+              "limit",
+              "query",
+              false,
+              ordered("type", "integer", "minimum", 1, "maximum", 50, "default", 20),
+              "Maximum grantees to return."));
+    }
+    operation.put("parameters", parameters);
+    operation.put("responses", resourceAccessResponses(replace, leave, search));
+    operation.put(
+        "x-rspace-operation",
+        search
+            ? "ACCESS_GRANTEE_SEARCH"
+            : leave ? "ACCESS_LEAVE" : replace ? "ACCESS_REPLACE" : "ACCESS_READ");
+    return operation;
+  }
+
+  private static Map<String, Object> resourceAccessResponses(
+      boolean replace, boolean leave, boolean search) {
+    Map<String, Object> responses = new LinkedHashMap<>();
+    if (leave) {
+      responses.put("204", ordered("description", "The direct assignment is absent."));
+    } else {
+      Map<String, Object> schema =
+          search
+              ? ordered("type", "array", "items", ref("ResourceGranteeDirectoryEntry"))
+              : ref("ResourceAccessDocument");
+      Map<String, Object> success =
+          ordered(
+              "description",
+              search
+                  ? "Eligible users and groups."
+                  : "Current direct assignments and caller capabilities.",
+              "content",
+              Map.of(JSON, ordered("schema", schema)));
+      if (!search) {
+        success.put("headers", ordered("ETag", headerRef("ETag")));
+      }
+      responses.put("200", success);
+    }
+    responses.put("400", responseRef("BadRequest"));
+    responses.put("401", responseRef("Unauthenticated"));
+    responses.put("403", responseRef("Forbidden"));
+    responses.put("404", responseRef("NotFound"));
+    responses.put("406", responseRef("NotAcceptable"));
+    if (replace || leave) {
+      responses.put(
+          "409",
+          problemResponse(
+              "The assignment change would violate a resource invariant.",
+              409,
+              "errors.api.v2.resourceAccess.ownerRequired"));
+    }
+    if (replace) {
+      responses.put(
+          "412",
+          problemResponse(
+              "The access document changed since it was read.",
+              412,
+              "errors.api.v2.resourceAccess.stale"));
+      responses.put("415", responseRef("UnsupportedMediaType"));
+      responses.put(
+          "428",
+          problemResponse(
+              "A strong If-Match header is required.",
+              428,
+              "errors.api.v2.resourceAccess.ifMatchRequired"));
+    }
+    responses.put("429", responseRef("TooManyRequests"));
+    responses.put("500", responseRef("UnexpectedError"));
+    return responses;
   }
 
   private void addAuditPaths(
@@ -1610,6 +1916,12 @@ public final class ApiV2OpenApiGenerator {
 
   private static Map<String, Object> standardHeaders() {
     return ordered(
+        "ETag",
+        ordered(
+            "description",
+            "Strong version identifier for conditional resource access replacement.",
+            "schema",
+            ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$")),
         "RateLimitLimit",
         integerHeader("Configured request limit for the shortest throttle interval."),
         "RateLimitRemaining",

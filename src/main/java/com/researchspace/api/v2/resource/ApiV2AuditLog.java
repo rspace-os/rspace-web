@@ -17,6 +17,7 @@ import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
+import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -49,6 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -66,18 +68,29 @@ public final class ApiV2AuditLog {
   private final ApiV2AuditStrictSearch strictSearch;
   private final Clock clock;
   private final int resultCeiling;
+  private final ResourceAccessManager resourceAccessManager;
   private final Map<Class<?>, Optional<AuditMetadata>> metadata = new ConcurrentHashMap<>();
 
   public ApiV2AuditLog(
       ApiV2AuditStrictSearch strictSearch,
       @Qualifier(ApiV2AuditConfig.AUDIT_CLOCK) Clock clock,
       @Value("${api.v2.audit.resultCeiling:1000}") int resultCeiling) {
+    this(strictSearch, clock, resultCeiling, null);
+  }
+
+  @Autowired
+  public ApiV2AuditLog(
+      ApiV2AuditStrictSearch strictSearch,
+      @Qualifier(ApiV2AuditConfig.AUDIT_CLOCK) Clock clock,
+      @Value("${api.v2.audit.resultCeiling:1000}") int resultCeiling,
+      ResourceAccessManager resourceAccessManager) {
     if (resultCeiling < 1) {
       throw new IllegalArgumentException("REST API v2 audit result ceiling must be positive");
     }
     this.strictSearch = strictSearch;
     this.clock = clock;
     this.resultCeiling = resultCeiling;
+    this.resourceAccessManager = resourceAccessManager;
   }
 
   /** Returns an audit page after resource and audit-actor access checks. */
@@ -86,7 +99,8 @@ public final class ApiV2AuditLog {
     if (actor == null) {
       throw new ApiV2AuthenticationException();
     }
-    ResolvedTarget target = resource.requireReadableForAudit(rawId, actor);
+    ResolvedTarget target =
+        resource.requireReadableForAudit(rawId, actor, requireAccessManager(resource));
     SearchWindow window = searchWindow(query);
     Optional<AuditTarget> auditTarget = auditTarget(resource, target);
     List<ApiV2AuditEvent> events =
@@ -117,6 +131,13 @@ public final class ApiV2AuditLog {
         query.getPage(),
         window.snapshotDate().toString(),
         fingerprint);
+  }
+
+  private ResourceAccessManager requireAccessManager(ApiV2ResourceRegistration<?, ?> resource) {
+    if (resource.resourceAccess().isPresent() && resourceAccessManager == null) {
+      throw new IllegalStateException("Resource access manager is required for protected audit");
+    }
+    return resourceAccessManager;
   }
 
   private List<ApiV2AuditEvent> events(

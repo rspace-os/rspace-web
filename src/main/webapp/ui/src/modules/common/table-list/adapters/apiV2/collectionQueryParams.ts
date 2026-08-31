@@ -24,6 +24,7 @@ export function selectedFields<TDocument>(
   state: CollectionQueryState<TDocument>,
   config: ResolvedCollectionConfig<TDocument>,
   virtualFields: ReadonlySet<FieldName<TDocument>> = new Set(),
+  projectableFields: ReadonlySet<FieldName<TDocument>> = new Set(config.fields.map((field) => field.name)),
 ): readonly FieldName<TDocument>[] {
   const fields = new Set<FieldName<TDocument>>([config.idField, config.useAsTitle]);
   const byName = new Map(config.fields.map((field) => [field.name, field]));
@@ -40,7 +41,14 @@ export function selectedFields<TDocument>(
     const list = field?.list;
     if (list) for (const dependency of list.dependencies ?? []) fields.add(dependency);
   }
-  return config.fields.map((field) => field.name).filter((name) => fields.has(name));
+  const configured = new Set(config.fields.map((field) => field.name));
+  const selected = config.fields.map((field) => field.name).filter((name) => fields.has(name));
+  for (const name of state.visibleFields) {
+    if (fields.has(name) && !configured.has(name) && !virtualFields.has(name) && projectableFields.has(name)) {
+      selected.push(name);
+    }
+  }
+  return selected;
 }
 
 export function collectionQueryParams<TDocument>(
@@ -48,6 +56,7 @@ export function collectionQueryParams<TDocument>(
   config: ResolvedCollectionConfig<TDocument>,
   metadata: ApiV2CollectionMetadata<TDocument>,
   virtualFields: ReadonlySet<FieldName<TDocument>> = new Set(),
+  projectableFields: ReadonlySet<FieldName<TDocument>> = new Set(config.fields.map((field) => field.name)),
   runtime: {
     projection?: readonly string[];
     selectors?: ApiV2CollectionMetadata<TDocument>["filtering"]["selectors"];
@@ -100,7 +109,7 @@ export function collectionQueryParams<TDocument>(
   }
   params.set(
     `fields[${metadata.resourceName}]`,
-    [...selectedFields(state, config, virtualFields), ...runtimeProjection].join(","),
+    [...selectedFields(state, config, virtualFields, projectableFields), ...runtimeProjection].join(","),
   );
   return params;
 }

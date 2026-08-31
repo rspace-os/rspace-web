@@ -11,6 +11,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
@@ -32,6 +33,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
 
   @Autowired private TimeSlotBookingManager bookingManager;
+  @Autowired private BookingConfigurationManager configurationManager;
   @Autowired private BookingConfigurationDao configurationDao;
   @Autowired private InstrumentDao instrumentDao;
   @Autowired private JdbcTemplate jdbcTemplate;
@@ -146,18 +148,24 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     Hibernate.initialize(instrument.getOwner());
     BookableTargetReference target =
         new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId);
-    BookingConfiguration configuration = new BookingConfiguration();
-    configuration.setEnabled(true);
-    configuration.setTimeZone("UTC");
-    configuration.setAllowDoubleBooking(allowDoubleBooking);
-    configuration.setBufferBeforeMinutes(bufferBeforeMinutes);
-    configuration.setBufferAfterMinutes(bufferAfterMinutes);
-    configuration.replaceTarget(target);
-    sessionFactory.getCurrentSession().persist(configuration);
-    sessionFactory.getCurrentSession().flush();
-    Long configurationId = configuration.getId();
     commitTransaction();
-    return new Setup(configurationId, target, instrument);
+    BookingConfiguration configuration =
+        configurationManager.createConfiguration(
+            new BookingConfigurationManager.Create(
+                true,
+                "UTC",
+                new ResolvedBookableTarget(target, instrument),
+                new BookingSchedulingSettings.Patch(
+                    null,
+                    null,
+                    null,
+                    bufferBeforeMinutes,
+                    bufferAfterMinutes,
+                    null,
+                    allowDoubleBooking)),
+            owner,
+            owner);
+    return new Setup(configuration.getId(), target, instrument);
   }
 
   private Throwable attemptCreate(

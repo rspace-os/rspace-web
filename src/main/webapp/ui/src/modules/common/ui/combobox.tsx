@@ -62,14 +62,23 @@ function ComboboxInput({
       <ComboboxPrimitive.Input render={<InputGroupInput disabled={disabled} />} {...props} />
       <InputGroupAddon align="inline-end">
         {showTrigger && (
-          <InputGroupButton
-            aria-label={triggerLabel}
-            size="icon-xs"
-            variant="ghost"
-            render={<ComboboxTrigger />}
-            data-slot="input-group-button"
-            className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
-            disabled={disabled}
+          <ComboboxPrimitive.Trigger
+            render={(triggerProps, state) => (
+              <InputGroupButton
+                {...triggerProps}
+                aria-label={triggerLabel}
+                size="icon-xs"
+                variant="ghost"
+                data-slot="input-group-button"
+                className={cn(
+                  "group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent",
+                  triggerProps.className,
+                )}
+                disabled={disabled || state.open}
+              >
+                <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />
+              </InputGroupButton>
+            )}
           />
         )}
         {showClear && <ComboboxClear aria-label={clearLabel} disabled={disabled} />}

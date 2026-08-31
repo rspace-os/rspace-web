@@ -151,6 +151,26 @@ class ResourceRegistryTest {
   }
 
   @Test
+  void permitsNamedResourceAliasesForOneEntityTypeButRejectsAmbiguousTypeLookup() {
+    CollectionDescription<Child> relationshipOnlyChildren =
+        new CollectionDescription<>(
+            "relationship-children",
+            Child.class,
+            List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Child::id)),
+            List.of(),
+            "id",
+            List.of(new Sort("id", true)));
+
+    ResourceRegistry registry = new ResourceRegistry(List.of(CHILDREN, relationshipOnlyChildren));
+
+    assertEquals(CHILDREN, registry.requireResource("children"));
+    assertEquals(relationshipOnlyChildren, registry.requireResource("relationship-children"));
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> registry.requireEntityType(Child.class));
+    assertTrue(exception.getMessage().contains("use a resource name instead"));
+  }
+
+  @Test
   void permitsSameCollectionTargetsAndStopsAtTheRequestedDepth() {
     CollectionDescription<Node> nodes = nodes();
     ResourceRegistry registry = new ResourceRegistry(List.of(nodes));

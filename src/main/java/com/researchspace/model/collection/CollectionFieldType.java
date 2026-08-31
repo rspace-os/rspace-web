@@ -14,7 +14,9 @@ public interface CollectionFieldType<V> {
   enum InputKind {
     STRING,
     NUMBER,
-    BOOLEAN
+    BOOLEAN,
+    OBJECT,
+    ARRAY
   }
 
   /** Introspectable wire schema used by validation and generated API metadata. */
@@ -39,6 +41,8 @@ public interface CollectionFieldType<V> {
       case STRING -> new Schema("string", null, null);
       case NUMBER -> new Schema("number", null, null);
       case BOOLEAN -> new Schema("boolean", null, null);
+      case OBJECT -> new Schema("object", null, null);
+      case ARRAY -> new Schema("array", null, null);
     };
   }
 

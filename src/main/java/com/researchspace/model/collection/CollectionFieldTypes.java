@@ -3,6 +3,8 @@ package com.researchspace.model.collection;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -79,6 +81,18 @@ public final class CollectionFieldTypes {
     return BOOLEAN;
   }
 
+  /** A server-rendered object field that is readable but never queryable or writable. */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static CollectionFieldType<Map<String, Object>> object() {
+    return new OpaqueFieldType<>((Class) Map.class, CollectionFieldType.InputKind.OBJECT);
+  }
+
+  /** A server-rendered array field that is readable but never queryable or writable. */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static <E> CollectionFieldType<List<E>> array() {
+    return new OpaqueFieldType<>((Class) List.class, CollectionFieldType.InputKind.ARRAY);
+  }
+
   public static CollectionFieldType<String> text() {
     return text(Integer.MAX_VALUE);
   }
@@ -143,6 +157,30 @@ public final class CollectionFieldTypes {
     @Override
     public Object serialize(V value) {
       return serializer.apply(value);
+    }
+  }
+
+  private record OpaqueFieldType<V>(Class<V> javaType, InputKind inputKind)
+      implements CollectionFieldType<V> {
+
+    @Override
+    public V parse(String value) {
+      throw new UnsupportedOperationException("Structured read-only fields cannot be parsed");
+    }
+
+    @Override
+    public Object serialize(V value) {
+      return value;
+    }
+
+    @Override
+    public Set<Operator> operators() {
+      return Set.of();
+    }
+
+    @Override
+    public boolean sortable() {
+      return false;
     }
   }
 }

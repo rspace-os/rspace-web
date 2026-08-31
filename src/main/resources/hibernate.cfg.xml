@@ -141,9 +141,12 @@
         <mapping class="com.researchspace.model.inventory.InstrumentTemplate"/>
         <mapping class="com.researchspace.model.booking.BookableItemCalendarSubscription"/>
         <mapping class="com.researchspace.model.booking.UserBookingCalendarSubscription"/>
+        <mapping class="com.researchspace.model.booking.BookingDefaultAccessGrantee"/>
         <mapping class="com.researchspace.model.booking.BookingConfiguration"/>
         <mapping class="com.researchspace.model.booking.BookingConfigurationDefaults"/>
         <mapping class="com.researchspace.model.booking.TimeSlotBooking"/>
+        <mapping class="com.researchspace.model.resourceaccess.ResourceAccess"/>
+        <mapping class="com.researchspace.model.resourceaccess.ResourceRoleAssignment"/>
     
         <mapping class="com.researchspace.model.inventory.Container"/>
         <mapping class="com.researchspace.model.inventory.ContainerLocation"/>

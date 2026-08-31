@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -21,9 +22,9 @@ import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
-import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
+import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
@@ -39,12 +40,17 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.resourceaccess.ResourceAccess;
+import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.service.CollectionMutationException;
 import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
+import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,13 +71,24 @@ class BookingConfigurationManagerTest {
   private final User actor = mock(User.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   private final ObjectProvider<ResourceRegistry> resourceRegistry = mock(ObjectProvider.class);
+  private final ResourceAccessManager accessManager = mock(ResourceAccessManager.class);
   private final LocalValidatorFactoryBean validator = validator();
   private final BookingConfigurationManager manager =
-      new BookingConfigurationManagerImpl(dao, defaultsDao, validator, events, resourceRegistry);
+      new BookingConfigurationManagerImpl(
+          dao,
+          defaultsDao,
+          validator,
+          events,
+          resourceRegistry,
+          ApiV2BookingConfigurationResource.DESCRIPTION,
+          accessManager);
 
   @BeforeEach
   void setUp() {
-    when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
+    when(actor.hasSysadminRole()).thenReturn(true);
+    when(actor.isEnabled()).thenReturn(true);
+    when(actor.getId()).thenReturn(1L);
+    when(actor.getDisplayName()).thenReturn("System Administrator");
     when(actor.getUsername()).thenReturn("sysadmin");
     when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
         .thenReturn(Optional.of(defaults(5, "00:00", "24:00", 0, 0, 0, false)));
@@ -80,8 +97,18 @@ class BookingConfigurationManagerTest {
             new ResourceRegistry(
                 List.of(
                     ApiV2BookingConfigurationResource.DESCRIPTION,
+                    ApiV2BookingInstrumentResource.DESCRIPTION,
                     ApiV2InstrumentResource.DESCRIPTION,
                     ApiV2UserResource.DESCRIPTION)));
+    when(accessManager.resolve(nullable(ResourceAccess.class), eq(actor)))
+        .thenReturn(
+            new ResolvedResourceAccess(
+                Optional.of(BookingResourceRoleScheme.OWNER),
+                Set.of(
+                    BookingResourceRoleScheme.READ_RESOURCE,
+                    BookingResourceRoleScheme.EDIT_CONFIGURATION,
+                    BookingResourceRoleScheme.ARCHIVE_CONFIGURATION),
+                List.of()));
   }
 
   @AfterEach
@@ -106,7 +133,7 @@ class BookingConfigurationManagerTest {
 
   @Test
   void appliesTargetVisibilityOnlyToRelationshipFilters() {
-    when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(false);
+    when(actor.hasSysadminRole()).thenReturn(false);
     BookingConfiguration readable = configuration(1L, 11L);
     ResourceRequest request = ResourceRequest.unpaged(null);
     when(dao.getResources(any(), any())).thenReturn(new ResourcePage<>(List.of(readable), 1));
@@ -148,6 +175,20 @@ class BookingConfigurationManagerTest {
     assertEquals(5, created.getSlotGranularityMinutes());
     assertEquals("00:00", created.getOpeningStart());
     assertEquals("24:00", created.getOpeningEnd());
+    assertEquals(BookingResourceRoleScheme.SCHEME_KEY, created.getResourceAccess().getSchemeKey());
+    assertEquals(2, created.getResourceAccess().getAssignments().size());
+    assertTrue(
+        created.getResourceAccess().getAssignments().stream()
+            .anyMatch(
+                assignment ->
+                    assignment.getRoleKey().equals(BookingResourceRoleScheme.OWNER)
+                        && assignment.getGranteeKey().equals("user:1")));
+    assertTrue(
+        created.getResourceAccess().getAssignments().stream()
+            .anyMatch(
+                assignment ->
+                    assignment.getRoleKey().equals(BookingResourceRoleScheme.BOOKER)
+                        && assignment.getGranteeKey().equals("audience:all-users")));
     verify(dao).saveAndFlush(created);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
@@ -314,14 +355,14 @@ class BookingConfigurationManagerTest {
 
   @Test
   void rejectsUnauthorizedAndInvalidDirectServiceWritesBeforeSaving() {
-    when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(false);
+    when(actor.hasSysadminRole()).thenReturn(false);
     assertThrows(
         AuthorizationException.class,
         () ->
             manager.createConfiguration(
                 new Create(true, "Europe/Berlin", target(12L)), actor, actor));
 
-    when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
+    when(actor.hasSysadminRole()).thenReturn(true);
     assertThrows(
         ConstraintViolationException.class,
         () ->
@@ -332,10 +373,8 @@ class BookingConfigurationManagerTest {
 
   @Test
   void directServicePatchesPreserveFieldsThatWereNotProvided() {
-    BookingConfiguration configuration = new BookingConfiguration();
-    configuration.setTimeZone("UTC");
-    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L));
-    when(dao.getSafeNull(42L)).thenReturn(Optional.of(configuration));
+    BookingConfiguration configuration = configuration(42L, 12L);
+    when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
     when(dao.saveAndFlush(configuration)).thenReturn(configuration);
 
     BookingConfiguration updated =
@@ -368,7 +407,7 @@ class BookingConfigurationManagerTest {
 
   @Test
   void reportsAnAbsentConfigurationWithoutWriting() {
-    when(dao.getSafeNull(42L)).thenReturn(Optional.empty());
+    when(dao.lockById(42L)).thenReturn(Optional.empty());
 
     assertFalse(manager.updateConfiguration(42L, new Patch(true, null), actor, actor).isPresent());
     assertFalse(manager.removeConfiguration(42L, actor, actor).isPresent());
@@ -439,14 +478,14 @@ class BookingConfigurationManagerTest {
     ResourceRequest request =
         ResourceRequest.unpaged(
             new FilterExpression.Comparison("id", Operator.EQUAL, List.of(42L), false));
-    when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(false);
+    when(actor.hasSysadminRole()).thenReturn(false);
 
     assertThrows(
         AuthorizationException.class,
         () -> manager.updateConfigurations(request, new Patch(true, null), actor, actor));
     verify(dao, never()).getResources(any(ResourceRequest.class), anyInt(), any());
 
-    when(actor.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
+    when(actor.hasSysadminRole()).thenReturn(true);
     BookingConfiguration configuration = new BookingConfiguration();
     int oversizedBatch =
         ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
@@ -473,8 +512,8 @@ class BookingConfigurationManagerTest {
     manager.removeConfigurations(request, actor, actor);
 
     verify(dao).getResources(eq(request), eq(limit), access.capture());
-    assertFalse(access.getValue().result("instruments").isDenied());
-    assertTrue(access.getValue().result("instruments").constraintOrEmpty().isEmpty());
+    assertFalse(access.getValue().result("booking-instruments").isDenied());
+    assertTrue(access.getValue().result("booking-instruments").constraintOrEmpty().isEmpty());
   }
 
   @Test
@@ -521,12 +560,17 @@ class BookingConfigurationManagerTest {
         new BookableTargetReference(BookableTargetType.INSTRUMENT, id), instrument);
   }
 
-  private static BookingConfiguration configuration(long id, long targetId) {
+  private BookingConfiguration configuration(long id, long targetId) {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setId(id);
     configuration.setTimeZone("UTC");
     configuration.replaceTarget(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, targetId));
+    ResourceAccess access =
+        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, null, new java.util.Date());
+    access.setId(targetId);
+    access.addAssignment(ResourceRoleAssignment.forUser(BookingResourceRoleScheme.OWNER, actor));
+    configuration.setResourceAccess(access);
     return configuration;
   }
 

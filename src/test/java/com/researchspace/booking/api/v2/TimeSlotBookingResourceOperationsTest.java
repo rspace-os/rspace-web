@@ -43,7 +43,8 @@ class TimeSlotBookingResourceOperationsTest {
   private final TimeSlotBookingManager manager = mock(TimeSlotBookingManager.class);
   private final FeatureFlagManager featureFlags = mock(FeatureFlagManager.class);
   private final TimeSlotBookingResourceOperations operations =
-      new TimeSlotBookingResourceOperations(manager, featureFlags);
+      new TimeSlotBookingResourceOperations(
+          manager, featureFlags, ApiV2TimeSlotBookingResource.DESCRIPTION);
   private final User actor = mock(User.class);
 
   @BeforeEach

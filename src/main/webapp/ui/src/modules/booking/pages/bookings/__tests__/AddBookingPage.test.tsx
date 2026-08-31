@@ -50,7 +50,7 @@ function currentUserHandler(hasSysAdminRole: boolean) {
 const optionDocument = {
   id: 7,
   target: {
-    relationTo: "instruments",
+    relationTo: "booking-instruments",
     globalId: "IN123",
     value: { id: 123, name: "Confocal microscope", deleted: false },
   },
@@ -163,7 +163,7 @@ describe("AddBookingPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Calendar destination" })).toBeVisible();
     expect(body).toEqual({
-      target: { relationTo: "instruments", value: 123 },
+      target: { relationTo: "booking-instruments", value: 123 },
       start: "2026-08-17T07:00:00Z",
       end: "2026-08-17T08:00:00Z",
       purpose: null,
@@ -227,7 +227,7 @@ describe("AddBookingPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Calendar destination" })).toBeVisible();
     expect(body).toEqual({
-      target: { relationTo: "instruments", value: 123 },
+      target: { relationTo: "booking-instruments", value: 123 },
       start: "2026-08-17T07:00:00Z",
       end: "2026-08-17T08:00:00Z",
       purpose: null,

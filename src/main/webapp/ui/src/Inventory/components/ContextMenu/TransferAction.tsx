@@ -1,16 +1,20 @@
 import { faHandHolding } from "@fortawesome/free-solid-svg-icons/faHandHolding";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Typography from "@mui/material/Typography";
 import { Observer } from "mobx-react-lite";
 import type React from "react";
-import { forwardRef, useContext, useState } from "react";
+import { forwardRef, useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import JwtService from "@/common/JwtService";
+import { fetchBookingOwnershipCandidates } from "@/modules/booking/pages/bookable-items/bookingConfiguration";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import SearchContext from "../../../stores/contexts/Search";
@@ -43,6 +47,34 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
     const { t } = useTranslation(["inventory", "common"]);
     const [btnPos, setBtnPos] = useState<{ top: number; left: number } | null>(null);
     const [recipient, setRecipient] = useState<PersonModel | null>(null);
+    const [canTransferBookingOwnership, setCanTransferBookingOwnership] = useState(false);
+    const [transferBookingOwnership, setTransferBookingOwnership] = useState(false);
+
+    useEffect(() => {
+      if (btnPos === null) return;
+      const globalIds = selectedResults
+        .filter((record) => record.recordType === "instrument")
+        .flatMap((record) => (record.globalId === null ? [] : [record.globalId]));
+      const token = JwtService.getToken();
+      if (globalIds.length === 0 || token === null) {
+        setCanTransferBookingOwnership(false);
+        return;
+      }
+      const controller = new AbortController();
+      void fetchBookingOwnershipCandidates(globalIds, token, controller.signal)
+        .then((configurations) =>
+          setCanTransferBookingOwnership(
+            configurations.some((configuration) => configuration.capabilities.canManageOwners),
+          ),
+        )
+        .catch((error: unknown) => {
+          if (!controller.signal.aborted) {
+            console.error("Could not determine Booking ownership transfer availability.", error);
+            setCanTransferBookingOwnership(false);
+          }
+        });
+      return () => controller.abort();
+    }, [btnPos, selectedResults]);
 
     const handleOpen = ({ currentTarget }: Event) => {
       if (currentTarget instanceof HTMLElement) {
@@ -52,6 +84,8 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
           left: gbcr.left,
         });
         setRecipient(null);
+        setTransferBookingOwnership(false);
+        setCanTransferBookingOwnership(false);
       }
     };
 
@@ -61,7 +95,9 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
     };
 
     const onSubmitHandler = () => {
-      if (recipient) void search.transferRecords(recipient.username, selectedResults);
+      if (recipient) {
+        void search.transferRecords(recipient.username, selectedResults, transferBookingOwnership);
+      }
       handleClose();
     };
 
@@ -111,6 +147,17 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
                     recipient={recipient}
                     excludedUsernames={excludedFromSelection}
                   />
+                  {canTransferBookingOwnership && (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={transferBookingOwnership}
+                          onChange={(_, checked) => setTransferBookingOwnership(checked)}
+                        />
+                      }
+                      label={t("contextMenu.transfer.dialog.transferBookingConfigurationOwnership")}
+                    />
+                  )}
                 </FormControl>
               </DialogContent>
               <DialogActions>

@@ -6,12 +6,14 @@ import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
+import com.researchspace.api.v2.resource.ResourceAccessSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
+import com.researchspace.booking.service.BookingConfigurationProtectedResourceAccess;
 import com.researchspace.booking.service.BookingConfigurationTargetConflictException;
 import com.researchspace.booking.service.InvalidBookableTargetException;
 import com.researchspace.model.User;
@@ -21,6 +23,7 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
+import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResolvedResourceReference;
@@ -46,16 +49,25 @@ public final class BookingConfigurationResourceOperations
     implements ResourceOperations<BookingConfiguration, Long> {
 
   private final BookingConfigurationManager manager;
+  private final BookingConfigurationProtectedResourceAccess protectedResourceAccess;
   private final FeatureFlagManager featureFlags;
   private final Clock institutionClock;
+  private final CollectionDescription<BookingConfiguration> description;
 
   public BookingConfigurationResourceOperations(
       BookingConfigurationManager manager,
+      BookingConfigurationProtectedResourceAccess protectedResourceAccess,
       FeatureFlagManager featureFlags,
-      @Qualifier(BookingTimeConfig.INSTITUTION_CLOCK) Clock institutionClock) {
+      @Qualifier(BookingTimeConfig.INSTITUTION_CLOCK) Clock institutionClock,
+      @Qualifier(
+              com.researchspace.booking.config.BookingResourceAccessConfiguration
+                  .BOOKING_CONFIGURATION_DESCRIPTION)
+          CollectionDescription<BookingConfiguration> description) {
     this.manager = manager;
+    this.protectedResourceAccess = protectedResourceAccess;
     this.featureFlags = featureFlags;
     this.institutionClock = institutionClock;
+    this.description = description;
   }
 
   @Bean
@@ -73,7 +85,7 @@ public final class BookingConfigurationResourceOperations
                 "errors.api.v2.bookingConfiguration.target.conflict",
                 "The instrument already has a booking configuration."));
     return new ApiV2ResourceSpec<>(
-        ApiV2BookingConfigurationResource.DESCRIPTION,
+        description,
         this,
         Long::valueOf,
         "errors.api.v2.bookingConfiguration.create",
@@ -104,7 +116,7 @@ public final class BookingConfigurationResourceOperations
                         "allowDoubleBooking",
                         false,
                         "target",
-                        Map.of("relationTo", "instruments", "value", 123)))
+                        Map.of("relationTo", "booking-instruments", "value", 123)))
                 .build()),
         Map.of(
             ResourceOperation.CREATE,
@@ -115,7 +127,13 @@ public final class BookingConfigurationResourceOperations
             writeErrors,
             ResourceOperation.BULK_UPDATE,
             writeErrors),
-        ApiV2BookingConfigurationResource.MUTATION_LIMITS);
+        ApiV2BookingConfigurationResource.MUTATION_LIMITS,
+        List.of(),
+        Optional.of(
+            new ResourceAccessSpec<>(
+                protectedResourceAccess,
+                com.researchspace.model.booking.BookingConfigurationCapabilities.class,
+                com.researchspace.model.booking.BookingOwnerHealth.class)));
   }
 
   @Override
@@ -220,7 +238,7 @@ public final class BookingConfigurationResourceOperations
         value(document, "allowDoubleBooking", Boolean.class));
   }
 
-  private static ResolvedBookableTarget target(ParsedDocument document) {
+  private ResolvedBookableTarget target(ParsedDocument document) {
     Object value = document.values().get("target");
     if (value == null) {
       return null;
@@ -229,10 +247,7 @@ public final class BookingConfigurationResourceOperations
     ResourceReference<?, ?> reference = resolved.reference();
     BookableTargetType type = BookableTargetType.class.cast(reference.kind());
     Long id = Long.class.cast(reference.id());
-    RelationshipTarget<?> metadata =
-        ApiV2BookingConfigurationResource.DESCRIPTION
-            .requireRelationship("target")
-            .targetForKind(type);
+    RelationshipTarget<?> metadata = description.requireRelationship("target").targetForKind(type);
     Object selectedEntity = resolved.entityAs(metadata.entityType());
     InventoryRecord entity = InventoryRecord.class.cast(selectedEntity);
     return new ResolvedBookableTarget(new BookableTargetReference(type, id), entity);

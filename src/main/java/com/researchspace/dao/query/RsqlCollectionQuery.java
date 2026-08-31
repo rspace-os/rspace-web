@@ -8,16 +8,20 @@ import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.FilterSelector;
 import com.researchspace.model.collection.FilterSelector.RelationshipComponent;
+import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRegistry.RelationshipQueryPath;
 import com.researchspace.model.collection.ResourceRegistry.TargetQueryField;
+import com.researchspace.model.collection.ResourceRoleMembershipConstraint;
 import com.researchspace.model.collection.RuntimeFieldBinding;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.collection.SplitReferenceBinding;
+import com.researchspace.model.resourceaccess.ResourceAudience;
+import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -73,13 +77,17 @@ public final class RsqlCollectionQuery {
   }
 
   /** Compiles a server-built constraint without charging it to the caller complexity budget. */
-  public Predicate translateTrusted(FilterExpression filter) {
-    return translate(filter, RelationshipReadAccess.none(), RuntimeFieldSelection.empty(), false);
+  public Predicate translateTrusted(QueryConstraint constraint) {
+    return translateTrusted(constraint, RelationshipReadAccess.none());
   }
 
   /** Compiles a relationship-aware server constraint without charging caller complexity limits. */
-  public Predicate translateTrusted(FilterExpression filter, RelationshipReadAccess targets) {
-    return translate(filter, targets, RuntimeFieldSelection.empty(), false);
+  public Predicate translateTrusted(QueryConstraint constraint, RelationshipReadAccess targets) {
+    if (constraint == null) {
+      return null;
+    }
+    State state = new State(parameterPrefix, targets, RuntimeFieldSelection.empty(), false);
+    return new Predicate(compileConstraint(constraint, state), state.parameters, state.subqueries);
   }
 
   /** Compiles the SQL-level read rule for one described relationship. */
@@ -144,6 +152,66 @@ public final class RsqlCollectionQuery {
       return compileLogical(or.children(), " OR ", state);
     }
     throw new IllegalStateException("Unsupported filter expression " + filter.getClass());
+  }
+
+  private String compileConstraint(QueryConstraint constraint, State state) {
+    if (constraint instanceof FilterExpression filter) {
+      return compile(filter, state);
+    }
+    if (constraint instanceof QueryConstraint.And and) {
+      return compileConstraintLogical(and.children(), " AND ", state);
+    }
+    if (constraint instanceof QueryConstraint.Or or) {
+      return compileConstraintLogical(or.children(), " OR ", state);
+    }
+    if (constraint instanceof ResourceRoleMembershipConstraint membership) {
+      return compileResourceRoleMembership(membership, state);
+    }
+    throw new IllegalStateException("Unsupported query constraint " + constraint.getClass());
+  }
+
+  private String compileConstraintLogical(
+      List<QueryConstraint> children, String separator, State state) {
+    return children.stream()
+        .map(child -> compileConstraint(child, state))
+        .reduce((left, right) -> left + separator + right)
+        .map(expression -> "(" + expression + ")")
+        .orElseThrow();
+  }
+
+  private String compileResourceRoleMembership(
+      ResourceRoleMembershipConstraint membership, State state) {
+    String assignment = state.nextTargetAlias();
+    List<String> applicable = new ArrayList<>();
+    applicable.add(
+        "("
+            + assignment
+            + ".user.id = :"
+            + state.add(membership.subjectId())
+            + " AND "
+            + assignment
+            + ".user.enabled = true)");
+    if (!membership.currentGroupIds().isEmpty()) {
+      applicable.add(assignment + ".group.id IN :" + state.add(membership.currentGroupIds()));
+    }
+    if (membership.includeAllUsers()) {
+      applicable.add(assignment + ".audienceKey = :" + state.add(ResourceAudience.ALL_USERS));
+    }
+    String where =
+        assignment
+            + ".resourceAccess.id = "
+            + alias
+            + "."
+            + membership.resourceAccessIdPath()
+            + " AND "
+            + assignment
+            + ".roleKey IN :"
+            + state.add(membership.readableRoleKeys())
+            + " AND ("
+            + String.join(" OR ", applicable)
+            + ")";
+    return "EXISTS "
+        + state.addSubquery(new Subquery(ResourceRoleAssignment.class, assignment, where));
   }
 
   private String compileLogical(List<FilterExpression> children, String separator, State state) {

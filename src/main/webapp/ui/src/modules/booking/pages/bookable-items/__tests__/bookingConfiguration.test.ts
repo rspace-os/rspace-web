@@ -5,12 +5,13 @@ import {
   BOOKING_CONFIGURATION_READ_FIELDS,
   fetchBookingConfiguration,
   fetchBookingConfigurationByTarget,
+  fetchBookingOwnershipCandidates,
 } from "../bookingConfiguration";
 
 const configuration = {
   id: 7,
   target: {
-    relationTo: "instruments",
+    relationTo: "booking-instruments",
     value: { id: 123, name: "Confocal microscope", deleted: false },
     globalId: "IN123",
   },
@@ -51,7 +52,9 @@ describe("booking configuration reads", () => {
       }),
     );
 
-    await expect(fetchBookingConfiguration(7, "token", new AbortController().signal)).resolves.toEqual(configuration);
+    await expect(fetchBookingConfiguration(7, "token", new AbortController().signal)).resolves.toMatchObject(
+      configuration,
+    );
 
     const url = new URL(request?.url ?? "http://localhost");
     expect(url.searchParams.get("depth")).toBe("1");
@@ -68,7 +71,7 @@ describe("booking configuration reads", () => {
       }),
     );
 
-    await expect(fetchBookingConfigurationByTarget("IN123", "token")).resolves.toEqual(configuration);
+    await expect(fetchBookingConfigurationByTarget("IN123", "token")).resolves.toMatchObject(configuration);
 
     const url = new URL(request?.url ?? "http://localhost");
     expect(url.searchParams.get("where")).toBe("target==IN123");
@@ -93,6 +96,44 @@ describe("booking configuration reads", () => {
     );
 
     await fetchBookingConfigurationByTarget("IN1;enabled==false", "token");
+  });
+
+  it("loads bounded ownership candidates through a single escaped target query", async () => {
+    let request: Request | undefined;
+    server.use(
+      http.get("/api/v2/booking-configurations", ({ request: received }) => {
+        request = received;
+        return HttpResponse.json(
+          envelope([
+            {
+              ...configuration,
+              capabilities: {
+                canEditConfiguration: true,
+                canArchiveConfiguration: true,
+                canViewAudit: true,
+                canViewAccess: true,
+                canManageAssignments: true,
+                canManageOwners: true,
+                canCreateBooking: true,
+                canManageOwnBookings: true,
+                canManageAllEvents: true,
+                canCreateBlockout: true,
+                canSubscribeCalendar: true,
+                canLeaveConfiguration: false,
+              },
+            },
+          ]),
+        );
+      }),
+    );
+
+    const result = await fetchBookingOwnershipCandidates(["IN123", "IN456"], "token");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].capabilities.canManageOwners).toBe(true);
+    const url = new URL(request?.url ?? "http://localhost");
+    expect(url.searchParams.get("where")).toBe("target=in=(IN123,IN456)");
+    expect(url.searchParams.get("limit")).toBe("2");
   });
 
   it.each([

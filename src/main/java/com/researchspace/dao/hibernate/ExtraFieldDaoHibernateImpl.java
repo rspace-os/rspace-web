@@ -2,7 +2,7 @@ package com.researchspace.dao.hibernate;
 
 import com.researchspace.dao.ExtraFieldDao;
 import com.researchspace.dao.query.RsqlCollectionQuery;
-import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraFieldIdentity;
@@ -42,7 +42,7 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
   @Override
   public ExtraFieldPage readableDefinitions(
       ExtraFieldScope scope,
-      FilterExpression constraint,
+      QueryConstraint constraint,
       String search,
       Set<ExtraFieldRow> wanted,
       Set<FieldType> types,
@@ -176,7 +176,7 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
         + ")";
   }
 
-  private RsqlCollectionQuery.Predicate access(ExtraFieldScope scope, FilterExpression constraint) {
+  private RsqlCollectionQuery.Predicate access(ExtraFieldScope scope, QueryConstraint constraint) {
     RsqlCollectionQuery.Predicate predicate =
         new RsqlCollectionQuery(scope.parentDescription(), PARENT_ALIAS, "extraFieldAccess")
             .translateTrusted(constraint);

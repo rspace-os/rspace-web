@@ -38,6 +38,7 @@ describe("the All Bookable Items page", () => {
   test("navigates to the bookable item details page", async () => {
     render(<AllBookableItemsStory />);
 
+    await expect.element(pageObj.detailsButton).toBeVisible();
     await pageObj.detailsButton.click();
 
     await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
@@ -78,7 +79,6 @@ describe("the All Bookable Items page", () => {
       await expect.element(pageObj.cards).toBeVisible();
       await expect.element(pageObj.tableElement).not.toBeVisible();
       await expect.element(pageObj.card("Confocal microscope")).toBeVisible();
-      await expect.element(pageObj.cardParentContainer("Confocal microscope", "Imaging lab")).toBeVisible();
       await expect.element(pageObj.effectiveTimeZone).toBeVisible();
       await expect.element(pageObj.confocalAvailability).toBeVisible();
       await expect.element(pageObj.search).toBeVisible();
@@ -140,10 +140,6 @@ describe("the All Bookable Items page", () => {
     await expect.element(pageObj.electronAvailability).toBeVisible();
     await expect.element(pageObj.massSpectrometerAvailability).toBeVisible();
     await expect.element(pageObj.flowCytometerAvailability).toBeVisible();
-    await expect.element(pageObj.parentContainer("Imaging lab")).toHaveAttribute("href", "/globalId/IC456");
-    await expect.element(pageObj.parentContainer("Workbench")).toHaveAttribute("href", "/globalId/BE457");
-    await expect.element(pageObj.parentContainer("Mass spectrometry lab")).toHaveAttribute("href", "/globalId/IC458");
-    await expect.element(pageObj.parentContainer("Screening lab")).toHaveAttribute("href", "/globalId/IC459");
     await expect.element(pageObj.nowMarker("Confocal microscope")).toBeVisible();
     await expect.element(pageObj.effectiveTimeZone).toBeVisible();
     await expect

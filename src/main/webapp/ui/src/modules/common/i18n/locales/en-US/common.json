@@ -717,6 +717,31 @@
     "remove": "Remove {item}",
     "search": "Search by name or global ID"
   },
+  "resourceAccess": {
+    "addNamed": "Add {name}",
+    "addUserOrGroup": "Add user or group",
+    "assignments": "Access assignments",
+    "cancelled": "Unsaved access changes were cancelled.",
+    "conflict": "Access changed elsewhere. Your draft has been kept. Review the latest assignments before saving again.",
+    "conflictTitle": "Access changed",
+    "directRole": "Direct role",
+    "leaveError": "Could not leave this resource.",
+    "loadError": "Access could not be loaded.",
+    "loading": "Loading access.",
+    "removeNamed": "Remove {name}",
+    "reviewLatest": "Review latest",
+    "roleFor": "Direct role for {name}",
+    "saveChanges": "Save changes",
+    "saved": "Access changes saved.",
+    "saveError": "Access changes could not be saved.",
+    "saving": "Saving access changes.",
+    "search": "Search",
+    "searchError": "Users and groups could not be searched.",
+    "searchResults": "User and group search results",
+    "stagedAdd": "Added {name} to the access draft.",
+    "unavailable": "Unavailable",
+    "unsaved": "Access changes are not yet saved."
+  },
   "search": {
     "clearTooltip": "Clear search",
     "placeholder": "Search..."

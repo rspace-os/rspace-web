@@ -18,10 +18,11 @@ const adapter = createApiV2CollectionAdapter({
     score: v.number(),
     enabled: v.boolean(),
     modifiedAt: v.string(),
+    capability: v.optional(v.boolean()),
   }),
   metadata: {
     resourceName: "records",
-    fields: ["id", "title", "owner", "score", "enabled", "modifiedAt"],
+    fields: ["id", "title", "owner", "score", "enabled", "modifiedAt", "capability"],
     sorting: { fields: ["title", "modifiedAt"], default: [], maximumFields: 5 },
     filtering: {
       selectors: {
@@ -194,7 +195,7 @@ describe("createApiV2CollectionFetcher", () => {
   });
 
   it("uses a fixed projection independently of the visible columns", async () => {
-    const projection = { fixed: ["title", "score"] } as const;
+    const projection = { fixed: ["title", "score", "capability"] } as const;
     const state = {
       filters: { search: "", expression: null },
       sorting: [],
@@ -209,9 +210,9 @@ describe("createApiV2CollectionFetcher", () => {
 
     server.use(
       http.get("/api/v2/records", ({ request }) => {
-        expect(new URL(request.url).searchParams.get("fields[records]")).toBe("id,title,score");
+        expect(new URL(request.url).searchParams.get("fields[records]")).toBe("id,title,score,capability");
         return HttpResponse.json({
-          docs: [{ id: "one", title: "One", score: 1 }],
+          docs: [{ id: "one", title: "One", score: 1, capability: true }],
           totalDocs: 1,
           limit: 2,
           page: 1,
@@ -227,7 +228,7 @@ describe("createApiV2CollectionFetcher", () => {
 
     const fetchCollection = createApiV2CollectionFetcher(adapter, { projection });
     await expect(fetchCollection(state, { signal: new AbortController().signal })).resolves.toEqual({
-      rows: [{ id: "one", title: "One", score: 1 }],
+      rows: [{ id: "one", title: "One", score: 1, capability: true }],
       rowCount: 1,
     });
   });

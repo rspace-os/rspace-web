@@ -11,22 +11,37 @@ import { resolveCollectionConfig } from "@/modules/common/collection/resolveColl
 import i18n from "@/modules/common/i18n";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+import { RoleSourceSchema } from "@/modules/common/resource-access/schemas";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
+import { Badge } from "@/modules/common/ui/badge";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
+
+const NO_BOOKING_CAPABILITIES = {
+  canEditConfiguration: false,
+  canArchiveConfiguration: false,
+  canViewAudit: false,
+  canViewAccess: false,
+  canManageAssignments: false,
+  canManageOwners: false,
+  canCreateBooking: false,
+  canManageOwnBookings: false,
+  canManageAllEvents: false,
+  canCreateBlockout: false,
+  canSubscribeCalendar: false,
+  canLeaveConfiguration: false,
+};
 
 export const BookingConfigurationSchema = v.pipe(
   v.object({
     id: v.number(),
     target: v.nullable(
       v.object({
-        relationTo: v.literal("instruments"),
+        relationTo: v.literal("booking-instruments"),
         value: v.object({
           id: v.number(),
           name: v.string(),
           deleted: v.boolean(),
-          parentContainerName: v.optional(v.nullable(v.string())),
-          parentContainerGlobalId: v.optional(v.nullable(v.string())),
         }),
         globalId: v.string(),
       }),
@@ -42,6 +57,26 @@ export const BookingConfigurationSchema = v.pipe(
         value: v.number(),
       }),
     ),
+    effectiveRole: v.optional(v.nullable(v.string()), null),
+    roleSources: v.optional(v.array(RoleSourceSchema), []),
+    capabilities: v.optional(
+      v.object({
+        canEditConfiguration: v.boolean(),
+        canArchiveConfiguration: v.boolean(),
+        canViewAudit: v.boolean(),
+        canViewAccess: v.boolean(),
+        canManageAssignments: v.boolean(),
+        canManageOwners: v.boolean(),
+        canCreateBooking: v.boolean(),
+        canManageOwnBookings: v.boolean(),
+        canManageAllEvents: v.boolean(),
+        canCreateBlockout: v.boolean(),
+        canSubscribeCalendar: v.boolean(),
+        canLeaveConfiguration: v.boolean(),
+      }),
+      NO_BOOKING_CAPABILITIES,
+    ),
+    ownerHealth: v.optional(v.object({ hasEffectiveOwner: v.boolean() })),
   }),
   v.forward(
     v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
@@ -60,7 +95,7 @@ export type BookingConfiguration = v.InferOutput<typeof BookingConfigurationSche
 export const BookingConfigurationInputSchema = v.pipe(
   v.object({
     target: v.object({
-      relationTo: v.literal("instruments"),
+      relationTo: v.literal("booking-instruments"),
       value: v.number(),
     }),
     enabled: v.boolean(),
@@ -100,7 +135,7 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
 export type BookingConfigurationUpdateInput = v.InferOutput<typeof BookingConfigurationUpdateInputSchema>;
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
-  "id,target,enabled,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,updatedAt";
+  "id,target,enabled,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
 
 export async function fetchBookingConfiguration(
   id: number,
@@ -151,6 +186,33 @@ export async function fetchBookingConfigurationByTarget(
   return configurations[0];
 }
 
+/** Returns the readable Booking configurations for a bounded set of Instrument global IDs. */
+export async function fetchBookingOwnershipCandidates(
+  globalIds: readonly string[],
+  token: string,
+  signal?: AbortSignal,
+): Promise<readonly BookingConfiguration[]> {
+  if (globalIds.length === 0) return [];
+  const where = serializeRsqlExpression<BookingConfiguration>({
+    kind: "comparison",
+    field: "target",
+    operator: "in",
+    value: globalIds,
+  });
+  const parameters = new URLSearchParams({
+    depth: "1",
+    limit: String(Math.min(globalIds.length, 100)),
+    where,
+    "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
+  });
+  const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
+    headers: bookingApiV2Headers(token),
+    signal,
+  });
+  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
+  return parseOrThrow(v2ListEnvelope(BookingConfigurationSchema), (await response.json()) as unknown).docs;
+}
+
 export const bookingConfigurationConfig = {
   slug: "bookable-items",
   idField: "id",
@@ -166,20 +228,29 @@ export const bookingConfigurationConfig = {
     {
       name: "target",
       type: "relationship",
-      relationTo: "instruments",
+      relationTo: "booking-instruments",
       hasMany: false,
       labelKey: "booking:bookableItems.fields.target",
       list: {
         renderCell: ({ row }) => {
           if (row.target === null) return createElement(UnknownItem, { size: "xs" });
-          return createElement(InventoryItem, {
-            name: row.target.value.name,
-            globalId: row.target.globalId,
-            href: `/globalId/${row.target.globalId}`,
-            idLinkLabel: i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId }),
-            compact: true,
-            size: "xs",
-          });
+          return createElement(
+            "div",
+            { className: "grid gap-1" },
+            createElement(InventoryItem, {
+              name: row.target.value.name,
+              globalId: row.target.globalId,
+              compact: true,
+              size: "xs",
+            }),
+            row.ownerHealth?.hasEffectiveOwner === false
+              ? createElement(
+                  Badge,
+                  { variant: "destructive", className: "w-fit" },
+                  i18n.t("booking:bookableItems.ownerHealth.needsOwner"),
+                )
+              : null,
+          );
         },
       },
     },

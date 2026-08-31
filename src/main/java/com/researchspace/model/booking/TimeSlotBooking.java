@@ -105,6 +105,7 @@ public class TimeSlotBooking implements Serializable {
 
   private transient BookingPrivacy preparedPrivacy = BookingPrivacy.BUSY;
   private transient boolean preparedCanEdit;
+  private transient boolean preparedCanViewConfiguration;
 
   public TimeSlotBooking() {}
 
@@ -154,9 +155,10 @@ public class TimeSlotBooking implements Serializable {
   }
 
   /** Prepares the safe response values for the current actor without changing persisted data. */
-  public void prepareView(BookingPrivacy privacy, boolean canEdit) {
+  public void prepareView(BookingPrivacy privacy, boolean canEdit, boolean canViewConfiguration) {
     preparedPrivacy = privacy == null ? BookingPrivacy.BUSY : privacy;
     preparedCanEdit = preparedPrivacy == BookingPrivacy.FULL && canEdit;
+    preparedCanViewConfiguration = canViewConfiguration;
   }
 
   /** Returns the detail level prepared by the manager for this response. */
@@ -169,6 +171,12 @@ public class TimeSlotBooking implements Serializable {
   @Transient
   public boolean isCanEdit() {
     return preparedCanEdit;
+  }
+
+  /** Returns whether the current actor may navigate to the parent Booking configuration. */
+  @Transient
+  public boolean isCanViewConfiguration() {
+    return preparedCanViewConfiguration;
   }
 
   /** Returns the target configuration's IANA timezone without duplicating it in this row. */

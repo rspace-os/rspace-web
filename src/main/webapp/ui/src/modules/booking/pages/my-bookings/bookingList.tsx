@@ -41,7 +41,7 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
       {
         name: "target",
         type: "relationship",
-        relationTo: "instruments",
+        relationTo: "booking-instruments",
         hasMany: false,
         labelKey: "booking:myBookings.fields.target",
         list: {
@@ -49,8 +49,12 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
             <InventoryItem
               name={row.target.value.name}
               globalId={row.target.globalId}
-              href={`/globalId/${row.target.globalId}`}
-              idLinkLabel={i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })}
+              href={row.canViewConfiguration ? `/globalId/${row.target.globalId}` : undefined}
+              idLinkLabel={
+                row.canViewConfiguration
+                  ? i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })
+                  : undefined
+              }
               compact
               size="xs"
             />

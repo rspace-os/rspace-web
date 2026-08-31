@@ -15,7 +15,7 @@ function endsAfterStart(booking: { start: string; end: string }): boolean {
 }
 
 const BookingTargetSchema = v.object({
-  relationTo: v.literal("instruments"),
+  relationTo: v.literal("booking-instruments"),
   value: v.object({
     id: v.number(),
     name: v.string(),
@@ -29,7 +29,7 @@ const BookingTargetSchema = v.object({
 // Mutation responses are serialized directly from the saved entity. Unlike reads, they do not
 // expand relationships, even when the request includes depth=1.
 const MutationTargetSchema = v.object({
-  relationTo: v.literal("instruments"),
+  relationTo: v.literal("booking-instruments"),
   value: v.union([v.number(), BookingTargetSchema.entries.value]),
   globalId: v.string(),
 });
@@ -99,6 +99,7 @@ const BookingMutationSchema = v.pipe(
 
 const BookingListDocumentObjectSchema = v.object({
   ...BookingIdentitySchema,
+  canViewConfiguration: v.boolean(),
   requesterId: v.number(),
   purpose: v.nullable(v.string()),
   bookedBy: v.nullable(v.string()),
@@ -140,7 +141,7 @@ export type BookingListDocument = v.InferOutput<typeof BookingListDocumentSchema
 type BookingMutation = v.InferOutput<typeof BookingMutationSchema>;
 
 export const BookingCreateSchema = v.object({
-  target: v.object({ relationTo: v.literal("instruments"), value: v.number() }),
+  target: v.object({ relationTo: v.literal("booking-instruments"), value: v.number() }),
   start: v.string(),
   end: v.string(),
   purpose: v.optional(v.nullable(v.pipe(v.string(), v.maxLength(1000)))),
@@ -174,7 +175,7 @@ export function isBookingOverlapError(error: unknown): boolean {
 }
 
 export const BOOKING_READ_FIELDS =
-  "id,target,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt";
+  "id,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,createdAt,updatedAt";
 
 export async function parseApiV2Problem(response: Response): Promise<ApiV2ProblemError> {
   const body: unknown = await response.json().catch(() => null);

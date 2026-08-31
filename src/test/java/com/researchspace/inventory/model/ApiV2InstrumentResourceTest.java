@@ -15,6 +15,7 @@ import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription.FieldSchema;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import java.util.List;
@@ -32,7 +33,7 @@ class ApiV2InstrumentResourceTest {
 
   @Test
   void limitsEveryReadToInstrumentsThatAreNotDeleted() {
-    Optional<FilterExpression> constraint = read(mock(User.class)).constraintOrEmpty();
+    Optional<QueryConstraint> constraint = read(mock(User.class)).constraintOrEmpty();
 
     assertEquals(
         Optional.of(

@@ -126,6 +126,7 @@ export function createApiV2CollectionAdapter<TDocument>({
     runtime.map(({ field, operators, supportsWildcards }) => [field.name, { operators, supportsWildcards }] as const),
   );
   const virtualFields = new Set([...relationshipFields, ...runtimeSelectors.keys()]);
+  const projectableFields = new Set(Object.keys(documentSchema.entries) as FieldName<TDocument>[]);
   const fields = [
     ...sourceConfig.fields,
     ...derived.map(({ field }) => field),
@@ -206,7 +207,7 @@ export function createApiV2CollectionAdapter<TDocument>({
     metadata,
     isRuntimeSelector,
     selectedFields: (state) => {
-      const selected = selectedFields(state, config, virtualFields);
+      const selected = selectedFields(state, config, virtualFields, projectableFields);
       const namespaces = (metadata.runtimeFields ?? [])
         .filter((namespace) =>
           state.visibleFields.some(
@@ -218,7 +219,7 @@ export function createApiV2CollectionAdapter<TDocument>({
     },
     requiredDepth: (state) => (state.visibleFields.some((field) => relationshipFields.has(field)) ? 1 : 0),
     toSearchParams: (state) =>
-      collectionQueryParams(state, config, metadata, virtualFields, {
+      collectionQueryParams(state, config, metadata, virtualFields, projectableFields, {
         projection: runtimeProjection(state),
         selectors: catalogSelectors,
         projectionLimitMessage: (limit) => translate("tableList.error.customFieldColumnLimit", { limit }),

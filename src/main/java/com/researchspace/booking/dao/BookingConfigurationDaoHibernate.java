@@ -4,9 +4,9 @@ import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.dao.query.IndexedTextNarrowing;
-import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Operator;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.RelationshipReadAccess;
@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 /** Hibernate persistence for booking configurations. */
@@ -25,31 +26,35 @@ import org.springframework.stereotype.Repository;
 public class BookingConfigurationDaoHibernate
     extends GenericDaoHibernate<BookingConfiguration, Long> implements BookingConfigurationDao {
 
-  private static final CollectionQueryExecutor<BookingConfiguration> COLLECTION_QUERY =
-      new CollectionQueryExecutor<>(
-          BookingConfiguration.class,
-          ApiV2BookingConfigurationResource.DESCRIPTION,
-          "bookingConfiguration");
-
   private static final FilterExpression ACTIVE =
       new FilterExpression.Comparison("deleted", Operator.EQUAL, List.of(false), false);
-
   private final CriteriaBuilderFactory criteriaBuilderFactory;
+  private final CollectionDescription<BookingConfiguration> description;
+  private final CollectionQueryExecutor<BookingConfiguration> collectionQuery;
 
   @Autowired(required = false)
   private RuntimeFieldTextSearch textSearch;
 
   public BookingConfigurationDaoHibernate(
-      SessionFactory sessionFactory, CriteriaBuilderFactory criteriaBuilderFactory) {
+      SessionFactory sessionFactory,
+      CriteriaBuilderFactory criteriaBuilderFactory,
+      @Qualifier(
+              com.researchspace.booking.config.BookingResourceAccessConfiguration
+                  .BOOKING_CONFIGURATION_DESCRIPTION)
+          CollectionDescription<BookingConfiguration> description) {
     super(BookingConfiguration.class, sessionFactory);
     this.criteriaBuilderFactory = criteriaBuilderFactory;
+    this.description = description;
+    collectionQuery =
+        new CollectionQueryExecutor<>(
+            BookingConfiguration.class, description, "bookingConfiguration");
   }
 
   @Override
   public ResourcePage<BookingConfiguration> getResources(
       ResourceRequest request, RelationshipReadAccess targetAccess) {
     try {
-      return COLLECTION_QUERY.page(
+      return collectionQuery.page(
           criteriaBuilderFactory,
           getSession(),
           narrowed(request.restrict(ACTIVE)),
@@ -63,7 +68,7 @@ public class BookingConfigurationDaoHibernate
   @Override
   public long countResources(ResourceRequest request, RelationshipReadAccess targetAccess) {
     try {
-      return COLLECTION_QUERY.count(
+      return collectionQuery.count(
           criteriaBuilderFactory,
           getSession(),
           narrowed(request.restrict(ACTIVE)),
@@ -78,7 +83,7 @@ public class BookingConfigurationDaoHibernate
   public List<BookingConfiguration> getResources(
       ResourceRequest request, int limit, RelationshipReadAccess targetAccess) {
     try {
-      return COLLECTION_QUERY.listById(
+      return collectionQuery.listById(
           criteriaBuilderFactory,
           getSession(),
           narrowed(request.restrict(ACTIVE)),
@@ -90,8 +95,7 @@ public class BookingConfigurationDaoHibernate
   }
 
   private ResourceRequest narrowed(ResourceRequest request) {
-    return IndexedTextNarrowing.apply(
-        request, ApiV2BookingConfigurationResource.DESCRIPTION, textSearch);
+    return IndexedTextNarrowing.apply(request, description, textSearch);
   }
 
   @Override

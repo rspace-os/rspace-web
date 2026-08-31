@@ -18,12 +18,12 @@ import {
   RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME,
 } from "@/modules/common/collection-form/responsiveFieldLayout";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { ResourceAccessEditor } from "@/modules/common/resource-access/ResourceAccessEditor";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
-import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
+import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Heading } from "@/modules/common/ui/typography";
 import { BookableItemAuditLog } from "./BookableItemAuditLog";
 import { BookingEventList } from "./BookingEventList";
@@ -35,9 +35,10 @@ import {
   bookingConfigurationFields,
   fetchBookingConfigurationByTarget,
 } from "./bookingConfiguration";
+import { bookingResourceAccessAdapter } from "./bookingResourceAccess";
 import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
 
-type BookableItemTab = "bookings" | "details" | "audit";
+type BookableItemTab = "bookings" | "details" | "audit" | "access";
 
 async function updateBookingConfiguration(
   id: number,
@@ -79,26 +80,16 @@ function SpotlightHeader({
   action?: ReactNode;
 }) {
   const { t } = useTranslation("booking");
-  const hasLocation = target.value.parentContainerName != null && target.value.parentContainerGlobalId != null;
-
   return (
     <section className="flex flex-wrap items-center gap-4">
       <InventoryItem
         name={target.value.name}
         nameAs="h1"
         globalId={target.globalId}
-        href={`/globalId/${target.globalId}`}
-        idLinkLabel={t("bookableItemDetails.viewInventory", { name: target.value.name })}
         idPlacement="title"
         className="min-w-full flex-1 p-0 sm:min-w-0"
       >
         <span>{configuration.timezone}</span>
-        {hasLocation ? (
-          <InventoryLocationLink
-            name={target.value.parentContainerName}
-            globalId={target.value.parentContainerGlobalId}
-          />
-        ) : null}
       </InventoryItem>
       <div className="flex w-full min-w-0 flex-wrap items-center gap-3 sm:w-auto sm:shrink-0">
         <Badge variant={configuration.enabled ? "default" : "secondary"}>
@@ -195,7 +186,6 @@ function LoadedBookableItemPage({
 }) {
   const { t } = useTranslation("booking");
   const preferences = useBookingDisplayPreferences();
-  const { data: currentUser } = useCurrentUserQuery();
   const { tab = "bookings", edit = false } = useSearch({ from: "/booking/bookable-items/$globalId" });
   const navigate = useNavigate({ from: "/booking/bookable-items/$globalId" });
   const queryClient = useQueryClient();
@@ -206,7 +196,7 @@ function LoadedBookableItemPage({
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const wasEditing = useRef(false);
   const target = configuration.target;
-  const canEdit = currentUser.hasSysAdminRole;
+  const canEdit = configuration.capabilities.canEditConfiguration;
   const editing = canEdit && edit;
   const form = useForm({
     schema: BookingConfigurationUpdateInputSchema,
@@ -218,7 +208,7 @@ function LoadedBookableItemPage({
       search: (current) => {
         const merged = { ...current, ...next };
         return {
-          ...(merged.tab === "details" || merged.tab === "audit" ? { tab: merged.tab } : {}),
+          ...(merged.tab === "details" || merged.tab === "audit" || merged.tab === "access" ? { tab: merged.tab } : {}),
           ...(merged.edit === true ? { edit: true } : {}),
         };
       },
@@ -248,6 +238,15 @@ function LoadedBookableItemPage({
     if (updateMutation.isError && !updateMutation.isPending) saveButtonRef.current?.focus();
   }, [updateMutation.isError, updateMutation.isPending]);
 
+  useEffect(() => {
+    if (
+      (tab === "audit" && !configuration.capabilities.canViewAudit) ||
+      (tab === "access" && !configuration.capabilities.canViewAccess)
+    ) {
+      setSearch({ tab: "bookings" });
+    }
+  }, [configuration.capabilities.canViewAccess, configuration.capabilities.canViewAudit, tab]);
+
   if (target === null) return null;
 
   const cancelEdit = () => {
@@ -262,7 +261,7 @@ function LoadedBookableItemPage({
         value={tab}
         onValueChange={(value) => {
           if (updateMutation.isPending) return;
-          const nextTab = value === "details" || value === "audit" ? value : "bookings";
+          const nextTab = value === "details" || value === "audit" || value === "access" ? value : "bookings";
           setSearch({ tab: nextTab });
         }}
         className="space-y-6"
@@ -272,13 +271,17 @@ function LoadedBookableItemPage({
           target={target}
           action={
             <>
-              <BookingCreationButtonGroup
-                ownerId={`bookable-item-${configuration.id}`}
-                target={bookableItemOption({ ...configuration, target })}
-                lockTarget
-                disabled={!configuration.enabled}
-              />
-              <CalendarSubscriptionPopover configurationId={configuration.id} token={token} />
+              {configuration.capabilities.canCreateBooking || configuration.capabilities.canCreateBlockout ? (
+                <BookingCreationButtonGroup
+                  ownerId={`bookable-item-${configuration.id}`}
+                  target={bookableItemOption({ ...configuration, target })}
+                  lockTarget
+                  disabled={!configuration.enabled}
+                />
+              ) : null}
+              {configuration.capabilities.canSubscribeCalendar ? (
+                <CalendarSubscriptionPopover configurationId={configuration.id} token={token} />
+              ) : null}
             </>
           }
         />
@@ -290,9 +293,16 @@ function LoadedBookableItemPage({
           <PageTab value="details" disabled={updateMutation.isPending}>
             {t("bookableItemDetails.tabs.details")}
           </PageTab>
-          <PageTab value="audit" disabled={updateMutation.isPending}>
-            {t("bookableItemDetails.tabs.audit")}
-          </PageTab>
+          {configuration.capabilities.canViewAudit ? (
+            <PageTab value="audit" disabled={updateMutation.isPending}>
+              {t("bookableItemDetails.tabs.audit")}
+            </PageTab>
+          ) : null}
+          {configuration.capabilities.canViewAccess ? (
+            <PageTab value="access" disabled={updateMutation.isPending}>
+              {t("bookableItemDetails.tabs.access")}
+            </PageTab>
+          ) : null}
         </Tabs.List>
 
         <Tabs.Panel value="bookings" className="space-y-8 outline-none">
@@ -386,9 +396,27 @@ function LoadedBookableItemPage({
           </Card>
         </Tabs.Panel>
 
-        <Tabs.Panel value="audit" className="outline-none">
-          <BookableItemAuditLog configurationId={configuration.id} />
-        </Tabs.Panel>
+        {configuration.capabilities.canViewAudit ? (
+          <Tabs.Panel value="audit" className="outline-none">
+            <BookableItemAuditLog configurationId={configuration.id} />
+          </Tabs.Panel>
+        ) : null}
+
+        {configuration.capabilities.canViewAccess ? (
+          <Tabs.Panel value="access" className="outline-none">
+            <Card>
+              <CardContent className="pt-6">
+                <ResourceAccessEditor
+                  resource="booking-configurations"
+                  resourceId={configuration.id}
+                  token={token}
+                  adapter={bookingResourceAccessAdapter(t)}
+                  onLeave={() => void navigate({ to: "/booking" })}
+                />
+              </CardContent>
+            </Card>
+          </Tabs.Panel>
+        ) : null}
       </Tabs.Root>
 
       <p role="status" aria-live="polite" className="sr-only">

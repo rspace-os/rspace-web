@@ -18,7 +18,7 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { createAddBookableItemRoute } from "../routes";
 
-const confocal = { id: 123, name: "Confocal microscope", globalId: "IN123" };
+const confocal = { id: 123, name: "Confocal microscope", globalId: "IN123", deleted: false };
 const settings = {
   slotGranularityMinutes: 5,
   openingStart: "00:00",
@@ -32,6 +32,8 @@ const settings = {
   timezoneMode: "BROWSER",
   customTimezone: null,
   institutionTimezone: "UTC",
+  defaultSharedWith: "ALL_USERS" as const,
+  selectedAccessGrantees: [],
   configurationVersion: 0,
 };
 
@@ -50,13 +52,10 @@ function collectionPage(docs: readonly unknown[]) {
   };
 }
 
-function instrumentsHandler(
-  onRequest: (url: URL) => void = () => undefined,
-  instruments: readonly unknown[] = [confocal],
-) {
-  return http.get("/api/v2/instruments", ({ request }) => {
+function targetsHandler(onRequest: (url: URL) => void = () => undefined, targets: readonly unknown[] = [confocal]) {
+  return http.get("/api/v2/booking-configuration-targets", ({ request }) => {
     onRequest(new URL(request.url));
-    return HttpResponse.json(collectionPage(instruments));
+    return HttpResponse.json(targets);
   });
 }
 
@@ -107,7 +106,7 @@ function renderPage() {
         createAddBookableItemRoute(bookingRoute),
       ]),
     ]),
-    history: createMemoryHistory({ initialEntries: ["/booking/config/bookable-items/add"] }),
+    history: createMemoryHistory({ initialEntries: ["/booking/bookable-items/add"] }),
   });
 
   return render(
@@ -120,11 +119,10 @@ function renderPage() {
 }
 
 async function completeForm(user: ReturnType<typeof userEvent.setup>) {
-  const bookableItem = await screen.findByRole("combobox", { name: "booking:bookableItems.fields.target" });
-  await user.type(bookableItem, "Conf");
-  const option = await screen.findByRole("option", { name: /Confocal microscope/ });
-  expect(option).not.toHaveAttribute("aria-disabled", "true");
-  await user.click(option);
+  const search = await screen.findByRole("textbox", { name: "booking:bookableItems.targetSearch.label" });
+  await user.type(search, "Conf");
+  await user.click(screen.getByRole("button", { name: "booking:bookableItems.targetSearch.search" }));
+  await user.click(await screen.findByRole("button", { name: "Confocal microscope (IN123)" }));
 }
 
 describe("AddBookableItemPage", () => {
@@ -132,14 +130,14 @@ describe("AddBookableItemPage", () => {
     const user = userEvent.setup();
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      instrumentsHandler(),
+      targetsHandler(),
       availabilityHandler(),
     );
     renderPage();
 
-    const bookableItem = await screen.findByRole("combobox", { name: "booking:bookableItems.fields.target" });
-    await user.type(bookableItem, "Conf");
-    await user.clear(bookableItem);
+    const search = await screen.findByRole("textbox", { name: "booking:bookableItems.targetSearch.label" });
+    await user.type(search, "Conf");
+    await user.clear(search);
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -150,7 +148,7 @@ describe("AddBookableItemPage", () => {
     let authorization: string | null = null;
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      instrumentsHandler(),
+      targetsHandler(),
       availabilityHandler(),
       http.post("/api/v2/booking-configurations", async ({ request }) => {
         requestBody = await request.json();
@@ -160,7 +158,7 @@ describe("AddBookableItemPage", () => {
     );
     const { container } = renderPage();
 
-    expect(await screen.findByRole("combobox", { name: "booking:bookableItems.fields.target" })).toBeVisible();
+    expect(await screen.findByRole("textbox", { name: "booking:bookableItems.targetSearch.label" })).toBeVisible();
     expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
     await completeForm(user);
@@ -172,7 +170,7 @@ describe("AddBookableItemPage", () => {
     expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
     expect(authorization).toBe("Bearer test-token");
     expect(requestBody).toEqual({
-      target: { relationTo: "instruments", value: 123 },
+      target: { relationTo: "booking-instruments", value: 123 },
       enabled: true,
       slotGranularityMinutes: 5,
       openingStart: "00:00",
@@ -188,7 +186,7 @@ describe("AddBookableItemPage", () => {
     const user = userEvent.setup();
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      instrumentsHandler(),
+      targetsHandler(),
       availabilityHandler(),
       http.post("/api/v2/booking-configurations", () => new HttpResponse(null, { status: 500 })),
     );
@@ -202,43 +200,24 @@ describe("AddBookableItemPage", () => {
     expect(screen.getByRole("heading", { name: "booking:bookableItems.addTitle" })).toBeVisible();
   });
 
-  it("selects a configured instrument, then shows its existing configuration instead of the rest of the form", async () => {
+  it("searches only eligible instruments and selects a result", async () => {
     const user = userEvent.setup();
-    const availabilityRequests: URL[] = [];
-    const spare = { id: 456, name: "Spare confocal microscope", globalId: "IN456" };
+    const targetRequests: URL[] = [];
+    const spare = { id: 456, name: "Spare confocal microscope", globalId: "IN456", deleted: false };
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      instrumentsHandler(() => undefined, [confocal, spare]),
-      availabilityHandler(
-        () => [
-          {
-            id: 7,
-            target: { relationTo: "instruments", value: 123, globalId: "IN123" },
-          },
-        ],
-        (url) => availabilityRequests.push(url),
-      ),
+      targetsHandler((url) => targetRequests.push(url), [spare]),
     );
     const { container } = renderPage();
-    const bookableItem = await screen.findByRole("combobox", { name: "booking:bookableItems.fields.target" });
+    const search = await screen.findByRole("textbox", { name: "booking:bookableItems.targetSearch.label" });
+    await user.type(search, "Conf");
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.targetSearch.search" }));
 
-    await user.type(bookableItem, "Conf");
+    expect(screen.queryByRole("button", { name: "Confocal microscope (IN123)" })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Spare confocal microscope (IN456)" }));
 
-    const configured = await screen.findByRole("option", { name: /^Confocal microscope/ });
-    expect(configured).not.toHaveAttribute("aria-disabled", "true");
-    expect(availabilityRequests).toHaveLength(0);
-
-    await user.click(configured);
-
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("booking:bookableItems.availability.alreadyConfigured");
-    const detailsLink = within(alert).getByRole("link", {
-      name: "booking:bookableItems.availability.viewExisting",
-    });
-    expect(detailsLink).toHaveAttribute("href", "/booking/bookable-items/IN123");
-    expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
-    expect(availabilityRequests[0]?.searchParams.get("where")).toBe("target=in=(IN123)");
+    expect(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeVisible();
+    expect(targetRequests[0]?.searchParams.get("query")).toBe("Conf");
 
     await expectAccessible(container);
   });
@@ -248,9 +227,9 @@ describe("AddBookableItemPage", () => {
     let conflict = false;
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      instrumentsHandler(),
+      targetsHandler(),
       availabilityHandler(() =>
-        conflict ? [{ id: 9, target: { relationTo: "instruments", value: 123, globalId: "IN123" } }] : [],
+        conflict ? [{ id: 9, target: { relationTo: "booking-instruments", value: 123, globalId: "IN123" } }] : [],
       ),
       http.post("/api/v2/booking-configurations", () => {
         conflict = true;
@@ -273,24 +252,18 @@ describe("AddBookableItemPage", () => {
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
   });
 
-  it("keeps the instrument selected and shows an error when its eligibility cannot be checked", async () => {
+  it("shows an error when eligible instruments cannot be searched", async () => {
     const user = userEvent.setup();
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      instrumentsHandler(),
-      http.get("/api/v2/booking-configurations", () => new HttpResponse(null, { status: 500 })),
+      http.get("/api/v2/booking-configuration-targets", () => new HttpResponse(null, { status: 500 })),
     );
     renderPage();
-    const bookableItem = await screen.findByRole("combobox", { name: "booking:bookableItems.fields.target" });
+    const search = await screen.findByRole("textbox", { name: "booking:bookableItems.targetSearch.label" });
+    await user.type(search, "Conf");
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.targetSearch.search" }));
 
-    await user.type(bookableItem, "Conf");
-
-    const option = await screen.findByRole("option", { name: /Confocal microscope/ });
-    expect(option).not.toHaveAttribute("aria-disabled", "true");
-    await user.click(option);
-
-    expect(bookableItem).toHaveValue("Confocal microscope");
-    expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.availability.checkFailed");
+    expect(await screen.findByText("booking:bookableItems.targetSearch.error")).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
   });
 });

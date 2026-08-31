@@ -11,7 +11,7 @@ import { DeleteBookingDialog } from "../DeleteBookingDialog";
 const cancelledBooking = {
   id: 41,
   target: {
-    relationTo: "instruments",
+    relationTo: "booking-instruments",
     value: { id: 12, name: "Scope", deleted: false },
     globalId: "IN12",
   },

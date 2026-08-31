@@ -1,11 +1,19 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import { expect, within } from "storybook/test";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { Spinner } from "./spinner";
 
 const meta = {
   title: "DesignSystem/Spinner",
   component: Spinner,
   tags: ["autodocs"],
+  decorators: [
+    (Story) => (
+      <I18nRoot namespaces={["common"]}>
+        <Story />
+      </I18nRoot>
+    ),
+  ],
 } satisfies Meta<typeof Spinner>;
 
 export default meta;

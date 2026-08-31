@@ -18,6 +18,10 @@ public final class ApiV2ResourceException extends RuntimeException {
     this.arguments = Objects.requireNonNull(arguments, "Error arguments").clone();
   }
 
+  public static ApiV2ResourceException of(HttpStatus status, String errorCode) {
+    return new ApiV2ResourceException(null, status, errorCode, new Object[0]);
+  }
+
   public HttpStatus status() {
     return status;
   }

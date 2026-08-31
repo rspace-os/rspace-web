@@ -31,7 +31,18 @@ import {
 } from "./bookingConfiguration";
 
 const bookableItemsProjection = {
-  fixed: ["id", "target", "enabled", "timezone", ...schedulingSettingsFieldNames, "updatedAt"],
+  fixed: [
+    "id",
+    "target",
+    "enabled",
+    "timezone",
+    ...schedulingSettingsFieldNames,
+    "updatedAt",
+    "effectiveRole",
+    "roleSources",
+    "capabilities",
+    "ownerHealth",
+  ],
 } as const;
 
 const maximumBookableItemsSelection = 1000;
@@ -381,11 +392,7 @@ export default function BookableItemsPage() {
           ),
         }}
         createAction={
-          <Link
-            to="/booking/config/bookable-items/add"
-            className={cn(buttonVariants(), "rounded-sm")}
-            data-slot="button"
-          >
+          <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
             <PlusIcon aria-hidden="true" data-icon="inline-start" />
             {t("bookableItems.actions.add")}
           </Link>

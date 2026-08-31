@@ -761,11 +761,35 @@ export default interface Resources {
     }
   },
   "booking": {
+    "access": {
+      "allUsers": "All users",
+      "leave": "Leave configuration",
+      "roles": {
+        "booker": {
+          "description": "Can view the schedule, subscribe, create bookings, and manage their own bookings.",
+          "label": "Booker"
+        },
+        "manager": {
+          "description": "Can manage configuration, events, and non-owner access.",
+          "label": "Manager"
+        },
+        "owner": {
+          "description": "Full control, including Owners and archiving.",
+          "label": "Owner"
+        },
+        "viewer": {
+          "description": "Can view the schedule and subscribe to the calendar.",
+          "label": "Viewer"
+        }
+      }
+    },
     "allBookableItems": {
       "actions": {
+        "access": "Access",
         "book": "Book",
         "nextDay": "Next day",
         "previousDay": "Previous day",
+        "settings": "Settings",
         "today": "Today",
         "viewDetails": "View details"
       },
@@ -946,6 +970,7 @@ export default interface Resources {
       "past": "Past events",
       "rules": "Booking rules",
       "tabs": {
+        "access": "Access",
         "audit": "Audit log",
         "bookings": "Bookings",
         "details": "Details"
@@ -1012,8 +1037,17 @@ export default interface Resources {
         "timezone": "Time zone",
         "updatedAt": "Last updated"
       },
+      "ownerHealth": {
+        "needsOwner": "Owner needed"
+      },
       "plural": "Bookable Items",
-      "singular": "Bookable item"
+      "singular": "Bookable item",
+      "targetSearch": {
+        "error": "Eligible instruments could not be searched.",
+        "label": "Instrument",
+        "results": "Eligible instruments",
+        "search": "Search"
+      }
     },
     "bookings": {
       "actions": {
@@ -1248,6 +1282,9 @@ export default interface Resources {
         "upcoming": "Upcoming"
       },
       "plural": "Bookings",
+      "roleLoss": {
+        "readOnly": "Read-only: you no longer have access to this item."
+      },
       "singular": "Booking",
       "title": "My Bookings"
     },
@@ -1307,6 +1344,32 @@ export default interface Resources {
     "settings": {
       "actions": {
         "save": "Save settings"
+      },
+      "defaultSharing": {
+        "addNamed": "Add {name}",
+        "addUserOrGroup": "Add user or group",
+        "description": "New bookable items grant the Booker role using this choice. Existing items are unchanged.",
+        "options": {
+          "ALL_USERS": {
+            "description": "Everyone, including future users, can create bookings.",
+            "label": "All users"
+          },
+          "ONLY_ME": {
+            "description": "Only the creator receives access as Owner.",
+            "label": "Only me"
+          },
+          "SELECTED": {
+            "description": "Exactly the users and groups selected below receive Booker access.",
+            "label": "Selected users and groups"
+          }
+        },
+        "removeNamed": "Remove {name}",
+        "required": "Add at least one user or group.",
+        "search": "Search",
+        "searchResults": "User and group search results",
+        "selected": "Selected users and groups",
+        "title": "Default shared with",
+        "unavailable": "Unavailable"
       },
       "description": "These defaults are copied to new bookable items. Existing bookable items keep their own settings.",
       "displayDefaults": {
@@ -2069,6 +2132,31 @@ export default interface Resources {
       "openRecord": "Open record {globalId}",
       "remove": "Remove {item}",
       "search": "Search by name or global ID"
+    },
+    "resourceAccess": {
+      "addNamed": "Add {name}",
+      "addUserOrGroup": "Add user or group",
+      "assignments": "Access assignments",
+      "cancelled": "Unsaved access changes were cancelled.",
+      "conflict": "Access changed elsewhere. Your draft has been kept. Review the latest assignments before saving again.",
+      "conflictTitle": "Access changed",
+      "directRole": "Direct role",
+      "leaveError": "Could not leave this resource.",
+      "loadError": "Access could not be loaded.",
+      "loading": "Loading access.",
+      "removeNamed": "Remove {name}",
+      "reviewLatest": "Review latest",
+      "roleFor": "Direct role for {name}",
+      "saveChanges": "Save changes",
+      "saveError": "Access changes could not be saved.",
+      "saved": "Access changes saved.",
+      "saving": "Saving access changes.",
+      "search": "Search",
+      "searchError": "Users and groups could not be searched.",
+      "searchResults": "User and group search results",
+      "stagedAdd": "Added {name} to the access draft.",
+      "unavailable": "Unavailable",
+      "unsaved": "Access changes are not yet saved."
     },
     "search": {
       "clearTooltip": "Clear search",
@@ -3521,7 +3609,8 @@ export default interface Resources {
           "body": "Select someone to transfer ownership to. By performing this action you will give the new owner full control over the item. <strong>This action can only be undone by the recipient or their PI.</strong>",
           "recipientLabel": "Recipient",
           "recipientSearchHint": "If the desired recipient cannot be found in this list, try searching for their name or username.",
-          "title": "Transfer Ownership"
+          "title": "Transfer Ownership",
+          "transferBookingConfigurationOwnership": "Also transfer Booking configuration ownership"
         },
         "disabled": {
           "noPermission": "{count, plural, one {You do not have permission to transfer this item.} other {You do not have permission to transfer these items.}}",
@@ -4832,7 +4921,8 @@ export default interface Resources {
     "peopleField": {
       "errors": {
         "couldNotGetGroupMembers": "Could not get group members."
-      }
+      },
+      "loading": "Loading people"
     },
     "permalink": {
       "invalidId": "\"{id}\" is not a valid {recordType} id.",
@@ -6360,6 +6450,9 @@ export default interface Resources {
               "invalid": "Booking buffers must be between 0 and 10,080 minutes."
             },
             "create": "The booking configuration is invalid.",
+            "defaultSharing": {
+              "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
+            },
             "granularity": {
               "invalid": "Slot granularity must be 1, 5, 10, or 15 minutes."
             },
@@ -6426,6 +6519,16 @@ export default interface Resources {
             "value": "The query contains an invalid value."
           },
           "requestRejected": "The request could not be processed.",
+          "resourceAccess": {
+            "duplicateGrantee": "Each user or group can have only one direct role.",
+            "forbidden": "You do not have permission to manage access to this resource.",
+            "ifMatchRequired": "The current access version is required.",
+            "invalidGrantee": "The selected user or group is no longer available.",
+            "invalidRole": "The selected role is not valid for this resource.",
+            "ownerRequired": "At least one direct Owner must remain.",
+            "selfRemovalRequiresLeave": "Use the leave action to remove your own direct access.",
+            "stale": "Access changed after this page was loaded. Review the latest access before saving again."
+          },
           "runtimeFields": {
             "ids": {
               "limit": "A request must not name more than {0} custom fields."

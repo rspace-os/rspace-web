@@ -85,7 +85,7 @@ describe("AllBookableItemsPage", () => {
       {
         id: 41,
         target: {
-          relationTo: "instruments",
+          relationTo: "booking-instruments",
           value: { id: 123, name: "Confocal microscope", deleted: false },
           globalId: "IN123",
         },
@@ -120,13 +120,6 @@ describe("AllBookableItemsPage", () => {
       ).toBeInTheDocument(),
     );
     const table = screen.getByRole("table", { name: "All Bookable Items table" });
-    expect(within(table).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
-    expect(within(table).getByRole("link", { name: "Workbench" })).toHaveAttribute("href", "/globalId/BE457");
-    expect(within(table).getByRole("link", { name: "Mass spectrometry lab" })).toHaveAttribute(
-      "href",
-      "/globalId/IC458",
-    );
-    expect(within(table).getByRole("link", { name: "Screening lab" })).toHaveAttribute("href", "/globalId/IC459");
     await waitFor(() =>
       expect(
         within(screen.getByRole("table", { name: "All Bookable Items table" })).getByRole("img", {
@@ -149,6 +142,9 @@ describe("AllBookableItemsPage", () => {
     const where = new URL(collectionRequest?.url ?? "http://localhost").searchParams.get("where") ?? "";
     expect(where).toContain("enabled==true");
     expect(where).toContain("target.deleted==false");
+    expect(
+      new URL(collectionRequest?.url ?? "http://localhost").searchParams.get("fields[booking-configurations]"),
+    ).toContain("capabilities");
 
     const bookLink = within(within(table).getByRole("row", { name: /Confocal microscope/ })).getByRole("link", {
       name: "Book",

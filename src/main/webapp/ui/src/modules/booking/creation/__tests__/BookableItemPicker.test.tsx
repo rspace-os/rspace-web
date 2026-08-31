@@ -26,7 +26,7 @@ function configuration(id: number, name: string) {
   return {
     id,
     target: {
-      relationTo: "instruments",
+      relationTo: "booking-instruments",
       globalId: `IN${id}`,
       value: { id, name, deleted: false },
     },

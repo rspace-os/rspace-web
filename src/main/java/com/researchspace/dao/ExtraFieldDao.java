@@ -1,7 +1,7 @@
 package com.researchspace.dao;
 
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +67,7 @@ public interface ExtraFieldDao {
    */
   ExtraFieldPage readableDefinitions(
       ExtraFieldScope scope,
-      FilterExpression constraint,
+      QueryConstraint constraint,
       String search,
       Set<ExtraFieldRow> wanted,
       Set<FieldType> types,

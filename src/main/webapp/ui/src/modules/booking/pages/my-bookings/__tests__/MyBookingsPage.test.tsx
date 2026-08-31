@@ -20,7 +20,7 @@ import i18n from "@/modules/common/i18n";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { MyBookingsRoutePage } from "../MyBookingsPage";
-import { bookingHandlers, bookingsOpenApi, upcomingBooking } from "../mocks/bookingMocks";
+import { bookingHandlers, bookingsOpenApi, roleLostBooking, upcomingBooking } from "../mocks/bookingMocks";
 
 const initialColumns = '{ "fields": ["target", "start", "end"] }';
 const initialPath = `/booking/my-bookings?period=upcoming&my-bookings.q=confocal&my-bookings.where=target.name%3Dcontains%3Dscope&my-bookings.columns=${encodeURIComponent(initialColumns)}&my-bookings.sort=-start`;
@@ -165,6 +165,16 @@ describe("My Bookings page", () => {
     }).format(new Date(upcomingBooking.start));
 
     expect(await screen.findByText(expectedStart)).toBeVisible();
+  });
+
+  it("keeps a role-lost requester's target label but removes item navigation", async () => {
+    renderPage(initialPath, 84, undefined, undefined, [roleLostBooking]);
+
+    expect(await screen.findByText("Confocal microscope")).toBeVisible();
+    expect(screen.getByText("IN123", { exact: true })).toBeVisible();
+    expect(screen.queryByRole("link", { name: "booking:myBookings.actions.viewDetails" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "common:tableList.filters.openRecord" })).not.toBeInTheDocument();
+    expect(screen.getByText("booking:myBookings.roleLoss.readOnly")).toBeVisible();
   });
 
   it("shows period-specific empty states", async () => {

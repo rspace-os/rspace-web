@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 /** Typed, persistence-neutral filter tree produced from a supported query dialect. */
-public sealed interface FilterExpression
+public sealed interface FilterExpression extends QueryConstraint
     permits FilterExpression.And, FilterExpression.Comparison, FilterExpression.Or {
 
   record Comparison(String field, Operator operator, List<Object> values, boolean wildcard)

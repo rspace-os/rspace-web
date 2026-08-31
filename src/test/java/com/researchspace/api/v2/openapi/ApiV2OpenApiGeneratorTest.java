@@ -12,6 +12,7 @@ import com.researchspace.api.v2.resource.ApiV2RelationshipTargetSpec;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
+import com.researchspace.api.v2.resource.ResourceAccessSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
@@ -19,16 +20,22 @@ import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
+import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationCapabilities;
+import com.researchspace.model.booking.BookingOwnerHealth;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ApiV2UserResource;
+import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
 import io.swagger.v3.core.util.Json31;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,7 +94,17 @@ class ApiV2OpenApiGeneratorTest {
             bookingOperations,
             Long::valueOf,
             "create-error",
-            "update-error");
+            "update-error",
+            EnumSet.allOf(ResourceOperation.class),
+            Map.of(),
+            Map.of(),
+            CollectionMutationLimits.DEFAULT,
+            List.of(),
+            Optional.of(
+                new ResourceAccessSpec<>(
+                    protectedAccess(),
+                    BookingConfigurationCapabilities.class,
+                    BookingOwnerHealth.class)));
     ApiV2ResourceSpec<TimeSlotBooking, Long> timeSlotBookings =
         new ApiV2ResourceSpec<>(
             ApiV2TimeSlotBookingResource.DESCRIPTION,
@@ -98,11 +115,14 @@ class ApiV2OpenApiGeneratorTest {
     ApiV2RelationshipTargetSpec<Instrument, Long> instruments =
         new ApiV2RelationshipTargetSpec<>(
             ApiV2InstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
+    ApiV2RelationshipTargetSpec<Instrument, Long> bookingInstruments =
+        new ApiV2RelationshipTargetSpec<>(
+            ApiV2BookingInstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
     generator =
         new ApiV2OpenApiGenerator(
             new ApiV2ResourceCatalog(
                 List.of(maintenance, users, bookingConfigurations, timeSlotBookings),
-                List.of(instruments)),
+                List.of(instruments, bookingInstruments)),
             "Test API",
             "2.0.0");
   }
@@ -110,6 +130,11 @@ class ApiV2OpenApiGeneratorTest {
   private static final class ExampleConflictException extends RuntimeException {}
 
   private static final class SecondConflictException extends RuntimeException {}
+
+  @SuppressWarnings("unchecked")
+  private static ProtectedResourceAccess<BookingConfiguration, Long> protectedAccess() {
+    return mock(ProtectedResourceAccess.class);
+  }
 
   @Test
   void generatesConcretePathsAndKeepsTargetOnlyResourcesSchemaOnly() {
@@ -140,6 +165,33 @@ class ApiV2OpenApiGeneratorTest {
     assertTrue(schemas.containsKey("InstrumentsRead"));
     assertTrue(schemas.containsKey("InstrumentsReference"));
     assertFalse(schemas.containsKey("InstrumentsCreate"));
+  }
+
+  @Test
+  void documentsAccessOnlyForRegisteredProtectedResources() {
+    Map<String, Object> document = document();
+    Map<String, Object> paths = objectMap(document.get("paths"));
+    String accessPath = "/api/v2/booking-configurations/{id}/access";
+
+    assertEquals(Set.of("get", "put"), objectMap(paths.get(accessPath)).keySet());
+    assertTrue(paths.containsKey(accessPath + "/me"));
+    assertTrue(paths.containsKey(accessPath + "/grantees"));
+    assertTrue(paths.containsKey("/api/v2/booking-settings/access-grantees"));
+    assertTrue(paths.containsKey("/api/v2/booking-configuration-targets"));
+    assertFalse(paths.containsKey("/api/v2/maintenances/{id}/access"));
+
+    Map<String, Object> schemas = schemas(document);
+    assertTrue(schemas.containsKey("ResourceAccessDocument"));
+    assertTrue(schemas.containsKey("ResourceAccessReplacement"));
+    assertTrue(schemas.containsKey("BookingConfigurationTarget"));
+    Map<String, Object> readProperties =
+        objectMap(objectMap(schemas.get("BookingConfigurationsRead")).get("properties"));
+    assertEquals(
+        "#/components/schemas/BookingConfigurationCapabilities",
+        objectMap(readProperties.get("capabilities")).get("$ref"));
+    assertEquals(
+        "#/components/schemas/ResourceRoleSource",
+        objectMap(objectMap(readProperties.get("roleSources")).get("items")).get("$ref"));
   }
 
   @Test
@@ -355,7 +407,7 @@ class ApiV2OpenApiGeneratorTest {
 
     Map<String, Object> bookingProperties =
         objectMap(objectMap(schemas.get("BookingConfigurationsCreate")).get("properties"));
-    assertTrue(bookingProperties.containsKey("timezone"));
+    assertFalse(bookingProperties.containsKey("timezone"));
     assertFalse(bookingProperties.containsKey("timeZone"));
     Map<String, Object> target = objectMap(bookingProperties.get("target"));
     assertEquals("Booking target", target.get("title"));
@@ -381,7 +433,7 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> targetReference = objectMap(targetOutputVariants.get(0));
     List<?> targetReferenceParts = (List<?>) targetReference.get("allOf");
     assertEquals(
-        "#/components/schemas/InstrumentsReference",
+        "#/components/schemas/BookingInstrumentsReference",
         objectMap(targetReferenceParts.get(0)).get("$ref"));
     Map<String, Object> targetReferenceProperties =
         objectMap(objectMap(targetReferenceParts.get(1)).get("properties"));

@@ -152,10 +152,12 @@ class InventoryReadRestrictionTest {
   }
 
   private FilterExpression filter() {
-    return access
-        .check(new AccessContext(user, Operation.READ, "instruments"))
-        .constraintOrEmpty()
-        .orElseThrow();
+    return org.junit.jupiter.api.Assertions.assertInstanceOf(
+        FilterExpression.class,
+        access
+            .check(new AccessContext(user, Operation.READ, "instruments"))
+            .constraintOrEmpty()
+            .orElseThrow());
   }
 
   private static FilterExpression.Comparison comparison(

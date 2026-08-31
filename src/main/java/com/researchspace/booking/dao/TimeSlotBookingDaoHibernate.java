@@ -3,7 +3,6 @@ package com.researchspace.booking.dao;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
-import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
@@ -21,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 /** Hibernate persistence for one-off time-slot bookings. */
@@ -28,41 +28,40 @@ import org.springframework.stereotype.Repository;
 public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBooking, Long>
     implements TimeSlotBookingDao {
 
-  private static final CollectionQueryExecutor<TimeSlotBooking> COLLECTION_QUERY =
-      new CollectionQueryExecutor<>(
-          TimeSlotBooking.class, ApiV2TimeSlotBookingResource.DESCRIPTION, "booking");
-
   private static final FilterExpression ACTIVE =
       new FilterExpression.Comparison("deleted", Operator.EQUAL, List.of(false), false);
 
   private final CriteriaBuilderFactory criteriaBuilderFactory;
+  private final CollectionQueryExecutor<TimeSlotBooking> collectionQuery;
 
   public TimeSlotBookingDaoHibernate(
-      SessionFactory sessionFactory, CriteriaBuilderFactory criteriaBuilderFactory) {
+      SessionFactory sessionFactory,
+      CriteriaBuilderFactory criteriaBuilderFactory,
+      @Qualifier(
+              com.researchspace.booking.config.BookingResourceAccessConfiguration
+                  .TIME_SLOT_BOOKING_DESCRIPTION)
+          com.researchspace.model.collection.CollectionDescription<TimeSlotBooking> description) {
     super(TimeSlotBooking.class, sessionFactory);
     this.criteriaBuilderFactory = criteriaBuilderFactory;
+    collectionQuery = new CollectionQueryExecutor<>(TimeSlotBooking.class, description, "booking");
   }
 
   @Override
   public ResourcePage<TimeSlotBooking> getReadableResources(
       ResourceRequest request, RelationshipReadAccess targetAccess) {
-    return COLLECTION_QUERY.page(
+    return collectionQuery.page(
         criteriaBuilderFactory,
         getSession(),
         request.restrict(ACTIVE),
-        COLLECTION_QUERY.compileReadableRelationship("target", targetAccess),
+        null,
         targetAccess,
         List.of("bookingConfiguration"));
   }
 
   @Override
   public long countReadableResources(ResourceRequest request, RelationshipReadAccess targetAccess) {
-    return COLLECTION_QUERY.count(
-        criteriaBuilderFactory,
-        getSession(),
-        request.restrict(ACTIVE),
-        COLLECTION_QUERY.compileReadableRelationship("target", targetAccess),
-        targetAccess);
+    return collectionQuery.count(
+        criteriaBuilderFactory, getSession(), request.restrict(ACTIVE), null, targetAccess);
   }
 
   @Override

@@ -8,6 +8,7 @@ export type TestRecord = {
   score: number;
   enabled: boolean;
   modifiedAt: string;
+  capability?: boolean;
 };
 
 export const config = resolveCollectionConfig<TestRecord>({

@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
+import com.researchspace.booking.service.BookingConfigurationOwnershipManager;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
@@ -86,6 +87,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired BookingConfigurationOwnershipManager bookingOwnershipManager;
 
   @Override
   public boolean instrumentExists(long id) {
@@ -531,14 +533,27 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument changeApiInstrumentOwner(ApiInstrument apiInstrument, User user) {
+    return changeApiInstrumentOwner(apiInstrument, user, user, false);
+  }
+
+  @Override
+  public ApiInstrument changeApiInstrumentOwner(
+      ApiInstrument apiInstrument,
+      User subject,
+      User actor,
+      boolean transferBookingConfigurationOwnership) {
     Validate.notNull(apiInstrument.getOwner(), "'owner' field not present");
     Validate.notNull(apiInstrument.getOwner().getUsername(), "'owner.username' field not present");
 
-    assertUserCanTransferInstrument(apiInstrument.getId(), user);
+    assertUserCanTransferInstrument(apiInstrument.getId(), subject);
     Instrument dbInstrument = (Instrument) getIfExists(apiInstrument.getId());
-    boolean temporaryLock = lockItemForEdit(dbInstrument, user);
+    boolean temporaryLock = lockItemForEdit(dbInstrument, subject);
     try {
-      dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
+      dbInstrument =
+          instrumentDao
+              .lockById(dbInstrument.getId())
+              .orElseThrow(() -> new NotFoundException("Instrument not found"));
+      assertUserCanTransferInstrument(dbInstrument.getId(), subject);
       User originalOwner = dbInstrument.getOwner();
       String newOwnerUsername = apiInstrument.getOwner().getUsername();
       if (!originalOwner.getUsername().equals(newOwnerUsername)) {
@@ -546,18 +561,22 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
             userManager.userExists(newOwnerUsername),
             "Target user [" + newOwnerUsername + "] not found");
         User newOwner = userManager.getUserByUsername(newOwnerUsername);
+        if (transferBookingConfigurationOwnership) {
+          bookingOwnershipManager.transferInstrumentOwnership(
+              dbInstrument.getId(), originalOwner, newOwner, subject, actor);
+        }
         dbInstrument.setOwner(newOwner);
         moveItemBetweenWorkbenches(dbInstrument, originalOwner, newOwner);
         instrumentDao.save(dbInstrument);
         publisher.publishEvent(
-            new InventoryTransferEvent(dbInstrument, user, originalOwner, newOwner));
+            new InventoryTransferEvent(dbInstrument, actor, originalOwner, newOwner));
       }
     } finally {
       if (temporaryLock) {
-        unlockItemAfterEdit(dbInstrument, user);
+        unlockItemAfterEdit(dbInstrument, subject);
       }
     }
-    return getInstrumentById(dbInstrument.getId(), user);
+    return getInstrumentById(dbInstrument.getId(), subject);
   }
 
   @Override

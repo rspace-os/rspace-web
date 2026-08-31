@@ -3,9 +3,13 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserSetup";
-import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
+import {
+  emulateForcedColors,
+  emulateReducedMotion,
+  expectNoAxeViolations,
+} from "@/__tests__/pageObjects/accessibility";
 import { BookableItemPageStory } from "./BookableItemPage.story";
-import { bookableItemDetailsHandlers, bookableItemFixtures } from "./mocks/bookableItemsMocks";
+import { bookableItemDetailsHandlers, bookableItemFixtures, bookerBookingAccess } from "./mocks/bookableItemsMocks";
 import { BookableItemPage } from "./pageObjects/BookableItemPage";
 
 const pageObj = new BookableItemPage();
@@ -42,6 +46,27 @@ function registerHandlers() {
   worker.use(
     ...bookableItemDetailsHandlers(),
     http.patch("/api/v2/booking-configurations/7", () => new HttpResponse(null, { status: 204 })),
+  );
+}
+
+function useBookerConfiguration() {
+  worker.use(
+    http.get("/api/v2/booking-configurations", ({ request }) => {
+      const where = new URL(request.url).searchParams.get("where") ?? "";
+      if (!where.includes("IN123")) return undefined;
+      return HttpResponse.json({
+        docs: [{ ...bookableItemFixtures[0], ...bookerBookingAccess }],
+        totalDocs: 1,
+        limit: 2,
+        page: 1,
+        pagingCounter: 1,
+        totalPages: 1,
+        hasPrevPage: false,
+        hasNextPage: false,
+        prevPage: null,
+        nextPage: null,
+      });
+    }),
   );
 }
 
@@ -129,6 +154,7 @@ describe("BookableItemPage", () => {
   });
 
   test("keeps the calendar control available to an ordinary readable user", async () => {
+    useBookerConfiguration();
     render(<BookableItemPageStory hasSysAdminRole={false} />);
     await expect.element(pageObj.heading).toBeVisible();
     await expect.element(pageObj.calendarTrigger).toBeVisible();
@@ -416,6 +442,54 @@ describe("BookableItemPage", () => {
     await expect.element(pageObj.auditPanel).toBeVisible();
   });
 
+  test("manages access by keyboard with safe roles, announcements, responsive layout, and accessibility modes", async () => {
+    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
+    await emulateForcedColors();
+    await emulateReducedMotion();
+    await page.viewport(320, 900);
+
+    try {
+      render(<BookableItemPageStory />);
+      await expect.element(pageObj.heading).toBeVisible();
+      pageObj.accessTab.element().focus();
+      await userEvent.keyboard("{Enter}");
+      await expect.element(pageObj.accessPanel).toBeVisible();
+      expect(pageObj.accessTab.element().getAttribute("aria-controls")).toBe(pageObj.accessPanel.element().id);
+      expect(pageObj.accessPanel.element().getAttribute("aria-labelledby")).toBe(pageObj.accessTab.element().id);
+
+      const search = page.getByRole("textbox", { name: "Add user or group" });
+      await userEvent.fill(search, "gr");
+      await userEvent.keyboard("{Enter}");
+      const addGrace = page.getByRole("button", { name: "Add Grace Hopper" });
+      await expect.element(addGrace).toBeVisible();
+      await addGrace.click();
+      const graceRole = page.getByRole("combobox", { name: "Direct role for Grace Hopper" });
+      await expect.element(graceRole).toHaveValue("BOOKER");
+      await graceRole.selectOptions("VIEWER");
+      await expect.element(graceRole).toHaveValue("VIEWER");
+      await page.getByRole("button", { name: "Remove All users" }).click();
+      await expect.element(page.getByText("Access changes are not yet saved.", { exact: true })).toBeVisible();
+
+      await page.getByRole("button", { name: "Cancel" }).click();
+      const assignments = page.getByRole("list", { name: "Access assignments" });
+      await expect.element(assignments.getByText("All users", { exact: true })).toBeVisible();
+      await expect.element(assignments.getByText("Grace Hopper", { exact: true })).not.toBeInTheDocument();
+      await expect.element(page.getByText("Unsaved access changes were cancelled.", { exact: true })).toBeVisible();
+
+      await userEvent.fill(search, "gr");
+      await userEvent.keyboard("{Enter}");
+      await page.getByRole("button", { name: "Add Grace Hopper" }).click();
+      await page.getByRole("button", { name: "Save changes" }).click();
+      const savedStatus = page.getByText("Access changes saved.", { exact: true });
+      await expect.element(savedStatus).toBeVisible();
+      await expect.element(savedStatus).toHaveFocus();
+      await expect.poll(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth).toBe(true);
+      await expectNoAxeViolations();
+    } finally {
+      await page.viewport(originalViewport.width, originalViewport.height);
+    }
+  });
+
   test("blocks tab changes during PATCH and restores focus after saving", async () => {
     let releasePatch: (() => void) | undefined;
     worker.use(
@@ -520,7 +594,7 @@ describe("BookableItemPage", () => {
     try {
       render(<BookableItemPageStory />);
       const longHeading = page.getByRole("heading", { level: 1, name: longName });
-      const globalId = page.getByRole("link", { name: `View ${longName} in Inventory` });
+      const globalId = page.getByText("IN123", { exact: true });
       await expect.element(longHeading).toBeVisible();
       await pageObj.openEditor();
 
@@ -547,6 +621,7 @@ describe("BookableItemPage", () => {
 
   test("keeps ordinary users read-only on a direct edit URL", async () => {
     window.history.replaceState({}, "", "/booking/bookable-items/IN123?tab=details&edit=true");
+    useBookerConfiguration();
     render(<BookableItemPageStory hasSysAdminRole={false} />);
 
     await expect.element(page.getByText("Booking rules")).toBeVisible();

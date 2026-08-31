@@ -18,13 +18,13 @@ import com.researchspace.booking.service.TimeSlotBookingManager;
 import com.researchspace.booking.service.TimeSlotBookingManager.Create;
 import com.researchspace.booking.service.TimeSlotBookingManager.Patch;
 import com.researchspace.model.User;
-import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResolvedResourceReference;
@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -58,11 +59,18 @@ public final class TimeSlotBookingResourceOperations
 
   private final TimeSlotBookingManager manager;
   private final FeatureFlagManager featureFlags;
+  private final CollectionDescription<TimeSlotBooking> description;
 
   public TimeSlotBookingResourceOperations(
-      TimeSlotBookingManager manager, FeatureFlagManager featureFlags) {
+      TimeSlotBookingManager manager,
+      FeatureFlagManager featureFlags,
+      @Qualifier(
+              com.researchspace.booking.config.BookingResourceAccessConfiguration
+                  .TIME_SLOT_BOOKING_DESCRIPTION)
+          CollectionDescription<TimeSlotBooking> description) {
     this.manager = manager;
     this.featureFlags = featureFlags;
+    this.description = description;
   }
 
   @Bean
@@ -105,7 +113,7 @@ public final class TimeSlotBookingResourceOperations
                         "The event changed while it was being edited.")))
             .toList();
     return new ApiV2ResourceSpec<>(
-        ApiV2TimeSlotBookingResource.DESCRIPTION,
+        description,
         this,
         Long::valueOf,
         "errors.api.v2.booking.create",
@@ -120,7 +128,7 @@ public final class TimeSlotBookingResourceOperations
                 .requestExample(
                     Map.of(
                         "target",
-                        Map.of("relationTo", "instruments", "value", 123),
+                        Map.of("relationTo", "booking-instruments", "value", 123),
                         "start",
                         "2026-10-25T07:30:00Z",
                         "end",
@@ -181,7 +189,7 @@ public final class TimeSlotBookingResourceOperations
         value(document, "state", BookingState.class));
   }
 
-  private static ResolvedBookableTarget target(ParsedDocument document) {
+  private ResolvedBookableTarget target(ParsedDocument document) {
     Object value = document.values().get("target");
     if (value == null) {
       return null;
@@ -190,8 +198,7 @@ public final class TimeSlotBookingResourceOperations
     ResourceReference<?, ?> reference = resolved.reference();
     BookableTargetType type = BookableTargetType.class.cast(reference.kind());
     Long id = Long.class.cast(reference.id());
-    RelationshipTarget<?> metadata =
-        ApiV2TimeSlotBookingResource.DESCRIPTION.requireRelationship("target").targetForKind(type);
+    RelationshipTarget<?> metadata = description.requireRelationship("target").targetForKind(type);
     InventoryRecord entity = InventoryRecord.class.cast(resolved.entityAs(metadata.entityType()));
     return new ResolvedBookableTarget(new BookableTargetReference(type, id), entity);
   }

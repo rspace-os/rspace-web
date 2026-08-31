@@ -11,8 +11,10 @@ import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
+import com.researchspace.booking.service.BookingConfigurationProtectedResourceAccess;
 import com.researchspace.featureflags.FeatureFlags;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
@@ -38,10 +40,17 @@ import org.junit.jupiter.api.Test;
 class BookingConfigurationResourceOperationsTest {
 
   private final BookingConfigurationManager manager = mock(BookingConfigurationManager.class);
+  private final BookingConfigurationProtectedResourceAccess protectedResourceAccess =
+      mock(BookingConfigurationProtectedResourceAccess.class);
   private final FeatureFlagManager featureFlags = mock(FeatureFlagManager.class);
   private final Clock institutionClock = Clock.fixed(Instant.EPOCH, ZoneId.of("Pacific/Auckland"));
   private final BookingConfigurationResourceOperations operations =
-      new BookingConfigurationResourceOperations(manager, featureFlags, institutionClock);
+      new BookingConfigurationResourceOperations(
+          manager,
+          protectedResourceAccess,
+          featureFlags,
+          institutionClock,
+          ApiV2BookingConfigurationResource.DESCRIPTION);
   private final User actor = mock(User.class);
 
   @BeforeEach

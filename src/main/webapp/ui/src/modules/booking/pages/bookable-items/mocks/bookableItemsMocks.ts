@@ -5,6 +5,45 @@ import {
 } from "@/modules/booking/configuration/schedulingSettings";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 
+export const ownerBookingAccess = {
+  effectiveRole: "OWNER",
+  roleSources: [],
+  capabilities: {
+    canEditConfiguration: true,
+    canArchiveConfiguration: true,
+    canViewAudit: true,
+    canViewAccess: true,
+    canManageAssignments: true,
+    canManageOwners: true,
+    canCreateBooking: true,
+    canManageOwnBookings: true,
+    canManageAllEvents: true,
+    canCreateBlockout: true,
+    canSubscribeCalendar: true,
+    canLeaveConfiguration: false,
+  },
+  ownerHealth: { hasEffectiveOwner: true },
+} as const;
+
+export const bookerBookingAccess = {
+  effectiveRole: "BOOKER",
+  roleSources: [],
+  capabilities: {
+    canEditConfiguration: false,
+    canArchiveConfiguration: false,
+    canViewAudit: false,
+    canViewAccess: false,
+    canManageAssignments: false,
+    canManageOwners: false,
+    canCreateBooking: true,
+    canManageOwnBookings: true,
+    canManageAllEvents: false,
+    canCreateBlockout: false,
+    canSubscribeCalendar: true,
+    canLeaveConfiguration: false,
+  },
+} as const;
+
 export const bookableItemsOpenApi = {
   paths: {
     "/api/v2/booking-configurations": {
@@ -100,7 +139,7 @@ export const bookableItemsOpenApi = {
                 catalog: "/api/v2/instruments/fields/customFields",
                 responseField: "target.customFields",
                 via: "target",
-                viaResource: "instruments",
+                viaResource: "booking-instruments",
                 filterable: true,
                 columnSelectable: true,
                 sortable: false,
@@ -121,6 +160,10 @@ export const bookableItemsOpenApi = {
                 "timezone",
                 ...schedulingSettingsFieldNames,
                 "updatedAt",
+                "effectiveRole",
+                "roleSources",
+                "capabilities",
+                "ownerHealth",
               ],
             },
           },
@@ -133,8 +176,9 @@ export const bookableItemsOpenApi = {
 export const bookableItemFixtures = [
   {
     id: 7,
+    ...ownerBookingAccess,
     target: {
-      relationTo: "instruments",
+      relationTo: "booking-instruments",
       value: {
         id: 123,
         name: "Confocal microscope",
@@ -154,8 +198,9 @@ export const bookableItemFixtures = [
   },
   {
     id: 8,
+    ...ownerBookingAccess,
     target: {
-      relationTo: "instruments",
+      relationTo: "booking-instruments",
       value: {
         id: 124,
         name: "Electron microscope",
@@ -172,8 +217,9 @@ export const bookableItemFixtures = [
   },
   {
     id: 9,
+    ...ownerBookingAccess,
     target: {
-      relationTo: "instruments",
+      relationTo: "booking-instruments",
       value: {
         id: 125,
         name: "Mass spectrometer",
@@ -190,8 +236,9 @@ export const bookableItemFixtures = [
   },
   {
     id: 10,
+    ...ownerBookingAccess,
     target: {
-      relationTo: "instruments",
+      relationTo: "booking-instruments",
       value: {
         id: 126,
         name: "Flow cytometer",
@@ -210,8 +257,9 @@ export const bookableItemFixtures = [
   },
   {
     id: 11,
+    ...ownerBookingAccess,
     target: {
-      relationTo: "instruments",
+      relationTo: "booking-instruments",
       value: {
         id: 127,
         name: "Microplate reader",
@@ -385,6 +433,45 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
 }
 
 export function bookableItemDetailsHandlers(): RequestHandler[] {
+  let accessVersion = 3;
+  let accessAssignments = [
+    {
+      grantee: {
+        kind: "USER",
+        id: 1,
+        key: "user:1",
+        name: "Ada Lovelace",
+        detail: "ada",
+        available: true,
+        effectiveRole: "OWNER",
+        roleSources: [],
+      },
+      role: "OWNER",
+    },
+    {
+      grantee: {
+        kind: "AUDIENCE",
+        id: "ALL_USERS",
+        key: "audience:all-users",
+        name: "All users",
+        detail: null,
+        available: true,
+        effectiveRole: null,
+        roleSources: [],
+      },
+      role: "BOOKER",
+    },
+  ];
+  const accessDocument = () => ({
+    scheme: "booking-configurations",
+    version: accessVersion,
+    assignments: accessAssignments,
+    caller: {
+      effectiveRole: "OWNER",
+      roleSources: [],
+      capabilities: { canManageAssignments: true, canManageOwners: true, canLeave: false },
+    },
+  });
   return [
     http.get("/api/v2/booking-configurations", ({ request }) => {
       const where = new URL(request.url).searchParams.get("where") ?? "";
@@ -431,5 +518,35 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
         subscriptionUrl: `https://rspace.example/public/booking/calendars/feed.ics?token=${"c".repeat(43)}`,
       }),
     ),
+    http.get("/api/v2/booking-configurations/7/access", () =>
+      HttpResponse.json(accessDocument(), { headers: { ETag: `"${accessVersion}"` } }),
+    ),
+    http.get("/api/v2/booking-configurations/7/access/grantees", () =>
+      HttpResponse.json([{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }]),
+    ),
+    http.put("/api/v2/booking-configurations/7/access", async ({ request }) => {
+      const body = (await request.json()) as {
+        assignments: Array<{ granteeKey: string; role: string }>;
+      };
+      accessVersion += 1;
+      accessAssignments = body.assignments.map(({ granteeKey, role }) => {
+        if (granteeKey === "user:1") return { ...accessAssignments[0], role };
+        if (granteeKey === "audience:all-users") return { ...accessAssignments[1], role };
+        return {
+          grantee: {
+            kind: "USER",
+            id: 2,
+            key: "user:2",
+            name: "Grace Hopper",
+            detail: "grace",
+            available: true,
+            effectiveRole: role,
+            roleSources: [],
+          },
+          role,
+        };
+      });
+      return HttpResponse.json(accessDocument(), { headers: { ETag: `"${accessVersion}"` } });
+    }),
   ];
 }

@@ -11,16 +11,33 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
+import com.researchspace.booking.service.BookingConfigurationManager;
+import com.researchspace.booking.service.BookingConfigurationProtectedResourceAccess;
+import com.researchspace.booking.service.BookingResourceRoleScheme;
 import com.researchspace.core.testutil.CoreTestUtils;
+import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
+import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
+import com.researchspace.service.resourceaccess.ResourceAccessDocument;
+import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
+import org.hibernate.Hibernate;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase {
+
+  @Autowired private BookingConfigurationManager bookingConfigurationManager;
+  @Autowired private BookingConfigurationProtectedResourceAccess bookingProtectedAccess;
+  @Autowired private ResourceAccessManager resourceAccessManager;
+  @Autowired private InstrumentDao instrumentDao;
 
   @Test
   public void checkBasicInstrumentCreateRetrieveAndExists() throws Exception {
@@ -202,6 +219,47 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
     assertThrows(
         Exception.class,
         () -> instrumentApiMgr.assertUserCanEditInstrument(transferred.getId(), owner));
+  }
+
+  @Test
+  public void changeApiInstrumentOwner_canTransferBookingConfigurationOwnershipTogether()
+      throws Exception {
+    User owner = createAndSaveUser(CoreTestUtils.getRandomName(10));
+    setUpUserWithoutCustomContent(owner);
+    User newOwner = createAndSaveUser(CoreTestUtils.getRandomName(10));
+    setUpUserWithoutCustomContent(newOwner);
+
+    ApiInstrument created = createBasicInstrumentForUser(owner, "booking-owner-transfer");
+    openTransaction();
+    Instrument instrument = instrumentDao.get(created.getId());
+    Hibernate.initialize(instrument.getOwner());
+    commitTransaction();
+    BookableTargetReference target =
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, created.getId());
+    BookingConfiguration configuration =
+        bookingConfigurationManager.createConfiguration(
+            new BookingConfigurationManager.Create(
+                true, "UTC", new ResolvedBookableTarget(target, instrument)),
+            owner,
+            owner);
+
+    created.setOwner(new ApiUser(newOwner));
+    ApiInstrument transferred =
+        instrumentApiMgr.changeApiInstrumentOwner(created, owner, owner, true);
+
+    assertEquals(newOwner.getUsername(), transferred.getOwner().getUsername());
+    ResourceAccessDocument access =
+        resourceAccessManager.get(bookingProtectedAccess, configuration.getId(), newOwner);
+    assertTrue(hasDirectRole(access, newOwner, BookingResourceRoleScheme.OWNER));
+    assertFalse(hasDirectRole(access, owner, BookingResourceRoleScheme.OWNER));
+  }
+
+  private boolean hasDirectRole(ResourceAccessDocument access, User user, String role) {
+    return access.assignments().stream()
+        .anyMatch(
+            assignment ->
+                assignment.role().equals(role)
+                    && assignment.grantee().detail().equals(user.getUsername()));
   }
 
   @Test

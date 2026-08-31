@@ -1,4 +1,4 @@
-import type { Browser, BrowserContext, BrowserContextOptions } from "@playwright/test";
+import type { Browser, BrowserContext, BrowserContextOptions, Page } from "@playwright/test";
 import type { SysadminClient } from "../api/clients/SysadminClient";
 import { LoginPage } from "../pageObjects/auth/LoginPage";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
@@ -13,10 +13,10 @@ export async function createDynamicUser(
   clientSysadmin: SysadminClient,
   role: CreatableRole,
   namePrefix: string,
-): Promise<{ username: string; password: string; apiKey: string }> {
+): Promise<{ id: number; username: string; password: string; apiKey: string }> {
   const username = alphaNumericUnique(namePrefix);
   const apiKey = alphaNumericUnique(`${namePrefix}Key`).slice(0, 32);
-  await clientSysadmin.createUser({
+  const created = await clientSysadmin.createUser({
     username,
     password: DYNAMIC_USER_PASSWORD,
     email: `${username}@example.com`,
@@ -25,21 +25,21 @@ export async function createDynamicUser(
     role,
     apiKey,
   });
-  return { username, password: DYNAMIC_USER_PASSWORD, apiKey };
+  return { id: created.id, username, password: DYNAMIC_USER_PASSWORD, apiKey };
 }
 
 export async function loginInNewContext(
   browser: Browser,
   browserContextOptions: BrowserContextOptions,
   { username, password }: { username: string; password: string },
-): Promise<{ ctx: BrowserContext; workspace: WorkspacePage; close: () => Promise<void> }> {
+): Promise<{ ctx: BrowserContext; page: Page; workspace: WorkspacePage; close: () => Promise<void> }> {
   const ctx = await browser.newContext({ ...browserContextOptions, storageState: undefined });
   const page = await ctx.newPage();
   const loginPage = new LoginPage(page);
   await loginPage.open();
   await loginPage.login(username, password);
   await page.waitForURL((url) => !url.pathname.includes("/login"));
-  return { ctx, workspace: new WorkspacePage(page), close: () => ctx.close() };
+  return { ctx, page, workspace: new WorkspacePage(page), close: () => ctx.close() };
 }
 
 type DynamicUserFixtures = {

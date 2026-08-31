@@ -866,7 +866,11 @@ export default class Search implements SearchInterface {
     this.fetcher.replaceResult(result);
   }
 
-  async transferRecords(username: Username, records: Array<InventoryRecord>): Promise<void> {
+  async transferRecords(
+    username: Username,
+    records: Array<InventoryRecord>,
+    transferBookingConfigurationOwnership = false,
+  ): Promise<void> {
     const { peopleStore } = getRootStore();
     this.setProcessingContextActions(true);
 
@@ -884,7 +888,7 @@ export default class Search implements SearchInterface {
             record: Record<string, unknown> & { globalId: GlobalId };
           }>;
           errorCount: number;
-        }>(prepareRecordsForBulkApi(records), "CHANGE_OWNER", true),
+        }>(prepareRecordsForBulkApi(records), "CHANGE_OWNER", true, transferBookingConfigurationOwnership),
       );
 
       const factory = this.factory.newFactory();
@@ -909,7 +913,7 @@ export default class Search implements SearchInterface {
           record: r,
         })),
         "transfer",
-        (erroredRecords) => this.transferRecords(username, erroredRecords),
+        (erroredRecords) => this.transferRecords(username, erroredRecords, transferBookingConfigurationOwnership),
       );
       handleDetailedSuccesses(successfullyTranferred, "transferred", () => "transferred", translatedHelpMessage);
       await this.updateStateAfterTransfer(new RsSet(successfullyTranferred));

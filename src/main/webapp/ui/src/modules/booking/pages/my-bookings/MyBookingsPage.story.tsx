@@ -10,8 +10,10 @@ import {
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
+import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
 import { createBookableItemRoute } from "../bookable-items/routes";
+import { inheritedBrowserBookingPreferences } from "../preferences/bookingPreferencesFixtures";
 import { MyBookingsRoutePage } from "./MyBookingsPage";
 import { bookingsOpenApi } from "./mocks/bookingMocks";
 
@@ -29,6 +31,7 @@ export function MyBookingsPageStory() {
   }
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
+  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
   queryClient.setQueryData(
     ["api-v2", "openapi", "bookings"],
     apiV2CollectionMetadataFromOpenApi(bookingsOpenApi, "bookings"),

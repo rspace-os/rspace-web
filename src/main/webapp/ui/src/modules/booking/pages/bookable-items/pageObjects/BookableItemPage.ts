@@ -2,13 +2,15 @@ import { type Locator, page } from "vitest/browser";
 
 export class BookableItemPage {
   readonly heading: Locator = page.getByRole("heading", { level: 1, name: "Confocal microscope" });
-  readonly globalId: Locator = page.getByRole("link", { name: "View Confocal microscope in Inventory" });
+  readonly globalId: Locator = page.getByText("IN123", { exact: true });
   readonly bookingsTab: Locator = page.getByRole("tab", { name: "Bookings" });
   readonly detailsTab: Locator = page.getByRole("tab", { name: "Details" });
   readonly auditTab: Locator = page.getByRole("tab", { name: "Audit log" });
+  readonly accessTab: Locator = page.getByRole("tab", { name: "Access" });
   readonly bookingsPanel: Locator = page.getByRole("tabpanel", { name: "Bookings", includeHidden: true });
   readonly detailsPanel: Locator = page.getByRole("tabpanel", { name: "Details", includeHidden: true });
   readonly auditPanel: Locator = page.getByRole("tabpanel", { name: "Audit log", includeHidden: true });
+  readonly accessPanel: Locator = page.getByRole("tabpanel", { name: "Access", includeHidden: true });
 
   get calendarTrigger(): Locator {
     return page.getByRole("button", { name: "Add to calendar" });

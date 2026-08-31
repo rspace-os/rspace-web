@@ -7,13 +7,13 @@ import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.model.User;
+import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InventoryBulkOperationApiManager;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler.InventoryBulkOperationException;
 import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +33,10 @@ public class InventoryBulkOperationsApiController extends BaseApiInventoryContro
 
   @Autowired private SmartValidator mvcValidator;
   @Autowired private ApiControllerAdvice apiControllerAdvice;
+  @Autowired private UserManager userManager;
 
   @Setter
   @Getter
-  @AllArgsConstructor
   public static class InventoryBulkOperationConfig {
 
     private BulkApiOperationType operationType;
@@ -44,12 +44,40 @@ public class InventoryBulkOperationsApiController extends BaseApiInventoryContro
 
     private boolean onErrorStopWithException = true;
     private User user;
+    private User actor;
+    private boolean transferBookingConfigurationOwnership;
 
-    public InventoryBulkOperationConfig(ApiInventoryBulkOperationPost apiRequest, User user) {
+    public InventoryBulkOperationConfig(
+        ApiInventoryBulkOperationPost apiRequest, User user, User actor) {
       operationType = apiRequest.getOperationType();
       records = apiRequest.getRecords();
       onErrorStopWithException = apiRequest.isRollbackOnError();
       this.user = user;
+      this.actor = actor;
+      transferBookingConfigurationOwnership = apiRequest.isTransferBookingConfigurationOwnership();
+    }
+
+    public InventoryBulkOperationConfig(
+        BulkApiOperationType operationType,
+        List<ApiInventoryRecordInfo> records,
+        boolean onErrorStopWithException,
+        User user) {
+      this(operationType, records, onErrorStopWithException, user, user, false);
+    }
+
+    public InventoryBulkOperationConfig(
+        BulkApiOperationType operationType,
+        List<ApiInventoryRecordInfo> records,
+        boolean onErrorStopWithException,
+        User user,
+        User actor,
+        boolean transferBookingConfigurationOwnership) {
+      this.operationType = operationType;
+      this.records = records;
+      this.onErrorStopWithException = onErrorStopWithException;
+      this.user = user;
+      this.actor = actor;
+      this.transferBookingConfigurationOwnership = transferBookingConfigurationOwnership;
     }
   }
 
@@ -63,7 +91,8 @@ public class InventoryBulkOperationsApiController extends BaseApiInventoryContro
     throwBindExceptionIfErrors(errors);
 
     InventoryBulkOperationConfig bulkOpConfig =
-        new InventoryBulkOperationConfig(bulkApiRequest, user);
+        new InventoryBulkOperationConfig(
+            bulkApiRequest, user, userManager.getOriginalUserForOperateAs(user));
     if (bulkApiRequest.isRollbackOnError()) {
       ApiInventoryBulkOperationResult initialValidationResult =
           validateRecordsBeforeRunningBulkOperation(bulkOpConfig.getRecords(), errors);

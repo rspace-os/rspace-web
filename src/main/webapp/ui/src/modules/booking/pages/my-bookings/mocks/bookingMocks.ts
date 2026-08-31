@@ -69,6 +69,7 @@ export const bookingsOpenApi = {
                 "requesterId",
                 "kind",
                 "target",
+                "canViewConfiguration",
                 "timezone",
                 "start",
                 "end",
@@ -89,7 +90,7 @@ export const bookingsOpenApi = {
 };
 
 const target = (id: number, name: string) => ({
-  relationTo: "instruments" as const,
+  relationTo: "booking-instruments" as const,
   value: { id, name, deleted: false },
   globalId: `IN${id}`,
 });
@@ -98,6 +99,7 @@ export const upcomingBooking = {
   id: 41,
   kind: "BOOKING",
   target: target(123, "Confocal microscope"),
+  canViewConfiguration: true,
   timezone: "Pacific/Auckland",
   start: "2020-08-23T09:00:00Z",
   end: "2030-08-23T10:00:00Z",
@@ -108,10 +110,18 @@ export const pastBooking = {
   id: 42,
   kind: "BOOKING",
   target: target(124, "Electron microscope"),
+  canViewConfiguration: true,
   timezone: "UTC",
   start: "2020-08-23T09:00:00Z",
   end: "2020-08-23T10:00:00Z",
   purpose: "Completed run",
+};
+
+export const roleLostBooking = {
+  ...upcomingBooking,
+  id: 43,
+  canViewConfiguration: false,
+  purpose: "Retained requester details",
 };
 
 function page(docs: readonly unknown[]) {

@@ -7,9 +7,7 @@ function css(selector: string): Locator {
 
 export class AllBookableItemsPage {
   readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Confocal microscope" });
-  readonly bookableItemDetailsTarget: Locator = page.getByRole("link", {
-    name: "View Confocal microscope in Inventory",
-  });
+  readonly bookableItemDetailsTarget: Locator = page.getByText("IN123", { exact: true });
 
   get table(): Locator {
     return page.getByRole("table");

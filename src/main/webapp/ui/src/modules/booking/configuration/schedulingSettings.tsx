@@ -62,6 +62,17 @@ export const BookingSettingsSchema = v.pipe(
     timezoneMode: v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]),
     customTimezone: v.nullable(v.string()),
     institutionTimezone: v.string(),
+    defaultSharedWith: v.picklist(["ALL_USERS", "SELECTED", "ONLY_ME"]),
+    selectedAccessGrantees: v.array(
+      v.object({
+        kind: v.picklist(["USER", "GROUP"]),
+        id: v.number(),
+        key: v.string(),
+        name: v.string(),
+        detail: v.optional(v.nullable(v.string())),
+        available: v.boolean(),
+      }),
+    ),
     configurationVersion: v.number(),
   }),
   v.forward(
@@ -78,7 +89,11 @@ export const BookingSettingsSchema = v.pipe(
 
 export type SchedulingSettings = v.InferOutput<typeof SchedulingSettingsSchema>;
 export type BookingSettings = v.InferOutput<typeof BookingSettingsSchema>;
-export type BookingSettingsInput = SchedulingSettings & BookingDisplayPreferencesInput;
+export type BookingSettingsInput = SchedulingSettings &
+  BookingDisplayPreferencesInput & {
+    defaultSharedWith: "ALL_USERS" | "SELECTED" | "ONLY_ME";
+    selectedGranteeKeys: readonly string[];
+  };
 
 export const BookingSettingsInputSchema = v.intersect([SchedulingSettingsSchema, BookingDisplayPreferencesInputSchema]);
 
@@ -135,7 +150,13 @@ export async function saveBookingSettings(
       "Content-Type": "application/json",
       "X-Requested-With": "XMLHttpRequest",
     },
-    body: JSON.stringify({ ...scheduling, ...display, configurationVersion }),
+    body: JSON.stringify({
+      ...scheduling,
+      ...display,
+      defaultSharedWith: input.defaultSharedWith,
+      selectedGranteeKeys: input.defaultSharedWith === "SELECTED" ? input.selectedGranteeKeys : [],
+      configurationVersion,
+    }),
   });
   if (!response.ok) throw await parseApiV2Problem(response);
   return parseOrThrow(BookingSettingsSchema, await response.json());

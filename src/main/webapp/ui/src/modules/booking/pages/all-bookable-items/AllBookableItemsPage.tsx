@@ -1,5 +1,12 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { CalendarClockIcon, CalendarPlusIcon, Clock3Icon, EyeIcon } from "lucide-react";
+import {
+  CalendarClockIcon,
+  CalendarPlusIcon,
+  Clock3Icon,
+  EyeIcon,
+  KeyRoundIcon,
+  SettingsIcon,
+} from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AvailabilityBar } from "@/modules/booking/components/AvailabilityBar";
@@ -13,12 +20,11 @@ import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking
 import { addCalendarDays, displayInterval } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import i18n from "@/modules/common/i18n";
 import { useApiV2TableList } from "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
-import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
+import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import {
@@ -30,7 +36,19 @@ import {
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
 import { type AvailabilityQuickFilter, useAvailabilityQuickFilterIndex } from "./availabilityQuickFilters";
 
-const requestProjection = { fixed: ["id", "target", "enabled", "timezone", ...schedulingSettingsFieldNames] } as const;
+const requestProjection = {
+  fixed: [
+    "id",
+    "target",
+    "enabled",
+    "timezone",
+    ...schedulingSettingsFieldNames,
+    "effectiveRole",
+    "roleSources",
+    "capabilities",
+    "ownerHealth",
+  ],
+} as const;
 const baseFilter = {
   kind: "and",
   children: [
@@ -57,18 +75,7 @@ const allBookableItemsConfig: CollectionConfig<BookingConfiguration> = {
             minWidth: 240,
             renderCell: ({ row }: { row: BookingConfiguration }) =>
               row.target ? (
-                <InventoryItem
-                  name={row.target.value.name}
-                  globalId={row.target.globalId}
-                  href={`/globalId/${row.target.globalId}`}
-                  idLinkLabel={i18n.t("common:tableList.filters.openRecord", { globalId: row.target.globalId })}
-                  size="xs"
-                >
-                  <InventoryLocationLink
-                    name={row.target.value.parentContainerName}
-                    globalId={row.target.value.parentContainerGlobalId}
-                  />
-                </InventoryItem>
+                <InventoryItem name={row.target.value.name} globalId={row.target.globalId} size="xs" />
               ) : (
                 <UnknownItem size="xs" />
               ),
@@ -166,8 +173,8 @@ export default function AllBookableItemsPage({
     () => ({
       id: "actions",
       label: t("allBookableItems.fields.actions"),
-      width: 72,
-      minWidth: 68,
+      width: 176,
+      minWidth: 120,
       renderCell: ({ row }) => {
         if (!row.target) return null;
         const rowDate = quickIndex.data?.get(row.target.globalId)?.date ?? selectedDate;
@@ -193,24 +200,68 @@ export default function AllBookableItemsPage({
                 {detailsLabel}
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Link
-                    aria-label={bookLabel}
-                    className={buttonVariants({ variant: "outline", size: "icon-sm" })}
-                    data-slot="button"
-                    to="/booking/calendar/bookings/add"
-                    search={{ date: rowDate, target: row.target.globalId }}
-                  />
-                }
-              >
-                <CalendarPlusIcon aria-hidden="true" />
-              </TooltipTrigger>
-              <TooltipContent role="tooltip" className="rounded-sm">
-                {bookLabel}
-              </TooltipContent>
-            </Tooltip>
+            {row.capabilities?.canCreateBooking ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Link
+                      aria-label={bookLabel}
+                      className={buttonVariants({ variant: "outline", size: "icon-sm" })}
+                      data-slot="button"
+                      to="/booking/calendar/bookings/add"
+                      search={{ date: rowDate, target: row.target.globalId }}
+                    />
+                  }
+                >
+                  <CalendarPlusIcon aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent role="tooltip" className="rounded-sm">
+                  {bookLabel}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+            {row.capabilities?.canEditConfiguration ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Link
+                      aria-label={t("allBookableItems.actions.settings")}
+                      className={buttonVariants({ variant: "outline", size: "icon-sm" })}
+                      data-slot="button"
+                      to="/booking/bookable-items/$globalId"
+                      params={{ globalId: row.target.globalId }}
+                      search={{ tab: "details", edit: true }}
+                    />
+                  }
+                >
+                  <SettingsIcon aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent role="tooltip" className="rounded-sm">
+                  {t("allBookableItems.actions.settings")}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+            {row.capabilities?.canViewAccess ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Link
+                      aria-label={t("allBookableItems.actions.access")}
+                      className={buttonVariants({ variant: "outline", size: "icon-sm" })}
+                      data-slot="button"
+                      to="/booking/bookable-items/$globalId"
+                      params={{ globalId: row.target.globalId }}
+                      search={{ tab: "access" }}
+                    />
+                  }
+                >
+                  <KeyRoundIcon aria-hidden="true" />
+                </TooltipTrigger>
+                <TooltipContent role="tooltip" className="rounded-sm">
+                  {t("allBookableItems.actions.access")}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
           </div>
         );
       },

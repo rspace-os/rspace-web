@@ -13,11 +13,12 @@ const documentSchema = v.object({
   score: v.number(),
   enabled: v.boolean(),
   modifiedAt: v.string(),
+  capability: v.optional(v.boolean()),
 });
 
 const metadata: ApiV2CollectionMetadata<TestRecord> = {
   resourceName: "records",
-  fields: ["id", "title", "owner", "score", "enabled", "modifiedAt"],
+  fields: ["id", "title", "owner", "score", "enabled", "modifiedAt", "capability"],
   sorting: { fields: ["title", "score", "modifiedAt"], default: [], maximumFields: 5 },
   filtering: {
     selectors: {

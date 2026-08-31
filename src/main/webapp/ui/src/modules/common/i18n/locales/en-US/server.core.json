@@ -53,6 +53,9 @@
         },
         "bookingConfiguration": {
           "create": "The booking configuration is invalid.",
+          "defaultSharing": {
+            "invalid": "Choose at least one available user or group when sharing with selected people, and do not include selected people for other sharing options."
+          },
           "buffer": {
             "invalid": "Booking buffers must be between 0 and 10,080 minutes."
           },
@@ -75,6 +78,16 @@
             "invalid": "The time zone must be a valid IANA time zone.",
             "required": "A time zone is required."
           }
+        },
+        "resourceAccess": {
+          "duplicateGrantee": "Each user or group can have only one direct role.",
+          "forbidden": "You do not have permission to manage access to this resource.",
+          "ifMatchRequired": "The current access version is required.",
+          "invalidGrantee": "The selected user or group is no longer available.",
+          "invalidRole": "The selected role is not valid for this resource.",
+          "ownerRequired": "At least one direct Owner must remain.",
+          "selfRemovalRequiresLeave": "Use the leave action to remove your own direct access.",
+          "stale": "Access changed after this page was loaded. Review the latest access before saving again."
         },
         "audit": {
           "range": {

@@ -17,6 +17,7 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
 import { createBookingRoute } from "@/modules/booking/pages/BookingPage";
+import { ownerBookingAccess } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import { createBookableItemRoute } from "@/modules/booking/pages/bookable-items/routes";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { getSidebarRenderer } from "@/modules/common/app/AppShell";
@@ -169,7 +170,7 @@ describe("booking sidebar", () => {
             {
               id: 42,
               target: {
-                relationTo: "instruments",
+                relationTo: "booking-instruments",
                 value: { id: 123, name: "Confocal microscope", deleted: false },
                 globalId: "IN123",
               },
@@ -177,6 +178,7 @@ describe("booking sidebar", () => {
               timezone: "Europe/Berlin",
               ...DEFAULT_SCHEDULING_SETTINGS,
               updatedAt: null,
+              ...ownerBookingAccess,
             },
           ],
           totalDocs: 1,

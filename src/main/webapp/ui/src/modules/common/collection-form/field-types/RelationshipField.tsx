@@ -75,6 +75,7 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
   const common = {
     id,
     name: fieldConfig.name,
+    "aria-label": label,
     disabled: isDisabled,
     required: fieldConfig.required,
     "aria-describedby": describedBy,

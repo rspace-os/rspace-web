@@ -1,6 +1,11 @@
 package com.researchspace.dao.hibernate;
 
+import static org.junit.Assert.assertTrue;
+
 import com.researchspace.dao.BaseDaoTestCase;
+import com.researchspace.model.booking.BookingDefaultAccessGrantee;
+import com.researchspace.model.resourceaccess.ResourceAccess;
+import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.metamodel.EntityType;
 import jakarta.persistence.metamodel.Metamodel;
@@ -41,5 +46,20 @@ public class HibernateConfigurationTest extends BaseDaoTestCase {
     } finally {
       //	session.close();
     }
+  }
+
+  @Test
+  public void resourceAccessEntitiesAreMapped() {
+    Metamodel model = emf.getMetamodel();
+
+    assertTrue(
+        model.getEntities().stream()
+            .anyMatch(entity -> entity.getJavaType() == ResourceAccess.class));
+    assertTrue(
+        model.getEntities().stream()
+            .anyMatch(entity -> entity.getJavaType() == ResourceRoleAssignment.class));
+    assertTrue(
+        model.getEntities().stream()
+            .anyMatch(entity -> entity.getJavaType() == BookingDefaultAccessGrantee.class));
   }
 }

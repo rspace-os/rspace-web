@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -19,6 +18,8 @@ import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
+import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
@@ -28,14 +29,18 @@ import com.researchspace.model.booking.BookingPrivacy;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
+import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.service.inventory.InventoryPermissionUtils;
+import com.researchspace.model.resourceaccess.ResourceAccess;
+import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
+import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
@@ -49,46 +54,59 @@ class TimeSlotBookingManagerTest {
 
   private final TimeSlotBookingDao bookingDao = mock(TimeSlotBookingDao.class);
   private final BookingConfigurationDao configurationDao = mock(BookingConfigurationDao.class);
-  private final InventoryPermissionUtils permissions = mock(InventoryPermissionUtils.class);
   private final InstrumentDao instrumentDao = mock(InstrumentDao.class);
   private final ObjectProvider<ResourceRegistry> registry = mock(ObjectProvider.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   private final BookingSchedulingPolicy schedulingPolicy = new BookingSchedulingPolicyImpl();
   private final BookingMaintenancePolicy maintenancePolicy = new BookingMaintenancePolicyImpl();
   private final User actor = mock(User.class);
+  private final ResourceAccessManager accessManager = mock(ResourceAccessManager.class);
   private final TimeSlotBookingManager manager =
       new TimeSlotBookingManagerImpl(
           bookingDao,
           configurationDao,
-          permissions,
           schedulingPolicy,
           maintenancePolicy,
           instrumentDao,
           registry,
-          events);
+          events,
+          accessManager,
+          ApiV2TimeSlotBookingResource.DESCRIPTION,
+          ApiV2BookingConfigurationResource.DESCRIPTION);
 
   @BeforeEach
   void setUp() {
     when(actor.getId()).thenReturn(1L);
     when(actor.getUsername()).thenReturn("ada");
     when(actor.getFullName()).thenReturn("Ada Lovelace");
+    when(actor.isEnabled()).thenReturn(true);
     when(registry.getObject())
         .thenReturn(
             new ResourceRegistry(
                 List.of(
                     ApiV2TimeSlotBookingResource.DESCRIPTION,
-                    ApiV2InstrumentResource.DESCRIPTION)));
+                    ApiV2BookingConfigurationResource.DESCRIPTION,
+                    ApiV2BookingInstrumentResource.DESCRIPTION,
+                    ApiV2InstrumentResource.DESCRIPTION,
+                    ApiV2UserResource.DESCRIPTION)));
     when(bookingDao.saveAndFlush(any(TimeSlotBooking.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
-    when(bookingDao.findOwnedInstrumentIds(anyCollection(), eq(1L))).thenReturn(Set.of());
+    when(accessManager.resolve(any(ResourceAccess.class), eq(actor))).thenReturn(ownerAccess());
+    when(accessManager.resolveAll(any(), eq(actor)))
+        .thenAnswer(
+            invocation -> {
+              java.util.Collection<ResourceAccess> accesses = invocation.getArgument(0);
+              return accesses.stream()
+                  .collect(
+                      java.util.stream.Collectors.toMap(
+                          ResourceAccess::getId, ignored -> ownerAccess()));
+            });
   }
 
   @Test
   void createsInsideTheConfigurationLockAndPreparesAFullResponse() {
     BookingConfiguration configuration = configuration(4L, 12L, true);
     ResolvedBookableTarget target = target(12L);
-    when(permissions.canUserReadInventoryRecord((Instrument) target.entity(), actor))
-        .thenReturn(true);
     when(configurationDao.lockByTarget(target.reference())).thenReturn(Optional.of(configuration));
     when(bookingDao.overlaps(
             4L,
@@ -126,8 +144,6 @@ class TimeSlotBookingManagerTest {
   @Test
   void rejectsInvalidWindowsDisabledTargetsAndOverlapsBeforeSaving() {
     ResolvedBookableTarget target = target(12L);
-    when(permissions.canUserReadInventoryRecord((Instrument) target.entity(), actor))
-        .thenReturn(true);
 
     assertThrows(
         BookingWindowException.class,
@@ -308,8 +324,6 @@ class TimeSlotBookingManagerTest {
   @Test
   void maximumDurationAppliesToCreateAndTimeChangingUpdatesEvenWithDoubleBooking() {
     ResolvedBookableTarget target = target(12L);
-    when(permissions.canUserReadInventoryRecord((Instrument) target.entity(), actor))
-        .thenReturn(true);
     BookingConfiguration configuration = configuration(4L, 12L, true);
     configuration.setMaxBookingDurationMinutes(60);
     configuration.setAllowDoubleBooking(true);
@@ -344,8 +358,6 @@ class TimeSlotBookingManagerTest {
   @Test
   void expandsConflictQueriesAsymmetricallyAndSkipsThemForDoubleBooking() {
     ResolvedBookableTarget target = target(12L);
-    when(permissions.canUserReadInventoryRecord((Instrument) target.entity(), actor))
-        .thenReturn(true);
     BookingConfiguration buffered = configuration(4L, 12L, true);
     buffered.setTimeZone("UTC");
     buffered.setBufferBeforeMinutes(10);
@@ -382,8 +394,6 @@ class TimeSlotBookingManagerTest {
   @Test
   void rejectsExcessiveDurationsBeforeTakingTheConfigurationLock() {
     ResolvedBookableTarget target = target(12L);
-    when(permissions.canUserReadInventoryRecord((Instrument) target.entity(), actor))
-        .thenReturn(true);
 
     assertThrows(
         BookingDurationException.class,
@@ -440,22 +450,39 @@ class TimeSlotBookingManagerTest {
   }
 
   @Test
-  void preparesCompleteDetailsForEveryReadableRowWithOneOwnershipQuery() {
+  void preparesCurrentRoleRowsWithOneBatchedAccessResolution() {
     User other = mock(User.class);
     TimeSlotBooking requested = booking(1L, 12L, actor);
     TimeSlotBooking busy = booking(2L, 13L, other);
     when(bookingDao.getReadableResources(any(), any()))
         .thenReturn(new ResourcePage<>(List.of(requested, busy), 2));
-    when(bookingDao.findOwnedInstrumentIds(Set.of(12L, 13L), 1L)).thenReturn(Set.of());
 
     ResourcePage<TimeSlotBooking> page = manager.getBookings(ResourceRequest.unpaged(null), actor);
 
     assertEquals(BookingPrivacy.FULL, page.resources().get(0).getPrivacy());
     assertTrue(page.resources().get(0).isCanEdit());
+    assertTrue(page.resources().get(0).isCanViewConfiguration());
     assertEquals(BookingPrivacy.FULL, page.resources().get(1).getPrivacy());
-    assertFalse(page.resources().get(1).isCanEdit());
-    assertEquals("Private purpose", page.resources().get(1).getVisiblePurpose());
-    verify(bookingDao).findOwnedInstrumentIds(Set.of(12L, 13L), 1L);
+    assertTrue(page.resources().get(1).isCanEdit());
+    assertTrue(page.resources().get(1).isCanViewConfiguration());
+    verify(accessManager).resolveAll(any(), eq(actor));
+  }
+
+  @Test
+  void preparesRolelessRequesterOwnRowAsFullButNonNavigableAndReadOnly() {
+    TimeSlotBooking requested = booking(1L, 12L, actor);
+    when(bookingDao.getReadableResources(any(), any()))
+        .thenReturn(new ResourcePage<>(List.of(requested), 1));
+    when(accessManager.resolveAll(any(), eq(actor)))
+        .thenReturn(
+            Map.of(requested.getBookingConfiguration().getResourceAccess().getId(), noAccess()));
+
+    TimeSlotBooking prepared =
+        manager.getBookings(ResourceRequest.unpaged(null), actor).resources().get(0);
+
+    assertEquals(BookingPrivacy.FULL, prepared.getPrivacy());
+    assertFalse(prepared.isCanEdit());
+    assertFalse(prepared.isCanViewConfiguration());
   }
 
   @Test
@@ -498,6 +525,9 @@ class TimeSlotBookingManagerTest {
     User requester = mock(User.class);
     TimeSlotBooking existing = booking(41L, 12L, requester);
     when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
+    when(configurationDao.lockById(4L)).thenReturn(Optional.of(existing.getBookingConfiguration()));
+    when(accessManager.resolve(existing.getBookingConfiguration().getResourceAccess(), actor))
+        .thenReturn(viewerAccess());
 
     assertThrows(
         AuthorizationException.class,
@@ -507,7 +537,7 @@ class TimeSlotBookingManagerTest {
                 new TimeSlotBookingManager.Patch(null, null, true, "Changed", null),
                 actor,
                 actor));
-    verify(configurationDao, never()).lockById(any());
+    verify(configurationDao).lockById(4L);
   }
 
   @Test
@@ -608,7 +638,33 @@ class TimeSlotBookingManagerTest {
     configuration.setTimeZone("Europe/Berlin");
     configuration.replaceTarget(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, targetId));
+    ResourceAccess access =
+        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, null, new Date());
+    access.setId(targetId);
+    configuration.setResourceAccess(access);
     return configuration;
+  }
+
+  private static ResolvedResourceAccess ownerAccess() {
+    return new ResolvedResourceAccess(
+        Optional.of(BookingResourceRoleScheme.OWNER),
+        Set.of(
+            BookingResourceRoleScheme.READ_RESOURCE,
+            BookingResourceRoleScheme.CREATE_BOOKING,
+            BookingResourceRoleScheme.MANAGE_OWN_BOOKINGS,
+            BookingResourceRoleScheme.MANAGE_ALL_EVENTS),
+        List.of());
+  }
+
+  private static ResolvedResourceAccess noAccess() {
+    return new ResolvedResourceAccess(Optional.empty(), Set.of(), List.of());
+  }
+
+  private static ResolvedResourceAccess viewerAccess() {
+    return new ResolvedResourceAccess(
+        Optional.of(BookingResourceRoleScheme.VIEWER),
+        Set.of(BookingResourceRoleScheme.READ_RESOURCE),
+        List.of());
   }
 
   private static ResolvedBookableTarget target(long id) {

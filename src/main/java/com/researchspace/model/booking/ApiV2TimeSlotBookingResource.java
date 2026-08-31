@@ -1,5 +1,6 @@
 package com.researchspace.model.booking;
 
+import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionDescription.Field;
@@ -10,7 +11,6 @@ import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.SplitReferenceBinding;
-import com.researchspace.model.inventory.Instrument;
 import java.util.List;
 import java.util.Locale;
 
@@ -23,7 +23,10 @@ public final class ApiV2TimeSlotBookingResource {
               CollectionFieldTypes.longNumber(),
               List.of(
                   new RelationshipTarget<>(
-                      "instruments", BookableTargetType.INSTRUMENT, "IN", Instrument.class)),
+                      ApiV2BookingInstrumentResource.RESOURCE_NAME,
+                      BookableTargetType.INSTRUMENT,
+                      "IN",
+                      com.researchspace.model.inventory.Instrument.class)),
               new SplitReferenceBinding<>(
                   ApiV2TimeSlotBookingResource::targetReference,
                   "bookingConfiguration.target.type",
@@ -32,97 +35,113 @@ public final class ApiV2TimeSlotBookingResource {
           .required();
 
   public static final CollectionDescription<TimeSlotBooking> DESCRIPTION =
-      new CollectionDescription<>(
-          "bookings",
-          TimeSlotBooking.class,
-          List.<Field<TimeSlotBooking, ?>>of(
-              Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TimeSlotBooking::getId),
-              Field.readOnly(
-                      "timezone",
-                      "timeZone",
-                      CollectionFieldTypes.text(255),
-                      TimeSlotBooking::getTimeZone)
-                  .withQueryCapabilities(false, false),
-              Field.<TimeSlotBooking, Long>readOnly(
-                      "requesterId",
-                      "requester.id",
-                      CollectionFieldTypes.longNumber(),
-                      booking -> booking.getRequester().getId())
-                  .withQueryCapabilities(true, false),
-              Field.writable(
-                      "kind",
-                      "kind",
-                      CollectionFieldTypes.enumeration(BookingEventKind.class),
-                      TimeSlotBooking::getKind,
-                      TimeSlotBooking::setKind)
-                  .writeOnlyOn(WriteOperation.CREATE),
-              Field.writable(
-                      "start",
-                      "startTime",
-                      CollectionFieldTypes.instant(),
-                      TimeSlotBooking::getStartTime,
-                      TimeSlotBooking::setStartTime)
-                  .required(),
-              Field.writable(
-                      "end",
-                      "endTime",
-                      CollectionFieldTypes.instant(),
-                      TimeSlotBooking::getEndTime,
-                      TimeSlotBooking::setEndTime)
-                  .required(),
-              Field.writable(
-                      "state",
-                      "state",
-                      CollectionFieldTypes.enumeration(BookingState.class),
-                      TimeSlotBooking::getState,
-                      TimeSlotBooking::setState)
-                  .writeOnlyOn(WriteOperation.UPDATE),
-              Field.writable(
-                      "purpose",
-                      "purpose",
-                      CollectionFieldTypes.text(1000),
-                      TimeSlotBooking::getVisiblePurpose,
-                      TimeSlotBooking::setPurpose)
-                  .allowNull()
-                  .withQueryCapabilities(false, false),
-              Field.readOnly(
-                      "bookedBy",
-                      "visibleBookedBy",
-                      CollectionFieldTypes.text(),
-                      TimeSlotBooking::getVisibleBookedBy)
-                  .allowNull()
-                  .withQueryCapabilities(false, false),
-              Field.readOnly(
-                      "createdBy",
-                      "visibleCreatedBy",
-                      CollectionFieldTypes.text(),
-                      TimeSlotBooking::getVisibleCreatedBy)
-                  .allowNull()
-                  .withQueryCapabilities(false, false),
-              Field.<TimeSlotBooking, String>readOnly(
-                      "privacy",
-                      "privacy",
-                      CollectionFieldTypes.text(),
-                      booking -> booking.getPrivacy().name().toLowerCase(Locale.ROOT))
-                  .withQueryCapabilities(false, false),
-              Field.readOnly(
-                      "canEdit", "canEdit", CollectionFieldTypes.bool(), TimeSlotBooking::isCanEdit)
-                  .withQueryCapabilities(false, false),
-              Field.readOnly(
-                  "createdAt",
-                  "createdAt",
-                  CollectionFieldTypes.instant(),
-                  TimeSlotBooking::getCreatedAt),
-              Field.readOnly(
-                  "updatedAt",
-                  "updatedAt",
-                  CollectionFieldTypes.instant(),
-                  TimeSlotBooking::getUpdatedAt)),
-          List.of(TARGET),
-          "id",
-          List.of(new Sort("start", true), new Sort("id", true)),
-          AccessPolicy.authenticated(),
-          List.of(new InternalFilter("deleted", "deleted", CollectionFieldTypes.bool())));
+      description(AccessFunction.authenticated());
+
+  /** Builds the booking collection with its server-owned event visibility predicate. */
+  public static CollectionDescription<TimeSlotBooking> description(AccessFunction readAccess) {
+    return new CollectionDescription<>(
+        "bookings",
+        TimeSlotBooking.class,
+        List.<Field<TimeSlotBooking, ?>>of(
+            Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TimeSlotBooking::getId),
+            Field.readOnly(
+                    "timezone",
+                    "timeZone",
+                    CollectionFieldTypes.text(255),
+                    TimeSlotBooking::getTimeZone)
+                .withQueryCapabilities(false, false),
+            Field.<TimeSlotBooking, Long>readOnly(
+                    "requesterId",
+                    "requester.id",
+                    CollectionFieldTypes.longNumber(),
+                    booking -> booking.getRequester().getId())
+                .withQueryCapabilities(true, false),
+            Field.writable(
+                    "kind",
+                    "kind",
+                    CollectionFieldTypes.enumeration(BookingEventKind.class),
+                    TimeSlotBooking::getKind,
+                    TimeSlotBooking::setKind)
+                .writeOnlyOn(WriteOperation.CREATE),
+            Field.writable(
+                    "start",
+                    "startTime",
+                    CollectionFieldTypes.instant(),
+                    TimeSlotBooking::getStartTime,
+                    TimeSlotBooking::setStartTime)
+                .required(),
+            Field.writable(
+                    "end",
+                    "endTime",
+                    CollectionFieldTypes.instant(),
+                    TimeSlotBooking::getEndTime,
+                    TimeSlotBooking::setEndTime)
+                .required(),
+            Field.writable(
+                    "state",
+                    "state",
+                    CollectionFieldTypes.enumeration(BookingState.class),
+                    TimeSlotBooking::getState,
+                    TimeSlotBooking::setState)
+                .writeOnlyOn(WriteOperation.UPDATE),
+            Field.writable(
+                    "purpose",
+                    "purpose",
+                    CollectionFieldTypes.text(1000),
+                    TimeSlotBooking::getVisiblePurpose,
+                    TimeSlotBooking::setPurpose)
+                .allowNull()
+                .withQueryCapabilities(false, false),
+            Field.readOnly(
+                    "bookedBy",
+                    "visibleBookedBy",
+                    CollectionFieldTypes.text(),
+                    TimeSlotBooking::getVisibleBookedBy)
+                .allowNull()
+                .withQueryCapabilities(false, false),
+            Field.readOnly(
+                    "createdBy",
+                    "visibleCreatedBy",
+                    CollectionFieldTypes.text(),
+                    TimeSlotBooking::getVisibleCreatedBy)
+                .allowNull()
+                .withQueryCapabilities(false, false),
+            Field.<TimeSlotBooking, String>readOnly(
+                    "privacy",
+                    "privacy",
+                    CollectionFieldTypes.text(),
+                    booking -> booking.getPrivacy().name().toLowerCase(Locale.ROOT))
+                .withQueryCapabilities(false, false),
+            Field.readOnly(
+                    "canEdit", "canEdit", CollectionFieldTypes.bool(), TimeSlotBooking::isCanEdit)
+                .withQueryCapabilities(false, false),
+            Field.readOnly(
+                    "canViewConfiguration",
+                    "canViewConfiguration",
+                    CollectionFieldTypes.bool(),
+                    TimeSlotBooking::isCanViewConfiguration)
+                .withQueryCapabilities(false, false),
+            Field.readOnly(
+                "createdAt",
+                "createdAt",
+                CollectionFieldTypes.instant(),
+                TimeSlotBooking::getCreatedAt),
+            Field.readOnly(
+                "updatedAt",
+                "updatedAt",
+                CollectionFieldTypes.instant(),
+                TimeSlotBooking::getUpdatedAt)),
+        List.of(TARGET),
+        "id",
+        List.of(new Sort("start", true), new Sort("id", true)),
+        new AccessPolicy(
+            readAccess,
+            AccessFunction.authenticated(),
+            AccessFunction.authenticated(),
+            AccessFunction.authenticated(),
+            AccessFunction.authenticated()),
+        List.of(new InternalFilter("deleted", "deleted", CollectionFieldTypes.bool())));
+  }
 
   private ApiV2TimeSlotBookingResource() {}
 

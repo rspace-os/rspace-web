@@ -277,6 +277,25 @@ _Avoid_: deprecated flag, disabled forever, archived flag
 A flag whose `expires` date has passed. It fails CI validation but not startup.
 _Avoid_: runtime-failing flag, startup blocker
 
+## Resource role permissions
+
+- **Role scheme**: the roles, ordering, capabilities, assignment rules, and
+  invariants for one protected resource type. Every scheme makes Owner its
+  highest role, puts Manager immediately below it, prevents Managers from
+  changing Owners, and requires one persisted Owner. Capabilities are
+  monotonic: every higher role includes every capability of each lower role.
+  Other roles and capabilities belong only to that resource type.
+- **Role assignment**: one role granted directly to one grantee for one
+  protected resource. A grantee has at most one direct role assignment for that
+  resource.
+- **Grantee**: a user, group, or dynamic audience that receives a role.
+  _Avoid_: subject, actor, sharee
+- **Capability**: one action allowed by a role scheme, such as changing a
+  resource or assigning an Owner. Callers receive resolved capabilities so they
+  do not have to reproduce a role scheme.
+- **Effective role**: the highest role a user receives from all applicable
+  direct, group, audience, and implicit sources for one resource.
+
 ## Booking
 
 - **Available now** — the current instant falls in an available segment of the
@@ -342,6 +361,79 @@ _Avoid_: runtime-failing flag, startup blocker
   a cancelled or deleted booking event. It keeps the event's stable identity and
   original time range while declaring the event cancelled.
   _Avoid_: deleted calendar event, hidden cancellation
+- **Booking access assignment**: one Booking role granted directly to one user
+  or group for one booking configuration. The assignment governs the
+  configuration and all of its bookings, blockouts, calendar views, audit
+  history, and calendar-subscription eligibility.
+- **Effective Booking role**: the highest Booking role a user receives from
+  the All users audience, their direct Booking access assignment, and all group
+  assignments. A weaker direct assignment never reduces access inherited
+  through another source.
+- **Booking Owner**: the highest Booking role. A Booking Owner can change the
+  configuration, manage every role assignment and calendar event, and archive
+  the configuration, subject to the explicit-owner invariant.
+- **Booking Manager**: a Booking role that can change the configuration, manage
+  Manager, Booker, and Viewer assignments, and manage every calendar event. It
+  cannot change Owner assignments or archive the configuration.
+- **Booker**: the Booking role whose defining permission is creating a booking.
+  A Booker can change or cancel their own bookings but cannot manage another
+  requester's bookings or create blockouts.
+  _Avoid_: User, booking user
+- **Viewer**: the lowest Booking role. A Viewer can read the configuration and
+  calendar and create a personal calendar subscription, but cannot create or
+  change calendar events.
+- **Explicit-owner invariant**: every booking configuration has at least one
+  persisted Owner assignment row for a user or supported group. A disabled
+  user, deleted-group snapshot, or group with no enabled members still counts
+  structurally, but grants no effective access. The implicit Owner access of a
+  system administrator never satisfies this invariant.
+- **Unavailable Booking role holder**: a disabled user, a hard-deleted group
+  retained through its assignment snapshot, or a group with no enabled members.
+  Availability is derived from live User and Group state rather than copied
+  onto every assignment. The row remains visible, removable, and auditable,
+  but grants no effective Booking access.
+- **All users audience**: every user account on the RSpace instance, including
+  accounts created after a booking configuration. It is a dynamic source of a
+  Booking role rather than a list of individual access assignments.
+- **Default shared with**: the instance-wide choice that supplies initial
+  Booker access when a booking configuration is created. It grants Booker to
+  the All users audience, to the users and groups selected with the setting, or
+  to nobody beyond the creator, who is always an Owner. A new instance starts
+  with All users selected.
+- **Leave a booking configuration**: remove one's direct Booking access
+  assignment. Access received through a group or the All users audience remains
+  because Booking has no per-user exclusions. Removing the final persisted
+  Owner is rejected.
+- **Own-booking access after role loss**: a requester without a current Booking
+  role can still read only their own past and future booking rows, whether the
+  role loss was voluntary or involuntary. This is derived from each booking's
+  requester relation, stores no departure marker, grants no configuration,
+  calendar, audit, access, or subscription permission, and keeps those rows
+  read-only.
+- **Booking ownership transfer**: an optional part of transferring the target
+  Instrument. It atomically makes the incoming Instrument owner a direct
+  Booking Owner and removes the outgoing owner's direct Booking assignment only
+  when that assignment is Owner. A lower outgoing role and every other Booking
+  assignment are preserved.
+- **Booking access directory**: the users and groups available for Booking role
+  assignment through a resource-scoped, capability-protected search. An
+  ordinary Owner or Manager can select their groups and fellow group members; a
+  system administrator can select any active user or valid lab, collaboration,
+  or project group. A community is never selectable. The Booking-settings
+  variant is separately sysadmin-only.
+- **Booking access**: access granted by a Booking role, independently of access
+  to the target Inventory record. Booking access reveals only the target details
+  needed inside Booking and grants no Inventory access.
+- **System administrator Booking access**: implicit Booking Owner access held by
+  every system administrator without a persisted assignment. While running as
+  another user, the represented user's Booking access applies and the system
+  administrator remains only the audit actor. This implicit access allows a
+  system administrator to identify and repair a configuration whose persisted
+  Owner rows grant no effective Owner access.
+- **Booking identity boundary**: the current Shiro solution supplies the
+  authenticated represented subject and original audit actor. Controllers pass
+  both identities into Booking and generic resource-access services; those
+  services never inspect Shiro or ambient thread-local identity themselves.
 - **Booking defaults** — the instance-wide scheduling values copied into a new
   booking configuration at creation time. Changing them does not alter an
   existing booking configuration.
@@ -370,8 +462,10 @@ _Avoid_: runtime-failing flag, startup blocker
   audit data. The system rejects durations over 366 days before acquiring the
   configuration lock, and the locked scheduling policy may impose a smaller
   maximum booking duration.
-- **Booking privacy** — the response detail prepared for one caller. `full` shows
-  the purpose and requester label. `busy` shows only the target and occupied time.
+- **Booking privacy** — access to a booking's details is all or nothing in the
+  Booking role iteration. Every caller authorized to read the booking
+  configuration sees full event details; other callers cannot read its calendar.
+  _Avoid_: busy-only Viewer
 - **Half-open booking interval** — a booking window that includes its start and
   excludes its end. Two bookings that only touch at one boundary do not overlap.
 - **Booking cancellation** — the one-way change from `CONFIRMED` to `CANCELLED`.

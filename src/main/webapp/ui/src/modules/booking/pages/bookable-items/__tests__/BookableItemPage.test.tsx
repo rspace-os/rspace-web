@@ -20,6 +20,7 @@ import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/book
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
+import { bookerBookingAccess, ownerBookingAccess } from "../mocks/bookableItemsMocks";
 import { createBookableItemRoute } from "../routes";
 
 vi.mock("@/modules/common/hooks/auth", () => ({ useOauthTokenQuery: vi.fn() }));
@@ -28,7 +29,7 @@ vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi
 const configuration = {
   id: 7,
   target: {
-    relationTo: "instruments",
+    relationTo: "booking-instruments",
     value: {
       id: 123,
       name: "Confocal microscope",
@@ -48,6 +49,7 @@ const configuration = {
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
   updatedAt: null,
+  ...ownerBookingAccess,
 };
 const booking = {
   id: 41,
@@ -125,8 +127,8 @@ describe("BookableItemPage", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toBeVisible();
     expect(screen.getByText("IN123")).toBeVisible();
-    expect(screen.getByRole("link", { name: "booking:bookableItemDetails.viewInventory" })).toHaveTextContent("IN123");
-    expect(screen.getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
+    expect(screen.queryByRole("link", { name: "booking:bookableItemDetails.viewInventory" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Imaging lab")).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }),
     ).toBeVisible();
@@ -307,12 +309,14 @@ describe("BookableItemPage", () => {
     expect(saveButton).toHaveFocus();
   });
 
-  it("keeps a non-administrator in view mode on the direct edit URL", async () => {
+  it("keeps a caller without edit capability in view mode on the direct edit URL", async () => {
     mockedUseCurrentUserQuery.mockReturnValue({ data: { hasSysAdminRole: false } } as ReturnType<
       typeof useCurrentUserQuery
     >);
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(envelope([{ ...configuration, ...bookerBookingAccess }], 2)),
+      ),
       http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
     );
     renderPage("/booking/bookable-items/IN123?tab=details&edit=true");

@@ -48,10 +48,12 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const input = canvas.getByPlaceholderText("Search fruit...");
+    const trigger = canvas.getByRole("button", { name: "Show fruit options" });
     expect(input).toBeInTheDocument();
     await userEvent.click(input);
     const body = within(canvasElement.ownerDocument.body);
     expect(await body.findByText("Apple")).toBeInTheDocument();
+    expect(trigger).toBeDisabled();
   },
 };
 

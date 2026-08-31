@@ -22,7 +22,7 @@ import { Label } from "@/modules/common/ui/label";
 const DocumentSchema = v.object({
   id: v.number(),
   target: v.object({
-    relationTo: v.literal("instruments"),
+    relationTo: v.literal("booking-instruments"),
     globalId: v.string(),
     value: v.object({ id: v.number(), name: v.string(), deleted: v.boolean() }),
   }),

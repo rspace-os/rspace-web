@@ -35,7 +35,8 @@ class ApiV2TimeSlotBookingResourceTest {
         List.of("start", "end", "state", "purpose"),
         List.copyOf(
             ApiV2TimeSlotBookingResource.DESCRIPTION.writableFields(WriteOperation.UPDATE)));
-    for (String privateField : List.of("purpose", "bookedBy", "createdBy", "privacy", "canEdit")) {
+    for (String privateField :
+        List.of("purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canViewConfiguration")) {
       assertFalse(ApiV2TimeSlotBookingResource.DESCRIPTION.requireField(privateField).sortable());
       assertFalse(
           ApiV2TimeSlotBookingResource.DESCRIPTION
@@ -63,7 +64,7 @@ class ApiV2TimeSlotBookingResourceTest {
             mapper.readTree(
                 """
                 {
-                  "target": {"relationTo": "instruments", "value": 12},
+                  "target": {"relationTo": "booking-instruments", "value": 12},
                   "start": "2026-10-25T00:30:00Z",
                   "end": "2026-10-25T02:30:00Z",
                   "kind": "MAINTENANCE",
@@ -86,7 +87,7 @@ class ApiV2TimeSlotBookingResourceTest {
             ApiV2DocumentParser.parse(
                 mapper.readTree(
                     """
-                    {"target":{"relationTo":"instruments","value":12},
+                    {"target":{"relationTo":"booking-instruments","value":12},
                      "start":"2026-10-25T00:30:00Z","end":"2026-10-25T02:30:00Z",
                      "bookedBy":"forged"}
                     """),
@@ -126,9 +127,10 @@ class ApiV2TimeSlotBookingResourceTest {
     assertEquals("busy", busy.get("privacy"));
     assertNull(busy.get("purpose"));
     assertNull(busy.get("bookedBy"));
+    assertEquals(false, busy.get("canViewConfiguration"));
     assertEquals("Secret", booking.getPurpose());
 
-    booking.prepareView(BookingPrivacy.FULL, true);
+    booking.prepareView(BookingPrivacy.FULL, true, true);
     Map<String, Object> full = ApiV2TimeSlotBookingResource.DESCRIPTION.toDocument(booking);
     assertEquals("full", full.get("privacy"));
     assertEquals("Secret", full.get("purpose"));
@@ -136,6 +138,7 @@ class ApiV2TimeSlotBookingResourceTest {
     assertEquals("Ada Lovelace (ada)", full.get("createdBy"));
     assertEquals("BOOKING", full.get("kind"));
     assertEquals(true, full.get("canEdit"));
+    assertEquals(true, full.get("canViewConfiguration"));
   }
 
   private static TimeSlotBooking booking(User requester) {

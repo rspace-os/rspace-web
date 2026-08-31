@@ -1,16 +1,23 @@
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import type { Locator } from "vitest/browser";
 import { worker } from "@/__tests__/browserSetup";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { bookableItemDetailsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
 import { currentUser } from "../calendar/__tests__/calendarTestHarness";
 import { MyBookingsPageStory } from "./MyBookingsPage.story";
-import { bookingHandlers } from "./mocks/bookingMocks";
+import { bookingHandlers, roleLostBooking } from "./mocks/bookingMocks";
 import { MyBookingsPageObject } from "./pageObjects/MyBookingsPage";
 
 const pageObj = new MyBookingsPageObject();
 let listRequests: URL[] = [];
+
+function clickWithoutDriverWait(locator: Locator) {
+  const element = locator.element();
+  if (!(element instanceof HTMLElement)) throw new TypeError("Expected an HTML element");
+  element.click();
+}
 
 function registerHandlers() {
   worker.use(
@@ -35,7 +42,8 @@ describe("the My Bookings page", () => {
   test("navigates from a booking row to the bookable item details page", async () => {
     render(<MyBookingsPageStory />);
 
-    await pageObj.confocalDetails.click();
+    await expect.element(pageObj.confocalDetails).toBeVisible();
+    clickWithoutDriverWait(pageObj.confocalDetails);
 
     await expect.element(pageObj.bookableItemDetailsHeading).toBeVisible();
     await expect.element(pageObj.bookableItemDetailsTarget).toBeVisible();
@@ -83,5 +91,21 @@ describe("the My Bookings page", () => {
     await pageObj.resetView();
 
     await expect.poll(() => new URLSearchParams(window.location.search).get("period")).toBe("upcoming");
+  });
+
+  test("keeps a role-lost booking non-navigable", async () => {
+    worker.use(
+      ...bookingHandlers(
+        () => undefined,
+        () => undefined,
+        [roleLostBooking],
+      ),
+    );
+    render(<MyBookingsPageStory />);
+
+    await expect.element(pageObj.confocal).toBeVisible();
+    await expect.element(pageObj.roleLossNotice).toBeVisible();
+    await expect.element(pageObj.confocalDetails).not.toBeInTheDocument();
+    await expectNoAxeViolations();
   });
 });

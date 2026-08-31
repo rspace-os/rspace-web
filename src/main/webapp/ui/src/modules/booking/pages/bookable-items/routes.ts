@@ -24,14 +24,14 @@ export function createBookingSettingsRoute<TParentRoute extends AnyRoute>(bookin
 export function createAddBookableItemRoute<TParentRoute extends AnyRoute>(bookingRoute: TParentRoute) {
   return createRoute({
     getParentRoute: () => bookingRoute,
-    path: "/config/bookable-items/add",
+    path: "/bookable-items/add",
     component: AddBookableItemPage,
   });
 }
 
 // Tab and edit mode live in the URL so both are linkable, back-button-able and
 // survive a reload. `history: "replace"` keeps the two from filling the stack.
-export const bookableItemTabParser = parseAsStringLiteral(["bookings", "details", "audit"] as const)
+export const bookableItemTabParser = parseAsStringLiteral(["bookings", "details", "audit", "access"] as const)
   .withDefault("bookings")
   .withOptions({ history: "replace", clearOnDefault: true });
 export const bookableItemEditParser = parseAsBoolean
@@ -44,7 +44,7 @@ const loadBookableItemSearch = createLoader({ tab: bookableItemTabParser, edit: 
 // existing `<Link to="/booking/bookable-items/$globalId">` to pass `search`,
 // and `clearOnDefault` already means the defaults never appear in the URL.
 export function bookableItemSearch(search: Record<string, unknown>): {
-  tab?: "bookings" | "details" | "audit";
+  tab?: "bookings" | "details" | "audit" | "access";
   edit?: boolean;
 } {
   const loaded = loadBookableItemSearch({

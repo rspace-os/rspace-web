@@ -198,11 +198,25 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
+    return changeInstrumentOwner(id, incomingInstrument, errors, user, user, false);
+  }
+
+  /** Internal bulk-operation entry point carrying represented-subject and actor semantics. */
+  public ApiInstrument changeInstrumentOwner(
+      Long id,
+      ApiInstrument incomingInstrument,
+      BindingResult errors,
+      User subject,
+      User actor,
+      boolean transferBookingConfigurationOwnership)
+      throws BindException {
     throwBindExceptionIfErrors(errors);
     incomingInstrument.setIdIfNotSet(id);
-    instrumentApiMgr.assertUserCanTransferInstrument(id, user);
+    instrumentApiMgr.assertUserCanTransferInstrument(id, subject);
 
-    ApiInstrument updated = instrumentApiMgr.changeApiInstrumentOwner(incomingInstrument, user);
+    ApiInstrument updated =
+        instrumentApiMgr.changeApiInstrumentOwner(
+            incomingInstrument, subject, actor, transferBookingConfigurationOwnership);
     buildAndAddInventoryRecordLinks(updated);
     return updated;
   }

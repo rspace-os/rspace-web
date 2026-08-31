@@ -898,6 +898,52 @@ An access function can return a row constraint. The framework combines the const
 client filter. It does this for list, count, read by ID, and bulk operations. An unreadable row
 returns 404.
 
+### Resource-role protected collections
+
+A domain entity that adopts resource-role permissions owns a non-null foreign key to a
+`ResourceAccess` aggregate. The aggregate is versioned independently from the domain entity and
+contains its direct role assignments. Do not key a global access table with arbitrary resource
+type and resource ID strings.
+
+Adopting a resource requires three registrations:
+
+1. Implement and register a `ResourceRoleScheme` bean. Roles are ordered from highest to lowest;
+   Owner must be highest and Manager must be immediately below it. Every higher role must contain
+   every capability of lower roles. The registry validates this monotonicity because effective
+   access resolves to one highest role.
+2. Implement `ProtectedResourceAccess<T, ID>` in the service layer. It loads and locks the domain
+   resource, exposes its aggregate, declares the access-management capabilities, and owns any
+   domain-specific leave validation and audit target.
+3. Add a `ResourceAccessSpec` to the resource's `ApiV2ResourceSpec`. This enables the generic
+   access, self-removal, directory, and audit routes and publishes capability and Owner-health
+   fields when the resource supplies those types.
+
+Every aggregate must retain a persisted Owner assignment. An implicit role, including sysadmin,
+does not satisfy this invariant. Only a caller with the scheme's manage-owners capability may
+change Owner assignments; Manager cannot do so.
+
+List, count, item, and bulk selection use the server-created
+`ResourceRoleMembershipConstraint`. It is a trusted `QueryConstraint`, not client filter syntax,
+and compiles to duplicate-safe correlated membership checks before count and pagination. Runtime
+access fields are resolved in batches for the returned page; do not add per-row permission calls.
+Direct access to a missing or unreadable protected resource returns the same 404 response.
+
+`GET .../{id}/access` returns an `ETag`. Replacement is one atomic `PUT` with the complete direct
+assignment set and requires the matching `If-Match`; a stale version returns 412 without changing
+the aggregate. Read models may show assignment snapshots for a hard-deleted user or group, but
+authorization always derives availability, enabled state, and active group membership from live
+identity data. Snapshot rows do not grant access.
+
+Owner health is also derived at read time. A configuration can therefore retain its required
+structural Owner rows while having no effective Owner; sysadmins can identify and repair that
+state. Identity lifecycle operations do not fan out across every protected resource and do not
+rewrite assignments or emit resource-level access deltas.
+
+Changes to the generic module must keep a second test-only scheme whose lower roles are not named
+Booker or Viewer. This prevents generic code and OpenAPI/UI contracts from acquiring Booking role
+branches. Before adopting another production resource, write an explicit migration plan for every
+existing row and for the old permission semantics; adding the registration alone is unsafe.
+
 Do not run authorization functions during OpenAPI generation. The `INHERITED` preset uses the
 documentation from the matching collection operation. Every other access function must include
 `AccessDocumentation`. The documentation must state its authentication rule and denial codes.

@@ -129,7 +129,7 @@ class ApiV2RelationshipContractMVCIT {
       mockMvc
           .perform(get(CONFIGURATIONS + "/" + id).header("apiKey", fixture.userKey()))
           .andExpect(status().isOk())
-          .andExpect(jsonPath("$.target.relationTo").value("instruments"))
+          .andExpect(jsonPath("$.target.relationTo").value("booking-instruments"))
           .andExpect(jsonPath("$.target.value").value(instrumentId))
           .andExpect(jsonPath("$.target.globalId").value("IN" + instrumentId));
     }
@@ -149,31 +149,26 @@ class ApiV2RelationshipContractMVCIT {
                   .header("apiKey", fixture.userKey())
                   .param("depth", "1"))
           .andExpect(status().isOk())
-          .andExpect(jsonPath("$.target.relationTo").value("instruments"))
+          .andExpect(jsonPath("$.target.relationTo").value("booking-instruments"))
           .andExpect(jsonPath("$.target.globalId").value("IN" + instrumentId))
           .andExpect(jsonPath("$.target.value.id").value(instrumentId))
           .andExpect(jsonPath("$.target.value.name").value(Matchers.containsString("Confocal")));
     }
 
-    /**
-     * The design is explicit that an unreadable target blanks the whole relationship rather than
-     * falling back to a bare ID, and that the owning row stays visible and counted. A leaked ID
-     * here would let any authenticated caller enumerate instruments they cannot read.
-     */
     @Test
-    @DisplayName("an unreadable target renders as null while its owner row stays visible")
-    void anUnreadableTargetRendersAsNull() throws Exception {
+    @DisplayName("Booking access returns only the safe target reference without Inventory access")
+    void bookingAccessReturnsSafeTargetReferenceWithoutInventoryAccess() throws Exception {
       long id = fixture.bookingConfiguration(instrumentId, "Europe/Berlin");
 
       mockMvc
           .perform(get(CONFIGURATIONS + "/" + id).header("apiKey", fixture.otherUserKey()))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.id").value(id))
-          // The whole envelope is null, not a stripped-down object. The raw-body check is the part
-          // that matters: no relationTo, no bare target id and no global id may survive anywhere.
-          .andExpect(jsonPath("$.target").value(Matchers.nullValue()))
-          .andExpect(content().string(Matchers.not(Matchers.containsString("IN" + instrumentId))))
-          .andExpect(content().string(Matchers.not(Matchers.containsString("instruments"))));
+          .andExpect(jsonPath("$.target.relationTo").value("booking-instruments"))
+          .andExpect(jsonPath("$.target.value").value(instrumentId))
+          .andExpect(jsonPath("$.target.globalId").value("IN" + instrumentId))
+          .andExpect(jsonPath("$.target.owner").doesNotExist())
+          .andExpect(jsonPath("$.target.parentContainerName").doesNotExist());
 
       mockMvc
           .perform(
@@ -213,8 +208,7 @@ class ApiV2RelationshipContractMVCIT {
               post(CONFIGURATIONS)
                   .header("apiKey", sysadminKey)
                   .contentType(MediaType.APPLICATION_JSON)
-                  .content(
-                      "{\"enabled\":true,\"timezone\":\"UTC\",\"target\":%s}".formatted(target)))
+                  .content("{\"enabled\":true,\"target\":%s}".formatted(target)))
           .andExpect(status().isBadRequest())
           .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON))
           .andExpect(jsonPath("$.invalidParams[?(@.name == 'target')]").exists());
@@ -234,7 +228,7 @@ class ApiV2RelationshipContractMVCIT {
                   .contentType(MediaType.APPLICATION_JSON)
                   .content(
                       """
-                      {"enabled":true,"timezone":"UTC","target":{"relationTo":"instruments","value":%d,"globalId":"IN%d"}}\
+                      {"enabled":true,"target":{"relationTo":"booking-instruments","value":%d,"globalId":"IN%d"}}\
                       """
                           .formatted(instrumentId, instrumentId + 7)))
           .andExpect(status().isBadRequest())
@@ -264,9 +258,7 @@ class ApiV2RelationshipContractMVCIT {
               post(CONFIGURATIONS)
                   .header("apiKey", sysadminKey)
                   .contentType(MediaType.APPLICATION_JSON)
-                  .content(
-                      "{\"enabled\":true,\"timezone\":\"UTC\",\"target\":\"IN%d\"}"
-                          .formatted(instrumentId)))
+                  .content("{\"enabled\":true,\"target\":\"IN%d\"}".formatted(instrumentId)))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.invalidParams[?(@.name == 'target')]").exists());
     }
@@ -283,7 +275,7 @@ class ApiV2RelationshipContractMVCIT {
                   .contentType(MediaType.APPLICATION_JSON)
                   .content(
                       """
-                      {"target":{"relationTo":"instruments","value":{"id":%d,"name":"x"}}}\
+                      {"target":{"relationTo":"booking-instruments","value":{"id":%d,"name":"x"}}}\
                       """
                           .formatted(instrumentId)))
           .andExpect(status().isBadRequest())
@@ -314,14 +306,10 @@ class ApiV2RelationshipContractMVCIT {
           .andExpect(jsonPath("$.docs[0].id").value(id));
     }
 
-    /**
-     * The mirror image of the rendering rule: a caller who cannot read the target must not be able
-     * to use a target filter to confirm what it contains.
-     */
     @Test
-    @DisplayName("a target filter cannot enumerate targets the caller may not read")
-    void aTargetFilterCannotEnumerateHiddenTargets() throws Exception {
-      fixture.bookingConfiguration(instrumentId, "UTC");
+    @DisplayName("a target filter uses the safe Booking projection without Inventory access")
+    void aTargetFilterUsesTheSafeBookingProjection() throws Exception {
+      long id = fixture.bookingConfiguration(instrumentId, "UTC");
 
       mockMvc
           .perform(
@@ -329,7 +317,8 @@ class ApiV2RelationshipContractMVCIT {
                   .header("apiKey", fixture.otherUserKey())
                   .param("where", "target.name=contains=" + fixture.marker()))
           .andExpect(status().isOk())
-          .andExpect(jsonPath("$.totalDocs").value(0));
+          .andExpect(jsonPath("$.totalDocs").value(1))
+          .andExpect(jsonPath("$.docs[0].id").value(id));
     }
 
     @Test
