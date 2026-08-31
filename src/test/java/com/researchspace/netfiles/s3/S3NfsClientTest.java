@@ -52,7 +52,6 @@ public class S3NfsClientTest {
     client = new S3NfsClient("testUser", s3Utilities);
   }
 
-  /** Returns a fresh destination client backed by its own mock {@link S3Utilities}. */
   private DestClientFixture newDestClient() {
     S3Utilities destS3Utilities = mock(S3Utilities.class);
     return new DestClientFixture(new S3NfsClient("destUser", destS3Utilities), destS3Utilities);

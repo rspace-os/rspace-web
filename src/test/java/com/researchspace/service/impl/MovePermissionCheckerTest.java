@@ -98,7 +98,6 @@ public class MovePermissionCheckerTest {
     grp1.addChild(target, user);
   }
 
-  // these 2 tests assert that loading root folder does not trigger an unnecessary DB call
   @Test
   public void homeFolderMoveOKDoesNotCallDatabaseMethod() throws IllegalAddChildOperation {
     setUpPermissionsOK(rootFolder);

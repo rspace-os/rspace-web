@@ -67,7 +67,6 @@ public class SystemConfigurationInitializorTest extends SpringTransactionalTest 
     systemConfigurationInitialisor.setChemistryProvider("indigo");
     systemConfigurationInitialisor.setChemistryServiceUrl("http://indigoService:8090");
 
-    // properties are configured, so the system setting is not consulted
     systemConfigurationInitialisor.onAppStartup(null);
     verify(mockSystemPropertyManager, Mockito.times(1))
         .save(Mockito.any(), (HierarchicalPermission) Mockito.any(), Mockito.any());

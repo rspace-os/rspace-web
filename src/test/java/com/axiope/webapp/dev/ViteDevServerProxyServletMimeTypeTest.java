@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
-/** Separate from the proxying tests: inferFallbackContentType needs no mocks. */
 public class ViteDevServerProxyServletMimeTypeTest {
 
   private final ViteDevServerProxyServlet servlet =
