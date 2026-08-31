@@ -32,8 +32,11 @@ import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
+import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.testutils.TestFactory;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -50,7 +53,6 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.ObjectProvider;
 
 class BookingCalendarManagerTest {
 
@@ -62,6 +64,7 @@ class BookingCalendarManagerTest {
   private UserBookingCalendarSubscriptionDao userSubscriptionDao;
   private TimeSlotBookingManager bookingManager;
   private FeatureFlagManager featureFlags;
+  private ResourceAccessManager accessManager;
   private BookingCalendarFeedGenerator generator;
   private InstrumentDao instrumentDao;
   private BookingCalendarManager manager;
@@ -76,8 +79,7 @@ class BookingCalendarManagerTest {
     bookingManager = mock(TimeSlotBookingManager.class);
     instrumentDao = mock(InstrumentDao.class);
     featureFlags = mock(FeatureFlagManager.class);
-    @SuppressWarnings("unchecked")
-    ObjectProvider<ResourceRegistry> resourceRegistry = mock(ObjectProvider.class);
+    accessManager = mock(ResourceAccessManager.class);
     generator = mock(BookingCalendarFeedGenerator.class);
     IPropertyHolder properties = mock(IPropertyHolder.class);
 
@@ -86,15 +88,13 @@ class BookingCalendarManagerTest {
     configuration = new BookingConfiguration();
     configuration.setId(CONFIGURATION_ID);
     configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 101L));
-    Instrument instrument = mock(Instrument.class);
+    configuration.setResourceAccess(
+        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, owner, new java.util.Date()));
     when(properties.getServerUrl()).thenReturn("https://rspace.example/context");
-    when(resourceRegistry.getObject()).thenReturn(mock(ResourceRegistry.class));
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(true);
     when(configurationDao.lockById(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
-    when(configurationDao.getResources(any(), eq(1), any(RelationshipReadAccess.class)))
-        .thenReturn(List.of(configuration));
-    when(instrumentDao.getReadableResources(any(), any()))
-        .thenReturn(new ResourcePage<>(List.of(instrument), 1));
+    when(configurationDao.getSafeNull(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
+    when(accessManager.resolve(configuration.getResourceAccess(), owner)).thenReturn(ownerAccess());
     when(subscriptionDao.findByUserIdAndConfigurationId(owner.getId(), CONFIGURATION_ID))
         .thenReturn(Optional.empty());
     when(subscriptionDao.saveAndFlush(any(BookableItemCalendarSubscription.class)))
@@ -110,7 +110,7 @@ class BookingCalendarManagerTest {
             bookingManager,
             instrumentDao,
             featureFlags,
-            resourceRegistry,
+            accessManager,
             generator,
             new BookingCalendarProperties(100, 10_000, 1),
             properties,
@@ -216,8 +216,8 @@ class BookingCalendarManagerTest {
 
   @Test
   void statusAndCreateConcealAMissingOrUnreadableConfiguration() {
-    when(configurationDao.getResources(any(), eq(1), any(RelationshipReadAccess.class)))
-        .thenReturn(List.of());
+    when(configurationDao.getSafeNull(CONFIGURATION_ID)).thenReturn(Optional.empty());
+    when(configurationDao.lockById(CONFIGURATION_ID)).thenReturn(Optional.empty());
 
     assertThrows(
         BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
@@ -228,9 +228,9 @@ class BookingCalendarManagerTest {
   }
 
   @Test
-  void statusAndCreateConcealAnUnreadableTarget() {
-    when(instrumentDao.getReadableResources(any(), any()))
-        .thenReturn(new ResourcePage<>(List.of(), 0));
+  void statusAndCreateConcealAConfigurationWithoutBookingAccess() {
+    when(accessManager.resolve(configuration.getResourceAccess(), owner))
+        .thenReturn(ResolvedResourceAccess.none());
 
     assertThrows(
         BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
@@ -375,5 +375,15 @@ class BookingCalendarManagerTest {
         CryptoUtils.hashToken("previous"),
         "previous",
         new java.util.Date(1000L));
+  }
+
+  private static ResolvedResourceAccess ownerAccess() {
+    return new ResolvedResourceAccess(
+        Optional.of(BookingResourceRoleScheme.OWNER),
+        java.util.Set.of(
+            BookingResourceRoleScheme.READ_RESOURCE,
+            BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION,
+            BookingResourceRoleScheme.MANAGE_ALL_EVENTS),
+        List.of());
   }
 }

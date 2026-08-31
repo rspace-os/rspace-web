@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -29,6 +30,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -132,6 +135,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
   @Test
   void getAndPostConcealMissingAndUnreadableConfigurations() throws Exception {
     long configurationId = readableConfiguration();
+    restrictToOwner(configurationId);
     mockMvc
         .perform(get(path(Long.MAX_VALUE)).header("apiKey", fixture.userKey()))
         .andExpect(status().isNotFound());
@@ -201,16 +205,17 @@ class BookingCalendarSubscriptionControllerMVCIT {
   @Test
   void deleteRevokesTheCallersRowAfterReadAccessIsLost() throws Exception {
     long configurationId = readableConfiguration();
-    User owner = fixture.otherUser();
+    User subscriber = fixture.otherUser();
     new TransactionTemplate(transactionManager)
         .executeWithoutResult(
             ignored ->
                 subscriptionDao.saveAndFlush(
                     new BookableItemCalendarSubscription(
                         configurationDao.get(configurationId),
-                        owner,
+                        subscriber,
                         CryptoUtils.hashToken("unrecoverable-test-credential"),
                         new Date())));
+    restrictToOwner(configurationId);
 
     mockMvc
         .perform(get(path(configurationId)).header("apiKey", fixture.otherUserKey()))
@@ -224,7 +229,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
             .execute(
                 ignored ->
                     subscriptionDao
-                        .findByUserIdAndConfigurationId(owner.getId(), configurationId)
+                        .findByUserIdAndConfigurationId(subscriber.getId(), configurationId)
                         .isPresent());
     assertFalse(remains);
   }
@@ -244,7 +249,28 @@ class BookingCalendarSubscriptionControllerMVCIT {
 
   private long readableConfiguration() {
     long instrumentId = fixture.instrument(fixture.user(), fixture.marker());
-    return fixture.bookingConfiguration(instrumentId, "UTC");
+    return fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
+  }
+
+  private void restrictToOwner(long configurationId) throws Exception {
+    String accessPath = "/api/v2/booking-configurations/" + configurationId + "/access";
+    MvcResult access =
+        mockMvc
+            .perform(get(accessPath).header("apiKey", fixture.userKey()))
+            .andExpect(status().isOk())
+            .andReturn();
+    mockMvc
+        .perform(
+            put(accessPath)
+                .header("apiKey", fixture.userKey())
+                .header(HttpHeaders.IF_MATCH, access.getResponse().getHeader(HttpHeaders.ETAG))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"assignments":[{"granteeKey":"user:%d","role":"OWNER"}]}
+                    """
+                        .formatted(fixture.user().getId())))
+        .andExpect(status().isOk());
   }
 
   private String create(long configurationId, String apiKey) throws Exception {

@@ -6,7 +6,7 @@ import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { BookingEventsCalendar, type CalendarLayout, type CalendarView } from "./BookingEventsCalendar";
 
 const target = (id: number, name: string) => ({
-  relationTo: "instruments" as const,
+  relationTo: "booking-instruments" as const,
   globalId: `IN${id}`,
   value: { id, name, deleted: false },
 });
@@ -20,6 +20,7 @@ const storyEvents: readonly BookingListDocument[] = [
   {
     id: 41,
     target: target(123, "Confocal microscope"),
+    canViewConfiguration: true,
     requesterId: 1,
     timezone: "Europe/Berlin",
     start: "2026-08-17T08:00:00Z",
@@ -34,6 +35,7 @@ const storyEvents: readonly BookingListDocument[] = [
   {
     id: 42,
     target: target(124, "Electron microscope"),
+    canViewConfiguration: true,
     requesterId: 2,
     timezone: "Europe/Berlin",
     start: "2026-08-17T12:00:00Z",
@@ -48,6 +50,7 @@ const storyEvents: readonly BookingListDocument[] = [
   {
     id: 43,
     target: target(124, "Electron microscope"),
+    canViewConfiguration: true,
     requesterId: 3,
     timezone: "Europe/Berlin",
     start: "2026-08-19T09:00:00Z",
@@ -62,6 +65,7 @@ const storyEvents: readonly BookingListDocument[] = [
   {
     id: 44,
     target: target(125, "Flow cytometer"),
+    canViewConfiguration: true,
     requesterId: 1,
     timezone: "Europe/Berlin",
     start: "2026-08-21T13:00:00Z",

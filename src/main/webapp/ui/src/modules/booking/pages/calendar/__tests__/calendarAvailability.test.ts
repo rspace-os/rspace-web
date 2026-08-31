@@ -22,7 +22,7 @@ function envelope(docs: unknown[], page = 1, totalPages = 1, totalDocs = docs.le
 const booking = (id: number, target: string, start: string, end: string) => ({
   id,
   target: {
-    relationTo: "instruments",
+    relationTo: "booking-instruments",
     value: { id, name: target, deleted: false },
     globalId: target,
   },

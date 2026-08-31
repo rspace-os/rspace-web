@@ -13,7 +13,6 @@ import com.researchspace.booking.service.TimeSlotBookingManager.CalendarSourceTo
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.dao.InstrumentDao;
-import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableItemCalendarSubscription;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -33,6 +32,8 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
+import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +47,6 @@ import java.util.function.Supplier;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -65,7 +65,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   private final TimeSlotBookingManager bookingManager;
   private final InstrumentDao instrumentDao;
   private final FeatureFlagManager featureFlags;
-  private final ObjectProvider<ResourceRegistry> resourceRegistry;
+  private final ResourceAccessManager accessManager;
   private final BookingCalendarFeedGenerator generator;
   private final BookingCalendarProperties limits;
   private final URI serverBaseUrl;
@@ -81,7 +81,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       TimeSlotBookingManager bookingManager,
       InstrumentDao instrumentDao,
       FeatureFlagManager featureFlags,
-      ObjectProvider<ResourceRegistry> resourceRegistry,
+      ResourceAccessManager accessManager,
       BookingCalendarFeedGenerator generator,
       BookingCalendarProperties limits,
       IPropertyHolder properties) {
@@ -92,7 +92,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         bookingManager,
         instrumentDao,
         featureFlags,
-        resourceRegistry,
+        accessManager,
         generator,
         limits,
         properties,
@@ -106,7 +106,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       TimeSlotBookingManager bookingManager,
       InstrumentDao instrumentDao,
       FeatureFlagManager featureFlags,
-      ObjectProvider<ResourceRegistry> resourceRegistry,
+      ResourceAccessManager accessManager,
       BookingCalendarFeedGenerator generator,
       BookingCalendarProperties limits,
       IPropertyHolder properties,
@@ -117,7 +117,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     this.bookingManager = bookingManager;
     this.instrumentDao = instrumentDao;
     this.featureFlags = featureFlags;
-    this.resourceRegistry = resourceRegistry;
+    this.accessManager = accessManager;
     this.generator = generator;
     this.limits = limits;
     this.serverBaseUrl = validatedBaseUrl(properties.getServerUrl());
@@ -151,7 +151,8 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         configurationDao
             .lockById(configurationId)
             .orElseThrow(BookingCalendarNotFoundException::new);
-    requireReadableConfiguration(configurationId, subject);
+    requireCapability(
+        configuration, subject, BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION);
     Optional<BookableItemCalendarSubscription> existing =
         subscriptionDao.findByUserIdAndConfigurationId(subject.getId(), configurationId);
     String rawToken = tokenSupplier.get();
@@ -278,10 +279,11 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   public int resetForConfiguration(Long configurationId, User subject, User actor) {
     requirePersonalCaller(subject, actor);
     requireFeature(subject);
-    if (!subject.hasRole(Role.SYSTEM_ROLE)) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
-    }
-    configurationDao.lockById(configurationId).orElseThrow(BookingCalendarNotFoundException::new);
+    BookingConfiguration configuration =
+        configurationDao
+            .lockById(configurationId)
+            .orElseThrow(BookingCalendarNotFoundException::new);
+    requireMutationCapability(configuration, subject, BookingResourceRoleScheme.MANAGE_ALL_EVENTS);
     int deleted = subscriptionDao.deleteByConfigurationId(configurationId);
     SECURITY_LOG.info(
         "Booking calendar subscriptions reset by actor [{}] for configuration [{}], revoked [{}]",
@@ -401,21 +403,17 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private Optional<CalendarSource> downloadSource(TimeSlotBooking booking, User subject) {
     BookingConfiguration configuration = booking.getBookingConfiguration();
-    if (configuration.isDeleted()) {
+    if (configuration.isDeleted()
+        || !hasCapability(configuration, subject, BookingResourceRoleScheme.READ_RESOURCE)) {
       return Optional.empty();
     }
     BookableTargetReference target = configuration.getTarget();
     if (target == null || target.type() != BookableTargetType.INSTRUMENT) {
       return Optional.empty();
     }
-    RelationshipReadAccess access = targetAccess(subject);
-    Optional<Instrument> instrument =
-        instrumentDao
-            .getReadableResources(idRequest(target.id()), access.result("instruments"))
-            .resources()
-            .stream()
-            .findFirst();
-    if (instrument.isEmpty() || instrument.get().isDeleted()) {
+    var instrument =
+        instrumentDao.getBookingSummaries(java.util.Set.of(target.id())).get(target.id());
+    if (instrument == null || instrument.deleted()) {
       return Optional.empty();
     }
     CalendarEvent event =
@@ -432,34 +430,42 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
             booking.getVisiblePurpose(),
             booking.isCanEdit());
     return Optional.of(
-        new CalendarSource(
-            instrument.get().getName(), configuration.getTimeZone(), List.of(event)));
+        new CalendarSource(instrument.name(), configuration.getTimeZone(), List.of(event)));
   }
 
   private BookingConfiguration requireReadableConfiguration(Long configurationId, User subject) {
-    RelationshipReadAccess access = targetAccess(subject);
     BookingConfiguration configuration =
-        configurationDao.getResources(idRequest(configurationId), 1, access).stream()
-            .findFirst()
+        configurationDao
+            .getSafeNull(configurationId)
             .orElseThrow(BookingCalendarNotFoundException::new);
-    BookableTargetReference target = configuration.getTarget();
-    if (target == null || target.type() != BookableTargetType.INSTRUMENT) {
-      throw new BookingCalendarNotFoundException();
-    }
-    boolean readable =
-        instrumentDao
-            .getReadableResources(idRequest(target.id()), access.result("instruments"))
-            .resources()
-            .stream()
-            .anyMatch(instrument -> !instrument.isDeleted() && !instrument.isTemplate());
-    if (!readable) {
-      throw new BookingCalendarNotFoundException();
-    }
+    requireCapability(configuration, subject, BookingResourceRoleScheme.READ_RESOURCE);
     return configuration;
   }
 
-  private RelationshipReadAccess targetAccess(User subject) {
-    return RelationshipReadAccess.forActor(resourceRegistry.getObject(), subject);
+  private void requireCapability(
+      BookingConfiguration configuration, User subject, String capability) {
+    if (!hasCapability(configuration, subject, capability)) {
+      throw new BookingCalendarNotFoundException();
+    }
+  }
+
+  private boolean hasCapability(
+      BookingConfiguration configuration, User subject, String capability) {
+    ResolvedResourceAccess access =
+        accessManager.resolve(configuration.getResourceAccess(), subject);
+    return access.hasCapability(capability);
+  }
+
+  private void requireMutationCapability(
+      BookingConfiguration configuration, User subject, String capability) {
+    ResolvedResourceAccess access =
+        accessManager.resolve(configuration.getResourceAccess(), subject);
+    if (!access.hasCapability(BookingResourceRoleScheme.READ_RESOURCE)) {
+      throw new BookingCalendarNotFoundException();
+    }
+    if (!access.hasCapability(capability)) {
+      throw new AuthorizationException("errors.api.v2.forbidden");
+    }
   }
 
   private void requireFeature(User subject) {
@@ -485,15 +491,6 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private static boolean active(User user) {
     return user != null && user.isEnabled() && !user.isAccountLocked();
-  }
-
-  private static ResourceRequest idRequest(Long id) {
-    return new ResourceRequest(
-        new FilterExpression.Comparison("id", Operator.EQUAL, List.of(id), false),
-        List.of(),
-        new ResourceRequest.Page(1, 1),
-        FieldSelection.all(),
-        IncludeTree.empty());
   }
 
   static URI validatedBaseUrl(String configured) {

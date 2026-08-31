@@ -23,7 +23,7 @@ import { createCalendarRoute } from "../routes";
 export { currentUser } from "../calendarFixtures";
 
 const target = (id: number, name: string, location?: { name: string; globalId: string } | null) => ({
-  relationTo: "instruments" as const,
+  relationTo: "booking-instruments" as const,
   globalId: `IN${id}`,
   value: {
     id,
@@ -43,6 +43,7 @@ const timestamps = {
 export const ownBooking: BookingListDocument = {
   id: 41,
   target: target(123, "Confocal microscope"),
+  canViewConfiguration: true,
   requesterId: 1,
   timezone: "Europe/Berlin",
   start: "2026-08-17T08:00:00Z",

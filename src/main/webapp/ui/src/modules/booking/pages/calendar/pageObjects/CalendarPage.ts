@@ -2,9 +2,7 @@ import { type Locator, page } from "vitest/browser";
 
 export class CalendarPage {
   readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Electron microscope" });
-  readonly bookableItemDetailsTarget: Locator = page.getByRole("link", {
-    name: "View Electron microscope in Inventory",
-  });
+  readonly bookableItemDetailsTarget: Locator = page.getByText("IN124", { exact: true });
   readonly heading: Locator = page.getByRole("heading", { name: "Calendar" });
   readonly toolbar: Locator = page.getByRole("toolbar", { name: "Calendar controls" });
   readonly dateControls: Locator = page.getByRole("group", { name: "Calendar date controls" });
