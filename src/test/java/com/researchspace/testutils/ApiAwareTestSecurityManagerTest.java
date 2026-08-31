@@ -13,6 +13,7 @@ import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.SimplePrincipalCollection;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.subject.support.DelegatingSubject;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +32,13 @@ public class ApiAwareTestSecurityManagerTest {
   public void setUp() {
     securityManager = new ApiAwareTestSecurityManager();
     session = mock(Session.class);
+  }
+
+  // rotation replaces the stopped session with a real one, which starts Shiro's
+  // session-validation scheduler; stop its thread rather than leave it in the fork
+  @AfterEach
+  public void tearDown() {
+    securityManager.destroy();
   }
 
   private DelegatingSubject subjectWithSession() {
