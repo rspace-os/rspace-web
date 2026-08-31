@@ -99,7 +99,7 @@ function SlicePopover({
           }
           setOpen(true);
         }}
-        className="pointer-events-auto absolute inset-y-0 cursor-help border-2 border-transparent bg-transparent p-0 outline-none data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring/30 focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="pointer-events-auto absolute inset-y-0 cursor-help rounded-none border-2 border-transparent bg-transparent p-0 outline-none data-popup-open:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
         style={{ left, width }}
       />
       {children}
@@ -262,7 +262,7 @@ export function AvailabilityBar({
               dateTime={new Date(visibleNow).toISOString()}
               title={nowLabel}
               data-slot="availability-bar-now"
-              className="pointer-events-none absolute -top-1 -bottom-1 z-30 w-0.5 bg-red-600"
+              className="pointer-events-none absolute inset-y-0 z-30 w-0.5 bg-red-600"
               style={{ left: `${nowPosition * 100}%` }}
             />
           )}

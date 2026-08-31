@@ -421,6 +421,45 @@ describe("BookingForm", () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
+  it("warns about a past booking without blocking submission", async () => {
+    const user = userEvent.setup();
+    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+    const stateChanged = vi.fn();
+    const pastEnd = new Date(Math.floor((Date.now() - 5 * 60_000) / (5 * 60_000)) * (5 * 60_000));
+    const pastStart = new Date(pastEnd.getTime() - 60 * 60_000);
+    const start = currentWallClock(pastStart.toISOString(), "UTC");
+    const end = currentWallClock(pastEnd.toISOString(), "UTC");
+    const clockTime = ({ minute }: { minute: number }) =>
+      `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+
+    renderForm(
+      <BookingForm
+        mode="add"
+        displayTimezone="UTC"
+        eventKind="BOOKING"
+        initialTarget={target}
+        initialWindow={{
+          startDate: start.date,
+          startTime: clockTime(start),
+          endDate: end.date,
+          endTime: clockTime(end),
+        }}
+        token="token"
+        pending={false}
+        onStateChange={stateChanged}
+        onSubmit={submit}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(stateChanged).toHaveBeenLastCalledWith(expect.objectContaining({ window: expect.anything() })),
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent("booking:bookings.warnings.past");
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+    expect(submit).toHaveBeenCalledOnce();
+  });
+
   it("allows an unchanged over-limit interval on a purpose-only edit", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();

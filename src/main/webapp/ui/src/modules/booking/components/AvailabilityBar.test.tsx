@@ -31,7 +31,7 @@ const resources = {
         overlap: "Booked and blocked out: {ranges}.",
       },
       slice: {
-        count: "{count, plural, one {# constituent event} other {# constituent events}}",
+        count: "{count, plural, one {# event} other {# events}}",
         sources: {
           booking: "Booking",
           openingHours: "Outside opening hours",
@@ -41,8 +41,7 @@ const resources = {
           blockout: "Outside opening hours",
           overlap: "Booked and outside opening hours",
         },
-        trigger:
-          "{itemName}, {state}, {period}, {count, plural, one {# constituent event} other {# constituent events}}",
+        trigger: "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}",
       },
     },
   },
@@ -166,12 +165,12 @@ describe("AvailabilityBar", () => {
     expect(screen.getAllByRole("button")).toHaveLength(2);
     expect(
       screen.getByRole("button", {
-        name: /Confocal microscope, Booked, Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC, 1 constituent event/,
+        name: /Confocal microscope, Booked, Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC, 1 event/,
       }),
     ).toBeVisible();
     expect(
       screen.getByRole("button", {
-        name: /Confocal microscope, Booked, Aug 12, 2026, 11:00 UTC–Aug 12, 2026, 12:00 UTC, 1 constituent event/,
+        name: /Confocal microscope, Booked, Aug 12, 2026, 11:00 UTC–Aug 12, 2026, 12:00 UTC, 1 event/,
       }),
     ).toBeVisible();
   });
@@ -228,6 +227,7 @@ describe("AvailabilityBar", () => {
     await user.click(screen.getAllByRole("button")[1]);
 
     const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("2 events")).toBeVisible();
     expect(within(dialog).getByText("Booking")).toBeVisible();
     expect(within(dialog).getByText("Outside opening hours")).toBeVisible();
     expect(within(dialog).getByText("09:30–10:10")).toBeVisible();

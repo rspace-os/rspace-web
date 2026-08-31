@@ -280,6 +280,8 @@ class ApiV2OpenApiGeneratorTest {
     assertTrue(bookingWhereDescription.contains("createdBy.value==me"));
     assertTrue(bookingWhereDescription.contains("authenticated effective subject"));
     assertTrue(bookingSelectors.containsKey("target.name"));
+    assertTrue(bookingSelectors.containsKey("target.deleted"));
+    assertEquals(List.of("=="), objectMap(bookingSelectors.get("target.deleted")).get("operators"));
     assertTrue(bookingSelectors.containsKey("createdBy.username"));
     assertTrue(bookingSelectors.containsKey("updatedBy.username"));
 

@@ -809,7 +809,7 @@ export default interface Resources {
         "overlap": "Booked and blocked out: {ranges}."
       },
       "slice": {
-        "count": "{count, plural, one {# constituent event} other {# constituent events}}",
+        "count": "{count, plural, one {# event} other {# events}}",
         "sources": {
           "booking": "Booking",
           "openingHours": "Outside opening hours"
@@ -819,7 +819,7 @@ export default interface Resources {
           "booking": "Booked",
           "overlap": "Booked and outside opening hours"
         },
-        "trigger": "{itemName}, {state}, {period}, {count, plural, one {# constituent event} other {# constituent events}}"
+        "trigger": "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}"
       },
       "summary": "Availability period: {period}. {states}",
       "timezone": "Time zone: {timezone}"
@@ -1100,7 +1100,10 @@ export default interface Resources {
       },
       "loading": "Loading booking.",
       "loadingConfiguration": "Loading bookable item settings.",
-      "maintenanceLabel": "Maintenance blockout"
+      "maintenanceLabel": "Maintenance blockout",
+      "warnings": {
+        "past": "This booking is in the past. You can still create it."
+      }
     },
     "calendar": {
       "actions": {

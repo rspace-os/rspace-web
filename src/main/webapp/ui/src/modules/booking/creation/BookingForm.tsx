@@ -195,6 +195,7 @@ export function BookingForm(props: BookingFormProps) {
     (target?.globalId ?? "") !== initialState.current.targetGlobalId ||
     !sameWindowDraft(draft, initialState.current.draft) ||
     purposeValue !== initialState.current.purpose;
+  const bookingInPast = window !== undefined && Date.parse(window.end) <= Date.now();
   useEffect(() => {
     props.onStateChange?.({ target, draft, window, purpose: purposeValue, eventKind, dirty });
   }, [dirty, draft, eventKind, props.onStateChange, purposeValue, target, window]);
@@ -247,6 +248,11 @@ export function BookingForm(props: BookingFormProps) {
             disabled={busy}
             density={props.density}
           />
+          {bookingInPast && (
+            <p role="status" className="text-sm text-amber-800 dark:text-amber-200">
+              {t("bookings.warnings.past")}
+            </p>
+          )}
         </>
       )}
       {attempted && target && !window && <FieldError>{t("bookings.errors.windowRequired")}</FieldError>}

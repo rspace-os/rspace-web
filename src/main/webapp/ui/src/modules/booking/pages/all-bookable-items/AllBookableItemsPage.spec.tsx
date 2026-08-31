@@ -190,7 +190,7 @@ describe("the All Bookable Items page", () => {
     await expect.element(pageObj.availabilityDetails.getByText("Booked", { exact: true })).not.toBeInTheDocument();
     expect(pageObj.sliceBorderRadius("Confocal microscope", 2)).toBe("0px");
     expect(pageObj.sliceHeight("Confocal microscope", 2)).toBe(16);
-    expect(pageObj.nowMarker("Confocal microscope").element().getBoundingClientRect().height).toBeGreaterThan(
+    expect(pageObj.nowMarker("Confocal microscope").element().getBoundingClientRect().height).toBe(
       pageObj.sliceHeight("Confocal microscope", 2),
     );
 

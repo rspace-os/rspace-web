@@ -77,9 +77,7 @@ export class AllBookableItemsPage {
 
   availabilitySlice(itemName: string, contributorCount: number, state = ".*"): Locator {
     return page.getByRole("button", {
-      name: new RegExp(
-        `^${itemName}, ${state}, .*, ${contributorCount} constituent event${contributorCount === 1 ? "" : "s"}$`,
-      ),
+      name: new RegExp(`^${itemName}, ${state}, .*, ${contributorCount} event${contributorCount === 1 ? "" : "s"}$`),
     });
   }
 
