@@ -37,8 +37,8 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       resolveCollectionConfig({
         slug: `bookable-item-${period}-events`,
         idField: "id",
-        useAsTitle: "bookedBy",
-        defaultColumns: ["start", "bookedBy", "purpose"],
+        useAsTitle: "kind",
+        defaultColumns: ["start", "kind", "bookedBy", "purpose"],
         pagination: { defaultLimit: 10, limits: [10] },
         labels: {
           singularKey: "booking:calendar.event",
@@ -62,26 +62,51 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
           },
           { name: "end", type: "dateTime", labelKey: "booking:myBookings.fields.end", list: false },
           {
+            name: "kind",
+            type: "text",
+            labelKey: "booking:bookableItemDetails.events.kind",
+            label: t("bookableItemDetails.events.kind"),
+            list: {
+              width: 180,
+              renderCell: ({ row }) =>
+                t(row.kind === "MAINTENANCE" ? "bookings.form.typeBlockout" : "bookings.form.typeBooking"),
+            },
+          },
+          {
             name: "bookedBy",
             type: "text",
             nullable: true,
-            labelKey: "booking:bookableItemDetails.events.requester",
+            labelKey: "booking:bookableItemDetails.events.actor",
+            label: t("bookableItemDetails.events.actor"),
             list: {
               width: 220,
-              renderCell: ({ row }) =>
-                row.privacy === "busy" || row.bookedBy === null ? (
+              renderCell: ({ row }) => {
+                if (row.kind === "MAINTENANCE") {
+                  return row.createdBy ? <UserBadge name={row.createdBy} /> : t("bookings.maintenanceLabel");
+                }
+                return row.privacy === "busy" || row.bookedBy === null ? (
                   t("bookableItemDetails.events.busy")
                 ) : (
                   <UserBadge name={row.bookedBy} />
-                ),
+                );
+              },
             },
+          },
+          {
+            name: "createdBy",
+            type: "text",
+            nullable: true,
+            labelKey: "booking:bookableItemDetails.events.actor",
+            list: false,
           },
           {
             name: "purpose",
             type: "text",
             nullable: true,
             labelKey: "booking:bookableItemDetails.events.purpose",
-            list: { renderCell: ({ row }) => (row.privacy === "full" ? row.purpose : null) },
+            list: {
+              renderCell: ({ row }) => (row.kind === "MAINTENANCE" || row.privacy === "full" ? row.purpose : null),
+            },
           },
         ],
       } satisfies CollectionConfig<Booking>),

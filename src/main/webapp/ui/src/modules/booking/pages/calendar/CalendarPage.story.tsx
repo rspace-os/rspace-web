@@ -21,7 +21,7 @@ import { currentUser } from "./calendarFixtures";
 import { createCalendarRoute } from "./routes";
 
 export function CalendarPageStory({ user = currentUser }: { user?: CurrentUser } = {}) {
-  if (window.location.pathname !== "/booking/calendar") {
+  if (window.location.pathname === "/") {
     window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
   }
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

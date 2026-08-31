@@ -116,4 +116,26 @@ describe("BookableItemPicker", () => {
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.itemChoose" }));
     expect(await screen.findByText("booking:bookings.form.itemNone")).toBeVisible();
   });
+
+  it("announces loading without showing the empty state", async () => {
+    let finishRequest = () => {};
+    const requestPending = new Promise<void>((resolve) => {
+      finishRequest = resolve;
+    });
+    server.use(
+      http.get("/api/v2/booking-configurations", async () => {
+        await requestPending;
+        return HttpResponse.json(envelope([]));
+      }),
+    );
+    renderPicker();
+
+    expect(await screen.findByRole("status")).toHaveTextContent("booking:bookings.loadingConfiguration");
+    expect(screen.queryByText("booking:bookings.form.itemNone")).not.toBeInTheDocument();
+
+    finishRequest();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.itemChoose" }));
+    expect(await screen.findByText("booking:bookings.form.itemNone")).toBeVisible();
+  });
 });

@@ -1,5 +1,6 @@
 import { Form, useField, useForm } from "@formisch/react";
 import { Link } from "@tanstack/react-router";
+import { CheckIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
@@ -13,6 +14,7 @@ import {
 } from "@/modules/booking/domain/bookingTime";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
+import { ActionBar } from "@/modules/common/ui/action-bar";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { FieldError } from "@/modules/common/ui/field";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
@@ -71,6 +73,7 @@ type BookingFormCommonProps = {
   submissionBlocked?: boolean;
   density?: "comfortable" | "compact";
   onCancel?: () => void;
+  onMoreOptions?: () => void;
   onStateChange?: (state: BookingFormState) => void;
   onSubmit: (submission: BookingFormSubmission) => Promise<unknown>;
 };
@@ -186,6 +189,8 @@ export function BookingForm(props: BookingFormProps) {
         eventKind,
         returnDate: draft.startDate,
       });
+    } catch {
+      // The owning page exposes mutation failures through the error prop while this form keeps its draft.
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
@@ -202,91 +207,118 @@ export function BookingForm(props: BookingFormProps) {
   const compact = props.density === "compact";
 
   return (
-    <Form of={form} className={cn("max-w-2xl", compact ? "space-y-4" : "space-y-8")} aria-busy={busy} onSubmit={submit}>
-      {fixedTarget ? (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">{t("bookings.form.item")}</p>
-          <InventoryItem
-            name={fixedTarget?.name ?? ""}
-            globalId={fixedTarget?.globalId ?? ""}
-            href={`/globalId/${fixedTarget?.globalId ?? ""}`}
-            idLinkLabel={t("bookings.form.openItem", { globalId: fixedTarget?.globalId ?? "" })}
-            compact
-          />
-        </div>
-      ) : (
-        <BookableItemPicker value={target} onChange={selectTarget} token={props.token} disabled={busy} />
-      )}
-      {attempted && !target && <FieldError>{t("bookings.errors.itemRequired")}</FieldError>}
-      {target && (
-        <>
-          {eventKind === "BOOKING" ? (
-            <>
-              <p className="text-sm text-muted-foreground">
-                {t("bookings.form.openingHours", { start: target.openingStart, end: target.openingEnd })}
-              </p>
-              {target.maxBookingDurationMinutes > 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {t("bookings.form.maximumDuration", {
-                    count: target.maxBookingDurationMinutes,
-                  })}
-                </p>
-              ) : null}
-            </>
-          ) : null}
-          <ZonedBookingWindowFields
-            displayTimezone={displayTimezone}
-            schedulingTimezone={target.timezone}
-            slotGranularityMinutes={target.slotGranularityMinutes}
-            maxBookingDurationMinutes={eventKind === "MAINTENANCE" ? 0 : target.maxBookingDurationMinutes}
-            openingStart={eventKind === "MAINTENANCE" ? "00:00" : target.openingStart}
-            openingEnd={eventKind === "MAINTENANCE" ? "24:00" : target.openingEnd}
-            value={draft}
-            onChange={setDraft}
-            onResolved={resolved}
-            allowPolicyMismatch={Boolean(originalDraft && sameWindowDraft(draft, originalDraft))}
-            disabled={busy}
-            density={props.density}
-          />
-          {bookingInPast && (
-            <p role="status" className="text-sm text-amber-800 dark:text-amber-200">
-              {t("bookings.warnings.past")}
-            </p>
-          )}
-        </>
-      )}
-      {attempted && target && !window && <FieldError>{t("bookings.errors.windowRequired")}</FieldError>}
-      {props.error && <FieldError>{props.error}</FieldError>}
-      <RenderFields fields={textFields} form={form} disabled={busy} density={props.density} />
-      <p className={cn("text-right text-xs text-muted-foreground", compact ? "-mt-2" : "-mt-6")} aria-live="polite">
-        {t(eventKind === "MAINTENANCE" ? "bookings.form.notesCount" : "bookings.form.purposeCount", {
-          count: purposeValue.length,
-        })}
-      </p>
-      <div className="flex gap-3">
-        <Button type="submit" disabled={busy || props.submissionBlocked} aria-busy={busy}>
-          {editing
-            ? t("bookings.form.save")
-            : eventKind === "MAINTENANCE"
-              ? t("bookings.form.submitMaintenance")
-              : t("bookings.form.submit")}
-        </Button>
-        {props.onCancel ? (
-          <Button type="button" variant="outline" disabled={busy} onClick={props.onCancel}>
-            {t("bookings.form.cancel")}
-          </Button>
+    <Form of={form} className={cn("max-w-2xl", compact && "flex min-h-0 flex-col")} aria-busy={busy} onSubmit={submit}>
+      <div className={compact ? "min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3" : "space-y-8"}>
+        {fixedTarget ? (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">{t("bookings.form.item")}</p>
+            <InventoryItem
+              name={fixedTarget?.name ?? ""}
+              globalId={fixedTarget?.globalId ?? ""}
+              href={`/globalId/${fixedTarget?.globalId ?? ""}`}
+              idLinkLabel={t("bookings.form.openItem", { globalId: fixedTarget?.globalId ?? "" })}
+              compact
+            />
+          </div>
         ) : (
-          <Link
-            className={buttonVariants({ variant: "outline", className: busy ? "pointer-events-none opacity-50" : "" })}
-            to="/booking/calendar"
-            search={{ date: draft.startDate, target: target?.globalId }}
-            aria-disabled={busy}
-            tabIndex={busy ? -1 : undefined}
-          >
-            {t("bookings.form.cancel")}
-          </Link>
+          <BookableItemPicker value={target} onChange={selectTarget} token={props.token} disabled={busy} />
         )}
+        {attempted && !target && <FieldError>{t("bookings.errors.itemRequired")}</FieldError>}
+        {target && (
+          <>
+            {eventKind === "BOOKING" ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {t("bookings.form.openingHours", { start: target.openingStart, end: target.openingEnd })}
+                </p>
+                {target.maxBookingDurationMinutes > 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("bookings.form.maximumDuration", {
+                      count: target.maxBookingDurationMinutes,
+                    })}
+                  </p>
+                ) : null}
+              </>
+            ) : null}
+            <ZonedBookingWindowFields
+              displayTimezone={displayTimezone}
+              schedulingTimezone={target.timezone}
+              slotGranularityMinutes={target.slotGranularityMinutes}
+              maxBookingDurationMinutes={eventKind === "MAINTENANCE" ? 0 : target.maxBookingDurationMinutes}
+              openingStart={eventKind === "MAINTENANCE" ? "00:00" : target.openingStart}
+              openingEnd={eventKind === "MAINTENANCE" ? "24:00" : target.openingEnd}
+              enforceOpeningHours={eventKind !== "MAINTENANCE"}
+              value={draft}
+              onChange={setDraft}
+              onResolved={resolved}
+              allowPolicyMismatch={Boolean(originalDraft && sameWindowDraft(draft, originalDraft))}
+              disabled={busy}
+              density={props.density}
+            />
+            {bookingInPast && (
+              <p role="status" className="text-sm text-amber-800 dark:text-amber-200">
+                {t("bookings.warnings.past")}
+              </p>
+            )}
+          </>
+        )}
+        {attempted && target && !window && <FieldError>{t("bookings.errors.windowRequired")}</FieldError>}
+        {props.error && <FieldError>{props.error}</FieldError>}
+        <RenderFields fields={textFields} form={form} disabled={busy} density={props.density} />
+        <p className={cn("text-right text-xs text-muted-foreground", compact ? "-mt-2" : "-mt-6")} aria-live="polite">
+          {t(eventKind === "MAINTENANCE" ? "bookings.form.notesCount" : "bookings.form.purposeCount", {
+            count: purposeValue.length,
+          })}
+        </p>
       </div>
+      {compact ? (
+        <ActionBar
+          className="[&>div>button:last-of-type]:!flex"
+          actions={[
+            ...(props.onMoreOptions ? [{ label: t("bookings.form.moreOptions"), onClick: props.onMoreOptions }] : []),
+            {
+              label: editing
+                ? t("bookings.form.save")
+                : eventKind === "MAINTENANCE"
+                  ? t("bookings.form.submitMaintenance")
+                  : t("bookings.form.submit"),
+              icon: CheckIcon,
+              preferred: true,
+              disabled: busy || props.submissionBlocked,
+              onClick: () => void submit({ purpose: purposeValue }),
+            },
+            { label: t("bookings.form.cancel"), onClick: props.onCancel, alwaysVisible: true },
+          ]}
+        />
+      ) : (
+        <div className="flex gap-3">
+          <Button type="submit" disabled={busy || props.submissionBlocked} aria-busy={busy}>
+            {editing
+              ? t("bookings.form.save")
+              : eventKind === "MAINTENANCE"
+                ? t("bookings.form.submitMaintenance")
+                : t("bookings.form.submit")}
+          </Button>
+          {props.onCancel ? (
+            <Button type="button" variant="outline" disabled={busy} onClick={props.onCancel}>
+              {t("bookings.form.cancel")}
+            </Button>
+          ) : (
+            <Link
+              className={buttonVariants({
+                variant: "outline",
+                className: busy ? "pointer-events-none opacity-50" : "",
+              })}
+              to="/booking/calendar"
+              search={{ date: draft.startDate, target: target?.globalId }}
+              aria-disabled={busy}
+              tabIndex={busy ? -1 : undefined}
+            >
+              {t("bookings.form.cancel")}
+            </Link>
+          )}
+        </div>
+      )}
     </Form>
   );
 }

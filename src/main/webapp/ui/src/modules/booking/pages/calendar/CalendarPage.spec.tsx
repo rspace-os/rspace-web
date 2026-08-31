@@ -10,6 +10,7 @@ import {
   calendarBookingFields,
   resetBookingPageRequests,
 } from "@/modules/booking/pages/mocks/bookingPagesMocks";
+import { collectionResponse, noParentBooking } from "./__tests__/calendarTestHarness";
 import { CalendarPageStory } from "./CalendarPage.story";
 import { currentUser } from "./calendarFixtures";
 import { CalendarPage as CalendarPageObject } from "./pageObjects/CalendarPage";
@@ -261,6 +262,8 @@ describe("Calendar page", () => {
     await calendar.dragResourceSelection(0, 0.35, 0.4, 1);
     const dialog = page.getByRole("dialog", { name: "New Booking" });
     await expect.element(dialog).toBeVisible();
+    await expect.element(page.getByTestId("compact-booking-draft-marker")).toBeVisible();
+    await expect.element(dialog).not.toHaveAttribute("aria-modal", "true");
     await expect.element(dialog.getByText("Confocal microscope", { exact: true })).toBeVisible();
     await expect
       .poll(() => canvases.every((canvas) => canvas.element().dataset.creationDisabled === "true"))
@@ -272,13 +275,55 @@ describe("Calendar page", () => {
     await expect.element(dialog.getByText("Electron microscope", { exact: true })).not.toBeInTheDocument();
   });
 
+  test("starts a resource booking from the keyboard with a proposed free hour", async () => {
+    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory />);
+    await calendar.resources.click();
+    await calendar.day.click();
+    await expect.poll(() => calendar.resourceCanvases.length).toBe(5);
+
+    const addForMassSpectrometer = page.getByRole("button", { name: "Add booking for Mass spectrometer" });
+    addForMassSpectrometer.element().focus();
+    await expect.element(addForMassSpectrometer).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+
+    const dialog = page.getByRole("dialog", { name: "New Booking" });
+    await expect.element(dialog.getByText("Mass spectrometer", { exact: true })).toBeVisible();
+    await expect.element(dialog.getByRole("group", { name: "Start" }).getByLabelText("Time")).toHaveValue("08:00");
+    await expect.element(dialog.getByRole("group", { name: "End" }).getByLabelText("Time")).toHaveValue("09:00");
+  });
+
+  test("disables resource-row creation when no free window exists", async () => {
+    worker.use(
+      http.get("/api/v2/bookings", ({ request }) => {
+        if (new URL(request.url).searchParams.get("fields[bookings]") !== calendarBookingFields) return undefined;
+        return HttpResponse.json(
+          collectionResponse([
+            {
+              ...noParentBooking,
+              start: "2026-08-16T00:00:00Z",
+              end: "2026-08-19T00:00:00Z",
+            },
+          ]),
+        );
+      }),
+    );
+    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory />);
+    await calendar.resources.click();
+    await calendar.day.click();
+    await expect.poll(() => calendar.resourceCanvases.length).toBe(5);
+
+    await expect.element(page.getByRole("button", { name: "Add booking for Mass spectrometer" })).toBeDisabled();
+  });
+
   test("creates a booking through the targetless compact form and restores trigger focus", async () => {
     window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
     render(<CalendarPageStory />);
     const trigger = page.getByRole("button", { name: "New Booking" });
     const dialog = await calendar.openTargetlessBookingDialog();
-    expect(getComputedStyle(dialog.element()).borderRadius).toBe("4px");
-    expect(getComputedStyle(dialog.getByRole("button", { name: "Cancel" }).element()).borderRadius).toBe("4px");
+    expect(getComputedStyle(dialog.element()).borderRadius).toBe("8px");
+    expect(getComputedStyle(dialog.getByRole("button", { name: "Cancel" }).element()).borderRadius).toBe("0px");
     await dialog.getByRole("group", { name: "Start" }).getByLabelText("Time").fill("09:00");
     await dialog.getByRole("group", { name: "End" }).getByLabelText("Time").fill("10:00");
     await dialog.getByRole("textbox", { name: "Purpose" }).fill("Live-stack-shaped booking");
@@ -294,7 +339,18 @@ describe("Calendar page", () => {
     await expect.poll(() => document.activeElement).toBe(trigger.element());
   });
 
-  test("dismisses a clean form through the backdrop and confirms dirty browser navigation", async () => {
+  test("opens the full booking form from compact More options", async () => {
+    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory />);
+    const dialog = await calendar.openTargetlessBookingDialog();
+
+    await dialog.getByRole("button", { name: "More options" }).click();
+    await expect.poll(() => window.location.pathname).toBe("/booking/calendar/bookings/add");
+    await expect.poll(() => new URLSearchParams(window.location.search).get("target")).toBe("IN123");
+    await expect.element(page.getByRole("heading", { name: "Add Booking" })).toBeVisible();
+  });
+
+  test("keeps the popover open after outside press and confirms dirty browser navigation", async () => {
     window.history.replaceState({}, "", "/booking/calendar?date=2026-08-16");
     window.history.pushState({}, "", "/booking/calendar?date=2026-08-17");
     render(<CalendarPageStory />);
@@ -303,7 +359,9 @@ describe("Calendar page", () => {
     await trigger.click();
     const cleanDialog = page.getByRole("dialog", { name: "New Booking" });
     await expect.element(cleanDialog).toBeVisible();
-    calendar.clickDialogOverlay();
+    await calendar.heading.click();
+    await expect.element(cleanDialog).toBeVisible();
+    await cleanDialog.getByRole("button", { name: "Cancel" }).click();
     await expect.element(cleanDialog).not.toBeInTheDocument();
     await expect.poll(() => document.activeElement).toBe(trigger.element());
 
@@ -333,17 +391,24 @@ describe("Calendar page", () => {
     window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
     render(<CalendarPageStory />);
     const dialog = await calendar.openTargetlessBookingDialog();
-    await dialog.getByRole("group", { name: "Start" }).getByLabelText("Time").fill("09:00");
-    await dialog.getByRole("group", { name: "End" }).getByLabelText("Time").fill("10:00");
+    const startTime = dialog.getByRole("group", { name: "Start" }).getByLabelText("Time");
+    const endTime = dialog.getByRole("group", { name: "End" }).getByLabelText("Time");
+    const submit = dialog.getByRole("button", { name: "Book", exact: true });
+    await startTime.fill("09:00");
+    await endTime.fill("10:00");
     const purpose = dialog.getByRole("textbox", { name: "Purpose" });
     await purpose.fill("Preserve this draft");
 
-    await dialog.getByRole("button", { name: "Book", exact: true }).click();
+    await submit.click();
     await expect.element(dialog.getByText("This period overlaps another booking.")).toBeVisible();
     await expect.element(purpose).toHaveValue("Preserve this draft");
+    await expect.element(submit).toBeDisabled();
 
+    await startTime.fill("10:00");
+    await endTime.fill("11:00");
+    await expect.element(submit).toBeEnabled();
     code = "errors.api.v2.booking.concurrentModification";
-    await dialog.getByRole("button", { name: "Book", exact: true }).click();
+    await submit.click();
     await expect
       .element(
         dialog.getByText("This event changed while you were editing it. Review the latest details and try again."),
@@ -352,7 +417,7 @@ describe("Calendar page", () => {
     await expect.element(purpose).toHaveValue("Preserve this draft");
 
     code = "errors.api.v2.booking.target.unavailable";
-    await dialog.getByRole("button", { name: "Book", exact: true }).click();
+    await submit.click();
     await expect.element(dialog.getByText("This bookable item is unavailable.")).toBeVisible();
     await expect.element(purpose).toHaveValue("Preserve this draft");
   });

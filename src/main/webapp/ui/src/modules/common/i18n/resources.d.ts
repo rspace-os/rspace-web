@@ -913,6 +913,7 @@ export default interface Resources {
         "title": "Bookable item unavailable"
       },
       "events": {
+        "actor": "Requester / creator",
         "busy": "Busy",
         "count": "{count, plural, one {# event} other {# events}}",
         "edit": "Edit",
@@ -921,6 +922,7 @@ export default interface Resources {
           "description": "RSpace could not load these events.",
           "title": "Events unavailable"
         },
+        "kind": "Event type",
         "loading": "Loading events.",
         "page": "Page {page, number} of {totalPages, number}",
         "pagination": "Event pages",
@@ -1076,6 +1078,7 @@ export default interface Resources {
         "itemSearch": "Search bookable items",
         "laterOccurrence": "Later occurrence ({offset})",
         "maximumDuration": "Maximum booking duration: {count, number} minutes",
+        "moreOptions": "More options",
         "notes": "Notes",
         "notesCount": "{count, number}/1,000 characters",
         "occurrence": "Repeated local time",
@@ -1107,6 +1110,7 @@ export default interface Resources {
     },
     "calendar": {
       "actions": {
+        "addForItem": "Add booking for {item}",
         "book": "Book",
         "edit": "Edit",
         "label": "Booking actions",

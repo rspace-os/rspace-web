@@ -54,15 +54,6 @@ export class CalendarPage {
     return this.bookingDialog;
   }
 
-  clickDialogOverlay(): void {
-    // The backdrop has no accessible role or name, so this action must address its data slot.
-    const overlay = document.querySelector<HTMLElement>('[data-slot="dialog-overlay"]');
-    if (!overlay) throw new Error("The compact booking dialog overlay is missing");
-    overlay.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
-    overlay.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
-    overlay.click();
-  }
-
   async dragResourceSelection(index: number, from: number, to: number, pointerId: number): Promise<void> {
     const canvas = this.resourceCanvases[index].element() as HTMLElement;
     const box = canvas.getBoundingClientRect();

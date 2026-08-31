@@ -52,7 +52,7 @@ function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssu
       ...identity,
       privacy: v.literal("full"),
       purpose: v.nullable(v.string()),
-      bookedBy: v.string(),
+      bookedBy: v.nullable(v.string()),
       createdBy: v.optional(v.nullable(v.string())),
       canEdit: v.boolean(),
       createdAt: v.string(),

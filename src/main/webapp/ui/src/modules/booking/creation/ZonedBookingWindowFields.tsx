@@ -52,6 +52,7 @@ export function ZonedBookingWindowFields({
   maxBookingDurationMinutes,
   openingStart,
   openingEnd,
+  enforceOpeningHours = true,
   value,
   onChange,
   onResolved,
@@ -67,6 +68,7 @@ export function ZonedBookingWindowFields({
   maxBookingDurationMinutes: number;
   openingStart: string;
   openingEnd: string;
+  enforceOpeningHours?: boolean;
   value: BookingWindowDraft;
   onChange: (value: BookingWindowDraft) => void;
   onResolved: (value: ResolvedBookingWindow | undefined) => void;
@@ -88,6 +90,7 @@ export function ZonedBookingWindowFields({
     (startMinute !== undefined && startMinute % slotGranularityMinutes !== 0) ||
     (endMinute !== undefined && endMinute % slotGranularityMinutes !== 0);
   const openingInvalid =
+    enforceOpeningHours &&
     Boolean(result.window && schedulingStart && schedulingEnd) &&
     (schedulingStart?.toPlainDate().toString() !== schedulingEnd?.toPlainDate().toString() ||
       `${String(schedulingStart?.hour).padStart(2, "0")}:${String(schedulingStart?.minute).padStart(2, "0")}` <

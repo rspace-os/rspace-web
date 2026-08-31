@@ -460,6 +460,40 @@ describe("BookingForm", () => {
     expect(submit).toHaveBeenCalledOnce();
   });
 
+  it("allows maintenance to span local dates", async () => {
+    const user = userEvent.setup();
+    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))));
+
+    renderForm(
+      <BookingForm
+        mode="add"
+        displayTimezone="UTC"
+        eventKind="MAINTENANCE"
+        initialTarget={{ ...target, timezone: "UTC", openingStart: "08:00", openingEnd: "18:00" }}
+        initialWindow={{
+          startDate: "2026-08-17",
+          startTime: "22:00",
+          endDate: "2026-08-18",
+          endTime: "02:00",
+        }}
+        token="token"
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
+
+    const submitButton = await screen.findByRole("button", { name: "booking:bookings.form.submitMaintenance" });
+    expect(screen.queryByText("booking:bookings.errors.openingHours")).not.toBeInTheDocument();
+    await user.click(submitButton);
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventKind: "MAINTENANCE",
+        window: { start: "2026-08-17T22:00:00Z", end: "2026-08-18T02:00:00Z" },
+      }),
+    );
+  });
+
   it("allows an unchanged over-limit interval on a purpose-only edit", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();

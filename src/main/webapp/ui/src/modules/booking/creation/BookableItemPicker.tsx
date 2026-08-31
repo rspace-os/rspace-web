@@ -171,9 +171,16 @@ export function BookableItemPicker({
               </ComboboxItem>
             )}
           </ComboboxList>
-          <ComboboxEmpty>{query.isError ? t("bookings.errors.itemLoad") : t("bookings.form.itemNone")}</ComboboxEmpty>
+          <ComboboxEmpty>
+            {query.isPending ? null : query.isError ? t("bookings.errors.itemLoad") : t("bookings.form.itemNone")}
+          </ComboboxEmpty>
         </ComboboxContent>
       </Combobox>
+      {query.isPending ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t("bookings.loadingConfiguration")}
+        </p>
+      ) : null}
     </div>
   );
 }

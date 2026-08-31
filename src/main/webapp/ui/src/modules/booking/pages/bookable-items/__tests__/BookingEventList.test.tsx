@@ -45,6 +45,15 @@ const busyBooking = {
   bookedBy: null,
   canEdit: false,
 };
+const maintenance = {
+  ...fullBooking,
+  id: 43,
+  kind: "MAINTENANCE",
+  purpose: "Laser alignment",
+  bookedBy: null,
+  createdBy: "Morgan Ellis (mellis)",
+  canEdit: false,
+};
 
 function envelope(
   docs: unknown[],
@@ -128,6 +137,18 @@ describe("BookingEventList", () => {
       "/booking/calendar/bookings/41",
     );
     expect(within(table).getAllByRole("link")).toHaveLength(1);
+  });
+
+  it("renders maintenance with its creator rather than as a busy booking", async () => {
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([maintenance]))));
+    renderList();
+
+    await screen.findAllByText("Morgan Ellis (mellis)");
+    const table = await screen.findByRole("table");
+    expect(within(table).getByText("booking:bookings.form.typeBlockout")).toBeVisible();
+    expect(within(table).getByText("Morgan Ellis (mellis)")).toBeVisible();
+    expect(within(table).getByText("Laser alignment")).toBeVisible();
+    expect(within(table).queryByText("booking:bookableItemDetails.events.busy")).not.toBeInTheDocument();
   });
 
   it("reformats for a timezone change without another request", async () => {

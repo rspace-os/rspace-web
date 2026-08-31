@@ -24,6 +24,8 @@ export type ActionBarAction = {
    * and order alone, so marking something preferred never reshuffles the row.
    */
   preferred?: boolean;
+  /** Keeps this action in the row at every width. */
+  alwaysVisible?: boolean;
 };
 
 /** Beyond this the bar stops being a bar. Extra actions are dropped rather than silently crowded. */
@@ -85,7 +87,7 @@ export function ActionBar({ actions, className }: { actions: readonly ActionBarA
   const ordered = cancel ? [cancel, ...rest] : rest;
   // Cancel plus the leading action stay put; only what comes after them can be overflowed.
   const pinned = cancel ? 2 : 1;
-  const overflow = ordered.slice(pinned);
+  const overflow = ordered.filter((action, index) => index >= pinned && !action.alwaysVisible);
   if (ordered.length === 0) return null;
 
   return (
@@ -103,7 +105,7 @@ export function ActionBar({ actions, className }: { actions: readonly ActionBarA
               ACTION_CLASS,
               action.preferred && "font-semibold",
               action.style === "destructive" ? "text-destructive" : action.preferred && "text-primary",
-              index < pinned ? "flex" : cn("hidden", REVEAL_AT[index]),
+              index < pinned || action.alwaysVisible ? "flex" : cn("hidden", REVEAL_AT[index]),
             )}
           >
             {action.icon ? <action.icon className="size-4" aria-hidden="true" /> : null}

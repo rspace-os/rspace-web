@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { CalendarCheck2Icon } from "lucide-react";
+import { CalendarCheck2Icon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -106,6 +106,26 @@ export function calendarDates(date: string, view: CalendarView): readonly string
 function periodDates(date: string, view: CalendarView): readonly string[] {
   if (view !== "month") return calendarDates(date, view);
   return datesFrom(firstOfMonth(date), monthDayCount(date));
+}
+
+function nextFreeRange(
+  events: readonly BookingListDocument[],
+  date: string,
+  timezone: string,
+  startWindow: number,
+  endWindow: number,
+  increment: number,
+): { startMinute: number; endMinute: number } | undefined {
+  const duration = Math.min(60, endWindow - startWindow);
+  const firstStart = Math.ceil(startWindow / increment) * increment;
+  const occupied = events.map((event) => sliceAcrossWallClockDay(event.start, event.end, date, timezone));
+  for (let startMinute = firstStart; startMinute + duration <= endWindow; startMinute += increment) {
+    const endMinute = startMinute + duration;
+    if (!occupied.some((event) => event.startMinute < endMinute && event.endMinute > startMinute)) {
+      return { startMinute, endMinute };
+    }
+  }
+  return undefined;
 }
 
 function shiftDate(date: string, view: CalendarView, delta: number): string {
@@ -517,8 +537,18 @@ function ResourceSchedule({
             {resourceRows.map((resource, index) => {
               const resourceEvents = eventsByResourceAndDate.get(`${resource.globalId}|${date}`) ?? [];
               const configuration = configurationByTarget.get(resource.globalId);
+              const proposedRange = configuration
+                ? nextFreeRange(
+                    resourceEvents,
+                    date,
+                    timezone,
+                    availabilityStartMinute,
+                    availabilityEndMinute,
+                    configuration.slotGranularityMinutes,
+                  )
+                : undefined;
               return (
-                <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)]">
+                <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)_auto]">
                   <header className="border-r bg-muted/30 p-1">
                     <InventoryItem name={resource.value.name} globalId={resource.globalId} size="xs">
                       <InventoryLocationLink
@@ -549,6 +579,21 @@ function ResourceSchedule({
                         : undefined
                     }
                   />
+                  <div className="flex items-center border-l p-2">
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="outline"
+                      disabled={creationDisabled || !configuration || !proposedRange || !onResourceRangeSelect}
+                      aria-label={t("calendar.actions.addForItem", { item: resource.value.name })}
+                      onClick={(event) => {
+                        if (!configuration || !proposedRange || !onResourceRangeSelect) return;
+                        onResourceRangeSelect(configuration, proposedRange, event.currentTarget);
+                      }}
+                    >
+                      <PlusIcon aria-hidden="true" />
+                    </Button>
+                  </div>
                 </section>
               );
             })}
