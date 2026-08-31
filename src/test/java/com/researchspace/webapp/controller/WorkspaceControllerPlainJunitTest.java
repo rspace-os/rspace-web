@@ -38,8 +38,7 @@ public class WorkspaceControllerPlainJunitTest {
   @BeforeEach
   public void setUp() throws Exception {
     anyUser = TestFactory.createAnyUser("any");
-    // needs an id: the templates lookup is stubbed with Set.of(anyUser.getId()), and Set.of
-    // rejects a null element
+    // Set.of(anyUser.getId()) in the stub rejects null.
     anyUser.setId(1L);
     workspaceCtrller.setRecordManager(recordMgr);
   }
@@ -65,7 +64,6 @@ public class WorkspaceControllerPlainJunitTest {
   }
 
   private void assertTemplateOrdering(List<RecordInformation> results) {
-    // without this the loop below asserts nothing at all on an empty or single-element list
     assertEquals(TEMPLATE_COUNT, results.size());
     for (int i = 0; i < results.size() - 1; i++) {
       int thisSuffix = Integer.parseInt(results.get(i).getName().split("-")[1]);

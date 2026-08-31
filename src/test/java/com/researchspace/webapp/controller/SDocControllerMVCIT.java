@@ -180,10 +180,7 @@ public class SDocControllerMVCIT extends MVCTestBase {
     assertEquals(
         docFieldAttachmentsCount,
         templateFieldAttachments.size() - 1,
-        "template should have as many FieldAttachments as original doc"); // template creation adds
-    // image from annotation
-    // as extra
-    // FieldAttachment
+        "template should preserve document attachments plus its annotation image");
 
     shareRecordWithGroup(u1, grp, template);
 

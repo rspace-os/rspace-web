@@ -19,11 +19,7 @@ public class FieldDaoTest extends SpringTransactionalTest {
 
   @Test
   public void testGetFieldInvalid() {
-    assertThrows(
-        DataAccessException.class,
-        () ->
-            // should throw DataAccessException
-            dao.get(1000L));
+    assertThrows(DataAccessException.class, () -> dao.get(1000L));
   }
 
   @Test

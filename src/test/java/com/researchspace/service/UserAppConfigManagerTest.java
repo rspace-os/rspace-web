@@ -87,8 +87,7 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     props.put(SLACK_CHANNEL_NAME, SLACK_CHANNEL1);
     assertThrows(
         IllegalArgumentException.class,
-        () -> // setup
-        userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1));
+        () -> userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1));
   }
 
   @Test
@@ -96,9 +95,7 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     Map<String, String> props = new HashMap<>();
     props.put(SLACK_CHANNEL_NAME, SLACK_CHANNEL1);
     props.put(SLACK_CHANNEL_LABEL, "label");
-    // setup
     UserAppConfig cfg = userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1);
-    // update
     props.put(SLACK_CHANNEL_NAME, SLACK_CHANNEL2);
     Long setId = cfg.getAppConfigElementSets().iterator().next().getId();
     assertAuthorisationExceptionThrown(

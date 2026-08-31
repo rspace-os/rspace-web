@@ -59,9 +59,6 @@ public class ExternalFileServiceTest extends SpringTransactionalTest {
             anyUser, "anyToken - this is a mock API call");
   }
 
-  // Was annotated @Before (now @BeforeEach) despite being named after() and documented as tidy-up,
-  // so it has never run as teardown. A no-op today because the setFileStore(localFs) call it pairs
-  // with is commented out in before(); kept and corrected so restoring that line stays safe.
   @AfterEach
   public void restoreFileStore() throws Exception {
     getTargetObject(mediaMgr, MediaManagerImpl.class).setFileStore(fileStore);
@@ -105,8 +102,6 @@ public class ExternalFileServiceTest extends SpringTransactionalTest {
         HttpStatus.BAD_REQUEST.value(), "Some error message", null);
   }
 
-  // not named tearDown(): the superclass already declares a public tearDown() and this must run
-  // alongside it, not override it
   @AfterEach
   void closeMocks() throws Exception {
     mocks.close();

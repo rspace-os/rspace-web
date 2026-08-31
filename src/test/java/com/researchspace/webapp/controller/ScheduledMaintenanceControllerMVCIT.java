@@ -41,10 +41,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 /** Integration tests covering scheduled maintenance. */
 public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
 
-  /** Matches the pattern SessionTimeZoneUtils.formatDateTimeForClient renders dates with. */
   private static final String CLIENT_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm";
 
-  /** ScheduledMaintenance defaults stopUserLoginDate to this far before startDate. */
   private static final Duration STOP_USER_LOGIN_MINUTES_BEFORE_START = Duration.ofMinutes(10);
 
   @Autowired MockServletContext servletContext;
@@ -78,10 +76,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
 
   private void initDates() {
     if (dateNextHour == null) {
-      // The trailing -00:00 in the pattern is a literal, and the server parses these strings as
-      // UTC. Formatting must therefore happen in UTC too, otherwise local wall-clock time is
-      // labelled as UTC and every relative date is shifted by the machine's offset: in a
-      // negative-offset zone the "future" maintenance dates below land in the past.
+      // The suffix is literal, so format in UTC to match how the server parses it.
       dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.000-00:00");
       dateFormat.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
 
@@ -189,11 +184,7 @@ public class ScheduledMaintenanceControllerMVCIT extends MVCTestBase {
   @Test
   public void testActiveMaintenanceCreateRetrieveFinishNow() throws Exception {
     String testMessage = "test maintenance message";
-    // The start date is posted as an absolute instant but the server renders it back in the user's
-    // timezone (SessionTimeZoneUtils, which falls back to the JVM default when the session carries
-    // no preference, as it does here), so the expected strings have to be derived rather than
-    // hard-coded or the test only passes under UTC. Everything below comes from this one instant:
-    // a second literal for the posted form of it would silently drift out of sync with it.
+    // The response uses the JVM timezone, so derive both expectations from the same instant.
     Instant start = Instant.parse("2015-01-01T00:00:01Z");
     String oldDateString = dateFormat.format(Date.from(start));
     DateTimeFormatter clientFormat =

@@ -9,20 +9,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
- * Wires a test class into the Spring TestContext framework.
+ * Registers {@link SpringExtension} without requiring a Spring test superclass.
  *
- * <p>This is the composed-annotation equivalent of extending a Spring base class. JUnit 4 needed a
- * base class because a runner is class-level and cannot be composed, which is why Spring shipped
- * {@code AbstractJUnit4SpringContextTests}; Jupiter registers the equivalent behaviour through an
- * extension instead, so the single superclass a test gets to spend stays free.
- *
- * <p>Deliberately adds nothing but the extension. In particular it declares no
- * {@code @TestExecutionListeners}: naming any set here would replace Spring's defaults for every
- * annotated class that does not declare its own, silently dropping listeners such as {@code
- * ServletTestExecutionListener} and {@code TransactionalTestExecutionListener}.
- *
- * <p>Combine it with a context annotation such as {@link DefaultTestContext}, or with
- * {@code @ContextConfiguration} directly.
+ * <p>Combine with {@link DefaultTestContext} or {@code @ContextConfiguration}. Do not declare
+ * {@code @TestExecutionListeners} here because that replaces Spring's default listeners.
  */
 @ExtendWith(SpringExtension.class)
 @Retention(RetentionPolicy.RUNTIME)

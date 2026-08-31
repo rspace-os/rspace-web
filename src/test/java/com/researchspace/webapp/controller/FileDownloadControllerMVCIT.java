@@ -1,10 +1,10 @@
 package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -56,9 +56,7 @@ public class FileDownloadControllerMVCIT extends MVCTestBase {
             hashes2 = getSignatureHashesForSignature(signResult.getSignature().get());
             return hashes2.stream().filter(h -> h.getFile() != null).findAny().get().getFile();
           } catch (Exception e) {
-            assertFalse(
-                1 == 1, "Invokable threw internal exception " + e.getMessage()); // fail test
-            return null;
+            return fail("Invokable threw internal exception", e);
           }
         };
     Function<InvokableWithResult<FileProperty>, FileProperty> p = t -> t.invokeWithResult();

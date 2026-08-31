@@ -58,15 +58,12 @@ public class UserPreferenceTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> {
-          // this is a boolean pref, can only be set with string representation of booleans
           UserPreference up = createUserPref(Preference.NOTIFICATION_DOCUMENT_EDITED_PREF);
-          // all ok
           up.setValue("true");
           up.setValue("false");
           up.setValue("FALSE");
           up.setValue("TRUE");
 
-          // throws IAE
           up.setValue("otherstring");
         });
   }

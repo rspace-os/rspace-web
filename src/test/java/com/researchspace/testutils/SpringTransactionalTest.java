@@ -45,10 +45,7 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Defines transactional behaviour for Spring transactional tests. Subclasses overriding {@link
- * #tearDown()} should invoke {@code super.tearDown()} to ensure correct tidy up after each test.
- */
+/** Transactional base for Spring tests. Overrides of {@link #tearDown()} must call it via super. */
 @TestExecutionListeners(
     value = {
       DependencyInjectionTestExecutionListener.class,

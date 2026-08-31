@@ -83,10 +83,7 @@ public class PermissionsPerformanceTest {
     // this will go through subject permissions and ACLS
     utils.filter(toFilter, PermissionType.RENAME, u);
     sw.split();
-    assertTrue(
-        sw.getSplitTime() < 1500,
-        "Should be less than 1500ms but was "
-            + sw.getSplitTime()); // check that 10000 records->500 takes < 1.5 second.
+    assertTrue(sw.getSplitTime() < 1500, "Should be less than 1500ms but was " + sw.getSplitTime());
     assertEquals(NUM_RECORDS_TO_CREATE, toFilter.size());
   }
 

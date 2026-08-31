@@ -36,9 +36,7 @@ public class GenericDaoTest extends BaseDaoTestCase {
   @Test
   public void testGetThrowsExceptionIfObjectNotFound() {
     final Long UNKNOWNID = -1234556L;
-    // getSafeNull returns an empty Optional rather than throwing
     assertFalse(genericDao.getSafeNull(UNKNOWNID).isPresent());
-    // whereas get throws for an unknown id
     assertThrows(ObjectRetrievalFailureException.class, () -> genericDao.get(-UNKNOWNID));
   }
 

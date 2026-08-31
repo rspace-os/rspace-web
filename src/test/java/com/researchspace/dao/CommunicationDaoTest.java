@@ -55,10 +55,7 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     Notification message = createAnyNotification(originator);
     message.setOriginator(null);
     dao.save(message);
-    assertThrows(
-        PersistenceException.class,
-        () -> // needed to test FK constraints
-        sessionFactory.getCurrentSession().flush());
+    assertThrows(PersistenceException.class, () -> sessionFactory.getCurrentSession().flush());
   }
 
   @Test

@@ -132,7 +132,6 @@ public class ApiRequestThrottlerTest {
     // but other user works fine
     Mockito.clearInvocations(timesource);
     String otherUser = "other";
-    // reset invocations for other user
     Mockito.when(timesource.now())
         .thenReturn(
             sequentialTimes[0], ArrayUtils.subarray(sequentialTimes, 1, numTimeSourceRequests));

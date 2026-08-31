@@ -113,7 +113,7 @@ public class ExportImportTest {
 
   @Test
   public void streamArchiveDownloadHappyCase() throws IOException {
-    File file = newFile(folder, "file.zip"); // must be zip
+    File file = newFile(folder, "file.zip");
     final String EXPECTED_RESPONSE = "some data";
 
     FileUtils.write(file, "some data", StandardCharsets.UTF_8);

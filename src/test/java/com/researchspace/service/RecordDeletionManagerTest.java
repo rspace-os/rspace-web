@@ -110,7 +110,6 @@ public class RecordDeletionManagerTest extends SpringTransactionalTest {
     assertThrows(
         AuthorizationException.class,
         () -> recordDeletionMgr.deleteRecord(root.getId(), sdoc.getId(), other));
-    // and the record is left undeleted
     StructuredDocument reloaded = (StructuredDocument) recordDao.get(sdoc.getId());
     assertFalse(reloaded.isDeleted());
     assertFalse(reloaded.getParents().iterator().next().isRecordInFolderDeleted());

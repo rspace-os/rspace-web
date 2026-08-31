@@ -48,7 +48,6 @@ public class DefaultPostUserCreateTest {
 
   @Test
   public void postUserCreateMakesGroupIfEnabled() {
-    //
     when(properties.isPicreateGroupOnSignupEnabled()).thenReturn(Boolean.TRUE);
     postUserCreate.postUserCreate(anyUser, mockRequest, "any");
     assertLoginAndNotifyCalled();
@@ -59,7 +58,6 @@ public class DefaultPostUserCreateTest {
     assertLoginAndNotifyCalled();
     assertGroupNotCreated();
 
-    // both conditions must be true
     when(properties.isPicreateGroupOnSignupEnabled()).thenReturn(Boolean.TRUE);
     when(roleHandler.setNewlySignedUpUserAsPi(anyUser)).thenReturn(anyUser);
     postUserCreate.postUserCreate(anyUser, mockRequest, "any");

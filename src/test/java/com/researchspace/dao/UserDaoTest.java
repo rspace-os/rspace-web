@@ -47,11 +47,7 @@ public class UserDaoTest extends BaseDaoTestCase {
 
   @Test
   public void testGetUserInvalid() throws Exception {
-    assertThrows(
-        DataAccessException.class,
-        () ->
-            // should throw DataAccessException
-            userDao.get(1000L));
+    assertThrows(DataAccessException.class, () -> userDao.get(1000L));
   }
 
   @Test
@@ -99,7 +95,6 @@ public class UserDaoTest extends BaseDaoTestCase {
     user = userDao.get(-1L);
     // verify that violation occurs when adding new user with same username
     user.setId(null);
-    // saving a second user with the same username should violate the unique constraint
     final User duplicate = user;
     assertThrows(DataAccessException.class, () -> userDao.saveUser(duplicate));
   }

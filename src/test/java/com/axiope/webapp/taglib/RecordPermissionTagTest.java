@@ -35,11 +35,7 @@ public class RecordPermissionTagTest {
 
   @Test
   public void testDoStartTag() throws JspException {
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            // throws ISE if attributes are not set
-            tag.doStartTag());
+    assertThrows(IllegalStateException.class, () -> tag.doStartTag());
   }
 
   @Test

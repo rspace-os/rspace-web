@@ -29,12 +29,9 @@ public class IdConstraintTest {
         () -> {
           createConstraintFromLongArray(new Long[] {2L, 3L, 1L});
           ids.clear();
-          // encapsulated  set is unaltered
           assertEquals(3, constraint.getId().size());
-          // check ids are ordered in ascending order
           assertEquals(1L, constraint.getId().iterator().next().longValue());
 
-          // return list is read only!
           constraint.getId().clear();
         });
   }

@@ -218,7 +218,6 @@ public class RecordEditorTrackerTest {
     Set<String> viewers = tracker.getViewersForRecord(r1.getId());
     assertNotNull(viewers); // should not return null
     assertTrue(viewers.isEmpty());
-    // the returned set is unmodifiable
     assertThrows(UnsupportedOperationException.class, () -> viewers.add("new user"));
   }
 

@@ -40,10 +40,7 @@ public class MySQLVersionPreconditionTest {
     setUpDBVersion(new SemanticVersion(5, 6, null, null));
     precondition.setVersion("5.7");
     precondition.setOperator("gte");
-    assertThrows(
-        CustomPreconditionFailedException.class,
-        () -> // fails - should ne > =5.7 but is 5.6
-        precondition.check(db));
+    assertThrows(CustomPreconditionFailedException.class, () -> precondition.check(db));
   }
 
   @Test

@@ -8,7 +8,6 @@ import org.junit.jupiter.api.TestInfo;
 /** Registers a test class for database cleanup after its final test. */
 public interface DatabaseCleanerLifecycle {
 
-  /** Returns the test's Spring-managed data source. */
   DataSource getDataSourceForCleanup();
 
   @BeforeEach

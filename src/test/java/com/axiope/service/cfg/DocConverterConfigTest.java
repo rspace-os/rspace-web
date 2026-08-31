@@ -32,8 +32,7 @@ import org.springframework.test.context.TestPropertySource;
  * This test class tests how different deployment property settings affect the connfiguration of
  * DocumentConverterService.
  *
- * <p>By using {@code @Nested} inner classes we can test different class-level configurations
- * without having to define every test in a separate class.
+ * <p>Nested classes give each scenario its own class-level Spring configuration.
  *
  * <p>When running these tests, although we're using 'prod' profile, the Aspose classes aren't
  * present on the classpath during a unit test run, so even if

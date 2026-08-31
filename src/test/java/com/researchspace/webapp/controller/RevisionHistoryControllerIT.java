@@ -71,7 +71,6 @@ public class RevisionHistoryControllerIT extends RealTransactionSpringTestBase {
 
           AuditedRecord sdAudit = null;
           try {
-            // this should be allowed - user is document owner
             revisionHistoryController.getListOfVersions(
                 sd.getId(),
                 model,
@@ -81,7 +80,6 @@ public class RevisionHistoryControllerIT extends RealTransactionSpringTestBase {
                 createSearchCriteria());
             List<AuditedRecord> audits = (List) modelTss.get("history");
             sdAudit = audits.get(0);
-            // should be able to get a
             structuredDocumentController.getDocumentRevision(
                 sd.getId(), sdAudit.getRevision().intValue(), "", model, mockPrincipal, null);
 

@@ -32,6 +32,5 @@ public class ArchiveUsersTest {
     assertEquals(testData.getAdmin(), inCommunity.getAdmins().iterator().next());
     // profiles
     assertEquals(1, fromXml.getProfiles().size());
-    assertTrue(true);
   }
 }

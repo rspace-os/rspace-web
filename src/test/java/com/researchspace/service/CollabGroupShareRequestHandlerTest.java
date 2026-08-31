@@ -30,10 +30,7 @@ public class CollabGroupShareRequestHandlerTest extends SpringTransactionalTest 
     User u = TestFactory.createAnyUser("any");
     CommunicationTarget ct = new CommunicationTarget();
     ct.setCommunication(new Notification());
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> // doesn't work iwth notifications
-        handler.handleMessageOrRequestUpdate(ct, u));
+    assertThrows(IllegalArgumentException.class, () -> handler.handleMessageOrRequestUpdate(ct, u));
   }
 
   @Test
@@ -42,9 +39,6 @@ public class CollabGroupShareRequestHandlerTest extends SpringTransactionalTest 
     User u = TestFactory.createAnyUser("any");
     CommunicationTarget ct = new CommunicationTarget();
     ct.setCommunication(mor);
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> // doesn't work with wrong message type
-        handler.handleMessageOrRequestUpdate(ct, u));
+    assertThrows(IllegalArgumentException.class, () -> handler.handleMessageOrRequestUpdate(ct, u));
   }
 }

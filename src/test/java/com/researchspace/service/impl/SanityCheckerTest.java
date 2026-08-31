@@ -52,8 +52,6 @@ public class SanityCheckerTest {
         .thenReturn(TestFactory.createAnyUser("any"));
     when(searchStrategy.isLocal()).thenReturn(false);
     sanityChecker.onAppStartup(context);
-    // Mockito.verify(chemModule, Mockito.times(1)).substructureSearch(Mockito.anyString(),
-    // Mockito.any(User.class));
     assertTrue(strglogger.logContents.contains(SanityChecker.SANITY_CHECK_RUN_ALL_OK_MSG + "true"));
     // not local search should not run here, it might not be configured yet
     verify(searchStrategy, never()).searchFiles(Mockito.anyString(), Mockito.any(User.class));

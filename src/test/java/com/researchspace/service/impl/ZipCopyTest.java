@@ -14,14 +14,10 @@ public class ZipCopyTest {
       Path.of("src/main/resources/StartUpData/chemical-data-sheet.zip");
   private static final String START_UP_DATA_C4_ZCIP = "/StartUpData/chemical-data-sheet.zip";
 
-  // tests that maven filtering is not messing up zip file when copying from src to target
-  // https://maven.apache.org/plugins/maven-resources-plugin/examples/binaries-filtering.html
-  // https://stackoverflow.com/questions/50594360/gzipinputstream-works-with-fileinputstream-but-not-inputstream/50610474#50610474
+  // Guards against Maven resource filtering corrupting the binary fixture.
   @Test
   public void classPathAndFileReadsAreTheSameBytes() throws IOException {
-    // readAllBytes rather than a fixed-size buffer: a buffer larger than the zip zero-pads both
-    // sides equally and a buffer smaller than it compares only a prefix, so either way a
-    // difference in the tail passes unnoticed once the file outgrows the number.
+    // Fixed buffers can compare only a prefix or include equal zero padding.
     try (InputStream fromClasspath = fromClasspath()) {
       assertArrayEquals(
           fromClasspath.readAllBytes(),

@@ -30,7 +30,7 @@ public class SubnetUtilsTest {
         IllegalArgumentException.class,
         () -> {
           new SubnetUtils(VALID_IP); // must be cidr
-        }); // must be cidr
+        });
   }
 
   @Test

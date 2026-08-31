@@ -21,9 +21,7 @@ public class DatabaseCleaner {
   public static void cleanUp(Class<?> testClass) {
     JdbcTemplate jdbcTemplate = jdbcTemplates.remove(testClass);
     if (jdbcTemplate == null) {
-      // No test in this class reached @BeforeEach, so it made no changes that need cleanup. This
-      // includes a class whose context failed to load. The per-class lookup avoids reusing a
-      // template left by an earlier test class.
+      // Context failures can prevent @BeforeEach from registering the class.
       return;
     }
     // delete from Batch tables

@@ -68,7 +68,7 @@ public class DateRangeTest {
           assertTrue(toOnly.getFrom() == 0L);
 
           DateRange.parse(",1900/01/23"); // illegal format throws IAE
-        }); // illegal format throws IAE
+        });
   }
 
   @Test

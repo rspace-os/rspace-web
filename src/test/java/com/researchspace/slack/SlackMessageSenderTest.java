@@ -26,7 +26,6 @@ public class SlackMessageSenderTest {
     App unsupported = new App("any", "label", false);
     assertFalse(slackSender.supportsApp(unsupported));
     User anyUser = TestFactory.createAnyUser("any");
-    // the unsupported app is rejected while building the config set, before any send
     assertThrows(IllegalArgumentException.class, () -> createAppConfigSet(unsupported, anyUser));
   }
 

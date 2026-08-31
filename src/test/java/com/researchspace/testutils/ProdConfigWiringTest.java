@@ -71,7 +71,6 @@ public class ProdConfigWiringTest {
   @Test
   public void testConfiguration() {
     // we don't run any code, we just want to check that no exception is thrown
-    assertTrue(1 == 1);
     userManager.exists(1L);
   }
 

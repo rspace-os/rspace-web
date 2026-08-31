@@ -31,7 +31,6 @@ public class RecordTypeFilterTest {
 
   @Test
   public void testHandlesExclude() {
-    // exclude these 2
     RecordTypeFilter rtf =
         new RecordTypeFilter(EnumSet.of(RecordType.MEDIA_FILE, RecordType.NORMAL), false);
     assertEquals(EnumSet.allOf(RecordType.class).size() - 2, rtf.getWantedTypes().size());
@@ -42,7 +41,6 @@ public class RecordTypeFilterTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> {
-          // exclude these 2
           new RecordTypeFilter(null, false);
         });
   }

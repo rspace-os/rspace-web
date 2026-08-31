@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Assumptions;
 
 public class TestRunnerController {
 
-  /** Will ignore tests if this is called from a {@code @BeforeAll} method. */
   public static void ignoreIfFastRun() {
     if (getFastProperty() != null) {
       Assumptions.assumeFalse(true);

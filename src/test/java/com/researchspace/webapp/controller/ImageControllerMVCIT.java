@@ -373,13 +373,13 @@ public class ImageControllerMVCIT extends MVCTestBase {
   @Test
   public void testGetAlreadySetThumbnail() throws Exception {
     byte[] b = testThumbnail(false);
-    assertTrue(b.length > 0, "byte array was " + b.length); // at least as long
+    assertTrue(b.length > 0, "byte array was " + b.length);
   }
 
   @Test
   public void testGeneratedThumbnail() throws Exception {
     byte[] b = testThumbnail(true);
-    assertTrue(b.length > 0, "byte array was " + b.length); // at least as long
+    assertTrue(b.length > 0, "byte array was " + b.length);
   }
 
   @Test
@@ -390,7 +390,7 @@ public class ImageControllerMVCIT extends MVCTestBase {
     MvcResult res = doGetThumbnail(docFile, testUser);
     byte[] b = res.getResponse().getContentAsByteArray();
     assertEquals(HttpStatus.OK.value(), res.getResponse().getStatus());
-    assertTrue(b.length > 0, "byte array was " + b.length); // at least as long
+    assertTrue(b.length > 0, "byte array was " + b.length);
   }
 
   @Test
