@@ -30,15 +30,13 @@ public class ApiAwareWebSecurityManager extends DefaultWebSecurityManager {
    * the {@link Subject#login(AuthenticationToken)} call.
    */
   public static void doStatelessLogin(Subject subject, AuthenticationToken token) {
-    Boolean previous = STATELESS_API_LOGIN.get();
+    boolean outermost = !isStatelessApiLogin();
     STATELESS_API_LOGIN.set(Boolean.TRUE);
     try {
       subject.login(token);
     } finally {
-      if (previous == null) {
+      if (outermost) {
         STATELESS_API_LOGIN.remove();
-      } else {
-        STATELESS_API_LOGIN.set(previous);
       }
     }
   }
