@@ -267,11 +267,11 @@ class DMPAssistantControllerTest {
   void refreshTokenThrowsNotFoundWhenNoConnection() {
     when(userConnectionManager.findByUserNameProviderName(USERNAME, "DMPASSISTANT"))
         .thenReturn(Optional.empty());
+    ExtendedModelMap model = new ExtendedModelMap();
 
     HttpClientErrorException ex =
         assertThrows(
-            HttpClientErrorException.class,
-            () -> controller.refreshToken(new ExtendedModelMap(), principal));
+            HttpClientErrorException.class, () -> controller.refreshToken(model, principal));
 
     assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
   }

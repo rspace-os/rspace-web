@@ -190,58 +190,47 @@ public class FolderApiControllerTest {
 
   @Test
   public void createNestedNotebookNotAllowed() {
-    assertThrows(
-        BindException.class,
-        () -> {
-          ApiFolder toCreate = createApiNotebookToPost();
-          toCreate.setParentFolderId(existingNotebook.getId()); // this should not be allowed
-          when(folderMgr.getFolder(existingNotebook.getId(), subject)).thenReturn(existingNotebook);
-          controller.createNewFolder(
-              toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
-        });
+    ApiFolder toCreate = createApiNotebookToPost();
+    Long parentFolderId = existingNotebook.getId();
+    toCreate.setParentFolderId(parentFolderId); // this should not be allowed
+    when(folderMgr.getFolder(parentFolderId, subject)).thenReturn(existingNotebook);
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
+
+    assertThrows(BindException.class, () -> controller.createNewFolder(toCreate, errors, subject));
   }
 
   @Test
   public void createTopLevelGalleryFolder() {
-    assertThrows(
-        BindException.class,
-        () -> {
-          ApiFolder toCreate = createApiFolderToPost();
-          toCreate.setParentFolderId(topLevelGalleryFolder.getId()); // this should not be allowed
-          when(folderMgr.getFolder(topLevelGalleryFolder.getId(), subject))
-              .thenReturn(topLevelGalleryFolder);
-          controller.createNewFolder(
-              toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
-        });
+    ApiFolder toCreate = createApiFolderToPost();
+    Long parentFolderId = topLevelGalleryFolder.getId();
+    toCreate.setParentFolderId(parentFolderId); // this should not be allowed
+    when(folderMgr.getFolder(parentFolderId, subject)).thenReturn(topLevelGalleryFolder);
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
+
+    assertThrows(BindException.class, () -> controller.createNewFolder(toCreate, errors, subject));
   }
 
   @Test
   public void createNestedFolderInNotebookNotAllowed() {
-    assertThrows(
-        BindException.class,
-        () -> {
-          ApiFolder toCreate = createApiFolderToPost();
-          toCreate.setParentFolderId(existingNotebook.getId()); // this should not be allowed
-          when(folderMgr.getFolder(existingNotebook.getId(), subject)).thenReturn(existingNotebook);
-          controller.createNewFolder(
-              toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
-        });
+    ApiFolder toCreate = createApiFolderToPost();
+    Long parentFolderId = existingNotebook.getId();
+    toCreate.setParentFolderId(parentFolderId); // this should not be allowed
+    when(folderMgr.getFolder(parentFolderId, subject)).thenReturn(existingNotebook);
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
+
+    assertThrows(BindException.class, () -> controller.createNewFolder(toCreate, errors, subject));
   }
 
   @Test
   public void bindExceptionThrownIfValidationFails() {
-    assertThrows(
-        BindException.class,
-        () -> {
-          ApiFolder toCreate = createApiFolderToPost();
-          // validation is not actually performed in this test, this is just an example
-          toCreate.setName(RandomStringUtils.insecure().nextAlphabetic(300));
-          BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
-          errors.reject("some.value");
-          controller.createNewFolder(toCreate, errors, subject);
-          verify(folderMgr, never())
-              .createNewFolder(Mockito.anyLong(), Mockito.anyString(), eq(subject));
-        });
+    ApiFolder toCreate = createApiFolderToPost();
+    // validation is not actually performed in this test, this is just an example
+    toCreate.setName(RandomStringUtils.insecure().nextAlphabetic(300));
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
+    errors.reject("some.value");
+
+    assertThrows(BindException.class, () -> controller.createNewFolder(toCreate, errors, subject));
+    verify(folderMgr, never()).createNewFolder(Mockito.anyLong(), Mockito.anyString(), eq(subject));
   }
 
   @Test
@@ -291,12 +280,9 @@ public class FolderApiControllerTest {
 
   @Test
   public void getFolderThrowsNotFoundExIfNoExists() {
-    assertThrows(
-        NotFoundException.class,
-        () -> {
-          when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.empty());
-          controller.getFolder(1L, false, null, subject);
-        });
+    when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.empty());
+
+    assertThrows(NotFoundException.class, () -> controller.getFolder(1L, false, null, subject));
   }
 
   @Test
@@ -336,11 +322,12 @@ public class FolderApiControllerTest {
   @Test
   public void rejectInvalidFolderTreeFilter() {
     DocumentApiPaginationCriteria pgCriteria = new DocumentApiPaginationCriteria();
+    var filter = TransformerUtils.toSet("unknown");
+    BeanPropertyBindingResult errors = errorsObject(pgCriteria);
+
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            controller.rootFolderTree(
-                TransformerUtils.toSet("unknown"), pgCriteria, errorsObject(pgCriteria), subject));
+        () -> controller.rootFolderTree(filter, pgCriteria, errors, subject));
   }
 
   @Test

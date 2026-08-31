@@ -55,7 +55,9 @@ public class CommunicationDaoTest extends BaseDaoTestCase {
     Notification message = createAnyNotification(originator);
     message.setOriginator(null);
     dao.save(message);
-    assertThrows(PersistenceException.class, () -> sessionFactory.getCurrentSession().flush());
+    var session = sessionFactory.getCurrentSession();
+
+    assertThrows(PersistenceException.class, () -> session.flush());
   }
 
   @Test

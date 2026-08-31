@@ -84,15 +84,15 @@ public class ExternalOAuthControllerTest {
 
   @Test
   public void testNonexistentEmail() {
+    ExternalProfile profile = createEXternalPRofile();
+    when(verifier.verify(clientId, token)).thenReturn(Optional.of(profile));
+    String email = profile.getEmail();
+    when(userMgr.getUserByEmail(email)).thenReturn(Collections.emptyList());
+    MockHttpServletRequest request = new MockHttpServletRequest();
+
     assertThrows(
-        IllegalStateException.class,
-        () -> {
-          ExternalProfile profile = createEXternalPRofile();
-          when(verifier.verify(clientId, token)).thenReturn(Optional.of(profile));
-          when(userMgr.getUserByEmail(profile.getEmail())).thenReturn(Collections.emptyList());
-          signupCtrller.externalLogin(token, clientId, new MockHttpServletRequest());
-          assertNoLogin();
-        });
+        IllegalStateException.class, () -> signupCtrller.externalLogin(token, clientId, request));
+    assertNoLogin();
   }
 
   private ExternalProfile createEXternalPRofile() {

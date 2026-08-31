@@ -129,9 +129,9 @@ public class UserManagerTest extends SpringTransactionalTest {
   @Test
   public void getAllUsersInAdminsCommunityTestthrowIAEIfNotAdmin() {
     User pi1 = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    String username = pi1.getUsername();
     assertThrows(
-        IllegalArgumentException.class,
-        () -> userMgr.getAllUsersInAdminsCommunity(pi1.getUsername()));
+        IllegalArgumentException.class, () -> userMgr.getAllUsersInAdminsCommunity(username));
   }
 
   @Test
@@ -493,9 +493,10 @@ public class UserManagerTest extends SpringTransactionalTest {
   @Test
   public void updatePreferenceInvalidValue() {
     User user = userMgr.getUserByUsername(USER2);
+    String username = user.getUsername();
     assertThrows(
         IllegalArgumentException.class,
-        () -> userMgr.setPreference(Preference.UI_PDF_PAGE_SIZE, "INVALID", user.getUsername()));
+        () -> userMgr.setPreference(Preference.UI_PDF_PAGE_SIZE, "INVALID", username));
   }
 
   @Test
@@ -552,10 +553,11 @@ public class UserManagerTest extends SpringTransactionalTest {
     assertNull(userMgr.findUsernameByUsernameOrAlias(testAlias));
 
     // cannot save alias to an existing username
+    Long firstUserId = firstUser.getId();
     UserExistsException exception =
         assertThrows(
             UserExistsException.class,
-            () -> userMgr.changeUsernameAlias(firstUser.getId(), testUsername));
+            () -> userMgr.changeUsernameAlias(firstUserId, testUsername));
     assertEquals(
         "There is already a user with username [testUsernameAliasUser]", exception.getMessage());
 

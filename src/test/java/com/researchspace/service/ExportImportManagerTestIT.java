@@ -286,13 +286,13 @@ public class ExportImportManagerTestIT extends RealTransactionSpringTestBase {
     cfg.setArchiveType(ArchiveExportConfig.XML);
     cfg.setExportScope(ExportScope.GROUP);
     cfg.setUserOrGroupId(group.getOid());
+    Long groupId = group.getId();
+    URI destination = anyURI();
     assertThrows(
         AuthorizationException.class,
         () ->
-            exportImportMgr
-                .asyncExportGroupToArchive(
-                    cfg, labAdmin, group.getId(), anyURI(), standardPostExport)
-                .get());
+            exportImportMgr.asyncExportGroupToArchive(
+                cfg, labAdmin, groupId, destination, standardPostExport));
   }
 
   @Test

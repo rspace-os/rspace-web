@@ -75,11 +75,9 @@ public class ExternalMessageSenderTest {
   public void testSendMessageAppThrowsIAEIfAppNotSupported() throws Exception {
     msteamsSender.supported = false;
     UserAppConfig cfg = createAnyAppWithConfigElements(sender, "message");
+    var config = cfg.getAppConfigElementSets().iterator().next();
     assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            msteamsSender.sendMessage(
-                null, cfg.getAppConfigElementSets().iterator().next(), sender));
+        IllegalArgumentException.class, () -> msteamsSender.sendMessage(null, config, sender));
     // never invoked
     assertMessageNotPosted();
   }

@@ -197,10 +197,10 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
     // type rather than blindly casting it to a media file
     User user = createInitAndLoginAnyUser();
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(user, "not a gallery file");
+    String globalId = "GL" + doc.getId();
 
     assertThrows(
-        ApiRuntimeException.class,
-        () -> inventoryFileApiMgr.findAttachingItems("GL" + doc.getId(), user));
+        ApiRuntimeException.class, () -> inventoryFileApiMgr.findAttachingItems(globalId, user));
   }
 
   @Test
@@ -229,20 +229,19 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
 
     // pi can retrieve attachment added by testUser
     inventoryFileApiMgr.getInventoryFileById(attachment.getId(), pi);
+    Long attachmentId = attachment.getId();
     // user outside cannot
     NotFoundException nfe =
         assertThrows(
             NotFoundException.class,
-            () -> inventoryFileApiMgr.getInventoryFileById(attachment.getId(), otherUser));
+            () -> inventoryFileApiMgr.getInventoryFileById(attachmentId, otherUser));
     assertTrue(nfe.getMessage().startsWith(expectedAttachmentNotFoundMsg));
 
     // user outside group cannot attach file
+    GlobalIdentifier sampleId = new GlobalIdentifier(piSample.getGlobalId());
     nfe =
         assertThrows(
-            NotFoundException.class,
-            () ->
-                addFileAttachmentToInventoryItem(
-                    new GlobalIdentifier(piSample.getGlobalId()), otherUser));
+            NotFoundException.class, () -> addFileAttachmentToInventoryItem(sampleId, otherUser));
     assertTrue(nfe.getMessage().startsWith(expectedItemNotFoundMsg));
 
     // pi can delete the attachment
@@ -251,7 +250,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
     nfe =
         assertThrows(
             NotFoundException.class,
-            () -> inventoryFileApiMgr.markInventoryFileAsDeleted(attachment.getId(), otherUser));
+            () -> inventoryFileApiMgr.markInventoryFileAsDeleted(attachmentId, otherUser));
     assertTrue(nfe.getMessage().startsWith(expectedAttachmentNotFoundMsg));
   }
 }

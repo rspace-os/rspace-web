@@ -99,9 +99,9 @@ public class ImageUtilsTest {
     final InputStream is = getInputStreamToResource("Picture1.png");
     BufferedImage original = getBufferedImageFromInputImageStream(is).get();
     is.close();
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
     assertThrows(
-        IllegalArgumentException.class,
-        () -> createThumbnail(original, 0, 0, new ByteArrayOutputStream(), "png"));
+        IllegalArgumentException.class, () -> createThumbnail(original, 0, 0, output, "png"));
   }
 
   @Test
@@ -125,12 +125,12 @@ public class ImageUtilsTest {
   public void convertTiffToPngArgValidation() throws Exception {
     final File outFolder = getTempDirectory();
     // is not a tiff!
-    assertThrows(
-        IllegalArgumentException.class, () -> convertTiffToPng(new File(pngfile), outFolder, null));
+    File png = new File(pngfile);
+    assertThrows(IllegalArgumentException.class, () -> convertTiffToPng(png, outFolder, null));
     // outfolder is not a folder
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> convertTiffToPng(new File(tiffFile), createTempFile("any", "any"), null));
+    File tiff = new File(tiffFile);
+    File nonFolder = createTempFile("any", "any");
+    assertThrows(IllegalArgumentException.class, () -> convertTiffToPng(tiff, nonFolder, null));
     assertThrows(IllegalArgumentException.class, () -> convertTiffToPng(null, outFolder, null));
   }
 

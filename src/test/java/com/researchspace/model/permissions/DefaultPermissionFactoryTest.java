@@ -52,22 +52,18 @@ public class DefaultPermissionFactoryTest {
 
   @Test
   public void setUpACLForApiInboxFolderThrowsIAEIfNotAPiInboxFolder() {
+    Folder folder = TestFactory.createAFolder("any", u2);
+
     assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          Folder folder = TestFactory.createAFolder("any", u2);
-          fac.setUpAclForIndividualInboxFolder(folder, u2);
-        });
+        IllegalArgumentException.class, () -> fac.setUpAclForIndividualInboxFolder(folder, u2));
   }
 
   @Test
   public void setUpACLForApiInboxFolderThrowsAuthExceptionIfSubjectNotOwner() {
+    Folder folder = TestFactory.createAnAPiInboxFolder(u2);
+
     assertThrows(
-        AuthorizationException.class,
-        () -> {
-          Folder folder = TestFactory.createAnAPiInboxFolder(u2);
-          fac.setUpAclForIndividualInboxFolder(folder, pi);
-        });
+        AuthorizationException.class, () -> fac.setUpAclForIndividualInboxFolder(folder, pi));
   }
 
   @Test
@@ -79,12 +75,11 @@ public class DefaultPermissionFactoryTest {
 
   @Test
   public void communityEditPermsCannotBeAddedtoANonAdminUser() {
+    User u = TestFactory.createAnyUserWithRole("any", Constants.USER_ROLE);
+    Community community = new Community();
+
     assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          User u = TestFactory.createAnyUserWithRole("any", Constants.USER_ROLE);
-          fac.createCommunityPermissionsForAdmin(u, new Community());
-        });
+        IllegalArgumentException.class, () -> fac.createCommunityPermissionsForAdmin(u, community));
   }
 
   @Test

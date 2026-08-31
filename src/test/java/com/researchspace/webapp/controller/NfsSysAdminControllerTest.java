@@ -69,13 +69,10 @@ public class NfsSysAdminControllerTest {
 
   @Test
   public void getFileSystemsListFailsForNonSysadmin() throws Exception {
-    assertThrows(
-        AuthorizationException.class,
-        () -> {
-          when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
-          nfsSystemCtrller.getFileSystemsList();
-          verify(netFilesMgr, never()).getFileSystems();
-        });
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
+
+    assertThrows(AuthorizationException.class, () -> nfsSystemCtrller.getFileSystemsList());
+    verify(netFilesMgr, never()).getFileSystems();
   }
 
   @Test
@@ -159,13 +156,10 @@ public class NfsSysAdminControllerTest {
 
   @Test
   public void saveFileSystemsListFailsForNonSysadmin() throws Exception {
-    assertThrows(
-        AuthorizationException.class,
-        () -> {
-          when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
-          nfsSystemCtrller.saveFileSystem(nfs);
-          verify(netFilesMgr, never()).saveNfsFileSystem(nfs);
-        });
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
+
+    assertThrows(AuthorizationException.class, () -> nfsSystemCtrller.saveFileSystem(nfs));
+    verify(netFilesMgr, never()).saveNfsFileSystem(nfs);
   }
 
   @Test
@@ -179,12 +173,9 @@ public class NfsSysAdminControllerTest {
 
   @Test
   public void deleteFileSystemFailsForNonSysadmin() throws Exception {
-    assertThrows(
-        AuthorizationException.class,
-        () -> {
-          when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
-          nfsSystemCtrller.saveFileSystem(nfs);
-          verify(netFilesMgr, never()).deleteNfsFileSystem(Mockito.anyLong());
-        });
+    when(userMgr.getAuthenticatedUserInSession()).thenReturn(otherUser);
+
+    assertThrows(AuthorizationException.class, () -> nfsSystemCtrller.saveFileSystem(nfs));
+    verify(netFilesMgr, never()).deleteNfsFileSystem(Mockito.anyLong());
   }
 }

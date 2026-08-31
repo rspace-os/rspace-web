@@ -2059,11 +2059,10 @@ public class SearchManagerTest extends SearchSpringTestBase {
     flushToSearchIndices();
     // Login as user2 and search for the documents from that form
     RSpaceTestUtils.logoutCurrUserAndLoginAs(user2.getUsername(), TESTPASSWD);
+    String formId = form.getOid().getIdString();
+    var searchConfig = createSimpleFormSearchCfg(formId);
     assertThrows(
-        AuthorizationException.class,
-        () ->
-            searchMgr.searchWorkspaceRecords(
-                createSimpleFormSearchCfg(form.getOid().getIdString()), user2));
+        AuthorizationException.class, () -> searchMgr.searchWorkspaceRecords(searchConfig, user2));
   }
 
   @Test
@@ -2072,9 +2071,9 @@ public class SearchManagerTest extends SearchSpringTestBase {
     User user = createAndSaveUserIfNotExists(getRandomName(length));
     initialiseContentWithExampleContent(user);
     RSpaceTestUtils.logoutCurrUserAndLoginAs(user.getUsername(), TESTPASSWD);
+    var searchConfig = createSimpleFormSearchCfg("FM425346143");
     assertThrows(
-        AuthorizationException.class,
-        () -> searchMgr.searchWorkspaceRecords(createSimpleFormSearchCfg("FM425346143"), user));
+        AuthorizationException.class, () -> searchMgr.searchWorkspaceRecords(searchConfig, user));
   }
 
   @Test

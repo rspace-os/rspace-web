@@ -13,19 +13,14 @@ class ImportOverideTest {
 
   @Test
   void constructorInvariants() {
-    assertThrows(
-        IllegalArgumentException.class, () -> new ImportOverride(null, Instant.now(), null));
-    assertThrows(
-        IllegalArgumentException.class, () -> new ImportOverride(Instant.now(), null, null));
+    Instant now = Instant.now();
+    assertThrows(IllegalArgumentException.class, () -> new ImportOverride(null, now, null));
+    assertThrows(IllegalArgumentException.class, () -> new ImportOverride(now, null, null));
 
     final int TOLERANCE_EXCEEDED_SECONDS = ImportOverride.TOLERANCE_SECONDS + 1;
+    Instant tooEarly = now.minusSeconds(TOLERANCE_EXCEEDED_SECONDS);
     assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            new ImportOverride(
-                Instant.now(),
-                Instant.now().minusSeconds(TOLERANCE_EXCEEDED_SECONDS),
-                "someusername"));
+        IllegalArgumentException.class, () -> new ImportOverride(now, tooEarly, "someusername"));
   }
 
   @Test

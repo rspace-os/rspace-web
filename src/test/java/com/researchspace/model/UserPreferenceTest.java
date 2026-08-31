@@ -30,42 +30,32 @@ public class UserPreferenceTest {
 
   @Test
   public void testUserPreferenceMaxStringLength() {
+    String str = CoreTestUtils.getRandomName(256); // just a string > max length
+    User user = TestFactory.createAnyUser("user");
+
     assertThrows(
         IllegalArgumentException.class,
-        () -> {
-          String str = CoreTestUtils.getRandomName(256); // just a string > max length
-          new UserPreference(
-              Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, TestFactory.createAnyUser("user"), str);
-        });
+        () -> new UserPreference(Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, user, str));
   }
 
   @Test
   public void testUserPreferenceGetWrongValueTypeThrosISE() {
-    assertThrows(
-        IllegalStateException.class,
-        () -> {
-          UserPreference up =
-              new UserPreference(
-                  Preference.NOTIFICATION_DOCUMENT_EDITED_PREF,
-                  TestFactory.createAnyUser("user"),
-                  "false");
-          up.getValueAsNumber();
-        });
+    User user = TestFactory.createAnyUser("user");
+    UserPreference up =
+        new UserPreference(Preference.NOTIFICATION_DOCUMENT_EDITED_PREF, user, "false");
+
+    assertThrows(IllegalStateException.class, () -> up.getValueAsNumber());
   }
 
   @Test
   public void testBooleanPreferenceChecksArgs() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          UserPreference up = createUserPref(Preference.NOTIFICATION_DOCUMENT_EDITED_PREF);
-          up.setValue("true");
-          up.setValue("false");
-          up.setValue("FALSE");
-          up.setValue("TRUE");
+    UserPreference up = createUserPref(Preference.NOTIFICATION_DOCUMENT_EDITED_PREF);
+    up.setValue("true");
+    up.setValue("false");
+    up.setValue("FALSE");
+    up.setValue("TRUE");
 
-          up.setValue("otherstring");
-        });
+    assertThrows(IllegalArgumentException.class, () -> up.setValue("otherstring"));
   }
 
   @Test
@@ -109,18 +99,18 @@ public class UserPreferenceTest {
   public void testValidLengthDependingOnPreferenceType() {
     String longStringValue = StringUtils.repeat("x", 300);
     String veryLongStringValue = StringUtils.repeat("x", 70000);
+    UserPreference clientSettings = createUserPref(Preference.UI_CLIENT_SETTINGS);
 
     IllegalArgumentException iae =
         Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () -> createUserPref(Preference.UI_CLIENT_SETTINGS).setValue(longStringValue));
+            IllegalArgumentException.class, () -> clientSettings.setValue(longStringValue));
     assertEquals("Value is too long, is 300 characters but max is 255", iae.getMessage());
 
-    createUserPref(Preference.UI_JSON_SETTINGS).setValue(longStringValue);
+    UserPreference jsonSettings = createUserPref(Preference.UI_JSON_SETTINGS);
+    jsonSettings.setValue(longStringValue);
     iae =
         Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () -> createUserPref(Preference.UI_JSON_SETTINGS).setValue(veryLongStringValue));
+            IllegalArgumentException.class, () -> jsonSettings.setValue(veryLongStringValue));
     assertEquals("Text value is too long, is 70000 characters but max is 65535", iae.getMessage());
   }
 }

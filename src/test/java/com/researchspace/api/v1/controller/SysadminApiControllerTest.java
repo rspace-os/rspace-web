@@ -308,10 +308,10 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
   public void deleteGroupIfNoMemberLoggedInWithinOneYearRejectedIfSubjectNotSysadmin()
       throws Exception {
     Group toDelete = createAnyGroupWithId();
+    Long groupId = toDelete.getId();
     assertThrows(
         AuthorizationException.class,
-        () ->
-            controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, toDelete.getId(), user));
+        () -> controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, groupId, user));
     verify(groupManager, never())
         .removeGroupIfNoMemberLoggedInWithinOneYear(Mockito.anyLong(), Mockito.any(User.class));
   }
@@ -321,11 +321,10 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
       throws Exception {
     Group toDelete = createAnyGroupWithId();
     mockWhiteListedIP(false, sysadmin);
+    Long groupId = toDelete.getId();
     assertThrows(
         AuthorizationException.class,
-        () ->
-            controller.deleteGroupIfNoMemberLoggedInWithinOneYear(
-                request, toDelete.getId(), sysadmin));
+        () -> controller.deleteGroupIfNoMemberLoggedInWithinOneYear(request, groupId, sysadmin));
     verify(groupManager, never())
         .removeGroupIfNoMemberLoggedInWithinOneYear(Mockito.anyLong(), Mockito.any(User.class));
   }
@@ -352,13 +351,14 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     Group toDelete = createAnyGroupWithId();
     when(groupManager.removeGroupIfNoMemberLoggedInWithinOneYear(toDelete.getId(), sysadmin))
         .thenThrow(new IllegalStateException("internal: user 'alice' logged in 5 days ago"));
+    Long groupId = toDelete.getId();
 
     String message =
         Assertions.assertThrows(
                 IllegalArgumentException.class,
                 () ->
                     controller.deleteGroupIfNoMemberLoggedInWithinOneYear(
-                        request, toDelete.getId(), sysadmin))
+                        request, groupId, sysadmin))
             .getMessage();
 
     // Generic message; no username leaked.
@@ -399,12 +399,11 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     User internalUser = TestFactory.createAnyUser("any");
     when(userMgr.getUserByUsername("any")).thenReturn(internalUser);
     mockWhiteListedIP(true, sysadmin);
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(grpApiPost, "bean");
     // requires PI
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            controller.createGroup(
-                request, grpApiPost, new BeanPropertyBindingResult(grpApiPost, "bean"), sysadmin));
+        () -> controller.createGroup(request, grpApiPost, errors, sysadmin));
     verifyNoInteractions(grpStrategy);
 
     // but with >=1 PI, succeeds
@@ -552,9 +551,10 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
         .checkLicenseForUserInRole(anyInt(), any(Role.class));
 
     // when
+    Long userId = userToEnable.getId();
     assertThrows(
         LicenseServerUnavailableException.class,
-        () -> controller.enableUser(request, sysadmin, userToEnable.getId()));
+        () -> controller.enableUser(request, sysadmin, userId));
 
     // then
     verify(userMgr, times(0)).save(userToEnable);

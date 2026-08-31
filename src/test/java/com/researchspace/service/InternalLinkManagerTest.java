@@ -46,9 +46,11 @@ public class InternalLinkManagerTest {
     Snippet inValidTarget = TestFactory.createAnySnippet(user);
     inValidTarget.setId(3L);
     when(baseRcdMgr.get(inValidTarget.getId(), user)).thenReturn(inValidTarget);
+    Long fieldId = field.getId();
+    Long targetId = inValidTarget.getId();
     assertThrows(
         IllegalArgumentException.class,
-        () -> internalLinkMgr.createInternalLink(field.getId(), inValidTarget.getId(), user));
+        () -> internalLinkMgr.createInternalLink(fieldId, targetId, user));
 
     // verify 3 types of linkable doc are accepted
     Folder folder = TestFactory.createAFolder("any", user);

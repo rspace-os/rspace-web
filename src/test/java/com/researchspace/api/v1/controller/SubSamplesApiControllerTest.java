@@ -460,8 +460,9 @@ public class SubSamplesApiControllerTest extends SpringTransactionalTest {
     assertEquals(0, revisions.getRevisions().size());
 
     // a missing revision surfaces as 404, not a 200 null body
+    Long subSampleId = subSample.getId();
     assertThrows(
         NotFoundException.class,
-        () -> subSamplesApi.getSubSampleRevision(subSample.getId(), 1L, testUser));
+        () -> subSamplesApi.getSubSampleRevision(subSampleId, 1L, testUser));
   }
 }

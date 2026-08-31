@@ -91,10 +91,11 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
   public void registerInstrumentIdentifierWhenPidinstDisabledThrows() {
     dataCiteConnectorDummy.setEnabled(InventorySettingType.PIDINST, false);
     ApiInstrument createdInstrument = createBasicInstrumentForUser(user);
+    GlobalIdentifier instrumentId = createdInstrument.getOid();
 
     assertThrows(
         UnsupportedOperationException.class,
-        () -> inventoryIdentifierApiMgr.registerNewIdentifier(createdInstrument.getOid(), user));
+        () -> inventoryIdentifierApiMgr.registerNewIdentifier(instrumentId, user));
     assertNull(dataCiteConnectorDummy.getDoiSentToDatacite());
   }
 
@@ -124,11 +125,12 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
   @Test
   public void registerIdentifierForInstrumentTemplateUnsupported() {
     ApiInstrumentTemplate createdTemplate = createBasicInstrumentTemplateForUser(user);
+    GlobalIdentifier templateId = createdTemplate.getOid();
 
     IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class,
-            () -> inventoryIdentifierApiMgr.registerNewIdentifier(createdTemplate.getOid(), user));
+            () -> inventoryIdentifierApiMgr.registerNewIdentifier(templateId, user));
     assertTrue(iae.getMessage().contains("unsupported type for minting"), iae.getMessage());
     // the type check runs before any DataCite call, so no draft DOI was leaked
     assertNull(dataCiteConnectorDummy.getDoiSentToDatacite());
@@ -139,12 +141,12 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
     List<ApiInventoryDOI> allocatedIgsns =
         inventoryIdentifierApiMgr.registerBulkIdentifiers(1, user);
     ApiInstrument createdInstrument = createBasicInstrumentForUser(user);
+    GlobalIdentifier instrumentId = createdInstrument.getOid();
+    Long identifierId = allocatedIgsns.get(0).getId();
 
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            inventoryIdentifierApiMgr.assignIdentifier(
-                createdInstrument.getOid(), allocatedIgsns.get(0).getId(), user));
+        () -> inventoryIdentifierApiMgr.assignIdentifier(instrumentId, identifierId, user));
 
     // cleanup the unassociated allocated identifier
     inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(allocatedIgsns.get(0), user);

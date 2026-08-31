@@ -24,16 +24,13 @@ public class IdConstraintTest {
 
   @Test
   public void testInvariants2() {
-    assertThrows(
-        UnsupportedOperationException.class,
-        () -> {
-          createConstraintFromLongArray(new Long[] {2L, 3L, 1L});
-          ids.clear();
-          assertEquals(3, constraint.getId().size());
-          assertEquals(1L, constraint.getId().iterator().next().longValue());
+    createConstraintFromLongArray(new Long[] {2L, 3L, 1L});
+    ids.clear();
+    Set<Long> constraintIds = constraint.getId();
+    assertEquals(3, constraintIds.size());
+    assertEquals(1L, constraintIds.iterator().next().longValue());
 
-          constraint.getId().clear();
-        });
+    assertThrows(UnsupportedOperationException.class, () -> constraintIds.clear());
   }
 
   @Test

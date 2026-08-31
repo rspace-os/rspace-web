@@ -169,11 +169,10 @@ public class FolderNavigationServiceTest {
 
     Folder wrongParent = TestFactory.createAFolder("wrongParent", subject);
     wrongParent.setId(999L);
+    Long wrongParentId = wrongParent.getId();
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> {
-          service.findParentForUser(wrongParent.getId(), subject, childFolder);
-        });
+        () -> service.findParentForUser(wrongParentId, subject, childFolder));
   }
 }

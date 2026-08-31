@@ -490,10 +490,10 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         containerApiMgr.getApiContainerById(piContainer2.getId(), otherUser);
     assertTrue(containerAsSeenByOtherUser.isClearedForPublicView());
     // copy action is also blocked
+    Long piContainerId = piContainer2.getId();
     NotFoundException nfe =
         assertThrows(
-            NotFoundException.class,
-            () -> containerApiMgr.duplicate(piContainer2.getId(), otherUser));
+            NotFoundException.class, () -> containerApiMgr.duplicate(piContainerId, otherUser));
     assertTrue(
         nfe.getMessage().contains("does not exist, or you do not have permission to access it"));
   }
@@ -1173,10 +1173,11 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertEquals(intitalCount + 1, defaultContainerResult.getTotalHits());
 
     // try deleting main container
+    Long containerId = testContainer.getId();
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class,
-            () -> containerApiMgr.markContainerAsDeleted(testContainer.getId(), testUser));
+            () -> containerApiMgr.markContainerAsDeleted(containerId, testUser));
     assertEquals("errors.inventory.container.deletion.notEmpty", are.getMessage());
     assertEquals(testContainer.getGlobalId(), are.getArgs()[0]);
     Mockito.verify(mockPublisher, Mockito.never())
@@ -1235,10 +1236,10 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
 
     // workbench cannot be duplicated
     ApiContainer workbench = getWorkbenchForUser(testUser);
+    Long workbenchId = workbench.getId();
     IllegalArgumentException iae =
         assertThrows(
-            IllegalArgumentException.class,
-            () -> containerApiMgr.duplicate(workbench.getId(), testUser));
+            IllegalArgumentException.class, () -> containerApiMgr.duplicate(workbenchId, testUser));
     assertTrue(iae.getMessage().endsWith("is a workbench"));
   }
 
@@ -1328,10 +1329,11 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
 
     // try delete by testUser
+    Long containerId = testContainer.getId();
     iae =
         assertThrows(
             IllegalArgumentException.class,
-            () -> containerApiMgr.markContainerAsDeleted(testContainer.getId(), testUser));
+            () -> containerApiMgr.markContainerAsDeleted(containerId, testUser));
     assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
 
     // try transfer by testUser

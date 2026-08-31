@@ -20,16 +20,14 @@ public class BreadcrumbGeneratorTest {
 
   @Test
   public void testGenerateBreadcrumbNoNull1stArg() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> bGen.generateBreadcrumb(null, TestFactory.createAFolder("any", createAUser())));
+    Folder folder = TestFactory.createAFolder("any", createAUser());
+    assertThrows(IllegalArgumentException.class, () -> bGen.generateBreadcrumb(null, folder));
   }
 
   @Test
   public void testGenerateBreadcrumbNoNull2ndArg() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> bGen.generateBreadcrumb(TestFactory.createAFolder("any", createAUser()), null));
+    Folder folder = TestFactory.createAFolder("any", createAUser());
+    assertThrows(IllegalArgumentException.class, () -> bGen.generateBreadcrumb(folder, null));
   }
 
   private User createAUser() {

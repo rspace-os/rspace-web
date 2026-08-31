@@ -120,24 +120,23 @@ public class TimeLimitAdjusterTest {
 
   @Test
   public void testDateRangeThrowsIAEIfToBeforeFrom() {
+    TestAdjustable cfg = new TestAdjustable();
+    Date fourYearsAgo = new Date(minusFourYears.toEpochMilli());
+    cfg.setDateFrom(nowDate);
+    cfg.setDateTo(fourYearsAgo);
+
     assertThrows(
         IllegalArgumentException.class,
-        () -> {
-          TestAdjustable cfg = new TestAdjustable();
-          Date fourYearsAgo = new Date(minusFourYears.toEpochMilli());
-          cfg.setDateFrom(nowDate);
-          cfg.setDateTo(fourYearsAgo);
-          timeLimitadjuster.restrictDateRange(cfg, approx6MonthDuration);
-        });
+        () -> timeLimitadjuster.restrictDateRange(cfg, approx6MonthDuration));
   }
 
   @Test
   public void testDateRangeThrowsIAEIfDurationis0() {
+    TestAdjustable cfg = new TestAdjustable();
+    Duration zeroDuration = Duration.ofMillis(0);
+
     assertThrows(
         IllegalArgumentException.class,
-        () -> {
-          TestAdjustable cfg = new TestAdjustable();
-          timeLimitadjuster.restrictDateRange(cfg, Duration.ofMillis(0));
-        });
+        () -> timeLimitadjuster.restrictDateRange(cfg, zeroDuration));
   }
 }

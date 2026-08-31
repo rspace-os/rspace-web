@@ -305,18 +305,15 @@ public class IntegrationsHandlerTest {
 
   @Test
   public void testUpdateUnknownIntegrationName() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          IntegrationInfo infor = new IntegrationInfo();
-          infor.setAvailable(true);
-          infor.setEnabled(false);
-          infor.setName("UNKNOWN");
+    IntegrationInfo infor = new IntegrationInfo();
+    infor.setAvailable(true);
+    infor.setEnabled(false);
+    infor.setName("UNKNOWN");
 
-          handler.updateIntegrationInfo(subject, infor);
-          Mockito.verify(userMgr, never())
-              .setPreference(Preference.DROPBOX, infor.isEnabled() + "", subject.getUsername());
-        });
+    assertThrows(
+        IllegalArgumentException.class, () -> handler.updateIntegrationInfo(subject, infor));
+    Mockito.verify(userMgr, never())
+        .setPreference(Preference.DROPBOX, infor.isEnabled() + "", subject.getUsername());
   }
 
   @Test

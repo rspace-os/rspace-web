@@ -21,9 +21,8 @@ public class SystemPropertyValueTest {
   public void validateValueByType() {
     SystemProperty property = createASystemProperty();
     property.getDescriptor().setType(SettingsType.BOOLEAN);
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new SystemPropertyValue(property).setValue("not a boolean"));
+    SystemPropertyValue propertyValue = new SystemPropertyValue(property);
+    assertThrows(IllegalArgumentException.class, () -> propertyValue.setValue("not a boolean"));
   }
 
   @Test()

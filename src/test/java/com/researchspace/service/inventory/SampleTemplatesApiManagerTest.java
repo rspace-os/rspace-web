@@ -591,10 +591,11 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
 
     // try delete by testUser
+    Long templateId = testTemplate.getId();
     iae =
         assertThrows(
             IllegalArgumentException.class,
-            () -> sampleApiMgr.markSampleAsDeleted(testTemplate.getId(), false, testUser));
+            () -> sampleApiMgr.markSampleAsDeleted(templateId, false, testUser));
     assertTrue(iae.getMessage().startsWith("Item is currently edited by another user ("));
 
     // pi can edit fine
@@ -857,11 +858,11 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     assertEquals(1, retrievedSample.getTemplateVersion());
 
     // try updating sample to latest template
+    Long sampleId = createdSample.getId();
     IllegalStateException iae =
         assertThrows(
             IllegalStateException.class,
-            () ->
-                sampleApiMgr.updateSampleToLatestTemplateVersion(createdSample.getId(), testUser));
+            () -> sampleApiMgr.updateSampleToLatestTemplateVersion(sampleId, testUser));
     assertEquals(
         "Field [updated radio] value [r1] is invalid according to latest template field definition",
         iae.getMessage());
@@ -1001,11 +1002,11 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         retrievedSample1.getFields().get(1).getDefinition().getOptions());
 
     // try updating first sample to latest template version
+    Long sampleId = createdSample1.getId();
     IllegalStateException iae =
         assertThrows(
             IllegalStateException.class,
-            () ->
-                sampleApiMgr.updateSampleToLatestTemplateVersion(createdSample1.getId(), testUser));
+            () -> sampleApiMgr.updateSampleToLatestTemplateVersion(sampleId, testUser));
     assertEquals(
         "Field [updated choice] value [[\"c1\",\"c2\"]] is invalid according to latest template"
             + " field definition",
@@ -1047,12 +1048,12 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         new ApiSampleWithFullSubSamples("sample without a template");
     ApiSampleWithFullSubSamples createdSample =
         sampleApiMgr.createNewApiSample(apiSample, testUser);
+    Long sampleId = createdSample.getId();
 
     IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class,
-            () ->
-                sampleApiMgr.updateSampleToLatestTemplateVersion(createdSample.getId(), testUser));
+            () -> sampleApiMgr.updateSampleToLatestTemplateVersion(sampleId, testUser));
     assertEquals("Sample is not based on any template", iae.getMessage());
   }
 }

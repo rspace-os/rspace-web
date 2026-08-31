@@ -116,16 +116,17 @@ public class FolderTest {
   public void moveToThrowsExceptionOnMoveToSelf()
       throws InterruptedException, IllegalAddChildOperation {
     makeNestedFolders();
-    assertThrows(IllegalAddChildOperation.class, () -> t2.move(t2.getSingleParent(), t2, anyuser));
+    Folder parent = t2.getSingleParent();
+
+    assertThrows(IllegalAddChildOperation.class, () -> t2.move(parent, t2, anyuser));
   }
 
   @Test
   public void moveToThrowsExceptionOnMoveToChildOfSelf()
       throws InterruptedException, IllegalAddChildOperation {
     makeNestedFolders();
-    assertThrows(
-        IllegalAddChildOperation.class,
-        () -> t2.move(t2.getSingleParent(), t2, anyuser)); // cannot move
+    Folder parent = t2.getSingleParent();
+    assertThrows(IllegalAddChildOperation.class, () -> t2.move(parent, t2, anyuser)); // cannot move
     // to child
   }
 

@@ -370,8 +370,9 @@ public class DocumentsApiControllerTest extends SpringTransactionalTest {
   @Test
   public void testGetDocumentByIdHandlesImageIDs() throws Exception {
     EcatImage image = addImageToGallery(testUser);
-    assertThrows(
-        NotFoundException.class, () -> documentsApi.getDocumentById(image.getId(), testUser));
+    Long imageId = image.getId();
+
+    assertThrows(NotFoundException.class, () -> documentsApi.getDocumentById(imageId, testUser));
   }
 
   @Test

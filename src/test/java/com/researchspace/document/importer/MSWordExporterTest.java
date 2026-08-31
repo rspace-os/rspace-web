@@ -60,9 +60,10 @@ public class MSWordExporterTest {
     Mockito.verify(creator, Mockito.never())
         .create(
             any(ContentProvider.class), eq(targetFolder), any(Folder.class), eq(docName), eq(any));
+    String inputFileName = inputFile.getName();
     assertThrows(
         IllegalStateException.class,
-        () -> wordImporter.create(fis, any, targetFolder, null, inputFile.getName()));
+        () -> wordImporter.create(fis, any, targetFolder, null, inputFileName));
   }
 
   @Test

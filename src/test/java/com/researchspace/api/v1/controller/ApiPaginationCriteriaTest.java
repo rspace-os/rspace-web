@@ -61,12 +61,8 @@ public class ApiPaginationCriteriaTest extends JakartaValidatorTest {
 
   @Test
   public void firstPageHasNoPreviousPageNumber() {
-    assertThrows(
-        IllegalStateException.class,
-        () -> {
-          pgCrit.setPageNumber(0);
+    pgCrit.setPageNumber(0);
 
-          pgCrit.previousPageNumber();
-        });
+    assertThrows(IllegalStateException.class, () -> pgCrit.previousPageNumber());
   }
 }

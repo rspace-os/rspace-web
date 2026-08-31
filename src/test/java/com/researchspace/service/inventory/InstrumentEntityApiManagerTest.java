@@ -150,13 +150,14 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     // a second unrelated user cannot read or edit
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
     initialiseContentWithEmptyContent(otherUser);
+    Long instrumentId = created.getId();
 
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.assertUserCanReadInstrument(created.getId(), otherUser));
+        () -> instrumentApiMgr.assertUserCanReadInstrument(instrumentId, otherUser));
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.assertUserCanEditInstrument(created.getId(), otherUser));
+        () -> instrumentApiMgr.assertUserCanEditInstrument(instrumentId, otherUser));
   }
 
   @Test
@@ -989,10 +990,11 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
     initialiseContentWithEmptyContent(otherUser);
+    Long instrumentId = created.getId();
 
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.assertUserCanDeleteInstrument(created.getId(), otherUser));
+        () -> instrumentApiMgr.assertUserCanDeleteInstrument(instrumentId, otherUser));
   }
 
   @Test
@@ -1012,10 +1014,11 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
 
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
     initialiseContentWithEmptyContent(otherUser);
+    Long instrumentId = created.getId();
 
     assertThrows(
         Exception.class,
-        () -> instrumentApiMgr.assertUserCanTransferInstrument(created.getId(), otherUser));
+        () -> instrumentApiMgr.assertUserCanTransferInstrument(instrumentId, otherUser));
   }
 
   @Test
@@ -1078,17 +1081,19 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
   @Test
   public void assertUserCanReadInstrument_withTemplateId_throwsNotFoundNotClassCast() {
     ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(testUser);
+    Long templateId = template.getId();
     assertThrows(
         jakarta.ws.rs.NotFoundException.class,
-        () -> instrumentApiMgr.assertUserCanReadInstrument(template.getId(), testUser));
+        () -> instrumentApiMgr.assertUserCanReadInstrument(templateId, testUser));
   }
 
   @Test
   public void assertUserCanReadInstrumentTemplate_withInstrumentId_throwsNotFoundNotClassCast() {
     ApiInstrument instrument = createBasicInstrumentForUser(testUser, "type-mismatch-test");
+    Long instrumentId = instrument.getId();
     assertThrows(
         jakarta.ws.rs.NotFoundException.class,
-        () -> instrumentApiMgr.assertUserCanReadInstrumentTemplate(instrument.getId(), testUser));
+        () -> instrumentApiMgr.assertUserCanReadInstrumentTemplate(instrumentId, testUser));
   }
 
   @Test

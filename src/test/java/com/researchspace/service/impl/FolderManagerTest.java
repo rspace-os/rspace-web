@@ -65,11 +65,12 @@ public class FolderManagerTest {
     when(folderDao.get(child.getId())).thenReturn(child);
 
     // this should trigger IACO
+    Long childId = child.getId();
     assertThrows(
         IllegalAddChildOperation.class,
         () ->
             folderManagerImpl.addChild(
-                child.getId(), parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, false));
+                childId, parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, false));
 
     assertChildNotAddedtoParent(parent);
 

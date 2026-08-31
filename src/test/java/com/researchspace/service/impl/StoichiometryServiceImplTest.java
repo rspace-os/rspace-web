@@ -213,11 +213,10 @@ public class StoichiometryServiceImplTest {
     RSChemElement parent = TestFactory.createChemElement(null, 123L);
     existing.setParentReaction(parent);
     when(stoichiometryManager.get(3L)).thenReturn(existing);
+    StoichiometryUpdateDTO update = mock(StoichiometryUpdateDTO.class);
 
     NotFoundException ex =
-        assertThrows(
-            NotFoundException.class,
-            () -> service.update(3L, mock(StoichiometryUpdateDTO.class), user));
+        assertThrows(NotFoundException.class, () -> service.update(3L, update, user));
     assertTrue(ex.getMessage().contains("Record containing stoichiometry with id 3 not found"));
   }
 
@@ -233,10 +232,9 @@ public class StoichiometryServiceImplTest {
     when(stoichiometryManager.get(3L)).thenReturn(existing);
 
     when(permissionUtils.isPermitted(any(), eq(PermissionType.WRITE), eq(user))).thenReturn(false);
+    StoichiometryUpdateDTO update = mock(StoichiometryUpdateDTO.class);
 
-    assertThrows(
-        AuthorizationException.class,
-        () -> service.update(3L, mock(StoichiometryUpdateDTO.class), user));
+    assertThrows(AuthorizationException.class, () -> service.update(3L, update, user));
   }
 
   @Test

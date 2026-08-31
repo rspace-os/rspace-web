@@ -594,7 +594,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     // check u1 form has been deleted (and exception is thrown trying to retrieve) since the form
     // wasn't used by any other users
-    assertThrows(ObjectRetrievalFailureException.class, () -> formMgr.get(u1Form.getId()));
+    Long formId = u1Form.getId();
+    assertThrows(ObjectRetrievalFailureException.class, () -> formMgr.get(formId));
   }
 
   @Test
@@ -1051,7 +1052,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
         userDeletionMgr.removeUser(userToDelete.getId(), unrestrictedDeletionPolicy(), sysadmin);
 
     assertTrue(report.isSucceeded());
-    assertThrows(ObjectRetrievalFailureException.class, () -> recordMgr.get(template.getId()));
+    Long templateId = template.getId();
+    assertThrows(ObjectRetrievalFailureException.class, () -> recordMgr.get(templateId));
   }
 
   @Test

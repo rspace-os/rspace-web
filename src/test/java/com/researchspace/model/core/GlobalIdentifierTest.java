@@ -20,21 +20,13 @@ public class GlobalIdentifierTest {
 
   @Test
   public void testNullOrEmptyThrowsIAE() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new GlobalIdentifier("");
-          new GlobalIdentifier(null);
-        });
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(""));
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(null));
   }
 
   @Test
   public void testInvalidSyntaxThrowsIAE() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new GlobalIdentifier("INVALID_ID");
-        });
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier("INVALID_ID"));
   }
 
   @Test
@@ -46,28 +38,17 @@ public class GlobalIdentifierTest {
   @Test
   public void testValidSyntaxThrowsIAE() {
     assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new GlobalIdentifier(GlobalIdPrefix.CH, null);
-        });
+        IllegalArgumentException.class, () -> new GlobalIdentifier(GlobalIdPrefix.CH, null));
   }
 
   @Test
   public void testValidSyntaxThrowsIAE2() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new GlobalIdentifier(null, 2L);
-        });
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(null, 2L));
   }
 
   @Test
   public void testValidSyntaxThrowsIAE3() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new GlobalIdentifier(null, null);
-        });
+    assertThrows(IllegalArgumentException.class, () -> new GlobalIdentifier(null, null));
   }
 
   @Test

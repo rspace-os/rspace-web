@@ -297,9 +297,8 @@ public class StructuredDocumentControllerTest {
 
   @Test
   public void testGetTooLongTagRejected() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> strucDocCtrller.getTags(randomAlphanumeric(StructuredDocument.MAX_TAG_LENGTH + 1)));
+    String overlongTag = randomAlphanumeric(StructuredDocument.MAX_TAG_LENGTH + 1);
+    assertThrows(IllegalArgumentException.class, () -> strucDocCtrller.getTags(overlongTag));
   }
 
   @Test

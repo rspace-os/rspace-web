@@ -141,13 +141,13 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
 
   @Test
   public void isUserInAdminsCommunityThrowsIAEIfNotAdmin() {
+    User nonAdmin = createAnyUser("any");
+    User any = createAnyUser("any");
+    String username = any.getUsername();
+
     assertThrows(
         IllegalArgumentException.class,
-        () -> {
-          User nonAdmin = createAnyUser("any");
-          User any = createAnyUser("any");
-          userManager.isUserInAdminsCommunity(nonAdmin, any.getUsername());
-        });
+        () -> userManager.isUserInAdminsCommunity(nonAdmin, username));
   }
 
   @Test
