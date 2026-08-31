@@ -21,7 +21,7 @@ declare global {
   }
 
   interface Window {
-    RS: RSGlobal;
+    RS?: RSGlobal;
   }
 }
 
@@ -149,5 +149,6 @@ export function createConfirmationDialog(payload: ConfirmActionPayload) {
 }
 
 window.addEventListener("load", () => {
+  window.RS ??= {};
   window.RS.createConfirmationDialog = createConfirmationDialog;
 });

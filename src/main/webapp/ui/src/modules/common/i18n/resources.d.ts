@@ -1105,8 +1105,8 @@ export default interface Resources {
         "notFound": "Please contact an Admin: Calira returned HTTP status 404. Is Calira endpoint set correctly?"
       },
       "omero": {
-        "notFound": "The requested data was not found on this instance of Omero",
-        "sessionExpired": "Your session with Omero has expired. Please re-connect to Omero on the Apps page."
+        "notConnected": "You are not connected to Omero. Please connect to Omero on the Apps page.",
+        "notFound": "The requested data was not found on this instance of Omero"
       },
       "serverUnavailable": "The {appName} server at <serverLink>{url}</serverLink> is down, or CORS for this server has not been configured properly. If you are responsible for setting up the {appName} integration, open developer tools and have a look at the console and/or the network tab to find out what the issue is.",
       "timeout": "Request timed out.",
@@ -2267,14 +2267,13 @@ export default interface Resources {
       "empty": "The document has no connected Inventory items."
     },
     "barcodeScanner": {
-      "altEntry": "Alternatively, enter the data encoded in the barcode",
       "barcodeDetected": "Barcode detected: {format} format.",
-      "cameraError": "Could not access camera, please enter code below.",
+      "cameraError": "Could not access camera.",
       "cameraErrorSearchBox": "Could not access camera. Alternatively, enter the encoded data directly into the search box.",
+      "heading": "Scan a barcode",
       "helpTitle": "Info on using barcodes.",
       "loading": "Loading Barcode Scanner...",
       "otherFormats": "To scan other formats, please use Chrome or a Chromium-based browser.",
-      "prompt": "Barcode Scanner: {helpText}.",
       "scanError": {
         "message": "Unable to search. Scan has not completed.",
         "title": "An error occurred."
@@ -2285,8 +2284,8 @@ export default interface Resources {
         "title": "Unable to start camera with Barcode Detector."
       },
       "supportedFormats": {
-        "all": "all formats supported",
-        "qr": "QR format supported"
+        "all": "All formats supported.",
+        "qr": "QR format supported."
       }
     },
     "baseRecord": {
@@ -2921,7 +2920,7 @@ export default interface Resources {
         },
         "link": {
           "relationHelper": "Pick a DataCite relation type",
-          "targetHelper": "Paste a Global ID, or use the Browse buttons above.",
+          "targetHelper": "Paste a Global ID, or Browse",
           "targetNotFound": "{globalId} does not exist, or you do not have permission to view it."
         },
         "maxCharacters": "Must be no more than {max} characters.",
@@ -3203,7 +3202,10 @@ export default interface Resources {
           "pinVersion": "Pin version",
           "pinVersionFor": "Pin version for {globalId}",
           "pinnedVersion": "Pinned to v{version}",
-          "targetGlobalId": "Target Global ID"
+          "target": "Target",
+          "targetGlobalId": "Target Global ID",
+          "targetPlaceholder": "e.g. SA123",
+          "version": "Version"
         },
         "elnFolderBrowser": {
           "failedToLoadContents": "Failed to load contents",
@@ -3220,6 +3222,10 @@ export default interface Resources {
           "label": "Browse the ELN for a link target",
           "title": "Browse ELN",
           "workspaceTreeLabel": "Workspace tree"
+        },
+        "field": {
+          "label": "Link field",
+          "namedLabel": "Link field {name}"
         },
         "gallerySections": {
           "labels": {
@@ -3394,6 +3400,9 @@ export default interface Resources {
           "allowedRelationshipTypes": "Allowed relationship types",
           "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
           "allowedRelationshipTypesExplanationInstrument": "The DataCite relationship types that links may use on instruments created from this template. Leave empty to allow all relationship types.",
+          "defaultLink": "Default Link (optional)",
+          "defaultLinkExplanation": "An optional link applied to every item created from this template. Its relationship type must be one of the allowed types above. Items can change or remove it afterwards.",
+          "defaultLinkTarget": "Default link target",
           "none": "None"
         },
         "move": {
@@ -3588,7 +3597,6 @@ export default interface Resources {
       "noLinkedItem": "None",
       "noRows": "No IGSN IDs",
       "scan": "Scan",
-      "searchButtonPrefix": "Search for IGSN",
       "searchPlaceholder": "Search IGSN IDs...",
       "selectIgsn": "Select IGSN"
     },
@@ -5176,8 +5184,12 @@ export default interface Resources {
       },
       "omero": {
         "errors": {
-          "authenticationExpired": "Omero authentication expired, please connect to Omero on the Apps page",
-          "login": "Could not log in to OMERO: {0}"
+          "blankCredentials": "Both an OMERO username and password are required.",
+          "credentialsDelimiter": "An OMERO username or password may not contain \"{0}\".",
+          "login": "Could not log in to OMERO: {0}",
+          "notConnected": "You are not connected to OMERO. Connect from the Apps page.",
+          "rejectedCredentials": "OMERO rejected these credentials. Check your username and password.",
+          "unknownServer": "RSpace is configured for an OMERO server named \"{0}\", which this OMERO instance does not offer. Please contact an administrator."
         }
       },
       "owncloud": {
@@ -6732,10 +6744,11 @@ export default interface Resources {
           "unexportableUsers": "Cannot export data of users [{0}] - users not found, or no permission"
         },
         "field": {
-          "deleteRequestIdMissing": "''id'' property not provided for a field with ''deleteFieldRequest'' flag.",
+          "deleteRequestIdMissing": "'id' property not provided for a field with 'deleteFieldRequest' flag.",
           "deleteRequestIdUnknown": "Field id {0} doesn''t match the id of any pre-existing field.",
           "duplicateName": "Field name ''{0}'' is duplicated. Field names on a record must be unique.",
           "link": {
+            "defaultRelationTypeNotPermitted": "Field ''{1}'' has a default link using relation type ''{0}'', so that type cannot be removed from its allowed relationship types. Change or remove the default link first.",
             "selfLinkForbidden": "An item cannot link to itself: ''{0}''."
           },
           "linkRelationTypeInvalid": "Relation type ''{0}'' is not in the DataCite controlled vocabulary.",
@@ -6763,9 +6776,11 @@ export default interface Resources {
           "b2instDeleteFailed": "Could not delete the instrument PID from B2INST. {0}",
           "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
           "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
+          "b2instRegisterNoDraft": "Could not register a new instrument PID with B2INST: the service accepted the request but returned no draft record.",
           "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
           "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
           "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
+          "dataCiteRegisterNoDraft": "Could not register a new identifier with DataCite: the service accepted the request but returned no draft record.",
           "deleteNotOwner": "You can only delete an identifier that you own.",
           "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",

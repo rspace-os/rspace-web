@@ -67,6 +67,20 @@ public class ApiInventoryEntityField extends ApiField {
   @JsonInclude(JsonInclude.Include.NON_NULL)
   private ApiInventoryLink link;
 
+  /**
+   * Whether the incoming payload mentioned {@code link} at all, telling an explicit {@code "link":
+   * null} apart from a partial update that never mentions it. Without the distinction, a template
+   * PUT naming only allowed-relation-types destroyed that field's default link (RSDEV-1246). Set by
+   * the hand-written {@link #setLink} below. Excluded from JSON, equals and toString: it describes
+   * the payload, not the field.
+   */
+  @JsonIgnore @EqualsAndHashCode.Exclude @ToString.Exclude private boolean linkProvided;
+
+  public void setLink(ApiInventoryLink link) {
+    this.link = link;
+    this.linkProvided = true;
+  }
+
   @JsonProperty("mandatory")
   private Boolean mandatory;
 
@@ -143,7 +157,9 @@ public class ApiInventoryEntityField extends ApiField {
       InventoryLinkField linkField = (InventoryLinkField) field;
       setAllowedRelationTypes(splitRelationTypes(linkField.getAllowedRelationTypes()));
       if (linkField.getLink() != null) {
-        setLink(new ApiInventoryLink(linkField.getLink()));
+        // the field, not the setter: this is the outgoing direction, and setLink would set
+        // linkProvided on every serialized field, robbing the flag of its meaning
+        this.link = new ApiInventoryLink(linkField.getLink());
       }
     }
 

@@ -15,7 +15,7 @@ declare global {
   }
 
   interface Window {
-    RS: RSGlobal;
+    RS?: RSGlobal;
   }
 }
 
@@ -83,7 +83,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
             nfsId: file.nfsId,
             nfsType: (file.path[0] as Filestore).filesystemType,
           };
-          window.RS.insertTemplateIntoTinyMCE?.("netFilestoreLink", json);
+          window.RS?.insertTemplateIntoTinyMCE?.("netFilestoreLink", json);
         });
         if (files.size > localFiles.length + remoteFiles.length) {
           throw new Error("Some selected files were of an unsupported type");

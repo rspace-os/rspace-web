@@ -876,6 +876,13 @@ public class MediaManagerImpl implements MediaManager {
     return img;
   }
 
+  @Override
+  public EcatImage getImageWithOriginalImage(Long imageId, User user) {
+    EcatImage img = ecatImageDao.getWithOriginalImage(imageId);
+    assertMediaFilePermission(user, img, PermissionType.READ);
+    return img;
+  }
+
   private void assertMediaFilePermission(User user, EcatMediaFile media, PermissionType permType) {
     if (!permUtils.isRecordAccessPermitted(user, media, permType)) {
       throw new AuthorizationException(

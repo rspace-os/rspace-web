@@ -40,20 +40,22 @@ resolved during design. This file is a glossary only — no implementation detai
 ## Instrument PID registration (B2INST/PIDINST)
 
 - **PIDINST-mapped field** — a custom field on a concrete Instrument that feeds
-  the B2INST/PIDINST registration metadata because both its name (compared
-  case-insensitively, ignoring surrounding whitespace) and its declared field
-  type match a field of the default PIDINST template. A field matching by name
-  but not by type is ignored. Participation is decided by name+type
+  the B2INST/PIDINST and DataCite PIDINST registration metadata because both its
+  name (compared case-insensitively, ignoring surrounding whitespace) and its
+  declared field type match a field of the default PIDINST template. A field
+  matching by name but not by type is ignored. Participation is decided by name+type
   conformance, never by template lineage: any instrument carrying conforming
   fields is mapped, however it was created. The template's field names are the
   canonical spelling of the mapping contract.
 - **Documentation-only field** — a field of the default PIDINST template that
   deliberately feeds no registration metadata, existing purely so users can
-  record the fact against the instrument. The measurement technique, the
-  calibration and the last calibration date are documentation-only: they have no
-  PIDINST property that fits them, and inventing one was tried and rejected. A
-  documentation-only field is still an ordinary instrument field, so users fill,
-  edit and read it as usual; it simply never leaves RSpace.
+  record the fact against the instrument. Only the last calibration date is
+  documentation-only now: PIDINST's Date vocabulary has no home for it. The
+  measurement technique and calibration links were documentation-only until
+  RSDEV-1253 mapped them to RelatedIdentifier entries with a fixed IsDescribedBy
+  relation (see ADR 0007); the relation type stored on the link itself still
+  never leaves RSpace. A documentation-only field is still an ordinary
+  instrument field, so users fill, edit and read it as usual.
 - **Legacy auto-filled landing page** — a landing page RSpace itself wrote into
   an instrument's Landing page field, back when saving an instrument filled a
   blank field with the record's own globalId address. RSpace no longer writes

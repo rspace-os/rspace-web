@@ -7,9 +7,10 @@ import com.researchspace.model.inventory.InventoryRecord;
 
 /**
  * Translates an RSpace inventory record into the domain wrapper of the requested external PID
- * provider. This is the seam the future generic registration endpoints (RSDEV-1209) will build on;
- * in this story only the B2INST path is routed through it, while DataCite delegates to the existing
- * {@link ApiInventoryDOI#convertToDataCiteDoi()}.
+ * provider. This is the seam the future generic registration endpoints (RSDEV-1209) will build on.
+ * The B2INST path is built here in full; the DataCite path delegates the base conversion to {@link
+ * ApiInventoryDOI#convertToDataCiteDoi()} and adds the PIDINST properties that have no home on the
+ * RSpace DOI representation (ADR 0007).
  *
  * <p>Provider guard rails: {@code PIDINST_*} providers accept only Instrument records ({@code
  * IN*}); {@code IGSN_*} providers accept only {@code IC*}/{@code SA*}/{@code SS*}.
@@ -25,10 +26,11 @@ public interface RspaceToExternalProviderAdapter {
    * wrong (see ADR 0006). Owner always has exactly one entry (field content, falling back to the
    * record owner).
    *
-   * <p>Not every template field is mapped. "Measurement technique", "Calibration" and "Last
-   * calibrated" are documentation-only and feed nothing, because PIDINST has no property that fits
-   * them; see CONTEXT.md ("Documentation-only field") and the superseded
-   * DevDocs/adr/0005-measured-variable-narratives.md for the attempt that was rejected.
+   * <p>The "Measurement technique" and "Calibration" link fields are mapped to RelatedIdentifier
+   * entries (fixed IsDescribedBy relation, the target's globalId page as a URL, carrying the link's
+   * version pin when the target type resolves a version-suffixed id; RSDEV-1253, ADR 0007). "Last
+   * calibrated" remains documentation-only, because PIDINST has no property that fits it; see
+   * CONTEXT.md ("Documentation-only field") and DevDocs/adr/0005-measured-variable-narratives.md.
    *
    * <p>Must be called inside an existing transaction: the mapping reads the instrument's lazy
    * associations. The implementation declares {@code @Transactional(propagation = MANDATORY)}, so a
@@ -42,6 +44,32 @@ public interface RspaceToExternalProviderAdapter {
    */
   B2instDoi buildB2instDoi(InventoryRecord instrument, String publicLandingPageUrl);
 
-  /** Build the DataCite DOI wrapper from the RSpace DOI representation. */
-  DataCiteDoi buildDataCiteDoi(ApiInventoryDOI doi);
+  /**
+   * Build the DataCite DOI wrapper: the RSpace DOI representation converted by {@link
+   * ApiInventoryDOI#convertToDataCiteDoi()}, then, when the associated record is an Instrument, the
+   * PIDINST related identifiers appended from the Measurement technique and Calibration link fields
+   * (RSDEV-1253, ADR 0007): the link target's globalId page as a URL, carrying the link's version
+   * pin when the target type resolves one, always related as IsDescribedBy, labelled through
+   * relationTypeInformation. A link whose target is deleted, or no longer readable by the
+   * instrument's owner, is omitted with a WARN. An instrument whose entries come to nothing sends
+   * an explicit empty list, which is how DataCite is told to clear the property - except when no
+   * usable http(s) server URL exists, an environment failure under which the property is left
+   * untouched rather than wrongly cleared.
+   *
+   * <p>Callers resending full metadata (publish and retract both do) must route through this
+   * method, not {@code convertToDataCiteDoi()} directly, or the registered related identifiers
+   * silently regress.
+   *
+   * <p>Must be called inside an existing transaction, whatever the record: the implementation
+   * declares {@code @Transactional(propagation = MANDATORY)}, matching {@link #buildB2instDoi}, so
+   * a caller without one fails immediately rather than part-way through the mapping. Only the
+   * Instrument path actually needs the session, to read the instrument's lazy fields, but the
+   * requirement is deliberately uniform: both production callers (publish and retract) are already
+   * transactional, and a transaction requirement that changed with the argument's runtime type
+   * would be the harder contract to honour.
+   *
+   * @param associatedRecord the inventory record the DOI belongs to; null or a non-Instrument
+   *     yields the plain conversion
+   */
+  DataCiteDoi buildDataCiteDoi(ApiInventoryDOI doi, InventoryRecord associatedRecord);
 }

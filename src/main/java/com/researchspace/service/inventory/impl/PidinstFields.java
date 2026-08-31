@@ -3,7 +3,10 @@ package com.researchspace.service.inventory.impl;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.service.inventory.InventoryUrls;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,6 +48,20 @@ final class PidinstFields {
   }
 
   /**
+   * The live link held by the record's link field with this canonical name: present only when the
+   * field exists (name matched as in {@link #mappedField}, type LINK), holds a link that is not
+   * soft-deleted, and that link names a target. Anything else reads as an empty field.
+   */
+  static Optional<InventoryLink> mappedLink(InstrumentEntity record, String canonicalName) {
+    return mappedField(record, canonicalName, FieldType.LINK)
+        .filter(InventoryLinkField.class::isInstance)
+        .map(field -> ((InventoryLinkField) field).getLink())
+        .filter(Objects::nonNull)
+        .filter(link -> !link.isDeleted())
+        .filter(link -> StringUtils.isNotBlank(link.getTargetGlobalId()));
+  }
+
+  /**
    * The record's Landing page field. Shared by the clear, the registration-time write and the
    * PIDINST mapping so they can never act on different fields.
    */
@@ -71,7 +88,7 @@ final class PidinstFields {
 
   /**
    * Whether a typed Landing page is an address a resolver could actually follow. The field's own
-   * validation is only {@code new URI(...)} parsing (core-model's InventoryUriField), which accepts
+   * validation is only {@code new URI(...)} parsing (see {@code InventoryUriField}), which accepts
    * a bare host, a relative path, and non-web schemes such as {@code javascript:} and {@code
    * data:}. None of those identify the instrument to someone resolving the PID, and a LandingPage
    * is baked into a citable PID once a curator accepts, so anything that is not an absolute http(s)

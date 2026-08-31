@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import { Dialog } from "../../components/DialogBoundary";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
 import AddTag from "../../components/Tags/AddTag";
@@ -30,9 +30,7 @@ export default function Wrapper(): React.ReactNode {
       <ErrorBoundary topOfViewport>
         <Portal>
           <Alerts>
-            <DialogBoundary>
-              <TagDialog />
-            </DialogBoundary>
+            <TagDialog />
           </Alerts>
         </Portal>
       </ErrorBoundary>
