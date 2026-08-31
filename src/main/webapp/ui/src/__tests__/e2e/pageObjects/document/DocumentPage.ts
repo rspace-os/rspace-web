@@ -3,6 +3,8 @@ import { AttachmentsSection } from "@/__tests__/e2e/components/document/Attachme
 import { resolveFieldId } from "@/__tests__/e2e/components/document/DocumentFieldHelpers";
 import { DocumentHeader } from "@/__tests__/e2e/components/document/DocumentHeader";
 import { DocumentViewToolbar } from "@/__tests__/e2e/components/document/DocumentViewToolbar";
+import { SigningDialogComponent } from "@/__tests__/e2e/components/document/SigningDialogComponent";
+import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
 import { BasePage } from "../BasePage";
 
 export class DocumentPage extends BasePage {
@@ -11,12 +13,14 @@ export class DocumentPage extends BasePage {
   readonly header: DocumentHeader;
   readonly toolbar: DocumentViewToolbar;
   readonly attachments: AttachmentsSection;
+  readonly signingDialog: SigningDialogComponent;
 
   constructor(page: Page) {
     super(page);
     this.header = new DocumentHeader(page);
     this.toolbar = new DocumentViewToolbar(page);
     this.attachments = new AttachmentsSection(page);
+    this.signingDialog = new SigningDialogComponent(page);
   }
 
   async isLoaded(): Promise<void> {
@@ -58,5 +62,15 @@ export class DocumentPage extends BasePage {
     await dialog.getByRole("textbox", { name: "Template Name" }).fill(templateName);
     await dialog.getByRole("button", { name: "OK" }).click();
     await dialog.waitFor({ state: "hidden" });
+  }
+
+  async openRecordInfo(): Promise<RecordInfoDialog> {
+    return this.header.openRecordInfo();
+  }
+
+  async signWithoutWitness(password: string): Promise<void> {
+    await this.toolbar.signButton.click();
+    await this.signingDialog.waitForOpen();
+    await this.signingDialog.signWithoutWitness(password);
   }
 }

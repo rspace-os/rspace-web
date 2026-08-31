@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 
-export class WorkspaceRecordInfoDialog {
+export class RecordInfoDialog {
   readonly root: Locator;
 
   constructor(page: Page) {
@@ -17,9 +17,9 @@ export class WorkspaceRecordInfoDialog {
   }
 
   async field(name: string): Promise<string> {
-    const row = this.root.getByRole("row", { name: `${name}:` });
-    const text = await row.innerText();
-    return text.replace(`${name}:`, "").trim();
+    const labelCell = this.root.getByRole("cell", { name: `${name}:`, exact: true });
+    const value = await labelCell.evaluate((el) => el.nextElementSibling?.textContent?.trim() ?? "");
+    return value;
   }
 
   get relatedInventoryItemsContent(): Locator {

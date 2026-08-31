@@ -23,7 +23,9 @@ import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SubSampleApiManager;
 import jakarta.ws.rs.NotFoundException;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -89,7 +91,10 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   public StockDeductionResult deductStock(long stoichiometryId, List<Long> linkIds, User user) {
     StockDeductionResult result = new StockDeductionResult();
     result.setStoichiometryId(stoichiometryId);
-    for (Long id : linkIds) {
+    // dedupe: a repeated link id deducts its amount once (RSDEV-1319). The response still carries
+    // one result row per submitted entry, so the API's cardinality contract is unchanged
+    Map<Long, StockDeductionResult.IndividualResult> resultsById = new HashMap<>();
+    for (Long id : linkIds.stream().distinct().toList()) {
       try {
         StoichiometryInventoryLink link = getLinkOrThrowNotFound(id);
         StoichiometryMolecule stoichiometryMolecule = link.getStoichiometryMolecule();
@@ -115,16 +120,18 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
           link.setStockDeducted(true);
           linkDao.save(link);
         }
-        result.addResult(new StockDeductionResult.IndividualResult(id, true));
+        resultsById.put(id, new StockDeductionResult.IndividualResult(id, true));
       } catch (NotFoundException | IllegalArgumentException e) {
-        result.addResult(new StockDeductionResult.IndividualResult(id, false, e.getMessage()));
+        resultsById.put(id, new StockDeductionResult.IndividualResult(id, false, e.getMessage()));
       } catch (Exception e) {
         log.error("Unexpected error deducting stock for link {}", id, e);
-        result.addResult(
+        resultsById.put(
+            id,
             new StockDeductionResult.IndividualResult(
-                id, false, "An internal error occurred while deducting stock"));
+                id, false, messages.getMessage("errors.inventory.stoichiometry.deductionFailed")));
       }
     }
+    linkIds.forEach(id -> result.addResult(resultsById.get(id)));
     return result;
   }
 

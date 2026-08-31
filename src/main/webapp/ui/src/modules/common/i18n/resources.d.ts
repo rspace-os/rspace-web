@@ -3025,6 +3025,8 @@ export default interface Resources {
           "pidinstDocLink": "See PIDINST Documentation for details",
           "preview": "Preview",
           "publishAwaitingReview": "This instrument PID has been submitted to the B2INST community and is awaiting curator review.",
+          "publishPidinstPublished": "The community accepted this submission. The instrument PID is already published and cannot be published again.",
+          "refresh": "Refresh",
           "rorError": "Could not get RoR data.",
           "show": "Show",
           "stateInfo": {
@@ -3032,10 +3034,11 @@ export default interface Resources {
             "draftPidinst": "This PIDINST is a Draft. Metadata can be specified, but no information is publicly available.",
             "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
             "findablePidinst": "This PIDINST is Findable. The PIDINST is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
-            "pidinstAccepted": "The community accepted this submission. The instrument PID is registered and publicly resolvable.",
-            "pidinstCancelled": "The submission was cancelled before review. The instrument PID remains a draft.",
-            "pidinstDeclined": "The community declined this submission. The instrument PID remains a draft.",
-            "pidinstExpired": "The submission expired before it was reviewed. The instrument PID remains a draft.",
+            "pidinstAccepted": "This PIDINST ID is Accepted. The PIDINST ID is a citable ePIC Handle that redirects to the <externalLink href=\"{link}\">registered landing page</externalLink>. The metadata is publicly available through that page and the instrument's B2INST record.",
+            "pidinstCancelled": "The submission was cancelled before review. The instrument PID remains a draft. You can delete this identifier and register a new one.",
+            "pidinstCreated": "The review request was created but has not been submitted to the community yet. Press Publish to submit it.",
+            "pidinstDeclined": "The community declined this submission. The instrument PID remains a draft. You can delete this identifier and register a new one.",
+            "pidinstExpired": "The submission expired before it was reviewed. The instrument PID remains a draft. You can delete this identifier and register a new one.",
             "pidinstSubmitted": "Submitted to the B2INST community for review. A curator decides whether the instrument PID is published.",
             "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API.",
             "registeredPidinst": "This PIDINST is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API."
@@ -3054,11 +3057,13 @@ export default interface Resources {
             "show": "Show identifier's details"
           },
           "tooltips": {
+            "deleteClosedReview": "Delete this identifier so a new one can be registered",
             "deleteDraft": "Delete Draft",
             "missingData": "Some missing data",
             "notPublished": "Not published yet",
             "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",
             "previewPage": "Preview Landing Page",
+            "refresh": "Check the current status of the community review",
             "retract": "Retract"
           }
         },
@@ -3479,6 +3484,8 @@ export default interface Resources {
         "doiRequired": "DOI must be known",
         "publishFailed": "The identifier could not be published.",
         "published": "The identifier {doi} has been published.",
+        "refreshFailed": "Could not refresh the identifier status",
+        "refreshed": "The identifier status is now \"{state}\".",
         "republishAfterRetractFailed": "Identifier has been retracted. Tap publish to try again.\n{reason}",
         "republishFailed": "The identifier could not be republished.",
         "republished": "The identifier {doi} has been republished.",
@@ -6773,17 +6780,24 @@ export default interface Resources {
         },
         "identifier": {
           "assignTypeMismatch": "Identifier of type {0} cannot be assigned to inventory item [{1}]",
+          "b2instAcceptedRecordUnavailable": "B2INST accepted this submission but its record is not available yet, so the instrument PID cannot be shown. Please try again shortly.",
           "b2instDeleteFailed": "Could not delete the instrument PID from B2INST. {0}",
           "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
+          "b2instRecordGone": "B2INST no longer holds this record, so there is no status to refresh. The record was removed on the provider side.",
+          "b2instRefreshFailed": "Could not refresh the instrument PID status from B2INST. {0}",
           "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
           "b2instRegisterNoDraft": "Could not register a new instrument PID with B2INST: the service accepted the request but returned no draft record.",
           "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
           "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
           "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
+          "dataCitePublishFailed": "Error when publishing the DOI in DataCite. If the problem persists, please contact your System Admin",
           "dataCiteRegisterNoDraft": "Could not register a new identifier with DataCite: the service accepted the request but returned no draft record.",
+          "dataCiteRetractFailed": "Error when retracting the DOI in DataCite. If the problem persists, please contact your System Admin",
           "deleteNotOwner": "You can only delete an identifier that you own.",
+          "deleteWrongState": "You can only delete identifiers in \"draft\" state, or B2INST instrument PIDs whose community review was declined, cancelled or expired.",
           "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
+          "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
           "typeUnsupported": "identifiers of type {0} are not supported yet"
         },
         "imageTooLarge": "Image cannot be larger than 10MB",
@@ -6877,6 +6891,7 @@ export default interface Resources {
         "stoichiometry": {
           "actualAmountRequired": "Molecule actual amount must be set for deduction",
           "alreadyLinked": "Stoichiometry molecule already has an inventory link",
+          "deductionFailed": "An internal error occurred while deducting stock",
           "insufficientStock": "Insufficient stock to perform this action. Attempting to use {0} of stock amount {1} for {2}",
           "linkNotFound": "Stoichiometry link not found: id={0}",
           "linkNotInStoichiometry": "Link with id {0} does not belong to stoichiometry with id {1}",
@@ -10589,6 +10604,7 @@ export default interface Resources {
         },
         "fromPyrat": "From PyRAT",
         "helpTitle": "PyRAT help",
+        "importedFrom": "Imported from <serverLink>{server}</serverLink> on {timestamp}",
         "linkTooltip": "Link to PyRAT",
         "selectedCount": "Selected: {count}",
         "tableLabel": "animal search results"

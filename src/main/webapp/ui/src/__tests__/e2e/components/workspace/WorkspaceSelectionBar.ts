@@ -1,7 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
+import { ShareDialog } from "@/__tests__/e2e/components/shared/ShareDialog";
 import { MoveDialog } from "./MoveDialog";
 import { WorkspaceRenameDialog } from "./WorkspaceRenameDialog";
-import { WorkspaceShareDialog } from "./WorkspaceShareDialog";
 import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type SelectionBarAction =
@@ -87,9 +87,9 @@ export class WorkspaceSelectionBar {
     await this.item("CSV").getByRole("link", { name: "CSV" }).click();
   }
 
-  async share(): Promise<WorkspaceShareDialog> {
+  async share(): Promise<ShareDialog> {
     await this.item("Share").getByRole("link", { name: "Share" }).click();
-    const dialog = new WorkspaceShareDialog(this.page);
+    const dialog = new ShareDialog(this.page);
     await dialog.waitUntilVisible();
     return dialog;
   }

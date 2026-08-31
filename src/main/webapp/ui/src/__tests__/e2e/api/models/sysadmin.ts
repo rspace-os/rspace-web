@@ -44,3 +44,12 @@ export interface ApiIgsnSettingsUpdate {
   password: string;
   repositoryPrefix: string;
 }
+
+export interface ApiPidinstSettingsUpdate {
+  provider: "PIDINST_DATACITE" | "PIDINST_B2INST";
+  enabled: "true";
+  serverUrl: string;
+  username: string;
+  password: string;
+  repositoryPrefix: string;
+}

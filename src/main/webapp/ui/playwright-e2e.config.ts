@@ -30,7 +30,7 @@ function getReporterConfig(): ReporterDescription[] {
 }
 
 export default defineConfig<E2EOptions>({
-  testDir: "./src",
+  testDir: "./src/__tests__/e2e/specs/inventory",
 
   webServer:
     env.integrationMode === "mock"

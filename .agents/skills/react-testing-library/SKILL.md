@@ -7,17 +7,6 @@ description: React Testing Library best practices for writing maintainable, user
 
 Comprehensive testing guide for React components using Testing Library, designed for AI agents and LLMs. Contains 43 rules across 9 categories, prioritized by impact to guide test writing and code review.
 
-> **Read [`references/rspace-overrides.md`](references/rspace-overrides.md)
-> first.** This skill comes from an external repository. It describes a general
-> RTL setup. Four of its rules are not correct here:
->
-> - The `cleanup()` call in the setup file is necessary.
-> - Text queries must match i18n keys, not English text.
-> - Custom render modules are not permitted.
-> - MSW mocks each HTTP request. Do not use `vi.mock()` for an HTTP request.
->
-> If a rule below disagrees with the overrides file, obey the overrides file.
-
 ## When to Apply
 
 Reference these guidelines when:
@@ -124,6 +113,6 @@ Read individual reference files for detailed explanations and code examples:
 
 | File | Description |
 |------|-------------|
-| [references/rspace-overrides.md](references/rspace-overrides.md) | Local rules that replace some upstream rules. Read this file first |
 | [references/_sections.md](references/_sections.md) | Category definitions and ordering |
 | [assets/templates/_template.md](assets/templates/_template.md) | Template for new rules |
+| [metadata.json](metadata.json) | Version and reference information |

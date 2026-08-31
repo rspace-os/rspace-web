@@ -60,6 +60,13 @@ public interface InventoryIdentifiersApi {
   @PostMapping(value = "/{identifierId}/retract")
   ApiInventoryDOI retractIdentifier(Long identifierId, User user);
 
+  /**
+   * Refresh identifier of record with given internal id, pulling the current status from the
+   * external provider and persisting it.
+   */
+  @PostMapping(value = "/{identifierId}/refresh")
+  ApiInventoryDOI refreshIdentifier(Long identifierId, User user);
+
   /** Test the connection to the DataCite IGSN identifier service. */
   @GetMapping(value = "/testIgsnConnection")
   boolean testIgsnConnection(User user);
