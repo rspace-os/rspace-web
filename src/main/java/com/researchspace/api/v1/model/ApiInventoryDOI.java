@@ -2,6 +2,7 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.core.util.JacksonUtil;
@@ -55,6 +56,7 @@ import org.apache.commons.lang3.StringUtils;
       "publicUrl",
       "providerUrl",
       "customFieldsOnPublicPage",
+      "externalMetadataUpdate",
       "_links"
     })
 public class ApiInventoryDOI extends LinkableApiObject {
@@ -116,6 +118,28 @@ public class ApiInventoryDOI extends LinkableApiObject {
 
     private String value;
     private DoiDateType type;
+  }
+
+  /**
+   * Outcome of the external metadata update attempted while saving the record this identifier
+   * belongs to (RSDEV-1251, ADR 0008). Response-only and never persisted: it describes one push,
+   * not a state of the identifier, so it is absent from the next read of the same identifier.
+   */
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ApiExternalMetadataUpdate {
+
+    /** Whether the provider accepted the rebuilt metadata. */
+    @JsonProperty("succeeded")
+    private boolean succeeded;
+
+    /**
+     * Localized sentence for the user: what was updated, or why it was not. Carries the provider's
+     * own words for a rejection, which cannot be translated but say more than a generic failure.
+     */
+    @JsonProperty("reason")
+    private String reason;
   }
 
   @JsonProperty("id")
@@ -260,6 +284,22 @@ public class ApiInventoryDOI extends LinkableApiObject {
 
   @JsonProperty("dates")
   private List<ApiInventoryDOIDate> dates;
+
+  /**
+   * Set on the way out by the instrument save that pushed to the provider, and by nothing else.
+   *
+   * <p>{@link JsonProperty.Access#READ_ONLY} and excluded from equality: it is transient decoration
+   * of one response, so a client sending it is ignored and two identifiers carrying the same
+   * metadata still compare equal. {@code NON_NULL} keeps the property out of the payload entirely
+   * when no push was attempted, which is how a client tells "not eligible" from "attempted".
+   * Deliberately absent from {@link #applyChangesToDatabaseDOI(DigitalObjectIdentifier)}: there is
+   * no column for it, by decision (ADR 0008 item 4).
+   */
+  @JsonProperty(value = "externalMetadataUpdate", access = JsonProperty.Access.READ_ONLY)
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @EqualsAndHashCode.Exclude
+  @ToString.Exclude
+  private ApiExternalMetadataUpdate externalMetadataUpdate;
 
   @JsonIgnore
   public User getOwner() {

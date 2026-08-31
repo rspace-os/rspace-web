@@ -768,6 +768,9 @@ class B2instConnectorImplTest {
     assertThrows(B2instConnectionException.class, () -> connector.getPublishedRecord(craftedRid));
     assertThrows(B2instConnectionException.class, () -> connector.getDraftRecord(craftedRid));
     assertThrows(B2instConnectionException.class, () -> connector.deleteDoi(craftedRid));
+    assertThrows(
+        B2instConnectionException.class,
+        () -> connector.updateDraftDoi(craftedRid, draftWithName("X")));
 
     // no expectations were set, so verify() passing means nothing was sent
     server.verify();
@@ -810,6 +813,117 @@ class B2instConnectorImplTest {
         .andRespond(withSuccess("{\"status\":\"submitted\"}", MediaType.APPLICATION_JSON));
 
     assertEquals("submitted", connector.publishDoi("k2j9p-7yh21").getStatus());
+    server.verify();
+  }
+
+  @Test
+  void updateDraftDoiPutsRebuiltMetadataToTheDraft() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andExpect(header("Authorization", "Bearer TOK123"))
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.metadata.Name").value("Renamed microscope"))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"k2j9p-7yh21\",\"status\":\"draft\",\"revision_id\":4}",
+                MediaType.APPLICATION_JSON));
+
+    B2instDraftRecord updated =
+        connector.updateDraftDoi("k2j9p-7yh21", draftWithName("Renamed microscope"));
+
+    assertEquals("k2j9p-7yh21", updated.getId());
+    server.verify();
+  }
+
+  /**
+   * The provider's own words are what the on-save update reports to the user, so a rejection has to
+   * arrive as the reason rather than as an HTTP status: a locked or accepted record is the case
+   * that matters, and only B2INST can say which it is.
+   */
+  @Test
+  void updateDraftDoiSurfacesTheProviderMessageAsTheReason() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(
+            withStatus(HttpStatus.FORBIDDEN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"status\":403,\"message\":\"Record is not editable.\"}"));
+
+    B2instConnectionException thrown =
+        assertThrows(
+            B2instConnectionException.class,
+            () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
+
+    assertEquals("Record is not editable.", thrown.getReason());
+    server.verify();
+  }
+
+  @Test
+  void updateDraftDoiFallsBackToTheStatusWhenTheBodyExplainsNothing() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server.expect(requestTo(DRAFT_URL)).andRespond(withStatus(HttpStatus.NOT_FOUND).body(""));
+
+    B2instConnectionException thrown =
+        assertThrows(
+            B2instConnectionException.class,
+            () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
+
+    assertTrue(thrown.getReason().contains("404"), thrown.getReason());
+  }
+
+  @Test
+  void updateDraftDoiWrapsTransportErrors() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andRespond(withException(new IOException("read timed out")));
+
+    B2instConnectionException thrown =
+        assertThrows(
+            B2instConnectionException.class,
+            () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
+
+    assertNotNull(thrown.getReason());
+  }
+
+  /**
+   * The real 404 body from B2INST, captured against b2inst-test.gwdg.de (August 2026). Pins the
+   * reason the on-save external metadata update shows when the record is gone on the provider side:
+   * B2INST says it in plain words, which is why that path needs no HTTP-status classification of
+   * its own (RSDEV-1251).
+   */
+  @Test
+  void updateDraftDoiReportsAMissingRecordInB2instsOwnWords() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo(DRAFT_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(
+            withStatus(HttpStatus.NOT_FOUND)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(
+                    "{\"status\":404,\"message\":\"The persistent identifier does not exist.\"}"));
+
+    B2instConnectionException thrown =
+        assertThrows(
+            B2instConnectionException.class,
+            () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
+
+    assertEquals("The persistent identifier does not exist.", thrown.getReason());
     server.verify();
   }
 }

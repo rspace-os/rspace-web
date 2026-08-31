@@ -13,6 +13,7 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
+import com.researchspace.service.inventory.InventoryIdentifierExternalUpdateService;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
@@ -37,6 +38,7 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Autowired private InstrumentApiPostFullValidator instrumentApiPostFullValidator;
   @Autowired private InstrumentApiPutValidator instrumentApiPutValidator;
   @Autowired private InventoryAuditApiManager inventoryAuditMgr;
+  @Autowired private InventoryIdentifierExternalUpdateService externalUpdateService;
 
   @Data
   @AllArgsConstructor
@@ -157,8 +159,34 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     instrumentApiMgr.assertUserCanEditInstrument(id, user);
 
     ApiInstrument updated = instrumentApiMgr.updateApiInstrument(incomingInstrument, user);
+    pushExternalMetadataUpdates(updated, incomingInstrument, user);
     buildAndAddInventoryRecordLinks(updated);
     return updated;
+  }
+
+  /**
+   * Sends the instrument's remapped PIDINST metadata to any provider record registered for it
+   * (RSDEV-1251, ADR 0008).
+   *
+   * <p>Here, and only here: the manager is transactional and this controller is not, so by this
+   * point the edit has committed and the provider call runs outside any transaction. It is also the
+   * one place an ordinary user save passes through. Every identifier operation that updates an
+   * instrument internally - register, publish, retract, refresh, template sync, bulk owner change -
+   * re-enters {@code updateApiInstrument} at the manager level, below this seam, so none of them
+   * can trigger a push, let alone a recursive one.
+   *
+   * <p>Guarded rather than allowed to propagate: the instrument is already saved, and a provider
+   * outage or a bug in the push must not turn that into an error response. The failure is reported
+   * on the identifier in the response body by the service itself.
+   */
+  private void pushExternalMetadataUpdates(
+      ApiInstrument updated, ApiInstrument incomingInstrument, User user) {
+    try {
+      externalUpdateService.pushMetadataUpdates(updated, incomingInstrument, user);
+    } catch (RuntimeException e) {
+      log.error(
+          "Could not update the external PIDINST metadata of instrument {}", updated.getId(), e);
+    }
   }
 
   @Override

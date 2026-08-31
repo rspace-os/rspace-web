@@ -368,8 +368,17 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
       /*
        * Environment failure, not data: with no usable server URL no address can be built for ANY
        * link, so an empty list here would be indistinguishable from "the user cleared the fields"
-       * and would permanently strip entries that are still correct. Leave the property untouched
-       * (absent means "no change" at DataCite) until the deployment is fixed.
+       * and would permanently strip entries that are still correct.
+       *
+       * Leaving the property null is what expresses "no opinion": DataCite preserves a registered
+       * value only for a key ABSENT from the payload, and clears it for an explicit null exactly as
+       * it does for [] (verified against api.test.datacite.org, August 2026).
+       *
+       * That absence depends entirely on DataCiteDoiAttributes being serialized NON_NULL. Without
+       * it every null went on the wire as an explicit null and this guard stripped the very entries
+       * it exists to protect. The annotation is now on that class, pinned by
+       * DataCiteDoiTest.nullAttributesAreOmittedSoTheyDoNotClearRegisteredValues in
+       * datacite-java-client, so do not "tidy" it away.
        */
       log.warn(
           "Leaving the registered related identifiers of {} untouched: no usable http(s) address"
@@ -386,12 +395,13 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
                     RELATION_TYPE_IS_DESCRIBED_BY, url, RELATED_ID_TYPE_URL, label));
     /*
      * Set unconditionally, the empty list included. DataCite replaces the whole property with
-     * whatever the payload carries and clears it only when sent an explicit empty array; a
-     * property that is absent or null leaves the registered value alone. Once the environment
-     * guard above has passed, an empty list is a statement about the data - the fields are
-     * cleared, or their targets no longer qualify - so it must reach DataCite as [], or entries
-     * registered before the user cleared them stay attached to a findable DOI with no way to
-     * withdraw them.
+     * whatever the payload carries, and separates the three cases by presence: a populated list
+     * replaces, an explicit [] clears, and only a key absent from the payload is left alone (an
+     * explicit null clears, which is why the guard above relies on NON_NULL serialization rather
+     * than on null meaning "no change"). Once the environment guard has passed, an empty list is a
+     * statement about the data - the fields are cleared, or their targets no longer qualify - so it
+     * must reach DataCite as [], or entries registered before the user cleared them stay attached
+     * to a findable DOI with no way to withdraw them.
      */
     dataCiteDoi.getAttributes().setRelatedIdentifiers(related);
     return dataCiteDoi;

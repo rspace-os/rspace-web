@@ -20,6 +20,20 @@ public interface B2instConnector {
   /** Create a draft record from the given metadata. The returned draft carries the RID. */
   B2instDraftRecord registerDoi(B2instDoi doi);
 
+  /**
+   * Full-replace update of a record's draft metadata, returning the updated draft.
+   *
+   * <p>InvenioRDM keeps a draft writable both while it is a plain {@code draft} and while its
+   * community review is open ({@code submitted}), which is what makes an on-save external metadata
+   * update possible for those two states (RSDEV-1251, ADR 0008). An accepted record has no writable
+   * draft and B2INST rejects the call.
+   *
+   * <p>The body is the same register-shaped payload {@link #registerDoi(B2instDoi)} sends, rebuilt
+   * from the instrument's current fields: the endpoint replaces the metadata block wholesale, so a
+   * partial body would silently drop properties.
+   */
+  B2instDraftRecord updateDraftDoi(String rid, B2instDoi doi);
+
   /** Delete a draft record by its RID. Returns true on success. */
   boolean deleteDoi(String rid);
 

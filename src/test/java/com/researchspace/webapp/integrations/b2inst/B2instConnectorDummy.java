@@ -32,6 +32,17 @@ public class B2instConnectorDummy implements B2instConnector {
     return draft;
   }
 
+  /** Captures the rebuilt payload, so a test can assert on what an on-save update would send. */
+  @Getter private B2instDoi doiUpdateSentToB2inst;
+
+  @Override
+  public B2instDraftRecord updateDraftDoi(String rid, B2instDoi doi) {
+    this.doiUpdateSentToB2inst = doi;
+    B2instDraftRecord draft = new B2instDraftRecord();
+    draft.setId(rid);
+    return draft;
+  }
+
   @Override
   public boolean deleteDoi(String rid) {
     return true;

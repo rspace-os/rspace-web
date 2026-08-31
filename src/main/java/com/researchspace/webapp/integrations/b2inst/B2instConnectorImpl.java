@@ -119,6 +119,23 @@ public class B2instConnectorImpl implements B2instConnector {
   }
 
   @Override
+  public B2instDraftRecord updateDraftDoi(String rid, B2instDoi doi) {
+    try {
+      return restTemplate
+          .exchange(
+              recordUrl(rid, "draft"),
+              HttpMethod.PUT,
+              new HttpEntity<>(doi),
+              B2instDraftRecord.class)
+          .getBody();
+    } catch (RestClientException e) {
+      String reason = describeFailure(e);
+      throw new B2instConnectionException(
+          "Error updating B2INST draft record " + rid + ": " + reason, reason, e);
+    }
+  }
+
+  @Override
   public boolean deleteDoi(String rid) {
     try {
       restTemplate.delete(recordUrl(rid, "draft"));

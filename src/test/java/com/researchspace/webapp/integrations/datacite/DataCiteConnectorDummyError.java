@@ -30,6 +30,11 @@ public class DataCiteConnectorDummyError implements DataCiteConnector {
   }
 
   @Override
+  public DataCiteDoi updateDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType) {
+    throw new DataCiteConnectionException("Error when contacting DataCite", null);
+  }
+
+  @Override
   public void reloadDataCiteClient() {}
 
   @Override

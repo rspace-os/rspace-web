@@ -121,6 +121,36 @@ resolved during design. This file is a glossary only — no implementation detai
   (which needs an RSpace sign-in). The address exists from the moment
   registration begins; the page itself resolves only once the identifier is
   published.
+- **Updatable identifier state** — an identifier state in which the provider's
+  copy of the metadata can be rewritten in place by RSpace. The two providers
+  express it from opposite ends. For B2INST it is every state *except*
+  `accepted`: an InvenioRDM draft stays writable right up to acceptance, which
+  publishes the record and removes the draft, and since `refreshIdentifier`
+  stores the community review's status verbatim an identifier can legitimately
+  sit in `draft`, `created`, `submitted`, `cancelled`, `declined` or `expired`,
+  each with a live draft behind it (verified against b2inst-test.gwdg.de,
+  August 2026). For DataCite it is *only* `draft`: a findable DOI is refreshed
+  through the existing Republish, which already resends the full current
+  metadata (retract then publish), and a retracted (`registered`) DOI is left
+  alone by decision rather than because DataCite would refuse it. An accepted
+  B2INST record is never updated in place; it would need a whole new
+  draft-and-review round.
+- **External metadata update** — re-running the usual PIDINST mapping over an
+  instrument's current fields and pushing the result to the provider record
+  registered for it, so the external record keeps describing the instrument as
+  it is today rather than drifting. Triggered by saving an instrument that
+  carries an identifier in an updatable identifier state; saving *is* the
+  explicit user action, there is no separate "update external PIDINST" button.
+  A failed push never blocks or reverts the save: the instrument edit is
+  persisted regardless, the identifier's own state is left untouched, and the
+  failure is reported to the user. Every qualifying save pushes, whether or not
+  a mapped field changed, so retrying a failed push is just saving again.
+  Only the ordinary instrument save pushes: template sync, owner change,
+  restore, duplicate and delete do not, edits to samples, subsamples and
+  containers do not (their draft-DOI metadata still drifts), and identifiers
+  created, assigned or delete-requested within the same save are excluded,
+  because registration and publish own their own metadata moments.
+  (RSDEV-1251)
 - **Registered landing page** — the LandingPage value RSpace sends to a PID
   provider when registering an instrument identifier: the Landing page field
   when it holds an absolute http(s) address the user typed themselves, otherwise
