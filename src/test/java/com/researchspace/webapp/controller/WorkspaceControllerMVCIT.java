@@ -410,7 +410,6 @@ public class WorkspaceControllerMVCIT extends MVCTestBase {
     assertEquals(initRecordCount - 1, getNumberOfRecordsInRootFolder(settings));
   }
 
-  /** Creates a large deleted-items fixture for manual UI performance checks. */
   @Test
   @EnabledIfSystemProperty(named = "performanceTests", matches = "true")
   public void testBulkDeletionPerformance() throws Exception {

@@ -10,7 +10,6 @@ import org.apache.logging.log4j.core.config.Configuration;
 
 public class CoreTestUtils {
 
-  /** Returns a random alphabetic string of the requested length. */
   public static String getRandomName(int length) {
     return RandomStringUtils.randomAlphabetic(length);
   }

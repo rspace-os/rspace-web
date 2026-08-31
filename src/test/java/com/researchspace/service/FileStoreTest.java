@@ -94,7 +94,6 @@ public class FileStoreTest extends SpringTransactionalTest {
     URI uri = fileStore.save(fp, source.toFile(), AS_NEW);
     assertNotNull(uri);
 
-    // A copied property can be changed to identify a distinct stored version.
     FileProperty fp2 = fp.copy();
     fp2.setFileVersion("v2");
     Map<String, String> wheres =
