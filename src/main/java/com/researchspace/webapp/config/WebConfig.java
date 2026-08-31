@@ -1,11 +1,17 @@
 package com.researchspace.webapp.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.researchspace.api.v1.controller.APIFileUploadThrottlingInterceptor;
 import com.researchspace.api.v1.controller.APIRequestThrottlingInterceptor;
 import com.researchspace.api.v1.controller.InventoryExportApiController;
 import com.researchspace.api.v1.controller.InventoryFilesApiController;
 import com.researchspace.api.v1.controller.InventoryImportApiController;
+import com.researchspace.api.v2.controller.ApiV2AuthenticationInterceptor;
+import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
+import com.researchspace.api.v2.controller.ApiV2PreAuthenticationThrottlingInterceptor;
+import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
+import com.researchspace.api.v2.controller.ApiV2RequestThrottlingInterceptor;
 import com.researchspace.webapp.integrations.wopi.WopiAuthorisationInterceptor;
 import com.researchspace.webapp.integrations.wopi.WopiProofKeyValidationInterceptor;
 import java.nio.charset.Charset;
@@ -21,6 +27,8 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.validation.Validator;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
@@ -36,6 +44,11 @@ public class WebConfig extends WebMvcConfigurationSupport {
 
   @Autowired APIRequestThrottlingInterceptor requestThrottle;
   @Autowired APIFileUploadThrottlingInterceptor fileUploadThrottle;
+  @Autowired ApiV2RequestThrottlingInterceptor apiV2RequestThrottle;
+  @Autowired ApiV2PreAuthenticationThrottlingInterceptor apiV2PreAuthenticationThrottle;
+  @Autowired ApiV2AuthenticationInterceptor apiV2Authentication;
+  @Autowired ApiV2ControllerAdvice apiV2ControllerAdvice;
+  @Autowired ObjectMapper objectMapper;
 
   @Autowired WopiAuthorisationInterceptor wopiAuthorisation;
   @Autowired WopiProofKeyValidationInterceptor wopiProofKeyValidation;
@@ -74,6 +87,9 @@ public class WebConfig extends WebMvcConfigurationSupport {
           .addInterceptor(defaultConfig.originRefererCheckingInterceptor())
           .addPathPatterns("/**")
           .excludePathPatterns("/oauth/**", "/api/**", "/slack/callbacks/**", "/wopi/**");
+      registry
+          .addInterceptor(defaultConfig.originRefererCheckingInterceptor())
+          .addPathPatterns("/api/v2/oauth/tokens");
     }
     // add timezone via cookie if possible, just needed for sso
     if ("false".equals(standalone)) {
@@ -97,18 +113,49 @@ public class WebConfig extends WebMvcConfigurationSupport {
     if ("true".equals(permissiveCorsEnabled)) {
       registry
           .addInterceptor(defaultConfig.apiPermissiveCorsInterceptor())
-          .addPathPatterns("/api/**");
+          .addPathPatterns("/api/**")
+          .excludePathPatterns("/api/v2/**");
+      // REST API v2 declares its policy through addCorsMappings instead; see the comment there.
     }
-    registry.addInterceptor(requestThrottle).addPathPatterns("/api/**");
+    registry
+        .addInterceptor(requestThrottle)
+        .addPathPatterns("/api/**")
+        .excludePathPatterns("/api/v2/**");
+    registry.addInterceptor(apiV2PreAuthenticationThrottle).addPathPatterns("/api/v2/**");
     if ("true".equals(fileuploadRateLimitEnabled)) {
       registry.addInterceptor(fileUploadThrottle).addPathPatterns("/api/**/files");
     }
     registry
         .addInterceptor(defaultConfig.apiAuthenticationInterceptor())
         .addPathPatterns("/api/**")
-        .excludePathPatterns("/api/inventory/v1/public/**");
+        .excludePathPatterns("/api/v2/**", "/api/inventory/v1/public/**");
+    registry.addInterceptor(apiV2Authentication).addPathPatterns("/api/v2/**");
+    registry.addInterceptor(apiV2RequestThrottle).addPathPatterns("/api/v2/**");
     registry.addInterceptor(wopiAuthorisation).addPathPatterns("/wopi/files/**");
     registry.addInterceptor(wopiProofKeyValidation).addPathPatterns("/wopi/files/**");
+  }
+
+  @Override
+  public void addCorsMappings(CorsRegistry registry) {
+    if (!"true".equals(permissiveCorsEnabled)) {
+      return;
+    }
+    // A CorsConfiguration rather than a HandlerInterceptor. Spring decides a preflight from the
+    // registered CorsConfiguration, so headers an interceptor sets later do not affect that
+    // decision: an OPTIONS carrying Origin and Access-Control-Request-Method was refused with 403,
+    // and every cross-origin POST/PATCH/DELETE and every request sending the apiKey header failed
+    // in a browser while working from curl. Simple GETs did work, which is why the setting looked
+    // functional.
+    // Registered first: the source returns the first matching pattern, and the token route mints a
+    // credential from the live browser session, so permissive API CORS must never reach it. No
+    // allowed origin means every cross-origin attempt on it is refused.
+    registry.addMapping("/api/v2/oauth/tokens").allowedOrigins();
+    registry
+        .addMapping("/api/v2/**")
+        .allowedOrigins("*")
+        .allowedMethods("GET", "POST", "PATCH", "DELETE", "OPTIONS")
+        .allowedHeaders("apiKey", "Authorization", "Content-Type")
+        .maxAge(3600);
   }
 
   @Override
@@ -127,9 +174,6 @@ public class WebConfig extends WebMvcConfigurationSupport {
     registry
         .addViewController("/public/requestUsernameReminder")
         .setViewName("public/requestUsernameReminder");
-    registry
-        .addViewController("/public/maintenanceInProgress")
-        .setViewName("public/maintenanceInProgress");
     registry.addViewController("/public/terms").setViewName("public/terms");
     registry.addViewController("/public/ssoinfo").setViewName("public/ssoinfo");
     registry.addViewController("/public/noldapsignup").setViewName("public/noLdapSignUp");
@@ -140,7 +184,6 @@ public class WebConfig extends WebMvcConfigurationSupport {
         .addViewController("/public/ssoinfoUsernameNotAlias")
         .setViewName("public/ssoinfoUsernameNotAlias");
     registry.addViewController("/public/ipAddressInvalid").setViewName("public/ipAddressInvalid");
-    registry.addViewController("/public/apiDocs").setViewName("public/apiDocs");
     registry.addViewController("/audit/auditing").setViewName("audit/auditing");
 
     registry
@@ -187,12 +230,24 @@ public class WebConfig extends WebMvcConfigurationSupport {
     }
   }
 
+  /**
+   * Puts the v2 problem resolver ahead of Spring's own resolvers. Needed because {@link
+   * ApiV2ControllerAdvice} is package-selected and so is skipped for exceptions raised before a
+   * handler is chosen; see {@link ApiV2PreHandlerProblemResolver}.
+   */
+  @Override
+  protected void extendHandlerExceptionResolvers(List<HandlerExceptionResolver> resolvers) {
+    resolvers.add(0, new ApiV2PreHandlerProblemResolver(apiV2ControllerAdvice, objectMapper));
+  }
+
   @Override
   protected void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-    // now let's reconfigure Jackson to use PrettyPrinted object mapper.
     for (HttpMessageConverter<?> converter : converters) {
+      // Pretty-printing was on unconditionally, so every production response paid for indentation
+      // and newlines on every field of every document. Nothing consumes the whitespace: browsers
+      // and API clients format JSON themselves.
       if (converter instanceof MappingJackson2HttpMessageConverter) {
-        ((MappingJackson2HttpMessageConverter) converter).setPrettyPrint(true);
+        ((MappingJackson2HttpMessageConverter) converter).setPrettyPrint(false);
       }
       // and string response bodies to be UTF8
       if (converter instanceof StringHttpMessageConverter) {

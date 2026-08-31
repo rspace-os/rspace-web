@@ -12,7 +12,9 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.record.IRecordFactory;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.hibernate.query.Query;
 import org.hibernate.type.StandardBasicTypes;
@@ -186,5 +188,64 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
             Container.class)
         .setParameter("fileProperty", fileProperty)
         .list();
+  }
+
+  @Override
+  public Set<Long> getReadableActiveContainerIds(Set<Long> containerIds, User actor) {
+    if (containerIds.isEmpty()) {
+      return Set.of();
+    }
+    if (actor.hasSysadminRole()) {
+      return new LinkedHashSet<>(
+          sessionFactory
+              .getCurrentSession()
+              .createQuery(
+                  "select container.id from Container container "
+                      + "where container.id in (:containerIds) and container.deleted=false",
+                  Long.class)
+              .setParameterList("containerIds", containerIds)
+              .list());
+    }
+    List<String> groupMembers =
+        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(actor);
+    List<String> groupNames =
+        actor.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
+    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(actor);
+    String directContainer =
+        getInventoryReadPermissionSqlPredicate(
+            actor, groupMembers, groupNames, visibleOwners, "container.");
+    String childContainer =
+        getInventoryReadPermissionSqlPredicate(
+            actor, groupMembers, groupNames, List.of(), "childContainer.");
+    String childInstrument =
+        getInventoryReadPermissionSqlPredicate(
+            actor, groupMembers, groupNames, List.of(), "childInstrument.");
+    String childSubSample =
+        getInventoryReadPermissionSqlPredicate(
+            actor, groupMembers, groupNames, List.of(), "childSubSample.sample.");
+    String hql =
+        "select container.id from Container container "
+            + "where container.id in (:containerIds) and container.deleted=false and ("
+            + directContainer
+            + " or exists (select location.id from ContainerLocation location "
+            + "join location.storedContainer childContainer "
+            + "where location.container=container and childContainer.deleted=false and "
+            + childContainer
+            + ") or exists (select location.id from ContainerLocation location "
+            + "join location.storedInstrument childInstrument "
+            + "where location.container=container and childInstrument.deleted=false and "
+            + childInstrument
+            + ") or exists (select location.id from ContainerLocation location "
+            + "join location.storedSubSample childSubSample "
+            + "where location.container=container and childSubSample.deleted=false and "
+            + childSubSample
+            + "))";
+    Query<Long> query =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery(hql, Long.class)
+            .setParameterList("containerIds", containerIds);
+    addQueryParams(null, actor, query, visibleOwners, groupMembers, groupNames);
+    return new LinkedHashSet<>(query.list());
   }
 }

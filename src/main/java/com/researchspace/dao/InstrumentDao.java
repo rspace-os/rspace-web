@@ -5,8 +5,15 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentParentLocationSummary;
+import com.researchspace.model.inventory.InstrumentReadSummary;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /** For DAO operations specific to Inventory {@link Instrument} (not templates). */
 public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
@@ -22,6 +29,23 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
       InventorySearchDeletedOption deletedOption,
       String searchTerm,
       User user);
+
+  /**
+   * Returns one REST API v2 collection page of the instruments the user may read.
+   *
+   * <p>The filter, the sort, the permission rules, and the page are all applied by the database, so
+   * the page and the total agree and no caller has to read the whole collection.
+   */
+  ResourcePage<Instrument> getReadableResources(ResourceRequest request, AccessResult access);
+
+  /** Counts the instruments the user may read that match a REST API v2 collection request. */
+  long countReadableResources(ResourceRequest request, AccessResult access);
+
+  /** Returns current immediate parent-container data for the requested instruments. */
+  Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(Set<Long> instrumentIds);
+
+  /** Returns readable active instrument scalars for relationship expansion. */
+  Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user);
 
   /** Returns all instruments whose image or thumbnail is the given file property. */
   List<Instrument> getAllUsingImage(FileProperty fileProperty);

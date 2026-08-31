@@ -2,9 +2,14 @@ package com.researchspace.dao.hibernate;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.axiope.search.SearchUtils;
+import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.GenericDaoHibernate;
+import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.io.Serializable;
@@ -21,8 +26,41 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
 
   @Autowired protected InventoryPermissionUtils invPermissionUtils;
 
+  @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
+
   public InventoryDaoHibernate(Class<T> persistentClass) {
     super(persistentClass);
+  }
+
+  /**
+   * Returns one REST API v2 collection page of the records this user may read.
+   *
+   * <p>The database applies the caller's filter, the sort, the permission rules, and the page
+   * together, so the page and the total agree and no caller reads the collection to filter it.
+   */
+  protected ResourcePage<T> readableResourcePage(
+      CollectionQueryExecutor<T> collectionQuery, ResourceRequest request, AccessResult access) {
+    if (access.isDenied()) {
+      return new ResourcePage<>(List.of(), 0);
+    }
+    return collectionQuery.page(
+        criteriaBuilderFactory,
+        getSession(),
+        request,
+        access.constraintOrEmpty().map(collectionQuery::compileConstraint).orElse(null));
+  }
+
+  /** Counts the records this user may read that match a REST API v2 collection request. */
+  protected long countReadableResources(
+      CollectionQueryExecutor<T> collectionQuery, ResourceRequest request, AccessResult access) {
+    if (access.isDenied()) {
+      return 0;
+    }
+    return collectionQuery.count(
+        criteriaBuilderFactory,
+        getSession(),
+        request,
+        access.constraintOrEmpty().map(collectionQuery::compileConstraint).orElse(null));
   }
 
   protected String getOwnedByAndPermittedItemsSqlQueryFragment(
@@ -45,38 +83,57 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
 
     String ownedAndPermittedItemsFragment =
         StringUtils.isEmpty(ownedBy) ? "" : "and " + relatedItemPrefix + "owner.username=:ownedBy ";
-    if (user.hasSysadminRole()) {
-      ownedAndPermittedItemsFragment += ""; // for sysadmin there is no permission-limiting query
-    } else {
+    if (!user.hasSysadminRole()) {
       ownedAndPermittedItemsFragment +=
-          "and (" + relatedItemPrefix + "owner.username=:currentUser ";
-      if (CollectionUtils.isNotEmpty(visibleOwners)) {
-        ownedAndPermittedItemsFragment +=
-            " or (" + relatedItemPrefix + "owner.username in (:visibleOwners)) ";
-      }
-      if (CollectionUtils.isNotEmpty(userGroupMembers)) {
-        ownedAndPermittedItemsFragment +=
-            " or ("
-                + relatedItemPrefix
-                + "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.OWNER_GROUPS"
-                + " and "
-                + relatedItemPrefix
-                + "owner.username in (:userGroupMembers)) ";
-      }
-      for (int i = 0; i < userGroupsUniqueNames.size(); i++) {
-        ownedAndPermittedItemsFragment +=
-            "or ("
-                + relatedItemPrefix
-                + "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.WHITELIST"
-                + " and "
-                + relatedItemPrefix
-                + "sharingACL.acl LIKE :userGroupUniqueName"
-                + i
-                + ") ";
-      }
-      ownedAndPermittedItemsFragment += ") ";
+          "and "
+              + getInventoryReadPermissionSqlPredicate(
+                  user, userGroupMembers, userGroupsUniqueNames, visibleOwners, relatedItemPrefix)
+              + " ";
     }
     return ownedAndPermittedItemsFragment;
+  }
+
+  /** The inventory read rule without a leading {@code and}, for use inside larger predicates. */
+  protected String getInventoryReadPermissionSqlPredicate(
+      User user,
+      List<String> userGroupMembers,
+      List<String> userGroupsUniqueNames,
+      List<String> visibleOwners,
+      String relatedItemPrefix) {
+    if (user.hasSysadminRole()) {
+      return "1=1";
+    }
+    StringBuilder predicate =
+        new StringBuilder("(").append(relatedItemPrefix).append("owner.username=:currentUser ");
+    if (CollectionUtils.isNotEmpty(visibleOwners)) {
+      predicate
+          .append(" or (")
+          .append(relatedItemPrefix)
+          .append("owner.username in (:visibleOwners)) ");
+    }
+    if (CollectionUtils.isNotEmpty(userGroupMembers)) {
+      predicate
+          .append(" or (")
+          .append(relatedItemPrefix)
+          .append(
+              "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.OWNER_GROUPS")
+          .append(" and ")
+          .append(relatedItemPrefix)
+          .append("owner.username in (:userGroupMembers)) ");
+    }
+    for (int i = 0; i < userGroupsUniqueNames.size(); i++) {
+      predicate
+          .append("or (")
+          .append(relatedItemPrefix)
+          .append(
+              "sharingMode=com.researchspace.model.inventory.InventoryRecord$InventorySharingMode.WHITELIST")
+          .append(" and ")
+          .append(relatedItemPrefix)
+          .append("sharingACL.acl LIKE :userGroupUniqueName")
+          .append(i)
+          .append(") ");
+    }
+    return predicate.append(")").toString();
   }
 
   protected String getOrderBySqlFragmentForInventoryRecord(

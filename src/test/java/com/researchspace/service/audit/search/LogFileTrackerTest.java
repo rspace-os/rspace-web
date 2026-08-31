@@ -13,21 +13,18 @@ import java.util.stream.IntStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.PrefixFileFilter;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
-@EnableRuleMigrationSupport
 public class LogFileTrackerTest {
   LogFileTracker tracker;
   File logFolder;
   final int TOTAL_LOG_FILES = 5;
   SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-  @Rule public TemporaryFolder folder = new TemporaryFolder();
+  @TempDir File folder;
 
   @BeforeEach
   public void setUp() {
@@ -103,7 +100,7 @@ public class LogFileTrackerTest {
 
   @Test
   public void testFileRolloverDetected() throws ParseException, IOException {
-    File tempDir = folder.getRoot();
+    File tempDir = folder;
     FileUtils.copyDirectory(logFolder, tempDir, null);
     Assertions.assertEquals(5, getAllFilesInFolder(tempDir).size());
     Set<String> fileNames = searchBetween2Dates(getAllFilesInFolder(tempDir));
