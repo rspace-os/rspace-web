@@ -17,6 +17,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.file.Path;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.subject.support.SubjectThreadState;
@@ -31,6 +35,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 public class AnonymousUserFilterTest {
 
+  private static final Path WEB_XML = Path.of("src", "main", "webapp", "WEB-INF", "web.xml");
   private static ThreadState subjectThreadState;
   private AnonymousUserFilter testee;
   @Mock private HttpServletRequest request;
@@ -191,6 +196,18 @@ public class AnonymousUserFilterTest {
   }
 
   @Test
+  public void testWebXmlAllowsViteAssetsForAnonymousUser() throws Exception {
+    when(filterConfig.getInitParameter("urlsAllowedForAnonymousAccess"))
+        .thenReturn(urlsAllowedForAnonymousAccessFromWebXml());
+    setUpUserInSession("anon");
+    when(request.getRequestURI()).thenReturn("/ui/dist/tinymceGalleryUtils.js");
+
+    testee.doFilterInternal(request, response, chain);
+
+    verify(chain).doFilter(eq(request), eq(response));
+  }
+
+  @Test
   public void testAllowProgressNonAnonymousUserAndWhenRequestUrlNotExcludedFromFiltering()
       throws ServletException, IOException {
     setUpUserInSession("not anonymous");
@@ -212,5 +229,18 @@ public class AnonymousUserFilterTest {
     setUpAUrlWhichWillNotBeFiltered();
     testee.doFilterInternal(request, response, chain);
     verify(subject, never()).getSession();
+  }
+
+  private static String urlsAllowedForAnonymousAccessFromWebXml() throws Exception {
+    var factory = DocumentBuilderFactory.newInstance();
+    factory.setNamespaceAware(true);
+    var document = factory.newDocumentBuilder().parse(WEB_XML.toFile());
+    var expression =
+        "/*[local-name()='web-app']/*[local-name()='filter']"
+            + "[*[local-name()='filter-name']='anonymousUserFilter']/*[local-name()='init-param']"
+            + "[*[local-name()='param-name']='urlsAllowedForAnonymousAccess']"
+            + "/*[local-name()='param-value']/text()";
+    return (String)
+        XPathFactory.newInstance().newXPath().evaluate(expression, document, XPathConstants.STRING);
   }
 }
