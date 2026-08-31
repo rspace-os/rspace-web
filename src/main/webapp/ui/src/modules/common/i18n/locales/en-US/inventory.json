@@ -1454,7 +1454,7 @@
       "explanation": "If you select an instrument template below, initial metadata and custom fields will be automatically generated.",
       "fetchError": "Could not fetch instrument template details.",
       "label": "Instrument Template",
-      "noTemplate": "No template",
+      "noTemplate": "No Template",
       "noTemplateTitle": "No Template",
       "unknownReason": "Unknown reason.",
       "version": "Version {version}"

@@ -23,7 +23,7 @@ function TemplateName({ disabled, value, onChange, error }: TemplateNameArgs): R
       value={value}
       helperText={error ? t("import.fields.templateNameValidation") : ""}
       onChange={({ target }) => {
-        if (target instanceof HTMLInputElement) onChange(target.value);
+        onChange(target.value);
       }}
     />
   );

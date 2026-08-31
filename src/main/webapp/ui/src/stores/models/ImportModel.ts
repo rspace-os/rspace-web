@@ -534,6 +534,8 @@ export default class Import {
     this.resetMappingsByRecordType();
     if (this.isSamplesImport) {
       this.setTemplateName(i18n.t("inventory:import.fields.defaultTemplateName"));
+    } else if (this.isInstrumentsImport) {
+      this.setInstrumentTemplateName(i18n.t("inventory:import.fields.defaultTemplateName"));
     }
     this.state.transitionTo("initial");
   }
@@ -676,13 +678,10 @@ export default class Import {
   }
 
   get mappingsByRecordType(): Array<ColumnFieldMap> {
-    return this.isContainersImport
-      ? this.containersMappings
-      : this.isSamplesImport
-        ? this.samplesMappings
-        : this.isInstrumentsImport
-          ? this.instrumentsMappings
-          : this.subSamplesMappings;
+    if (this.isContainersImport) return this.containersMappings;
+    if (this.isSamplesImport) return this.samplesMappings;
+    if (this.isInstrumentsImport) return this.instrumentsMappings;
+    return this.subSamplesMappings;
   }
 
   get containersSubmittable(): boolean {
@@ -1055,8 +1054,13 @@ export default class Import {
     const subSamplesSubmittable = this.subSamplesSubmittable;
     const instrumentsFile = this.instrumentsFile;
     const instrumentsSubmittable = this.instrumentsSubmittable;
+    type InstrumentTemplateSnapshot = { createNew: true } | { createNew: false; template: InstrumentTemplateModel };
     const instrumentCreateNewTemplate = this.instrumentCreateNewTemplate;
     const instrumentTemplate = this.instrumentTemplate;
+    const instrumentTemplateSnapshot: InstrumentTemplateSnapshot =
+      !instrumentCreateNewTemplate && instrumentTemplate !== null
+        ? { createNew: false, template: instrumentTemplate }
+        : { createNew: true };
 
     this.state.transitionTo("submitting");
     const { peopleStore, uiStore } = getRootStore();
@@ -1091,9 +1095,10 @@ export default class Import {
             : null,
           instrumentSettings: instrumentsSubmittable
             ? {
-                // biome-ignore lint/style/noNonNullAssertion: instrumentTemplate is non-null when !instrumentCreateNewTemplate and instrumentsSubmittable is true
-                templateId: instrumentCreateNewTemplate ? null : instrumentTemplate!.id,
-                templateInfo: instrumentCreateNewTemplate ? this.transformInstrumentTemplateInfoForSubmission() : null,
+                templateId: instrumentTemplateSnapshot.createNew ? null : instrumentTemplateSnapshot.template.id,
+                templateInfo: instrumentTemplateSnapshot.createNew
+                  ? this.transformInstrumentTemplateInfoForSubmission()
+                  : null,
                 fieldMappings: this.makeMappingsObject(this.instrumentsMappings),
               }
             : null,
@@ -1184,6 +1189,7 @@ export default class Import {
         this.resetAllLoadedFiles();
         this.resetAllMappings();
         this.setTemplateName(i18n.t("inventory:import.fields.defaultTemplateName"));
+        this.setInstrumentTemplateName(i18n.t("inventory:import.fields.defaultTemplateName"));
       }
     } catch (error) {
       const gatewayTimeout =

@@ -200,7 +200,15 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
             </TableHead>
             <TableBody>
               {mappingsByRecordType?.map((m: ColumnFieldMap, i: number) => (
-                <Row key={i} columnFieldMap={m} existingTemplate={!importData.createNewTemplate} />
+                <Row
+                  key={i}
+                  columnFieldMap={m}
+                  existingTemplate={
+                    importData.isInstrumentsImport
+                      ? !importData.instrumentCreateNewTemplate
+                      : !importData.createNewTemplate
+                  }
+                />
               ))}
             </TableBody>
           </Table>

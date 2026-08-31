@@ -36,7 +36,7 @@ export class InventoryCreateMenu {
   }
 
   async clickCsvImport(): Promise<void> {
-    await this.root.getByRole("menuitem", { name: /From CSV/ }).click();
+    await this.root.getByRole("menuitem", { name: "From CSV" }).click();
   }
 
   async newSample(): Promise<NewSampleFormComponent> {

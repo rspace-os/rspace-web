@@ -116,6 +116,7 @@ test.describe(`Inventory CSV Import`, { tag: [tags.INVENTORY, tags.MOBILE] }, ()
 
     const importPage = await pageInventory.openCsvImport("INSTRUMENTS");
     await importPage.uploadCsv(INSTRUMENTS_CSV);
+    await importPage.setColumnChecked("Parent Container (Global ID)", false);
     await importPage.clickImport();
 
     await page.goto("/inventory/search?resultType=INSTRUMENT");
@@ -134,6 +135,12 @@ test.describe(`Inventory CSV Import`, { tag: [tags.INVENTORY, tags.MOBILE] }, ()
 
     await expect(importPage.main.getByRole("radio", { name: "Create new template." })).toBeVisible();
     await expect(importPage.main.getByRole("radio", { name: "Choose existing template." })).toBeVisible();
+    await expect(importPage.importButton).toBeDisabled();
+
+    await importPage.uploadCsv(INSTRUMENTS_CSV);
+    await expect(importPage.importButton).toBeEnabled();
+
+    await importPage.chooseExistingTemplate();
     await expect(importPage.importButton).toBeDisabled();
   });
 });

@@ -45,6 +45,10 @@ export class InventoryImportPage extends BasePage {
     }
   }
 
+  async chooseExistingTemplate(): Promise<void> {
+    await this.main.getByRole("radio", { name: "Choose existing template." }).click();
+  }
+
   async clickImport(): Promise<void> {
     const [response] = await Promise.all([
       this.page.waitForResponse(

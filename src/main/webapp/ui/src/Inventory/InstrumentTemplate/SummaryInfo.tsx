@@ -56,11 +56,11 @@ function SummaryInfo({ template, loading, paddingless }: SummaryInfoArgs): React
     return <OneItemList avatar={<FontAwesomeIcon icon={faSpinner} spin size="lg" />} text={t("common:loading")} />;
   }
   if (paddingless) {
-    return <NoValue label={t("template.summary.noTemplate")} />;
+    return <NoValue label={t("instrumentTemplate.field.noTemplate")} />;
   }
   return (
     <Box sx={{ my: 1.5 }}>
-      <NoValue label={t("template.summary.noTemplate")} />
+      <NoValue label={t("instrumentTemplate.field.noTemplate")} />
     </Box>
   );
 }
